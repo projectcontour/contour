@@ -35,16 +35,22 @@ func TestRouteRoute(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	c1 := &dag.Cluster{
 		Upstream: &dag.Service{
-			Name:        s1.Name,
-			Namespace:   s1.Namespace,
-			ServicePort: s1.Spec.Ports[0],
+			Weighted: dag.WeightedService{
+				Weight:           1,
+				ServiceName:      s1.Name,
+				ServiceNamespace: s1.Namespace,
+				ServicePort:      s1.Spec.Ports[0],
+			},
 		},
 	}
 	c2 := &dag.Cluster{
 		Upstream: &dag.Service{
-			Name:        s1.Name,
-			Namespace:   s1.Namespace,
-			ServicePort: s1.Spec.Ports[0],
+			Weighted: dag.WeightedService{
+				Weight:           1,
+				ServiceName:      s1.Name,
+				ServiceNamespace: s1.Namespace,
+				ServicePort:      s1.Spec.Ports[0],
+			},
 		},
 		LoadBalancerPolicy: "Cookie",
 	}
@@ -85,16 +91,22 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{{
 					Upstream: &dag.Service{
-						Name:        s1.Name,
-						Namespace:   s1.Namespace,
-						ServicePort: s1.Spec.Ports[0],
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
 					},
 					Weight: 90,
 				}, {
 					Upstream: &dag.Service{
-						Name:        s1.Name,
-						Namespace:   s1.Namespace, // it's valid to mention the same service several times per route.
-						ServicePort: s1.Spec.Ports[0],
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace, // it's valid to mention the same service several times per route.
+							ServicePort:      s1.Spec.Ports[0],
+						},
 					},
 				}},
 			},
@@ -119,17 +131,25 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Websocket: true,
 				Clusters: []*dag.Cluster{{
+
 					Upstream: &dag.Service{
-						Name:        s1.Name,
-						Namespace:   s1.Namespace,
-						ServicePort: s1.Spec.Ports[0],
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
 					},
+
 					Weight: 90,
 				}, {
 					Upstream: &dag.Service{
-						Name:        s1.Name,
-						Namespace:   s1.Namespace, // it's valid to mention the same service several times per route.
-						ServicePort: s1.Spec.Ports[0],
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
 					},
 				}},
 			},
@@ -158,9 +178,12 @@ func TestRouteRoute(t *testing.T) {
 				Websocket: true,
 				Clusters: []*dag.Cluster{{
 					Upstream: &dag.Service{
-						Name:        s1.Name,
-						Namespace:   s1.Namespace,
-						ServicePort: s1.Spec.Ports[0],
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
 					},
 
 					RequestHeadersPolicy: &dag.HeadersPolicy{
@@ -450,18 +473,24 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{{
 					Upstream: &dag.Service{
-						Name:        s1.Name,
-						Namespace:   s1.Namespace,
-						ServicePort: s1.Spec.Ports[0],
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      s1.Name,
+							ServiceNamespace: s1.Namespace,
+							ServicePort:      s1.Spec.Ports[0],
+						},
 					},
 					Weight: 90,
 				}},
 				MirrorPolicy: &dag.MirrorPolicy{
 					Cluster: &dag.Cluster{
 						Upstream: &dag.Service{
-							Name:        s1.Name,
-							Namespace:   s1.Namespace,
-							ServicePort: s1.Spec.Ports[0],
+							Weighted: dag.WeightedService{
+								Weight:           1,
+								ServiceName:      s1.Name,
+								ServiceNamespace: s1.Namespace,
+								ServicePort:      s1.Spec.Ports[0],
+							},
 						},
 					},
 				},
@@ -495,18 +524,24 @@ func TestWeightedClusters(t *testing.T) {
 		"multiple services w/o weights": {
 			clusters: []*dag.Cluster{{
 				Upstream: &dag.Service{
-					Name:      "kuard",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Port: 8080,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "kuard",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Port: 8080,
+						},
 					},
 				},
 			}, {
 				Upstream: &dag.Service{
-					Name:      "nginx",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Port: 8080,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "nginx",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Port: 8080,
+						},
 					},
 				},
 			}},
@@ -524,19 +559,25 @@ func TestWeightedClusters(t *testing.T) {
 		"multiple weighted services": {
 			clusters: []*dag.Cluster{{
 				Upstream: &dag.Service{
-					Name:      "kuard",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Port: 8080,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "kuard",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Port: 8080,
+						},
 					},
 				},
 				Weight: 80,
 			}, {
 				Upstream: &dag.Service{
-					Name:      "nginx",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Port: 8080,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "nginx",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Port: 8080,
+						},
 					},
 				},
 				Weight: 20,
@@ -555,28 +596,37 @@ func TestWeightedClusters(t *testing.T) {
 		"multiple weighted services and one with no weight specified": {
 			clusters: []*dag.Cluster{{
 				Upstream: &dag.Service{
-					Name:      "kuard",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Port: 8080,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "kuard",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Port: 8080,
+						},
 					},
 				},
 				Weight: 80,
 			}, {
 				Upstream: &dag.Service{
-					Name:      "nginx",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Port: 8080,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "nginx",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Port: 8080,
+						},
 					},
 				},
 				Weight: 20,
 			}, {
 				Upstream: &dag.Service{
-					Name:      "notraffic",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Port: 8080,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "notraffic",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Port: 8080,
+						},
 					},
 				},
 			}},

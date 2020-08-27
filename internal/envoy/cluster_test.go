@@ -25,6 +25,7 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/xds"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -220,9 +221,13 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-connections": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort:    s1.Spec.Ports[0],
 					MaxConnections: 9000,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      s1.Name,
+						ServiceNamespace: s1.Namespace,
+						ServicePort:      s1.Spec.Ports[0],
+					},
 				},
 			},
 			want: &v2.Cluster{
@@ -243,9 +248,13 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-pending-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort:        s1.Spec.Ports[0],
 					MaxPendingRequests: 4096,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      s1.Name,
+						ServiceNamespace: s1.Namespace,
+						ServicePort:      s1.Spec.Ports[0],
+					},
 				},
 			},
 			want: &v2.Cluster{
@@ -266,9 +275,13 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-requests": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: s1.Spec.Ports[0],
 					MaxRequests: 404,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      s1.Name,
+						ServiceNamespace: s1.Namespace,
+						ServicePort:      s1.Spec.Ports[0],
+					},
 				},
 			},
 			want: &v2.Cluster{
@@ -289,9 +302,13 @@ func TestCluster(t *testing.T) {
 		"projectcontour.io/max-retries": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					Name: s1.Name, Namespace: s1.Namespace,
-					ServicePort: s1.Spec.Ports[0],
-					MaxRetries:  7,
+					MaxRetries: 7,
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      s1.Name,
+						ServiceNamespace: s1.Namespace,
+						ServicePort:      s1.Spec.Ports[0],
+					},
 				},
 			},
 			want: &v2.Cluster{
@@ -401,9 +418,9 @@ func TestCluster(t *testing.T) {
 }
 
 func TestClusterLoadAssignmentName(t *testing.T) {
-	assert.Equal(t, ClusterLoadAssignmentName(types.NamespacedName{Namespace: "ns", Name: "svc"}, "port"), "ns/svc/port")
-	assert.Equal(t, ClusterLoadAssignmentName(types.NamespacedName{Namespace: "ns", Name: "svc"}, ""), "ns/svc")
-	assert.Equal(t, ClusterLoadAssignmentName(types.NamespacedName{}, ""), "/")
+	assert.Equal(t, xds.ClusterLoadAssignmentName(types.NamespacedName{Namespace: "ns", Name: "svc"}, "port"), "ns/svc/port")
+	assert.Equal(t, xds.ClusterLoadAssignmentName(types.NamespacedName{Namespace: "ns", Name: "svc"}, ""), "ns/svc")
+	assert.Equal(t, xds.ClusterLoadAssignmentName(types.NamespacedName{}, ""), "/")
 }
 
 func TestClustername(t *testing.T) {
@@ -414,13 +431,16 @@ func TestClustername(t *testing.T) {
 		"simple": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					Name:      "backend",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       80,
-						TargetPort: intstr.FromInt(6502),
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "backend",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(6502),
+						},
 					},
 				},
 			},
@@ -429,13 +449,16 @@ func TestClustername(t *testing.T) {
 		"far too long": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					Name:      "must-be-in-want-of-a-wife",
-					Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
-					ServicePort: v1.ServicePort{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       9999,
-						TargetPort: intstr.FromString("http-alt"),
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "must-be-in-want-of-a-wife",
+						ServiceNamespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
+						ServicePort: v1.ServicePort{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       9999,
+							TargetPort: intstr.FromString("http-alt"),
+						},
 					},
 				},
 			},
@@ -444,13 +467,16 @@ func TestClustername(t *testing.T) {
 		"various healthcheck params": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					Name:      "backend",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       80,
-						TargetPort: intstr.FromInt(6502),
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "backend",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(6502),
+						},
 					},
 				},
 				LoadBalancerPolicy: "Random",
@@ -467,13 +493,16 @@ func TestClustername(t *testing.T) {
 		"upstream tls validation with subject alt name": {
 			cluster: &dag.Cluster{
 				Upstream: &dag.Service{
-					Name:      "backend",
-					Namespace: "default",
-					ServicePort: v1.ServicePort{
-						Name:       "http",
-						Protocol:   "TCP",
-						Port:       80,
-						TargetPort: intstr.FromInt(6502),
+					Weighted: dag.WeightedService{
+						Weight:           1,
+						ServiceName:      "backend",
+						ServiceNamespace: "default",
+						ServicePort: v1.ServicePort{
+							Name:       "http",
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(6502),
+						},
 					},
 				},
 				LoadBalancerPolicy: "Random",
@@ -606,9 +635,12 @@ func service(s *v1.Service, protocols ...string) *dag.Service {
 		protocol = protocols[0]
 	}
 	return &dag.Service{
-		Name:         s.Name,
-		Namespace:    s.Namespace,
-		ServicePort:  s.Spec.Ports[0],
+		Weighted: dag.WeightedService{
+			Weight:           1,
+			ServiceName:      s.Name,
+			ServiceNamespace: s.Namespace,
+			ServicePort:      s.Spec.Ports[0],
+		},
 		ExternalName: s.Spec.ExternalName,
 		Protocol:     protocol,
 	}

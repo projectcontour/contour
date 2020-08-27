@@ -694,23 +694,28 @@ func TestTCPProxy(t *testing.T) {
 
 	c1 := &dag.Cluster{
 		Upstream: &dag.Service{
-			Name:      "example",
-			Namespace: "default",
-			ServicePort: v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8443),
+			Weighted: dag.WeightedService{
+				Weight:           1,
+				ServiceName:      "example",
+				ServiceNamespace: "default",
+				ServicePort: v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       443,
+					TargetPort: intstr.FromInt(8443),
+				},
 			},
 		},
 	}
 	c2 := &dag.Cluster{
 		Upstream: &dag.Service{
-			Name:      "example2",
-			Namespace: "default",
-			ServicePort: v1.ServicePort{
-				Protocol:   "TCP",
-				Port:       443,
-				TargetPort: intstr.FromInt(8443),
+			Weighted: dag.WeightedService{
+				ServiceName:      "example2",
+				ServiceNamespace: "default",
+				ServicePort: v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       443,
+					TargetPort: intstr.FromInt(8443),
+				},
 			},
 		},
 		Weight: 20,

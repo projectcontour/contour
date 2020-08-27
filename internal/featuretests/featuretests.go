@@ -38,6 +38,7 @@ import (
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -59,10 +60,9 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	t.Parallel()
 
 	log := fixture.NewTestLogger(t)
+	log.SetLevel(logrus.DebugLevel)
 
-	et := &contour.EndpointsTranslator{
-		FieldLogger: log,
-	}
+	et := contour.NewEndpointsTranslator(log)
 
 	conf := contour.ListenerConfig{}
 	for _, opt := range opts {

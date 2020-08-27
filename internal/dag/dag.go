@@ -16,6 +16,7 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -23,6 +24,7 @@ import (
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/projectcontour/contour/internal/xds"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -371,10 +373,7 @@ func (t *TCPProxy) Visit(f func(Vertex)) {
 
 // Service represents a single Kubernetes' Service's Port.
 type Service struct {
-	Name      string
-	Namespace string
-
-	ServicePort v1.ServicePort
+	Weighted WeightedService
 
 	// Protocol is the layer 7 protocol of this service
 	// One of "", "h2", "h2c", or "tls".
@@ -402,22 +401,24 @@ type Service struct {
 	ExternalName string
 }
 
-type servicemeta struct {
-	name      string
-	namespace string
-	port      int32
-}
-
-func (s *Service) ToFullName() servicemeta {
-	return servicemeta{
-		name:      s.Name,
-		namespace: s.Namespace,
-		port:      s.ServicePort.Port,
+// Visit applies the visitor function to the Service vertex.
+func (s *Service) Visit(f func(Vertex)) {
+	// A Service has only one WeightedService entry. Fake up a
+	// ServiceCluster so that the visitor can pretend to not
+	// know this.
+	c := ServiceCluster{
+		ClusterName: xds.ClusterLoadAssignmentName(
+			types.NamespacedName{
+				Name:      s.Weighted.ServiceName,
+				Namespace: s.Weighted.ServiceNamespace,
+			},
+			s.Weighted.ServicePort.Name),
+		Services: []WeightedService{
+			s.Weighted,
+		},
 	}
-}
 
-func (s *Service) Visit(func(Vertex)) {
-	// Services are leaves in the DAG.
+	f(&c)
 }
 
 // Cluster holds the connection specific parameters that apply to
@@ -462,6 +463,90 @@ type Cluster struct {
 
 func (c Cluster) Visit(f func(Vertex)) {
 	f(c.Upstream)
+}
+
+// WeightedService represents the load balancing weight of a
+// particular v1.Weighted port.
+type WeightedService struct {
+	// Weight is the integral load balancing weight.
+	Weight uint32
+	// ServiceName is the v1.Service name.
+	ServiceName string
+	// ServiceNamespace is the v1.Service namespace.
+	ServiceNamespace string
+	// ServicePort is the port to which we forward traffic.
+	ServicePort v1.ServicePort
+}
+
+// ServiceCluster capture the set of Kubernetes Services that will
+// compose the endpoints for a Envoy cluster. Traffic is balanced
+// across the Service slice based on the weight of the elements.
+type ServiceCluster struct {
+	// ClusterName is a globally unique name for this ServiceCluster.
+	// It is eventually used as the Envoy ClusterLoadAssignment
+	// name, and must not be empty.
+	ClusterName string
+	// Services are the load balancing targets. This slice must not be empty.
+	Services []WeightedService
+}
+
+// TODO(jpeach): apply deepcopy-gen to DAG objects.
+func (s *ServiceCluster) DeepCopy() *ServiceCluster {
+	s2 := ServiceCluster{
+		ClusterName: s.ClusterName,
+		Services:    make([]WeightedService, len(s.Services)),
+	}
+
+	for i, w := range s.Services {
+		s2.Services[i] = w
+		w.ServicePort.DeepCopyInto(&s2.Services[i].ServicePort)
+	}
+
+	return &s2
+}
+
+// Validate checks whether this ServiceCluster satisfies its semantic invariants.
+func (s *ServiceCluster) Validate() error {
+	if s.ClusterName == "" {
+		return errors.New("missing .ClusterName field")
+	}
+
+	if len(s.Services) == 0 {
+		return errors.New("empty .Services field")
+	}
+
+	for i, w := range s.Services {
+		if w.ServiceName == "" {
+			return fmt.Errorf("empty .Services[%d].ServiceName field", i)
+		}
+
+		if w.ServiceNamespace == "" {
+			return fmt.Errorf("empty .Services[%d].ServiceNamespace field", i)
+		}
+	}
+
+	return nil
+}
+
+func (s *ServiceCluster) Visit(func(Vertex)) {
+	// ServiceClusters are leaves in the DAG.
+}
+
+// AddService adds the given service with a default weight of 1.
+func (s *ServiceCluster) AddService(name types.NamespacedName, port v1.ServicePort) {
+	s.AddWeightedService(1, name, port)
+}
+
+// AddWeightedService adds the given service with the given weight.
+func (s *ServiceCluster) AddWeightedService(weight uint32, name types.NamespacedName, port v1.ServicePort) {
+	w := WeightedService{
+		Weight:           weight,
+		ServiceName:      name.Namespace,
+		ServiceNamespace: name.Namespace,
+		ServicePort:      port,
+	}
+
+	s.Services = append(s.Services, w)
 }
 
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is

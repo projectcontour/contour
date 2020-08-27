@@ -205,9 +205,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
-	endpointHandler := &contour.EndpointsTranslator{
-		FieldLogger: log.WithField("context", "endpointstranslator"),
-	}
+	endpointHandler := contour.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
 
 	resources := []contour.ResourceCache{
 		contour.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort),
