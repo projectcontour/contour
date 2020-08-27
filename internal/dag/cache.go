@@ -83,7 +83,8 @@ func (kc *KubernetesCache) matchesIngressClass(obj k8s.Object) bool {
 		kc.WithField("name", om.GetName()).
 			WithField("namespace", om.GetNamespace()).
 			WithField("kind", kind).
-			WithField("ingress.class", annotation.IngressClass(obj)).
+			WithField("ingress-class", annotation.IngressClass(obj)).
+			WithField("target-ingress-class", kc.IngressClass).
 			Debug("ignoring object with unmatched ingress class")
 		return false
 	}
