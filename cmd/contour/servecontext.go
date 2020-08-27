@@ -45,11 +45,8 @@ type serveContext struct {
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
 
 	// contour's xds service parameters
-	xdsAddr string
-	xdsPort int
-	// Defines the XDSServer to use for `contour serve`
-	// Defaults to "contour"
-	XDSServerType                   string `yaml:"xds-server-type,omitempty"`
+	xdsAddr                         string
+	xdsPort                         int
 	caFile, contourCert, contourKey string
 
 	// contour's debug handler parameters
@@ -158,7 +155,6 @@ func newServeContext() *serveContext {
 		Kubeconfig:            filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		xdsAddr:               "127.0.0.1",
 		xdsPort:               8001,
-		XDSServerType:         "contour",
 		statsAddr:             "0.0.0.0",
 		statsPort:             8002,
 		debugAddr:             "127.0.0.1",
