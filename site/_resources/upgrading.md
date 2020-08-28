@@ -24,7 +24,9 @@ The <code>request-timeout</code> field in the Contour config file is deprecated 
 The deprecated field will be removed in a future release.
 Please see the documentation for <a href="{% link docs/{{site.latest}}/configuration.md %}">the Contour config file</a>.
 
-Contour annotations starting with `contour.heptio.com` have been removed from documentation for some time. Contour 1.8 marks the official deprecation of these annotations, to be removed in a future release. These annotations will now result in warning error logs when used.
+Contour annotations starting with `contour.heptio.com` have been removed from documentation for some time.
+Contour 1.8 marks the official deprecation of these annotations, to be removed in a future release.
+Use of these annotations will be logged as warnings.
 </div>
 
 <br>
@@ -69,20 +71,11 @@ The Contour CRD definition must be re-applied to the cluster, since a number of 
 $ kubectl apply -f examples/contour/01-crds.yaml
 ```
 
-Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets. This will rotate the TLS certs used for gRPC security.
+Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets. This will rotate the TLS certificates used for gRPC security.
 
 
 ```bash
 $ kubectl apply -f examples/contour/02-job-certgen.yaml
-```
-
-To consume the new Secrets, reapply the Envoy Daemonset and the Contour Deployment YAML.
-All the Pods will gracefully restart and reconnect using the new TLS Secrets.
-After this, the gRPC session between Contour and Envoy can be re-keyed by regenerating the Secrets.
-
-```bash
-$ kubectl apply -f examples/contour/03-contour.yaml
-$ kubectl apply -f examples/contour/03-envoy.yaml
 ```
 
 ## Removing the IngressRoute CRDs
