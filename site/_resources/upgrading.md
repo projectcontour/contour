@@ -24,7 +24,7 @@ The <code>request-timeout</code> field in the Contour config file is deprecated 
 The deprecated field will be removed in a future release.
 Please see the documentation for <a href="{% link docs/{{site.latest}}/configuration.md %}">the Contour config file</a>.
 
-Contour annotations starting with `contour.heptio.com` have been removed from documentation for some time. Contour 1.8 marks the official deprecation of these annoations, to be removed in a future release. These annotations will now result in warning error logs when used.
+Contour annotations starting with `contour.heptio.com` have been removed from documentation for some time. Contour 1.8 marks the official deprecation of these annotations, to be removed in a future release. These annotations will now result in warning error logs when used.
 </div>
 
 <br>
