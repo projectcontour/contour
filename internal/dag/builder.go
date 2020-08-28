@@ -50,7 +50,6 @@ type Builder struct {
 	DisablePermitInsecure bool
 
 	services map[RouteServiceName]*Service
-	secrets  map[types.NamespacedName]*Secret
 
 	virtualhosts       map[string]*VirtualHost
 	securevirtualhosts map[string]*SecureVirtualHost
@@ -82,12 +81,10 @@ func (b *Builder) Build() *DAG {
 // reset (re)inialises the internal state of the builder.
 func (b *Builder) reset() {
 	b.services = make(map[RouteServiceName]*Service, len(b.services))
-	b.secrets = make(map[types.NamespacedName]*Secret, len(b.secrets))
-	b.orphaned = make(map[types.NamespacedName]bool, len(b.orphaned))
-
 	b.virtualhosts = make(map[string]*VirtualHost)
 	b.securevirtualhosts = make(map[string]*SecureVirtualHost)
 
+	b.orphaned = make(map[types.NamespacedName]bool, len(b.orphaned))
 	b.statuses = make(map[types.NamespacedName]Status, len(b.statuses))
 }
 
@@ -244,7 +241,6 @@ func (b *Builder) computeSecureVirtualhosts() {
 					Error("unresolved secret reference")
 				continue
 			}
-			b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 			if !b.Source.DelegationPermitted(secretName, ing.GetNamespace()) {
 				b.WithError(err).
@@ -369,7 +365,6 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
 				return
 			}
-			b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 			if !b.Source.DelegationPermitted(secretName, proxy.Namespace) {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
@@ -398,7 +393,6 @@ func (b *Builder) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 					sw.SetInvalid("Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", b.FallbackCertificate, err)
 					return
 				}
-				b.secrets[k8s.NamespacedNameOf(sec.Object)] = sec
 
 				if !b.Source.DelegationPermitted(*b.FallbackCertificate, proxy.Namespace) {
 					sw.SetInvalid("Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", b.FallbackCertificate)
@@ -914,7 +908,6 @@ func (b *Builder) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, n
 		// UpstreamValidation is requested, but cert is missing or not configured
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
 	}
-	b.secrets[k8s.NamespacedNameOf(cacert.Object)] = cacert
 
 	if uv.SubjectName == "" {
 		// UpstreamValidation is requested, but SAN is not provided
@@ -934,7 +927,6 @@ func (b *Builder) lookupDownstreamValidation(vc *projcontour.DownstreamValidatio
 		// PeerValidationContext is requested, but cert is missing or not configured.
 		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
 	}
-	b.secrets[k8s.NamespacedNameOf(cacert.Object)] = cacert
 
 	return &PeerValidationContext{
 		CACertificate: cacert,
@@ -1145,22 +1137,4 @@ func httppaths(rule v1beta1.IngressRule) []v1beta1.HTTPIngressPath {
 		return nil
 	}
 	return rule.IngressRuleValue.HTTP.Paths
-}
-
-// matchesPathPrefix checks whether the given path matches the given prefix
-func matchesPathPrefix(path, prefix string) bool {
-	if len(prefix) == 0 {
-		return true
-	}
-	// an empty string cannot have a prefix
-	if len(path) == 0 {
-		return false
-	}
-	if prefix[len(prefix)-1] != '/' {
-		prefix += "/"
-	}
-	if path[len(path)-1] != '/' {
-		path += "/"
-	}
-	return strings.HasPrefix(path, prefix)
 }
