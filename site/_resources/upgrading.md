@@ -19,17 +19,84 @@ You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">
 </div>
 
 <div class="alert-deprecation">
-<b>Deprecation Notice</b><br>
+<b>Deprecation Notices</b><br>
 The <code>request-timeout</code> field in the Contour config file is deprecated as of Contour 1.7 and has been replaced by the <code>timeouts.request-timeout</code> field.
 The deprecated field will be removed in a future release.
 Please see the documentation for <a href="{% link docs/{{site.latest}}/configuration.md %}">the Contour config file</a>.
+
+Contour annotations starting with `contour.heptio.com` have been removed from documentation for some time. Contour 1.8 marks the official deprecation of these annoations, to be removed in a future release. These annotations will now result in warning error logs when used.
 </div>
 
 <br>
 
-# Upgrading Contour 1.6.1 to 1.7.0
+# Upgrading Contour 1.7.0 to 1.8.0
 
-Contour 1.7.0 is the current stable release.
+Contour 1.8.0 is the current stable release.
+
+## Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.15.0`.
+
+Please see the [Envoy Release Notes][23] for information about issues fixed in Envoy 1.15.0.
+
+## The easy way to upgrade
+
+If the following are true for you:
+
+ * Your installation is in the `projectcontour` namespace.
+ * You are using our [quickstart example][18] deployments.
+ * Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade to 1.8.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.7.0/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+## The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.7.0 to 1.8.0 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.8.0` tag.
+
+The Contour CRD definition must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
+
+```bash
+$ kubectl apply -f examples/contour/01-crds.yaml
+```
+
+Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets. This will rotate the TLS certs used for gRPC security.
+
+
+```bash
+$ kubectl apply -f examples/contour/02-job-certgen.yaml
+```
+
+To consume the new Secrets, reapply the Envoy Daemonset and the Contour Deployment YAML.
+All the Pods will gracefully restart and reconnect using the new TLS Secrets.
+After this, the gRPC session between Contour and Envoy can be re-keyed by regenerating the Secrets.
+
+```bash
+$ kubectl apply -f examples/contour/03-contour.yaml
+$ kubectl apply -f examples/contour/03-envoy.yaml
+```
+
+## Removing the IngressRoute CRDs
+
+As a reminder, support for `IngressRoute` was officially dropped in v1.6.
+If you haven't already migrated to `HTTPProxy`, see [the IngressRoute to HTTPProxy migration guide][24] for instructions on how to do so.
+Once you have migrated, delete the `IngressRoute` and related CRDs:
+
+```bash
+$ kubectl delete crd ingressroutes.contour.heptio.com
+$ kubectl delete crd tlscertificatedelegations.contour.heptio.com
+```
+
+# Upgrading Contour 1.6.1 to 1.7.0
 
 ## Required Envoy version
 
