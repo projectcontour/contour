@@ -14,12 +14,17 @@
 package xds
 
 import (
+	"context"
+
+	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	clusterservice "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	endpointservice "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	listenerservice "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	routeservice "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
+	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
+	xds "github.com/envoyproxy/go-control-plane/pkg/server/v2"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
@@ -41,7 +46,7 @@ type Server interface {
 func RegisterServer(srv Server, registry *prometheus.Registry, opts ...grpc.ServerOption) *grpc.Server {
 	var metrics *grpc_prometheus.ServerMetrics
 
-	// TODO(jpeach) Figure out how to decouple this.
+	// TODO: Decouple registry from this.
 	if registry != nil {
 		metrics = grpc_prometheus.NewServerMetrics()
 		registry.MustRegister(metrics)
@@ -61,6 +66,42 @@ func RegisterServer(srv Server, registry *prometheus.Registry, opts ...grpc.Serv
 	v2.RegisterEndpointDiscoveryServiceServer(g, srv)
 	v2.RegisterListenerDiscoveryServiceServer(g, srv)
 	v2.RegisterRouteDiscoveryServiceServer(g, srv)
+
+	if metrics != nil {
+		metrics.InitializeMetrics(g)
+	}
+
+	return g
+}
+
+// RegisterEnvoyServer registers the given xDS protocol Server with the gRPC
+// runtime. If registry is non-nil gRPC server metrics will be automatically
+// configured and enabled.
+func RegisterEnvoyServer(registry *prometheus.Registry, sc cache.SnapshotCache, opts ...grpc.ServerOption) *grpc.Server {
+	var metrics *grpc_prometheus.ServerMetrics
+
+	// TODO: Decouple registry from this.
+	if registry != nil {
+		metrics = grpc_prometheus.NewServerMetrics()
+		registry.MustRegister(metrics)
+
+		opts = append(opts,
+			grpc.StreamInterceptor(metrics.StreamServerInterceptor()),
+			grpc.UnaryInterceptor(metrics.UnaryServerInterceptor()),
+		)
+
+	}
+
+	g := grpc.NewServer(opts...)
+
+	xdsServer := xds.NewServer(context.Background(), sc, nil)
+
+	discovery.RegisterAggregatedDiscoveryServiceServer(g, xdsServer)
+	discovery.RegisterSecretDiscoveryServiceServer(g, xdsServer)
+	api.RegisterEndpointDiscoveryServiceServer(g, xdsServer)
+	api.RegisterClusterDiscoveryServiceServer(g, xdsServer)
+	api.RegisterRouteDiscoveryServiceServer(g, xdsServer)
+	api.RegisterListenerDiscoveryServiceServer(g, xdsServer)
 
 	if metrics != nil {
 		metrics.InitializeMetrics(g)

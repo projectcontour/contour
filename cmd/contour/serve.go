@@ -24,6 +24,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
@@ -233,6 +234,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
+	// snapshotCache is used to store the state of what all xDS services should
+	// contain at any given point in time.
+	snapshotCache := cache.NewSnapshotCache(false, xds.DefaultHash,
+		log.WithField("context", "xDS"))
+
 	// Set the fallback certificate if configured.
 	if fallbackCert != nil {
 		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
@@ -418,7 +424,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		switch ctx.XDSServerType {
 		case "contour":
-			rpcServer := xds.RegisterServer(
+			grpcServer := xds.RegisterServer(
 				xds.NewContourServer(log, contour.ResourcesOf(resources)...),
 				registry,
 				ctx.grpcOptions()...)
@@ -434,8 +440,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				log = log.WithField("insecure", true)
 			}
 
-			log.Info("started xDS server")
-			defer log.Info("stopped xDS server")
+			log.Info("started contour xDS server")
+			defer log.Info("stopped contour xDS server")
 
 			go func() {
 				<-stop
@@ -444,10 +450,33 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				// has long-lived hanging xDS requests. There's no
 				// mechanism to make those pending requests fail,
 				// so we forcibly terminate the TCP sessions.
-				rpcServer.Stop()
+				grpcServer.Stop()
 			}()
 
-			return rpcServer.Serve(l)
+			return grpcServer.Serve(l)
+		case "envoy":
+			grpcServer := xds.RegisterEnvoyServer(registry, snapshotCache, ctx.grpcOptions()...)
+
+			addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
+			l, err := net.Listen("tcp", addr)
+			if err != nil {
+				return err
+			}
+
+			log = log.WithField("address", addr)
+			if ctx.PermitInsecureGRPC {
+				log = log.WithField("insecure", true)
+			}
+
+			log.Info("started envoy xDS server")
+			defer log.Info("stopped envoy xDS server")
+
+			go func() {
+				<-stop
+				grpcServer.Stop()
+			}()
+
+			return grpcServer.Serve(l)
 		default:
 			log.Fatalf("invalid xdsServerType %q configured", ctx.XDSServerType)
 		}
