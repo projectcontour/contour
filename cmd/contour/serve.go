@@ -24,6 +24,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
+	"github.com/envoyproxy/go-control-plane/pkg/server/v2"
 	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
@@ -38,6 +40,7 @@ import (
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -216,11 +219,19 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		endpointHandler,
 	}
 
+	// snapshotCache is used to store the state of what all xDS services should
+	// contain at any given point in time.
+	snapshotCache := cache.NewSnapshotCache(false, xds.DefaultHash,
+		log.WithField("context", "xDS"))
+
+	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
+	snapshotHandler := contour.NewSnapshotHandler(snapshotCache, resources, log.WithField("context", "snapshotHandler"))
+
 	// Build the core Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
-		Observer:        dag.ComposeObservers(contour.ObserversOf(resources)...),
+		Observer:        dag.ComposeObservers(append(contour.ObserversOf(resources), snapshotHandler)...),
 		Builder: dag.Builder{
 			FieldLogger: log.WithField("context", "builder"),
 			Source: dag.KubernetesCache{
@@ -423,42 +434,48 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 		log.Printf("informer caches synced")
 
+		var grpcServer *grpc.Server
+
 		switch ctx.XDSServerType {
 		case "contour":
-			rpcServer := xds.RegisterServer(
+			grpcServer = xds.RegisterServer(
 				xds.NewContourServer(log, contour.ResourcesOf(resources)...),
 				registry,
 				ctx.grpcOptions()...)
-
-			addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
-			l, err := net.Listen("tcp", addr)
-			if err != nil {
-				return err
-			}
-
-			log = log.WithField("address", addr)
-			if ctx.PermitInsecureGRPC {
-				log = log.WithField("insecure", true)
-			}
-
-			log.Info("started xDS server")
-			defer log.Info("stopped xDS server")
-
-			go func() {
-				<-stop
-
-				// We don't use GracefulStop here because envoy
-				// has long-lived hanging xDS requests. There's no
-				// mechanism to make those pending requests fail,
-				// so we forcibly terminate the TCP sessions.
-				rpcServer.Stop()
-			}()
-
-			return rpcServer.Serve(l)
+		case "envoy":
+			grpcServer = xds.RegisterServer(
+				server.NewServer(context.Background(), snapshotCache, nil),
+				registry,
+				ctx.grpcOptions()...)
 		default:
 			log.Fatalf("invalid xdsServerType %q configured", ctx.XDSServerType)
 		}
-		return nil
+
+		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
+		l, err := net.Listen("tcp", addr)
+		if err != nil {
+			return err
+		}
+
+		log = log.WithField("address", addr)
+		if ctx.PermitInsecureGRPC {
+			log = log.WithField("insecure", true)
+		}
+
+		log.Info("started xDS server")
+		defer log.Info("stopped xDS server")
+
+		go func() {
+			<-stop
+
+			// We don't use GracefulStop here because envoy
+			// has long-lived hanging xDS requests. There's no
+			// mechanism to make those pending requests fail,
+			// so we forcibly terminate the TCP sessions.
+			grpcServer.Stop()
+		}()
+
+		return grpcServer.Serve(l)
 	})
 
 	// Set up SIGTERM handler for graceful shutdown.
