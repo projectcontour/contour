@@ -44,7 +44,7 @@ func (c *Client) dial() *grpc.ClientConn {
 	case c.CAFile != "" || c.ClientCert != "" || c.ClientKey != "":
 		// If one of the three TLS commands is not empty, they all must be not empty
 		if !(c.CAFile != "" && c.ClientCert != "" && c.ClientKey != "") {
-			kingpin.Fatalf("You must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them.")
+			kingpin.Fatalf("you must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them")
 		}
 		// Load the client certificates from disk
 		certificate, err := tls.LoadX509KeyPair(c.ClientCert, c.ClientKey)
