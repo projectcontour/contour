@@ -14,9 +14,9 @@
 package k8s
 
 import (
-	"github.com/google/go-cmp/cmp"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"k8s.io/api/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // IsStatusEqual checks that two objects of supported Kubernetes types
@@ -29,16 +29,12 @@ func IsStatusEqual(objA, objB interface{}) bool {
 	case *v1beta1.Ingress:
 		switch b := objB.(type) {
 		case *v1beta1.Ingress:
-			if cmp.Equal(a.Status, b.Status) {
-				return true
-			}
+			return equality.Semantic.DeepEqual(a.Status, b.Status)
 		}
 	case *projcontour.HTTPProxy:
 		switch b := objB.(type) {
 		case *projcontour.HTTPProxy:
-			if cmp.Equal(a.Status, b.Status) {
-				return true
-			}
+			return equality.Semantic.DeepEqual(a.Status, b.Status)
 		}
 	}
 
