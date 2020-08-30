@@ -4,7 +4,7 @@
     bottom: 9px;
   }
   font-size: 0.75rem;
-  border-radius: 5px;  
+  border-radius: 5px;
   text-transform: uppercase;
   font-weight: $font-weight-bold;
   &.btn-no-border {
@@ -31,7 +31,7 @@
   }
 }
 
-.btn-secondary {  
+.btn-secondary {
   color: $button-secondary-foreground;
   background-color: $button-secondary-background;
   border-color: $button-secondary-border;
@@ -52,6 +52,7 @@
     background: $button-primary-foreground;
   }
 }
+
 .btn-outline-light {
   &:hover {
     color: $button-primary-foreground;

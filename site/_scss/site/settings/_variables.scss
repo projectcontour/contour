@@ -7,7 +7,7 @@ $path-images: "img";
 $black: #000;
 $white: #FFFFFF;
 $light: $white;
-$pink:    #A41458;
+$pink: #A41458;
 $darkest-blue: #1D428A;
 
 // Bootstrap overrides
@@ -89,7 +89,7 @@ $field-backgrounds: (
     h1,
     h2,
     p {
-      color: $white !important;      
+      color: $white !important;
     }
   }
   .bg-color-#{$name} {
