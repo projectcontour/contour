@@ -3,7 +3,7 @@ title: Frequently Asked Questions
 layout: page
 ---
 
-# Q: What's the relationship between Contour and Istio? 
+## Q: What's the relationship between Contour and Istio? 
 
 Both projects use Envoy under the covers as a "data plane".
 They can both be thought of as ways to configure Envoy, but they approach configuration differently, and address different use cases.
@@ -15,7 +15,7 @@ Contour focuses on north-south traffic only -- on making Envoy available to Kube
 We continue to work with contributors to Istio and Envoy to find common ground; we're also part of Kubernetes SIG-networking.
 As Contour continues to develop -- who knows what the future holds?
 
-# Q: What are the differences between Ingress and HTTPProxy?
+## Q: What are the differences between Ingress and HTTPProxy?
 
 Contour supports both the Kubernetes Ingress API and the HTTPProxy API, a custom resource that enables a richer and more robust experience for configuring ingress into your Kubernetes cluster.
 
@@ -27,7 +27,7 @@ The HTTPProxy custom resource is an attempt to solve these issues with an API th
 More importantly, the HTTPProxy CRD is designed with inclusion in mind, a feature that enables administrators to configure top-level ingress settings (for example, which virtual hosts are available to each team), while delegating the lower-level configuration (for example, the mapping between paths and backend services) to each development team.
 More information about the HTTPProxy API can be found [in the HTTPProxy documentation][1].
 
-# Q: When I load my site in Safari, it shows me an empty page. Developer tools show that the HTTP response was 421. Why does this happen?
+## Q: When I load my site in Safari, it shows me an empty page. Developer tools show that the HTTP response was 421. Why does this happen?
 
 The HTTP/2 specification allows user agents (browsers) to re-use TLS sessions to different hostnames as long as they share an IP address and a TLS server certificate (see [RFC 7540](https://tools.ietf.org/html/rfc7540#section-9.1.1)).
 Sharing a TLS certificate typically uses a wildcard certificate, or a certificate containing multiple alternate names.

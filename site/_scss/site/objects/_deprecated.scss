@@ -1,9 +1,9 @@
 .alert-deprecation {
-    @extend .alert-warning;
-    border-radius: 5px;
-    padding-left: 10px;
-    padding-right: 10px;
-    display: inline-block;
+  @extend .alert-warning;
+  border-radius: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+  display: inline-block;
 }
 
 /*
@@ -11,8 +11,8 @@
  * warning.
  */
 .alert-deprecation::before {
-    font-size: 175%;
-    font-weight: bold;
-    vertical-align: middle;
-    content: "⚠"
+  font-size: 175%;
+  font-weight: bold;
+  vertical-align: middle;
+  content: "⚠"
 }
