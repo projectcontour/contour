@@ -22,10 +22,10 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/google/go-cmp/cmp"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -798,7 +798,7 @@ func includeMatchConditionsIdentical(includes []projcontour.Include) bool {
 		// Now compare each include's set of conditions
 		for _, cA := range includes[i].Conditions {
 			for _, cB := range includes[j].Conditions {
-				if (cA.Prefix == cB.Prefix) && cmp.Equal(cA.Header, cB.Header) {
+				if (cA.Prefix == cB.Prefix) && equality.Semantic.DeepEqual(cA.Header, cB.Header) {
 					return true
 				}
 			}
