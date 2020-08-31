@@ -17,9 +17,9 @@ import (
 	"sort"
 	"sync"
 
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -43,8 +43,7 @@ func (c *ClusterCache) Update(v map[string]*v2.Cluster) {
 	c.Cond.Notify()
 }
 
-// Contents returns a copy of the cache's contents.
-func (c *ClusterCache) Contents() []proto.Message {
+func (c *ClusterCache) contents() []*v2.Cluster {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	var values []*v2.Cluster
@@ -52,7 +51,19 @@ func (c *ClusterCache) Contents() []proto.Message {
 		values = append(values, v)
 	}
 	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
+	return values
+}
+
+// Messages returns a copy of the cache's contents
+// as an array of proto.Message.
+func (c *ClusterCache) Messages() []proto.Message {
+	return protobuf.AsMessages(c.contents())
+}
+
+// Resources returns a copy of the cache's contents as
+// an array of xds.Resource.
+func (c *ClusterCache) Resources() []envoy_api_v2_xds.Resource {
+	return protobuf.AsResources(c.contents())
 }
 
 func (c *ClusterCache) Query(names []string) []proto.Message {

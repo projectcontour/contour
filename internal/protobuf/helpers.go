@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"time"
 
+	envoy_api_v2_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -60,6 +61,24 @@ func AsMessages(messages interface{}) []proto.Message {
 
 	for i := range protos {
 		protos[i] = v.Index(i).Interface().(proto.Message)
+	}
+
+	return protos
+}
+
+// AsResources casts the given slice of values (that implement the xds.Resource
+// interface) to a slice of xds.Resource. If the length of the slice is 0, it
+// returns nil.
+func AsResources(messages interface{}) []envoy_api_v2_xds.Resource {
+	v := reflect.ValueOf(messages)
+	if v.Len() == 0 {
+		return nil
+	}
+
+	protos := make([]envoy_api_v2_xds.Resource, v.Len())
+
+	for i := range protos {
+		protos[i] = v.Index(i).Interface().(envoy_api_v2_xds.Resource)
 	}
 
 	return protos

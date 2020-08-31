@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	envoy_api_v2_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
@@ -34,35 +35,45 @@ type SecretCache struct {
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *SecretCache) Update(v map[string]*envoy_api_v2_auth.Secret) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (s *SecretCache) Update(v map[string]*envoy_api_v2_auth.Secret) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	c.values = v
-	c.Cond.Notify()
+	s.values = v
+	s.Cond.Notify()
 }
 
-// Contents returns a copy of the cache's contents.
-func (c *SecretCache) Contents() []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+// contents returns a copy of the cache's contents.
+func (s *SecretCache) contents() []*envoy_api_v2_auth.Secret {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	var values []*envoy_api_v2_auth.Secret
-	for _, v := range c.values {
+	for _, v := range s.values {
 		values = append(values, v)
 	}
 	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
+	return values
 }
 
-func (c *SecretCache) Query(names []string) []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+// Messages returns a copy of the cache's contents.
+func (s *SecretCache) Messages() []proto.Message {
+	return protobuf.AsMessages(s.contents())
+}
+
+// Resources returns a copy of the cache's contents.
+func (s *SecretCache) Resources() []envoy_api_v2_xds.Resource {
+	return protobuf.AsResources(s.contents())
+}
+
+func (s *SecretCache) Query(names []string) []proto.Message {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	var values []*envoy_api_v2_auth.Secret
 	for _, n := range names {
 		// we can only return secrets where their value is
 		// known. if the secret is not registered in the cache
 		// we return nothing.
-		if v, ok := c.values[n]; ok {
+		if v, ok := s.values[n]; ok {
 			values = append(values, v)
 		}
 	}

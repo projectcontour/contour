@@ -20,6 +20,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	envoy_api_v2_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
@@ -36,36 +37,46 @@ type RouteCache struct {
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *RouteCache) Update(v map[string]*v2.RouteConfiguration) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (r *RouteCache) Update(v map[string]*v2.RouteConfiguration) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	c.values = v
-	c.Cond.Notify()
+	r.values = v
+	r.Cond.Notify()
 }
 
-// Contents returns a copy of the cache's contents.
-func (c *RouteCache) Contents() []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+// Messages returns a copy of the cache's contents.
+func (r *RouteCache) Messages() []proto.Message {
+	return protobuf.AsMessages(r.contents())
+}
+
+// Resources returns a copy of the cache's contents.
+func (r *RouteCache) Resources() []envoy_api_v2_xds.Resource {
+	return protobuf.AsResources(r.contents())
+}
+
+// contents returns a copy of the cache's contents.
+func (r *RouteCache) contents() []*v2.RouteConfiguration {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	var values []*v2.RouteConfiguration
-	for _, v := range c.values {
+	for _, v := range r.values {
 		values = append(values, v)
 	}
 
 	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
+	return values
 }
 
 // Query searches the RouteCache for the named RouteConfiguration entries.
-func (c *RouteCache) Query(names []string) []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (r *RouteCache) Query(names []string) []proto.Message {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	var values []*v2.RouteConfiguration
 	for _, n := range names {
-		v, ok := c.values[n]
+		v, ok := r.values[n]
 		if !ok {
 			// if there is no route registered with the cache
 			// we return a blank route configuration. This is

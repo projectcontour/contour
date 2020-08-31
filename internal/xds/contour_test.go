@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,7 @@ func TestXDSHandlerStream(t *testing.T) {
 						register: func(ch chan int, i int) {
 							ch <- i + 1
 						},
-						contents: func() []proto.Message {
+						messages: func() []proto.Message {
 							return []proto.Message{nil}
 						},
 						typeurl: func() string { return "io.projectcontour.potato" },
@@ -89,7 +90,7 @@ func TestXDSHandlerStream(t *testing.T) {
 						register: func(ch chan int, i int) {
 							ch <- i + 1
 						},
-						contents: func() []proto.Message {
+						messages: func() []proto.Message {
 							return []proto.Message{new(v2.ClusterLoadAssignment)}
 						},
 						typeurl: func() string { return "io.projectcontour.potato" },
@@ -160,13 +161,15 @@ func (m *mockStream) Send(resp *v2.DiscoveryResponse) error { return m.send(resp
 func (m *mockStream) Recv() (*v2.DiscoveryRequest, error)   { return m.recv() }
 
 type mockResource struct {
-	contents func() []proto.Message
-	query    func([]string) []proto.Message
-	register func(chan int, int)
-	typeurl  func() string
+	messages  func() []proto.Message
+	resources func() []envoy_api_v2_xds.Resource
+	query     func([]string) []proto.Message
+	register  func(chan int, int)
+	typeurl   func() string
 }
 
-func (m *mockResource) Contents() []proto.Message                       { return m.contents() }
+func (m *mockResource) Messages() []proto.Message                       { return m.messages() }
+func (m *mockResource) Resources() []envoy_api_v2_xds.Resource          { return m.resources() }
 func (m *mockResource) Query(names []string) []proto.Message            { return m.query(names) }
 func (m *mockResource) Register(ch chan int, last int, hints ...string) { m.register(ch, last) }
 func (m *mockResource) TypeURL() string                                 { return m.typeurl() }

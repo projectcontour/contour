@@ -69,7 +69,7 @@ func TestClusterCacheContents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var cc ClusterCache
 			cc.Update(tc.contents)
-			got := cc.Contents()
+			got := cc.Messages()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

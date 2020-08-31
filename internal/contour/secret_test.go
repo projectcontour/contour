@@ -53,7 +53,7 @@ func TestSecretCacheContents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var sc SecretCache
 			sc.Update(tc.contents)
-			got := sc.Contents()
+			got := sc.Messages()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

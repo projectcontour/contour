@@ -53,7 +53,7 @@ func TestEndpointsTranslatorContents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
 			et.entries = tc.contents
-			got := et.Contents()
+			got := et.Messages()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -294,7 +294,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
 			require.NoError(t, et.cache.SetClusters(clusters))
 			et.OnAdd(tc.ep)
-			got := et.Contents()
+			got := et.Messages()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -452,7 +452,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			// only after that, verify that deletion gives
 			// the expected result.
 			et.OnDelete(tc.ep)
-			got := et.Contents()
+			got := et.Messages()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -550,7 +550,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 			et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
 			require.NoError(t, et.cache.SetClusters([]*dag.ServiceCluster{&tc.cluster}))
 			et.OnAdd(tc.ep)
-			got := et.Contents()
+			got := et.Messages()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -588,7 +588,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 		},
 	}
 
-	protobuf.RequireEqual(t, want, et.Contents())
+	protobuf.RequireEqual(t, want, et.Messages())
 
 	// e2 is the same as e1, but without endpoint subsets
 	e2 := endpoints("default", "simple")
@@ -599,7 +599,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 		&v2.ClusterLoadAssignment{ClusterName: "default/simple"},
 	}
 
-	protobuf.RequireEqual(t, want, et.Contents())
+	protobuf.RequireEqual(t, want, et.Messages())
 }
 
 func ports(eps ...v1.EndpointPort) []v1.EndpointPort {

@@ -21,6 +21,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
+	envoy_api_v2_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -30,8 +31,11 @@ import (
 // Resource represents a source of proto.Messages that can be registered
 // for interest.
 type Resource interface {
-	// Contents returns the contents of this resource.
-	Contents() []proto.Message
+	// Messages returns the contents of this resource as []proto.Message.
+	Messages() []proto.Message
+
+	// Resources returns the contents of this resource as []xds.Resource.
+	Resources() []envoy_api_v2_xds.Resource
 
 	// Query returns an entry for each resource name supplied.
 	Query(names []string) []proto.Message
@@ -158,7 +162,7 @@ func (s *contourServer) stream(st grpcStream) error {
 			case 0:
 				// no resource hints supplied, return the full
 				// contents of the resource
-				resources = r.Contents()
+				resources = r.Messages()
 			default:
 				// resource hints supplied, return exactly those
 				resources = r.Query(req.ResourceNames)

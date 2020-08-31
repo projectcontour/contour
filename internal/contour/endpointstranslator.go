@@ -20,6 +20,7 @@ import (
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
+	envoy_api_v2_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
@@ -357,8 +358,7 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	}
 }
 
-// Contents returns a copy of the contents of the cache.
-func (e *EndpointsTranslator) Contents() []proto.Message {
+func (e *EndpointsTranslator) contents() []*v2.ClusterLoadAssignment {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -368,7 +368,17 @@ func (e *EndpointsTranslator) Contents() []proto.Message {
 	}
 
 	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
+	return values
+}
+
+// Messages returns a copy of the contents of the cache.
+func (e *EndpointsTranslator) Messages() []proto.Message {
+	return protobuf.AsMessages(e.contents())
+}
+
+// Resources returns a copy of the contents of the cache.
+func (e *EndpointsTranslator) Resources() []envoy_api_v2_xds.Resource {
+	return protobuf.AsResources(e.contents())
 }
 
 func (e *EndpointsTranslator) Query(names []string) []proto.Message {

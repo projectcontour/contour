@@ -66,7 +66,7 @@ func TestRouteCacheContents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var rc RouteCache
 			rc.Update(tc.contents)
-			got := rc.Contents()
+			got := rc.Messages()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

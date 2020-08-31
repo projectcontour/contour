@@ -65,7 +65,7 @@ func TestListenerCacheContents(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var lc ListenerCache
 			lc.Update(tc.contents)
-			got := lc.Contents()
+			got := lc.Messages()
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

@@ -22,6 +22,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
+	envoy_api_v2_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
@@ -234,39 +235,49 @@ func NewListenerCache(config ListenerConfig, address string, port int) *Listener
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *ListenerCache) Update(v map[string]*v2.Listener) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (l *ListenerCache) Update(v map[string]*v2.Listener) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
-	c.values = v
-	c.Cond.Notify()
+	l.values = v
+	l.Cond.Notify()
 }
 
-// Contents returns a copy of the cache's contents.
-func (c *ListenerCache) Contents() []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+// contents returns a copy of the cache's contents.
+func (l *ListenerCache) contents() []*v2.Listener {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	var values []*v2.Listener
-	for _, v := range c.values {
+	for _, v := range l.values {
 		values = append(values, v)
 	}
-	for _, v := range c.staticValues {
+	for _, v := range l.staticValues {
 		values = append(values, v)
 	}
 	sort.Stable(sorter.For(values))
-	return protobuf.AsMessages(values)
+	return values
+}
+
+// Messages returns a copy of the cache's contents.
+func (l *ListenerCache) Messages() []proto.Message {
+	return protobuf.AsMessages(l.contents())
+}
+
+// Resources returns a copy of the cache's contents.
+func (l *ListenerCache) Resources() []envoy_api_v2_xds.Resource {
+	return protobuf.AsResources(l.contents())
 }
 
 // Query returns the proto.Messages in the ListenerCache that match
 // a slice of strings
-func (c *ListenerCache) Query(names []string) []proto.Message {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (l *ListenerCache) Query(names []string) []proto.Message {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	var values []*v2.Listener
 	for _, n := range names {
-		v, ok := c.values[n]
+		v, ok := l.values[n]
 		if !ok {
-			v, ok = c.staticValues[n]
+			v, ok = l.staticValues[n]
 			if !ok {
 				// if the listener is not registered in
 				// dynamic or static values then skip it
