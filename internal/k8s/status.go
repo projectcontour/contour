@@ -111,8 +111,7 @@ func (irs *StatusWriter) SetStatus(status, desc string, existing interface{}) er
 	case *projcontour.HTTPProxy:
 		// StatusUpdateWriters only apply an update if required, so
 		// we don't need to check here.
-		irs.Updater.Update(exist.Name,
-			exist.Namespace,
+		irs.Updater.Update(exist,
 			projcontour.HTTPProxyGVR,
 			StatusMutatorFunc(func(obj interface{}) interface{} {
 				switch o := obj.(type) {
