@@ -86,8 +86,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		Debug("received an object, sending status address update")
 
 	s.StatusUpdater.Update(
-		typed.GetObjectMeta().GetName(),
-		typed.GetObjectMeta().GetNamespace(),
+		typed,
 		gvr,
 		StatusMutatorFunc(func(obj interface{}) interface{} {
 			switch o := obj.(type) {

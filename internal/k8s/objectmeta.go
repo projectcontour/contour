@@ -24,6 +24,7 @@ import (
 // TODO(youngnick): Review references to this and replace them
 // with straight metav1.ObjectMetaAccessor calls if we can.
 type Object interface {
+	metav1.Object
 	metav1.ObjectMetaAccessor
 }
 

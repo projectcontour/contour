@@ -15,20 +15,23 @@ package k8s
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 )
 
 // StatusUpdate contains an all the information needed to change an object's status to perform a specific update.
 // Send down a channel to the goroutine that actually writes the changes back.
 type StatusUpdate struct {
-	NamespacedName types.NamespacedName
-	Resource       schema.GroupVersionResource
-	Mutator        StatusMutator
+	Object   metav1.Object
+	Resource schema.GroupVersionResource
+	Mutator  StatusMutator
 }
 
 // StatusMutator is an interface to hold mutator functions for status updates.
@@ -73,65 +76,63 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 			suh.LeaderElected = nil
 		case upd := <-suh.UpdateChannel:
 			if !suh.IsLeader {
-				suh.Log.WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
+				suh.Log.WithField("name", upd.Object.GetName()).
+					WithField("namespace", upd.Object.GetNamespace()).
 					Debug("not leader, not applying update")
 				continue
 			}
 
-			suh.Log.WithField("name", upd.NamespacedName.Name).
-				WithField("namespace", upd.NamespacedName.Namespace).
+			suh.Log.WithField("name", upd.Object.GetName()).
+				WithField("namespace", upd.Object.GetNamespace()).
 				Debug("received a status update")
-			uObj, err := suh.Clients.DynamicClient().
-				Resource(upd.Resource).
-				Namespace(upd.NamespacedName.Namespace).Get(context.TODO(), upd.NamespacedName.Name, metav1.GetOptions{})
-			if err != nil {
+
+			attempts := 0
+			if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				original := upd.Object
+				defer func() {
+					attempts++
+				}()
+
+				// If the first attempt fails due to a conflict, then refetch the resource and
+				// attempt to apply our status update over that base resource.
+				if attempts > 0 {
+					var err error
+					original, err = suh.Clients.DynamicClient().Resource(upd.Resource).Namespace(upd.Object.GetNamespace()).Get(context.TODO(), original.GetName(), metav1.GetOptions{})
+					if err != nil {
+						return err
+					}
+				}
+
+				newObj := upd.Mutator.Mutate(original)
+				if IsStatusEqual(original, newObj) {
+					suh.Log.WithField("name", original.GetName()).
+						WithField("namespace", original.GetNamespace()).
+						Debug("Update was a no-op")
+					return nil
+				}
+
+				existingBytes, err := json.Marshal(original)
+				if err != nil {
+					return err
+				}
+				updatedBytes, err := json.Marshal(newObj)
+				if err != nil {
+					return err
+				}
+				patchBytes, err := jsonpatch.CreateMergePatch(existingBytes, updatedBytes)
+				if err != nil {
+					return err
+				}
+
+				_, err = suh.Clients.DynamicClient().Resource(upd.Resource).Namespace(original.GetNamespace()).Patch(context.TODO(), original.GetName(), types.MergePatchType, patchBytes, metav1.PatchOptions{}, "status")
+				return err
+			}); err != nil {
 				suh.Log.WithError(err).
-					WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					WithField("resource", upd.Resource).
-					Error("unable to retrieve object for updating")
-				continue
-			}
-
-			obj, err := suh.Converter.FromUnstructured(uObj)
-			if err != nil {
-				suh.Log.WithError(err).
-					WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					Error("unable to convert from unstructured")
-				continue
-			}
-
-			newObj := upd.Mutator.Mutate(obj)
-
-			if IsStatusEqual(obj, newObj) {
-				suh.Log.WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					Debug("Update was a no-op")
-				continue
-			}
-
-			usNewObj, err := suh.Converter.ToUnstructured(newObj)
-			if err != nil {
-				suh.Log.WithError(err).
-					WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					Error("unable to convert update to unstructured")
-				continue
-			}
-
-			_, err = suh.Clients.DynamicClient().Resource(upd.Resource).Namespace(upd.NamespacedName.Namespace).UpdateStatus(context.TODO(), usNewObj, metav1.UpdateOptions{})
-			if err != nil {
-				suh.Log.WithError(err).
-					WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
+					WithField("name", upd.Object.GetName()).
+					WithField("namespace", upd.Object.GetNamespace()).
 					Error("unable to update status")
-				continue
 			}
-
 		}
-
 	}
 
 }
@@ -150,7 +151,7 @@ func (suh *StatusUpdateHandler) Writer() StatusUpdater {
 
 // StatusUpdater describes an interface to send status updates somewhere.
 type StatusUpdater interface {
-	Update(name, namespace string, gvr schema.GroupVersionResource, mutator StatusMutator)
+	Update(obj metav1.Object, gvr schema.GroupVersionResource, mutator StatusMutator)
 }
 
 // StatusUpdateCacher takes status updates and applies them to a cache, to be used for testing.
@@ -196,13 +197,13 @@ func (suc *StatusUpdateCacher) objectPrefix(name, namespace string, gvr schema.G
 }
 
 // Update updates the cache with the requested update.
-func (suc *StatusUpdateCacher) Update(name, namespace string, gvr schema.GroupVersionResource, mutator StatusMutator) {
+func (suc *StatusUpdateCacher) Update(o metav1.Object, gvr schema.GroupVersionResource, mutator StatusMutator) {
 
 	if suc.objectCache == nil {
 		suc.objectCache = make(map[string]interface{})
 	}
 
-	objKey := fmt.Sprintf("%s/%s/%s", namespace, name, gvr)
+	objKey := fmt.Sprintf("%s/%s/%s", o.GetNamespace(), o.GetName(), gvr)
 	obj, ok := suc.objectCache[objKey]
 	if ok {
 		suc.objectCache[objKey] = mutator.Mutate(obj)
@@ -216,13 +217,10 @@ type StatusUpdateWriter struct {
 
 // Update sends the update to the StatusUpdateHandler for delivery to the apiserver.
 // The StatusUpdateHandler will retrieve the object, update it with the mutator, then put it back if it's different.
-func (suw *StatusUpdateWriter) Update(name, namespace string, gvr schema.GroupVersionResource, mutator StatusMutator) {
+func (suw *StatusUpdateWriter) Update(obj metav1.Object, gvr schema.GroupVersionResource, mutator StatusMutator) {
 
 	update := StatusUpdate{
-		NamespacedName: types.NamespacedName{
-			Name:      name,
-			Namespace: namespace,
-		},
+		Object:   obj,
 		Resource: gvr,
 		Mutator:  mutator,
 	}
