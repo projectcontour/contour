@@ -443,7 +443,7 @@ However, our `HTTPProxy` remains in the cluster and can continue to route reques
 
 ## Next steps
 
-Contour has a [growing library](https://github.com/projectcontour/contour/tree/master/examples/gatekeeper) of Gatekeeper constraint templates and constraints, for both **validations** and **policies**.
+Contour has a [growing library](https://github.com/projectcontour/contour/tree/main/examples/gatekeeper) of Gatekeeper constraint templates and constraints, for both **validations** and **policies**.
 
 If you're using Gatekeeper, we recommend that you apply all of the **validations** we've defined, since these rules are already being checked internally by Contour and reported as status errors/invalid proxies.
 Using the Gatekeeper constraints will only improve the user experience since users will get earlier feedback if their proxies are invalid.
