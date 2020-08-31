@@ -67,6 +67,7 @@ rules:
   verbs:
   - create
   - get
+  - patch
   - update
 - apiGroups:
   - projectcontour.io
@@ -84,4 +85,5 @@ rules:
   verbs:
   - create
   - get
+  - patch
   - update

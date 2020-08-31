@@ -23,10 +23,10 @@ import (
 )
 
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch
-// +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses/status,verbs=create;get;update
+// +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses/status,verbs=create;get;update;patch
 
 // +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies;tlscertificatedelegations,verbs=get;list;watch
-// +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies/status,verbs=create;get;update
+// +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies/status,verbs=create;get;update;patch
 
 // DefaultResources ...
 func DefaultResources() []schema.GroupVersionResource {
