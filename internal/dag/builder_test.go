@@ -6162,16 +6162,23 @@ func TestDAGInsert(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
-				FieldLogger:           fixture.NewTestLogger(t),
-				DisablePermitInsecure: tc.disablePermitInsecure,
-				FallbackCertificate: &types.NamespacedName{
-					Name:      tc.fallbackCertificateName,
-					Namespace: tc.fallbackCertificateNamespace,
-				},
+				FieldLogger: fixture.NewTestLogger(t),
 				Source: KubernetesCache{
 					FieldLogger: fixture.NewTestLogger(t),
 				},
+				Processors: []Processor{
+					&IngressProcessor{},
+					&HTTPProxyProcessor{
+						DisablePermitInsecure: tc.disablePermitInsecure,
+						FallbackCertificate: &types.NamespacedName{
+							Name:      tc.fallbackCertificateName,
+							Namespace: tc.fallbackCertificateNamespace,
+						},
+					},
+					&ListenerProcessor{},
+				},
 			}
+
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)
 			}
@@ -6408,6 +6415,11 @@ func TestDAGRootNamespaces(t *testing.T) {
 				Source: KubernetesCache{
 					RootNamespaces: tc.rootNamespaces,
 					FieldLogger:    fixture.NewTestLogger(t),
+				},
+				Processors: []Processor{
+					&IngressProcessor{},
+					&HTTPProxyProcessor{},
+					&ListenerProcessor{},
 				},
 			}
 
@@ -6702,6 +6714,32 @@ func TestValidateHeaderAlteration(t *testing.T) {
 			assert.Equal(t, test.wantErr, gotErr)
 		})
 	}
+}
+
+func TestBuilderRunsProcessorsInOrder(t *testing.T) {
+	var got []string
+
+	b := Builder{
+		Processors: []Processor{
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "foo") }},
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "bar") }},
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "baz") }},
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "abc") }},
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "def") }},
+		},
+	}
+
+	b.Build()
+
+	assert.Equal(t, []string{"foo", "bar", "baz", "abc", "def"}, got)
+}
+
+type pluggableProcessor struct {
+	runFunc func(builder *Builder)
+}
+
+func (p *pluggableProcessor) Run(builder *Builder) {
+	p.runFunc(builder)
 }
 
 func routes(routes ...*Route) map[string]*Route {

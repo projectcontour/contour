@@ -222,21 +222,27 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Observer:        dag.ComposeObservers(contour.ObserversOf(resources)...),
 		Builder: dag.Builder{
-			FieldLogger:           log.WithField("context", "builder"),
-			DisablePermitInsecure: ctx.DisablePermitInsecure,
+			FieldLogger: log.WithField("context", "builder"),
 			Source: dag.KubernetesCache{
 				RootNamespaces: ctx.proxyRootNamespaces(),
 				IngressClass:   ctx.ingressClass,
 				FieldLogger:    log.WithField("context", "KubernetesCache"),
 			},
+			Processors: []dag.Processor{
+				&dag.IngressProcessor{},
+				&dag.HTTPProxyProcessor{
+					DisablePermitInsecure: ctx.DisablePermitInsecure,
+					FallbackCertificate:   fallbackCert,
+				},
+				&dag.ListenerProcessor{},
+			},
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// Set the fallback certificate if configured.
+	// Log that we're using the fallback certificate if configured.
 	if fallbackCert != nil {
 		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
-		eventHandler.Builder.FallbackCertificate = fallbackCert
 	}
 
 	// Wrap eventHandler in a converter for objects from the dynamic client.

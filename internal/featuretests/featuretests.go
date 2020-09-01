@@ -103,6 +103,13 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 			},
 		},
 	}
+
+	eh.Builder.Processors = []dag.Processor{
+		&dag.IngressProcessor{},
+		&dag.HTTPProxyProcessor{},
+		&dag.ListenerProcessor{},
+	}
+
 	for _, opt := range opts {
 		if opt, ok := opt.(func(*contour.EventHandler)); ok {
 			opt(eh)

@@ -483,6 +483,11 @@ func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 		Source: dag.KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		},
+		Processors: []dag.Processor{
+			&dag.IngressProcessor{},
+			&dag.HTTPProxyProcessor{},
+			&dag.ListenerProcessor{},
+		},
 	}
 
 	for _, o := range objs {
@@ -498,9 +503,14 @@ func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, o
 		Source: dag.KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		},
-		FallbackCertificate: fallbackCertificate,
+		Processors: []dag.Processor{
+			&dag.IngressProcessor{},
+			&dag.HTTPProxyProcessor{
+				FallbackCertificate: fallbackCertificate,
+			},
+			&dag.ListenerProcessor{},
+		},
 	}
-
 	for _, o := range objs {
 		builder.Source.Insert(o)
 	}
