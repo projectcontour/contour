@@ -360,10 +360,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	sh := k8s.StatusUpdateHandler{
-		Log:           log.WithField("context", "StatusUpdateWriter"),
-		Clients:       clients,
-		LeaderElected: eventHandler.IsLeader,
-		Converter:     converter,
+		Log:             log.WithField("context", "StatusUpdateWriter"),
+		Clients:         clients,
+		LeaderElected:   eventHandler.IsLeader,
+		Converter:       converter,
+		InformerFactory: clusterInformerFactory,
 	}
 	g.Add(sh.Start)
 
