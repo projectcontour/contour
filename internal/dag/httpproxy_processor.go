@@ -14,7 +14,6 @@
 package dag
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -22,7 +21,6 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -166,7 +164,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 			// Fill in DownstreamValidation when external client validation is enabled.
 			if tls.ClientValidation != nil {
-				dv, err := p.lookupDownstreamValidation(tls.ClientValidation, proxy.Namespace)
+				dv, err := p.builder.Source.LookupDownstreamValidation(tls.ClientValidation, proxy.Namespace)
 				if err != nil {
 					sw.SetInvalid("Spec.VirtualHost.TLS client validation is invalid: %s", err)
 					return
@@ -366,7 +364,7 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 			var uv *PeerValidationContext
 			if protocol == "tls" || protocol == "h2" {
 				// we can only validate TLS connections to services that talk TLS
-				uv, err = p.lookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
+				uv, err = p.builder.Source.LookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
 				if err != nil {
 					sw.SetInvalid("Service [%s:%d] TLS upstream validation policy error: %s",
 						service.Name, service.Port, err)
@@ -561,51 +559,6 @@ func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
 		}
 	}
 	return false
-}
-
-func (p *HTTPProxyProcessor) lookupUpstreamValidation(uv *projcontour.UpstreamValidation, namespace string) (*PeerValidationContext, error) {
-	if uv == nil {
-		// no upstream validation requested, nothing to do
-		return nil, nil
-	}
-
-	secretName := types.NamespacedName{Name: uv.CACertificate, Namespace: namespace}
-	cacert, err := p.builder.Source.LookupSecret(secretName, validCA)
-	if err != nil {
-		// UpstreamValidation is requested, but cert is missing or not configured
-		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
-	}
-
-	if uv.SubjectName == "" {
-		// UpstreamValidation is requested, but SAN is not provided
-		return nil, errors.New("missing subject alternative name")
-	}
-
-	return &PeerValidationContext{
-		CACertificate: cacert,
-		SubjectName:   uv.SubjectName,
-	}, nil
-}
-
-func (p *HTTPProxyProcessor) lookupDownstreamValidation(vc *projcontour.DownstreamValidation, namespace string) (*PeerValidationContext, error) {
-	secretName := types.NamespacedName{Name: vc.CACertificate, Namespace: namespace}
-	cacert, err := p.builder.Source.LookupSecret(secretName, validCA)
-	if err != nil {
-		// PeerValidationContext is requested, but cert is missing or not configured.
-		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
-	}
-
-	return &PeerValidationContext{
-		CACertificate: cacert,
-	}, nil
-}
-
-func validCA(s *v1.Secret) error {
-	if len(s.Data[CACertificateKey]) == 0 {
-		return fmt.Errorf("empty %q key", CACertificateKey)
-	}
-
-	return nil
 }
 
 // setOrphaned records an HTTPProxy resource as orphaned.
