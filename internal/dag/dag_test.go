@@ -18,6 +18,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestVirtualHostValid(t *testing.T) {
@@ -104,4 +105,61 @@ func TestObserverFunc(t *testing.T) {
 	result := false
 	ObserverFunc(func(*DAG) { result = true }).OnChange(nil)
 	assert.Equal(t, true, result)
+}
+
+func TestServiceClusterValid(t *testing.T) {
+	invalid := []ServiceCluster{
+		{},
+		{ClusterName: "foo"},
+		{ClusterName: "foo", Services: []WeightedService{{}}},
+		{ClusterName: "foo", Services: []WeightedService{{ServiceName: "foo"}}},
+		{ClusterName: "foo", Services: []WeightedService{{ServiceNamespace: "foo"}}},
+	}
+
+	for _, c := range invalid {
+		assert.Errorf(t, c.Validate(), "invalid cluster %#v", c)
+	}
+}
+
+func TestServiceClusterAdd(t *testing.T) {
+	port := v1.ServicePort{
+		Name:     "foo",
+		Protocol: v1.ProtocolTCP,
+		Port:     32,
+	}
+
+	s := ServiceCluster{
+		ClusterName: "test",
+	}
+
+	s.AddService(types.NamespacedName{Namespace: "ns", Name: "s1"}, port)
+	assert.Equal(t,
+		ServiceCluster{
+			ClusterName: "test",
+			Services: []WeightedService{{
+				Weight:           1,
+				ServiceName:      "s1",
+				ServiceNamespace: "ns",
+				ServicePort:      port,
+			}},
+		},
+		s)
+
+	s.AddWeightedService(9, types.NamespacedName{Namespace: "ns", Name: "s2"}, port)
+	assert.Equal(t,
+		ServiceCluster{
+			ClusterName: "test",
+			Services: []WeightedService{{
+				Weight:           1,
+				ServiceName:      "s1",
+				ServiceNamespace: "ns",
+				ServicePort:      port,
+			}, {
+				Weight:           9,
+				ServiceName:      "s2",
+				ServiceNamespace: "ns",
+				ServicePort:      port,
+			}},
+		},
+		s)
 }
