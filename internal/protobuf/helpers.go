@@ -40,6 +40,26 @@ func UInt32(val uint32) *wrappers.UInt32Value {
 	}
 }
 
+// UInt32OrDefault returns a wrapped UInt32Value. If val is 0, def is wrapped and returned.
+func UInt32OrDefault(val uint32, def uint32) *wrappers.UInt32Value {
+	switch val {
+	case 0:
+		return UInt32(def)
+	default:
+		return UInt32(val)
+	}
+}
+
+// UInt32OrNil returns a wrapped UInt32Value. If val is 0, nil is returned
+func UInt32OrNil(val uint32) *wrappers.UInt32Value {
+	switch val {
+	case 0:
+		return nil
+	default:
+		return UInt32(val)
+	}
+}
+
 // Bool converts a bool to a pointer to a wrappers.BoolValue.
 func Bool(val bool) *wrappers.BoolValue {
 	return &wrappers.BoolValue{
