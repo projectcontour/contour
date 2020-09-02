@@ -1,0 +1,32 @@
+# httpproxynonempty is a ConstraintTemplate that requires
+# an HTTPProxy to have at least one route, include, or a
+# tcp proxy defined.
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: httpproxynonempty
+  labels:
+    app: contour
+spec:
+  crd:
+    spec:
+      names:
+        kind: HTTPProxyNonEmpty
+        listKind: HTTPProxyNonEmptyList
+        plural: HTTPProxyNonEmptys
+        singular: HTTPProxyNonEmpty
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package httpproxy.nonempty
+
+        violation[{"msg": msg}] {
+          # only check root HTTPProxies
+          input.review.object.spec.virtualhost
+          
+          not input.review.object.spec.routes
+          not input.review.object.spec.includes
+          not input.review.object.spec.tcpproxy
+
+          msg := "proxy must define at least one route, include, or a tcp proxy"
+        }

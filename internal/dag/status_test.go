@@ -1675,6 +1675,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
+	// a proxy without any routes, includes, or a tcp proxy
+	// is invalid.
+	emptyProxy := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "empty",
+			Namespace: "roots",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                []interface{}
 		fallbackCertificate *types.NamespacedName
@@ -2277,6 +2291,17 @@ func TestDAGStatus(t *testing.T) {
 			objs: []interface{}{fallbackCertificateWithClientValidation, fallbackSecret, secretRootsNS, serviceHome},
 			want: map[types.NamespacedName]Status{
 				{Name: fallbackCertificateWithClientValidation.Name, Namespace: fallbackCertificateWithClientValidation.Namespace}: {Object: fallbackCertificateWithClientValidation, Status: "invalid", Description: "Spec.Virtualhost.TLS fallback & client validation are incompatible together", Vhost: "example.com"},
+			},
+		},
+		"proxy with no routes, includes, or tcpproxy is invalid": {
+			objs: []interface{}{emptyProxy},
+			want: map[types.NamespacedName]Status{
+				{Name: emptyProxy.Name, Namespace: emptyProxy.Namespace}: {
+					Object:      emptyProxy,
+					Status:      "invalid",
+					Description: "HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy",
+					Vhost:       emptyProxy.Spec.VirtualHost.Fqdn,
+				},
 			},
 		},
 	}
