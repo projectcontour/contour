@@ -141,7 +141,7 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 func (suh *StatusUpdateHandler) Writer() StatusUpdater {
 
 	if suh.UpdateChannel == nil {
-		suh.UpdateChannel = make(chan StatusUpdate)
+		suh.UpdateChannel = make(chan StatusUpdate, 100)
 	}
 
 	return &StatusUpdateWriter{
