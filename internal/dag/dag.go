@@ -541,7 +541,7 @@ func (s *ServiceCluster) AddService(name types.NamespacedName, port v1.ServicePo
 func (s *ServiceCluster) AddWeightedService(weight uint32, name types.NamespacedName, port v1.ServicePort) {
 	w := WeightedService{
 		Weight:           weight,
-		ServiceName:      name.Namespace,
+		ServiceName:      name.Name,
 		ServiceNamespace: name.Namespace,
 		ServicePort:      port,
 	}

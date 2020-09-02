@@ -50,12 +50,13 @@ func (m StatusMutatorFunc) Mutate(old interface{}) interface{} {
 
 // StatusUpdateHandler holds the details required to actually write an Update back to the referenced object.
 type StatusUpdateHandler struct {
-	Log           logrus.FieldLogger
-	Clients       *Clients
-	UpdateChannel chan StatusUpdate
-	LeaderElected chan struct{}
-	IsLeader      bool
-	Converter     *UnstructuredConverter
+	Log             logrus.FieldLogger
+	Clients         *Clients
+	UpdateChannel   chan StatusUpdate
+	LeaderElected   chan struct{}
+	IsLeader        bool
+	Converter       *UnstructuredConverter
+	InformerFactory InformerFactory
 }
 
 // Start runs the goroutine to perform status writes.
@@ -82,9 +83,10 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 			suh.Log.WithField("name", upd.NamespacedName.Name).
 				WithField("namespace", upd.NamespacedName.Namespace).
 				Debug("received a status update")
-			uObj, err := suh.Clients.DynamicClient().
-				Resource(upd.Resource).
-				Namespace(upd.NamespacedName.Namespace).Get(context.TODO(), upd.NamespacedName.Name, metav1.GetOptions{})
+
+			// Fetch the lister cache for the informer associated with this resource.
+			lister := suh.InformerFactory.ForResource(upd.Resource).Lister()
+			uObj, err := lister.ByNamespace(upd.NamespacedName.Namespace).Get(upd.NamespacedName.Name)
 			if err != nil {
 				suh.Log.WithError(err).
 					WithField("name", upd.NamespacedName.Name).
@@ -129,7 +131,6 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 					Error("unable to update status")
 				continue
 			}
-
 		}
 
 	}
@@ -140,7 +141,7 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 func (suh *StatusUpdateHandler) Writer() StatusUpdater {
 
 	if suh.UpdateChannel == nil {
-		suh.UpdateChannel = make(chan StatusUpdate)
+		suh.UpdateChannel = make(chan StatusUpdate, 100)
 	}
 
 	return &StatusUpdateWriter{
