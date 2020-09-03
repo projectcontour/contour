@@ -1451,7 +1451,7 @@ rules:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: contour-certgen-v1.8.0
+  name: contour-certgen-v1.8.1
   namespace: projectcontour
 spec:
   ttlSecondsAfterFinished: 0
@@ -1686,7 +1686,7 @@ spec:
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
         command: ["contour"]
-        image: docker.io/projectcontour/contour:v1.8.0
+        image: docker.io/projectcontour/contour:v1.8.1
         imagePullPolicy: IfNotPresent
         name: contour
         ports:
@@ -1772,7 +1772,7 @@ spec:
         args:
           - envoy
           - shutdown-manager
-        image: docker.io/projectcontour/contour:v1.8.0
+        image: docker.io/projectcontour/contour:v1.8.1
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -1848,7 +1848,7 @@ spec:
         - --envoy-key-file=/certs/tls.key
         command:
         - contour
-        image: docker.io/projectcontour/contour:v1.8.0
+        image: docker.io/projectcontour/contour:v1.8.1
         imagePullPolicy: IfNotPresent
         name: envoy-initconfig
         volumeMounts:
