@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -600,6 +601,123 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 	}
 
 	protobuf.RequireEqual(t, want, et.Contents())
+}
+
+// Test that a cluster with weighted services propagates the weights.
+func TestEndpointsTranslatorWeightedService(t *testing.T) {
+	et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+	clusters := []*dag.ServiceCluster{
+		&dag.ServiceCluster{
+			ClusterName: "default/weighted",
+			Services: []dag.WeightedService{
+				dag.WeightedService{
+					Weight:           0,
+					ServiceName:      "weight0",
+					ServiceNamespace: "default",
+					ServicePort:      v1.ServicePort{},
+				},
+				dag.WeightedService{
+					Weight:           1,
+					ServiceName:      "weight1",
+					ServiceNamespace: "default",
+					ServicePort:      v1.ServicePort{},
+				},
+				dag.WeightedService{
+					Weight:           2,
+					ServiceName:      "weight2",
+					ServiceNamespace: "default",
+					ServicePort:      v1.ServicePort{},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, et.cache.SetClusters(clusters))
+
+	epSubset := v1.EndpointSubset{
+		Addresses: addresses("192.168.183.24"),
+		Ports:     ports(port("", 8080)),
+	}
+
+	et.OnAdd(endpoints("default", "weight0", epSubset))
+	et.OnAdd(endpoints("default", "weight1", epSubset))
+	et.OnAdd(endpoints("default", "weight2", epSubset))
+
+	// Each helper builds a `LocalityLbEndpoints` with one
+	// entry, so we can compose the final result by reaching
+	// in an taking the first element of each slice.
+	w0 := envoy.Endpoints(envoy.SocketAddress("192.168.183.24", 8080))
+	w1 := envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080))
+	w2 := envoy.WeightedEndpoints(2, envoy.SocketAddress("192.168.183.24", 8080))
+
+	want := []proto.Message{
+		&v2.ClusterLoadAssignment{
+			ClusterName: "default/weighted",
+			Endpoints: []*envoy_api_v2_endpoint.LocalityLbEndpoints{
+				w0[0], w1[0], w2[0],
+			},
+		},
+	}
+
+	protobuf.ExpectEqual(t, want, et.Contents())
+}
+
+// Test that a cluster with weighted services that all leave the
+// weights unspecified defaults to equally weighed and propagates the
+// weights.
+func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
+	et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+	clusters := []*dag.ServiceCluster{
+		&dag.ServiceCluster{
+			ClusterName: "default/weighted",
+			Services: []dag.WeightedService{
+				dag.WeightedService{
+					ServiceName:      "weight0",
+					ServiceNamespace: "default",
+					ServicePort:      v1.ServicePort{},
+				},
+				dag.WeightedService{
+					ServiceName:      "weight1",
+					ServiceNamespace: "default",
+					ServicePort:      v1.ServicePort{},
+				},
+				dag.WeightedService{
+					ServiceName:      "weight2",
+					ServiceNamespace: "default",
+					ServicePort:      v1.ServicePort{},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, et.cache.SetClusters(clusters))
+
+	epSubset := v1.EndpointSubset{
+		Addresses: addresses("192.168.183.24"),
+		Ports:     ports(port("", 8080)),
+	}
+
+	et.OnAdd(endpoints("default", "weight0", epSubset))
+	et.OnAdd(endpoints("default", "weight1", epSubset))
+	et.OnAdd(endpoints("default", "weight2", epSubset))
+
+	// Each helper builds a `LocalityLbEndpoints` with one
+	// entry, so we can compose the final result by reaching
+	// in an taking the first element of each slice.
+	w0 := envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080))
+	w1 := envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080))
+	w2 := envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080))
+
+	want := []proto.Message{
+		&v2.ClusterLoadAssignment{
+			ClusterName: "default/weighted",
+			Endpoints: []*envoy_api_v2_endpoint.LocalityLbEndpoints{
+				w0[0], w1[0], w2[0],
+			},
+		},
+	}
+
+	protobuf.ExpectEqual(t, want, et.Contents())
 }
 
 func ports(eps ...v1.EndpointPort) []v1.EndpointPort {

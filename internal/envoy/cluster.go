@@ -25,7 +25,6 @@ import (
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
-	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/xds"
@@ -69,10 +68,10 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 	if anyPositive(service.MaxConnections, service.MaxPendingRequests, service.MaxRequests, service.MaxRetries) {
 		cluster.CircuitBreakers = &envoy_cluster.CircuitBreakers{
 			Thresholds: []*envoy_cluster.CircuitBreakers_Thresholds{{
-				MaxConnections:     u32nil(service.MaxConnections),
-				MaxPendingRequests: u32nil(service.MaxPendingRequests),
-				MaxRequests:        u32nil(service.MaxRequests),
-				MaxRetries:         u32nil(service.MaxRetries),
+				MaxConnections:     protobuf.UInt32OrNil(service.MaxConnections),
+				MaxPendingRequests: protobuf.UInt32OrNil(service.MaxPendingRequests),
+				MaxRequests:        protobuf.UInt32OrNil(service.MaxRequests),
+				MaxRetries:         protobuf.UInt32OrNil(service.MaxRetries),
 			}},
 		}
 	}
@@ -250,17 +249,6 @@ func anyPositive(first uint32, rest ...uint32) bool {
 		}
 	}
 	return false
-}
-
-// u32nil creates a *types.UInt32Value containing v.
-// u33nil returns nil if v is zero.
-func u32nil(val uint32) *wrappers.UInt32Value {
-	switch val {
-	case 0:
-		return nil
-	default:
-		return protobuf.UInt32(val)
-	}
 }
 
 // ClusterCommonLBConfig creates a *v2.Cluster_CommonLbConfig with HealthyPanicThreshold disabled.

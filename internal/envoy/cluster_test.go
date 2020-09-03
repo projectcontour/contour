@@ -22,7 +22,6 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/xds"
@@ -395,8 +394,8 @@ func TestCluster(t *testing.T) {
 				HealthChecks: []*envoy_api_v2_core.HealthCheck{{
 					Timeout:            durationOrDefault(2, hcTimeout),
 					Interval:           durationOrDefault(10, hcInterval),
-					UnhealthyThreshold: countOrDefault(3, hcUnhealthyThreshold),
-					HealthyThreshold:   countOrDefault(2, hcHealthyThreshold),
+					UnhealthyThreshold: protobuf.UInt32OrDefault(3, hcUnhealthyThreshold),
+					HealthyThreshold:   protobuf.UInt32OrDefault(2, hcHealthyThreshold),
 					HealthChecker: &envoy_api_v2_core.HealthCheck_TcpHealthCheck_{
 						TcpHealthCheck: &envoy_api_v2_core.HealthCheck_TcpHealthCheck{},
 					},
@@ -612,11 +611,6 @@ func TestAnyPositive(t *testing.T) {
 	assert.Equal(t, false, anyPositive(0, 0))
 	assert.Equal(t, true, anyPositive(1, 0))
 	assert.Equal(t, true, anyPositive(0, 1))
-}
-
-func TestU32nil(t *testing.T) {
-	assert.Equal(t, (*wrappers.UInt32Value)(nil), u32nil(0))
-	assert.Equal(t, protobuf.UInt32(1), u32nil(1))
 }
 
 func TestClusterCommonLBConfig(t *testing.T) {
