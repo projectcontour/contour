@@ -6721,25 +6721,17 @@ func TestBuilderRunsProcessorsInOrder(t *testing.T) {
 
 	b := Builder{
 		Processors: []Processor{
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "foo") }},
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "bar") }},
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "baz") }},
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "abc") }},
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "def") }},
+			ProcessorFunc(func(*DAG, *Builder) { got = append(got, "foo") }),
+			ProcessorFunc(func(*DAG, *Builder) { got = append(got, "bar") }),
+			ProcessorFunc(func(*DAG, *Builder) { got = append(got, "baz") }),
+			ProcessorFunc(func(*DAG, *Builder) { got = append(got, "abc") }),
+			ProcessorFunc(func(*DAG, *Builder) { got = append(got, "def") }),
 		},
 	}
 
 	b.Build()
 
 	assert.Equal(t, []string{"foo", "bar", "baz", "abc", "def"}, got)
-}
-
-type pluggableProcessor struct {
-	runFunc func(builder *Builder)
-}
-
-func (p *pluggableProcessor) Run(builder *Builder) {
-	p.runFunc(builder)
 }
 
 func routes(routes ...*Route) map[string]*Route {

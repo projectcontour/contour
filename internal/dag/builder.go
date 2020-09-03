@@ -36,7 +36,15 @@ type RouteServiceName struct {
 // of a DAG.
 type Processor interface {
 	// Run executes the processor with the given Builder.
-	Run(builder *Builder)
+	Run(dag *DAG, builder *Builder)
+}
+
+type ProcessorFunc func(dag *DAG, builder *Builder)
+
+func (pf ProcessorFunc) Run(dag *DAG, builder *Builder) {
+	if pf != nil {
+		pf(dag, builder)
+	}
 }
 
 // Builder builds a DAG.
@@ -49,10 +57,8 @@ type Builder struct {
 	// use to build the DAG.
 	Processors []Processor
 
-	services           map[RouteServiceName]*Service
-	virtualhosts       map[string]*VirtualHost
-	securevirtualhosts map[string]*SecureVirtualHost
-	listeners          []*Listener
+	services  map[RouteServiceName]*Service
+	listeners []*Listener
 
 	StatusWriter
 	logrus.FieldLogger
@@ -63,25 +69,26 @@ type Builder struct {
 func (b *Builder) Build() *DAG {
 	b.reset()
 
-	for _, p := range b.Processors {
-		p.Run(b)
+	dag := &DAG{
+		virtualhosts:       make(map[string]*VirtualHost),
+		securevirtualhosts: make(map[string]*SecureVirtualHost),
 	}
 
-	var dag DAG
+	for _, p := range b.Processors {
+		p.Run(dag, b)
+	}
 
 	for i := range b.listeners {
 		dag.roots = append(dag.roots, b.listeners[i])
 	}
 
 	dag.statuses = b.statuses
-	return &dag
+	return dag
 }
 
 // reset (re)inialises the internal state of the builder.
 func (b *Builder) reset() {
 	b.services = make(map[RouteServiceName]*Service, len(b.services))
-	b.virtualhosts = make(map[string]*VirtualHost)
-	b.securevirtualhosts = make(map[string]*SecureVirtualHost)
 	b.listeners = []*Listener{}
 
 	b.statuses = make(map[types.NamespacedName]Status, len(b.statuses))
@@ -160,32 +167,6 @@ func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 		protocol = up[strconv.Itoa(int(port.Port))]
 	}
 	return protocol
-}
-
-func (b *Builder) lookupVirtualHost(name string) *VirtualHost {
-	vh, ok := b.virtualhosts[name]
-	if !ok {
-		vh := &VirtualHost{
-			Name: name,
-		}
-		b.virtualhosts[vh.Name] = vh
-		return vh
-	}
-	return vh
-}
-
-func (b *Builder) lookupSecureVirtualHost(name string) *SecureVirtualHost {
-	svh, ok := b.securevirtualhosts[name]
-	if !ok {
-		svh := &SecureVirtualHost{
-			VirtualHost: VirtualHost{
-				Name: name,
-			},
-		}
-		b.securevirtualhosts[svh.VirtualHost.Name] = svh
-		return svh
-	}
-	return svh
 }
 
 func externalName(svc *v1.Service) string {

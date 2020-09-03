@@ -29,6 +29,7 @@ import (
 // HTTPProxyProcessor translates HTTPProxies into DAG
 // objects and adds them to the DAG builder.
 type HTTPProxyProcessor struct {
+	dag      *DAG
 	builder  *Builder
 	orphaned map[types.NamespacedName]bool
 
@@ -44,12 +45,14 @@ type HTTPProxyProcessor struct {
 
 // Run translates HTTPProxies into DAG objects and
 // adds them to the DAG builder.
-func (p *HTTPProxyProcessor) Run(builder *Builder) {
+func (p *HTTPProxyProcessor) Run(dag *DAG, builder *Builder) {
+	p.dag = dag
 	p.builder = builder
 	p.orphaned = make(map[types.NamespacedName]bool, len(p.orphaned))
 
 	// reset the processor when we're done
 	defer func() {
+		p.dag = nil
 		p.builder = nil
 		p.orphaned = nil
 	}()
@@ -131,7 +134,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 				return
 			}
 
-			svhost := p.builder.lookupSecureVirtualHost(host)
+			svhost := p.dag.GetOrAddSecureVirtualHost(host)
 			svhost.Secret = sec
 			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion)
 
@@ -188,13 +191,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	}
 
 	routes := p.computeRoutes(sw, proxy, nil, nil, tlsEnabled)
-	insecure := p.builder.lookupVirtualHost(host)
+	insecure := p.dag.GetOrAddVirtualHost(host)
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
-		secure := p.builder.lookupSecureVirtualHost(host)
+		secure := p.dag.GetOrAddSecureVirtualHost(host)
 		addRoutes(secure, routes)
 	}
 }
@@ -457,7 +460,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 			})
 		}
-		p.builder.lookupSecureVirtualHost(host).TCPProxy = &proxy
+		p.dag.GetOrAddSecureVirtualHost(host).TCPProxy = &proxy
 		return true
 	}
 

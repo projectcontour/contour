@@ -19,17 +19,20 @@ import "sort"
 // the DAG builder if there are virtual hosts and secure
 // virtual hosts already defined in the builder.
 type ListenerProcessor struct {
+	dag     *DAG
 	builder *Builder
 }
 
 // Run adds HTTP and HTTPS listeners to the DAG builder
 // if there are virtual hosts and secure virtual hosts already
 // defined in the builder.
-func (p *ListenerProcessor) Run(builder *Builder) {
+func (p *ListenerProcessor) Run(dag *DAG, builder *Builder) {
+	p.dag = dag
 	p.builder = builder
 
 	// reset the processor when we're done
 	defer func() {
+		p.dag = nil
 		p.builder = nil
 	}()
 
@@ -48,9 +51,9 @@ func (p *ListenerProcessor) Run(builder *Builder) {
 // The list of virtual hosts will attached to the listener will be sorted
 // by hostname.
 func (p *ListenerProcessor) buildHTTPListener() *Listener {
-	var virtualhosts = make([]Vertex, 0, len(p.builder.virtualhosts))
+	var virtualhosts []Vertex
 
-	for _, vh := range p.builder.virtualhosts {
+	for _, vh := range p.dag.ListVirtualHosts() {
 		if vh.Valid() {
 			virtualhosts = append(virtualhosts, vh)
 		}
@@ -68,8 +71,9 @@ func (p *ListenerProcessor) buildHTTPListener() *Listener {
 // The list of virtual hosts will attached to the listener will be sorted
 // by hostname.
 func (p *ListenerProcessor) buildHTTPSListener() *Listener {
-	var virtualhosts = make([]Vertex, 0, len(p.builder.securevirtualhosts))
-	for _, svh := range p.builder.securevirtualhosts {
+	var virtualhosts []Vertex
+
+	for _, svh := range p.dag.ListSecureVirtualHosts() {
 		if svh.Valid() {
 			virtualhosts = append(virtualhosts, svh)
 		}

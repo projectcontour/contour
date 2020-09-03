@@ -25,16 +25,19 @@ import (
 // IngressProcessor translates Ingresses into DAG
 // objects and adds them to the DAG builder.
 type IngressProcessor struct {
+	dag     *DAG
 	builder *Builder
 }
 
 // Run translates Ingresses into DAG objects and
 // adds them to the DAG builder.
-func (p *IngressProcessor) Run(builder *Builder) {
+func (p *IngressProcessor) Run(dag *DAG, builder *Builder) {
+	p.dag = dag
 	p.builder = builder
 
 	// reset the processor when we're done
 	defer func() {
+		p.dag = nil
 		p.builder = nil
 	}()
 
@@ -74,7 +77,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 			// ahead and create the SecureVirtualHost for this
 			// Ingress.
 			for _, host := range tls.Hosts {
-				svhost := p.builder.lookupSecureVirtualHost(host)
+				svhost := p.dag.GetOrAddSecureVirtualHost(host)
 				svhost.Secret = sec
 				svhost.MinTLSVersion = annotation.MinTLSVersion(
 					annotation.CompatAnnotation(ing, "tls-minimum-protocol-version"))
@@ -118,14 +121,13 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
-			p.builder.lookupVirtualHost(host).addRoute(r)
+			p.dag.GetOrAddVirtualHost(host).addRoute(r)
 		}
 
 		// computeSecureVirtualhosts will have populated b.securevirtualhosts
 		// with the names of tls enabled ingress objects. If host exists then
 		// it is correctly configured for TLS.
-		svh, ok := p.builder.securevirtualhosts[host]
-		if ok && host != "*" {
+		if svh := p.dag.GetSecureVirtualHost(host); svh != nil && host != "*" {
 			svh.addRoute(r)
 		}
 	}

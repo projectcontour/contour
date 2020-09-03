@@ -69,6 +69,9 @@ type DAG struct {
 
 	// status computed while building this dag.
 	statuses map[types.NamespacedName]Status
+
+	virtualhosts       map[string]*VirtualHost
+	securevirtualhosts map[string]*SecureVirtualHost
 }
 
 // Visit calls fn on each root of this DAG.
@@ -76,6 +79,56 @@ func (d *DAG) Visit(fn func(Vertex)) {
 	for _, r := range d.roots {
 		fn(r)
 	}
+}
+
+func (d *DAG) GetOrAddVirtualHost(name string) *VirtualHost {
+	vh, ok := d.virtualhosts[name]
+	if !ok {
+		vh := &VirtualHost{
+			Name: name,
+		}
+		d.virtualhosts[vh.Name] = vh
+		return vh
+	}
+	return vh
+}
+
+func (d *DAG) GetVirtualHost(name string) *VirtualHost {
+	return d.virtualhosts[name]
+}
+
+func (d *DAG) ListVirtualHosts() []*VirtualHost {
+	res := make([]*VirtualHost, 0, len(d.virtualhosts))
+	for _, vh := range d.virtualhosts {
+		res = append(res, vh)
+	}
+	return res
+}
+
+func (d *DAG) GetOrAddSecureVirtualHost(name string) *SecureVirtualHost {
+	svh, ok := d.securevirtualhosts[name]
+	if !ok {
+		svh := &SecureVirtualHost{
+			VirtualHost: VirtualHost{
+				Name: name,
+			},
+		}
+		d.securevirtualhosts[svh.VirtualHost.Name] = svh
+		return svh
+	}
+	return svh
+}
+
+func (d *DAG) GetSecureVirtualHost(name string) *SecureVirtualHost {
+	return d.securevirtualhosts[name]
+}
+
+func (d *DAG) ListSecureVirtualHosts() []*SecureVirtualHost {
+	res := make([]*SecureVirtualHost, 0, len(d.securevirtualhosts))
+	for _, svh := range d.securevirtualhosts {
+		res = append(res, svh)
+	}
+	return res
 }
 
 // Statuses returns a slice of Status objects associated with
