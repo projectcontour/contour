@@ -14,11 +14,7 @@
 package xds
 
 import (
-	clusterservice "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	endpointservice "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	listenerservice "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	routeservice "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,12 +23,12 @@ import (
 
 // Server is a collection of handlers for streaming discovery requests.
 type Server interface {
-	clusterservice.ClusterDiscoveryServiceServer
+	api.ClusterDiscoveryServiceServer
+	api.EndpointDiscoveryServiceServer
+	api.ListenerDiscoveryServiceServer
+	api.RouteDiscoveryServiceServer
 	discovery.AggregatedDiscoveryServiceServer
 	discovery.SecretDiscoveryServiceServer
-	endpointservice.EndpointDiscoveryServiceServer
-	listenerservice.ListenerDiscoveryServiceServer
-	routeservice.RouteDiscoveryServiceServer
 }
 
 // RegisterServer registers the given xDS protocol Server with the gRPC
@@ -41,7 +37,7 @@ type Server interface {
 func RegisterServer(srv Server, registry *prometheus.Registry, opts ...grpc.ServerOption) *grpc.Server {
 	var metrics *grpc_prometheus.ServerMetrics
 
-	// TODO(jpeach) Figure out how to decouple this.
+	// TODO: Decouple registry from this.
 	if registry != nil {
 		metrics = grpc_prometheus.NewServerMetrics()
 		registry.MustRegister(metrics)
@@ -57,10 +53,10 @@ func RegisterServer(srv Server, registry *prometheus.Registry, opts ...grpc.Serv
 
 	discovery.RegisterAggregatedDiscoveryServiceServer(g, srv)
 	discovery.RegisterSecretDiscoveryServiceServer(g, srv)
-	v2.RegisterClusterDiscoveryServiceServer(g, srv)
-	v2.RegisterEndpointDiscoveryServiceServer(g, srv)
-	v2.RegisterListenerDiscoveryServiceServer(g, srv)
-	v2.RegisterRouteDiscoveryServiceServer(g, srv)
+	api.RegisterClusterDiscoveryServiceServer(g, srv)
+	api.RegisterEndpointDiscoveryServiceServer(g, srv)
+	api.RegisterListenerDiscoveryServiceServer(g, srv)
+	api.RegisterRouteDiscoveryServiceServer(g, srv)
 
 	if metrics != nil {
 		metrics.InitializeMetrics(g)
