@@ -549,6 +549,24 @@ func (s *ServiceCluster) AddWeightedService(weight uint32, name types.Namespaced
 	s.Services = append(s.Services, w)
 }
 
+// Rebalance rewrites the weights for the service cluster so that
+// if no weights are specifies, the traffic is evenly distributed.
+// This matches the behavior of weighted routes. Note that this is
+// a destructive operation.
+func (s *ServiceCluster) Rebalance() {
+	var sum uint32
+
+	for _, w := range s.Services {
+		sum += w.Weight
+	}
+
+	if sum == 0 {
+		for i := range s.Services {
+			s.Services[i].Weight = 1
+		}
+	}
+}
+
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
 // a leaf in the DAG.
 type Secret struct {

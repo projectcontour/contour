@@ -126,11 +126,14 @@ func (c *EndpointsCache) Recalculate() map[string]*v2.ClusterLoadAssignment {
 		for _, w := range cluster.Services {
 			n := types.NamespacedName{Namespace: w.ServiceNamespace, Name: w.ServiceName}
 			if lb := RecalculateEndpoints(w.ServicePort, c.endpoints[n]); lb != nil {
+				// Append the new set of endpoints. Users are allowed to set the load
+				// balancing weight to 0, which we reflect to Envoy as nil in order to
+				// assign no load to that locality.
 				cla.Endpoints = append(
 					cla.Endpoints,
 					&LocalityEndpoints{
 						LbEndpoints:         lb,
-						LoadBalancingWeight: protobuf.UInt32(w.Weight),
+						LoadBalancingWeight: protobuf.UInt32OrNil(w.Weight),
 					},
 				)
 			}
@@ -158,6 +161,9 @@ func (c *EndpointsCache) SetClusters(clusters []*dag.ServiceCluster) error {
 		if err := cluster.Validate(); err != nil {
 			return fmt.Errorf("invalid ServiceCluster %q: %w", cluster.ClusterName, err)
 		}
+
+		// Make sure service clusters with default weights are balanced.
+		cluster.Rebalance()
 
 		for _, s := range cluster.Services {
 			name := types.NamespacedName{

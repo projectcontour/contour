@@ -163,3 +163,83 @@ func TestServiceClusterAdd(t *testing.T) {
 		},
 		s)
 }
+
+func TestServiceClusterRebalance(t *testing.T) {
+	port := v1.ServicePort{
+		Name:     "foo",
+		Protocol: v1.ProtocolTCP,
+		Port:     32,
+	}
+
+	cases := map[string]struct {
+		have ServiceCluster
+		want ServiceCluster
+	}{
+		"default weights": {
+			have: ServiceCluster{
+				ClusterName: "test",
+				Services: []WeightedService{{
+					ServiceName:      "s1",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}, {
+					ServiceName:      "s2",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}},
+			},
+			want: ServiceCluster{
+				ClusterName: "test",
+				Services: []WeightedService{{
+					Weight:           1,
+					ServiceName:      "s1",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}, {
+					Weight:           1,
+					ServiceName:      "s2",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}},
+			},
+		},
+		"custom weights": {
+			have: ServiceCluster{
+				ClusterName: "test",
+				Services: []WeightedService{{
+					ServiceName:      "s1",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}, {
+					Weight:           6,
+					ServiceName:      "s2",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}},
+			},
+			want: ServiceCluster{
+				ClusterName: "test",
+				Services: []WeightedService{{
+					Weight:           0,
+					ServiceName:      "s1",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}, {
+					Weight:           6,
+					ServiceName:      "s2",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(n, func(t *testing.T) {
+			s := c.have
+			s.Rebalance()
+			assert.Equal(t, c.want, s)
+		})
+	}
+
+}
