@@ -27,7 +27,6 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
-	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -220,15 +219,8 @@ func (c *EndpointsCache) DeleteEndpoint(ep *v1.Endpoints) {
 	}
 }
 
-// EndpointsInterface exposes the interfaces supported by the endpoints translator.
-type EndpointsInterface interface {
-	cache.ResourceEventHandler
-	dag.Observer
-	xds.Resource
-}
-
 // NewEndpointsTranslator allocates a new endpoints translator.
-func NewEndpointsTranslator(log logrus.FieldLogger) EndpointsInterface {
+func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
 	return &EndpointsTranslator{
 		Cond:        Cond{},
 		FieldLogger: log,
@@ -244,6 +236,9 @@ func NewEndpointsTranslator(log logrus.FieldLogger) EndpointsInterface {
 // A EndpointsTranslator translates Kubernetes Endpoints objects into Envoy
 // ClusterLoadAssignment resources.
 type EndpointsTranslator struct {
+	// Observer notifies when the endpoints cache has been updated.
+	Observer Observer
+
 	Cond
 	logrus.FieldLogger
 
@@ -254,7 +249,7 @@ type EndpointsTranslator struct {
 }
 
 // Merge combines the given entries with the existing entries in the
-// EndpointsTranslatore. If the same key exists in both maps, an existing entry
+// EndpointsTranslator. If the same key exists in both maps, an existing entry
 // is replaced.
 func (e *EndpointsTranslator) Merge(entries map[string]*v2.ClusterLoadAssignment) {
 	e.mu.Lock()
@@ -315,6 +310,9 @@ func (e *EndpointsTranslator) OnAdd(obj interface{}) {
 		e.cache.UpdateEndpoint(obj)
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
+		if e.Observer != nil {
+			e.Observer.Refresh()
+		}
 	default:
 		e.Errorf("OnAdd unexpected type %T: %#v", obj, obj)
 	}
@@ -345,6 +343,9 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
 		e.cache.UpdateEndpoint(newObj)
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
+		if e.Observer != nil {
+			e.Observer.Refresh()
+		}
 	default:
 		e.Errorf("OnUpdate unexpected type %T: %#v", newObj, newObj)
 	}
@@ -356,6 +357,9 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 		e.cache.DeleteEndpoint(obj)
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
+		if e.Observer != nil {
+			e.Observer.Refresh()
+		}
 	case cache.DeletedFinalStateUnknown:
 		e.OnDelete(obj.Obj) // recurse into ourselves with the tombstoned value
 	default:

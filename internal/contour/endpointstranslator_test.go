@@ -52,7 +52,7 @@ func TestEndpointsTranslatorContents(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 			et.entries = tc.contents
 			got := et.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
@@ -108,7 +108,7 @@ func TestEndpointCacheQuery(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 			et.entries = tc.contents
 			got := et.Query(tc.query)
 			protobuf.ExpectEqual(t, tc.want, got)
@@ -292,7 +292,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 			require.NoError(t, et.cache.SetClusters(clusters))
 			et.OnAdd(tc.ep)
 			got := et.Contents()
@@ -444,7 +444,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 			require.NoError(t, et.cache.SetClusters(clusters))
 			tc.setup(et)
 			// TODO(jpeach): this doesn't actually test
@@ -548,7 +548,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 			require.NoError(t, et.cache.SetClusters([]*dag.ServiceCluster{&tc.cluster}))
 			et.OnAdd(tc.ep)
 			got := et.Contents()
@@ -559,7 +559,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 
 // See #602
 func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
-	et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+	et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 
 	require.NoError(t, et.cache.SetClusters([]*dag.ServiceCluster{
 		&dag.ServiceCluster{
@@ -605,7 +605,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 
 // Test that a cluster with weighted services propagates the weights.
 func TestEndpointsTranslatorWeightedService(t *testing.T) {
-	et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+	et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 	clusters := []*dag.ServiceCluster{
 		&dag.ServiceCluster{
 			ClusterName: "default/weighted",
@@ -666,7 +666,7 @@ func TestEndpointsTranslatorWeightedService(t *testing.T) {
 // weights unspecified defaults to equally weighed and propagates the
 // weights.
 func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
-	et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
+	et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 	clusters := []*dag.ServiceCluster{
 		&dag.ServiceCluster{
 			ClusterName: "default/weighted",
