@@ -48,16 +48,16 @@ func (c *Client) dial() *grpc.ClientConn {
 		}
 		// Load the client certificates from disk
 		certificate, err := tls.LoadX509KeyPair(c.ClientCert, c.ClientKey)
-		kingpin.FatalIfError(err, "")
+		kingpin.FatalIfError(err, "failed to load certificates from disk")
 		// Create a certificate pool from the certificate authority
 		certPool := x509.NewCertPool()
 		ca, err := ioutil.ReadFile(c.CAFile)
-		kingpin.FatalIfError(err, "")
+		kingpin.FatalIfError(err, "failed to read CA cert")
 
 		// Append the certificates from the CA
 		if ok := certPool.AppendCertsFromPEM(ca); !ok {
 			// TODO(nyoung) OMG yuck, thanks for this, crypto/tls. Suggestions on alternates welcomed.
-			kingpin.Fatalf("failed to append ca certs")
+			kingpin.Fatalf("failed to append CA certs")
 		}
 
 		creds := credentials.NewTLS(&tls.Config{
@@ -75,7 +75,7 @@ func (c *Client) dial() *grpc.ClientConn {
 	}
 
 	conn, err := grpc.Dial(c.ContourAddr, options...)
-	kingpin.FatalIfError(err, "")
+	kingpin.FatalIfError(err, "failed connecting Contour Server")
 
 	return conn
 }
@@ -83,28 +83,28 @@ func (c *Client) dial() *grpc.ClientConn {
 // ClusterStream returns a stream of Clusters using the config in the Client.
 func (c *Client) ClusterStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewClusterDiscoveryServiceClient(c.dial()).StreamClusters(context.Background())
-	kingpin.FatalIfError(err, "")
+	kingpin.FatalIfError(err, "failed to fetch stream of Clusters")
 	return stream
 }
 
 // EndpointStream returns a stream of Endpoints using the config in the Client.
 func (c *Client) EndpointStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewEndpointDiscoveryServiceClient(c.dial()).StreamEndpoints(context.Background())
-	kingpin.FatalIfError(err, "")
+	kingpin.FatalIfError(err, "failed to fetch stream of Endpoints")
 	return stream
 }
 
 // ListenerStream returns a stream of Listeners using the config in the Client.
 func (c *Client) ListenerStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewListenerDiscoveryServiceClient(c.dial()).StreamListeners(context.Background())
-	kingpin.FatalIfError(err, "")
+	kingpin.FatalIfError(err, "failed to fetch stream of Listeners")
 	return stream
 }
 
 // RouteStream returns a stream of Routes using the config in the Client.
 func (c *Client) RouteStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewRouteDiscoveryServiceClient(c.dial()).StreamRoutes(context.Background())
-	kingpin.FatalIfError(err, "")
+	kingpin.FatalIfError(err, "failed to fetch stream of Routes")
 	return stream
 }
 
@@ -124,10 +124,10 @@ func watchstream(st stream, typeURL string, resources []string) {
 			ResourceNames: resources,
 		}
 		err := st.Send(req)
-		kingpin.FatalIfError(err, "")
+		kingpin.FatalIfError(err, "failed to send Discover Request")
 		resp, err := st.Recv()
-		kingpin.FatalIfError(err, "")
+		kingpin.FatalIfError(err, "failed to receive response for Discover Request")
 		err = m.Marshal(os.Stdout, resp)
-		kingpin.FatalIfError(err, "")
+		kingpin.FatalIfError(err, "failed to marshal Discovery Response")
 	}
 }
