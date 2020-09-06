@@ -258,6 +258,144 @@ TLSCertificateDelegationStatus
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.AuthorizationPolicy">AuthorizationPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>, 
+<a href="#projectcontour.io/v1.Route">Route</a>)
+</p>
+<p>
+<p>AuthorizationPolicy modifies how client requests are authenticated.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>disabled</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>When true, this field disables client request authentication
+for the scope of the policy.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>context</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Context is a set of key/value pairs that are sent to the
+authentication server in the check request. If a context
+is provided at an enclosing scope, the entries are merged
+such that the inner scope overrides matching keys from the
+outer scope.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.AuthorizationServer">AuthorizationServer
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+</p>
+<p>
+<p>AuthorizationServer configures an external server to authenticate
+client requests. The external server must implement the Envoy
+external authorization GRPC protocol. Currently, the
+<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/service/auth/v2/external_auth.proto">v2</a>
+protocol is always used, but authorization server authors should implement
+the v3 protocol as well in the expectation that it will be supported
+in future.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>serviceRef</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.ExtensionServiceReference">
+ExtensionServiceReference
+</a>
+</em>
+</td>
+<td>
+<p>ServiceRef specifies the extension resource that will authorize client requests.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>authPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationPolicy">
+AuthorizationPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AuthPolicy sets a default authorization policy for client requests.
+This policy will be used unless overridden by individual routes.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseTimeout</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResponseTimeout configures maximum time to wait for a check response from the authorization server.
+Timeout durations are expressed in the Go <a href="https://godoc.org/time#ParseDuration">Duration format</a>.
+Valid time units are &ldquo;ns&rdquo;, &ldquo;us&rdquo; (or &ldquo;µs&rdquo;), &ldquo;ms&rdquo;, &ldquo;s&rdquo;, &ldquo;m&rdquo;, &ldquo;h&rdquo;.
+The string &ldquo;infinity&rdquo; is also a valid input and specifies no timeout.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>failOpen</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If FailOpen is true, the client request is forwarded to the upstream service
+even if the authorization server fails to respond. This field should not be
+set in most cases. It is intended for use only while migrating applications
+from internal authorization to Contour external authorization.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.CertificateDelegation">CertificateDelegation
 </h3>
 <p>
@@ -543,6 +681,82 @@ string
 <td>
 <p>Name of a Kubernetes secret that contains a CA certificate bundle.
 The client certificate must validate against the certificates in the bundle.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.ExtensionServiceReference">ExtensionServiceReference
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
+</p>
+<p>
+<p>ExtensionServiceReference names an ExtensionService resource.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>apiVersion</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>API version of the referent.
+If this field is not specified, the default &ldquo;projectcontour.io/v1alpha1&rdquo; will be used</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>kind</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Kind of the referent.
+If this field is not specified, the default &ldquo;ExtensionService&rdquo; will be used.</p>
+<p>More info: <a href="https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds">https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds</a></p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>namespace</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Namespace of the referent.
+If this field is not specifies, the namespace of the resource that targets the referent will be used.</p>
+<p>More info: <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/">https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/</a></p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of the referent.</p>
+<p>More info: <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names">https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names</a></p>
 </td>
 </tr>
 </tbody>
@@ -1430,6 +1644,23 @@ not permitted when a <code>virtualhost.tls</code> block is present.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>authPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationPolicy">
+AuthorizationPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AuthPolicy updates the authorization policy that was set
+on the root HTTPProxy object for client requests that
+match this route.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>timeoutPolicy</code>
 <br>
 <em>
@@ -2270,9 +2501,30 @@ TLS
 </td>
 <td>
 <em>(Optional)</em>
-<p>If present describes tls properties. The SNI names that will be matched on
-are described in fqdn, the tls.secretName secret must contain a
-certificate that itself contains a name that matches the FQDN.</p>
+<p>If present the fields describes TLS properties of the virtual
+host. The SNI names that will be matched on are described in fqdn,
+the tls.secretName secret must contain a certificate that itself
+contains a name that matches the FQDN.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>authorization</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServer">
+AuthorizationServer
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>This field configures an extension service to perform
+authorization for this virtual host. Authorization can
+only be configured on virtual hosts that have TLS enabled.
+If the TLS configuration requires client certificate
+/validation, the client certificate is always included in the
+authentication check request.</p>
 </td>
 </tr>
 </tbody>

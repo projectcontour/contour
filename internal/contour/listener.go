@@ -22,6 +22,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
+	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
@@ -380,6 +381,16 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		var filters []*envoy_api_v2_listener.Filter
 
 		if vh.TCPProxy == nil {
+			var authFilter *http.HttpFilter
+
+			if vh.AuthorizationService != nil {
+				authFilter = envoy.FilterExternalAuthz(
+					vh.AuthorizationService.Name,
+					vh.AuthorizationFailOpen,
+					vh.AuthorizationResponseTimeout,
+				)
+			}
+
 			// Create a uniquely named HTTP connection manager for
 			// this vhost, so that the SNI name the client requests
 			// only grants access to that host. See RFC 6066 for
@@ -392,6 +403,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					Codec(envoy.CodecForVersions(v.DefaultHTTPVersions...)).
 					AddFilter(envoy.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
+					AddFilter(authFilter).
 					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
 					AccessLoggers(v.ListenerConfig.newSecureAccessLog()).

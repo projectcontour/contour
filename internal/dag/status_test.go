@@ -1689,6 +1689,26 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
+	authFallback := fixture.NewProxy("roots/fallback-incompat").
+		WithSpec(projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "invalid.com",
+				TLS: &projcontour.TLS{
+					SecretName:                "ssl-cert",
+					EnableFallbackCertificate: true,
+				},
+				Authorization: &projcontour.AuthorizationServer{
+					ServiceRef: projcontour.ExtensionServiceReference{
+						Namespace: "auth",
+						Name:      "extension",
+					},
+				},
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{Name: "app-server", Port: 80}},
+			}},
+		})
+
 	tests := map[string]struct {
 		objs                []interface{}
 		fallbackCertificate *types.NamespacedName
@@ -2290,7 +2310,7 @@ func TestDAGStatus(t *testing.T) {
 		"fallback certificate requested and clientValidation also configured": {
 			objs: []interface{}{fallbackCertificateWithClientValidation, fallbackSecret, secretRootsNS, serviceHome},
 			want: map[types.NamespacedName]Status{
-				{Name: fallbackCertificateWithClientValidation.Name, Namespace: fallbackCertificateWithClientValidation.Namespace}: {Object: fallbackCertificateWithClientValidation, Status: "invalid", Description: "Spec.Virtualhost.TLS fallback & client validation are incompatible together", Vhost: "example.com"},
+				{Name: fallbackCertificateWithClientValidation.Name, Namespace: fallbackCertificateWithClientValidation.Namespace}: {Object: fallbackCertificateWithClientValidation, Status: "invalid", Description: "Spec.Virtualhost.TLS fallback & client validation are incompatible", Vhost: "example.com"},
 			},
 		},
 		"proxy with no routes, includes, or tcpproxy is invalid": {
@@ -2301,6 +2321,17 @@ func TestDAGStatus(t *testing.T) {
 					Status:      "invalid",
 					Description: "HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy",
 					Vhost:       emptyProxy.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"incompat": {
+			objs: []interface{}{secretRootsNS, authFallback},
+			want: map[types.NamespacedName]Status{
+				{Name: authFallback.Name, Namespace: authFallback.Namespace}: {
+					Object:      authFallback,
+					Status:      "invalid",
+					Description: "Spec.Virtualhost.TLS fallback & client authorization are incompatible",
+					Vhost:       authFallback.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},

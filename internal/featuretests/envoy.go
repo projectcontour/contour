@@ -24,9 +24,12 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	envoy_config_filter_http_ext_authz_v2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/ext_authz/v2"
+	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -214,6 +217,22 @@ func withSessionAffinity(route *envoy_api_v2_route.Route_Route) *envoy_api_v2_ro
 	return route
 }
 
+func withRedirect() *envoy_api_v2_route.Route_Redirect {
+	return &envoy_api_v2_route.Route_Redirect{
+		Redirect: &envoy_api_v2_route.RedirectAction{
+			SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+				HttpsRedirect: true,
+			},
+		},
+	}
+}
+
+func withFilterConfig(name string, message proto.Message) map[string]*any.Any {
+	return map[string]*any.Any{
+		name: protobuf.MustMarshalAny(message),
+	}
+}
+
 type weightedCluster struct {
 	name   string
 	weight uint32
@@ -290,6 +309,28 @@ func httpsFilterFor(vhost string) *envoy_api_v2_listener.Filter {
 		Get()
 }
 
+// authzFilterFor does the same as httpsFilterFor but inserts a
+// `ext_authz` filter with the specified configuration into the
+// filter chain.
+func authzFilterFor(
+	vhost string,
+	authz *envoy_config_filter_http_ext_authz_v2.ExtAuthz,
+) *envoy_api_v2_listener.Filter {
+	return envoy.HTTPConnectionManagerBuilder().
+		AddFilter(envoy.FilterMisdirectedRequests(vhost)).
+		DefaultFilters().
+		AddFilter(&http.HttpFilter{
+			Name: "envoy.filters.http.ext_authz",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(authz),
+			},
+		}).
+		RouteConfigName(path.Join("https", vhost)).
+		MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+		AccessLoggers(envoy.FileAccessLogEnvoy("/dev/stdout")).
+		Get()
+}
+
 func tcpproxy(statPrefix, cluster string) *envoy_api_v2_listener.Filter {
 	return &envoy_api_v2_listener.Filter{
 		Name: wellknown.TCPProxy,
@@ -308,4 +349,15 @@ func tcpproxy(statPrefix, cluster string) *envoy_api_v2_listener.Filter {
 
 func staticListener() *v2.Listener {
 	return envoy.StatsListener("0.0.0.0", 8002)
+}
+
+func defaultHTTPListener() *v2.Listener {
+	return &v2.Listener{
+		Name:    "ingress_http",
+		Address: envoy.SocketAddress("0.0.0.0", 8080),
+		FilterChains: envoy.FilterChains(
+			envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+		),
+		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+	}
 }

@@ -19,12 +19,28 @@ import (
 	"strings"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	projcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/timeout"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+// defaultExtensionRef populates the unset fields in ref with default values.
+func defaultExtensionRef(ref projcontour.ExtensionServiceReference) projcontour.ExtensionServiceReference {
+	if ref.APIVersion == "" {
+		ref.APIVersion = projcontourv1alpha1.GroupVersion.String()
+
+	}
+
+	if ref.Kind == "" {
+		ref.Kind = "ExtensionService"
+	}
+
+	return ref
+}
 
 // HTTPProxyProcessor translates HTTPProxies into DAG
 // objects and adds them to the DAG builder.
@@ -111,10 +127,17 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 			sw.SetInvalid("Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
 			return
 		}
+
 		if isBlank(tls.SecretName) && !tls.Passthrough {
 			sw.SetInvalid("Spec.VirtualHost.TLS: neither Passthrough nor SecretName were specified")
 			return
 		}
+
+		if tls.Passthrough && tls.ClientValidation != nil {
+			sw.SetInvalid("Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation")
+			return
+		}
+
 		tlsEnabled = true
 
 		// Attach secrets to TLS enabled vhosts.
@@ -137,7 +160,17 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
-				sw.SetInvalid("Spec.Virtualhost.TLS fallback & client validation are incompatible together")
+				sw.SetInvalid("Spec.Virtualhost.TLS fallback & client validation are incompatible")
+				return
+			}
+
+			// Fallback certificates and authorization are
+			// incompatible because fallback installs the routes on
+			// a separate HTTPConnectionManager. We can't have the
+			// same routes installed on multiple managers with
+			// inconsistent authorization settings.
+			if tls.EnableFallbackCertificate && proxy.Spec.VirtualHost.AuthorizationConfigured() {
+				sw.SetInvalid("Spec.Virtualhost.TLS fallback & client authorization are incompatible")
 				return
 			}
 
@@ -171,9 +204,40 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 				}
 				svhost.DownstreamValidation = dv
 			}
-		} else if tls.ClientValidation != nil {
-			sw.SetInvalid("Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation")
-			return
+
+			if proxy.Spec.VirtualHost.AuthorizationConfigured() {
+				auth := proxy.Spec.VirtualHost.Authorization
+				ref := defaultExtensionRef(auth.ServiceRef)
+
+				if ref.APIVersion != projcontourv1alpha1.GroupVersion.String() {
+					sw.SetInvalid("Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource version %q",
+						auth.ServiceRef.APIVersion)
+					return
+				}
+
+				if ref.Kind != "ExtensionService" {
+					sw.SetInvalid("Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource kind %q",
+						auth.ServiceRef.Kind)
+					return
+				}
+
+				// Lookup the support service reference.
+				extensionName := types.NamespacedName{
+					Name:      ref.Name,
+					Namespace: stringOrDefault(ref.Namespace, proxy.Namespace),
+				}
+
+				ext, ok := p.builder.extensions[extensionName]
+				if !ok {
+					sw.SetInvalid("Spec.Virtualhost.Authorization.ServiceRef support service %q not found",
+						extensionName)
+					return
+				}
+
+				svhost.AuthorizationService = ext
+				svhost.AuthorizationResponseTimeout = timeout.Parse(auth.ResponseTimeout)
+				svhost.AuthorizationFailOpen = auth.FailOpen
+			}
 		}
 	}
 
@@ -187,7 +251,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		}
 	}
 
-	routes := p.computeRoutes(sw, proxy, nil, nil, tlsEnabled)
+	routes := p.computeRoutes(sw, proxy, proxy, nil, nil, tlsEnabled)
 	insecure := p.builder.lookupVirtualHost(host)
 	addRoutes(insecure, routes)
 
@@ -210,7 +274,14 @@ func addRoutes(vhost vhost, routes []*Route) {
 	}
 }
 
-func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, conditions []projcontour.MatchCondition, visited []*projcontour.HTTPProxy, enforceTLS bool) []*Route {
+func (p *HTTPProxyProcessor) computeRoutes(
+	sw *ObjectStatusWriter,
+	rootProxy *projcontour.HTTPProxy,
+	proxy *projcontour.HTTPProxy,
+	conditions []projcontour.MatchCondition,
+	visited []*projcontour.HTTPProxy,
+	enforceTLS bool,
+) []*Route {
 	for _, v := range visited {
 		// ensure we are not following an edge that produces a cycle
 		var path []string
@@ -256,7 +327,7 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 		}
 
 		sw, commit := p.builder.WithObject(delegate)
-		routes = append(routes, p.computeRoutes(sw, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
+		routes = append(routes, p.computeRoutes(sw, rootProxy, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
 		commit()
 
 		// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
@@ -303,6 +374,28 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 			RetryPolicy:           retryPolicy(route.RetryPolicy),
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
+		}
+
+		// If the enclosing root proxy enabled authorization,
+		// enable it on the route and propagate defaults
+		// downwards.
+		if rootProxy.Spec.VirtualHost.AuthorizationConfigured() {
+			// When the ext_authz filter is added to a
+			// vhost, it is in enabled state, but we can
+			// disable it per route. We emulate disabling
+			// it at the vhost layer by defaulting the state
+			// from the root proxy.
+			disabled := rootProxy.Spec.VirtualHost.DisableAuthorization()
+
+			// Take the default for enabling authorization
+			// from the virtual host. If this route has a
+			// policy, let that override.
+			if route.AuthPolicy != nil {
+				disabled = route.AuthPolicy.Disabled
+			}
+
+			r.AuthDisabled = disabled
+			r.AuthContext = route.AuthorizationContext(rootProxy.Spec.VirtualHost.AuthorizationContext())
 		}
 
 		if len(route.GetPrefixReplacements()) > 0 {
