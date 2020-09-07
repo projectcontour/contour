@@ -222,7 +222,7 @@ func (e *EventHandler) rebuildDAG() {
 }
 
 // setStatus updates the status of objects.
-func (e *EventHandler) setStatus(statuses map[types.NamespacedName]dag.Status) {
+func (e *EventHandler) setStatus(statuses map[types.NamespacedName]dag.ProxyStatusUpdate) {
 	for _, st := range statuses {
 		switch obj := st.Object.(type) {
 		case *projcontour.HTTPProxy:

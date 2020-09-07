@@ -68,7 +68,7 @@ type DAG struct {
 	roots []Vertex
 
 	// status computed while building this dag.
-	statuses map[types.NamespacedName]Status
+	statuses map[types.NamespacedName]ProxyStatusUpdate
 }
 
 // Visit calls fn on each root of this DAG.
@@ -80,7 +80,7 @@ func (d *DAG) Visit(fn func(Vertex)) {
 
 // Statuses returns a slice of Status objects associated with
 // the computation of this DAG.
-func (d *DAG) Statuses() map[types.NamespacedName]Status {
+func (d *DAG) Statuses() map[types.NamespacedName]ProxyStatusUpdate {
 	return d.statuses
 }
 

@@ -73,7 +73,7 @@ func (b *Builder) Build() *DAG {
 		dag.roots = append(dag.roots, b.listeners[i])
 	}
 
-	dag.statuses = b.statuses
+	dag.statuses = b.proxyStatuses
 	return &dag
 }
 
@@ -84,7 +84,7 @@ func (b *Builder) reset() {
 	b.securevirtualhosts = make(map[string]*SecureVirtualHost)
 	b.listeners = []*Listener{}
 
-	b.statuses = make(map[types.NamespacedName]Status, len(b.statuses))
+	b.proxyStatuses = make(map[types.NamespacedName]ProxyStatusUpdate, len(b.proxyStatuses))
 }
 
 // lookupService returns a Service that matches the Meta and Port of the Kubernetes' Service,

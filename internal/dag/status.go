@@ -21,8 +21,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// Status contains the status for an HTTPProxy (valid / invalid / orphan, etc)
-type Status struct {
+// ProxyStatusUpdate contains the status for an HTTPProxy (valid / invalid / orphan, etc)
+type ProxyStatusUpdate struct {
 	Object      k8s.Object
 	Status      string
 	Description string
@@ -30,24 +30,24 @@ type Status struct {
 }
 
 type StatusWriter struct {
-	statuses map[types.NamespacedName]Status
+	proxyStatuses map[types.NamespacedName]ProxyStatusUpdate
 }
 
-type ObjectStatusWriter struct {
+type ProxyStatusWriter struct {
 	sw     *StatusWriter
 	obj    k8s.Object
 	values map[string]string
 }
 
-// WithObject returns an ObjectStatusWriter that can be used to set the state of
+// WithProxy returns an ProxyStatusWriter that can be used to set the state of
 // the object. The state can be set as many times as necessary. The state of the
-// object can be made permanent by calling the commit function returned from WithObject.
-// The caller should pass the ObjectStatusWriter to functions interested in writing status,
+// object can be made permanent by calling the commit function returned from WithProxy.
+// The caller should pass the ProxyStatusWriter to functions interested in writing status,
 // but keep the commit function for itself. The commit function should be either called
 // via a defer, or directly if statuses are being set in a loop (as defers will not fire
 // until the end of the function).
-func (sw *StatusWriter) WithObject(obj k8s.Object) (_ *ObjectStatusWriter, commit func()) {
-	osw := &ObjectStatusWriter{
+func (sw *StatusWriter) WithProxy(obj k8s.Object) (_ *ProxyStatusWriter, commit func()) {
+	osw := &ProxyStatusWriter{
 		sw:     sw,
 		obj:    obj,
 		values: make(map[string]string),
@@ -57,7 +57,7 @@ func (sw *StatusWriter) WithObject(obj k8s.Object) (_ *ObjectStatusWriter, commi
 	}
 }
 
-func (sw *StatusWriter) commit(osw *ObjectStatusWriter) {
+func (sw *StatusWriter) commit(osw *ProxyStatusWriter) {
 	if len(osw.values) == 0 {
 		// nothing to commit
 		return
@@ -67,9 +67,9 @@ func (sw *StatusWriter) commit(osw *ObjectStatusWriter) {
 		Name:      osw.obj.GetObjectMeta().GetName(),
 		Namespace: osw.obj.GetObjectMeta().GetNamespace(),
 	}
-	if _, ok := sw.statuses[m]; !ok {
+	if _, ok := sw.proxyStatuses[m]; !ok {
 		// only record the first status event
-		sw.statuses[m] = Status{
+		sw.proxyStatuses[m] = ProxyStatusUpdate{
 			Object:      osw.obj,
 			Status:      osw.values["status"],
 			Description: osw.values["description"],
@@ -77,39 +77,40 @@ func (sw *StatusWriter) commit(osw *ObjectStatusWriter) {
 		}
 	}
 }
-func (osw *ObjectStatusWriter) WithValue(key, val string) *ObjectStatusWriter {
-	osw.values[key] = val
-	return osw
+
+func (psw *ProxyStatusWriter) WithValue(key, val string) *ProxyStatusWriter {
+	psw.values[key] = val
+	return psw
 }
 
-func (osw *ObjectStatusWriter) SetInvalid(format string, args ...interface{}) {
-	osw.WithValue("description", fmt.Sprintf(format, args...)).WithValue("status", k8s.StatusInvalid)
+func (psw *ProxyStatusWriter) AddInvalidCondition(conditionType, formattedReason string, args ...interface{}) {
+	psw.WithValue("description", fmt.Sprintf(conditionType+": "+formattedReason, args...)).WithValue("status", k8s.StatusInvalid)
 }
 
-func (osw *ObjectStatusWriter) SetValid() {
-	switch osw.obj.(type) {
+func (psw *ProxyStatusWriter) SetValid() {
+	switch psw.obj.(type) {
 	case *projcontour.HTTPProxy:
-		osw.WithValue("description", "valid HTTPProxy").WithValue("status", k8s.StatusValid)
+		psw.WithValue("description", "valid HTTPProxy").WithValue("status", k8s.StatusValid)
 	default:
 		// not a supported type
 	}
 }
 
-// WithObject returns a new ObjectStatusWriter with a copy of the current
-// ObjectStatusWriter's values, including its status if set. This is convenient if
+// WithObject returns a new ProxyStatusWriter with a copy of the current
+// ProxyStatusWriter's values, including its status if set. This is convenient if
 // the object shares a relationship with its parent. The caller should arrange for
 // the commit function to be called to write the final status of the object.
-func (osw *ObjectStatusWriter) WithObject(obj k8s.Object) (_ *ObjectStatusWriter, commit func()) {
+func (psw *ProxyStatusWriter) WithObject(obj k8s.Object) (_ *ProxyStatusWriter, commit func()) {
 	m := make(map[string]string)
-	for k, v := range osw.values {
+	for k, v := range psw.values {
 		m[k] = v
 	}
-	nosw := &ObjectStatusWriter{
-		sw:     osw.sw,
+	nosw := &ProxyStatusWriter{
+		sw:     psw.sw,
 		obj:    obj,
 		values: m,
 	}
 	return nosw, func() {
-		osw.sw.commit(nosw)
+		psw.sw.commit(nosw)
 	}
 }

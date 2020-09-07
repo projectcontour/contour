@@ -87,7 +87,7 @@ func (m *RebuildMetricsObserver) OnChange(d *dag.DAG) {
 	}
 }
 
-func calculateRouteMetric(statuses map[types.NamespacedName]dag.Status) metrics.RouteMetric {
+func calculateRouteMetric(statuses map[types.NamespacedName]dag.ProxyStatusUpdate) metrics.RouteMetric {
 	proxyMetricTotal := make(map[metrics.Meta]int)
 	proxyMetricValid := make(map[metrics.Meta]int)
 	proxyMetricInvalid := make(map[metrics.Meta]int)
@@ -113,7 +113,7 @@ func calculateRouteMetric(statuses map[types.NamespacedName]dag.Status) metrics.
 	}
 }
 
-func calcMetrics(v dag.Status, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
+func calcMetrics(v dag.ProxyStatusUpdate, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
 	switch v.Status {
 	case k8s.StatusValid:
 		metricValid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetObjectMeta().GetNamespace()}]++

@@ -59,7 +59,7 @@ func (p *HTTPProxyProcessor) Run(builder *Builder) {
 	for meta := range p.orphaned {
 		proxy, ok := p.builder.Source.httpproxies[meta]
 		if ok {
-			sw, commit := p.builder.WithObject(proxy)
+			sw, commit := p.builder.WithProxy(proxy)
 			sw.WithValue("status", k8s.StatusOrphaned).
 				WithValue("description", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 			commit()
@@ -74,7 +74,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxies() {
 }
 
 func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
-	sw, commit := p.builder.WithObject(proxy)
+	psw, commit := p.builder.WithProxy(proxy)
 	defer commit()
 
 	if proxy.Spec.VirtualHost == nil {
@@ -85,34 +85,34 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 	// ensure root httpproxy lives in allowed namespace
 	if !p.rootAllowed(proxy.Namespace) {
-		sw.SetInvalid("root HTTPProxy cannot be defined in this namespace")
+		psw.AddInvalidCondition("RootNamespaceDenied", "root HTTPProxy cannot be defined in this namespace")
 		return
 	}
 
 	host := proxy.Spec.VirtualHost.Fqdn
 	if isBlank(host) {
-		sw.SetInvalid("Spec.VirtualHost.Fqdn must be specified")
+		psw.AddInvalidCondition("VirtualHostError", "Spec.VirtualHost.Fqdn must be specified")
 		return
 	}
-	sw = sw.WithValue("vhost", host)
+	psw = psw.WithValue("vhost", host)
 	if strings.Contains(host, "*") {
-		sw.SetInvalid("Spec.VirtualHost.Fqdn %q cannot use wildcards", host)
+		psw.AddInvalidCondition("VirtualHostError", "Spec.VirtualHost.Fqdn %q cannot use wildcards", host)
 		return
 	}
 
 	if len(proxy.Spec.Routes) == 0 && len(proxy.Spec.Includes) == 0 && proxy.Spec.TCPProxy == nil {
-		sw.SetInvalid("HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy")
+		psw.AddInvalidCondition("IncompleteSpec", "HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy")
 		return
 	}
 
 	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
 		if !isBlank(tls.SecretName) && tls.Passthrough {
-			sw.SetInvalid("Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
+			psw.AddInvalidCondition("TLSError", "Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
 			return
 		}
 		if isBlank(tls.SecretName) && !tls.Passthrough {
-			sw.SetInvalid("Spec.VirtualHost.TLS: neither Passthrough nor SecretName were specified")
+			psw.AddInvalidCondition("TLSError", "Spec.VirtualHost.TLS: neither Passthrough nor SecretName were specified")
 			return
 		}
 		tlsEnabled = true
@@ -122,12 +122,12 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
 			sec, err := p.builder.Source.LookupSecret(secretName, validSecret)
 			if err != nil {
-				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
+				psw.AddInvalidCondition("TLSError", "Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
 				return
 			}
 
 			if !p.builder.Source.DelegationPermitted(secretName, proxy.Namespace) {
-				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
+				psw.AddInvalidCondition("TLSError", "Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
 				return
 			}
 
@@ -137,25 +137,25 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
-				sw.SetInvalid("Spec.Virtualhost.TLS fallback & client validation are incompatible together")
+				psw.AddInvalidCondition("TLSError", "Spec.Virtualhost.TLS fallback & client validation are incompatible together")
 				return
 			}
 
 			// If FallbackCertificate is enabled, but no cert passed, set error
 			if tls.EnableFallbackCertificate {
 				if p.FallbackCertificate == nil {
-					sw.SetInvalid("Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file")
+					psw.AddInvalidCondition("TLSFallbackError", "Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file")
 					return
 				}
 
 				sec, err = p.builder.Source.LookupSecret(*p.FallbackCertificate, validSecret)
 				if err != nil {
-					sw.SetInvalid("Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
+					psw.AddInvalidCondition("TLSFallbackError", "Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
 					return
 				}
 
 				if !p.builder.Source.DelegationPermitted(*p.FallbackCertificate, proxy.Namespace) {
-					sw.SetInvalid("Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", p.FallbackCertificate)
+					psw.AddInvalidCondition("TLSFallbackError", "Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", p.FallbackCertificate)
 					return
 				}
 
@@ -166,28 +166,28 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 			if tls.ClientValidation != nil {
 				dv, err := p.builder.Source.LookupDownstreamValidation(tls.ClientValidation, proxy.Namespace)
 				if err != nil {
-					sw.SetInvalid("Spec.VirtualHost.TLS client validation is invalid: %s", err)
+					psw.AddInvalidCondition("TLSClientValidationError", "Spec.VirtualHost.TLS client validation is invalid: %s", err)
 					return
 				}
 				svhost.DownstreamValidation = dv
 			}
 		} else if tls.ClientValidation != nil {
-			sw.SetInvalid("Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation")
+			psw.AddInvalidCondition("TLSClientValidationError", "Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation")
 			return
 		}
 	}
 
 	if proxy.Spec.TCPProxy != nil {
 		if !tlsEnabled {
-			sw.SetInvalid("Spec.TCPProxy requires that either Spec.TLS.Passthrough or Spec.TLS.SecretName be set")
+			psw.AddInvalidCondition("TCPProxyTLSError", "Spec.TCPProxy requires that either Spec.TLS.Passthrough or Spec.TLS.SecretName be set")
 			return
 		}
-		if !p.processHTTPProxyTCPProxy(sw, proxy, nil, host) {
+		if !p.processHTTPProxyTCPProxy(psw, proxy, nil, host) {
 			return
 		}
 	}
 
-	routes := p.computeRoutes(sw, proxy, nil, nil, tlsEnabled)
+	routes := p.computeRoutes(psw, proxy, nil, nil, tlsEnabled)
 	insecure := p.builder.lookupVirtualHost(host)
 	addRoutes(insecure, routes)
 
@@ -210,7 +210,7 @@ func addRoutes(vhost vhost, routes []*Route) {
 	}
 }
 
-func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projcontour.HTTPProxy, conditions []projcontour.MatchCondition, visited []*projcontour.HTTPProxy, enforceTLS bool) []*Route {
+func (p *HTTPProxyProcessor) computeRoutes(psw *ProxyStatusWriter, proxy *projcontour.HTTPProxy, conditions []projcontour.MatchCondition, visited []*projcontour.HTTPProxy, enforceTLS bool) []*Route {
 	for _, v := range visited {
 		// ensure we are not following an edge that produces a cycle
 		var path []string
@@ -219,7 +219,7 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 		}
 		if v.Name == proxy.Name && v.Namespace == proxy.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", proxy.Namespace, proxy.Name))
-			sw.SetInvalid("include creates a delegation cycle: %s", strings.Join(path, " -> "))
+			psw.AddInvalidCondition("IncludeCycle", "include creates a delegation cycle: %s", strings.Join(path, " -> "))
 			return nil
 		}
 	}
@@ -229,7 +229,7 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 
 	// Check for duplicate conditions on the includes
 	if includeMatchConditionsIdentical(proxy.Spec.Includes) {
-		sw.SetInvalid("duplicate conditions defined on an include")
+		psw.AddInvalidCondition("IndenticalIncludeMatch", "duplicate match conditions defined on an include")
 		return nil
 	}
 
@@ -242,20 +242,20 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 
 		delegate, ok := p.builder.Source.httpproxies[types.NamespacedName{Name: include.Name, Namespace: namespace}]
 		if !ok {
-			sw.SetInvalid("include %s/%s not found", namespace, include.Name)
+			psw.AddInvalidCondition("IncludeNotFound", "include %s/%s not found", namespace, include.Name)
 			return nil
 		}
 		if delegate.Spec.VirtualHost != nil {
-			sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
+			psw.AddInvalidCondition("RootCannotIncludeRoot", "root httpproxy cannot delegate to another root httpproxy")
 			return nil
 		}
 
 		if err := pathMatchConditionsValid(include.Conditions); err != nil {
-			sw.SetInvalid("include: %s", err)
+			psw.AddInvalidCondition("IncludePathMatchConditionInvalid", "include: %s", err)
 			return nil
 		}
 
-		sw, commit := p.builder.WithObject(delegate)
+		sw, commit := p.builder.WithProxy(delegate)
 		routes = append(routes, p.computeRoutes(sw, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
 		commit()
 
@@ -265,7 +265,7 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 
 	for _, route := range proxy.Spec.Routes {
 		if err := pathMatchConditionsValid(route.Conditions); err != nil {
-			sw.SetInvalid("route: %s", err)
+			psw.AddInvalidCondition("RoutePathMatchConditionInvalid", "route: %s", err)
 			return nil
 		}
 
@@ -273,24 +273,24 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 
 		// Look for invalid header conditions on this route
 		if err := headerMatchConditionsValid(conds); err != nil {
-			sw.SetInvalid(err.Error())
+			psw.AddInvalidCondition("RouteHeaderMatchConditionInvalid", err.Error())
 			return nil
 		}
 
 		reqHP, err := headersPolicy(route.RequestHeadersPolicy, true /* allow Host */)
 		if err != nil {
-			sw.SetInvalid(err.Error())
+			psw.AddInvalidCondition("RequestHeaderPolicyError", err.Error())
 			return nil
 		}
 
 		respHP, err := headersPolicy(route.ResponseHeadersPolicy, false /* disallow Host */)
 		if err != nil {
-			sw.SetInvalid(err.Error())
+			psw.AddInvalidCondition("ResponseHeaderPolicyError", err.Error())
 			return nil
 		}
 
 		if len(route.Services) < 1 {
-			sw.SetInvalid("route.services must have at least one entry")
+			psw.AddInvalidCondition("RouteServicesEmpty", "route.services must have at least one entry")
 			return nil
 		}
 
@@ -307,12 +307,12 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 
 		if len(route.GetPrefixReplacements()) > 0 {
 			if !r.HasPathPrefix() {
-				sw.SetInvalid("cannot specify prefix replacements without a prefix condition")
+				psw.AddInvalidCondition("PrefixReplaceNoPrefix", "cannot specify prefix replacements without a prefix condition")
 				return nil
 			}
 
 			if err := prefixReplacementsAreValid(route.GetPrefixReplacements()); err != nil {
-				sw.SetInvalid(err.Error())
+				psw.AddInvalidCondition("PrefixReplacementsInvalid", err.Error())
 				return nil
 			}
 
@@ -344,20 +344,20 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 
 		for _, service := range route.Services {
 			if service.Port < 1 || service.Port > 65535 {
-				sw.SetInvalid("service %q: port must be in the range 1-65535", service.Name)
+				psw.AddInvalidCondition("ServicePortError", "service %q: port must be in the range 1-65535", service.Name)
 				return nil
 			}
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
 			s, err := p.builder.lookupService(m, intstr.FromInt(service.Port))
 			if err != nil {
-				sw.SetInvalid("Spec.Routes unresolved service reference: %s", err)
+				psw.AddInvalidCondition("ServiceNotFound", "Spec.Routes unresolved service reference: %s", err)
 				return nil
 			}
 
 			// Determine the protocol to use to speak to this Cluster.
 			protocol, err := getProtocol(service, s)
 			if err != nil {
-				sw.SetInvalid(err.Error())
+				psw.AddInvalidCondition("ProtocolError", err.Error())
 				return nil
 			}
 
@@ -366,7 +366,7 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 				// we can only validate TLS connections to services that talk TLS
 				uv, err = p.builder.Source.LookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
 				if err != nil {
-					sw.SetInvalid("Service [%s:%d] TLS upstream validation policy error: %s",
+					psw.AddInvalidCondition("TLSUpstreamValidationError", "Service [%s:%d] TLS upstream validation policy error: %s",
 						service.Name, service.Port, err)
 					return nil
 				}
@@ -374,13 +374,13 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 
 			reqHP, err := headersPolicy(service.RequestHeadersPolicy, true /* allow Host */)
 			if err != nil {
-				sw.SetInvalid(err.Error())
+				psw.AddInvalidCondition("ServiceRequestHeadersPolicyError", err.Error())
 				return nil
 			}
 
 			respHP, err := headersPolicy(service.ResponseHeadersPolicy, false /* disallow Host */)
 			if err != nil {
-				sw.SetInvalid(err.Error())
+				psw.AddInvalidCondition("ServiceResponseHeadersPolicyError", err.Error())
 				return nil
 			}
 
@@ -396,7 +396,7 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
-				sw.SetInvalid("only one service per route may be nominated as mirror")
+				psw.AddInvalidCondition("TooManyServiceMirrors", "only one service per route may be nominated as mirror")
 				return nil
 			}
 			if service.Mirror {
@@ -412,7 +412,7 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 
 	routes = expandPrefixMatches(routes)
 
-	sw.SetValid()
+	psw.SetValid()
 	return routes
 }
 
@@ -420,7 +420,7 @@ func (p *HTTPProxyProcessor) computeRoutes(sw *ObjectStatusWriter, proxy *projco
 // following the chain of spec.tcpproxy.include references. It returns true if processing
 // was successful, otherwise false if an error was encountered. The details of the error
 // will be recorded on the status of the relevant HTTPProxy object,
-func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *projcontour.HTTPProxy, visited []*projcontour.HTTPProxy, host string) bool {
+func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(psw *ProxyStatusWriter, httpproxy *projcontour.HTTPProxy, visited []*projcontour.HTTPProxy, host string) bool {
 	tcpproxy := httpproxy.Spec.TCPProxy
 	if tcpproxy == nil {
 		// nothing to do
@@ -437,7 +437,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 	}
 
 	if len(tcpproxy.Services) > 0 && tcpProxyInclude != nil {
-		sw.SetInvalid("tcpproxy: cannot specify services and include in the same httpproxy")
+		psw.AddInvalidCondition("TCPProxySpecError", "tcpproxy: cannot specify services and include in the same httpproxy")
 		return false
 	}
 
@@ -447,7 +447,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
 			s, err := p.builder.lookupService(m, intstr.FromInt(service.Port))
 			if err != nil {
-				sw.SetInvalid("Spec.TCPProxy unresolved service reference: %s", err)
+				psw.AddInvalidCondition("TCPProxyServiceReferenceError", "Spec.TCPProxy unresolved service reference: %s", err)
 				return false
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
@@ -463,7 +463,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 
 	if tcpProxyInclude == nil {
 		// We don't allow an empty TCPProxy object.
-		sw.SetInvalid("tcpproxy: either services or inclusion must be specified")
+		psw.AddInvalidCondition("TCPProxySpecError", "tcpproxy: either services or inclusion must be specified")
 		return false
 	}
 
@@ -476,12 +476,12 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 	m := types.NamespacedName{Name: tcpProxyInclude.Name, Namespace: namespace}
 	dest, ok := p.builder.Source.httpproxies[m]
 	if !ok {
-		sw.SetInvalid("tcpproxy: include %s/%s not found", m.Namespace, m.Name)
+		psw.AddInvalidCondition("TCPProxyServiceReferenceError", "tcpproxy: include %s/%s not found", m.Namespace, m.Name)
 		return false
 	}
 
 	if dest.Spec.VirtualHost != nil {
-		sw.SetInvalid("root httpproxy cannot delegate to another root httpproxy")
+		psw.AddInvalidCondition("RootCannotIncludeRoot", "root httpproxy cannot delegate to another root httpproxy")
 		return false
 	}
 
@@ -496,17 +496,17 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 	for _, hp := range visited {
 		if dest.Name == hp.Name && dest.Namespace == hp.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
-			sw.SetInvalid("tcpproxy include creates a cycle: %s", strings.Join(path, " -> "))
+			psw.AddInvalidCondition("TCPProxyIncludeCycle", "tcpproxy include creates a cycle: %s", strings.Join(path, " -> "))
 			return false
 		}
 	}
 
 	// follow the link and process the target tcpproxy
-	sw, commit := sw.WithObject(dest)
+	psw, commit := psw.WithObject(dest)
 	defer commit()
-	ok = p.processHTTPProxyTCPProxy(sw, dest, visited, host)
+	ok = p.processHTTPProxyTCPProxy(psw, dest, visited, host)
 	if ok {
-		sw.SetValid()
+		psw.SetValid()
 	}
 	return ok
 }
@@ -539,8 +539,8 @@ func (p *HTTPProxyProcessor) validHTTPProxies() []*projcontour.HTTPProxy {
 			sort.Strings(conflicting) // sort for test stability
 			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
 			for _, proxy := range proxies {
-				sw, commit := p.builder.WithObject(proxy)
-				sw.WithValue("vhost", fqdn).SetInvalid(msg)
+				psw, commit := p.builder.WithProxy(proxy)
+				psw.WithValue("vhost", fqdn).AddInvalidCondition("NonUniqueFQDN", msg)
 				commit()
 			}
 		}

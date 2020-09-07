@@ -13,7 +13,7 @@
 
 // +k8s:deepcopy-gen=package
 
-// This package holds the specification for the projectcontour.io Custom Resource Definitions (CRDs).
+// Package v1 holds the specification for the projectcontour.io Custom Resource Definitions (CRDs).
 //
 // In building this CRD, we've inadvertently overloaded the word "Condition", so we've tried to make
 // this spec clear as to which types of condition are which.
