@@ -18,7 +18,6 @@ import (
 
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/ptypes/duration"
-	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
@@ -45,8 +44,8 @@ func httpHealthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
 	return &envoy_api_v2_core.HealthCheck{
 		Timeout:            durationOrDefault(hc.Timeout, hcTimeout),
 		Interval:           durationOrDefault(hc.Interval, hcInterval),
-		UnhealthyThreshold: countOrDefault(hc.UnhealthyThreshold, hcUnhealthyThreshold),
-		HealthyThreshold:   countOrDefault(hc.HealthyThreshold, hcHealthyThreshold),
+		UnhealthyThreshold: protobuf.UInt32OrDefault(hc.UnhealthyThreshold, hcUnhealthyThreshold),
+		HealthyThreshold:   protobuf.UInt32OrDefault(hc.HealthyThreshold, hcHealthyThreshold),
 		HealthChecker: &envoy_api_v2_core.HealthCheck_HttpHealthCheck_{
 			HttpHealthCheck: &envoy_api_v2_core.HealthCheck_HttpHealthCheck{
 				Path: hc.Path,
@@ -63,8 +62,8 @@ func tcpHealthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
 	return &envoy_api_v2_core.HealthCheck{
 		Timeout:            durationOrDefault(hc.Timeout, hcTimeout),
 		Interval:           durationOrDefault(hc.Interval, hcInterval),
-		UnhealthyThreshold: countOrDefault(hc.UnhealthyThreshold, hcUnhealthyThreshold),
-		HealthyThreshold:   countOrDefault(hc.HealthyThreshold, hcHealthyThreshold),
+		UnhealthyThreshold: protobuf.UInt32OrDefault(hc.UnhealthyThreshold, hcUnhealthyThreshold),
+		HealthyThreshold:   protobuf.UInt32OrDefault(hc.HealthyThreshold, hcHealthyThreshold),
 		HealthChecker: &envoy_api_v2_core.HealthCheck_TcpHealthCheck_{
 			TcpHealthCheck: &envoy_api_v2_core.HealthCheck_TcpHealthCheck{},
 		},
@@ -76,13 +75,4 @@ func durationOrDefault(d, def time.Duration) *duration.Duration {
 		return protobuf.Duration(d)
 	}
 	return protobuf.Duration(def)
-}
-
-func countOrDefault(count uint32, def uint32) *wrappers.UInt32Value {
-	switch count {
-	case 0:
-		return protobuf.UInt32(def)
-	default:
-		return protobuf.UInt32(count)
-	}
 }

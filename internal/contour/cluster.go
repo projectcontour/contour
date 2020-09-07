@@ -17,9 +17,8 @@ import (
 	"sort"
 	"sync"
 
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"

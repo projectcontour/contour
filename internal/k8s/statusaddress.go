@@ -71,7 +71,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 			WithField("name", typed.GetObjectMeta().GetName()).
 			WithField("namespace", typed.GetObjectMeta().GetNamespace()).
 			WithField("ingress-class", annotation.IngressClass(typed)).
-			WithField("defined-ingress-class", s.IngressClass).
+			WithField("target-ingress-class", s.IngressClass).
 			WithField("kind", kind).
 			Debug("unmatched ingress class, skipping status address update")
 		return

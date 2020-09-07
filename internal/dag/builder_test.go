@@ -20,9 +20,9 @@ import (
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1905,6 +1905,32 @@ func TestDAGInsert(t *testing.T) {
 				Services: []projcontour.Service{{
 					Name: "kuard",
 					Port: 8080,
+					UpstreamValidation: &projcontour.UpstreamValidation{
+						CACertificate: cert1.Name,
+						SubjectName:   "example.com",
+					},
+				}},
+			}},
+		},
+	}
+	protocolh2 := "h2"
+	proxy17h2 := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Conditions: []projcontour.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []projcontour.Service{{
+					Name:     "kuard",
+					Port:     8080,
+					Protocol: &protocolh2,
 					UpstreamValidation: &projcontour.UpstreamValidation{
 						CACertificate: cert1.Name,
 						SubjectName:   "example.com",
@@ -4065,10 +4091,13 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:        s3d.Name,
-								Namespace:   s3d.Namespace,
-								ServicePort: s3d.Spec.Ports[0],
-								Protocol:    "h2c",
+								Protocol: "h2c",
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s3d.Name,
+									ServiceNamespace: s3d.Namespace,
+									ServicePort:      s3d.Spec.Ports[0],
+								},
 							}),
 						),
 					),
@@ -4085,10 +4114,13 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:        s3e.Name,
-								Namespace:   s3e.Namespace,
-								ServicePort: s3e.Spec.Ports[0],
-								Protocol:    "h2",
+								Protocol: "h2",
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s3e.Name,
+									ServiceNamespace: s3e.Namespace,
+									ServicePort:      s3e.Spec.Ports[0],
+								},
 							}),
 						),
 					),
@@ -4105,10 +4137,13 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:        s3f.Name,
-								Namespace:   s3f.Namespace,
-								ServicePort: s3f.Spec.Ports[0],
-								Protocol:    "tls",
+								Protocol: "tls",
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s3f.Name,
+									ServiceNamespace: s3f.Namespace,
+									ServicePort:      s3f.Spec.Ports[0],
+								},
 							}),
 						),
 					),
@@ -4126,10 +4161,13 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:        s3a.Name,
-								Namespace:   s3a.Namespace,
-								ServicePort: s3a.Spec.Ports[0],
-								Protocol:    "h2c",
+								Protocol: "h2c",
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s3a.Name,
+									ServiceNamespace: s3a.Namespace,
+									ServicePort:      s3a.Spec.Ports[0],
+								},
 							}),
 						),
 					),
@@ -4146,10 +4184,13 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:        s3b.Name,
-								Namespace:   s3b.Namespace,
-								ServicePort: s3b.Spec.Ports[0],
-								Protocol:    "h2",
+								Protocol: "h2",
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s3b.Name,
+									ServiceNamespace: s3b.Namespace,
+									ServicePort:      s3b.Spec.Ports[0],
+								},
 							}),
 						),
 					),
@@ -4166,10 +4207,13 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:        s3c.Name,
-								Namespace:   s3c.Namespace,
-								ServicePort: s3c.Spec.Ports[0],
-								Protocol:    "tls",
+								Protocol: "tls",
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s3c.Name,
+									ServiceNamespace: s3c.Namespace,
+									ServicePort:      s3c.Spec.Ports[0],
+								},
 							}),
 						),
 					),
@@ -4187,9 +4231,12 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", &Service{
-								Name:               s1b.Name,
-								Namespace:          s1b.Namespace,
-								ServicePort:        s1b.Spec.Ports[0],
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s1b.Name,
+									ServiceNamespace: s1b.Namespace,
+									ServicePort:      s1b.Spec.Ports[0],
+								},
 								MaxConnections:     9000,
 								MaxPendingRequests: 4096,
 								MaxRequests:        404,
@@ -4211,17 +4258,23 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("example.com",
 							routeCluster("/a", &Cluster{
 								Upstream: &Service{
-									Name:        s1.Name,
-									Namespace:   s1.Namespace,
-									ServicePort: s1.Spec.Ports[0],
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s1.Name,
+										ServiceNamespace: s1.Namespace,
+										ServicePort:      s1.Spec.Ports[0],
+									},
 								},
 								Weight: 90,
 							}),
 							routeCluster("/b", &Cluster{
 								Upstream: &Service{
-									Name:        s1.Name,
-									Namespace:   s1.Namespace,
-									ServicePort: s1.Spec.Ports[0],
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s1.Name,
+										ServiceNamespace: s1.Namespace,
+										ServicePort:      s1.Spec.Ports[0],
+									},
 								},
 								Weight: 60,
 							}),
@@ -4242,16 +4295,22 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/a",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 									Weight: 90,
 								}, &Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 									Weight: 60,
 								},
@@ -4525,12 +4584,46 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1a.Name,
-										Namespace:   s1a.Namespace,
-										ServicePort: s1a.Spec.Ports[0],
-										Protocol:    "tls",
+										Protocol: "tls",
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1a.Name,
+											ServiceNamespace: s1a.Namespace,
+											ServicePort:      s1a.Spec.Ports[0],
+										},
 									},
 									Protocol: "tls",
+									UpstreamValidation: &PeerValidationContext{
+										CACertificate: secret(cert1),
+										SubjectName:   "example.com",
+									},
+								},
+							),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy with h2 expecting upstream verification": {
+			objs: []interface{}{
+				cert1, proxy17h2, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1a.Name,
+											ServiceNamespace: s1a.Namespace,
+											ServicePort:      s1a.Spec.Ports[0],
+										},
+									},
+									Protocol: "h2",
 									UpstreamValidation: &PeerValidationContext{
 										CACertificate: secret(cert1),
 										SubjectName:   "example.com",
@@ -4734,18 +4827,24 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 								},
 							),
 							routeCluster("/blog",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s4.Name,
-										Namespace:   s4.Namespace,
-										ServicePort: s4.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s4.Name,
+											ServiceNamespace: s4.Namespace,
+											ServicePort:      s4.Spec.Ports[0],
+										},
 									},
 								},
 							),
@@ -4766,9 +4865,12 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 								},
 							),
@@ -4776,11 +4878,15 @@ func TestDAGInsert(t *testing.T) {
 								PathMatchCondition: prefix("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
-										Name:        s4.Name,
-										Namespace:   s4.Namespace,
-										ServicePort: s4.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s4.Name,
+											ServiceNamespace: s4.Namespace,
+											ServicePort:      s4.Spec.Ports[0],
+										},
 									},
-								}},
+								},
+								},
 							},
 						),
 					),
@@ -4799,9 +4905,12 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 								},
 							),
@@ -4809,18 +4918,24 @@ func TestDAGInsert(t *testing.T) {
 								PathMatchCondition: prefix("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
-										Name:        s4.Name,
-										Namespace:   s4.Namespace,
-										ServicePort: s4.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s4.Name,
+											ServiceNamespace: s4.Namespace,
+											ServicePort:      s4.Spec.Ports[0],
+										},
 									},
 								}},
 							},
 							routeCluster("/blog",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s4.Name,
-										Namespace:   s4.Namespace,
-										ServicePort: s4.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s4.Name,
+											ServiceNamespace: s4.Namespace,
+											ServicePort:      s4.Spec.Ports[0],
+										},
 									},
 								},
 							),
@@ -4828,9 +4943,12 @@ func TestDAGInsert(t *testing.T) {
 								PathMatchCondition: prefix("/blog/it/foo"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
-										Name:        s11.Name,
-										Namespace:   s11.Namespace,
-										ServicePort: s11.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s11.Name,
+											ServiceNamespace: s11.Namespace,
+											ServicePort:      s11.Spec.Ports[0],
+										},
 									},
 								}},
 							},
@@ -4851,18 +4969,24 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 								},
 							),
 							routeCluster("/kuarder",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s2.Name,
-										Namespace:   s2.Namespace,
-										ServicePort: s2.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s2.Name,
+											ServiceNamespace: s2.Namespace,
+											ServicePort:      s2.Spec.Ports[0],
+										},
 									},
 								},
 							),
@@ -4883,18 +5007,24 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 								},
 							),
 							routeCluster("/kuarder",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s2.Name,
-										Namespace:   s2.Namespace,
-										ServicePort: s2.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s2.Name,
+											ServiceNamespace: s2.Namespace,
+											ServicePort:      s2.Spec.Ports[0],
+										},
 									},
 								},
 							),
@@ -4915,18 +5045,24 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 								},
 							),
 							routeCluster("/kuarder/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s2.Name,
-										Namespace:   s2.Namespace,
-										ServicePort: s2.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s2.Name,
+											ServiceNamespace: s2.Namespace,
+											ServicePort:      s2.Spec.Ports[0],
+										},
 									},
 								},
 							),
@@ -4947,18 +5083,24 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 								},
 							),
 							routeCluster("/kuarder/withavengeance",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s2.Name,
-										Namespace:   s2.Namespace,
-										ServicePort: s2.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s2.Name,
+											ServiceNamespace: s2.Namespace,
+											ServicePort:      s2.Spec.Ports[0],
+										},
 									},
 								},
 							),
@@ -4979,18 +5121,24 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s1.Name,
-										Namespace:   s1.Namespace,
-										ServicePort: s1.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1.Name,
+											ServiceNamespace: s1.Namespace,
+											ServicePort:      s1.Spec.Ports[0],
+										},
 									},
 								},
 							),
 							routeCluster("/kuarder/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s2.Name,
-										Namespace:   s2.Namespace,
-										ServicePort: s2.Spec.Ports[0],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s2.Name,
+											ServiceNamespace: s2.Namespace,
+											ServicePort:      s2.Spec.Ports[0],
+										},
 									},
 								},
 							),
@@ -5082,9 +5230,12 @@ func TestDAGInsert(t *testing.T) {
 							routeCluster("/",
 								&Cluster{
 									Upstream: &Service{
-										Name:        s10.Name,
-										Namespace:   s10.Namespace,
-										ServicePort: s10.Spec.Ports[1],
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s10.Name,
+											ServiceNamespace: s10.Namespace,
+											ServicePort:      s10.Spec.Ports[1],
+										},
 									},
 								},
 							),
@@ -5338,10 +5489,13 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
-									Name:         s14.Name,
-									Namespace:    s14.Namespace,
-									ServicePort:  s14.Spec.Ports[0],
 									ExternalName: "externalservice.io",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s14.Name,
+										ServiceNamespace: s14.Namespace,
+										ServicePort:      s14.Spec.Ports[0],
+									},
 								},
 								SNI: "externalservice.io",
 							}},
@@ -5386,10 +5540,13 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
-									Name:         s14.Name,
-									Namespace:    s14.Namespace,
-									ServicePort:  s14.Spec.Ports[0],
 									ExternalName: "externalservice.io",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s14.Name,
+										ServiceNamespace: s14.Namespace,
+										ServicePort:      s14.Spec.Ports[0],
+									},
 								},
 								SNI: "bar.com",
 							}},
@@ -5437,10 +5594,13 @@ func TestDAGInsert(t *testing.T) {
 							PathMatchCondition: prefix("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
-									Name:         s14.Name,
-									Namespace:    s14.Namespace,
-									ServicePort:  s14.Spec.Ports[0],
 									ExternalName: "externalservice.io",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s14.Name,
+										ServiceNamespace: s14.Namespace,
+										ServicePort:      s14.Spec.Ports[0],
+									},
 								},
 								RequestHeadersPolicy: &HeadersPolicy{
 									HostRewrite: "bar.com",
@@ -6002,16 +6162,23 @@ func TestDAGInsert(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			builder := Builder{
-				FieldLogger:           fixture.NewTestLogger(t),
-				DisablePermitInsecure: tc.disablePermitInsecure,
-				FallbackCertificate: &types.NamespacedName{
-					Name:      tc.fallbackCertificateName,
-					Namespace: tc.fallbackCertificateNamespace,
-				},
+				FieldLogger: fixture.NewTestLogger(t),
 				Source: KubernetesCache{
 					FieldLogger: fixture.NewTestLogger(t),
 				},
+				Processors: []Processor{
+					&IngressProcessor{},
+					&HTTPProxyProcessor{
+						DisablePermitInsecure: tc.disablePermitInsecure,
+						FallbackCertificate: &types.NamespacedName{
+							Name:      tc.fallbackCertificateName,
+							Namespace: tc.fallbackCertificateNamespace,
+						},
+					},
+					&ListenerProcessor{},
+				},
 			}
+
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)
 			}
@@ -6249,6 +6416,11 @@ func TestDAGRootNamespaces(t *testing.T) {
 					RootNamespaces: tc.rootNamespaces,
 					FieldLogger:    fixture.NewTestLogger(t),
 				},
+				Processors: []Processor{
+					&IngressProcessor{},
+					&HTTPProxyProcessor{},
+					&ListenerProcessor{},
+				},
 			}
 
 			for _, o := range tc.objs {
@@ -6267,94 +6439,6 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 			if tc.want != count {
 				t.Errorf("wanted %d vertices, but got %d", tc.want, count)
-			}
-		})
-	}
-}
-
-func TestMatchesPathPrefix(t *testing.T) {
-	tests := map[string]struct {
-		path    string
-		prefix  string
-		matches bool
-	}{
-		"no path cannot match the prefix": {
-			prefix:  "/foo",
-			path:    "",
-			matches: false,
-		},
-		"any path has the empty string as the prefix": {
-			prefix:  "",
-			path:    "/foo",
-			matches: true,
-		},
-		"strict match": {
-			prefix:  "/foo",
-			path:    "/foo",
-			matches: true,
-		},
-		"strict match with / at the end": {
-			prefix:  "/foo/",
-			path:    "/foo/",
-			matches: true,
-		},
-		"no match": {
-			prefix:  "/foo",
-			path:    "/bar",
-			matches: false,
-		},
-		"string prefix match should not match": {
-			prefix:  "/foo",
-			path:    "/foobar",
-			matches: false,
-		},
-		"prefix match": {
-			prefix:  "/foo",
-			path:    "/foo/bar",
-			matches: true,
-		},
-		"prefix match with trailing slash in prefix": {
-			prefix:  "/foo/",
-			path:    "/foo/bar",
-			matches: true,
-		},
-		"prefix match with trailing slash in path": {
-			prefix:  "/foo",
-			path:    "/foo/bar/",
-			matches: true,
-		},
-		"prefix match with trailing slashes": {
-			prefix:  "/foo/",
-			path:    "/foo/bar/",
-			matches: true,
-		},
-		"prefix match two levels": {
-			prefix:  "/foo/bar",
-			path:    "/foo/bar",
-			matches: true,
-		},
-		"prefix match two levels trailing slash in prefix": {
-			prefix:  "/foo/bar/",
-			path:    "/foo/bar",
-			matches: true,
-		},
-		"prefix match two levels trailing slash in path": {
-			prefix:  "/foo/bar",
-			path:    "/foo/bar/",
-			matches: true,
-		},
-		"no match two levels": {
-			prefix:  "/foo/bar",
-			path:    "/foo/baz",
-			matches: false,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := matchesPathPrefix(tc.path, tc.prefix)
-			if got != tc.matches {
-				t.Errorf("expected %v but got %v", tc.matches, got)
 			}
 		})
 	}
@@ -6632,6 +6716,32 @@ func TestValidateHeaderAlteration(t *testing.T) {
 	}
 }
 
+func TestBuilderRunsProcessorsInOrder(t *testing.T) {
+	var got []string
+
+	b := Builder{
+		Processors: []Processor{
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "foo") }},
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "bar") }},
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "baz") }},
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "abc") }},
+			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "def") }},
+		},
+	}
+
+	b.Build()
+
+	assert.Equal(t, []string{"foo", "bar", "baz", "abc", "def"}, got)
+}
+
+type pluggableProcessor struct {
+	runFunc func(builder *Builder)
+}
+
+func (p *pluggableProcessor) Run(builder *Builder) {
+	p.runFunc(builder)
+}
+
 func routes(routes ...*Route) map[string]*Route {
 	if len(routes) == 0 {
 		return nil
@@ -6708,9 +6818,12 @@ func clusters(services ...*Service) (c []*Cluster) {
 
 func service(s *v1.Service) *Service {
 	return &Service{
-		Name:        s.Name,
-		Namespace:   s.Namespace,
-		ServicePort: s.Spec.Ports[0],
+		Weighted: WeightedService{
+			Weight:           1,
+			ServiceName:      s.Name,
+			ServiceNamespace: s.Namespace,
+			ServicePort:      s.Spec.Ports[0],
+		},
 	}
 }
 

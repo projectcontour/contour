@@ -18,7 +18,6 @@ import (
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -44,7 +43,7 @@ func TestUpstreamTLSTransportSocket(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := UpstreamTLSTransportSocket(tc.ctxt)
-			assert.Equal(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -80,7 +79,7 @@ func TestDownstreamTLSTransportSocket(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := DownstreamTLSTransportSocket(tc.ctxt)
-			assert.Equal(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }

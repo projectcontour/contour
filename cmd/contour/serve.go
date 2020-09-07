@@ -24,6 +24,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
+	"github.com/envoyproxy/go-control-plane/pkg/server/v2"
 	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
@@ -38,6 +40,7 @@ import (
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -131,6 +134,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
+
 	// Establish k8s core & dynamic client connections.
 	clients, err := k8s.NewClients(ctx.Kubeconfig, ctx.InCluster)
 	if err != nil {
@@ -205,9 +209,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
-	endpointHandler := &contour.EndpointsTranslator{
-		FieldLogger: log.WithField("context", "endpointstranslator"),
-	}
+	endpointHandler := contour.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
 
 	resources := []contour.ResourceCache{
 		contour.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort),
@@ -217,27 +219,41 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		endpointHandler,
 	}
 
+	// snapshotCache is used to store the state of what all xDS services should
+	// contain at any given point in time.
+	snapshotCache := cache.NewSnapshotCache(false, xds.DefaultHash,
+		log.WithField("context", "xDS"))
+
+	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
+	snapshotHandler := contour.NewSnapshotHandler(snapshotCache, resources, log.WithField("context", "snapshotHandler"))
+
 	// Build the core Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
-		Observer:        dag.ComposeObservers(contour.ObserversOf(resources)...),
+		Observer:        dag.ComposeObservers(append(contour.ObserversOf(resources), snapshotHandler)...),
 		Builder: dag.Builder{
-			FieldLogger:           log.WithField("context", "builder"),
-			DisablePermitInsecure: ctx.DisablePermitInsecure,
+			FieldLogger: log.WithField("context", "builder"),
 			Source: dag.KubernetesCache{
 				RootNamespaces: ctx.proxyRootNamespaces(),
 				IngressClass:   ctx.ingressClass,
 				FieldLogger:    log.WithField("context", "KubernetesCache"),
 			},
+			Processors: []dag.Processor{
+				&dag.IngressProcessor{},
+				&dag.HTTPProxyProcessor{
+					DisablePermitInsecure: ctx.DisablePermitInsecure,
+					FallbackCertificate:   fallbackCert,
+				},
+				&dag.ListenerProcessor{},
+			},
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// Set the fallback certificate if configured.
+	// Log that we're using the fallback certificate if configured.
 	if fallbackCert != nil {
 		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
-		eventHandler.Builder.FallbackCertificate = fallbackCert
 	}
 
 	// Wrap eventHandler in a converter for objects from the dynamic client.
@@ -259,13 +275,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Inform on ExtensionService resources if they are installed
 	// in the cluster. TODO(jpeach) remove the resource check as part of #2711.
-	if gvr := projectcontourv1alpha1.GroupVersion.WithResource("extensionservices"); clients.ResourceExists(gvr) {
+	if gvr := projectcontourv1alpha1.GroupVersion.WithResource("extensionservices"); clients.ResourcesExist(gvr) {
 		informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, gvr)
 	}
 
 	if ctx.UseExperimentalServiceAPITypes {
 		// Check if the resource exists in the API server before setting up the informer.
-		if !clients.ResourceExists(k8s.ServiceAPIResources()...) {
+		if !clients.ResourcesExist(k8s.ServiceAPIResources()...) {
 			log.WithField("InformOnResources", "ExperimentalServiceAPITypes").Warnf("resources %v not found in api server", k8s.ServiceAPIResources())
 		} else {
 			informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, k8s.ServiceAPIResources()...)
@@ -360,10 +376,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	sh := k8s.StatusUpdateHandler{
-		Log:           log.WithField("context", "StatusUpdateWriter"),
-		Clients:       clients,
-		LeaderElected: eventHandler.IsLeader,
-		Converter:     converter,
+		Log:             log.WithField("context", "StatusUpdateWriter"),
+		Clients:         clients,
+		LeaderElected:   eventHandler.IsLeader,
+		Converter:       converter,
+		InformerFactory: clusterInformerFactory,
 	}
 	g.Add(sh.Start)
 
@@ -417,10 +434,22 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 		log.Printf("informer caches synced")
 
-		rpcServer := xds.RegisterServer(
-			xds.NewContourServer(log, contour.ResourcesOf(resources)...),
-			registry,
-			ctx.grpcOptions()...)
+		var grpcServer *grpc.Server
+
+		switch ctx.XDSServerType {
+		case "contour":
+			grpcServer = xds.RegisterServer(
+				xds.NewContourServer(log, contour.ResourcesOf(resources)...),
+				registry,
+				ctx.grpcOptions()...)
+		case "envoy":
+			grpcServer = xds.RegisterServer(
+				server.NewServer(context.Background(), snapshotCache, nil),
+				registry,
+				ctx.grpcOptions()...)
+		default:
+			log.Fatalf("invalid xdsServerType %q configured", ctx.XDSServerType)
+		}
 
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
 		l, err := net.Listen("tcp", addr)
@@ -443,10 +472,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			// has long-lived hanging xDS requests. There's no
 			// mechanism to make those pending requests fail,
 			// so we forcibly terminate the TCP sessions.
-			rpcServer.Stop()
+			grpcServer.Stop()
 		}()
 
-		return rpcServer.Serve(l)
+		return grpcServer.Serve(l)
 	})
 
 	// Set up SIGTERM handler for graceful shutdown.

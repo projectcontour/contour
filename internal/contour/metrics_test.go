@@ -17,10 +17,10 @@ import (
 	"testing"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,8 +45,12 @@ func TestHTTPProxyMetrics(t *testing.T) {
 					RootNamespaces: tc.rootNamespaces,
 					FieldLogger:    fixture.NewTestLogger(t),
 				},
+				Processors: []dag.Processor{
+					&dag.IngressProcessor{},
+					&dag.HTTPProxyProcessor{},
+					&dag.ListenerProcessor{},
+				},
 			}
-
 			for _, o := range tc.objs {
 				builder.Source.Insert(o)
 			}

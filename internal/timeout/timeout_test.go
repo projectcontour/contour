@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParse(t *testing.T) {

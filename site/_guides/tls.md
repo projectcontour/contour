@@ -17,6 +17,13 @@ Enabling TLS support requires Contour version 0.3 or later. You must also add an
 
 If you deploy behind an AWS Elastic Load Balancer, see [EC2 ELB PROXY protocol support][2] for special instructions.
 
+## TLS SNI name matching
+Envoy SNI name matching during TLS handshake is case-sensitive.
+For example, for a cert with common name foo.bar.com, requests to Foo.bar.com would not match.
+Similarly, for cert with wildcard name \*.bar.com, only requests to lower case name will match.
+Here is the [known issue][4] reported on Envoy.
+
 [1]: {{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/examples/contour/03-contour.yaml/#L45
 [2]: {% link _guides/proxy-proto.md %}
 [3]: {% link _guides/cert-manager.md %}
+[4]: https://github.com/envoyproxy/envoy/issues/6199

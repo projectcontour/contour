@@ -1,0 +1,30 @@
+# httpproxy-retry-count-range instantiates an HTTPProxyRetryCountRange
+# ConstraintTemplate with a max value of 5.
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: HTTPProxyRetryCountRange
+metadata:
+  name: httpproxy-retry-count-range
+  labels:
+    app: contour
+spec:
+  match:
+
+    # namespaces optionally defines the list of namespaces
+    # for which this Constraint should be enforced.
+    # namespaces:
+    #   - namespace-1
+    #   - namespace-2
+
+    # excludedNamespaces optionally defines the list of
+    # namespaces for which this Constraint should *not*
+    # be enforced.
+    # excludedNamespaces:
+    #   - namespace-3
+    #   - namespace-4
+
+    kinds:
+      - apiGroups: ["projectcontour.io"]
+        kinds: ["HTTPProxy"]
+
+  parameters:
+    max: 5

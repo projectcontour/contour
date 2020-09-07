@@ -14,7 +14,9 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -82,7 +84,8 @@ func (kc *KubernetesCache) matchesIngressClass(obj k8s.Object) bool {
 		kc.WithField("name", om.GetName()).
 			WithField("namespace", om.GetNamespace()).
 			WithField("kind", kind).
-			WithField("ingress.class", annotation.IngressClass(obj)).
+			WithField("ingress-class", annotation.IngressClass(obj)).
+			WithField("target-ingress-class", kc.IngressClass).
 			Debug("ignoring object with unmatched ingress class")
 		return false
 	}
@@ -101,6 +104,16 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	if obj, ok := obj.(k8s.Object); ok {
 		kind := k8s.KindOf(obj)
 		for key := range obj.GetObjectMeta().GetAnnotations() {
+			// TODO(youngnick#2749): Remove this once the deprecation period ends.
+			if strings.Contains(key, "contour.heptio.com/") {
+				om := obj.GetObjectMeta()
+				kc.WithField("name", om.GetName()).
+					WithField("namespace", om.GetNamespace()).
+					WithField("kind", kind).
+					WithField("version", k8s.VersionOf(obj)).
+					WithField("annotation", key).
+					Warn("contour.heptio.com annotations are deprecated and will be removed in a future release. Please move to the projectcontour.io version instead.")
+			}
 			// Emit a warning if this is a known annotation that has
 			// been applied to an invalid object kind. Note that we
 			// only warn for known annotations because we want to
@@ -426,6 +439,43 @@ func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func
 	return s, nil
 }
 
+func (kc *KubernetesCache) LookupUpstreamValidation(uv *projectcontour.UpstreamValidation, namespace string) (*PeerValidationContext, error) {
+	if uv == nil {
+		// no upstream validation requested, nothing to do
+		return nil, nil
+	}
+
+	secretName := types.NamespacedName{Name: uv.CACertificate, Namespace: namespace}
+	cacert, err := kc.LookupSecret(secretName, validCA)
+	if err != nil {
+		// UpstreamValidation is requested, but cert is missing or not configured
+		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
+	}
+
+	if uv.SubjectName == "" {
+		// UpstreamValidation is requested, but SAN is not provided
+		return nil, errors.New("missing subject alternative name")
+	}
+
+	return &PeerValidationContext{
+		CACertificate: cacert,
+		SubjectName:   uv.SubjectName,
+	}, nil
+}
+
+func (kc *KubernetesCache) LookupDownstreamValidation(vc *projectcontour.DownstreamValidation, namespace string) (*PeerValidationContext, error) {
+	secretName := types.NamespacedName{Name: vc.CACertificate, Namespace: namespace}
+	cacert, err := kc.LookupSecret(secretName, validCA)
+	if err != nil {
+		// PeerValidationContext is requested, but cert is missing or not configured.
+		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
+	}
+
+	return &PeerValidationContext{
+		CACertificate: cacert,
+	}, nil
+}
+
 // DelegationPermitted returns true if the referenced secret has been delegated
 // to the namespace where the ingress object is located.
 func (kc *KubernetesCache) DelegationPermitted(secret types.NamespacedName, targetNamespace string) bool {
@@ -459,4 +509,12 @@ func (kc *KubernetesCache) DelegationPermitted(secret types.NamespacedName, targ
 		}
 	}
 	return false
+}
+
+func validCA(s *v1.Secret) error {
+	if len(s.Data[CACertificateKey]) == 0 {
+		return fmt.Errorf("empty %q key", CACertificateKey)
+	}
+
+	return nil
 }

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestShutdownManager_HealthzHandler(t *testing.T) {

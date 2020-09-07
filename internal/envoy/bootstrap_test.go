@@ -21,7 +21,8 @@ import (
 	envoy_api_bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBootstrap(t *testing.T) {
@@ -1007,21 +1008,21 @@ func TestBootstrap(t *testing.T) {
 			if tc.wantedBootstrapConfig != "" {
 				want := new(envoy_api_bootstrap.Bootstrap)
 				unmarshal(t, tc.wantedBootstrapConfig, want)
-				assert.EqualProto(t, want, gotConfigs[tc.config.Path])
+				protobuf.ExpectEqual(t, want, gotConfigs[tc.config.Path])
 				delete(gotConfigs, tc.config.Path)
 			}
 
 			if tc.wantedTLSCertificateConfig != "" {
 				want := new(api.DiscoveryResponse)
 				unmarshal(t, tc.wantedTLSCertificateConfig, want)
-				assert.EqualProto(t, want, gotConfigs[sdsTLSCertificatePath])
+				protobuf.ExpectEqual(t, want, gotConfigs[sdsTLSCertificatePath])
 				delete(gotConfigs, sdsTLSCertificatePath)
 			}
 
 			if tc.wantedValidationContextConfig != "" {
 				want := new(api.DiscoveryResponse)
 				unmarshal(t, tc.wantedValidationContextConfig, want)
-				assert.EqualProto(t, want, gotConfigs[sdsValidationContextPath])
+				protobuf.ExpectEqual(t, want, gotConfigs[sdsValidationContextPath])
 				delete(gotConfigs, sdsValidationContextPath)
 			}
 

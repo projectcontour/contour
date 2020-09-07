@@ -24,6 +24,7 @@ import (
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -38,7 +39,7 @@ import (
 
 func TestGRPC(t *testing.T) {
 	// tr and et is recreated before the start of each test.
-	var et *EndpointsTranslator
+	var et EndpointsInterface
 	var eh *EventHandler
 
 	tests := map[string]func(*testing.T, *grpc.ClientConn){
@@ -188,9 +189,7 @@ func TestGRPC(t *testing.T) {
 	log.SetOutput(ioutil.Discard)
 	for name, fn := range tests {
 		t.Run(name, func(t *testing.T) {
-			et = &EndpointsTranslator{
-				FieldLogger: log,
-			}
+			et = NewEndpointsTranslator(fixture.NewTestLogger(t))
 
 			resources := []ResourceCache{
 				NewListenerCache(ListenerConfig{}, "", 0),

@@ -20,9 +20,9 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/proto"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,7 +54,7 @@ func TestSecretCacheContents(t *testing.T) {
 			var sc SecretCache
 			sc.Update(tc.contents)
 			got := sc.Contents()
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -98,7 +98,7 @@ func TestSecretCacheQuery(t *testing.T) {
 			var sc SecretCache
 			sc.Update(tc.contents)
 			got := sc.Query(tc.query)
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -471,7 +471,7 @@ func TestSecretVisit(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := buildDAG(t, tc.objs...)
 			got := visitSecrets(root)
-			assert.EqualProto(t, tc.want, got)
+			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
 }
@@ -482,6 +482,11 @@ func buildDAG(t *testing.T, objs ...interface{}) *dag.DAG {
 		FieldLogger: fixture.NewTestLogger(t),
 		Source: dag.KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
+		},
+		Processors: []dag.Processor{
+			&dag.IngressProcessor{},
+			&dag.HTTPProxyProcessor{},
+			&dag.ListenerProcessor{},
 		},
 	}
 
@@ -498,9 +503,14 @@ func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, o
 		Source: dag.KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
 		},
-		FallbackCertificate: fallbackCertificate,
+		Processors: []dag.Processor{
+			&dag.IngressProcessor{},
+			&dag.HTTPProxyProcessor{
+				FallbackCertificate: fallbackCertificate,
+			},
+			&dag.ListenerProcessor{},
+		},
 	}
-
 	for _, o := range objs {
 		builder.Source.Insert(o)
 	}

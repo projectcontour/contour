@@ -1,0 +1,13 @@
+# httpproxy-non-empty instantiates an HTTPProxyNonEmpty
+# ConstraintTemplate.
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: HTTPProxyNonEmpty
+metadata:
+  name: httpproxy-non-empty
+  labels:
+    app: contour
+spec:
+  match:
+    kinds:
+      - apiGroups: ["projectcontour.io"]
+        kinds: ["HTTPProxy"]

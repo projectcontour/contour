@@ -23,8 +23,8 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
-	"github.com/projectcontour/contour/internal/assert"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInvalidSorter(t *testing.T) {

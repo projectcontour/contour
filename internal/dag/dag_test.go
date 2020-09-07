@@ -16,34 +16,33 @@ package dag
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/assert"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestVirtualHostValid(t *testing.T) {
-	assert := Assert{t}
 
 	vh := VirtualHost{}
-	assert.False(vh.Valid())
+	assert.False(t, vh.Valid())
 
 	vh = VirtualHost{
 		routes: map[string]*Route{
 			"/": {},
 		},
 	}
-	assert.True(vh.Valid())
+	assert.True(t, vh.Valid())
 }
 
 func TestSecureVirtualHostValid(t *testing.T) {
-	assert := Assert{t}
 
 	vh := SecureVirtualHost{}
-	assert.False(vh.Valid())
+	assert.False(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		Secret: new(Secret),
 	}
-	assert.False(vh.Valid())
+	assert.False(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		VirtualHost: VirtualHost{
@@ -52,7 +51,7 @@ func TestSecureVirtualHostValid(t *testing.T) {
 			},
 		},
 	}
-	assert.False(vh.Valid())
+	assert.False(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		Secret: new(Secret),
@@ -62,18 +61,18 @@ func TestSecureVirtualHostValid(t *testing.T) {
 			},
 		},
 	}
-	assert.True(vh.Valid())
+	assert.True(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		TCPProxy: new(TCPProxy),
 	}
-	assert.True(vh.Valid())
+	assert.True(t, vh.Valid())
 
 	vh = SecureVirtualHost{
 		Secret:   new(Secret),
 		TCPProxy: new(TCPProxy),
 	}
-	assert.True(vh.Valid())
+	assert.True(t, vh.Valid())
 }
 
 func TestPeerValidationContext(t *testing.T) {
@@ -108,20 +107,139 @@ func TestObserverFunc(t *testing.T) {
 	assert.Equal(t, true, result)
 }
 
-type Assert struct {
-	*testing.T
-}
+func TestServiceClusterValid(t *testing.T) {
+	invalid := []ServiceCluster{
+		{},
+		{ClusterName: "foo"},
+		{ClusterName: "foo", Services: []WeightedService{{}}},
+		{ClusterName: "foo", Services: []WeightedService{{ServiceName: "foo"}}},
+		{ClusterName: "foo", Services: []WeightedService{{ServiceNamespace: "foo"}}},
+	}
 
-func (a Assert) True(t bool) {
-	a.Helper()
-	if !t {
-		a.Error("expected true, got false")
+	for _, c := range invalid {
+		assert.Errorf(t, c.Validate(), "invalid cluster %#v", c)
 	}
 }
 
-func (a Assert) False(t bool) {
-	a.Helper()
-	if t {
-		a.Error("expected false, got true")
+func TestServiceClusterAdd(t *testing.T) {
+	port := v1.ServicePort{
+		Name:     "foo",
+		Protocol: v1.ProtocolTCP,
+		Port:     32,
 	}
+
+	s := ServiceCluster{
+		ClusterName: "test",
+	}
+
+	s.AddService(types.NamespacedName{Namespace: "ns", Name: "s1"}, port)
+	assert.Equal(t,
+		ServiceCluster{
+			ClusterName: "test",
+			Services: []WeightedService{{
+				Weight:           1,
+				ServiceName:      "s1",
+				ServiceNamespace: "ns",
+				ServicePort:      port,
+			}},
+		},
+		s)
+
+	s.AddWeightedService(9, types.NamespacedName{Namespace: "ns", Name: "s2"}, port)
+	assert.Equal(t,
+		ServiceCluster{
+			ClusterName: "test",
+			Services: []WeightedService{{
+				Weight:           1,
+				ServiceName:      "s1",
+				ServiceNamespace: "ns",
+				ServicePort:      port,
+			}, {
+				Weight:           9,
+				ServiceName:      "s2",
+				ServiceNamespace: "ns",
+				ServicePort:      port,
+			}},
+		},
+		s)
+}
+
+func TestServiceClusterRebalance(t *testing.T) {
+	port := v1.ServicePort{
+		Name:     "foo",
+		Protocol: v1.ProtocolTCP,
+		Port:     32,
+	}
+
+	cases := map[string]struct {
+		have ServiceCluster
+		want ServiceCluster
+	}{
+		"default weights": {
+			have: ServiceCluster{
+				ClusterName: "test",
+				Services: []WeightedService{{
+					ServiceName:      "s1",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}, {
+					ServiceName:      "s2",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}},
+			},
+			want: ServiceCluster{
+				ClusterName: "test",
+				Services: []WeightedService{{
+					Weight:           1,
+					ServiceName:      "s1",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}, {
+					Weight:           1,
+					ServiceName:      "s2",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}},
+			},
+		},
+		"custom weights": {
+			have: ServiceCluster{
+				ClusterName: "test",
+				Services: []WeightedService{{
+					ServiceName:      "s1",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}, {
+					Weight:           6,
+					ServiceName:      "s2",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}},
+			},
+			want: ServiceCluster{
+				ClusterName: "test",
+				Services: []WeightedService{{
+					Weight:           0,
+					ServiceName:      "s1",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}, {
+					Weight:           6,
+					ServiceName:      "s2",
+					ServiceNamespace: "ns",
+					ServicePort:      port,
+				}},
+			},
+		},
+	}
+
+	for n, c := range cases {
+		t.Run(n, func(t *testing.T) {
+			s := c.have
+			s.Rebalance()
+			assert.Equal(t, c.want, s)
+		})
+	}
+
 }
