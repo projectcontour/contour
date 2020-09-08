@@ -40,13 +40,14 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			t.Helper()
 
 			builder := dag.Builder{
-				FieldLogger: fixture.NewTestLogger(t),
 				Source: dag.KubernetesCache{
 					RootNamespaces: tc.rootNamespaces,
 					FieldLogger:    fixture.NewTestLogger(t),
 				},
 				Processors: []dag.Processor{
-					&dag.IngressProcessor{},
+					&dag.IngressProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
 					&dag.HTTPProxyProcessor{},
 					&dag.ListenerProcessor{},
 				},

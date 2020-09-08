@@ -18,6 +18,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -25,6 +26,8 @@ import (
 // IngressProcessor translates Ingresses into DAG
 // objects and adds them to the DAG builder.
 type IngressProcessor struct {
+	logrus.FieldLogger
+
 	builder *Builder
 }
 
@@ -53,7 +56,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(ing.GetNamespace()))
 			sec, err := p.builder.Source.LookupSecret(secretName, validSecret)
 			if err != nil {
-				p.builder.WithError(err).
+				p.WithError(err).
 					WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
 					WithField("secret", secretName).
@@ -62,7 +65,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 			}
 
 			if !p.builder.Source.DelegationPermitted(secretName, ing.GetNamespace()) {
-				p.builder.WithError(err).
+				p.WithError(err).
 					WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
 					WithField("secret", secretName).

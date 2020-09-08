@@ -23,7 +23,6 @@ import (
 
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
-	"github.com/sirupsen/logrus"
 )
 
 type RouteServiceName struct {
@@ -55,7 +54,6 @@ type Builder struct {
 	listeners          []*Listener
 
 	StatusWriter
-	logrus.FieldLogger
 }
 
 // Build builds and returns a new DAG by running the
