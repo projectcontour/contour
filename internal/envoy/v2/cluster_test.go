@@ -157,6 +157,58 @@ func TestCluster(t *testing.T) {
 				LoadAssignment:       StaticClusterLoadAssignment(service(s2)),
 			},
 		},
+		"externalName service - dns-lookup-family v4": {
+			cluster: &dag.Cluster{
+				Upstream:        service(s2),
+				DNSLookupFamily: "v4",
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+				LoadAssignment:       StaticClusterLoadAssignment(service(s2)),
+				DnsLookupFamily:      v2.Cluster_V4_ONLY,
+			},
+		},
+		"externalName service - dns-lookup-family v6": {
+			cluster: &dag.Cluster{
+				Upstream:        service(s2),
+				DNSLookupFamily: "v6",
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+				LoadAssignment:       StaticClusterLoadAssignment(service(s2)),
+				DnsLookupFamily:      v2.Cluster_V6_ONLY,
+			},
+		},
+		"externalName service - dns-lookup-family auto": {
+			cluster: &dag.Cluster{
+				Upstream:        service(s2),
+				DNSLookupFamily: "auto",
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+				LoadAssignment:       StaticClusterLoadAssignment(service(s2)),
+				DnsLookupFamily:      v2.Cluster_AUTO,
+			},
+		},
+		"externalName service - dns-lookup-family not defined": {
+			cluster: &dag.Cluster{
+				Upstream: service(s2),
+				//DNSLookupFamily: "auto",
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
+				LoadAssignment:       StaticClusterLoadAssignment(service(s2)),
+				DnsLookupFamily:      v2.Cluster_AUTO,
+			},
+		},
 		"tls upstream": {
 			cluster: &dag.Cluster{
 				Upstream: service(s1, "tls"),

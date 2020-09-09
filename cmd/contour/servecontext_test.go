@@ -18,6 +18,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -510,6 +511,49 @@ func TestParseHTTPVersions(t *testing.T) {
 
 			assert.Equal(t, testcase.parseError, err)
 			assert.Equal(t, testcase.parseVersions, vers)
+		})
+	}
+}
+
+func TestParseDNSLookupFamily(t *testing.T) {
+	cases := map[string]struct {
+		input         string
+		expectedError error
+		expected      string
+	}{
+		"empty": {
+			input:         "",
+			expectedError: nil,
+			expected:      "auto",
+		},
+		"auto": {
+			input:         "auto",
+			expectedError: nil,
+			expected:      "auto",
+		},
+		"v4": {
+			input:         "v4",
+			expectedError: nil,
+			expected:      "v4",
+		},
+		"v6": {
+			input:         "v6",
+			expectedError: nil,
+			expected:      "v6",
+		},
+		"invalid": {
+			input:         "abcdefg",
+			expectedError: fmt.Errorf("invalid dns lookup family \"abcdefg\" configured, defaulting to \"auto\""),
+			expected:      "auto",
+		},
+	}
+
+	for name, testcase := range cases {
+		testcase := testcase
+		t.Run(name, func(t *testing.T) {
+			got, err := ParseDNSLookupFamily(testcase.input)
+			assert.Equal(t, testcase.expectedError, err)
+			assert.Equal(t, testcase.expected, got)
 		})
 	}
 }

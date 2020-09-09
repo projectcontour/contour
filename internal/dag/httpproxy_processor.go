@@ -53,6 +53,16 @@ type HTTPProxyProcessor struct {
 	// TLS secret to use by default when SNI is not set on a
 	// request.
 	FallbackCertificate *types.NamespacedName
+
+	// DNSLookupFamily defines how external names are looked up
+	// When configured as V4, the DNS resolver will only perform a lookup
+	// for addresses in the IPv4 family. If V6 is configured, the DNS resolver
+	// will only perform a lookup for addresses in the IPv6 family.
+	// If AUTO is configured, the DNS resolver will first perform a lookup
+	// for addresses in the IPv6 family and fallback to a lookup for addresses
+	// in the IPv4 family.
+	// Note: This only applies to externalName clusters.
+	DNSLookupFamily string
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -488,6 +498,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				ResponseHeadersPolicy: respHP,
 				Protocol:              protocol,
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
+				DNSLookupFamily:       p.DNSLookupFamily,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				sw.SetInvalid("only one service per route may be nominated as mirror")

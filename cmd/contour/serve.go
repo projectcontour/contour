@@ -296,6 +296,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// register observer for endpoints updates.
 	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
 
+	dnsLookupFamily, err := ParseDNSLookupFamily(ctx.DNSLookupFamily)
+	if err != nil {
+		return fmt.Errorf("failed to configure configuration file parameter cluster.dns-lookup-family: %w", err)
+	}
+
 	// Build the core Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
@@ -317,6 +322,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				&dag.HTTPProxyProcessor{
 					DisablePermitInsecure: ctx.DisablePermitInsecure,
 					FallbackCertificate:   fallbackCert,
+					DNSLookupFamily:       dnsLookupFamily,
 				},
 				&dag.ListenerProcessor{},
 			},
