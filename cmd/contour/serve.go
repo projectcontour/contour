@@ -234,14 +234,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Observer:        dag.ComposeObservers(append(contour.ObserversOf(resources), snapshotHandler)...),
 		Builder: dag.Builder{
-			FieldLogger: log.WithField("context", "builder"),
 			Source: dag.KubernetesCache{
 				RootNamespaces: ctx.proxyRootNamespaces(),
 				IngressClass:   ctx.ingressClass,
 				FieldLogger:    log.WithField("context", "KubernetesCache"),
 			},
 			Processors: []dag.Processor{
-				&dag.IngressProcessor{},
+				&dag.IngressProcessor{
+					FieldLogger: log.WithField("context", "IngressProcessor"),
+				},
 				&dag.HTTPProxyProcessor{
 					DisablePermitInsecure: ctx.DisablePermitInsecure,
 					FallbackCertificate:   fallbackCert,
