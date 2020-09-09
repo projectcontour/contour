@@ -14,27 +14,20 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/build"
 	"github.com/projectcontour/contour/internal/envoy"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-	"k8s.io/klog"
 )
-
-func init() {
-	// even though we don't use it directly, some of our dependencies use klog
-	// so we must initialize it here to ensure that klog is set to log to stderr
-	// and not to a file.
-	// yes, this is gross, the klog authors are monsters.
-	klog.InitFlags(nil)
-}
 
 func main() {
 	log := logrus.StandardLogger()
+	k8s.InitLogging(k8s.LogWriterOption(log.WithField("context", "kubernetes")))
+
 	app := kingpin.New("contour", "Contour Kubernetes ingress controller.")
 	app.HelpFlag.Short('h')
 
@@ -76,9 +69,11 @@ func main() {
 	case sdmShutdown.FullCommand():
 		sdmShutdownCtx.shutdownHandler()
 	case bootstrap.FullCommand():
-		check(envoy.WriteBootstrap(bootstrapCtx))
+		if err := envoy.WriteBootstrap(bootstrapCtx); err != nil {
+			log.WithError(err).Fatal("failed to write bootstrap configuration")
+		}
 	case certgenApp.FullCommand():
-		doCertgen(certgenConfig)
+		doCertgen(certgenConfig, log)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
 		watchstream(stream, resource.ClusterType, resources)
@@ -95,15 +90,24 @@ func main() {
 		stream := client.RouteStream()
 		watchstream(stream, resource.SecretType, resources)
 	case serve.FullCommand():
-		// parse args a second time so cli flags are applied
+		// Parse args a second time so cli flags are applied
 		// on top of any values sourced from -c's config file.
-		_, err := app.Parse(args)
-		check(err)
+		kingpin.MustParse(app.Parse(args))
+
+		// Reinitialize with the target debug level.
+		k8s.InitLogging(
+			k8s.LogWriterOption(log.WithField("context", "kubernetes")),
+			k8s.LogLevelOption(int(serveCtx.KubernetesDebug)),
+		)
+
 		if serveCtx.Debug {
 			log.SetLevel(logrus.DebugLevel)
 		}
+
 		log.Infof("args: %v", args)
-		check(doServe(log, serveCtx))
+		if err := doServe(log, serveCtx); err != nil {
+			log.WithError(err).Fatal("Contour server failed")
+		}
 	case version.FullCommand():
 		println(build.PrintBuildInfo())
 	default:
@@ -111,11 +115,4 @@ func main() {
 		os.Exit(2)
 	}
 
-}
-
-func check(err error) {
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 }
