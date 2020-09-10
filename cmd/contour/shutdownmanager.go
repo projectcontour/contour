@@ -111,16 +111,16 @@ func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *
 	ctx := r.Context()
 	for {
 		_, err := os.Stat(s.shutdownReadyFile)
-		if err == nil {
+		if os.IsNotExist(err) {
+			l.Infof("file %s does not exist; checking again in %v", s.shutdownReadyFile,
+				s.shutdownReadyCheckInterval)
+		} else if err == nil {
 			l.Infof("detected file %s; sending HTTP response", s.shutdownReadyFile)
 			http.StatusText(http.StatusOK)
 			if _, err := w.Write([]byte("OK")); err != nil {
 				l.Error(err)
 			}
 			return
-		} else if os.IsNotExist(err) {
-			l.Infof("file %s does not yet exist; checking again in %v", s.shutdownReadyFile,
-				s.shutdownReadyCheckInterval)
 		} else {
 			l.Errorf("error checking for file: %v", err)
 		}
