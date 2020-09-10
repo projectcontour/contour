@@ -93,11 +93,16 @@ func visitClusters(root dag.Vertex) map[string]*v2.Cluster {
 }
 
 func (v *clusterVisitor) visit(vertex dag.Vertex) {
-	if cluster, ok := vertex.(*dag.Cluster); ok {
+	switch cluster := vertex.(type) {
+	case *dag.Cluster:
 		name := envoy.Clustername(cluster)
 		if _, ok := v.clusters[name]; !ok {
-			c := envoy.Cluster(cluster)
-			v.clusters[c.Name] = c
+			v.clusters[name] = envoy.Cluster(cluster)
+		}
+	case *dag.ExtensionCluster:
+		name := cluster.Name
+		if _, ok := v.clusters[name]; !ok {
+			v.clusters[name] = envoy.ExtensionCluster(cluster)
 		}
 	}
 

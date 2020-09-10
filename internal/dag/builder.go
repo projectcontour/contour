@@ -17,12 +17,11 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-
-	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/k8s"
 )
 
 type RouteServiceName struct {
@@ -52,6 +51,7 @@ type Builder struct {
 	virtualhosts       map[string]*VirtualHost
 	securevirtualhosts map[string]*SecureVirtualHost
 	listeners          []*Listener
+	extensions         map[types.NamespacedName]*ExtensionCluster
 
 	StatusWriter
 }
@@ -71,6 +71,10 @@ func (b *Builder) Build() *DAG {
 		dag.roots = append(dag.roots, b.listeners[i])
 	}
 
+	for i := range b.extensions {
+		dag.roots = append(dag.roots, b.extensions[i])
+	}
+
 	dag.statuses = b.statuses
 	return &dag
 }
@@ -81,6 +85,7 @@ func (b *Builder) reset() {
 	b.virtualhosts = make(map[string]*VirtualHost)
 	b.securevirtualhosts = make(map[string]*SecureVirtualHost)
 	b.listeners = []*Listener{}
+	b.extensions = map[types.NamespacedName]*ExtensionCluster{}
 
 	b.statuses = make(map[types.NamespacedName]Status, len(b.statuses))
 }
