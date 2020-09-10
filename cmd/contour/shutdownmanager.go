@@ -99,15 +99,15 @@ func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, r *http.R
 // the kubelet calls the shutdown command is different than the HTTP request from Envoy to /shutdown
 func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *http.Request) {
 	for {
-		if _, err := os.Stat(shutdownReadyFile); err == nil {
+		_, err := os.Stat(shutdownReadyFile)
+		if err != nil {
 			http.StatusText(http.StatusOK)
 			if _, err := w.Write([]byte("OK")); err != nil {
 				s.WithField("context", "shutdownReadyHandler").Error(err)
 			}
 			return
-		} else {
-			s.WithField("context", "shutdownReadyHandler").Errorf("error checking for file: %v", err)
 		}
+		s.WithField("context", "shutdownReadyHandler").Errorf("error checking for file: %v", err)
 		time.Sleep(1 * time.Second)
 	}
 }
