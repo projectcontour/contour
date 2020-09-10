@@ -38,6 +38,7 @@ const (
 
 // File path used in the /shutdown endpoint.
 const shutdownReadyFile = "/ok"
+const shutdownReadyCheckInterval = time.Second * 1
 
 func prometheusLabels() []string {
 	return []string{contour.ENVOY_HTTP_LISTENER, contour.ENVOY_HTTPS_LISTENER}
@@ -45,7 +46,9 @@ func prometheusLabels() []string {
 
 type shutdownmanagerContext struct {
 	// httpServePort defines what port the shutdown-manager listens on
-	httpServePort int
+	httpServePort              int
+	shutdownReadyFile          string
+	shutdownReadyCheckInterval time.Duration
 
 	logrus.FieldLogger
 }
@@ -98,17 +101,44 @@ func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, r *http.R
 // file to understand if it is safe to terminate. The file-based approach is used since the process in which
 // the kubelet calls the shutdown command is different than the HTTP request from Envoy to /shutdown
 func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *http.Request) {
+	// For testing, the filepath and check period can be overridden in the context
+	// Otherwise, use the module constants
+	var signalFilepath string
+	if s.shutdownReadyFile != "" {
+		signalFilepath = s.shutdownReadyFile
+	} else {
+		signalFilepath = shutdownReadyFile
+	}
+	var signalFileCheckDuration time.Duration
+	if s.shutdownReadyCheckInterval != 0 {
+		signalFileCheckDuration = s.shutdownReadyCheckInterval
+	} else {
+		signalFileCheckDuration = shutdownReadyCheckInterval
+	}
+
+	l := s.WithField("context", "shutdownReadyHandler")
+	ctx := r.Context()
 	for {
-		_, err := os.Stat(shutdownReadyFile)
-		if err != nil {
+		_, err := os.Stat(signalFilepath)
+		if err == nil {
+			l.Infof("detected file %s; sending HTTP response", signalFilepath)
 			http.StatusText(http.StatusOK)
 			if _, err := w.Write([]byte("OK")); err != nil {
-				s.WithField("context", "shutdownReadyHandler").Error(err)
+				l.Error(err)
 			}
 			return
+		} else if os.IsNotExist(err) {
+			l.Infof("file %s does not yet exist; checking again in %v", signalFilepath, signalFileCheckDuration)
+		} else {
+			l.Errorf("error checking for file: %v", err)
 		}
-		s.WithField("context", "shutdownReadyHandler").Errorf("error checking for file: %v", err)
-		time.Sleep(1 * time.Second)
+
+		select {
+		case <-time.After(signalFileCheckDuration):
+		case <-ctx.Done():
+			l.Infof("client request cancelled")
+			return
+		}
 	}
 }
 

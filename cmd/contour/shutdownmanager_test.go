@@ -1,14 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/projectcontour/contour/internal/fixture"
 )
 
 func TestShutdownManager_HealthzHandler(t *testing.T) {
@@ -40,6 +47,79 @@ func TestShutdownManager_HealthzHandler(t *testing.T) {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)
 	}
+}
+
+func TestShutdownManager_ShutdownReadyHandler_Success(t *testing.T) {
+	// Create a request to pass to our handler
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*500)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", "/shutdown", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mgr := newShutdownManagerContext()
+	mgr.FieldLogger = fixture.NewTestLogger(t)
+	tmpdir, err := ioutil.TempDir("", "shutdownmanager_test-*")
+	defer os.RemoveAll(tmpdir)
+	if err != nil {
+		t.Error(err)
+	}
+	mgr.shutdownReadyFile = path.Join(tmpdir, "ok")
+	mgr.shutdownReadyCheckInterval = time.Millisecond * 20
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(mgr.shutdownReadyHandler)
+
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		file, err := os.Create(mgr.shutdownReadyFile)
+		if err != nil {
+			t.Error(err)
+		}
+		defer file.Close()
+	}()
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, req)
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	// Check the response body is what we expect.
+	expected := `OK`
+	if rr.Body.String() != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expected)
+	}
+}
+
+func TestShutdownManager_ShutdownReadyHandler_ClientCancel(t *testing.T) {
+	// Create a request to pass to our handler
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*50)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", "/shutdown", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mgr := shutdownmanagerContext{}
+	mgr.FieldLogger = fixture.NewTestLogger(t)
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(mgr.shutdownReadyHandler)
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, req)
 }
 
 func TestParseOpenConnections(t *testing.T) {
