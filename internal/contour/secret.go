@@ -72,9 +72,9 @@ func (c *SecretCache) Query(names []string) []proto.Message {
 
 func (*SecretCache) TypeURL() string { return resource.SecretType }
 
-func (s *SecretCache) OnChange(root *dag.DAG) {
+func (c *SecretCache) OnChange(root *dag.DAG) {
 	secrets := visitSecrets(root)
-	s.Update(secrets)
+	c.Update(secrets)
 }
 
 type secretVisitor struct {

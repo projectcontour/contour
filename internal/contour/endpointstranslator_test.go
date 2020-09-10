@@ -118,10 +118,10 @@ func TestEndpointCacheQuery(t *testing.T) {
 
 func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 	clusters := []*dag.ServiceCluster{
-		&dag.ServiceCluster{
+		{
 			ClusterName: "default/httpbin-org/a",
 			Services: []dag.WeightedService{
-				dag.WeightedService{
+				{
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
@@ -129,10 +129,10 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				},
 			},
 		},
-		&dag.ServiceCluster{
+		{
 			ClusterName: "default/httpbin-org/b",
 			Services: []dag.WeightedService{
-				dag.WeightedService{
+				{
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
@@ -140,10 +140,10 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				},
 			},
 		},
-		&dag.ServiceCluster{
+		{
 			ClusterName: "default/simple",
 			Services: []dag.WeightedService{
-				dag.WeightedService{
+				{
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
@@ -303,10 +303,10 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 
 func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 	clusters := []*dag.ServiceCluster{
-		&dag.ServiceCluster{
+		{
 			ClusterName: "default/simple",
 			Services: []dag.WeightedService{
-				dag.WeightedService{
+				{
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
@@ -314,10 +314,10 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				},
 			},
 		},
-		&dag.ServiceCluster{
+		{
 			ClusterName: "super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http",
 			Services: []dag.WeightedService{
-				dag.WeightedService{
+				{
 					Weight:           1,
 					ServiceName:      "what-a-descriptive-service-name-you-must-be-so-proud",
 					ServiceNamespace: "super-long-namespace-name-oh-boy",
@@ -325,10 +325,10 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				},
 			},
 		},
-		&dag.ServiceCluster{
+		{
 			ClusterName: "super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https",
 			Services: []dag.WeightedService{
-				dag.WeightedService{
+				{
 					Weight:           1,
 					ServiceName:      "what-a-descriptive-service-name-you-must-be-so-proud",
 					ServiceNamespace: "super-long-namespace-name-oh-boy",
@@ -562,7 +562,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 	et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
 
 	require.NoError(t, et.cache.SetClusters([]*dag.ServiceCluster{
-		&dag.ServiceCluster{
+		{
 			ClusterName: "default/simple",
 			Services: []dag.WeightedService{{
 				Weight:           1,
@@ -607,22 +607,22 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 func TestEndpointsTranslatorWeightedService(t *testing.T) {
 	et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
 	clusters := []*dag.ServiceCluster{
-		&dag.ServiceCluster{
+		{
 			ClusterName: "default/weighted",
 			Services: []dag.WeightedService{
-				dag.WeightedService{
+				{
 					Weight:           0,
 					ServiceName:      "weight0",
 					ServiceNamespace: "default",
 					ServicePort:      v1.ServicePort{},
 				},
-				dag.WeightedService{
+				{
 					Weight:           1,
 					ServiceName:      "weight1",
 					ServiceNamespace: "default",
 					ServicePort:      v1.ServicePort{},
 				},
-				dag.WeightedService{
+				{
 					Weight:           2,
 					ServiceName:      "weight2",
 					ServiceNamespace: "default",
@@ -668,20 +668,20 @@ func TestEndpointsTranslatorWeightedService(t *testing.T) {
 func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 	et := NewEndpointsTranslator(fixture.NewTestLogger(t)).(*EndpointsTranslator)
 	clusters := []*dag.ServiceCluster{
-		&dag.ServiceCluster{
+		{
 			ClusterName: "default/weighted",
 			Services: []dag.WeightedService{
-				dag.WeightedService{
+				{
 					ServiceName:      "weight0",
 					ServiceNamespace: "default",
 					ServicePort:      v1.ServicePort{},
 				},
-				dag.WeightedService{
+				{
 					ServiceName:      "weight1",
 					ServiceNamespace: "default",
 					ServicePort:      v1.ServicePort{},
 				},
-				dag.WeightedService{
+				{
 					ServiceName:      "weight2",
 					ServiceNamespace: "default",
 					ServicePort:      v1.ServicePort{},

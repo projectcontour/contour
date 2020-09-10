@@ -30,7 +30,7 @@ func TestResourceKindExists(t *testing.T) {
 		Group: metav1.APIGroup{
 			Name: "networking.k8s.io",
 			Versions: []metav1.GroupVersionForDiscovery{
-				metav1.GroupVersionForDiscovery{
+				{
 					GroupVersion: "networking.k8s.io/v1beta1",
 					Version:      "v1beta1",
 				},
@@ -41,15 +41,15 @@ func TestResourceKindExists(t *testing.T) {
 			},
 		},
 		VersionedResources: map[string][]metav1.APIResource{
-			"v1beta1": []metav1.APIResource{
-				metav1.APIResource{
+			"v1beta1": {
+				{
 					Name:               "ingressclasses",
 					Namespaced:         false,
 					Kind:               "IngressClass",
 					Verbs:              metav1.Verbs{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
 					StorageVersionHash: "6upRfBq0FOI=",
 				},
-				metav1.APIResource{
+				{
 					Name:               "ingresses",
 					Namespaced:         true,
 					Kind:               "Ingress",
@@ -57,7 +57,7 @@ func TestResourceKindExists(t *testing.T) {
 					ShortNames:         []string{"ing"},
 					StorageVersionHash: "ZOAfGflaKd0=",
 				},
-				metav1.APIResource{
+				{
 					Name:       "ingresses/status",
 					Namespaced: true,
 					Kind:       "Ingress",

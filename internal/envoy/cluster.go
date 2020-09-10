@@ -144,10 +144,10 @@ func edshealthcheck(c *dag.Cluster) []*envoy_api_v2_core.HealthCheck {
 		return []*envoy_api_v2_core.HealthCheck{
 			httpHealthCheck(c),
 		}
-	} else {
-		return []*envoy_api_v2_core.HealthCheck{
-			tcpHealthCheck(c),
-		}
+	}
+
+	return []*envoy_api_v2_core.HealthCheck{
+		tcpHealthCheck(c),
 	}
 }
 

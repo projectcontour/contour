@@ -31,6 +31,7 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
+// nolint:golint
 const (
 	ENVOY_HTTP_LISTENER            = "ingress_http"
 	ENVOY_FALLBACK_ROUTECONFIG     = "ingress_fallbackcert"
@@ -284,9 +285,9 @@ func (c *ListenerCache) Query(names []string) []proto.Message {
 
 func (*ListenerCache) TypeURL() string { return resource.ListenerType }
 
-func (l *ListenerCache) OnChange(root *dag.DAG) {
-	listeners := visitListeners(root, &l.Config)
-	l.Update(listeners)
+func (c *ListenerCache) OnChange(root *dag.DAG) {
+	listeners := visitListeners(root, &c.Config)
+	c.Update(listeners)
 }
 
 type listenerVisitor struct {

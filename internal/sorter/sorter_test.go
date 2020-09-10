@@ -33,11 +33,11 @@ func TestInvalidSorter(t *testing.T) {
 
 func TestSortRouteConfiguration(t *testing.T) {
 	want := []*v2.RouteConfiguration{
-		&v2.RouteConfiguration{Name: "bar"},
-		&v2.RouteConfiguration{Name: "baz"},
-		&v2.RouteConfiguration{Name: "foo"},
-		&v2.RouteConfiguration{Name: "same", InternalOnlyHeaders: []string{"z", "y"}},
-		&v2.RouteConfiguration{Name: "same", InternalOnlyHeaders: []string{"a", "b"}},
+		{Name: "bar"},
+		{Name: "baz"},
+		{Name: "foo"},
+		{Name: "same", InternalOnlyHeaders: []string{"z", "y"}},
+		{Name: "same", InternalOnlyHeaders: []string{"a", "b"}},
 	}
 
 	have := []*v2.RouteConfiguration{
@@ -54,11 +54,11 @@ func TestSortRouteConfiguration(t *testing.T) {
 
 func TestSortVirtualHosts(t *testing.T) {
 	want := []*envoy_api_v2_route.VirtualHost{
-		&envoy_api_v2_route.VirtualHost{Name: "bar"},
-		&envoy_api_v2_route.VirtualHost{Name: "baz"},
-		&envoy_api_v2_route.VirtualHost{Name: "foo"},
-		&envoy_api_v2_route.VirtualHost{Name: "same", Domains: []string{"z", "y"}},
-		&envoy_api_v2_route.VirtualHost{Name: "same", Domains: []string{"a", "b"}},
+		{Name: "bar"},
+		{Name: "baz"},
+		{Name: "foo"},
+		{Name: "same", Domains: []string{"z", "y"}},
+		{Name: "same", Domains: []string{"a", "b"}},
 	}
 
 	have := []*envoy_api_v2_route.VirtualHost{
@@ -107,23 +107,23 @@ func presentHeader(name string) *envoy_api_v2_route.HeaderMatcher {
 
 func TestSortRoutesLongestPath(t *testing.T) {
 	want := []*envoy_api_v2_route.Route{
-		&envoy_api_v2_route.Route{
+		{
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchRegex("/this/is/the/longest"),
 			}},
 
 		// Note that regex matches sort before prefix matches.
-		&envoy_api_v2_route.Route{
+		{
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchRegex("."),
 			}},
 
-		&envoy_api_v2_route.Route{
+		{
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchPrefix("/path/prefix2"),
 			}},
 
-		&envoy_api_v2_route.Route{
+		{
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchPrefix("/path/prefix"),
 			}},
@@ -145,21 +145,21 @@ func TestSortRoutesLongestHeaders(t *testing.T) {
 		// Although the header names are the same, this value
 		// should sort before the next one because it is
 		// textually longer.
-		&envoy_api_v2_route.Route{
+		{
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
 				Headers: []*envoy_api_v2_route.HeaderMatcher{
 					exactHeader("header-name", "header-value"),
 				},
 			}},
-		&envoy_api_v2_route.Route{
+		{
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
 				Headers: []*envoy_api_v2_route.HeaderMatcher{
 					presentHeader("header-name"),
 				},
 			}},
-		&envoy_api_v2_route.Route{
+		{
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
 				Headers: []*envoy_api_v2_route.HeaderMatcher{
@@ -180,8 +180,8 @@ func TestSortRoutesLongestHeaders(t *testing.T) {
 
 func TestSortSecrets(t *testing.T) {
 	want := []*envoy_api_v2_auth.Secret{
-		&envoy_api_v2_auth.Secret{Name: "first"},
-		&envoy_api_v2_auth.Secret{Name: "second"},
+		{Name: "first"},
+		{Name: "second"},
 	}
 
 	have := []*envoy_api_v2_auth.Secret{
@@ -215,8 +215,8 @@ func TestSortHeaderMatchers(t *testing.T) {
 
 func TestSortClusters(t *testing.T) {
 	want := []*v2.Cluster{
-		&v2.Cluster{Name: "first"},
-		&v2.Cluster{Name: "second"},
+		{Name: "first"},
+		{Name: "second"},
 	}
 
 	have := []*v2.Cluster{
@@ -230,8 +230,8 @@ func TestSortClusters(t *testing.T) {
 
 func TestSortClusterLoadAssignments(t *testing.T) {
 	want := []*v2.ClusterLoadAssignment{
-		&v2.ClusterLoadAssignment{ClusterName: "first"},
-		&v2.ClusterLoadAssignment{ClusterName: "second"},
+		{ClusterName: "first"},
+		{ClusterName: "second"},
 	}
 
 	have := []*v2.ClusterLoadAssignment{
@@ -245,15 +245,15 @@ func TestSortClusterLoadAssignments(t *testing.T) {
 
 func TestSortHTTPWeightedClusters(t *testing.T) {
 	want := []*envoy_api_v2_route.WeightedCluster_ClusterWeight{
-		&envoy_api_v2_route.WeightedCluster_ClusterWeight{
+		{
 			Name:   "first",
 			Weight: protobuf.UInt32(10),
 		},
-		&envoy_api_v2_route.WeightedCluster_ClusterWeight{
+		{
 			Name:   "second",
 			Weight: protobuf.UInt32(10),
 		},
-		&envoy_api_v2_route.WeightedCluster_ClusterWeight{
+		{
 			Name:   "second",
 			Weight: protobuf.UInt32(20),
 		},
@@ -271,15 +271,15 @@ func TestSortHTTPWeightedClusters(t *testing.T) {
 
 func TestSortTCPWeightedClusters(t *testing.T) {
 	want := []*tcp.TcpProxy_WeightedCluster_ClusterWeight{
-		&tcp.TcpProxy_WeightedCluster_ClusterWeight{
+		{
 			Name:   "first",
 			Weight: 10,
 		},
-		&tcp.TcpProxy_WeightedCluster_ClusterWeight{
+		{
 			Name:   "second",
 			Weight: 10,
 		},
-		&tcp.TcpProxy_WeightedCluster_ClusterWeight{
+		{
 			Name:   "second",
 			Weight: 20,
 		},
@@ -297,8 +297,8 @@ func TestSortTCPWeightedClusters(t *testing.T) {
 
 func TestSortListeners(t *testing.T) {
 	want := []*v2.Listener{
-		&v2.Listener{Name: "first"},
-		&v2.Listener{Name: "second"},
+		{Name: "first"},
+		{Name: "second"},
 	}
 
 	have := []*v2.Listener{

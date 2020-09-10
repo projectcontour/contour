@@ -87,9 +87,9 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 // TypeURL returns the string type of RouteCache Resource.
 func (*RouteCache) TypeURL() string { return resource.RouteType }
 
-func (r *RouteCache) OnChange(root *dag.DAG) {
+func (c *RouteCache) OnChange(root *dag.DAG) {
 	routes := visitRoutes(root)
-	r.Update(routes)
+	c.Update(routes)
 }
 
 type routeVisitor struct {
