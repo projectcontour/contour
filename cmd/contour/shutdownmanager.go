@@ -36,8 +36,10 @@ const (
 	prometheusStat     = "envoy_http_downstream_cx_active"
 )
 
-// File path used in the /shutdown endpoint.
+// shutdownReadyFile is the default file path used in the /shutdown endpoint.
 const shutdownReadyFile = "/ok"
+
+// shutdownReadyFile is the default polling interval for the file used in the /shutdown endpoint.
 const shutdownReadyCheckInterval = time.Second * 1
 
 func prometheusLabels() []string {
@@ -46,8 +48,10 @@ func prometheusLabels() []string {
 
 type shutdownmanagerContext struct {
 	// httpServePort defines what port the shutdown-manager listens on
-	httpServePort              int
-	shutdownReadyFile          string
+	httpServePort int
+	// shutdownReadyFile is the default file path used in the /shutdown endpoint
+	shutdownReadyFile string
+	// shutdownReadyCheckInterval is the polling interval for the file used in the /shutdown endpoint
 	shutdownReadyCheckInterval time.Duration
 
 	logrus.FieldLogger
@@ -73,7 +77,9 @@ type shutdownContext struct {
 func newShutdownManagerContext() *shutdownmanagerContext {
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
 	return &shutdownmanagerContext{
-		httpServePort: 8090,
+		httpServePort:              8090,
+		shutdownReadyFile:          shutdownReadyFile,
+		shutdownReadyCheckInterval: shutdownReadyCheckInterval,
 	}
 }
 
@@ -101,40 +107,26 @@ func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, r *http.R
 // file to understand if it is safe to terminate. The file-based approach is used since the process in which
 // the kubelet calls the shutdown command is different than the HTTP request from Envoy to /shutdown
 func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *http.Request) {
-	// For testing, the filepath and check period can be overridden in the context
-	// Otherwise, use the module constants
-	var signalFilepath string
-	if s.shutdownReadyFile != "" {
-		signalFilepath = s.shutdownReadyFile
-	} else {
-		signalFilepath = shutdownReadyFile
-	}
-	var signalFileCheckDuration time.Duration
-	if s.shutdownReadyCheckInterval != 0 {
-		signalFileCheckDuration = s.shutdownReadyCheckInterval
-	} else {
-		signalFileCheckDuration = shutdownReadyCheckInterval
-	}
-
 	l := s.WithField("context", "shutdownReadyHandler")
 	ctx := r.Context()
 	for {
-		_, err := os.Stat(signalFilepath)
+		_, err := os.Stat(s.shutdownReadyFile)
 		if err == nil {
-			l.Infof("detected file %s; sending HTTP response", signalFilepath)
+			l.Infof("detected file %s; sending HTTP response", s.shutdownReadyFile)
 			http.StatusText(http.StatusOK)
 			if _, err := w.Write([]byte("OK")); err != nil {
 				l.Error(err)
 			}
 			return
 		} else if os.IsNotExist(err) {
-			l.Infof("file %s does not yet exist; checking again in %v", signalFilepath, signalFileCheckDuration)
+			l.Infof("file %s does not yet exist; checking again in %v", s.shutdownReadyFile,
+				s.shutdownReadyCheckInterval)
 		} else {
 			l.Errorf("error checking for file: %v", err)
 		}
 
 		select {
-		case <-time.After(signalFileCheckDuration):
+		case <-time.After(s.shutdownReadyCheckInterval):
 		case <-ctx.Done():
 			l.Infof("client request cancelled")
 			return

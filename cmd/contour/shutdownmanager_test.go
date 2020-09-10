@@ -110,7 +110,7 @@ func TestShutdownManager_ShutdownReadyHandler_ClientCancel(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mgr := shutdownmanagerContext{}
+	mgr := newShutdownManagerContext()
 	mgr.FieldLogger = fixture.NewTestLogger(t)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
