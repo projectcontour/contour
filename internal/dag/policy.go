@@ -64,7 +64,12 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 	}
 }
 
-func headersPolicy(policy *projcontour.HeadersPolicy, allowHostRewrite bool) (*HeadersPolicy, error) {
+func headersPolicyService(policy *projcontour.HeadersPolicy) (*HeadersPolicy, error) {
+	return headersPolicyRoute(policy, false)
+
+}
+
+func headersPolicyRoute(policy *projcontour.HeadersPolicy, allowHostRewrite bool) (*HeadersPolicy, error) {
 	if policy == nil {
 		return nil, nil
 	}

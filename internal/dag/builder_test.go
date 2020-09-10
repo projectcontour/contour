@@ -5563,54 +5563,14 @@ func TestDAGInsert(t *testing.T) {
 				proxyReplaceHostHeaderService,
 				s9,
 			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
-							Clusters: []*Cluster{{
-								Upstream: service(s9),
-								RequestHeadersPolicy: &HeadersPolicy{
-									HostRewrite: "bar.com",
-								},
-								SNI: "bar.com",
-							}},
-						}),
-					),
-				},
-			),
+			want: listeners(),
 		},
 		"insert proxy with replace header policy - service - host header - externalName": {
 			objs: []interface{}{
 				proxyReplaceHostHeaderService,
 				s14,
 			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
-							Clusters: []*Cluster{{
-								Upstream: &Service{
-									ExternalName: "externalservice.io",
-									Weighted: WeightedService{
-										Weight:           1,
-										ServiceName:      s14.Name,
-										ServiceNamespace: s14.Namespace,
-										ServicePort:      s14.Spec.Ports[0],
-									},
-								},
-								RequestHeadersPolicy: &HeadersPolicy{
-									HostRewrite: "bar.com",
-								},
-								SNI: "bar.com",
-							}},
-						}),
-					),
-				},
-			),
+			want: listeners(),
 		},
 		"insert proxy with response header policy - route - host header": {
 			objs: []interface{}{
@@ -6711,7 +6671,7 @@ func TestValidateHeaderAlteration(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, gotErr := headersPolicy(test.in, false)
+			got, gotErr := headersPolicyService(test.in)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
 		})
