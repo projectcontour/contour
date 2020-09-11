@@ -22,6 +22,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -128,25 +129,32 @@ func escapeHeaderValue(value string) string {
 }
 
 // ingressRetryPolicy builds a RetryPolicy from ingress annotations.
-func ingressRetryPolicy(ingress *v1beta1.Ingress) *RetryPolicy {
+func ingressRetryPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) *RetryPolicy {
 	retryOn := annotation.CompatAnnotation(ingress, "retry-on")
 	if len(retryOn) < 1 {
 		return nil
 	}
+
 	// if there is a non empty retry-on annotation, build a RetryPolicy manually.
-	return &RetryPolicy{
+	rp := &RetryPolicy{
 		RetryOn: retryOn,
 		// TODO(dfc) k8s.NumRetries may parse as 0, which is inconsistent with
 		// retryPolicy()'s default value of 1.
 		NumRetries: annotation.NumRetries(ingress),
-		// TODO(dfc) k8s.PerTryTimeout will parse to -1, infinite, in the case of
-		// invalid data, this is inconsistent with retryPolicy()'s default value
-		// of 0 duration.
-		PerTryTimeout: annotation.PerTryTimeout(ingress),
 	}
+
+	perTryTimeout, err := annotation.PerTryTimeout(ingress)
+	if err != nil {
+		log.WithError(err).Error("Error parsing per-try-timeout annotation")
+
+		return rp
+	}
+
+	rp.PerTryTimeout = perTryTimeout
+	return rp
 }
 
-func ingressTimeoutPolicy(ingress *v1beta1.Ingress) TimeoutPolicy {
+func ingressTimeoutPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) TimeoutPolicy {
 	response := annotation.CompatAnnotation(ingress, "response-timeout")
 	if len(response) == 0 {
 		// Note: due to a misunderstanding the name of the annotation is
@@ -162,22 +170,39 @@ func ingressTimeoutPolicy(ingress *v1beta1.Ingress) TimeoutPolicy {
 	}
 	// if the request timeout annotation is present on this ingress
 	// construct and use the HTTPProxy timeout policy logic.
-	return timeoutPolicy(&projcontour.TimeoutPolicy{
+	tp, err := timeoutPolicy(&projcontour.TimeoutPolicy{
 		Response: response,
 	})
+	if err != nil {
+		log.WithError(err).Error("Error parsing response-timeout annotation, using the default value")
+		return TimeoutPolicy{}
+	}
+
+	return tp
 }
 
-func timeoutPolicy(tp *projcontour.TimeoutPolicy) TimeoutPolicy {
+func timeoutPolicy(tp *projcontour.TimeoutPolicy) (TimeoutPolicy, error) {
 	if tp == nil {
 		return TimeoutPolicy{
 			ResponseTimeout: timeout.DefaultSetting(),
 			IdleTimeout:     timeout.DefaultSetting(),
-		}
+		}, nil
 	}
+
+	responseTimeout, err := timeout.Parse(tp.Response)
+	if err != nil {
+		return TimeoutPolicy{}, fmt.Errorf("error parsing response timeout: %w", err)
+	}
+
+	idleTimeout, err := timeout.Parse(tp.Idle)
+	if err != nil {
+		return TimeoutPolicy{}, fmt.Errorf("error parsing idle timeout: %w", err)
+	}
+
 	return TimeoutPolicy{
-		ResponseTimeout: timeout.Parse(tp.Response),
-		IdleTimeout:     timeout.Parse(tp.Idle),
-	}
+		ResponseTimeout: responseTimeout,
+		IdleTimeout:     idleTimeout,
+	}, nil
 }
 
 func httpHealthCheckPolicy(hc *projcontour.HTTPHealthCheckPolicy) *HTTPHealthCheckPolicy {

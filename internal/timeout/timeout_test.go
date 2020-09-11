@@ -23,6 +23,7 @@ func TestParse(t *testing.T) {
 	tests := map[string]struct {
 		duration string
 		want     Setting
+		wantErr  bool
 	}{
 		"empty": {
 			duration: "",
@@ -40,19 +41,30 @@ func TestParse(t *testing.T) {
 			duration: "infinity",
 			want:     DisabledSetting(),
 		},
+		"infinite": {
+			duration: "infinite",
+			want:     DisabledSetting(),
+		},
 		"10 seconds": {
 			duration: "10s",
 			want:     DurationSetting(10 * time.Second),
 		},
 		"invalid": {
 			duration: "10", // 10 what?
-			want:     DisabledSetting(),
+			want:     DefaultSetting(),
+			wantErr:  true,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, Parse(tc.duration))
+			got, gotErr := Parse(tc.duration)
+			assert.Equal(t, tc.want, got)
+			if tc.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
 		})
 	}
 }

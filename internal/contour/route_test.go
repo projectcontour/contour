@@ -701,7 +701,7 @@ func TestRouteVisit(t *testing.T) {
 					envoy.VirtualHost("*",
 						&envoy_api_v2_route.Route{
 							Match:  routePrefix("/"),
-							Action: routetimeout("default/kuard/8080/da39a3ee5e", 0),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
 					),
 				),

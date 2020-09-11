@@ -182,7 +182,7 @@ func NumRetries(i *v1beta1.Ingress) uint32 {
 }
 
 // PerTryTimeout returns the duration envoy will wait per retry cycle.
-func PerTryTimeout(i *v1beta1.Ingress) timeout.Setting {
+func PerTryTimeout(i *v1beta1.Ingress) (timeout.Setting, error) {
 	return timeout.Parse(CompatAnnotation(i, "per-try-timeout"))
 }
 

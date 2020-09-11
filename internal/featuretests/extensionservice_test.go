@@ -207,6 +207,25 @@ func extMissingService(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) 
 	})
 }
 
+func extInvalidTimeout(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+	rh.OnAdd(&v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("ns/ext"),
+		Spec: v1alpha1.ExtensionServiceSpec{
+			Services: []v1alpha1.ExtensionServiceTarget{
+				{Name: "svc1", Port: 8081},
+				{Name: "svc2", Port: 8082},
+			},
+			TimeoutPolicy: &projcontour.TimeoutPolicy{
+				Response: "invalid",
+			},
+		},
+	})
+
+	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+		TypeUrl: clusterType,
+	})
+}
+
 func extInconsistentProto(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	rh.OnAdd(&v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
@@ -236,6 +255,7 @@ func TestExtensionService(t *testing.T) {
 		"ExternalName":       extExternalName,
 		"MissingService":     extMissingService,
 		"InconsistentProto":  extInconsistentProto,
+		"InvalidTimeout":     extInvalidTimeout,
 	}
 
 	for n, f := range subtests {

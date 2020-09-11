@@ -1807,6 +1807,54 @@ func TestDAGStatus(t *testing.T) {
 			}},
 		})
 
+	invalidResponseTimeout := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: serviceKuard.Namespace,
+			Name:      "invalid-timeouts",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{
+				{
+					Services: []projcontour.Service{
+						{
+							Name: serviceKuard.Name,
+						},
+					},
+					TimeoutPolicy: &projcontour.TimeoutPolicy{
+						Response: "invalid-val",
+					},
+				},
+			},
+		},
+	}
+
+	invalidIdleTimeout := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: serviceKuard.Namespace,
+			Name:      "invalid-timeouts",
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{
+				{
+					Services: []projcontour.Service{
+						{
+							Name: serviceKuard.Name,
+						},
+					},
+					TimeoutPolicy: &projcontour.TimeoutPolicy{
+						Idle: "invalid-val",
+					},
+				},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                []interface{}
 		fallbackCertificate *types.NamespacedName
@@ -2474,6 +2522,34 @@ func TestDAGStatus(t *testing.T) {
 					Status:      "invalid",
 					Description: "rewriting \"Host\" header is not supported on response headers",
 					Vhost:       invalidResponseHeadersPolicyRoute.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"proxy with invalid response timeout value is invalid": {
+			objs: []interface{}{invalidResponseTimeout, serviceKuard},
+			want: map[types.NamespacedName]Status{
+				{
+					Name:      invalidResponseTimeout.Name,
+					Namespace: invalidResponseTimeout.Namespace,
+				}: {
+					Object:      invalidResponseTimeout,
+					Status:      "invalid",
+					Description: "route.timeoutPolicy failed to parse: error parsing response timeout: unable to parse timeout string \"invalid-val\": time: invalid duration \"invalid-val\"",
+					Vhost:       invalidResponseTimeout.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"proxy with invalid idle timeout value is invalid": {
+			objs: []interface{}{invalidIdleTimeout, serviceKuard},
+			want: map[types.NamespacedName]Status{
+				{
+					Name:      invalidIdleTimeout.Name,
+					Namespace: invalidIdleTimeout.Namespace,
+				}: {
+					Object:      invalidIdleTimeout,
+					Status:      "invalid",
+					Description: "route.timeoutPolicy failed to parse: error parsing idle timeout: unable to parse timeout string \"invalid-val\": time: invalid duration \"invalid-val\"",
+					Vhost:       invalidIdleTimeout.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},

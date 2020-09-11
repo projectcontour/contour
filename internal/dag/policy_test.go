@@ -14,11 +14,13 @@
 package dag
 
 import (
+	"io/ioutil"
 	"testing"
 	"time"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -165,7 +167,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := ingressRetryPolicy(tc.i)
+			got := ingressRetryPolicy(tc.i, &logrus.Logger{Out: ioutil.Discard})
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -247,8 +249,9 @@ func TestRetryPolicy(t *testing.T) {
 
 func TestTimeoutPolicy(t *testing.T) {
 	tests := map[string]struct {
-		tp   *projcontour.TimeoutPolicy
-		want TimeoutPolicy
+		tp      *projcontour.TimeoutPolicy
+		want    TimeoutPolicy
+		wantErr bool
 	}{
 		"nil timeout policy": {
 			tp:   nil,
@@ -270,13 +273,7 @@ func TestTimeoutPolicy(t *testing.T) {
 			tp: &projcontour.TimeoutPolicy{
 				Response: "90", // 90 what?
 			},
-			want: TimeoutPolicy{
-				// the documentation for an invalid timeout says the duration will
-				// be undefined. In practice we take the spec from the
-				// contour.heptio.com/request-timeout annotation, which is defined
-				// to choose infinite when its valid cannot be parsed.
-				ResponseTimeout: timeout.DisabledSetting(),
-			},
+			wantErr: true,
 		},
 		"infinite response timeout": {
 			tp: &projcontour.TimeoutPolicy{
@@ -298,8 +295,14 @@ func TestTimeoutPolicy(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := timeoutPolicy(tc.tp)
-			assert.Equal(t, tc.want, got)
+			got, gotErr := timeoutPolicy(tc.tp)
+			if tc.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.Equal(t, tc.want, got)
+				assert.NoError(t, gotErr)
+			}
+
 		})
 	}
 }

@@ -59,6 +59,13 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	cache *KubernetesCache,
 	ext *v1alpha1.ExtensionService,
 ) *ExtensionCluster {
+	tp, err := timeoutPolicy(ext.Spec.TimeoutPolicy)
+	if err != nil {
+		// TODO(jpeach): Add status condition, #2874.
+		p.WithError(err).Error("failed to parse timeout policy values")
+		return nil
+	}
+
 	extension := ExtensionCluster{
 		Name: extensionClusterName(k8s.NamespacedNameOf(ext)),
 		Upstream: ServiceCluster{
@@ -70,7 +77,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		Protocol:           "h2",
 		UpstreamValidation: nil,
 		LoadBalancerPolicy: loadBalancerPolicy(ext.Spec.LoadBalancerPolicy),
-		TimeoutPolicy:      timeoutPolicy(ext.Spec.TimeoutPolicy),
+		TimeoutPolicy:      tp,
 		SNI:                "",
 	}
 

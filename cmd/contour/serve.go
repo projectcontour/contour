@@ -181,6 +181,27 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return err
 	}
 
+	connectionIdleTimeout, err := timeout.Parse(ctx.ConnectionIdleTimeout)
+	if err != nil {
+		return fmt.Errorf("error parsing connection idle timeout: %w", err)
+	}
+	streamIdleTimeout, err := timeout.Parse(ctx.StreamIdleTimeout)
+	if err != nil {
+		return fmt.Errorf("error parsing stream idle timeout: %w", err)
+	}
+	maxConnectionDuration, err := timeout.Parse(ctx.MaxConnectionDuration)
+	if err != nil {
+		return fmt.Errorf("error parsing max connection duration: %w", err)
+	}
+	connectionShutdownGracePeriod, err := timeout.Parse(ctx.ConnectionShutdownGracePeriod)
+	if err != nil {
+		return fmt.Errorf("error parsing connection shutdown grace period: %w", err)
+	}
+	requestTimeout, err := getRequestTimeout(log, ctx)
+	if err != nil {
+		return fmt.Errorf("error parsing request timeout: %w", err)
+	}
+
 	listenerConfig := contour.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
@@ -192,11 +213,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		AccessLogType:                 ctx.AccessLogFormat,
 		AccessLogFields:               ctx.AccessLogFields,
 		MinimumTLSVersion:             annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
-		RequestTimeout:                getRequestTimeout(log, ctx),
-		ConnectionIdleTimeout:         timeout.Parse(ctx.ConnectionIdleTimeout),
-		StreamIdleTimeout:             timeout.Parse(ctx.StreamIdleTimeout),
-		MaxConnectionDuration:         timeout.Parse(ctx.MaxConnectionDuration),
-		ConnectionShutdownGracePeriod: timeout.Parse(ctx.ConnectionShutdownGracePeriod),
+		RequestTimeout:                requestTimeout,
+		ConnectionIdleTimeout:         connectionIdleTimeout,
+		StreamIdleTimeout:             streamIdleTimeout,
+		MaxConnectionDuration:         maxConnectionDuration,
+		ConnectionShutdownGracePeriod: connectionShutdownGracePeriod,
 	}
 
 	defaultHTTPVersions, err := parseDefaultHTTPVersions(ctx.DefaultHTTPVersions)
@@ -524,14 +545,14 @@ func startInformer(inf k8s.InformerFactory, log logrus.FieldLogger) func(stop <-
 
 // getRequestTimeout gets the request timeout setting from ctx.TimeoutConfig.RequestTimeout
 // if it's set, or else ctx.RequestTimeoutDeprecated if it's set, or else a default setting.
-func getRequestTimeout(log logrus.FieldLogger, ctx *serveContext) timeout.Setting {
+func getRequestTimeout(log logrus.FieldLogger, ctx *serveContext) (timeout.Setting, error) {
 	if ctx.RequestTimeout != "" {
 		return timeout.Parse(ctx.RequestTimeout)
 	}
 	if ctx.RequestTimeoutDeprecated > 0 {
 		log.Warn("The request-timeout field in the Contour config file is deprecated and will be removed in a future release. Use timeout-config.request-timeout instead.")
-		return timeout.DurationSetting(ctx.RequestTimeoutDeprecated)
+		return timeout.DurationSetting(ctx.RequestTimeoutDeprecated), nil
 	}
 
-	return timeout.DefaultSetting()
+	return timeout.DefaultSetting(), nil
 }

@@ -3715,9 +3715,6 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
-								ResponseTimeout: timeout.DisabledSetting(), // invalid timeout equals infinity ¯\_(ツ)_/¯.
-							},
 						}),
 					),
 				},
@@ -3735,9 +3732,6 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefix("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
-								ResponseTimeout: timeout.DisabledSetting(), // invalid timeout equals infinity ¯\_(ツ)_/¯.
-							},
 						}),
 					),
 				},
@@ -3749,20 +3743,7 @@ func TestDAGInsert(t *testing.T) {
 				proxyTimeoutPolicyInvalidResponse,
 				s1,
 			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
-							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
-								ResponseTimeout: timeout.DisabledSetting(), // invalid timeout equals infinity ¯\_(ツ)_/¯.
-							},
-						}),
-					),
-				},
-			),
+			want: listeners(),
 		},
 		"insert ingress w/ valid legacy timeout annotation": {
 			objs: []interface{}{

@@ -224,8 +224,14 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 				}
 
 				svhost.AuthorizationService = ext
-				svhost.AuthorizationResponseTimeout = timeout.Parse(auth.ResponseTimeout)
 				svhost.AuthorizationFailOpen = auth.FailOpen
+
+				timeout, err := timeout.Parse(auth.ResponseTimeout)
+				if err != nil {
+					sw.SetInvalid("Spec.Virtualhost.Authorization.ResponseTimeout string %q cannot be parsed: %s", auth.ResponseTimeout, err)
+					return
+				}
+				svhost.AuthorizationResponseTimeout = timeout
 			}
 		}
 	}
@@ -354,12 +360,18 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		tp, err := timeoutPolicy(route.TimeoutPolicy)
+		if err != nil {
+			sw.SetInvalid("route.timeoutPolicy failed to parse: %v", err)
+			return nil
+		}
+
 		r := &Route{
 			PathMatchCondition:    mergePathMatchConditions(conds),
 			HeaderMatchConditions: mergeHeaderMatchConditions(conds),
 			Websocket:             route.EnableWebsockets,
 			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
-			TimeoutPolicy:         timeoutPolicy(route.TimeoutPolicy),
+			TimeoutPolicy:         tp,
 			RetryPolicy:           retryPolicy(route.RetryPolicy),
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
