@@ -13,6 +13,8 @@
 
 package v1
 
+import "fmt"
+
 // AuthorizationConfigured returns whether authorization  is
 // configured on this virtual host.
 func (v *VirtualHost) AuthorizationConfigured() bool {
@@ -77,4 +79,194 @@ func (r *Route) AuthorizationContext(parent map[string]string) map[string]string
 	}
 
 	return values
+}
+
+// AddError adds an error-level Subcondition to the DetailedCondition.
+// AddError will also update the DetailedCondition's state to take into account
+// the error that's present.
+// If a SubCondition with the given errorType exists, will change
+// the reason to "MultipleReasons", and will append the given message
+// to the existing SubCondition's message.
+func (dc *DetailedCondition) AddError(errorType, reason, message string) {
+
+	// Update the condition so that it indicates there's at least one error
+	// This needs to be here because conditions may be normal-true (positive)
+	// polarity (like `Valid`), or abnormal-true (negative) polarity
+	// (like `ErrorPresent`)
+	if dc.IsPositivePolarity() {
+		dc.Status = ConditionFalse
+	} else {
+		dc.Status = ConditionTrue
+	}
+
+	// Update the DetailedCondition Reason and message if the reason
+	// is different to the current one. We have to namespace
+	// the DetailedCondition reason by the errorType because we're
+	// adding SubConditions; DetailedCondition Reason is a summary of the
+	// SubCondition reasons.
+	detailedReason := errorType + reason
+	dc.updateReason(detailedReason, message)
+	// Now we can actually upsert the error.
+	i := getIndex(errorType, dc.Errors)
+
+	if i == -1 {
+		dc.Errors = append(dc.Errors, SubCondition{
+			Type:    errorType,
+			Status:  ConditionTrue,
+			Message: message,
+			Reason:  reason,
+		})
+		return
+	}
+
+	// If the error is already present, just update the reason and message.
+	dc.Errors[i].updateReason(reason, message)
+
+}
+
+// AddErrorf adds an error-level Subcondition to the DetailedCondition, using
+// fmt.Sprintf on the formatmsg and args params.
+// If a SubCondition with the given errorType exists, will change
+// the reason to "MultipleReasons", and will append the given message
+// to the existing SubCondition's message.
+func (dc *DetailedCondition) AddErrorf(errorType, reason, formatmsg string, args ...interface{}) {
+
+	dc.AddError(errorType, reason, fmt.Sprintf(formatmsg, args...))
+}
+
+// GetError gets an error of the given errorType.
+// Similar to a hash lookup, will return true in the second value if a match is
+// found, and false otherwise.
+func (dc *DetailedCondition) GetError(errorType string) (SubCondition, bool) {
+
+	i := getIndex(errorType, dc.Errors)
+
+	if i == -1 {
+		return SubCondition{}, false
+	}
+
+	return dc.Errors[i], true
+}
+
+// AddWarning adds an warning-level Subcondition to the DetailedCondition.
+// If a SubCondition with the given warnType exists, will change
+// the reason to "MultipleReasons", and will append the given message
+// to the existing SubCondition's message.
+func (dc *DetailedCondition) AddWarning(warnType, reason, message string) {
+
+	detailedReason := warnType + reason
+	dc.updateReason(detailedReason, message)
+
+	i := getIndex(warnType, dc.Warnings)
+
+	if i == -1 {
+		dc.Warnings = append(dc.Warnings, SubCondition{
+			Type:    warnType,
+			Status:  ConditionTrue,
+			Reason:  reason,
+			Message: message,
+		})
+		return
+	}
+
+	// If the warning is already present, just update the reason and message.
+	dc.Warnings[i].updateReason(reason, message)
+}
+
+// AddWarningf adds an warning-level Subcondition to the DetailedCondition, using
+// fmt.Sprintf on the formatmsg and args params.
+// If a SubCondition with the given errorType exists, will change
+// the reason to "MultipleReasons", and will append the given message
+// to the existing SubCondition's message.
+func (dc *DetailedCondition) AddWarningf(warnType, reason, formatmsg string, args ...interface{}) {
+
+	dc.AddWarning(warnType, reason, fmt.Sprintf(formatmsg, args...))
+}
+
+// GetWarning gets an warning of the given warnType.
+// Similar to a hash lookup, will return true in the second value if a match is
+// found, and false otherwise.
+func (dc *DetailedCondition) GetWarning(warnType string) (SubCondition, bool) {
+
+	i := getIndex(warnType, dc.Warnings)
+
+	if i == -1 {
+		return SubCondition{}, false
+	}
+
+	return dc.Warnings[i], true
+}
+
+// updateReason updates a DetailedCondition's reason and message correctly
+// if they are different to the existing ones.
+func (dc *DetailedCondition) updateReason(reason, message string) {
+	if dc.Reason == "" {
+		dc.Reason = reason
+		dc.Message = message
+		return
+	}
+
+	if dc.Reason != reason {
+		dc.Reason = "MultipleProblems"
+		dc.Message = "Multiple problems were found, see errors for details"
+		return
+	}
+
+	if dc.Message != message {
+		dc.Message = dc.Message + ", " + message
+	}
+}
+
+func (sc *SubCondition) updateReason(reason, message string) {
+
+	if sc.Reason == "" {
+		sc.Reason = reason
+		sc.Message = message
+		return
+	}
+
+	if sc.Reason != reason {
+		sc.Reason = "MultipleReasons"
+	}
+
+	sc.Message = sc.Message + ", " + message
+
+}
+
+// getIndex checks if a SubCondition of type condType exists in the
+// slice, and returns its index if so. If not, returns -1.
+func getIndex(condType string, subconds []SubCondition) int {
+
+	for i, cond := range subconds {
+		if cond.Type == condType {
+			return i
+		}
+	}
+	return -1
+}
+
+// GetConditionIndex gets the index of a condition of the given type from
+// the given DetailedCondition slice, or -1 if it is not found.
+func GetConditionIndex(condType string, conds []DetailedCondition) int {
+
+	for i, cond := range conds {
+		if cond.Type == condType {
+			return i
+		}
+	}
+
+	return -1
+
+}
+
+// IsPositivePolarity returns true if the DetailedCondition is a positive-polarity
+// condition like `Valid` or `Ready`, and false otherwise.
+func (dc *DetailedCondition) IsPositivePolarity() bool {
+
+	switch dc.Type {
+	case "Valid":
+		return true
+	default:
+		return false
+	}
 }
