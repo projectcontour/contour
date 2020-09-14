@@ -22,6 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
+        with:
+          go-version: '1.15.2'
       - name: test
         run: |
           go mod vendor
@@ -36,6 +38,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
+        with:
+          go-version: '1.15.2'
       - name: test
         run: |
           go mod vendor
@@ -46,6 +50,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
+        with:
+          go-version: '1.15.2'
       - name: lint
         run: |
           go mod vendor
@@ -55,6 +61,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
+        with:
+          go-version: '1.15.2'
       - name: generate
         run: |
           go mod vendor

@@ -1,6 +1,6 @@
 module github.com/projectcontour/contour
 
-go 1.14
+go 1.15
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.1.5
