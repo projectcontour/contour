@@ -47,11 +47,7 @@ spec:
     spec:
       containers:
       - name: contour
-        # This version is set to latest because Job specs are immutable;
-        # if we change this on each version, you can no longer upgrade
-        # just by applying the deployment YAML.
-        # See #2423, #2395, #2150, and #2030 for earlier questions about this.
-        image: docker.io/projectcontour/contour:latest
+        image: docker.io/projectcontour/contour:main
         imagePullPolicy: Always
         command:
         - contour
