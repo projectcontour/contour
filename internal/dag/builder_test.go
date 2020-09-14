@@ -6184,80 +6184,6 @@ func ingressrulevalue(backend *v1beta1.IngressBackend) v1beta1.IngressRuleValue 
 	}
 }
 
-func TestBuilderLookupService(t *testing.T) {
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
-				Name:       "http",
-				Protocol:   "TCP",
-				Port:       8080,
-				TargetPort: intstr.FromInt(8080),
-			}},
-		},
-	}
-	services := map[types.NamespacedName]*v1.Service{
-		{Name: "service1", Namespace: "default"}: s1,
-	}
-
-	tests := map[string]struct {
-		types.NamespacedName
-		port    intstr.IntOrString
-		want    *Service
-		wantErr error
-	}{
-		"lookup service by port number": {
-			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.FromInt(8080),
-			want:           service(s1),
-		},
-		"lookup service by port name": {
-			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.FromString("http"),
-			want:           service(s1),
-		},
-		"lookup service by port number (as string)": {
-			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.Parse("8080"),
-			want:           service(s1),
-		},
-		"lookup service by port number (from string)": {
-			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.FromString("8080"),
-			want:           service(s1),
-		},
-		"when service does not exist an error is returned": {
-			NamespacedName: types.NamespacedName{Name: "nonexistent-service", Namespace: "default"},
-			port:           intstr.FromString("8080"),
-			wantErr:        errors.New(`service "default/nonexistent-service" not found`),
-		},
-		"when port does not exist an error is returned": {
-			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
-			port:           intstr.FromString("9999"),
-			wantErr:        errors.New(`port "9999" on service "default/service1" not matched`),
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			b := Builder{
-				Source: KubernetesCache{
-					services:    services,
-					FieldLogger: fixture.NewTestLogger(t),
-				},
-			}
-			b.reset()
-
-			got, gotErr := b.lookupService(tc.NamespacedName, tc.port)
-			assert.Equal(t, tc.want, got)
-			assert.Equal(t, tc.wantErr, gotErr)
-		})
-	}
-}
-
 func TestDAGRootNamespaces(t *testing.T) {
 	proxy1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -6683,25 +6609,17 @@ func TestBuilderRunsProcessorsInOrder(t *testing.T) {
 
 	b := Builder{
 		Processors: []Processor{
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "foo") }},
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "bar") }},
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "baz") }},
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "abc") }},
-			&pluggableProcessor{runFunc: func(_ *Builder) { got = append(got, "def") }},
+			ProcessorFunc(func(*DAG, *KubernetesCache) { got = append(got, "foo") }),
+			ProcessorFunc(func(*DAG, *KubernetesCache) { got = append(got, "bar") }),
+			ProcessorFunc(func(*DAG, *KubernetesCache) { got = append(got, "baz") }),
+			ProcessorFunc(func(*DAG, *KubernetesCache) { got = append(got, "abc") }),
+			ProcessorFunc(func(*DAG, *KubernetesCache) { got = append(got, "def") }),
 		},
 	}
 
 	b.Build()
 
 	assert.Equal(t, []string{"foo", "bar", "baz", "abc", "def"}, got)
-}
-
-type pluggableProcessor struct {
-	runFunc func(builder *Builder)
-}
-
-func (p *pluggableProcessor) Run(builder *Builder) {
-	p.runFunc(builder)
 }
 
 func routes(routes ...*Route) map[string]*Route {

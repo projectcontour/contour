@@ -39,9 +39,10 @@ func defaultExtensionRef(ref projcontour.ExtensionServiceReference) projcontour.
 }
 
 // HTTPProxyProcessor translates HTTPProxies into DAG
-// objects and adds them to the DAG builder.
+// objects and adds them to the DAG.
 type HTTPProxyProcessor struct {
-	builder  *Builder
+	dag      *DAG
+	source   *KubernetesCache
 	orphaned map[types.NamespacedName]bool
 
 	// DisablePermitInsecure disables the use of the
@@ -55,23 +56,27 @@ type HTTPProxyProcessor struct {
 }
 
 // Run translates HTTPProxies into DAG objects and
-// adds them to the DAG builder.
-func (p *HTTPProxyProcessor) Run(builder *Builder) {
-	p.builder = builder
+// adds them to the DAG.
+func (p *HTTPProxyProcessor) Run(dag *DAG, source *KubernetesCache) {
+	p.dag = dag
+	p.source = source
 	p.orphaned = make(map[types.NamespacedName]bool, len(p.orphaned))
 
 	// reset the processor when we're done
 	defer func() {
-		p.builder = nil
+		p.dag = nil
+		p.source = nil
 		p.orphaned = nil
 	}()
 
-	p.computeHTTPProxies()
+	for _, proxy := range p.validHTTPProxies() {
+		p.computeHTTPProxy(proxy)
+	}
 
 	for meta := range p.orphaned {
-		proxy, ok := p.builder.Source.httpproxies[meta]
+		proxy, ok := p.source.httpproxies[meta]
 		if ok {
-			sw, commit := p.builder.WithObject(proxy)
+			sw, commit := p.dag.WithObject(proxy)
 			sw.WithValue("status", k8s.StatusOrphaned).
 				WithValue("description", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 			commit()
@@ -79,14 +84,8 @@ func (p *HTTPProxyProcessor) Run(builder *Builder) {
 	}
 }
 
-func (p *HTTPProxyProcessor) computeHTTPProxies() {
-	for _, proxy := range p.validHTTPProxies() {
-		p.computeHTTPProxy(proxy)
-	}
-}
-
 func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
-	sw, commit := p.builder.WithObject(proxy)
+	sw, commit := p.dag.WithObject(proxy)
 	defer commit()
 
 	if proxy.Spec.VirtualHost == nil {
@@ -139,18 +138,18 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
-			sec, err := p.builder.Source.LookupSecret(secretName, validSecret)
+			sec, err := p.source.LookupSecret(secretName, validSecret)
 			if err != nil {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
 				return
 			}
 
-			if !p.builder.Source.DelegationPermitted(secretName, proxy.Namespace) {
+			if !p.source.DelegationPermitted(secretName, proxy.Namespace) {
 				sw.SetInvalid("Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
 				return
 			}
 
-			svhost := p.builder.lookupSecureVirtualHost(host)
+			svhost := EnsureSecureVirtualHost(host, p.dag)
 			svhost.Secret = sec
 			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion)
 
@@ -177,13 +176,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 					return
 				}
 
-				sec, err = p.builder.Source.LookupSecret(*p.FallbackCertificate, validSecret)
+				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validSecret)
 				if err != nil {
 					sw.SetInvalid("Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
 					return
 				}
 
-				if !p.builder.Source.DelegationPermitted(*p.FallbackCertificate, proxy.Namespace) {
+				if !p.source.DelegationPermitted(*p.FallbackCertificate, proxy.Namespace) {
 					sw.SetInvalid("Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", p.FallbackCertificate)
 					return
 				}
@@ -193,7 +192,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 			// Fill in DownstreamValidation when external client validation is enabled.
 			if tls.ClientValidation != nil {
-				dv, err := p.builder.Source.LookupDownstreamValidation(tls.ClientValidation, proxy.Namespace)
+				dv, err := p.source.LookupDownstreamValidation(tls.ClientValidation, proxy.Namespace)
 				if err != nil {
 					sw.SetInvalid("Spec.VirtualHost.TLS client validation is invalid: %s", err)
 					return
@@ -211,15 +210,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 					return
 				}
 
-				// Lookup the support service reference.
+				// Lookup the extension service reference.
 				extensionName := types.NamespacedName{
 					Name:      ref.Name,
 					Namespace: stringOrDefault(ref.Namespace, proxy.Namespace),
 				}
 
-				ext, ok := p.builder.extensions[extensionName]
-				if !ok {
-					sw.SetInvalid("Spec.Virtualhost.Authorization.ServiceRef support service %q not found",
+				ext := GetExtensionCluster(extensionClusterName(extensionName), p.dag)
+				if ext == nil {
+					sw.SetInvalid("Spec.Virtualhost.Authorization.ServiceRef extension service %q not found",
 						extensionName)
 					return
 				}
@@ -242,13 +241,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	}
 
 	routes := p.computeRoutes(sw, proxy, proxy, nil, nil, tlsEnabled)
-	insecure := p.builder.lookupVirtualHost(host)
+	insecure := EnsureVirtualHost(host, p.dag)
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
-		secure := p.builder.lookupSecureVirtualHost(host)
+		secure := EnsureSecureVirtualHost(host, p.dag)
 		addRoutes(secure, routes)
 	}
 }
@@ -301,7 +300,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			namespace = proxy.Namespace
 		}
 
-		delegate, ok := p.builder.Source.httpproxies[types.NamespacedName{Name: include.Name, Namespace: namespace}]
+		delegate, ok := p.source.httpproxies[types.NamespacedName{Name: include.Name, Namespace: namespace}]
 		if !ok {
 			sw.SetInvalid("include %s/%s not found", namespace, include.Name)
 			return nil
@@ -316,7 +315,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		sw, commit := p.builder.WithObject(delegate)
+		sw, commit := p.dag.WithObject(delegate)
 		routes = append(routes, p.computeRoutes(sw, rootProxy, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
 		commit()
 
@@ -431,7 +430,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				return nil
 			}
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
-			s, err := p.builder.lookupService(m, intstr.FromInt(service.Port))
+			s, err := EnsureService(m, intstr.FromInt(service.Port), p.dag, p.source)
 			if err != nil {
 				sw.SetInvalid("Spec.Routes unresolved service reference: %s", err)
 				return nil
@@ -447,7 +446,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			var uv *PeerValidationContext
 			if protocol == "tls" || protocol == "h2" {
 				// we can only validate TLS connections to services that talk TLS
-				uv, err = p.builder.Source.LookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
+				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
 				if err != nil {
 					sw.SetInvalid("Service [%s:%d] TLS upstream validation policy error: %s",
 						service.Name, service.Port, err)
@@ -528,7 +527,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
 			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
-			s, err := p.builder.lookupService(m, intstr.FromInt(service.Port))
+			s, err := EnsureService(m, intstr.FromInt(service.Port), p.dag, p.source)
 			if err != nil {
 				sw.SetInvalid("Spec.TCPProxy unresolved service reference: %s", err)
 				return false
@@ -540,7 +539,9 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 			})
 		}
-		p.builder.lookupSecureVirtualHost(host).TCPProxy = &proxy
+		secure := EnsureSecureVirtualHost(host, p.dag)
+		secure.TCPProxy = &proxy
+
 		return true
 	}
 
@@ -557,7 +558,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 	}
 
 	m := types.NamespacedName{Name: tcpProxyInclude.Name, Namespace: namespace}
-	dest, ok := p.builder.Source.httpproxies[m]
+	dest, ok := p.source.httpproxies[m]
 	if !ok {
 		sw.SetInvalid("tcpproxy: include %s/%s not found", m.Namespace, m.Name)
 		return false
@@ -601,7 +602,7 @@ func (p *HTTPProxyProcessor) validHTTPProxies() []*projcontour.HTTPProxy {
 	// ensure that a given fqdn is only referenced in a single HTTPProxy resource
 	var valid []*projcontour.HTTPProxy
 	fqdnHTTPProxies := make(map[string][]*projcontour.HTTPProxy)
-	for _, proxy := range p.builder.Source.httpproxies {
+	for _, proxy := range p.source.httpproxies {
 		if proxy.Spec.VirtualHost == nil {
 			valid = append(valid, proxy)
 			continue
@@ -622,7 +623,7 @@ func (p *HTTPProxyProcessor) validHTTPProxies() []*projcontour.HTTPProxy {
 			sort.Strings(conflicting) // sort for test stability
 			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
 			for _, proxy := range proxies {
-				sw, commit := p.builder.WithObject(proxy)
+				sw, commit := p.dag.WithObject(proxy)
 				sw.WithValue("vhost", fqdn).SetInvalid(msg)
 				commit()
 			}
@@ -633,10 +634,10 @@ func (p *HTTPProxyProcessor) validHTTPProxies() []*projcontour.HTTPProxy {
 
 // rootAllowed returns true if the HTTPProxy lives in a permitted root namespace.
 func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
-	if len(p.builder.Source.RootNamespaces) == 0 {
+	if len(p.source.RootNamespaces) == 0 {
 		return true
 	}
-	for _, ns := range p.builder.Source.RootNamespaces {
+	for _, ns := range p.source.RootNamespaces {
 		if ns == namespace {
 			return true
 		}

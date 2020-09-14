@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"errors"
 	"testing"
 
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -21,9 +22,12 @@ import (
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
@@ -952,6 +956,103 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := tc.cache.Remove(tc.obj)
 			assert.Equalf(t, tc.want, got, "Remove failed for object %v ", tc.obj)
+		})
+	}
+}
+
+func TestLookupService(t *testing.T) {
+	cache := func(objs ...interface{}) *KubernetesCache {
+		cache := KubernetesCache{
+			FieldLogger: fixture.NewTestLogger(t),
+		}
+		for _, o := range objs {
+			cache.Insert(o)
+		}
+		return &cache
+	}
+
+	service := func(ns, name string, ports ...v1.ServicePort) *v1.Service {
+		return &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: ns,
+			},
+			Spec: v1.ServiceSpec{
+				Ports: ports,
+			},
+		}
+	}
+
+	port := func(name string, port int32, protocol v1.Protocol) v1.ServicePort {
+		return v1.ServicePort{
+			Name:     name,
+			Port:     port,
+			Protocol: protocol,
+		}
+	}
+
+	tests := map[string]struct {
+		cache    *KubernetesCache
+		meta     types.NamespacedName
+		port     intstr.IntOrString
+		wantSvc  *v1.Service
+		wantPort v1.ServicePort
+		wantErr  error
+	}{
+		"service and port exist with valid service protocol, lookup by port num": {
+			cache:    cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			meta:     types.NamespacedName{Namespace: "default", Name: "service-1"},
+			port:     intstr.FromInt(80),
+			wantSvc:  service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
+			wantPort: port("http", 80, v1.ProtocolTCP),
+		},
+		"service and port exist with valid service protocol, lookup by port name": {
+			cache:    cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			meta:     types.NamespacedName{Namespace: "default", Name: "service-1"},
+			port:     intstr.FromString("http"),
+			wantSvc:  service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
+			wantPort: port("http", 80, v1.ProtocolTCP),
+		},
+		"service and port exist with valid service protocol, lookup by wrong port num": {
+			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
+			port:    intstr.FromInt(9999),
+			wantErr: errors.New(`port "9999" on service "default/service-1" not matched`),
+		},
+		"service and port exist with valid service protocol, lookup by wrong port name": {
+			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
+			port:    intstr.FromString("wrong-port-name"),
+			wantErr: errors.New(`port "wrong-port-name" on service "default/service-1" not matched`),
+		},
+		"service and port exist, invalid service protocol": {
+			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolUDP))),
+			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
+			port:    intstr.FromString("http"),
+			wantSvc: service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
+			wantErr: errors.New(`unsupported service protocol "UDP"`),
+		},
+		"service does not exist": {
+			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			meta:    types.NamespacedName{Namespace: "default", Name: "nonexistent-service"},
+			port:    intstr.FromInt(80),
+			wantErr: errors.New(`service "default/nonexistent-service" not found`),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			gotSvc, gotPort, gotErr := tc.cache.LookupService(tc.meta, tc.port)
+
+			switch {
+			case tc.wantErr != nil:
+				require.Error(t, gotErr)
+				assert.EqualError(t, tc.wantErr, gotErr.Error())
+			default:
+				assert.Nil(t, gotErr)
+				assert.Equal(t, tc.wantSvc, gotSvc)
+				assert.Equal(t, tc.wantPort, gotPort)
+			}
 		})
 	}
 }

@@ -27,6 +27,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
 	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
@@ -517,4 +518,27 @@ func validCA(s *v1.Secret) error {
 	}
 
 	return nil
+}
+
+// LookupService returns the Kubernetes service and port matching the provided parameters,
+// or an error if a match can't be found.
+func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.IntOrString) (*v1.Service, v1.ServicePort, error) {
+	svc, ok := kc.services[meta]
+	if !ok {
+		return nil, v1.ServicePort{}, fmt.Errorf("service %q not found", meta)
+	}
+
+	for i := range svc.Spec.Ports {
+		p := svc.Spec.Ports[i]
+		if int(p.Port) == port.IntValue() || port.String() == p.Name {
+			switch p.Protocol {
+			case "", v1.ProtocolTCP:
+				return svc, p, nil
+			default:
+				return nil, v1.ServicePort{}, fmt.Errorf("unsupported service protocol %q", p.Protocol)
+			}
+		}
+	}
+
+	return nil, v1.ServicePort{}, fmt.Errorf("port %q on service %q not matched", port.String(), meta)
 }
