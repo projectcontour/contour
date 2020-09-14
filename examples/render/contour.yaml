@@ -706,21 +706,11 @@ spec:
                           description: When true, this field disables client request authentication for the scope of the policy.
                           type: boolean
                       type: object
-                    failOpen:
-                      description: If FailOpen is true, the client request is forwarded to the upstream service even if the authorization server fails to respond. This field should not be set in most cases. It is intended for use only while migrating applications from internal authorization to Contour external authorization.
-                      type: boolean
-                    responseTimeout:
-                      description: ResponseTimeout configures maximum time to wait for a check response from the authorization server. Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration). Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h". The string "infinity" is also a valid input and specifies no timeout.
-                      type: string
-                    serviceRef:
-                      description: ServiceRef specifies the extension resource that will authorize client requests.
+                    extensionRef:
+                      description: ExtensionServiceRef specifies the extension resource that will authorize client requests.
                       properties:
                         apiVersion:
                           description: API version of the referent. If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
-                          minLength: 1
-                          type: string
-                        kind:
-                          description: "Kind of the referent. If this field is not specified, the default \"ExtensionService\" will be used. \n More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"
                           minLength: 1
                           type: string
                         name:
@@ -732,8 +722,14 @@ spec:
                           minLength: 1
                           type: string
                       type: object
+                    failOpen:
+                      description: If FailOpen is true, the client request is forwarded to the upstream service even if the authorization server fails to respond. This field should not be set in most cases. It is intended for use only while migrating applications from internal authorization to Contour external authorization.
+                      type: boolean
+                    responseTimeout:
+                      description: ResponseTimeout configures maximum time to wait for a check response from the authorization server. Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration). Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h". The string "infinity" is also a valid input and specifies no timeout.
+                      type: string
                   required:
-                  - serviceRef
+                  - extensionRef
                   type: object
                 fqdn:
                   description: The fully qualified domain name of the root of the ingress tree all leaves of the DAG rooted at this object relate to the fqdn.

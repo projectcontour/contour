@@ -110,15 +110,6 @@ type ExtensionServiceReference struct {
 	// +kubebuilder:validation:MinLength=1
 	APIVersion string `json:"apiVersion,omitempty" protobuf:"bytes,5,opt,name=apiVersion"`
 
-	// Kind of the referent.
-	// If this field is not specified, the default "ExtensionService" will be used.
-	//
-	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-	//
-	// +optional
-	// +kubebuilder:validation:MinLength=1
-	Kind string `json:"kind,omitempty" protobuf:"bytes,1,opt,name=kind"`
-
 	// Namespace of the referent.
 	// If this field is not specifies, the namespace of the resource that targets the referent will be used.
 	//
@@ -145,10 +136,10 @@ type ExtensionServiceReference struct {
 // the v3 protocol as well in the expectation that it will be supported
 // in future.
 type AuthorizationServer struct {
-	// ServiceRef specifies the extension resource that will authorize client requests.
+	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
 	//
 	// +required
-	ServiceRef ExtensionServiceReference `json:"serviceRef"`
+	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef"`
 
 	// AuthPolicy sets a default authorization policy for client requests.
 	// This policy will be used unless overridden by individual routes.

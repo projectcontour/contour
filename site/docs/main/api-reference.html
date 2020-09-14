@@ -334,7 +334,7 @@ in future.</p>
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>serviceRef</code>
+<code>extensionRef</code>
 <br>
 <em>
 <a href="#projectcontour.io/v1.ExtensionServiceReference">
@@ -343,7 +343,7 @@ ExtensionServiceReference
 </em>
 </td>
 <td>
-<p>ServiceRef specifies the extension resource that will authorize client requests.</p>
+<p>ExtensionServiceRef specifies the extension resource that will authorize client requests.</p>
 </td>
 </tr>
 <tr>
@@ -714,21 +714,6 @@ string
 <em>(Optional)</em>
 <p>API version of the referent.
 If this field is not specified, the default &ldquo;projectcontour.io/v1alpha1&rdquo; will be used</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>kind</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Kind of the referent.
-If this field is not specified, the default &ldquo;ExtensionService&rdquo; will be used.</p>
-<p>More info: <a href="https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds">https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds</a></p>
 </td>
 </tr>
 <tr>

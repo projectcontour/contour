@@ -1637,6 +1637,26 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
+	// a proxy with TLS configured with passthrough and
+	// client validation is invalid
+	tlsPassthroughAndValidation := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalid",
+			Namespace: serviceKuard.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "tcpproxy.example.com",
+				TLS: &projcontour.TLS{
+					Passthrough: true,
+					ClientValidation: &projcontour.DownstreamValidation{
+						CACertificate: "aCAcert",
+					},
+				},
+			},
+			TCPProxy: &projcontour.TCPProxy{},
+		},
+	}
 	// a proxy with TLS configured with *both* passthrough and
 	// a secret name is invalid.
 	tlsPassthroughAndSecretName := &projcontour.HTTPProxy{
@@ -1698,7 +1718,7 @@ func TestDAGStatus(t *testing.T) {
 					EnableFallbackCertificate: true,
 				},
 				Authorization: &projcontour.AuthorizationServer{
-					ServiceRef: projcontour.ExtensionServiceReference{
+					ExtensionServiceRef: projcontour.ExtensionServiceReference{
 						Namespace: "auth",
 						Name:      "extension",
 					},
@@ -2332,6 +2352,17 @@ func TestDAGStatus(t *testing.T) {
 					Status:      "invalid",
 					Description: "Spec.Virtualhost.TLS fallback & client authorization are incompatible",
 					Vhost:       authFallback.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"passthrough and client auth are incompatible tlsPassthroughAndValidation": {
+			objs: []interface{}{secretRootsNS, tlsPassthroughAndValidation},
+			want: map[types.NamespacedName]Status{
+				{Name: tlsPassthroughAndValidation.Name, Namespace: tlsPassthroughAndValidation.Namespace}: {
+					Object:      tlsPassthroughAndValidation,
+					Status:      "invalid",
+					Description: "Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation",
+					Vhost:       tlsPassthroughAndValidation.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},

@@ -53,7 +53,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 		WithFQDN(fqdn).
 		WithCertificate("certificate").
 		WithAuthServer(projcontour.AuthorizationServer{
-			ServiceRef: projcontour.ExtensionServiceReference{
+			ExtensionServiceRef: projcontour.ExtensionServiceReference{
 				Namespace: "auth",
 				Name:      "extension",
 			},
@@ -115,7 +115,7 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 		WithFQDN(fqdn).
 		WithCertificate("certificate").
 		WithAuthServer(projcontour.AuthorizationServer{
-			ServiceRef: projcontour.ExtensionServiceReference{
+			ExtensionServiceRef: projcontour.ExtensionServiceReference{
 				Namespace: "auth",
 				Name:      "extension",
 			},
@@ -173,7 +173,7 @@ func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 		WithFQDN("echo.projectcontour.io").
 		WithCertificate("certificate").
 		WithAuthServer(projcontour.AuthorizationServer{
-			ServiceRef: projcontour.ExtensionServiceReference{
+			ExtensionServiceRef: projcontour.ExtensionServiceReference{
 				Namespace: "auth",
 				Name:      "extension",
 			},
@@ -210,8 +210,8 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 		WithFQDN(enabled).
 		WithCertificate("certificate").
 		WithAuthServer(projcontour.AuthorizationServer{
-			ServiceRef: extensionRef,
-			AuthPolicy: &projcontour.AuthorizationPolicy{Disabled: false},
+			ExtensionServiceRef: extensionRef,
+			AuthPolicy:          &projcontour.AuthorizationPolicy{Disabled: false},
 		}).
 		WithSpec(projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
@@ -229,8 +229,8 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 		WithFQDN(disabled).
 		WithCertificate("certificate").
 		WithAuthServer(projcontour.AuthorizationServer{
-			ServiceRef: extensionRef,
-			AuthPolicy: &projcontour.AuthorizationPolicy{Disabled: true},
+			ExtensionServiceRef: extensionRef,
+			AuthPolicy:          &projcontour.AuthorizationPolicy{Disabled: true},
 		}).
 		WithSpec(projcontour.HTTPProxySpec{
 			Routes: []projcontour.Route{{
@@ -320,7 +320,7 @@ func authzMergeRouteContext(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 		WithFQDN(fqdn).
 		WithCertificate("certificate").
 		WithAuthServer(projcontour.AuthorizationServer{
-			ServiceRef: projcontour.ExtensionServiceReference{
+			ExtensionServiceRef: projcontour.ExtensionServiceReference{
 				Namespace: "auth",
 				Name:      "extension",
 			},
@@ -412,9 +412,8 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			}},
 		})
 
-	invalid.Spec.VirtualHost.Authorization.ServiceRef = projcontour.ExtensionServiceReference{
+	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = projcontour.ExtensionServiceReference{
 		APIVersion: "foo/bar",
-		Kind:       "",
 		Namespace:  "",
 		Name:       "",
 	}
@@ -430,27 +429,8 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 		Description:   `Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource version "foo/bar"`,
 	})
 
-	invalid.Spec.VirtualHost.Authorization.ServiceRef = projcontour.ExtensionServiceReference{
+	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = projcontour.ExtensionServiceReference{
 		APIVersion: "projectcontour.io/v1alpha1",
-		Kind:       "Foo",
-		Namespace:  "",
-		Name:       "",
-	}
-
-	rh.OnDelete(invalid)
-	rh.OnAdd(invalid)
-
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
-		TypeUrl:   listenerType,
-		Resources: resources(t, staticListener()),
-	}).Status(invalid).Equals(projcontour.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource kind "Foo"`,
-	})
-
-	invalid.Spec.VirtualHost.Authorization.ServiceRef = projcontour.ExtensionServiceReference{
-		APIVersion: "projectcontour.io/v1alpha1",
-		Kind:       "ExtensionService",
 		Namespace:  "missing",
 		Name:       "extension",
 	}
@@ -466,7 +446,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 		Description:   `Spec.Virtualhost.Authorization.ServiceRef support service "missing/extension" not found`,
 	})
 
-	invalid.Spec.VirtualHost.Authorization.ServiceRef = projcontour.ExtensionServiceReference{
+	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = projcontour.ExtensionServiceReference{
 		Namespace: "auth",
 		Name:      "extension",
 	}

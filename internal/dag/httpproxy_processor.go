@@ -35,10 +35,6 @@ func defaultExtensionRef(ref projcontour.ExtensionServiceReference) projcontour.
 
 	}
 
-	if ref.Kind == "" {
-		ref.Kind = "ExtensionService"
-	}
-
 	return ref
 }
 
@@ -207,17 +203,11 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 			if proxy.Spec.VirtualHost.AuthorizationConfigured() {
 				auth := proxy.Spec.VirtualHost.Authorization
-				ref := defaultExtensionRef(auth.ServiceRef)
+				ref := defaultExtensionRef(auth.ExtensionServiceRef)
 
 				if ref.APIVersion != projcontourv1alpha1.GroupVersion.String() {
 					sw.SetInvalid("Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource version %q",
-						auth.ServiceRef.APIVersion)
-					return
-				}
-
-				if ref.Kind != "ExtensionService" {
-					sw.SetInvalid("Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource kind %q",
-						auth.ServiceRef.Kind)
+						auth.ExtensionServiceRef.APIVersion)
 					return
 				}
 
