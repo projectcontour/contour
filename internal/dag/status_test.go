@@ -1709,6 +1709,84 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
+	invalidRequestHeadersPolicyService := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalidRHPService",
+			Namespace: serviceKuard.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{
+					{
+						Name: serviceKuard.Name,
+						Port: 8080,
+						RequestHeadersPolicy: &projcontour.HeadersPolicy{
+							Set: []projcontour.HeaderValue{{
+								Name:  "Host",
+								Value: "external.com",
+							}},
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	invalidResponseHeadersPolicyService := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalidRHPService",
+			Namespace: serviceKuard.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{
+					{
+						Name: serviceKuard.Name,
+						Port: 8080,
+						ResponseHeadersPolicy: &projcontour.HeadersPolicy{
+							Set: []projcontour.HeaderValue{{
+								Name:  "Host",
+								Value: "external.com",
+							}},
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	invalidResponseHeadersPolicyRoute := &projcontour.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalidRHPRoute",
+			Namespace: serviceKuard.Namespace,
+		},
+		Spec: projcontour.HTTPProxySpec{
+			VirtualHost: &projcontour.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{
+					{
+						Name: serviceKuard.Name,
+						Port: 8080,
+					},
+				},
+				ResponseHeadersPolicy: &projcontour.HeadersPolicy{
+					Set: []projcontour.HeaderValue{{
+						Name:  "Host",
+						Value: "external.com",
+					}},
+				},
+			}},
+		},
+	}
+
 	authFallback := fixture.NewProxy("roots/fallback-incompat").
 		WithSpec(projcontour.HTTPProxySpec{
 			VirtualHost: &projcontour.VirtualHost{
@@ -2363,6 +2441,39 @@ func TestDAGStatus(t *testing.T) {
 					Status:      "invalid",
 					Description: "Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation",
 					Vhost:       tlsPassthroughAndValidation.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"requestHeadersPolicy, Host header invalid on Service": {
+			objs: []interface{}{invalidRequestHeadersPolicyService, serviceKuard},
+			want: map[types.NamespacedName]Status{
+				{Name: invalidRequestHeadersPolicyService.Name, Namespace: invalidRequestHeadersPolicyService.Namespace}: {
+					Object:      invalidRequestHeadersPolicyService,
+					Status:      "invalid",
+					Description: "rewriting \"Host\" header is not supported on a service",
+					Vhost:       invalidRequestHeadersPolicyService.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"responseHeadersPolicy, Host header invalid on Service": {
+			objs: []interface{}{invalidResponseHeadersPolicyService, serviceKuard},
+			want: map[types.NamespacedName]Status{
+				{Name: invalidResponseHeadersPolicyService.Name, Namespace: invalidResponseHeadersPolicyService.Namespace}: {
+					Object:      invalidResponseHeadersPolicyService,
+					Status:      "invalid",
+					Description: "rewriting \"Host\" header is not supported on response headers",
+					Vhost:       invalidResponseHeadersPolicyService.Spec.VirtualHost.Fqdn,
+				},
+			},
+		},
+		"responseHeadersPolicy, Host header invalid on Route": {
+			objs: []interface{}{invalidResponseHeadersPolicyRoute, serviceKuard},
+			want: map[types.NamespacedName]Status{
+				{Name: invalidResponseHeadersPolicyRoute.Name, Namespace: invalidResponseHeadersPolicyRoute.Namespace}: {
+					Object:      invalidResponseHeadersPolicyRoute,
+					Status:      "invalid",
+					Description: "rewriting \"Host\" header is not supported on response headers",
+					Vhost:       invalidResponseHeadersPolicyRoute.Spec.VirtualHost.Fqdn,
 				},
 			},
 		},

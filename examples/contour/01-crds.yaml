@@ -216,7 +216,7 @@ spec:
                     description: Allow this path to respond to insecure requests over HTTP which are normally not permitted when a `virtualhost.tls` block is present.
                     type: boolean
                   requestHeadersPolicy:
-                    description: The policy for managing request headers during proxying
+                    description: The policy for managing request headers during proxying.
                     properties:
                       remove:
                         description: Remove specifies a list of HTTP header names to remove.
@@ -243,7 +243,7 @@ spec:
                         type: array
                     type: object
                   responseHeadersPolicy:
-                    description: The policy for managing response headers during proxying
+                    description: The policy for managing response headers during proxying. Rewriting the 'Host' header is not supported.
                     properties:
                       remove:
                         description: Remove specifies a list of HTTP header names to remove.
@@ -332,7 +332,7 @@ spec:
                           - tls
                           type: string
                         requestHeadersPolicy:
-                          description: The policy for managing request headers during proxying
+                          description: The policy for managing request headers during proxying. Rewriting the 'Host' header is not supported.
                           properties:
                             remove:
                               description: Remove specifies a list of HTTP header names to remove.
@@ -359,7 +359,7 @@ spec:
                               type: array
                           type: object
                         responseHeadersPolicy:
-                          description: The policy for managing response headers during proxying
+                          description: The policy for managing response headers during proxying. Rewriting the 'Host' header is not supported.
                           properties:
                             remove:
                               description: Remove specifies a list of HTTP header names to remove.
@@ -502,7 +502,7 @@ spec:
                         - tls
                         type: string
                       requestHeadersPolicy:
-                        description: The policy for managing request headers during proxying
+                        description: The policy for managing request headers during proxying. Rewriting the 'Host' header is not supported.
                         properties:
                           remove:
                             description: Remove specifies a list of HTTP header names to remove.
@@ -529,7 +529,7 @@ spec:
                             type: array
                         type: object
                       responseHeadersPolicy:
-                        description: The policy for managing response headers during proxying
+                        description: The policy for managing response headers during proxying. Rewriting the 'Host' header is not supported.
                         properties:
                           remove:
                             description: Remove specifies a list of HTTP header names to remove.

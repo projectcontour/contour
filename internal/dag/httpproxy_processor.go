@@ -338,15 +338,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		reqHP, err := headersPolicy(route.RequestHeadersPolicy, true /* allow Host */)
+		reqHP, err := headersPolicyRoute(route.RequestHeadersPolicy, true /* allow Host */)
 		if err != nil {
 			sw.SetInvalid(err.Error())
 			return nil
 		}
 
-		respHP, err := headersPolicy(route.ResponseHeadersPolicy, false /* disallow Host */)
+		respHP, err := headersPolicyRoute(route.ResponseHeadersPolicy, false /* disallow Host */)
 		if err != nil {
-			sw.SetInvalid(err.Error())
+			sw.SetInvalid("%s on response headers", err)
 			return nil
 		}
 
@@ -455,15 +455,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				}
 			}
 
-			reqHP, err := headersPolicy(service.RequestHeadersPolicy, true /* allow Host */)
+			reqHP, err := headersPolicyService(service.RequestHeadersPolicy)
 			if err != nil {
-				sw.SetInvalid(err.Error())
+				sw.SetInvalid("%s on a service", err)
 				return nil
 			}
 
-			respHP, err := headersPolicy(service.ResponseHeadersPolicy, false /* disallow Host */)
+			respHP, err := headersPolicyService(service.ResponseHeadersPolicy)
 			if err != nil {
-				sw.SetInvalid(err.Error())
+				sw.SetInvalid("%s on response headers", err)
 				return nil
 			}
 

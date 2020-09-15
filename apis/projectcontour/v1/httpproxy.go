@@ -282,10 +282,11 @@ type Route struct {
 	//
 	// +optional
 	PathRewritePolicy *PathRewritePolicy `json:"pathRewritePolicy,omitempty"`
-	// The policy for managing request headers during proxying
+	// The policy for managing request headers during proxying.
 	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
-	// The policy for managing response headers during proxying
+	// The policy for managing response headers during proxying.
+	// Rewriting the 'Host' header is not supported.
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
 }
@@ -348,10 +349,12 @@ type Service struct {
 	UpstreamValidation *UpstreamValidation `json:"validation,omitempty"`
 	// If Mirror is true the Service will receive a read only mirror of the traffic for this route.
 	Mirror bool `json:"mirror,omitempty"`
-	// The policy for managing request headers during proxying
+	// The policy for managing request headers during proxying.
+	// Rewriting the 'Host' header is not supported.
 	// +optional
 	RequestHeadersPolicy *HeadersPolicy `json:"requestHeadersPolicy,omitempty"`
-	// The policy for managing response headers during proxying
+	// The policy for managing response headers during proxying.
+	// Rewriting the 'Host' header is not supported.
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
 }
