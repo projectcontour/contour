@@ -228,6 +228,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
 	snapshotHandler := contour.NewSnapshotHandler(snapshotCache, resources, log.WithField("context", "snapshotHandler"))
 
+	// register observer for endpoints updates.
+	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
+
 	// Build the core Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,

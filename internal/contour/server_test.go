@@ -39,7 +39,7 @@ import (
 
 func TestGRPC(t *testing.T) {
 	// tr and et is recreated before the start of each test.
-	var et EndpointsInterface
+	var et *EndpointsTranslator
 	var eh *EventHandler
 
 	tests := map[string]func(*testing.T, *grpc.ClientConn){
