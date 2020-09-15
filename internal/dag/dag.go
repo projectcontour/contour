@@ -142,6 +142,14 @@ type Route struct {
 	// over HTTP?
 	HTTPSUpgrade bool
 
+	// AuthDisabled is set if authorization should be disabled
+	// for this route. If authorization is disabled, the AuthContext
+	// field has no effect.
+	AuthDisabled bool
+
+	// AuthContext sets the authorization context (if authorization is enabled).
+	AuthContext map[string]string
+
 	// Is this a websocket route?
 	// TODO(dfc) this should go on the service
 	Websocket bool
@@ -318,6 +326,21 @@ type SecureVirtualHost struct {
 
 	// DownstreamValidation defines how to verify the client's certificate.
 	DownstreamValidation *PeerValidationContext
+
+	// AuthorizationService points to the extension that client
+	// requests are forwarded to for authorization. If nil, no
+	// authorization is enabled for this host.
+	AuthorizationService *ExtensionCluster
+
+	// AuthorizationResponseTimeout sets how long the proxy should wait
+	// for authorization server responses.
+	AuthorizationResponseTimeout timeout.Setting
+
+	// AuthorizationFailOpen sets whether authorization server
+	// failures should cause the client request to also fail. The
+	// only reason to set this to `true` is when you are migrating
+	// from internal to external authorization.
+	AuthorizationFailOpen bool
 }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {

@@ -101,17 +101,111 @@ type HeaderMatchCondition struct {
 	NotExact string `json:"notexact,omitempty"`
 }
 
+// ExtensionServiceReference names an ExtensionService resource.
+type ExtensionServiceReference struct {
+	// API version of the referent.
+	// If this field is not specified, the default "projectcontour.io/v1alpha1" will be used
+	//
+	// +optional
+	// +kubebuilder:validation:MinLength=1
+	APIVersion string `json:"apiVersion,omitempty" protobuf:"bytes,5,opt,name=apiVersion"`
+
+	// Namespace of the referent.
+	// If this field is not specifies, the namespace of the resource that targets the referent will be used.
+	//
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+	//
+	// +optional
+	// +kubebuilder:validation:MinLength=1
+	Namespace string `json:"namespace,omitempty" protobuf:"bytes,2,opt,name=namespace"`
+
+	// Name of the referent.
+	//
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	//
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
+}
+
+// AuthorizationServer configures an external server to authenticate
+// client requests. The external server must implement the Envoy
+// external authorization GRPC protocol. Currently, the
+// [v2](https://www.envoyproxy.io/docs/envoy/latest/api-v2/service/auth/v2/external_auth.proto)
+// protocol is always used, but authorization server authors should implement
+// the v3 protocol as well in the expectation that it will be supported
+// in future.
+type AuthorizationServer struct {
+	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
+	//
+	// +required
+	ExtensionServiceRef ExtensionServiceReference `json:"extensionRef"`
+
+	// AuthPolicy sets a default authorization policy for client requests.
+	// This policy will be used unless overridden by individual routes.
+	//
+	// +optional
+	AuthPolicy *AuthorizationPolicy `json:"authPolicy,omitempty"`
+
+	// ResponseTimeout configures maximum time to wait for a check response from the authorization server.
+	// Timeout durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// The string "infinity" is also a valid input and specifies no timeout.
+	//
+	// +optional
+	ResponseTimeout string `json:"responseTimeout,omitempty"`
+
+	// If FailOpen is true, the client request is forwarded to the upstream service
+	// even if the authorization server fails to respond. This field should not be
+	// set in most cases. It is intended for use only while migrating applications
+	// from internal authorization to Contour external authorization.
+	//
+	// +optional
+	FailOpen bool `json:"failOpen,omitempty"`
+}
+
+// AuthorizationPolicy modifies how client requests are authenticated.
+type AuthorizationPolicy struct {
+	// When true, this field disables client request authentication
+	// for the scope of the policy.
+	//
+	// +optional
+	Disabled bool `json:"disabled,omitempty"`
+
+	// Context is a set of key/value pairs that are sent to the
+	// authentication server in the check request. If a context
+	// is provided at an enclosing scope, the entries are merged
+	// such that the inner scope overrides matching keys from the
+	// outer scope.
+	//
+	// +optional
+	Context map[string]string `json:"context,omitempty"`
+}
+
 // VirtualHost appears at most once. If it is present, the object is considered
 // to be a "root".
 type VirtualHost struct {
 	// The fully qualified domain name of the root of the ingress tree
 	// all leaves of the DAG rooted at this object relate to the fqdn.
 	Fqdn string `json:"fqdn"`
-	// If present describes tls properties. The SNI names that will be matched on
-	// are described in fqdn, the tls.secretName secret must contain a
-	// certificate that itself contains a name that matches the FQDN.
+
+	// If present the fields describes TLS properties of the virtual
+	// host. The SNI names that will be matched on are described in fqdn,
+	// the tls.secretName secret must contain a certificate that itself
+	// contains a name that matches the FQDN.
+	//
 	// +optional
 	TLS *TLS `json:"tls,omitempty"`
+
+	// This field configures an extension service to perform
+	// authorization for this virtual host. Authorization can
+	// only be configured on virtual hosts that have TLS enabled.
+	// If the TLS configuration requires client certificate
+	///validation, the client certificate is always included in the
+	// authentication check request.
+	//
+	// +optional
+	Authorization *AuthorizationServer `json:"authorization,omitempty"`
 }
 
 // TLS describes tls properties. The SNI names that will be matched on
@@ -166,6 +260,11 @@ type Route struct {
 	// not permitted when a `virtualhost.tls` block is present.
 	// +optional
 	PermitInsecure bool `json:"permitInsecure,omitempty"`
+	// AuthPolicy updates the authorization policy that was set
+	// on the root HTTPProxy object for client requests that
+	// match this route.
+	// +optional
+	AuthPolicy *AuthorizationPolicy `json:"authPolicy,omitempty"`
 	// The timeout policy for this route.
 	// +optional
 	TimeoutPolicy *TimeoutPolicy `json:"timeoutPolicy,omitempty"`
@@ -189,13 +288,6 @@ type Route struct {
 	// The policy for managing response headers during proxying
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
-}
-
-func (r *Route) GetPrefixReplacements() []ReplacePrefix {
-	if r.PathRewritePolicy != nil {
-		return r.PathRewritePolicy.ReplacePrefix
-	}
-	return nil
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.

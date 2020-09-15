@@ -32,6 +32,19 @@ func NewProxy(name string) *ProxyBuilder {
 	return b
 }
 
+func (b *ProxyBuilder) ensureVirtualHost() {
+	if b.Spec.VirtualHost == nil {
+		b.Spec.VirtualHost = &v1.VirtualHost{}
+	}
+}
+
+func (b *ProxyBuilder) ensureTLS() {
+	b.ensureVirtualHost()
+	if b.Spec.VirtualHost.TLS == nil {
+		b.Spec.VirtualHost.TLS = &v1.TLS{}
+	}
+}
+
 // Annotate adds the given values as metadata annotations.
 func (b *ProxyBuilder) Annotate(k string, v string) *ProxyBuilder {
 	b.ObjectMeta.Annotations[k] = v
@@ -60,10 +73,19 @@ func (b *ProxyBuilder) WithSpec(spec v1.HTTPProxySpec) *v1.HTTPProxy {
 }
 
 func (b *ProxyBuilder) WithFQDN(fqdn string) *ProxyBuilder {
-	if b.Spec.VirtualHost == nil {
-		b.Spec.VirtualHost = &v1.VirtualHost{}
-	}
-
+	b.ensureVirtualHost()
 	b.Spec.VirtualHost.Fqdn = fqdn
+	return b
+}
+
+func (b *ProxyBuilder) WithCertificate(secretName string) *ProxyBuilder {
+	b.ensureTLS()
+	b.Spec.VirtualHost.TLS.SecretName = secretName
+	return b
+}
+
+func (b *ProxyBuilder) WithAuthServer(auth v1.AuthorizationServer) *ProxyBuilder {
+	b.ensureTLS()
+	b.Spec.VirtualHost.Authorization = &auth
 	return b
 }
