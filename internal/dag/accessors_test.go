@@ -91,7 +91,9 @@ func TestBuilderLookupService(t *testing.T) {
 				},
 			}
 
-			got, gotErr := EnsureService(tc.NamespacedName, tc.port, &DAG{}, &b.Source)
+			var dag DAG
+
+			got, gotErr := dag.EnsureService(tc.NamespacedName, tc.port, &b.Source)
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantErr, gotErr)
 		})

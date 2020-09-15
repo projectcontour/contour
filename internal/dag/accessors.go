@@ -32,7 +32,7 @@ type RouteServiceName struct {
 }
 
 // GetServices returns all services in the DAG.
-func GetServices(dag *DAG) map[RouteServiceName]*Service {
+func (dag *DAG) GetServices() map[RouteServiceName]*Service {
 	getter := serviceGetter(map[RouteServiceName]*Service{})
 	dag.Visit(getter.visit)
 	return getter
@@ -40,8 +40,8 @@ func GetServices(dag *DAG) map[RouteServiceName]*Service {
 
 // GetService returns the service in the DAG that matches the provided
 // namespace, name and port, or nil if no matching service is found.
-func GetService(meta types.NamespacedName, port int32, dag *DAG) *Service {
-	return GetServices(dag)[RouteServiceName{
+func (dag *DAG) GetService(meta types.NamespacedName, port int32) *Service {
+	return dag.GetServices()[RouteServiceName{
 		Name:      meta.Name,
 		Namespace: meta.Namespace,
 		Port:      port,
@@ -52,13 +52,13 @@ func GetService(meta types.NamespacedName, port int32, dag *DAG) *Service {
 // namespace, name and port, adds it to the DAG if it does not already exist, and
 /// returns it. If a matching service cannot be found in the cache, an error is
 // returned.
-func EnsureService(meta types.NamespacedName, port intstr.IntOrString, dag *DAG, cache *KubernetesCache) (*Service, error) {
+func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, cache *KubernetesCache) (*Service, error) {
 	svc, svcPort, err := cache.LookupService(meta, port)
 	if err != nil {
 		return nil, err
 	}
 
-	if dagSvc := GetService(k8s.NamespacedNameOf(svc), svcPort.Port, dag); dagSvc != nil {
+	if dagSvc := dag.GetService(k8s.NamespacedNameOf(svc), svcPort.Port); dagSvc != nil {
 		return dagSvc, nil
 	}
 
@@ -114,7 +114,7 @@ func (s serviceGetter) visit(vertex Vertex) {
 }
 
 // GetSecureVirtualHosts returns all secure virtual hosts in the DAG.
-func GetSecureVirtualHosts(dag *DAG) map[string]*SecureVirtualHost {
+func (dag *DAG) GetSecureVirtualHosts() map[string]*SecureVirtualHost {
 	getter := svhostGetter(map[string]*SecureVirtualHost{})
 	dag.Visit(getter.visit)
 	return getter
@@ -123,14 +123,14 @@ func GetSecureVirtualHosts(dag *DAG) map[string]*SecureVirtualHost {
 // GetSecureVirtualHost returns the secure virtual host in the DAG that
 // matches the provided name, or nil if no matching secure virtual host
 // is found.
-func GetSecureVirtualHost(name string, dag *DAG) *SecureVirtualHost {
-	return GetSecureVirtualHosts(dag)[name]
+func (dag *DAG) GetSecureVirtualHost(name string) *SecureVirtualHost {
+	return dag.GetSecureVirtualHosts()[name]
 }
 
 // EnsureSecureVirtualHost adds a secure virtual host with the provided
 // name to the DAG if it does not already exist, and returns it.
-func EnsureSecureVirtualHost(name string, dag *DAG) *SecureVirtualHost {
-	if svh := GetSecureVirtualHost(name, dag); svh != nil {
+func (dag *DAG) EnsureSecureVirtualHost(name string) *SecureVirtualHost {
+	if svh := dag.GetSecureVirtualHost(name); svh != nil {
 		return svh
 	}
 
@@ -157,7 +157,7 @@ func (s svhostGetter) visit(vertex Vertex) {
 }
 
 // GetVirtualHosts returns all virtual hosts in the DAG.
-func GetVirtualHosts(dag *DAG) map[string]*VirtualHost {
+func (dag *DAG) GetVirtualHosts() map[string]*VirtualHost {
 	getter := vhostGetter(map[string]*VirtualHost{})
 	dag.Visit(getter.visit)
 	return getter
@@ -165,14 +165,14 @@ func GetVirtualHosts(dag *DAG) map[string]*VirtualHost {
 
 // GetVirtualHost returns the virtual host in the DAG that matches the
 // provided name, or nil if no matching virtual host is found.
-func GetVirtualHost(name string, dag *DAG) *VirtualHost {
-	return GetVirtualHosts(dag)[name]
+func (dag *DAG) GetVirtualHost(name string) *VirtualHost {
+	return dag.GetVirtualHosts()[name]
 }
 
 // EnsureVirtualHost adds a virtual host with the provided name to the
 // DAG if it does not already exist, and returns it.
-func EnsureVirtualHost(name string, dag *DAG) *VirtualHost {
-	if vhost := GetVirtualHost(name, dag); vhost != nil {
+func (dag *DAG) EnsureVirtualHost(name string) *VirtualHost {
+	if vhost := dag.GetVirtualHost(name); vhost != nil {
 		return vhost
 	}
 
@@ -197,7 +197,7 @@ func (v vhostGetter) visit(vertex Vertex) {
 }
 
 // GetExtensionClusters returns all extension clusters in the DAG.
-func GetExtensionClusters(dag *DAG) map[string]*ExtensionCluster {
+func (dag *DAG) GetExtensionClusters() map[string]*ExtensionCluster {
 	getter := extensionClusterGetter(map[string]*ExtensionCluster{})
 	dag.Visit(getter.visit)
 	return getter
@@ -206,8 +206,8 @@ func GetExtensionClusters(dag *DAG) map[string]*ExtensionCluster {
 // GetExtensionCluster returns the extension cluster in the DAG that
 // matches the provided name, or nil if no matching extension cluster
 //is found.
-func GetExtensionCluster(name string, dag *DAG) *ExtensionCluster {
-	return GetExtensionClusters(dag)[name]
+func (dag *DAG) GetExtensionCluster(name string) *ExtensionCluster {
+	return dag.GetExtensionClusters()[name]
 }
 
 // extensionClusterGetter is a visitor that gets all extension clusters

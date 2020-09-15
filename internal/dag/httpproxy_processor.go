@@ -149,7 +149,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 				return
 			}
 
-			svhost := EnsureSecureVirtualHost(host, p.dag)
+			svhost := p.dag.EnsureSecureVirtualHost(host)
 			svhost.Secret = sec
 			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion)
 
@@ -216,7 +216,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 					Namespace: stringOrDefault(ref.Namespace, proxy.Namespace),
 				}
 
-				ext := GetExtensionCluster(extensionClusterName(extensionName), p.dag)
+				ext := p.dag.GetExtensionCluster(extensionClusterName(extensionName))
 				if ext == nil {
 					sw.SetInvalid("Spec.Virtualhost.Authorization.ServiceRef extension service %q not found",
 						extensionName)
@@ -241,13 +241,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 	}
 
 	routes := p.computeRoutes(sw, proxy, proxy, nil, nil, tlsEnabled)
-	insecure := EnsureVirtualHost(host, p.dag)
+	insecure := p.dag.EnsureVirtualHost(host)
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
-		secure := EnsureSecureVirtualHost(host, p.dag)
+		secure := p.dag.EnsureSecureVirtualHost(host)
 		addRoutes(secure, routes)
 	}
 }
@@ -430,7 +430,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				return nil
 			}
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
-			s, err := EnsureService(m, intstr.FromInt(service.Port), p.dag, p.source)
+			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source)
 			if err != nil {
 				sw.SetInvalid("Spec.Routes unresolved service reference: %s", err)
 				return nil
@@ -527,7 +527,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
 			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
-			s, err := EnsureService(m, intstr.FromInt(service.Port), p.dag, p.source)
+			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source)
 			if err != nil {
 				sw.SetInvalid("Spec.TCPProxy unresolved service reference: %s", err)
 				return false
@@ -539,7 +539,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 			})
 		}
-		secure := EnsureSecureVirtualHost(host, p.dag)
+		secure := p.dag.EnsureSecureVirtualHost(host)
 		secure.TCPProxy = &proxy
 
 		return true

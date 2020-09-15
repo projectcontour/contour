@@ -80,7 +80,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 			// ahead and create the SecureVirtualHost for this
 			// Ingress.
 			for _, host := range tls.Hosts {
-				svhost := EnsureSecureVirtualHost(host, p.dag)
+				svhost := p.dag.EnsureSecureVirtualHost(host)
 				svhost.Secret = sec
 				svhost.MinTLSVersion = annotation.MinTLSVersion(
 					annotation.CompatAnnotation(ing, "tls-minimum-protocol-version"))
@@ -115,7 +115,7 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 		path := stringOrDefault(httppath.Path, "/")
 		be := httppath.Backend
 		m := types.NamespacedName{Name: be.ServiceName, Namespace: ing.Namespace}
-		s, err := EnsureService(m, be.ServicePort, p.dag, p.source)
+		s, err := p.dag.EnsureService(m, be.ServicePort, p.source)
 		if err != nil {
 			continue
 		}
@@ -124,14 +124,14 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
-			vhost := EnsureVirtualHost(host, p.dag)
+			vhost := p.dag.EnsureVirtualHost(host)
 			vhost.addRoute(r)
 		}
 
 		// computeSecureVirtualhosts will have populated b.securevirtualhosts
 		// with the names of tls enabled ingress objects. If host exists then
 		// it is correctly configured for TLS.
-		if svh := GetSecureVirtualHost(host, p.dag); svh != nil && host != "*" {
+		if svh := p.dag.GetSecureVirtualHost(host); svh != nil && host != "*" {
 			svh.addRoute(r)
 		}
 	}
