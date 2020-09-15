@@ -100,6 +100,50 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 	return cluster
 }
 
+// ExtensionCluster builds a v2.Cluster struct for the given extension service.
+func ExtensionCluster(ext *dag.ExtensionCluster) *v2.Cluster {
+	cluster := clusterDefaults()
+
+	// The Envoy cluster name has already been set.
+	cluster.Name = ext.Name
+
+	// The AltStatName was added to make a more readable alternative
+	// to the cluster name for metrics (see #827). For extension
+	// services, we can have multiple ports, so it doesn't make
+	// sense to build this the same way we build it for HTTPProxy
+	// service clusters. However, we know the namespaced name for
+	// the ExtensionCluster is globally unique, so we can use that
+	// to produce a stable, readable name.
+	cluster.AltStatName = strings.ReplaceAll(cluster.Name, "/", "_")
+
+	cluster.LbPolicy = lbPolicy(ext.LoadBalancerPolicy)
+
+	// Cluster will be discovered via EDS.
+	cluster.ClusterDiscoveryType = ClusterDiscoveryType(v2.Cluster_EDS)
+	cluster.EdsClusterConfig = &v2.Cluster_EdsClusterConfig{
+		EdsConfig:   ConfigSource("contour"),
+		ServiceName: ext.Upstream.ClusterName,
+	}
+
+	// TODO(jpeach): Externalname service support in https://github.com/projectcontour/contour/issues/2875
+
+	switch ext.Protocol {
+	case "h2":
+		cluster.Http2ProtocolOptions = &envoy_api_v2_core.Http2ProtocolOptions{}
+		cluster.TransportSocket = UpstreamTLSTransportSocket(
+			UpstreamTLSContext(
+				ext.UpstreamValidation,
+				ext.SNI,
+				"h2",
+			),
+		)
+	case "h2c":
+		cluster.Http2ProtocolOptions = &envoy_api_v2_core.Http2ProtocolOptions{}
+	}
+
+	return cluster
+}
+
 // StaticClusterLoadAssignment creates a *v2.ClusterLoadAssignment pointing to the external DNS address of the service
 func StaticClusterLoadAssignment(service *dag.Service) *v2.ClusterLoadAssignment {
 	addr := SocketAddress(service.ExternalName, int(service.Weighted.ServicePort.Port))
@@ -144,10 +188,10 @@ func edshealthcheck(c *dag.Cluster) []*envoy_api_v2_core.HealthCheck {
 		return []*envoy_api_v2_core.HealthCheck{
 			httpHealthCheck(c),
 		}
-	} else {
-		return []*envoy_api_v2_core.HealthCheck{
-			tcpHealthCheck(c),
-		}
+	}
+
+	return []*envoy_api_v2_core.HealthCheck{
+		tcpHealthCheck(c),
 	}
 }
 

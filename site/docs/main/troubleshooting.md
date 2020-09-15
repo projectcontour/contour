@@ -84,6 +84,13 @@ Replace `contour cli lds` with `contour cli rds` for RDS, `contour cli cds` for 
 
 See [the deployment documentation][5] for some tips on using these two deployment options successfully.
 
+## Enabling Contour debug logging
+
+The `contour serve` subcommand has two command-line flags that can be helpful for debugging.
+The `--debug` flag enabled general Contour debug logging, which logs more information about how Contour is processing API resources.
+The `--kubernetes-debug` flag enables verbose logging in the Kubernetes client API, which can help debug interactions between Contour and the Kubernetes API server.
+This flag accepts an integer log level argument, where higher number indicates more detailed logging.
+
 [1]: https://golang.org/pkg/net/http/pprof
 [2]: https://en.wikipedia.org/wiki/DOT
 [3]: https://graphviz.gitlab.io/

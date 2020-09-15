@@ -1509,14 +1509,14 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 	})
 }
 
-func assertRDS(t *testing.T, c *Contour, versioninfo string, ingress_http, ingress_https []*envoy_api_v2_route.VirtualHost) {
+func assertRDS(t *testing.T, c *Contour, versioninfo string, ingressHTTP, ingressHTTPS []*envoy_api_v2_route.VirtualHost) {
 	t.Helper()
 
 	routes := []*v2.RouteConfiguration{
-		envoy.RouteConfiguration("ingress_http", ingress_http...),
+		envoy.RouteConfiguration("ingress_http", ingressHTTP...),
 	}
 
-	for _, vh := range ingress_https {
+	for _, vh := range ingressHTTPS {
 		routes = append(routes,
 			envoy.RouteConfiguration(path.Join("https", vh.Name), vh))
 	}

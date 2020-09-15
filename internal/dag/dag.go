@@ -142,6 +142,14 @@ type Route struct {
 	// over HTTP?
 	HTTPSUpgrade bool
 
+	// AuthDisabled is set if authorization should be disabled
+	// for this route. If authorization is disabled, the AuthContext
+	// field has no effect.
+	AuthDisabled bool
+
+	// AuthContext sets the authorization context (if authorization is enabled).
+	AuthContext map[string]string
+
 	// Is this a websocket route?
 	// TODO(dfc) this should go on the service
 	Websocket bool
@@ -318,6 +326,21 @@ type SecureVirtualHost struct {
 
 	// DownstreamValidation defines how to verify the client's certificate.
 	DownstreamValidation *PeerValidationContext
+
+	// AuthorizationService points to the extension that client
+	// requests are forwarded to for authorization. If nil, no
+	// authorization is enabled for this host.
+	AuthorizationService *ExtensionCluster
+
+	// AuthorizationResponseTimeout sets how long the proxy should wait
+	// for authorization server responses.
+	AuthorizationResponseTimeout timeout.Setting
+
+	// AuthorizationFailOpen sets whether authorization server
+	// failures should cause the client request to also fail. The
+	// only reason to set this to `true` is when you are migrating
+	// from internal to external authorization.
+	AuthorizationFailOpen bool
 }
 
 func (s *SecureVirtualHost) Visit(f func(Vertex)) {
@@ -608,4 +631,36 @@ type TCPHealthCheckPolicy struct {
 	Timeout            time.Duration
 	UnhealthyThreshold uint32
 	HealthyThreshold   uint32
+}
+
+// ExtensionCluster generates an Envoy cluster (aka ClusterLoadAssignment)
+// for an ExtensionService resource.
+type ExtensionCluster struct {
+	// Name is the (globally unique) name of the corresponding Envoy cluster resource.
+	Name string
+
+	// Upstream is the cluster that receives network traffic.
+	Upstream ServiceCluster
+
+	// The protocol to use to speak to this cluster.
+	Protocol string
+
+	// UpstreamValidation defines how to verify the backend service's certificate
+	UpstreamValidation *PeerValidationContext
+
+	// The load balancer type to use when picking a host in the cluster.
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cds.proto#envoy-api-enum-cluster-lbpolicy
+	LoadBalancerPolicy string
+
+	// TimeoutPolicy specifies how to handle timeouts to this extension.
+	TimeoutPolicy TimeoutPolicy
+
+	// SNI is used when a route proxies an upstream using TLS.
+	SNI string
+}
+
+// Visit processes extension clusters.
+func (e *ExtensionCluster) Visit(f func(Vertex)) {
+	// Emit the upstream ServiceCluster to the visitor.
+	f(&e.Upstream)
 }

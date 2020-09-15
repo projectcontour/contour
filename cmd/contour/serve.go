@@ -128,6 +128,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
 
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Debug)
+	serve.Flag("kubernetes-debug", "Enable Kubernetes client debug logging.").UintVar(&ctx.KubernetesDebug)
 	serve.Flag("experimental-service-apis", "Subscribe to the new service-apis types.").BoolVar(&ctx.UseExperimentalServiceAPITypes)
 	return serve, ctx
 }
@@ -236,14 +237,18 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Observer:        dag.ComposeObservers(append(contour.ObserversOf(resources), snapshotHandler)...),
 		Builder: dag.Builder{
-			FieldLogger: log.WithField("context", "builder"),
 			Source: dag.KubernetesCache{
 				RootNamespaces: ctx.proxyRootNamespaces(),
 				IngressClass:   ctx.ingressClass,
 				FieldLogger:    log.WithField("context", "KubernetesCache"),
 			},
 			Processors: []dag.Processor{
-				&dag.IngressProcessor{},
+				&dag.IngressProcessor{
+					FieldLogger: log.WithField("context", "IngressProcessor"),
+				},
+				&dag.ExtensionServiceProcessor{
+					FieldLogger: log.WithField("context", "ExtensionServiceProcessor"),
+				},
 				&dag.HTTPProxyProcessor{
 					DisablePermitInsecure: ctx.DisablePermitInsecure,
 					FallbackCertificate:   fallbackCert,
@@ -444,12 +449,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			grpcServer = xds.RegisterServer(
 				xds.NewContourServer(log, contour.ResourcesOf(resources)...),
 				registry,
-				ctx.grpcOptions()...)
+				ctx.grpcOptions(log)...)
 		case "envoy":
 			grpcServer = xds.RegisterServer(
 				server.NewServer(context.Background(), snapshotCache, nil),
 				registry,
-				ctx.grpcOptions()...)
+				ctx.grpcOptions(log)...)
 		default:
 			log.Fatalf("invalid xdsServerType %q configured", ctx.XDSServerType)
 		}

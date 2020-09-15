@@ -27,6 +27,8 @@ import (
 
 // +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies;tlscertificatedelegations,verbs=get;list;watch
 // +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies/status,verbs=create;get;update
+// +kubebuilder:rbac:groups="projectcontour.io",resources=extensionservices,verbs=get;list;watch
+// +kubebuilder:rbac:groups="projectcontour.io",resources=extensionservices/status,verbs=create;get;update
 
 // DefaultResources ...
 func DefaultResources() []schema.GroupVersionResource {

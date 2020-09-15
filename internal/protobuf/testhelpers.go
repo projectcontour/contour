@@ -12,7 +12,6 @@
 // limitations under the License.
 
 // Package protobuf provides helpers for working with golang/protobuf types.
-
 package protobuf
 
 import (

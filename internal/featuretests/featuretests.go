@@ -97,7 +97,6 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 			NextObserver: dag.ComposeObservers(contour.ObserversOf(resources)...),
 		},
 		Builder: dag.Builder{
-			FieldLogger: fixture.NewTestLogger(t),
 			Source: dag.KubernetesCache{
 				FieldLogger: log,
 			},
@@ -105,7 +104,12 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	}
 
 	eh.Builder.Processors = []dag.Processor{
-		&dag.IngressProcessor{},
+		&dag.IngressProcessor{
+			FieldLogger: log.WithField("context", "IngressProcessor"),
+		},
+		&dag.ExtensionServiceProcessor{
+			FieldLogger: log.WithField("context", "ExtensionServiceProcessor"),
+		},
 		&dag.HTTPProxyProcessor{},
 		&dag.ListenerProcessor{},
 	}

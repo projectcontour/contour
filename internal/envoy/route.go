@@ -21,6 +21,8 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	envoy_config_filter_http_ext_authz_v2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/ext_authz/v2"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/duration"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
@@ -28,6 +30,31 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
 )
+
+// RouteAuthzDisabled returns a per-route config to disable authorization.
+func RouteAuthzDisabled() *any.Any {
+	return protobuf.MustMarshalAny(
+		&envoy_config_filter_http_ext_authz_v2.ExtAuthzPerRoute{
+			Override: &envoy_config_filter_http_ext_authz_v2.ExtAuthzPerRoute_Disabled{
+				Disabled: true,
+			},
+		},
+	)
+}
+
+// RouteAuthzContext returns a per-route config to pass the given
+// context entries in the check request.
+func RouteAuthzContext(settings map[string]string) *any.Any {
+	return protobuf.MustMarshalAny(
+		&envoy_config_filter_http_ext_authz_v2.ExtAuthzPerRoute{
+			Override: &envoy_config_filter_http_ext_authz_v2.ExtAuthzPerRoute_CheckSettings{
+				CheckSettings: &envoy_config_filter_http_ext_authz_v2.CheckSettings{
+					ContextExtensions: settings,
+				},
+			},
+		},
+	)
+}
 
 // RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
