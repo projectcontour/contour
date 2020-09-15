@@ -101,13 +101,17 @@ func (v *secretVisitor) addSecret(s *dag.Secret) {
 }
 
 func (v *secretVisitor) visit(vertex dag.Vertex) {
-	switch svh := vertex.(type) {
+	switch obj := vertex.(type) {
 	case *dag.SecureVirtualHost:
-		if svh.Secret != nil {
-			v.addSecret(svh.Secret)
+		if obj.Secret != nil {
+			v.addSecret(obj.Secret)
 		}
-		if svh.FallbackCertificate != nil {
-			v.addSecret(svh.FallbackCertificate)
+		if obj.FallbackCertificate != nil {
+			v.addSecret(obj.FallbackCertificate)
+		}
+	case *dag.Cluster:
+		if obj.ClientCertificate != nil {
+			v.addSecret(obj.ClientCertificate)
 		}
 	default:
 		vertex.Visit(v.visit)
