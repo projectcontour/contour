@@ -228,7 +228,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 				timeout, err := timeout.Parse(auth.ResponseTimeout)
 				if err != nil {
-					sw.SetInvalid("Spec.Virtualhost.Authorization.ResponseTimeout string %q cannot be parsed: %s", auth.ResponseTimeout, err)
+					sw.SetInvalid("Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
 					return
 				}
 				svhost.AuthorizationResponseTimeout = timeout
