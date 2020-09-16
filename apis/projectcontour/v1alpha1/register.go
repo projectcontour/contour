@@ -19,6 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+var ExtensionServiceGVR = GroupVersion.WithResource("extensionservices")
+
 var (
 	// GroupVersion is group version used to register these objects
 	GroupVersion = schema.GroupVersion{Group: "projectcontour.io", Version: "v1alpha1"}

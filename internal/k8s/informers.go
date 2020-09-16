@@ -15,6 +15,7 @@ package k8s
 
 import (
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -35,6 +36,7 @@ func DefaultResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
 		projectcontour.HTTPProxyGVR,
 		projectcontour.TLSCertificateDelegationGVR,
+		projectcontourv1alpha1.ExtensionServiceGVR,
 		corev1.SchemeGroupVersion.WithResource("services"),
 		v1beta1.SchemeGroupVersion.WithResource("ingresses"),
 	}
