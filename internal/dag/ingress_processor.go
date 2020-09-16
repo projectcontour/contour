@@ -120,7 +120,7 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 			continue
 		}
 
-		r := route(ing, path, s)
+		r := route(ing, path, s, p.FieldLogger)
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
@@ -138,13 +138,17 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 }
 
 // route builds a dag.Route for the supplied Ingress.
-func route(ingress *v1beta1.Ingress, path string, service *Service) *Route {
-	wr := annotation.WebsocketRoutes(ingress)
+func route(ingress *v1beta1.Ingress, path string, service *Service, log logrus.FieldLogger) *Route {
+	log = log.WithFields(logrus.Fields{
+		"name":      ingress.Name,
+		"namespace": ingress.Namespace,
+	})
+
 	r := &Route{
 		HTTPSUpgrade:  annotation.TLSRequired(ingress),
-		Websocket:     wr[path],
-		TimeoutPolicy: ingressTimeoutPolicy(ingress),
-		RetryPolicy:   ingressRetryPolicy(ingress),
+		Websocket:     annotation.WebsocketRoutes(ingress)[path],
+		TimeoutPolicy: ingressTimeoutPolicy(ingress, log),
+		RetryPolicy:   ingressRetryPolicy(ingress, log),
 		Clusters: []*Cluster{{
 			Upstream: service,
 			Protocol: service.Protocol,

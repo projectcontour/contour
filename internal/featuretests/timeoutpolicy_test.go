@@ -105,14 +105,14 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	}
 	rh.OnUpdate(i2, i3)
 
-	// check annotation with malformed timeout is propogated as infinity
+	// check annotation with malformed timeout is not propagated
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoy.RouteConfiguration("ingress_http",
 				envoy.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
-						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
 					},
 				),
 			),
@@ -170,17 +170,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	}
 	rh.OnAdd(p1)
 
-	// check timeout policy with malformed response timeout is propogated as infinity
+	// check timeout policy with malformed response timeout is not propogated
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
-					},
-				),
-			),
+			envoy.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -225,7 +218,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			Routes: []projcontour.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
-					Response: "infinty",
+					Response: "infinity",
 				},
 				Services: []projcontour.Service{{
 					Name: svc.Name,
@@ -281,17 +274,10 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	}
 	rh.OnAdd(p1)
 
-	// check timeout policy with malformed response timeout is propogated as infinity
+	// check timeout policy with malformed response timeout is not propogated
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
-					&envoy_api_v2_route.Route{
-						Match:  routePrefix("/"),
-						Action: withIdleTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
-					},
-				),
-			),
+			envoy.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -336,7 +322,7 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 			Routes: []projcontour.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
 				TimeoutPolicy: &projcontour.TimeoutPolicy{
-					Idle: "infinty",
+					Idle: "infinity",
 				},
 				Services: []projcontour.Service{{
 					Name: svc.Name,

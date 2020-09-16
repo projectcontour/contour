@@ -108,6 +108,39 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 	})
 }
 
+func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+	const fqdn = "failopen.projectcontour.io"
+
+	p := fixture.NewProxy("proxy").
+		WithFQDN(fqdn).
+		WithCertificate("certificate").
+		WithAuthServer(projcontour.AuthorizationServer{
+			ExtensionServiceRef: projcontour.ExtensionServiceReference{
+				Namespace: "auth",
+				Name:      "extension",
+			},
+			ResponseTimeout: "invalid-timeout",
+		}).
+		WithSpec(projcontour.HTTPProxySpec{
+			Routes: []projcontour.Route{{
+				Services: []projcontour.Service{{Name: "app-server", Port: 80}},
+			}},
+		})
+
+	rh.OnAdd(p)
+
+	cluster := grpcCluster("extension/auth/extension")
+	cluster.GrpcService.Timeout = protobuf.Duration(10 * time.Minute)
+
+	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+		TypeUrl:   listenerType,
+		Resources: resources(t, staticListener()),
+	}).Status(p).Equals(projcontour.HTTPProxyStatus{
+		CurrentStatus: k8s.StatusInvalid,
+		Description:   `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`,
+	})
+}
+
 func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	const fqdn = "failopen.projectcontour.io"
 
@@ -495,12 +528,13 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 
 func TestAuthorization(t *testing.T) {
 	subtests := map[string]func(*testing.T, cache.ResourceEventHandler, *Contour){
-		"MissingExtension":  authzInvalidReference,
-		"MergeRouteContext": authzMergeRouteContext,
-		"OverrideDisabled":  authzOverrideDisabled,
-		"FallbackIncompat":  authzFallbackIncompat,
-		"FailOpen":          authzFailOpen,
-		"ResponseTimeout":   authzResponseTimeout,
+		"MissingExtension":       authzInvalidReference,
+		"MergeRouteContext":      authzMergeRouteContext,
+		"OverrideDisabled":       authzOverrideDisabled,
+		"FallbackIncompat":       authzFallbackIncompat,
+		"FailOpen":               authzFailOpen,
+		"ResponseTimeout":        authzResponseTimeout,
+		"InvalidResponseTimeout": authzInvalidResponseTimeout,
 	}
 
 	for n, f := range subtests {

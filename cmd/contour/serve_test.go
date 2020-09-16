@@ -64,6 +64,9 @@ func TestGetRequestTimeout(t *testing.T) {
 		log := logrus.New()
 		log.Out = ioutil.Discard
 
-		assert.Equal(t, tc.want, getRequestTimeout(log, tc.ctx))
+		got, gotErr := getRequestTimeout(log, tc.ctx)
+
+		assert.Equal(t, tc.want, got)
+		assert.NoError(t, gotErr)
 	}
 }

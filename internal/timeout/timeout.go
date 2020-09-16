@@ -13,7 +13,10 @@
 
 package timeout
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Setting describes a timeout setting that can be exactly one of:
 // disable the timeout entirely, use the default, or use a specific
@@ -59,27 +62,25 @@ func DurationSetting(duration time.Duration) Setting {
 //	- an empty string means "use the default".
 //	- any valid representation of "0" means "use the default".
 //	- a valid Go duration string is used as the specific timeout value.
-//	- any other input means "disable the timeout".
-func Parse(timeout string) Setting {
+//	- "infinity" or "infinite" means "disable the timeout".
+//	- any other value results in an error.
+func Parse(timeout string) (Setting, error) {
 	// An empty string is interpreted as no explicit timeout specified, so
 	// use the Envoy default.
 	if timeout == "" {
-		return DefaultSetting()
+		return DefaultSetting(), nil
 	}
 
-	// Interpret "infinity" as a disabled/infinite timeout, which envoy config
+	// Interpret "infinity" or "infinite" as a disabled/infinite timeout, which envoy config
 	// usually expects as an explicit value of 0.
-	if timeout == "infinity" {
-		return DisabledSetting()
+	if timeout == "infinity" || timeout == "infinite" {
+		return DisabledSetting(), nil
 	}
 
 	d, err := time.ParseDuration(timeout)
 	if err != nil {
-		// TODO(cmalonty) plumb a logger in here so we can log this error.
-		// Assuming infinite duration is going to surprise people less for
-		// a not-parseable duration than a implicit 15 second one.
-		return DisabledSetting()
+		return Setting{}, fmt.Errorf("unable to parse timeout string %q: %w", timeout, err)
 	}
 
-	return DurationSetting(d)
+	return DurationSetting(d), nil
 }
