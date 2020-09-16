@@ -31,12 +31,24 @@ type ExtensionServiceProcessor struct {
 
 var _ Processor = &ExtensionServiceProcessor{}
 
-func (p *ExtensionServiceProcessor) Run(builder *Builder) {
-	for n, e := range builder.Source.extensions {
-		if ext := p.buildExtensionService(builder, e); ext != nil {
-			builder.extensions[n] = ext
+func (p *ExtensionServiceProcessor) Run(dag *DAG, cache *KubernetesCache) {
+	for _, e := range cache.extensions {
+		if ext := p.buildExtensionService(cache, e); ext != nil {
+			dag.AddRoot(ext)
 		}
 	}
+}
+
+// Generate a unique Envoy cluster name for an ExtensionCluster.
+// The namespaced name of an ExtensionCluster is globally
+// unique, so we can simply use that as the cluster name. As
+// long as we scope the context with the "extension" prefix
+// there can't be a conflict. Note that the name doesn't include
+// a hash of the contents because we want a 1-1 mapping between
+// ExtensionServices and Envoy Clusters; we don't want a new
+// Envoy Cluster just because a field changed.
+func extensionClusterName(meta types.NamespacedName) string {
+	return strings.Join([]string{"extension", meta.Namespace, meta.Name}, "/")
 }
 
 // buildExtensionService builds one ExtensionCluster record based
@@ -44,24 +56,11 @@ func (p *ExtensionServiceProcessor) Run(builder *Builder) {
 //
 // TODO(jpeach): Publish status conditions in https://github.com/projectcontour/contour/issues/2874.
 func (p *ExtensionServiceProcessor) buildExtensionService(
-	builder *Builder,
+	cache *KubernetesCache,
 	ext *v1alpha1.ExtensionService,
 ) *ExtensionCluster {
-	// Generate a unique Envoy cluster name for an ExtensionCluster.
-	// The namespaced name of an ExtensionCluster is globally
-	// unique, so we can simply use that as the cluster name. As
-	// long as we scope the context with the "extension" prefix
-	// there can't be a conflict. Note that the name doesn't include
-	// a hash of the contents because we want a 1-1 mapping between
-	// ExtensionServices and Envoy Clusters; we don't want a new
-	// Envoy Cluster just because a field changed.
-	nameOf := func(ext *v1alpha1.ExtensionService) string {
-		n := k8s.NamespacedNameOf(ext)
-		return strings.Join([]string{"extension", n.Namespace, n.Name}, "/")
-	}
-
 	extension := ExtensionCluster{
-		Name: nameOf(ext),
+		Name: extensionClusterName(k8s.NamespacedNameOf(ext)),
 		Upstream: ServiceCluster{
 			ClusterName: path.Join(
 				"extension",
@@ -90,7 +89,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	}
 
 	if v := ext.Spec.UpstreamValidation; v != nil {
-		uv, err := builder.Source.LookupUpstreamValidation(v, ext.GetNamespace())
+		uv, err := cache.LookupUpstreamValidation(v, ext.GetNamespace())
 		if err != nil {
 			// TODO(jpeach): Add status condition, #2874.
 			p.WithError(err).Error("failed to resolve upstream validation")
@@ -126,7 +125,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 			Name:      target.Name,
 		}
 
-		svc, err := builder.lookupService(svcName, intstr.FromInt(target.Port))
+		svc, port, err := cache.LookupService(svcName, intstr.FromInt(target.Port))
 		if err != nil {
 			// TODO(jpeach): Add status condition, #2874.
 			p.WithError(err).
@@ -137,7 +136,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		}
 
 		// TODO(jpeach): Add ExternalName support in https://github.com/projectcontour/contour/issues/2875.
-		if svc.ExternalName != "" {
+		if svc.Spec.ExternalName != "" {
 			p.WithError(err).
 				WithField("name", svcName).
 				WithField("port", target.Port).
@@ -145,7 +144,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 			return nil
 		}
 
-		extension.Upstream.AddWeightedService(target.Weight, svcName, svc.Weighted.ServicePort)
+		extension.Upstream.AddWeightedService(target.Weight, svcName, port)
 	}
 
 	return &extension

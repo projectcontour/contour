@@ -64,11 +64,12 @@ func ComposeObservers(observers ...Observer) Observer {
 // between Kubernetes Ingress objects, the backend Services, and Secret objects.
 // The DAG models these relationships as Roots and Vertices.
 type DAG struct {
-	// roots are the roots of this dag
-	roots []Vertex
+	// StatusWriter records Kubernetes object statuses computed
+	// while building this DAG.
+	StatusWriter
 
-	// status computed while building this dag.
-	statuses map[types.NamespacedName]Status
+	// roots are the root vertices of this DAG.
+	roots []Vertex
 }
 
 // Visit calls fn on each root of this DAG.
@@ -82,6 +83,26 @@ func (d *DAG) Visit(fn func(Vertex)) {
 // the computation of this DAG.
 func (d *DAG) Statuses() map[types.NamespacedName]Status {
 	return d.statuses
+}
+
+// AddRoot appends the given root to the DAG's roots.
+func (d *DAG) AddRoot(root Vertex) {
+	d.roots = append(d.roots, root)
+}
+
+// RemoveRoot removes the given root from the DAG's roots if it exists.
+func (d *DAG) RemoveRoot(root Vertex) {
+	idx := -1
+	for i := range d.roots {
+		if d.roots[i] == root {
+			idx = i
+			break
+		}
+	}
+
+	if idx >= 0 {
+		d.roots = append(d.roots[:idx], d.roots[idx+1:]...)
+	}
 }
 
 type MatchCondition interface {

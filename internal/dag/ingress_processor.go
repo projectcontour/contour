@@ -24,21 +24,24 @@ import (
 )
 
 // IngressProcessor translates Ingresses into DAG
-// objects and adds them to the DAG builder.
+// objects and adds them to the DAG.
 type IngressProcessor struct {
 	logrus.FieldLogger
 
-	builder *Builder
+	dag    *DAG
+	source *KubernetesCache
 }
 
 // Run translates Ingresses into DAG objects and
-// adds them to the DAG builder.
-func (p *IngressProcessor) Run(builder *Builder) {
-	p.builder = builder
+// adds them to the DAG.
+func (p *IngressProcessor) Run(dag *DAG, source *KubernetesCache) {
+	p.dag = dag
+	p.source = source
 
 	// reset the processor when we're done
 	defer func() {
-		p.builder = nil
+		p.dag = nil
+		p.source = nil
 	}()
 
 	// setup secure vhosts if there is a matching secret
@@ -51,10 +54,10 @@ func (p *IngressProcessor) Run(builder *Builder) {
 // computeSecureVirtualhosts populates tls parameters of
 // secure virtual hosts.
 func (p *IngressProcessor) computeSecureVirtualhosts() {
-	for _, ing := range p.builder.Source.ingresses {
+	for _, ing := range p.source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(ing.GetNamespace()))
-			sec, err := p.builder.Source.LookupSecret(secretName, validSecret)
+			sec, err := p.source.LookupSecret(secretName, validSecret)
 			if err != nil {
 				p.WithError(err).
 					WithField("name", ing.GetName()).
@@ -64,7 +67,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 				continue
 			}
 
-			if !p.builder.Source.DelegationPermitted(secretName, ing.GetNamespace()) {
+			if !p.source.DelegationPermitted(secretName, ing.GetNamespace()) {
 				p.WithError(err).
 					WithField("name", ing.GetName()).
 					WithField("namespace", ing.GetNamespace()).
@@ -77,7 +80,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 			// ahead and create the SecureVirtualHost for this
 			// Ingress.
 			for _, host := range tls.Hosts {
-				svhost := p.builder.lookupSecureVirtualHost(host)
+				svhost := p.dag.EnsureSecureVirtualHost(host)
 				svhost.Secret = sec
 				svhost.MinTLSVersion = annotation.MinTLSVersion(
 					annotation.CompatAnnotation(ing, "tls-minimum-protocol-version"))
@@ -88,7 +91,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 
 func (p *IngressProcessor) computeIngresses() {
 	// deconstruct each ingress into routes and virtualhost entries
-	for _, ing := range p.builder.Source.ingresses {
+	for _, ing := range p.source.ingresses {
 
 		// rewrite the default ingress to a stock ingress rule.
 		rules := rulesFromSpec(ing.Spec)
@@ -112,7 +115,7 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 		path := stringOrDefault(httppath.Path, "/")
 		be := httppath.Backend
 		m := types.NamespacedName{Name: be.ServiceName, Namespace: ing.Namespace}
-		s, err := p.builder.lookupService(m, be.ServicePort)
+		s, err := p.dag.EnsureService(m, be.ServicePort, p.source)
 		if err != nil {
 			continue
 		}
@@ -121,14 +124,14 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
-			p.builder.lookupVirtualHost(host).addRoute(r)
+			vhost := p.dag.EnsureVirtualHost(host)
+			vhost.addRoute(r)
 		}
 
 		// computeSecureVirtualhosts will have populated b.securevirtualhosts
 		// with the names of tls enabled ingress objects. If host exists then
 		// it is correctly configured for TLS.
-		svh, ok := p.builder.securevirtualhosts[host]
-		if ok && host != "*" {
+		if svh := p.dag.GetSecureVirtualHost(host); svh != nil && host != "*" {
 			svh.addRoute(r)
 		}
 	}

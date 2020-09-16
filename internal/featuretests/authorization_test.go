@@ -443,7 +443,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 		Resources: resources(t, staticListener()),
 	}).Status(invalid).Equals(projcontour.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.Authorization.ServiceRef support service "missing/extension" not found`,
+		Description:   `Spec.Virtualhost.Authorization.ServiceRef extension service "missing/extension" not found`,
 	})
 
 	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = projcontour.ExtensionServiceReference{
