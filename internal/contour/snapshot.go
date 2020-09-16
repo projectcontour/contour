@@ -18,12 +18,10 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/projectcontour/contour/internal/xds"
-
 	envoy_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,16 +31,20 @@ import (
 type SnapshotHandler struct {
 
 	// resources holds the cache of xDS contents.
-	resources map[envoy_xds.ResponseType]ResourceCache
+	resources map[envoy_xds.ResponseType]ResourceSnapshot
 
 	// snapshotCache is a snapshot-based cache that maintains a single versioned
 	// snapshot of responses for xDS resources that Contour manages.
 	snapshotCache cache.SnapshotCache
 
+	logrus.FieldLogger
+}
+
+type ResourceSnapshot struct {
+	ResourceCache
+
 	// snapshotVersion holds the current version of the snapshot.
 	snapshotVersion int64
-
-	logrus.FieldLogger
 }
 
 // NewSnapshotHandler returns an instance of SnapshotHandler.
@@ -71,38 +73,48 @@ func (s *SnapshotHandler) OnChange(root *dag.DAG) {
 // generateNewSnapshot creates a new snapshot against
 // the Contour XDS caches.
 func (s *SnapshotHandler) generateNewSnapshot() {
-	// Generate new snapshot version.
-	snapshotVersion := s.newSnapshotVersion()
 
-	// Create an snapshot with all xDS resources.
-	snapshot := cache.NewSnapshot(snapshotVersion,
-		asResources(s.resources[envoy_xds.Endpoint].Contents()),
-		asResources(s.resources[envoy_xds.Cluster].Contents()),
-		asResources(s.resources[envoy_xds.Route].Contents()),
-		asResources(s.resources[envoy_xds.Listener].Contents()),
-		nil)
+	snapshot := cache.Snapshot{}
+	for key, r := range s.resources {
 
-	// Update the Secrets xDS resource manually until a new version of go-control-plane is released.
-	// ref: https://github.com/envoyproxy/go-control-plane/pull/314
-	snapshot.Resources[envoy_xds.Secret] = cache.NewResources(snapshotVersion, asResources(s.resources[envoy_xds.Secret].Contents()))
+		// Check if the contents of the snapshot cache have changed.
+		currentSnap, err := s.snapshotCache.GetSnapshot("contour")
+		if err != nil {
+			s.Debugf("OnChange: Error getting current snapshot for resource %q: %q", r.TypeURL(), err)
+		}
+
+		// If caches are different, set new snapshot.
+		if !reflect.DeepEqual(currentSnap.Resources[key].Items, cache.IndexResourcesByName(asResources(r.Contents()))) {
+
+			// Create a new cache resource to compare against current snapshot.
+			snapshot.Resources[key] = cache.NewResources(r.nextSnapshotVersion(), asResources(r.Contents()))
+		} else {
+
+			// If caches match, set the old resources to make the snapshot complete.
+			snapshot.Resources[key] = cache.Resources{
+				Version: currentSnap.GetVersion(r.TypeURL()),
+				Items:   currentSnap.Resources[key].Items,
+			}
+		}
+	}
 
 	if err := s.snapshotCache.SetSnapshot(xds.DefaultHash.String(), snapshot); err != nil {
 		s.Errorf("OnChange: Error setting snapshot: %q", err)
 	}
 }
 
-// newSnapshotVersion increments the current snapshotVersion
+// nextSnapshotVersion increments the current snapshotVersion
 // and returns as a string.
-func (s *SnapshotHandler) newSnapshotVersion() string {
+func (r *ResourceSnapshot) nextSnapshotVersion() string {
 
 	// Reset the snapshotVersion if it ever hits max size.
-	if s.snapshotVersion == math.MaxInt64 {
-		s.snapshotVersion = 0
+	if r.snapshotVersion == math.MaxInt64 {
+		r.snapshotVersion = 0
 	}
 
 	// Increment the snapshot version & return as string.
-	s.snapshotVersion++
-	return strconv.FormatInt(s.snapshotVersion, 10)
+	r.snapshotVersion++
+	return strconv.FormatInt(r.snapshotVersion, 10)
 }
 
 // asResources casts the given slice of values (that implement the envoy_xds.Resource
@@ -123,24 +135,16 @@ func asResources(messages interface{}) []envoy_xds.Resource {
 	return protos
 }
 
-// parseResources converts an []ResourceCache to a map[envoy_xds.ResponseType]ResourceCache
+// parseResources converts an []ResourceCache to a map[envoy_xds.ResponseType]ResourceSnapshot
 // for faster indexing when creating new snapshots.
-func parseResources(resources []ResourceCache) map[envoy_xds.ResponseType]ResourceCache {
+func parseResources(resources []ResourceCache) map[envoy_xds.ResponseType]ResourceSnapshot {
 
-	resourceMap := make(map[envoy_xds.ResponseType]ResourceCache, len(resources))
+	resourceMap := make(map[envoy_xds.ResponseType]ResourceSnapshot, len(resources))
 
 	for _, r := range resources {
-		switch r.TypeURL() {
-		case resource.ClusterType:
-			resourceMap[envoy_xds.Cluster] = r
-		case resource.RouteType:
-			resourceMap[envoy_xds.Route] = r
-		case resource.ListenerType:
-			resourceMap[envoy_xds.Listener] = r
-		case resource.SecretType:
-			resourceMap[envoy_xds.Secret] = r
-		case resource.EndpointType:
-			resourceMap[envoy_xds.Endpoint] = r
+		resourceMap[cache.GetResponseType(r.TypeURL())] = ResourceSnapshot{
+			ResourceCache:   r,
+			snapshotVersion: 0,
 		}
 	}
 	return resourceMap
