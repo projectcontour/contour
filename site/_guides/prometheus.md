@@ -11,7 +11,7 @@ should work out of the box with most configurations.
 
 ## Envoy Metrics
 
-Envoy typically exposes metrics through an endpoint on its admin interface. To
+Envoy typically [exposes metrics](https://www.envoyproxy.io/docs/envoy/v1.15.0/configuration/http/http_conn_man/stats#config-http-conn-man-stats) through an endpoint on its admin interface. To
 avoid exposing the entire admin interface to Prometheus (and other workloads in
 the cluster), Contour configures a static listener that sends traffic to the
 stats endpoint and nowhere else.
