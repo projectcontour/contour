@@ -26,7 +26,6 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v2"
-	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -300,13 +299,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// using the SyncList to keep track of what to sync later.
 	var informerSyncList k8s.InformerSyncList
 
+	// Inform on DefaultResources
 	informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, k8s.DefaultResources()...)
-
-	// Inform on ExtensionService resources if they are installed
-	// in the cluster. TODO(jpeach) remove the resource check as part of #2711.
-	if gvr := projectcontourv1alpha1.GroupVersion.WithResource("extensionservices"); clients.ResourcesExist(gvr) {
-		informerSyncList.InformOnResources(clusterInformerFactory, dynamicHandler, gvr)
-	}
 
 	if ctx.UseExperimentalServiceAPITypes {
 		// Check if the resource exists in the API server before setting up the informer.

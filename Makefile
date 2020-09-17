@@ -195,23 +195,13 @@ generate-deployment:
 
 .PHONY: generate-crd-yaml
 generate-crd-yaml:
-ifeq ($(ENABLE_EXTENSIONS_CRD),Y) # Remove in #2711.
-	@echo "Generating CRD YAML documents (including extensions) ..."
+	@echo "Generating CRD YAML documents..."
 	@./hack/generate-crd-yaml.sh
-else
-	@echo Generating CRD YAML documents ...
-	@./hack/generate-crd-yaml.sh ./apis/projectcontour/v1
-endif
 
 .PHONY: generate-api-docs
 generate-api-docs:
-ifeq ($(ENABLE_EXTENSIONS_CRD),Y) # Remove in #2711.
-	@echo "Generating API documentation (including extensions) ..."
+	@echo "Generating API documentation..."
 	@./hack/generate-api-docs.sh github.com/projectcontour/contour/apis/projectcontour
-else
-	@echo Generating API documentation ...
-	@./hack/generate-api-docs.sh
-endif
 
 .PHONY: generate-metrics-docs
 generate-metrics-docs:
