@@ -91,16 +91,20 @@ func TestServeContextTLSParams(t *testing.T) {
 	}{
 		"tls supplied correctly": {
 			ctx: serveContext{
-				caFile:      "cacert.pem",
-				contourCert: "contourcert.pem",
-				contourKey:  "contourkey.pem",
+				ServerConfig: ServerConfig{
+					caFile:      "cacert.pem",
+					contourCert: "contourcert.pem",
+					contourKey:  "contourkey.pem",
+				},
 			},
 			expecterror: false,
 		},
 		"tls partially supplied": {
 			ctx: serveContext{
-				contourCert: "contourcert.pem",
-				contourKey:  "contourkey.pem",
+				ServerConfig: ServerConfig{
+					contourCert: "contourcert.pem",
+					contourKey:  "contourkey.pem",
+				},
 			},
 			expecterror: true,
 		},
@@ -213,7 +217,7 @@ default-http-versions:
 			checkFatalErr(t, err)
 			want := tc.want()
 
-			if diff := cmp.Diff(*want, *got, cmp.AllowUnexported(serveContext{})); diff != "" {
+			if diff := cmp.Diff(*want, *got, cmp.AllowUnexported(serveContext{}, ServerConfig{})); diff != "" {
 				t.Error(diff)
 			}
 		})
@@ -328,9 +332,11 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	defer os.RemoveAll(configDir)
 
 	ctx := serveContext{
-		caFile:      filepath.Join(configDir, "CAcert.pem"),
-		contourCert: filepath.Join(configDir, "contourcert.pem"),
-		contourKey:  filepath.Join(configDir, "contourkey.pem"),
+		ServerConfig: ServerConfig{
+			caFile:      filepath.Join(configDir, "CAcert.pem"),
+			contourCert: filepath.Join(configDir, "contourcert.pem"),
+			contourKey:  filepath.Join(configDir, "contourkey.pem"),
+		},
 	}
 
 	// Initial set of credentials must be linked into temp directory before
