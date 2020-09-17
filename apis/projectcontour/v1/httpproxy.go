@@ -153,6 +153,7 @@ type AuthorizationServer struct {
 	// The string "infinity" is also a valid input and specifies no timeout.
 	//
 	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
 	ResponseTimeout string `json:"responseTimeout,omitempty"`
 
 	// If FailOpen is true, the client request is forwarded to the upstream service
@@ -411,6 +412,7 @@ type TimeoutPolicy struct {
 	// Timeout for receiving a response from the server after processing a request from client.
 	// If not supplied, Envoy's default value of 15s applies.
 	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
 	Response string `json:"response,omitempty"`
 
 	// Timeout after which, if there are no active requests for this route, the connection between
@@ -418,6 +420,7 @@ type TimeoutPolicy struct {
 	// If not specified, there is no per-route idle timeout, though a connection manager-wide
 	// stream_idle_timeout default of 5m still applies.
 	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
 	Idle string `json:"idle,omitempty"`
 }
 
@@ -434,6 +437,8 @@ type RetryPolicy struct {
 	NumRetries int64 `json:"count"`
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if NumRetries is not supplied.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
 	PerTryTimeout string `json:"perTryTimeout,omitempty"`
 	// RetryOn specifies the conditions on which to retry a request.
 	//
