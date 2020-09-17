@@ -27,14 +27,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/envoy"
-	"github.com/projectcontour/contour/internal/fixture"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/google/go-cmp/cmp"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestServeContextProxyRootNamespaces(t *testing.T) {
@@ -469,7 +468,7 @@ func TestParseHTTPVersions(t *testing.T) {
 	cases := map[string]struct {
 		versions      []string
 		parseError    error
-		parseVersions []envoy.HTTPVersionType
+		parseVersions []envoyv2.HTTPVersionType
 	}{
 		"empty": {
 			versions:      []string{},
@@ -484,17 +483,17 @@ func TestParseHTTPVersions(t *testing.T) {
 		"http/1.1": {
 			versions:      []string{"http/1.1", "HTTP/1.1"},
 			parseError:    nil,
-			parseVersions: []envoy.HTTPVersionType{envoy.HTTPVersion1},
+			parseVersions: []envoyv2.HTTPVersionType{envoyv2.HTTPVersion1},
 		},
 		"http/1.1+http/2": {
 			versions:      []string{"http/1.1", "http/2"},
 			parseError:    nil,
-			parseVersions: []envoy.HTTPVersionType{envoy.HTTPVersion1, envoy.HTTPVersion2},
+			parseVersions: []envoyv2.HTTPVersionType{envoyv2.HTTPVersion1, envoyv2.HTTPVersion2},
 		},
 		"http/1.1+http/2 duplicated": {
 			versions:      []string{"http/1.1", "http/2", "http/1.1", "http/2"},
 			parseError:    nil,
-			parseVersions: []envoy.HTTPVersionType{envoy.HTTPVersion1, envoy.HTTPVersion2},
+			parseVersions: []envoyv2.HTTPVersionType{envoyv2.HTTPVersion1, envoyv2.HTTPVersion2},
 		},
 	}
 

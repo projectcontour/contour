@@ -16,11 +16,11 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,7 +44,7 @@ func TestRootNamespaces(t *testing.T) {
 	rh.OnAdd(svc2)
 
 	// assert that there is only a static listener
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
@@ -52,7 +52,7 @@ func TestRootNamespaces(t *testing.T) {
 	})
 
 	// assert that the route tables are empty
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: nil,
 		TypeUrl:   routeType,
 	})
@@ -79,7 +79,7 @@ func TestRootNamespaces(t *testing.T) {
 	rh.OnAdd(hp1)
 
 	// assert that hp1 has no effect on the listener set.
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
@@ -87,9 +87,9 @@ func TestRootNamespaces(t *testing.T) {
 	})
 
 	// assert that the route tables are present but empty.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
+			envoyv2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -116,15 +116,15 @@ func TestRootNamespaces(t *testing.T) {
 	rh.OnAdd(hp2)
 
 	// assert that hp2 creates port 80 listener.
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoyv2.FilterChains(
+					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -132,10 +132,10 @@ func TestRootNamespaces(t *testing.T) {
 	})
 
 	// assert that hp2.example.com's routes are visible.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("hp2.example.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("hp2.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("roots/kuard/8080/da39a3ee5e"),

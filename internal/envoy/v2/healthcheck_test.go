@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy
+package v2
 
 import (
 	"testing"
@@ -19,6 +19,7 @@ import (
 
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
@@ -34,8 +35,8 @@ func TestHealthCheck(t *testing.T) {
 				HTTPHealthCheckPolicy: new(dag.HTTPHealthCheckPolicy),
 			},
 			want: &envoy_api_v2_core.HealthCheck{
-				Timeout:            protobuf.Duration(hcTimeout),
-				Interval:           protobuf.Duration(hcInterval),
+				Timeout:            protobuf.Duration(envoy.HCTimeout),
+				Interval:           protobuf.Duration(envoy.HCInterval),
 				UnhealthyThreshold: protobuf.UInt32(3),
 				HealthyThreshold:   protobuf.UInt32(2),
 				HealthChecker: &envoy_api_v2_core.HealthCheck_HttpHealthCheck_{
@@ -53,8 +54,8 @@ func TestHealthCheck(t *testing.T) {
 				},
 			},
 			want: &envoy_api_v2_core.HealthCheck{
-				Timeout:            protobuf.Duration(hcTimeout),
-				Interval:           protobuf.Duration(hcInterval),
+				Timeout:            protobuf.Duration(envoy.HCTimeout),
+				Interval:           protobuf.Duration(envoy.HCInterval),
 				UnhealthyThreshold: protobuf.UInt32(3),
 				HealthyThreshold:   protobuf.UInt32(2),
 				HealthChecker: &envoy_api_v2_core.HealthCheck_HttpHealthCheck_{

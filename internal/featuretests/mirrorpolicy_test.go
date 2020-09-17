@@ -16,11 +16,11 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,10 +60,10 @@ func TestMirrorPolicy(t *testing.T) {
 	}
 	rh.OnAdd(p1)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost(p1.Spec.VirtualHost.Fqdn,
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost(p1.Spec.VirtualHost.Fqdn,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withMirrorPolicy(routeCluster("default/kuard/8080/da39a3ee5e"), "default/mirror/8080/da39a3ee5e"),
@@ -76,7 +76,7 @@ func TestMirrorPolicy(t *testing.T) {
 
 	// assert that are two clusters in CDS, one for the route service
 	// and one for the mirror service.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/8080/da39a3ee5e", "default/kuard", "default_kuard_8080"),
 			cluster("default/mirror/8080/da39a3ee5e", "default/mirror", "default_mirror_8080"),

@@ -16,13 +16,13 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,21 +90,21 @@ func TestFallbackCertificate(t *testing.T) {
 	rh.OnAdd(proxy1)
 
 	// We should start with a single generic HTTPS service.
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("fallback.example.com", sec1,
 						httpsFilterFor("fallback.example.com"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
@@ -130,7 +130,7 @@ func TestFallbackCertificate(t *testing.T) {
 	rh.OnUpdate(proxy1, proxy2)
 
 	// Invalid since there's no TLSCertificateDelegation configured
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: nil,
 		TypeUrl:   listenerType,
 	})
@@ -152,14 +152,14 @@ func TestFallbackCertificate(t *testing.T) {
 
 	// Now we should still have the generic HTTPS service filter,
 	// but also the fallback certificate filter.
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("fallback.example.com", sec1,
@@ -167,14 +167,14 @@ func TestFallbackCertificate(t *testing.T) {
 						nil, "h2", "http/1.1"),
 					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
 
 	rh.OnDelete(certDelegationAll)
 
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: nil,
 		TypeUrl:   listenerType,
 	})
@@ -194,14 +194,14 @@ func TestFallbackCertificate(t *testing.T) {
 
 	rh.OnAdd(certDelegationSingle)
 
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("fallback.example.com", sec1,
@@ -209,7 +209,7 @@ func TestFallbackCertificate(t *testing.T) {
 						nil, "h2", "http/1.1"),
 					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
@@ -237,7 +237,7 @@ func TestFallbackCertificate(t *testing.T) {
 
 	rh.OnUpdate(proxy2, proxy3)
 
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: nil,
 	})
@@ -263,14 +263,14 @@ func TestFallbackCertificate(t *testing.T) {
 	rh.OnUpdate(proxy3, proxy2) // proxy3 is invalid, resolve that to test two valid proxies
 	rh.OnAdd(proxy4)
 
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("anotherfallback.example.com", sec1,
@@ -281,14 +281,14 @@ func TestFallbackCertificate(t *testing.T) {
 						nil, "h2", "http/1.1"),
 					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
 
 	// We should have emitted TLS certificate secrets for both
 	// the proxy certificate and for the fallback certificate.
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: secretType,
 		Resources: resources(t,
 			&envoy_api_v2_auth.Secret{
@@ -330,7 +330,7 @@ func TestFallbackCertificate(t *testing.T) {
 
 	rh.OnDelete(fallbackSecret)
 
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: nil,
 	})
@@ -338,7 +338,7 @@ func TestFallbackCertificate(t *testing.T) {
 	rh.OnDelete(proxy4)
 	rh.OnDelete(proxy2)
 
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   secretType,
 		Resources: nil,
 	})

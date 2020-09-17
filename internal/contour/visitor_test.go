@@ -21,7 +21,7 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,9 +65,9 @@ func TestVisitClusters(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/example/443/da39a3ee5e",
 					AltStatName:          "default_example_443",
-					ClusterDiscoveryType: envoy.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy.ConfigSource("contour"),
+						EdsConfig:   envoyv2.ConfigSource("contour"),
 						ServiceName: "default/example",
 					},
 				},
@@ -130,18 +130,18 @@ func TestVisitListeners(t *testing.T) {
 			want: listenermap(
 				&envoy_api_v2.Listener{
 					Name:    ENVOY_HTTPS_LISTENER,
-					Address: envoy.SocketAddress("0.0.0.0", 8443),
+					Address: envoyv2.SocketAddress("0.0.0.0", 8443),
 					FilterChains: []*envoy_api_v2_listener.FilterChain{{
 						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							ServerNames: []string{"tcpproxy.example.com"},
 						},
 						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1),
-						Filters:         envoy.Filters(envoy.TCPProxy(ENVOY_HTTPS_LISTENER, p1, envoy.FileAccessLogEnvoy(DEFAULT_HTTPS_ACCESS_LOG))),
+						Filters:         envoyv2.Filters(envoyv2.TCPProxy(ENVOY_HTTPS_LISTENER, p1, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTPS_ACCESS_LOG))),
 					}},
-					ListenerFilters: envoy.ListenerFilters(
-						envoy.TLSInspector(),
+					ListenerFilters: envoyv2.ListenerFilters(
+						envoyv2.TLSInspector(),
 					),
-					SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+					SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 				},
 			),
 		},

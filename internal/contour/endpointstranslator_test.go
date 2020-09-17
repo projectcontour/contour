@@ -16,11 +16,11 @@ package contour
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/require"
@@ -29,7 +29,7 @@ import (
 
 func TestEndpointsTranslatorContents(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*v2.ClusterLoadAssignment
+		contents map[string]*envoy_api_v2.ClusterLoadAssignment
 		want     []proto.Message
 	}{
 		"empty": {
@@ -38,13 +38,13 @@ func TestEndpointsTranslatorContents(t *testing.T) {
 		},
 		"simple": {
 			contents: clusterloadassignments(
-				envoy.ClusterLoadAssignment("default/httpbin-org",
-					envoy.SocketAddress("10.10.10.10", 80),
+				envoyv2.ClusterLoadAssignment("default/httpbin-org",
+					envoyv2.SocketAddress("10.10.10.10", 80),
 				),
 			),
 			want: []proto.Message{
-				envoy.ClusterLoadAssignment("default/httpbin-org",
-					envoy.SocketAddress("10.10.10.10", 80),
+				envoyv2.ClusterLoadAssignment("default/httpbin-org",
+					envoyv2.SocketAddress("10.10.10.10", 80),
 				),
 			},
 		},
@@ -62,46 +62,46 @@ func TestEndpointsTranslatorContents(t *testing.T) {
 
 func TestEndpointCacheQuery(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*v2.ClusterLoadAssignment
+		contents map[string]*envoy_api_v2.ClusterLoadAssignment
 		query    []string
 		want     []proto.Message
 	}{
 		"exact match": {
 			contents: clusterloadassignments(
-				envoy.ClusterLoadAssignment("default/httpbin-org",
-					envoy.SocketAddress("10.10.10.10", 80),
+				envoyv2.ClusterLoadAssignment("default/httpbin-org",
+					envoyv2.SocketAddress("10.10.10.10", 80),
 				),
 			),
 			query: []string{"default/httpbin-org"},
 			want: []proto.Message{
-				envoy.ClusterLoadAssignment("default/httpbin-org",
-					envoy.SocketAddress("10.10.10.10", 80),
+				envoyv2.ClusterLoadAssignment("default/httpbin-org",
+					envoyv2.SocketAddress("10.10.10.10", 80),
 				),
 			},
 		},
 		"partial match": {
 			contents: clusterloadassignments(
-				envoy.ClusterLoadAssignment("default/httpbin-org",
-					envoy.SocketAddress("10.10.10.10", 80),
+				envoyv2.ClusterLoadAssignment("default/httpbin-org",
+					envoyv2.SocketAddress("10.10.10.10", 80),
 				),
 			),
 			query: []string{"default/kuard/8080", "default/httpbin-org"},
 			want: []proto.Message{
-				envoy.ClusterLoadAssignment("default/httpbin-org",
-					envoy.SocketAddress("10.10.10.10", 80),
+				envoyv2.ClusterLoadAssignment("default/httpbin-org",
+					envoyv2.SocketAddress("10.10.10.10", 80),
 				),
-				envoy.ClusterLoadAssignment("default/kuard/8080"),
+				envoyv2.ClusterLoadAssignment("default/kuard/8080"),
 			},
 		},
 		"no match": {
 			contents: clusterloadassignments(
-				envoy.ClusterLoadAssignment("default/httpbin-org",
-					envoy.SocketAddress("10.10.10.10", 80),
+				envoyv2.ClusterLoadAssignment("default/httpbin-org",
+					envoyv2.SocketAddress("10.10.10.10", 80),
 				),
 			),
 			query: []string{"default/kuard/8080"},
 			want: []proto.Message{
-				envoy.ClusterLoadAssignment("default/kuard/8080"),
+				envoyv2.ClusterLoadAssignment("default/kuard/8080"),
 			},
 		},
 	}
@@ -165,11 +165,11 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&v2.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
-				&v2.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_api_v2.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/simple",
-					Endpoints:   envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080)),
+					Endpoints:   envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.24", 8080)),
 				},
 			},
 		},
@@ -186,15 +186,15 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&v2.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
-				&v2.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{ClusterName: "default/httpbin-org/a"},
+				&envoy_api_v2.ClusterLoadAssignment{ClusterName: "default/httpbin-org/b"},
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/simple",
-					Endpoints: envoy.WeightedEndpoints(1,
-						envoy.SocketAddress("23.23.247.89", 80), // addresses should be sorted
-						envoy.SocketAddress("50.17.192.147", 80),
-						envoy.SocketAddress("50.17.206.192", 80),
-						envoy.SocketAddress("50.19.99.160", 80),
+					Endpoints: envoyv2.WeightedEndpoints(1,
+						envoyv2.SocketAddress("23.23.247.89", 80), // addresses should be sorted
+						envoyv2.SocketAddress("50.17.192.147", 80),
+						envoyv2.SocketAddress("50.17.206.192", 80),
+						envoyv2.SocketAddress("50.19.99.160", 80),
 					),
 				},
 			},
@@ -211,15 +211,15 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			}),
 			want: []proto.Message{
 				// Results should be sorted by cluster name.
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
-					Endpoints:   envoy.WeightedEndpoints(1, envoy.SocketAddress("10.10.1.1", 8675)),
+					Endpoints:   envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("10.10.1.1", 8675)),
 				},
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/b",
-					Endpoints:   envoy.WeightedEndpoints(1, envoy.SocketAddress("10.10.1.1", 309)),
+					Endpoints:   envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("10.10.1.1", 309)),
 				},
-				&v2.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_api_v2.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 		},
 		"cartesian product": {
@@ -234,21 +234,21 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
-					Endpoints: envoy.WeightedEndpoints(1,
-						envoy.SocketAddress("10.10.1.1", 8675), // addresses should be sorted
-						envoy.SocketAddress("10.10.2.2", 8675),
+					Endpoints: envoyv2.WeightedEndpoints(1,
+						envoyv2.SocketAddress("10.10.1.1", 8675), // addresses should be sorted
+						envoyv2.SocketAddress("10.10.2.2", 8675),
 					),
 				},
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/b",
-					Endpoints: envoy.WeightedEndpoints(1,
-						envoy.SocketAddress("10.10.1.1", 309),
-						envoy.SocketAddress("10.10.2.2", 309),
+					Endpoints: envoyv2.WeightedEndpoints(1,
+						envoyv2.SocketAddress("10.10.1.1", 309),
+						envoyv2.SocketAddress("10.10.2.2", 309),
 					),
 				},
-				&v2.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_api_v2.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 		},
 		"not ready": {
@@ -272,20 +272,20 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/a",
-					Endpoints: envoy.WeightedEndpoints(1,
-						envoy.SocketAddress("10.10.1.1", 8675),
+					Endpoints: envoyv2.WeightedEndpoints(1,
+						envoyv2.SocketAddress("10.10.1.1", 8675),
 					),
 				},
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org/b",
-					Endpoints: envoy.WeightedEndpoints(1,
-						envoy.SocketAddress("10.10.1.1", 309),
-						envoy.SocketAddress("10.10.2.2", 309),
+					Endpoints: envoyv2.WeightedEndpoints(1,
+						envoyv2.SocketAddress("10.10.1.1", 309),
+						envoyv2.SocketAddress("10.10.2.2", 309),
 					),
 				},
-				&v2.ClusterLoadAssignment{ClusterName: "default/simple"},
+				&envoy_api_v2.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
 		},
 	}
@@ -359,9 +359,9 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				envoy.ClusterLoadAssignment("default/simple"),
-				envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
-				envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
+				envoyv2.ClusterLoadAssignment("default/simple"),
+				envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
+				envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 			},
 		},
 		"remove different": {
@@ -380,12 +380,12 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/simple",
-					Endpoints:   envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080)),
+					Endpoints:   envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.24", 8080)),
 				},
-				envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
-				envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
+				envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
+				envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 			},
 		},
 		"remove non existent": {
@@ -397,9 +397,9 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				envoy.ClusterLoadAssignment("default/simple"),
-				envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
-				envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
+				envoyv2.ClusterLoadAssignment("default/simple"),
+				envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
+				envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 			},
 		},
 		"remove long name": {
@@ -435,9 +435,9 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				},
 			),
 			want: []proto.Message{
-				envoy.ClusterLoadAssignment("default/simple"),
-				envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
-				envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
+				envoyv2.ClusterLoadAssignment("default/simple"),
+				envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
+				envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 			},
 		},
 	}
@@ -481,10 +481,10 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/simple",
-					Endpoints: envoy.WeightedEndpoints(1,
-						envoy.SocketAddress("192.168.183.24", 8080)),
+					Endpoints: envoyv2.WeightedEndpoints(1,
+						envoyv2.SocketAddress("192.168.183.24", 8080)),
 				},
 			},
 		},
@@ -509,13 +509,13 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/httpbin-org",
-					Endpoints: envoy.WeightedEndpoints(1,
-						envoy.SocketAddress("23.23.247.89", 80),
-						envoy.SocketAddress("50.17.192.147", 80),
-						envoy.SocketAddress("50.17.206.192", 80),
-						envoy.SocketAddress("50.19.99.160", 80),
+					Endpoints: envoyv2.WeightedEndpoints(1,
+						envoyv2.SocketAddress("23.23.247.89", 80),
+						envoyv2.SocketAddress("50.17.192.147", 80),
+						envoyv2.SocketAddress("50.17.206.192", 80),
+						envoyv2.SocketAddress("50.19.99.160", 80),
 					),
 				},
 			},
@@ -537,10 +537,10 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 				),
 			}),
 			want: []proto.Message{
-				&v2.ClusterLoadAssignment{
+				&envoy_api_v2.ClusterLoadAssignment{
 					ClusterName: "default/secure/https",
-					Endpoints: envoy.WeightedEndpoints(1,
-						envoy.SocketAddress("192.168.183.24", 8443)),
+					Endpoints: envoyv2.WeightedEndpoints(1,
+						envoyv2.SocketAddress("192.168.183.24", 8443)),
 				},
 			},
 		},
@@ -583,9 +583,9 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 
 	// Assert endpoint was added
 	want := []proto.Message{
-		&v2.ClusterLoadAssignment{
+		&envoy_api_v2.ClusterLoadAssignment{
 			ClusterName: "default/simple",
-			Endpoints:   envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080)),
+			Endpoints:   envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.24", 8080)),
 		},
 	}
 
@@ -597,7 +597,7 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 
 	// Assert endpoints are removed
 	want = []proto.Message{
-		&v2.ClusterLoadAssignment{ClusterName: "default/simple"},
+		&envoy_api_v2.ClusterLoadAssignment{ClusterName: "default/simple"},
 	}
 
 	protobuf.RequireEqual(t, want, et.Contents())
@@ -646,12 +646,12 @@ func TestEndpointsTranslatorWeightedService(t *testing.T) {
 	// Each helper builds a `LocalityLbEndpoints` with one
 	// entry, so we can compose the final result by reaching
 	// in an taking the first element of each slice.
-	w0 := envoy.Endpoints(envoy.SocketAddress("192.168.183.24", 8080))
-	w1 := envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080))
-	w2 := envoy.WeightedEndpoints(2, envoy.SocketAddress("192.168.183.24", 8080))
+	w0 := envoyv2.Endpoints(envoyv2.SocketAddress("192.168.183.24", 8080))
+	w1 := envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.24", 8080))
+	w2 := envoyv2.WeightedEndpoints(2, envoyv2.SocketAddress("192.168.183.24", 8080))
 
 	want := []proto.Message{
-		&v2.ClusterLoadAssignment{
+		&envoy_api_v2.ClusterLoadAssignment{
 			ClusterName: "default/weighted",
 			Endpoints: []*envoy_api_v2_endpoint.LocalityLbEndpoints{
 				w0[0], w1[0], w2[0],
@@ -704,12 +704,12 @@ func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 	// Each helper builds a `LocalityLbEndpoints` with one
 	// entry, so we can compose the final result by reaching
 	// in an taking the first element of each slice.
-	w0 := envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080))
-	w1 := envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080))
-	w2 := envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080))
+	w0 := envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.24", 8080))
+	w1 := envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.24", 8080))
+	w2 := envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.24", 8080))
 
 	want := []proto.Message{
-		&v2.ClusterLoadAssignment{
+		&envoy_api_v2.ClusterLoadAssignment{
 			ClusterName: "default/weighted",
 			Endpoints: []*envoy_api_v2_endpoint.LocalityLbEndpoints{
 				w0[0], w1[0], w2[0],
@@ -732,8 +732,8 @@ func port(name string, port int32) v1.EndpointPort {
 	}
 }
 
-func clusterloadassignments(clas ...*v2.ClusterLoadAssignment) map[string]*v2.ClusterLoadAssignment {
-	m := make(map[string]*v2.ClusterLoadAssignment)
+func clusterloadassignments(clas ...*envoy_api_v2.ClusterLoadAssignment) map[string]*envoy_api_v2.ClusterLoadAssignment {
+	m := make(map[string]*envoy_api_v2.ClusterLoadAssignment)
 	for _, cla := range clas {
 		m[cla.ClusterName] = cla
 	}

@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/projectcontour/contour/internal/contour"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -407,21 +407,21 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 
 // parseDefaultHTTPVersions parses a list of supported HTTP versions
 //  (of the form "HTTP/xx") into a slice of unique version constants.
-func parseDefaultHTTPVersions(versions []string) ([]envoy.HTTPVersionType, error) {
-	wanted := map[envoy.HTTPVersionType]struct{}{}
+func parseDefaultHTTPVersions(versions []string) ([]envoyv2.HTTPVersionType, error) {
+	wanted := map[envoyv2.HTTPVersionType]struct{}{}
 
 	for _, v := range versions {
 		switch strings.ToLower(v) {
 		case "http/1.1":
-			wanted[envoy.HTTPVersion1] = struct{}{}
+			wanted[envoyv2.HTTPVersion1] = struct{}{}
 		case "http/2":
-			wanted[envoy.HTTPVersion2] = struct{}{}
+			wanted[envoyv2.HTTPVersion2] = struct{}{}
 		default:
 			return nil, fmt.Errorf("invalid HTTP protocol version %q", v)
 		}
 	}
 
-	var parsed []envoy.HTTPVersionType
+	var parsed []envoyv2.HTTPVersionType
 	for k := range wanted {
 		parsed = append(parsed, k)
 

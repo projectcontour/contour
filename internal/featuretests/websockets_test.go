@@ -16,10 +16,10 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -63,10 +63,10 @@ func TestWebsocketsIngress(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// check legacy websocket annotation
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("websocket.hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("websocket.hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
@@ -105,10 +105,10 @@ func TestWebsocketsIngress(t *testing.T) {
 	rh.OnUpdate(i1, i2)
 
 	// check websocket annotation
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("websocket.hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("websocket.hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/ws2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
@@ -164,10 +164,10 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("websocket.hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("websocket.hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/ws-2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
@@ -221,10 +221,10 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	}
 	rh.OnUpdate(hp1, hp2)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("websocket.hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("websocket.hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/ws-2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),

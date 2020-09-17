@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -26,7 +26,7 @@ import (
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -70,15 +70,15 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 	cluster := grpcCluster("extension/auth/extension")
 	cluster.GrpcService.Timeout = protobuf.Duration(10 * time.Minute)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			defaultHTTPListener(),
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					filterchaintls(fqdn,
@@ -100,7 +100,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 						),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener()),
 	}).Status(p).Like(projcontour.HTTPProxyStatus{
@@ -132,7 +132,7 @@ func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c 
 	cluster := grpcCluster("extension/auth/extension")
 	cluster.GrpcService.Timeout = protobuf.Duration(10 * time.Minute)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
 	}).Status(p).Equals(projcontour.HTTPProxyStatus{
@@ -162,15 +162,15 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 
 	rh.OnAdd(p)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			defaultHTTPListener(),
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					filterchaintls(fqdn,
@@ -193,7 +193,7 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 						),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener()),
 	}).Status(p).Like(projcontour.HTTPProxyStatus{
@@ -221,7 +221,7 @@ func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 
 	rh.OnAdd(p)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
 	}).Status(p).Equals(projcontour.HTTPProxyStatus{
@@ -288,12 +288,12 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			},
 		})
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: routeType,
 		Resources: resources(t,
-			envoy.RouteConfiguration(
+			envoyv2.RouteConfiguration(
 				path.Join("https", disabled),
-				envoy.VirtualHost(disabled,
+				envoyv2.VirtualHost(disabled,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/enabled"),
 						Action: routeCluster("default/app-server/80/da39a3ee5e"),
@@ -305,9 +305,9 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 					},
 				),
 			),
-			envoy.RouteConfiguration(
+			envoyv2.RouteConfiguration(
 				path.Join("https", enabled),
-				envoy.VirtualHost(enabled,
+				envoyv2.VirtualHost(enabled,
 					&envoy_api_v2_route.Route{
 						Match:                routePrefix("/disabled"),
 						Action:               routeCluster("default/app-server/80/da39a3ee5e"),
@@ -319,9 +319,9 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 					},
 				),
 			),
-			envoy.RouteConfiguration(
+			envoyv2.RouteConfiguration(
 				"ingress_http",
-				envoy.VirtualHost(disabled,
+				envoyv2.VirtualHost(disabled,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/enabled"),
 						Action: withRedirect(),
@@ -331,7 +331,7 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 						Action: withRedirect(),
 					},
 				),
-				envoy.VirtualHost(enabled,
+				envoyv2.VirtualHost(enabled,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/disabled"),
 						Action: withRedirect(),
@@ -396,12 +396,12 @@ func authzMergeRouteContext(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 		"leaf-element":   "leaf",
 	}
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: routeType,
 		Resources: resources(t,
-			envoy.RouteConfiguration(
+			envoyv2.RouteConfiguration(
 				path.Join("https", fqdn),
-				envoy.VirtualHost(fqdn,
+				envoyv2.VirtualHost(fqdn,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/app-server/80/da39a3ee5e"),
@@ -416,9 +416,9 @@ func authzMergeRouteContext(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 					},
 				),
 			),
-			envoy.RouteConfiguration(
+			envoyv2.RouteConfiguration(
 				"ingress_http",
-				envoy.VirtualHost(fqdn,
+				envoyv2.VirtualHost(fqdn,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withRedirect(),
@@ -454,7 +454,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	rh.OnDelete(invalid)
 	rh.OnAdd(invalid)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
 	}).Status(invalid).Equals(projcontour.HTTPProxyStatus{
@@ -471,7 +471,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	rh.OnDelete(invalid)
 	rh.OnAdd(invalid)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
 	}).Status(invalid).Equals(projcontour.HTTPProxyStatus{
@@ -487,15 +487,15 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	rh.OnDelete(invalid)
 	rh.OnAdd(invalid)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			defaultHTTPListener(),
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					filterchaintls(fqdn,
@@ -518,7 +518,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 						),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener()),
 	}).Status(invalid).Like(projcontour.HTTPProxyStatus{

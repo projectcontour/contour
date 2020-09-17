@@ -16,10 +16,10 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,15 +67,15 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnAdd(p1)
 
 	// assert that the insecure listener and the stats listener are present in LDS.
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoyv2.FilterChains(
+					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -83,7 +83,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	})
 
 	// assert that there is a regular, non validation enabled cluster in CDS.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(cluster("default/kuard/443/da39a3ee5e", "default/kuard/securebackend", "default_kuard_443"), nil, "", ""),
 		),
@@ -115,15 +115,15 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnUpdate(p1, p2)
 
 	// assert that the insecure listener and the stats listener are present in LDS.
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoyv2.FilterChains(
+					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -131,7 +131,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	})
 
 	// assert that the cluster now has a certificate and subject name.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(cluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443"), []byte(CERTIFICATE), "subjname", ""),
 		),
@@ -140,7 +140,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 
 	// Contour does not use SDS to transmit the CA for upstream validation, issue 1405,
 	// assert that SDS is empty.
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		// we are asking for all SDS responses, the list is empty so
 		// resources is nil, not []any.Any{} -- an empty slice.
 		Resources: nil,
@@ -172,15 +172,15 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnAdd(hp1)
 
 	// assert that the insecure listener and the stats listener are present in LDS.
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoyv2.FilterChains(
+					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -188,7 +188,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	})
 
 	// assert that the cluster now has a certificate and subject name.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(cluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443"), []byte(CERTIFICATE), "subjname", ""),
 		),
@@ -197,7 +197,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 
 	// Contour does not use SDS to transmit the CA for upstream validation, issue 1405,
 	// assert that SDS is empty.
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		// we are asking for all SDS responses, the list is empty so
 		// resources is nil, not []any.Any{} -- an empty slice.
 		Resources: nil,

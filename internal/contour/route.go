@@ -18,13 +18,13 @@ import (
 	"sort"
 	"sync"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 )
@@ -32,12 +32,12 @@ import (
 // RouteCache manages the contents of the gRPC RDS cache.
 type RouteCache struct {
 	mu     sync.Mutex
-	values map[string]*v2.RouteConfiguration
+	values map[string]*envoy_api_v2.RouteConfiguration
 	Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *RouteCache) Update(v map[string]*v2.RouteConfiguration) {
+func (c *RouteCache) Update(v map[string]*envoy_api_v2.RouteConfiguration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -50,7 +50,7 @@ func (c *RouteCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	var values []*v2.RouteConfiguration
+	var values []*envoy_api_v2.RouteConfiguration
 	for _, v := range c.values {
 		values = append(values, v)
 	}
@@ -64,7 +64,7 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	var values []*v2.RouteConfiguration
+	var values []*envoy_api_v2.RouteConfiguration
 	for _, n := range names {
 		v, ok := c.values[n]
 		if !ok {
@@ -73,7 +73,7 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 			// not the same as returning nil, we're choosing to
 			// say "the configuration you asked for _does exists_,
 			// but it contains no useful information.
-			v = &v2.RouteConfiguration{
+			v = &envoy_api_v2.RouteConfiguration{
 				Name: n,
 			}
 		}
@@ -94,18 +94,18 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 }
 
 type routeVisitor struct {
-	routes map[string]*v2.RouteConfiguration
+	routes map[string]*envoy_api_v2.RouteConfiguration
 }
 
-func visitRoutes(root dag.Vertex) map[string]*v2.RouteConfiguration {
+func visitRoutes(root dag.Vertex) map[string]*envoy_api_v2.RouteConfiguration {
 	// Collect the route configurations for all the routes we can
 	// find. For HTTP hosts, the routes will all be collected on the
 	// well-known ENVOY_HTTP_LISTENER, but for HTTPS hosts, we will
 	// generate a per-vhost collection. This lets us keep different
 	// SNI names disjoint when we later configure the listener.
 	rv := routeVisitor{
-		routes: map[string]*v2.RouteConfiguration{
-			ENVOY_HTTP_LISTENER: envoy.RouteConfiguration(ENVOY_HTTP_LISTENER),
+		routes: map[string]*envoy_api_v2.RouteConfiguration{
+			ENVOY_HTTP_LISTENER: envoyv2.RouteConfiguration(ENVOY_HTTP_LISTENER),
 		},
 	}
 
@@ -132,20 +132,20 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 			// to a SecureVirtualHost that requires upgrade, this logic can move to
 			// envoy.RouteRoute.
 			routes = append(routes, &envoy_api_v2_route.Route{
-				Match:  envoy.RouteMatch(route),
-				Action: envoy.UpgradeHTTPS(),
+				Match:  envoyv2.RouteMatch(route),
+				Action: envoyv2.UpgradeHTTPS(),
 			})
 		} else {
 			rt := &envoy_api_v2_route.Route{
-				Match:  envoy.RouteMatch(route),
-				Action: envoy.RouteRoute(route),
+				Match:  envoyv2.RouteMatch(route),
+				Action: envoyv2.RouteRoute(route),
 			}
 			if route.RequestHeadersPolicy != nil {
-				rt.RequestHeadersToAdd = envoy.HeaderValueList(route.RequestHeadersPolicy.Set, false)
+				rt.RequestHeadersToAdd = envoyv2.HeaderValueList(route.RequestHeadersPolicy.Set, false)
 				rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
 			}
 			if route.ResponseHeadersPolicy != nil {
-				rt.ResponseHeadersToAdd = envoy.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
+				rt.ResponseHeadersToAdd = envoyv2.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
 				rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
 			}
 			routes = append(routes, rt)
@@ -156,7 +156,7 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 		sortRoutes(routes)
 
 		v.routes[ENVOY_HTTP_LISTENER].VirtualHosts = append(v.routes[ENVOY_HTTP_LISTENER].VirtualHosts,
-			envoy.VirtualHost(vh.Name, routes...))
+			envoyv2.VirtualHost(vh.Name, routes...))
 	}
 }
 
@@ -170,15 +170,15 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 		}
 
 		rt := &envoy_api_v2_route.Route{
-			Match:  envoy.RouteMatch(route),
-			Action: envoy.RouteRoute(route),
+			Match:  envoyv2.RouteMatch(route),
+			Action: envoyv2.RouteRoute(route),
 		}
 		if route.RequestHeadersPolicy != nil {
-			rt.RequestHeadersToAdd = envoy.HeaderValueList(route.RequestHeadersPolicy.Set, false)
+			rt.RequestHeadersToAdd = envoyv2.HeaderValueList(route.RequestHeadersPolicy.Set, false)
 			rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
 		}
 		if route.ResponseHeadersPolicy != nil {
-			rt.ResponseHeadersToAdd = envoy.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
+			rt.ResponseHeadersToAdd = envoyv2.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
 			rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
 		}
 
@@ -187,12 +187,12 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			// Apply per-route authorization policy modifications.
 			if route.AuthDisabled {
 				rt.TypedPerFilterConfig = map[string]*any.Any{
-					"envoy.filters.http.ext_authz": envoy.RouteAuthzDisabled(),
+					"envoy.filters.http.ext_authz": envoyv2.RouteAuthzDisabled(),
 				}
 			} else {
 				if len(route.AuthContext) > 0 {
 					rt.TypedPerFilterConfig = map[string]*any.Any{
-						"envoy.filters.http.ext_authz": envoy.RouteAuthzContext(route.AuthContext),
+						"envoy.filters.http.ext_authz": envoyv2.RouteAuthzContext(route.AuthContext),
 					}
 				}
 			}
@@ -207,11 +207,11 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 		name := path.Join("https", svh.VirtualHost.Name)
 
 		if _, ok := v.routes[name]; !ok {
-			v.routes[name] = envoy.RouteConfiguration(name)
+			v.routes[name] = envoyv2.RouteConfiguration(name)
 		}
 
 		v.routes[name].VirtualHosts = append(v.routes[name].VirtualHosts,
-			envoy.VirtualHost(svh.VirtualHost.Name, routes...))
+			envoyv2.VirtualHost(svh.VirtualHost.Name, routes...))
 
 		// A fallback route configuration contains routes for all the vhosts that have the fallback certificate enabled.
 		// When a request is received, the default TLS filterchain will accept the connection,
@@ -219,11 +219,11 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 		if svh.FallbackCertificate != nil {
 			// Add fallback route if not already
 			if _, ok := v.routes[ENVOY_FALLBACK_ROUTECONFIG]; !ok {
-				v.routes[ENVOY_FALLBACK_ROUTECONFIG] = envoy.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG)
+				v.routes[ENVOY_FALLBACK_ROUTECONFIG] = envoyv2.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG)
 			}
 
 			v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts = append(v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts,
-				envoy.VirtualHost(svh.Name, routes...))
+				envoyv2.VirtualHost(svh.Name, routes...))
 		}
 	}
 }

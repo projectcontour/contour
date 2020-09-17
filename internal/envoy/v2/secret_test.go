@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy
+package v2
 
 import (
 	"testing"
+
+	"github.com/projectcontour/contour/internal/envoy"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -110,7 +112,7 @@ func TestSecretname(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := Secretname(tc.secret)
+			got := envoy.Secretname(tc.secret)
 			assert.Equal(t, tc.want, got)
 		})
 	}

@@ -16,11 +16,11 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,18 +75,18 @@ func TestTCPProxy(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -94,9 +94,9 @@ func TestTCPProxy(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
+			envoyv2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -159,18 +159,18 @@ func TestTCPProxyDelegation(t *testing.T) {
 	rh.OnAdd(hp1)
 	rh.OnAdd(hp2)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "app/backend/80/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -178,9 +178,9 @@ func TestTCPProxyDelegation(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
+			envoyv2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -227,23 +227,23 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
-					Filters: envoy.Filters(
+					Filters: envoyv2.Filters(
 						tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"kuard-tcp.example.com"},
 					},
 				}},
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -251,9 +251,9 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
+			envoyv2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -304,25 +304,25 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 	rh.OnAdd(svc)
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("k8s.run.ubisoft.org", s1,
 						tcpproxy("ingress_https", svc.Namespace+"/"+svc.Name+"/443/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
 		TypeUrl: listenerType,
 	})
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(cluster(
 				svc.Namespace+"/"+svc.Name+"/443/da39a3ee5e",
@@ -334,9 +334,9 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 	})
 
 	// check that ingress_http is empty
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
+			envoyv2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -391,30 +391,30 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 	rh.OnAdd(svc)
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				// ingress_http is present for
 				// http://kuard-tcp.example.com/ -> default/backend:80
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoyv2.FilterChains(
+					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				// ingress_https is present for
 				// kuard-tcp.example.com:443 terminated at envoy then forwarded to default/backend:80
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -425,10 +425,10 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 	// There should be an unconditional 301 HTTPS upgrade for http://kuard-tcp.example.com/.
 	// ingress_https should be empty, no route should be present as kuard-tcp.example.com:443
 	// is in tcpproxy mode.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("kuard-tcp.example.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("kuard-tcp.example.com",
 					upgradeHTTPS(routePrefix("/")),
 				),
 			),
@@ -487,30 +487,30 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 	rh.OnAdd(svc)
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				// ingress_http is present for
 				// http://kuard-tcp.example.com/ -> default/backend:80
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoyv2.FilterChains(
+					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				// ingress_https is present for
 				// kuard-tcp.example.com:443 terminated at envoy then tcpproxied to default/backend:80
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -520,10 +520,10 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 	// check that routes exist on port 80 (ingress_http) only.
 	// ingress_https should be empty, no route should be present as kuard-tcp.example.com:443
 	// is in tcpproxy mode.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("kuard-tcp.example.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("kuard-tcp.example.com",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/"),
 						// this is a regular route cluster, not a 301 upgrade as
@@ -576,35 +576,35 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 	rh.OnAdd(svc)
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				// ingress_http is present for
 				// http://kuard-tcp.example.com/ -> default/backend:80
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoyv2.FilterChains(
+					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				// ingress_https is present for
 				// kuard-tcp.example.com:443 direct to default/backend:80
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
-					Filters: envoy.Filters(
+					Filters: envoyv2.Filters(
 						tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"kuard-tcp.example.com"},
 					},
 				}},
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -612,13 +612,13 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 	})
 
 	// check port 80 is open and the route is a 301 upgrade.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
+			envoyv2.RouteConfiguration("ingress_http",
 				// 301 upgrade because permitInsecure is false, thus
 				// the route is present on port 80, but unconditionally
 				// upgrades to HTTPS.
-				envoy.VirtualHost("kuard-tcp.example.com",
+				envoyv2.VirtualHost("kuard-tcp.example.com",
 					upgradeHTTPS(routePrefix("/")),
 				),
 			),
@@ -669,37 +669,37 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 	rh.OnAdd(svc)
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				// ingress_http is present for
 				// http://kuard-tcp.example.com/ -> default/backend:80, this is not 301 upgraded
 				// because permitInsecure: true is in use.
 				Name:    "ingress_http",
-				Address: envoy.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy.FilterChains(
-					envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoyv2.FilterChains(
+					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				// ingress_https is present for
 				// kuard-tcp.example.com:443 direct to default/backend:80, envoy does not handle
 				// the TLS handshake beyond SNI demux because passthrough: true is in use.
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
-					Filters: envoy.Filters(
+					Filters: envoyv2.Filters(
 						tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"kuard-tcp.example.com"},
 					},
 				}},
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -709,10 +709,10 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 	// check that routes exist on port 80 (ingress_http) only.
 	// ingress_https should be empty, no route should be present as kuard-tcp.example.com:443
 	// is in tcpproxy mode.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("kuard-tcp.example.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("kuard-tcp.example.com",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/"),
 						// not a 301 upgrade because permitInsecure: true is in use.
@@ -773,7 +773,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 	rh.OnAdd(svc)
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			// ingress_http and ingress_https should be missing
 			// as hp1 is not valid.
@@ -782,11 +782,11 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			// ingress_http and ingress_https should be empty
 			// as hp1 is not valid.
-			envoy.RouteConfiguration("ingress_http"),
+			envoyv2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -819,7 +819,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 	}
 	rh.OnUpdate(hp1, hp2)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			// ingress_http and ingress_https should be missing
 			// as hp2 is not valid.
@@ -828,11 +828,11 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			// ingress_http and ingress_https should be empty
 			// as hp2 is not valid.
-			envoy.RouteConfiguration("ingress_http"),
+			envoyv2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})

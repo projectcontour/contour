@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy
+package v2
 
 import (
 	"path"
@@ -21,20 +21,21 @@ import (
 	envoy_api_bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBootstrap(t *testing.T) {
 	tests := map[string]struct {
-		config                        BootstrapConfig
+		config                        envoy.BootstrapConfig
 		wantedBootstrapConfig         string
 		wantedTLSCertificateConfig    string
 		wantedValidationContextConfig string
 		wantedError                   bool
 	}{
 		"default configuration": {
-			config: BootstrapConfig{
+			config: envoy.BootstrapConfig{
 				Path:      "envoy.json",
 				Namespace: "testing-ns"},
 			wantedBootstrapConfig: `{
@@ -155,7 +156,7 @@ func TestBootstrap(t *testing.T) {
 }`,
 		},
 		"--admin-address=8.8.8.8 --admin-port=9200": {
-			config: BootstrapConfig{
+			config: envoy.BootstrapConfig{
 				Path:         "envoy.json",
 				AdminAddress: "8.8.8.8",
 				AdminPort:    9200,
@@ -279,7 +280,7 @@ func TestBootstrap(t *testing.T) {
 }`,
 		},
 		"AdminAccessLogPath": { // TODO(dfc) doesn't appear to be exposed via contour bootstrap
-			config: BootstrapConfig{
+			config: envoy.BootstrapConfig{
 				Path:               "envoy.json",
 				AdminAccessLogPath: "/var/log/admin.log",
 				Namespace:          "testing-ns",
@@ -402,7 +403,7 @@ func TestBootstrap(t *testing.T) {
 }`,
 		},
 		"--xds-address=8.8.8.8 --xds-port=9200": {
-			config: BootstrapConfig{
+			config: envoy.BootstrapConfig{
 				Path:        "envoy.json",
 				XDSAddress:  "8.8.8.8",
 				XDSGRPCPort: 9200,
@@ -526,7 +527,7 @@ func TestBootstrap(t *testing.T) {
 }`,
 		},
 		"--stats-address=8.8.8.8 --stats-port=9200": {
-			config: BootstrapConfig{
+			config: envoy.BootstrapConfig{
 				Path:      "envoy.json",
 				Namespace: "testing-ns",
 			},
@@ -648,7 +649,7 @@ func TestBootstrap(t *testing.T) {
 }`,
 		},
 		"--envoy-cafile=CA.cert --envoy-client-cert=client.cert --envoy-client-key=client.key": {
-			config: BootstrapConfig{
+			config: envoy.BootstrapConfig{
 				Path:              "envoy.json",
 				Namespace:         "testing-ns",
 				GrpcCABundle:      "CA.cert",
@@ -802,7 +803,7 @@ func TestBootstrap(t *testing.T) {
 }`,
 		},
 		"--resources-dir tmp --envoy-cafile=CA.cert --envoy-client-cert=client.cert --envoy-client-key=client.key": {
-			config: BootstrapConfig{
+			config: envoy.BootstrapConfig{
 				Path:              "envoy.json",
 				Namespace:         "testing-ns",
 				ResourcesDir:      "resources",
@@ -981,7 +982,7 @@ func TestBootstrap(t *testing.T) {
     }`,
 		},
 		"return error when not providing all certificate related parameters": {
-			config: BootstrapConfig{
+			config: envoy.BootstrapConfig{
 				Path:           "envoy.json",
 				Namespace:      "testing-ns",
 				ResourcesDir:   "resources",
@@ -1002,8 +1003,8 @@ func TestBootstrap(t *testing.T) {
 				gotConfigs[path] = config
 			}
 
-			sdsTLSCertificatePath := path.Join(tc.config.ResourcesDir, sdsResourcesSubdirectory, sdsTLSCertificateFile)
-			sdsValidationContextPath := path.Join(tc.config.ResourcesDir, sdsResourcesSubdirectory, sdsValidationContextFile)
+			sdsTLSCertificatePath := path.Join(tc.config.ResourcesDir, envoy.SDSResourcesSubdirectory, envoy.SDSTLSCertificateFile)
+			sdsValidationContextPath := path.Join(tc.config.ResourcesDir, envoy.SDSResourcesSubdirectory, envoy.SDSValidationContextFile)
 
 			if tc.wantedBootstrapConfig != "" {
 				want := new(envoy_api_bootstrap.Bootstrap)
