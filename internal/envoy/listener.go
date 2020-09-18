@@ -40,10 +40,11 @@ import (
 type HTTPVersionType = http.HttpConnectionManager_CodecType
 
 const (
-	HTTPVersionAuto HTTPVersionType = http.HttpConnectionManager_AUTO
-	HTTPVersion1    HTTPVersionType = http.HttpConnectionManager_HTTP1
-	HTTPVersion2    HTTPVersionType = http.HttpConnectionManager_HTTP2
-	HTTPVersion3    HTTPVersionType = http.HttpConnectionManager_HTTP3
+	HTTPVersionAuto    HTTPVersionType = http.HttpConnectionManager_AUTO
+	HTTPVersion1       HTTPVersionType = http.HttpConnectionManager_HTTP1
+	HTTPVersion2       HTTPVersionType = http.HttpConnectionManager_HTTP2
+	HTTPVersion3       HTTPVersionType = http.HttpConnectionManager_HTTP3
+	gzipHTTPFilterName                 = "envoy.filters.http.compressor"
 )
 
 // TLSInspector returns a new TLS inspector listener filter.
@@ -204,7 +205,8 @@ func (b *httpConnectionManagerBuilder) ConnectionShutdownGracePeriod(timeout tim
 func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBuilder {
 	b.filters = append(b.filters,
 		&http.HttpFilter{
-			Name: wellknown.Gzip,
+			// TODO(#2479) Update once go-control-plane constant is merged (https://github.com/envoyproxy/go-control-plane/pull/354).
+			Name: gzipHTTPFilterName,
 		},
 		&http.HttpFilter{
 			Name: wellknown.GRPCWeb,

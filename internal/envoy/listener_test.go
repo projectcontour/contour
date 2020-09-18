@@ -338,7 +338,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: gzipHTTPFilterName,
 						}, {
 							Name: wellknown.GRPCWeb,
 						}, {
@@ -388,7 +388,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: gzipHTTPFilterName,
 						}, {
 							Name: wellknown.GRPCWeb,
 						}, {
@@ -439,7 +439,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: gzipHTTPFilterName,
 						}, {
 							Name: wellknown.GRPCWeb,
 						}, {
@@ -491,7 +491,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: gzipHTTPFilterName,
 						}, {
 							Name: wellknown.GRPCWeb,
 						}, {
@@ -542,7 +542,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: gzipHTTPFilterName,
 						}, {
 							Name: wellknown.GRPCWeb,
 						}, {
@@ -594,7 +594,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: gzipHTTPFilterName,
 						}, {
 							Name: wellknown.GRPCWeb,
 						}, {
@@ -644,7 +644,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: gzipHTTPFilterName,
 						}, {
 							Name: wellknown.GRPCWeb,
 						}, {
