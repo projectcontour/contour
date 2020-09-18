@@ -26,6 +26,7 @@ import (
 
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v2"
+	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -43,10 +44,17 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 )
 
 // Add RBAC policy to support leader election.
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=create;get;update
+
+// Add RBAC policy to support getting CRDs.
+// +kubebuilder:rbac:groups="apiextensions.k8s.io",resources=customresourcedefinitions,verbs=list
 
 // registerServe registers the serve subcommand and flags
 // with the Application provided.
@@ -132,6 +140,40 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	return serve, ctx
 }
 
+// validateCRDs inspects all CRDs in the projectcontour.io group and logs a warning
+// if they have spec.preserveUnknownFields set to true, since this indicates that they
+// were created as v1beta1 and the user has not upgraded them to be fully v1-compatible.
+func validateCRDs(dynamicClient dynamic.Interface, log logrus.FieldLogger) {
+	client := dynamicClient.Resource(schema.GroupVersionResource{Group: "apiextensions.k8s.io", Version: "v1", Resource: "customresourcedefinitions"})
+
+	crds, err := client.List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("error listing v1 custom resource definitions: %v", err)
+		return
+	}
+
+	for _, crd := range crds.Items {
+		log = log.WithField("crd", crd.GetName())
+
+		if group, _, _ := unstructured.NestedString(crd.Object, "spec", "group"); group != contourv1.GroupName {
+			log.Debugf("CRD is not in projectcontour.io API group, ignoring")
+			continue
+		}
+
+		preserveUnknownFields, found, err := unstructured.NestedBool(crd.Object, "spec", "preserveUnknownFields")
+		if err != nil {
+			log.Warnf("error getting CRD's spec.preserveUnknownFields value: %v", err)
+			continue
+		}
+		if found && preserveUnknownFields {
+			log.Warnf("CRD was created as v1beta1 since it has spec.preserveUnknownFields set to true; it should be upgraded to v1 per https://projectcontour.io/resources/upgrading/")
+			continue
+		}
+
+		log.Debugf("CRD is fully v1-compatible since it has spec.preserveUnknownFields set to false")
+	}
+}
+
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
@@ -140,6 +182,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if err != nil {
 		return fmt.Errorf("failed to create Kubernetes clients: %w", err)
 	}
+
+	// Validate that Contour CRDs have been updated to v1.
+	validateCRDs(clients.DynamicClient(), log)
 
 	// Factory for cluster-wide informers.
 	clusterInformerFactory := clients.NewInformerFactory()
