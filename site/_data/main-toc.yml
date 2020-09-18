@@ -53,6 +53,8 @@ toc:
         link: /resources/envoy
       - page: Kubernetes Support Matrix
         link: /resources/kubernetes
+      - page: Contour Deprecation Policy
+        link: /resources/deprecation-policy
       - page: Release Process
         link: /resources/release-process
       - page: Frequently Asked Questions
