@@ -28,6 +28,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | request-timeout | [duration][4] | `0s` | **Deprecated and will be removed in a future release. Use [timeouts.request-timeout](#timeout-configuration) instead.**<br /><br /> This field specifies the default request timeout as a Go duration string. Zero means there is no timeout. |
 | tls | TLS | | The default [TLS configuration](#tls-configuration). |
 | timeouts | TimeoutConfig | | The [timeout configuration](#timeout-configuration). |
+| server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -81,8 +82,17 @@ The timeout configuration block can be used to configure various timeouts for th
 | connection-shutdown-grace-period | string | `5s`* | This field defines how long the proxy will wait between sending an initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During this grace period, the proxy will continue to respond to new streams. After the final GOAWAY frame has been sent, the proxy will refuse new streams. Must be a [valid Go duration string][4]. See [the Envoy documentation][11] for more information. |
 {: class="table thead-dark table-bordered"}
 <br>
-
 _* This is Envoy's default setting value and is not explicitly configured by Contour._
+
+### Server Configuration
+
+The server configuration block can be used to configure various settings for the `contour serve` command.
+
+| Field Name | Type| Default  | Description |
+|------------|-----|----------|-------------|
+| xds-server-type | string | contour | This field specifies the xDS Server to use. Options are `contour` or `envoy`.  |
+{: class="table thead-dark table-bordered"}
+<br>
 
 ### Configuration Example
 
@@ -96,6 +106,10 @@ metadata:
   namespace: projectcontour
 data:
   contour.yaml: |
+    # server:
+    #   determine which XDS Server implementation to utilize in Contour.
+    #   xds-server-type: contour
+    #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
     #

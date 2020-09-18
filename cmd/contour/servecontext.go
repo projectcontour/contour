@@ -48,13 +48,7 @@ type serveContext struct {
 	InCluster  bool   `yaml:"incluster,omitempty"`
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
 
-	// contour's xds service parameters
-	xdsAddr string
-	xdsPort int
-	// Defines the XDSServer to use for `contour serve`
-	// Defaults to "contour"
-	XDSServerType                   string `yaml:"xds-server-type,omitempty"`
-	caFile, contourCert, contourKey string
+	ServerConfig `yaml:"server,omitempty"`
 
 	// contour's debug handler parameters
 	debugAddr string
@@ -160,9 +154,6 @@ func newServeContext() *serveContext {
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
 	return &serveContext{
 		Kubeconfig:            filepath.Join(os.Getenv("HOME"), ".kube", "config"),
-		xdsAddr:               "127.0.0.1",
-		xdsPort:               8001,
-		XDSServerType:         "contour",
 		statsAddr:             "0.0.0.0",
 		statsPort:             8002,
 		debugAddr:             "127.0.0.1",
@@ -196,6 +187,11 @@ func newServeContext() *serveContext {
 			// without stopping slow connections from being terminated too quickly.
 			ConnectionIdleTimeout: "60s",
 		},
+		ServerConfig: ServerConfig{
+			xdsAddr:       "127.0.0.1",
+			xdsPort:       8001,
+			XDSServerType: "contour",
+		},
 	}
 }
 
@@ -206,6 +202,17 @@ type TLSConfig struct {
 	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
 	// use as fallback when a non-SNI request is received.
 	FallbackCertificate FallbackCertificate `yaml:"fallback-certificate,omitempty"`
+}
+
+type ServerConfig struct {
+	// contour's xds service parameters
+	xdsAddr                         string
+	xdsPort                         int
+	caFile, contourCert, contourKey string
+
+	// Defines the XDSServer to use for `contour serve`
+	// Defaults to "contour"
+	XDSServerType string `yaml:"xds-server-type,omitempty"`
 }
 
 // FallbackCertificate defines the namespace/name of the Kubernetes secret to
