@@ -18,12 +18,11 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/projectcontour/contour/internal/xds"
-
 	envoy_xds "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 )
 

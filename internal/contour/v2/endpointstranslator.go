@@ -11,12 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package v2
 
 import (
 	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/projectcontour/contour/internal/contour"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
@@ -222,7 +224,7 @@ func (c *EndpointsCache) DeleteEndpoint(ep *v1.Endpoints) {
 // NewEndpointsTranslator allocates a new endpoints translator.
 func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
 	return &EndpointsTranslator{
-		Cond:        Cond{},
+		Cond:        contour.Cond{},
 		FieldLogger: log,
 		entries:     map[string]*envoy_api_v2.ClusterLoadAssignment{},
 		cache: EndpointsCache{
@@ -237,9 +239,9 @@ func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
 // ClusterLoadAssignment resources.
 type EndpointsTranslator struct {
 	// Observer notifies when the endpoints cache has been updated.
-	Observer Observer
+	Observer contour.Observer
 
-	Cond
+	contour.Cond
 	logrus.FieldLogger
 
 	cache EndpointsCache

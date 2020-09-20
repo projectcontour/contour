@@ -29,6 +29,7 @@ import (
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
+	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
 	"github.com/projectcontour/contour/internal/health"
@@ -246,7 +247,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return fmt.Errorf("error parsing request timeout: %w", err)
 	}
 
-	listenerConfig := contour.ListenerConfig{
+	listenerConfig := contourv2.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
 		HTTPPort:                      ctx.httpPort,
@@ -275,13 +276,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
-	endpointHandler := contour.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
+	endpointHandler := contourv2.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
 
 	resources := []contour.ResourceCache{
-		contour.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort),
-		&contour.SecretCache{},
-		&contour.RouteCache{},
-		&contour.ClusterCache{},
+		contourv2.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort),
+		&contourv2.SecretCache{},
+		&contourv2.RouteCache{},
+		&contourv2.ClusterCache{},
 		endpointHandler,
 	}
 

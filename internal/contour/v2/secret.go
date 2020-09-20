@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package v2
 
 import (
 	"sort"
@@ -20,6 +20,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
+	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
@@ -31,7 +32,7 @@ import (
 type SecretCache struct {
 	mu     sync.Mutex
 	values map[string]*envoy_api_v2_auth.Secret
-	Cond
+	contour.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.

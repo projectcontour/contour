@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package v2
 
 import (
 	"context"
@@ -19,6 +19,8 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"github.com/projectcontour/contour/internal/contour"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
@@ -40,7 +42,7 @@ import (
 func TestGRPC(t *testing.T) {
 	// tr and et is recreated before the start of each test.
 	var et *EndpointsTranslator
-	var eh *EventHandler
+	var eh *contour.EventHandler
 
 	tests := map[string]func(*testing.T, *grpc.ClientConn){
 		"StreamClusters": func(t *testing.T, cc *grpc.ClientConn) {
@@ -191,7 +193,7 @@ func TestGRPC(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			et = NewEndpointsTranslator(fixture.NewTestLogger(t))
 
-			resources := []ResourceCache{
+			resources := []contour.ResourceCache{
 				NewListenerCache(ListenerConfig{}, "", 0),
 				&SecretCache{},
 				&RouteCache{},
@@ -199,12 +201,12 @@ func TestGRPC(t *testing.T) {
 				et,
 			}
 
-			eh = &EventHandler{
-				Observer:    dag.ComposeObservers(ObserversOf(resources)...),
+			eh = &contour.EventHandler{
+				Observer:    dag.ComposeObservers(contour.ObserversOf(resources)...),
 				FieldLogger: log,
 			}
 
-			srv := xds.RegisterServer(xds.NewContourServer(log, ResourcesOf(resources)...), nil)
+			srv := xds.RegisterServer(xds.NewContourServer(log, contour.ResourcesOf(resources)...), nil)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 			done := make(chan error, 1)

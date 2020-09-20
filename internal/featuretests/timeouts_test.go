@@ -19,7 +19,7 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
+	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -56,17 +56,17 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType, contour.ENVOY_HTTP_LISTENER).Equals(&envoy_api_v2.DiscoveryResponse{
+	c.Request(listenerType, contourv2.ENVOY_HTTP_LISTENER).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
-				Name:          contour.ENVOY_HTTP_LISTENER,
+				Name:          contourv2.ENVOY_HTTP_LISTENER,
 				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
 				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 				FilterChains: envoyv2.FilterChains(envoyv2.HTTPConnectionManagerBuilder().
-					RouteConfigName(contour.ENVOY_HTTP_LISTENER).
-					MetricsPrefix(contour.ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoyv2.FileAccessLogEnvoy(contour.DEFAULT_HTTP_ACCESS_LOG)).
+					RouteConfigName(contourv2.ENVOY_HTTP_LISTENER).
+					MetricsPrefix(contourv2.ENVOY_HTTP_LISTENER).
+					AccessLoggers(envoyv2.FileAccessLogEnvoy(contourv2.DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
 					Get(),
 				),
@@ -75,7 +75,7 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 }
 
 func TestNonZeroTimeoutsSpecified(t *testing.T) {
-	withTimeouts := func(conf *contour.ListenerConfig) {
+	withTimeouts := func(conf *contourv2.ListenerConfig) {
 		conf.ConnectionIdleTimeout = timeout.DurationSetting(7 * time.Second)
 		conf.StreamIdleTimeout = timeout.DurationSetting(70 * time.Second)
 		conf.MaxConnectionDuration = timeout.DurationSetting(700 * time.Second)
@@ -109,17 +109,17 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType, contour.ENVOY_HTTP_LISTENER).Equals(&envoy_api_v2.DiscoveryResponse{
+	c.Request(listenerType, contourv2.ENVOY_HTTP_LISTENER).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
-				Name:          contour.ENVOY_HTTP_LISTENER,
+				Name:          contourv2.ENVOY_HTTP_LISTENER,
 				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
 				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 				FilterChains: envoyv2.FilterChains(envoyv2.HTTPConnectionManagerBuilder().
-					RouteConfigName(contour.ENVOY_HTTP_LISTENER).
-					MetricsPrefix(contour.ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoyv2.FileAccessLogEnvoy(contour.DEFAULT_HTTP_ACCESS_LOG)).
+					RouteConfigName(contourv2.ENVOY_HTTP_LISTENER).
+					MetricsPrefix(contourv2.ENVOY_HTTP_LISTENER).
+					AccessLoggers(envoyv2.FileAccessLogEnvoy(contourv2.DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
 					ConnectionIdleTimeout(timeout.DurationSetting(7 * time.Second)).
 					StreamIdleTimeout(timeout.DurationSetting(70 * time.Second)).

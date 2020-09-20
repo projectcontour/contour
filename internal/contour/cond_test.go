@@ -13,7 +13,9 @@
 
 package contour
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestCondRegisterBeforeNotifyShouldNotBroadcast(t *testing.T) {
 	var c Cond

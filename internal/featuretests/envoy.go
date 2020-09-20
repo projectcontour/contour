@@ -30,7 +30,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
-	"github.com/projectcontour/contour/internal/contour"
+	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	"github.com/projectcontour/contour/internal/dag"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -291,8 +291,8 @@ func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *da
 		envoyv2.Filters(
 			envoyv2.HTTPConnectionManagerBuilder().
 				DefaultFilters().
-				RouteConfigName(contour.ENVOY_FALLBACK_ROUTECONFIG).
-				MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+				RouteConfigName(contourv2.ENVOY_FALLBACK_ROUTECONFIG).
+				MetricsPrefix(contourv2.ENVOY_HTTPS_LISTENER).
 				AccessLoggers(envoyv2.FileAccessLogEnvoy("/dev/stdout")).
 				Get(),
 		),
@@ -304,7 +304,7 @@ func httpsFilterFor(vhost string) *envoy_api_v2_listener.Filter {
 		AddFilter(envoyv2.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
 		RouteConfigName(path.Join("https", vhost)).
-		MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+		MetricsPrefix(contourv2.ENVOY_HTTPS_LISTENER).
 		AccessLoggers(envoyv2.FileAccessLogEnvoy("/dev/stdout")).
 		Get()
 }
@@ -326,7 +326,7 @@ func authzFilterFor(
 			},
 		}).
 		RouteConfigName(path.Join("https", vhost)).
-		MetricsPrefix(contour.ENVOY_HTTPS_LISTENER).
+		MetricsPrefix(contourv2.ENVOY_HTTPS_LISTENER).
 		AccessLoggers(envoyv2.FileAccessLogEnvoy("/dev/stdout")).
 		Get()
 }

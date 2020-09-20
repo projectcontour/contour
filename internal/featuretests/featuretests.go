@@ -22,13 +22,14 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
+	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -62,20 +63,20 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	log := fixture.NewTestLogger(t)
 	log.SetLevel(logrus.DebugLevel)
 
-	et := contour.NewEndpointsTranslator(log)
+	et := contourv2.NewEndpointsTranslator(log)
 
-	conf := contour.ListenerConfig{}
+	conf := contourv2.ListenerConfig{}
 	for _, opt := range opts {
-		if opt, ok := opt.(func(*contour.ListenerConfig)); ok {
+		if opt, ok := opt.(func(*contourv2.ListenerConfig)); ok {
 			opt(&conf)
 		}
 	}
 
 	resources := []contour.ResourceCache{
-		contour.NewListenerCache(conf, statsAddress, statsPort),
-		&contour.SecretCache{},
-		&contour.RouteCache{},
-		&contour.ClusterCache{},
+		contourv2.NewListenerCache(conf, statsAddress, statsPort),
+		&contourv2.SecretCache{},
+		&contourv2.RouteCache{},
+		&contourv2.ClusterCache{},
 		et,
 	}
 
@@ -231,7 +232,7 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 
 // routeResources returns the given routes as a slice of any.Any
 // resources, appropriately sorted.
-func routeResources(t *testing.T, routes ...*v2.RouteConfiguration) []*any.Any {
+func routeResources(t *testing.T, routes ...*envoy_api_v2.RouteConfiguration) []*any.Any {
 	sort.Stable(sorter.For(routes))
 	return resources(t, protobuf.AsMessages(routes)...)
 }
@@ -246,8 +247,8 @@ func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 }
 
 type grpcStream interface {
-	Send(*v2.DiscoveryRequest) error
-	Recv() (*v2.DiscoveryResponse, error)
+	Send(*envoy_api_v2.DiscoveryRequest) error
+	Recv() (*envoy_api_v2.DiscoveryResponse, error)
 }
 
 type statusResult struct {
@@ -340,29 +341,29 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 		require.NoError(c, err)
 		st = sts
 	case routeType:
-		rds := v2.NewRouteDiscoveryServiceClient(c.ClientConn)
+		rds := envoy_api_v2.NewRouteDiscoveryServiceClient(c.ClientConn)
 		str, err := rds.StreamRoutes(ctx)
 		require.NoError(c, err)
 		st = str
 	case clusterType:
-		cds := v2.NewClusterDiscoveryServiceClient(c.ClientConn)
+		cds := envoy_api_v2.NewClusterDiscoveryServiceClient(c.ClientConn)
 		stc, err := cds.StreamClusters(ctx)
 		require.NoError(c, err)
 		st = stc
 	case listenerType:
-		lds := v2.NewListenerDiscoveryServiceClient(c.ClientConn)
+		lds := envoy_api_v2.NewListenerDiscoveryServiceClient(c.ClientConn)
 		stl, err := lds.StreamListeners(ctx)
 		require.NoError(c, err)
 		st = stl
 	case endpointType:
-		eds := v2.NewEndpointDiscoveryServiceClient(c.ClientConn)
+		eds := envoy_api_v2.NewEndpointDiscoveryServiceClient(c.ClientConn)
 		ste, err := eds.StreamEndpoints(ctx)
 		require.NoError(c, err)
 		st = ste
 	default:
 		c.Fatal("unknown typeURL:", typeurl)
 	}
-	resp := c.sendRequest(st, &v2.DiscoveryRequest{
+	resp := c.sendRequest(st, &envoy_api_v2.DiscoveryRequest{
 		TypeUrl:       typeurl,
 		ResourceNames: names,
 	})
@@ -372,7 +373,7 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 	}
 }
 
-func (c *Contour) sendRequest(stream grpcStream, req *v2.DiscoveryRequest) *v2.DiscoveryResponse {
+func (c *Contour) sendRequest(stream grpcStream, req *envoy_api_v2.DiscoveryRequest) *envoy_api_v2.DiscoveryResponse {
 	err := stream.Send(req)
 	require.NoError(c, err)
 	resp, err := stream.Recv()
@@ -382,12 +383,12 @@ func (c *Contour) sendRequest(stream grpcStream, req *v2.DiscoveryRequest) *v2.D
 
 type Response struct {
 	*Contour
-	*v2.DiscoveryResponse
+	*envoy_api_v2.DiscoveryResponse
 }
 
 // Equals tests that the response retrieved from Contour is equal to the supplied value.
 // TODO(youngnick) This function really should be copied to an `EqualResources` function.
-func (r *Response) Equals(want *v2.DiscoveryResponse) *Contour {
+func (r *Response) Equals(want *envoy_api_v2.DiscoveryResponse) *Contour {
 	r.Helper()
 
 	protobuf.RequireEqual(r.T, want.Resources, r.DiscoveryResponse.Resources)
