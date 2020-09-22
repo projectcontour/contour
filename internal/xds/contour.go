@@ -125,7 +125,7 @@ func (s *contourServer) stream(st grpcStream) error {
 		// note: redeclare log in this scope so the next time around the loop all is forgotten.
 		log := log.WithField("version_info", req.VersionInfo).WithField("response_nonce", req.ResponseNonce)
 		if req.Node != nil {
-			log = log.WithField("node_id", req.Node.Id).WithField("node_version", req.Node.BuildVersion)
+			log = log.WithField("node_id", req.Node.Id).WithField("node_version", fmt.Sprintf("v%d.%d.%d", req.Node.GetUserAgentBuildVersion().Version.MajorNumber, req.Node.GetUserAgentBuildVersion().Version.MinorNumber, req.Node.GetUserAgentBuildVersion().Version.Patch))
 		}
 
 		if status := req.ErrorDetail; status != nil {

@@ -13,7 +13,7 @@ Its goal is to expand upon the functionality of the Ingress API to allow for a r
 
 ## Prerequisites
 
-Contour is tested with Kubernetes clusters running version 1.10 and later, but should work with earlier versions where Custom Resource Definitions are supported (Kubernetes 1.7+).
+Contour requires Kubernetes version 1.16 or later, for [v1 Custom Resource Definition support](https://kubernetes.io/blog/2019/09/18/kubernetes-1-16-release-announcement/#custom-resources-reach-general-availability).
 
 RBAC must be enabled on your cluster.
 
