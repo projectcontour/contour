@@ -503,6 +503,16 @@ type Cluster struct {
 	// is used if the route is configured to proxy to an externalService type.
 	// If the value is not set, then SNI is not changed.
 	SNI string
+
+	// DNSLookupFamily defines how external names are looked up
+	// When configured as V4, the DNS resolver will only perform a lookup
+	// for addresses in the IPv4 family. If V6 is configured, the DNS resolver
+	// will only perform a lookup for addresses in the IPv6 family.
+	// If AUTO is configured, the DNS resolver will first perform a lookup
+	// for addresses in the IPv6 family and fallback to a lookup for addresses
+	// in the IPv4 family.
+	// Note: This only applies to externalName clusters.
+	DNSLookupFamily string
 }
 
 func (c Cluster) Visit(f func(Vertex)) {

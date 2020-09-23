@@ -87,9 +87,14 @@ See [the deployment documentation][5] for some tips on using these two deploymen
 ## Enabling Contour debug logging
 
 The `contour serve` subcommand has two command-line flags that can be helpful for debugging.
-The `--debug` flag enabled general Contour debug logging, which logs more information about how Contour is processing API resources.
+The `--debug` flag enables general Contour debug logging, which logs more information about how Contour is processing API resources.
 The `--kubernetes-debug` flag enables verbose logging in the Kubernetes client API, which can help debug interactions between Contour and the Kubernetes API server.
 This flag accepts an integer log level argument, where higher number indicates more detailed logging.
+
+## Enabling Envoy debug logging
+
+The `envoy` command has a `--log-level` flag that can be useful for debugging. By default, it's set to `info`.
+To change it to `debug`, edit the `envoy` DaemonSet in the `projectcontour` namespace and replace the `--log-level info` flag with `--log-level debug`.
 
 [1]: https://golang.org/pkg/net/http/pprof
 [2]: https://en.wikipedia.org/wiki/DOT

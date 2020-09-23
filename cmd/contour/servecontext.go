@@ -147,6 +147,10 @@ type serveContext struct {
 	//
 	// If this field not specified, all supported versions are accepted.
 	DefaultHTTPVersions []string `yaml:"default-http-versions"`
+
+	// ClusterConfig holds various configurable Envoy cluster values that can
+	// be set in the config file.
+	ClusterConfig `yaml:"cluster,omitempty"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
@@ -191,6 +195,9 @@ func newServeContext() *serveContext {
 			xdsAddr:       "127.0.0.1",
 			xdsPort:       8001,
 			XDSServerType: "contour",
+		},
+		ClusterConfig: ClusterConfig{
+			DNSLookupFamily: "auto",
 		},
 	}
 }
@@ -299,6 +306,22 @@ type TimeoutConfig struct {
 	ConnectionShutdownGracePeriod string `yaml:"connection-shutdown-grace-period,omitempty"`
 }
 
+// ClusterConfig holds various configurable cluster values.
+type ClusterConfig struct {
+	// DNSLookupFamily defines how external names are looked up
+	// When configured as V4, the DNS resolver will only perform a lookup
+	// for addresses in the IPv4 family. If V6 is configured, the DNS resolver
+	// will only perform a lookup for addresses in the IPv6 family.
+	// If AUTO is configured, the DNS resolver will first perform a lookup
+	// for addresses in the IPv6 family and fallback to a lookup for addresses
+	// in the IPv4 family.
+	// Note: This only applies to externalName clusters.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster.proto#enum-cluster-dnslookupfamily
+	// for more information.
+	DNSLookupFamily string `yaml:"dns-lookup-family"`
+}
+
 // grpcOptions returns a slice of grpc.ServerOptions.
 // if ctx.PermitInsecureGRPC is false, the option set will
 // include TLS configuration.
@@ -403,6 +426,20 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 		ns = append(ns, strings.TrimSpace(s))
 	}
 	return ns
+}
+
+// ParseDNSLookupFamily parses the dnsLookupFamily returning the value
+// configured or the default of "auto" if invalid.
+func ParseDNSLookupFamily(value string) (string, error) {
+
+	dlf := strings.ToLower(value)
+	switch dlf {
+	case "auto", "v4", "v6":
+		return dlf, nil
+	case "":
+		return "auto", nil
+	}
+	return "auto", fmt.Errorf("invalid dns lookup family %q configured, defaulting to \"auto\"", dlf)
 }
 
 // parseDefaultHTTPVersions parses a list of supported HTTP versions

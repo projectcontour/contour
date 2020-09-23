@@ -75,3 +75,9 @@ data:
     #   stream-idle-timeout: 5m
     #   max-connection-duration: infinity
     #   connection-shutdown-grace-period: 5s
+    #
+    # Envoy cluster settings.
+    # cluster:
+    #   configure the cluster dns lookup family
+    #   valid options are: auto (default), v4, v6
+    #   dns-lookup-family: auto
