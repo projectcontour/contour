@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy
+package v2
 
 import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"

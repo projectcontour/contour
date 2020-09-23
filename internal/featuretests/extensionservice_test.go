@@ -16,7 +16,7 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
@@ -24,7 +24,7 @@ import (
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -42,13 +42,13 @@ func extBasic(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 		},
 	})
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			DefaultCluster(
 				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
-				&v2.Cluster{
-					TransportSocket: envoy.UpstreamTLSTransportSocket(
+				&envoy_api_v2.Cluster{
+					TransportSocket: envoyv2.UpstreamTLSTransportSocket(
 						&envoy_api_v2_auth.UpstreamTlsContext{
 							CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
 								AlpnProtocols: []string{"h2"},
@@ -61,13 +61,13 @@ func extBasic(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 		),
 	})
 
-	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
+	c.Request(endpointType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: endpointType,
-		Resources: resources(t, &v2.ClusterLoadAssignment{
+		Resources: resources(t, &envoy_api_v2.ClusterLoadAssignment{
 			ClusterName: "extension/ns/ext",
 			Endpoints: []*envoy_api_v2_endpoint.LocalityLbEndpoints{
-				envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.20", 8081))[0],
-				envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.21", 8082))[0],
+				envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.20", 8081))[0],
+				envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.21", 8082))[0],
 			},
 		}),
 	})
@@ -85,7 +85,7 @@ func extCleartext(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 		},
 	})
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			DefaultCluster(
@@ -112,7 +112,7 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	rh.OnAdd(ext)
 
 	// Enabling validation add SNI as well as CA and server altname validation.
-	tlsSocket := envoy.UpstreamTLSTransportSocket(
+	tlsSocket := envoyv2.UpstreamTLSTransportSocket(
 		&envoy_api_v2_auth.UpstreamTlsContext{
 			Sni: "ext.projectcontour.io",
 			CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
@@ -135,12 +135,12 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 		},
 	)
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			DefaultCluster(
 				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
-				&v2.Cluster{TransportSocket: tlsSocket},
+				&envoy_api_v2.Cluster{TransportSocket: tlsSocket},
 			),
 		),
 	})
@@ -160,7 +160,7 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	})
 
 	// No Clusters are build because the CACertificate secret didn't resolve.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 	})
 }
@@ -187,7 +187,7 @@ func extExternalName(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	})
 
 	// Using externalname services isn't implemented, so doesn't build a cluster.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 	})
 }
@@ -202,7 +202,7 @@ func extMissingService(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) 
 		},
 	})
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 	})
 }
@@ -221,7 +221,7 @@ func extInvalidTimeout(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) 
 		},
 	})
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 	})
 }
@@ -242,7 +242,7 @@ func extInconsistentProto(_ *testing.T, rh cache.ResourceEventHandler, c *Contou
 	})
 
 	// Should have no clusters because Protocol and UpstreamValidation is inconsistent.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 	})
 }

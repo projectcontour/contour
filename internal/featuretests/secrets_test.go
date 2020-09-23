@@ -16,10 +16,10 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
+	v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -45,7 +45,7 @@ func TestSDSVisibility(t *testing.T) {
 
 	// assert that the secret is _not_ visible as it is
 	// not referenced by any ingress/httpproxy
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources:   nil,
 		TypeUrl:     secretType,
@@ -81,7 +81,7 @@ func TestSDSVisibility(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// i1 has a default route to backend:80, but there is no matching service.
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources:   nil,
 		TypeUrl:     secretType,
@@ -137,7 +137,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 
 	rh.OnAdd(fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
@@ -147,7 +147,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	// verify that requesting the same resource without change
 	// does not bump the current version_info.
 
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
@@ -165,7 +165,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	}
 	rh.OnAdd(s2)
 
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
@@ -222,7 +222,7 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// SDS should be empty
-	c.Request(secretType).Equals(&v2.DiscoveryResponse{
+	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources:   nil,
 		TypeUrl:     secretType,
@@ -231,7 +231,7 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 }
 
 func secret(sec *v1.Secret) *envoy_api_v2_auth.Secret {
-	return envoy.Secret(&dag.Secret{
+	return v2.Secret(&dag.Secret{
 		Object: sec,
 	})
 }

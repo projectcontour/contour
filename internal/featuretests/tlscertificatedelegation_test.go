@@ -16,9 +16,9 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +29,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	defer done()
 
 	// assert that there is only a static listener
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
@@ -79,7 +79,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	rh.OnAdd(p1)
 
 	// assert there are no listeners
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
@@ -103,30 +103,30 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnAdd(t1)
 
-	ingress_http := &v2.Listener{
+	ingress_http := &envoy_api_v2.Listener{
 		Name:    "ingress_http",
-		Address: envoy.SocketAddress("0.0.0.0", 8080),
-		FilterChains: envoy.FilterChains(
-			envoy.HTTPConnectionManager("ingress_http", envoy.FileAccessLogEnvoy("/dev/stdout"), 0),
+		Address: envoyv2.SocketAddress("0.0.0.0", 8080),
+		FilterChains: envoyv2.FilterChains(
+			envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
 		),
-		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 	}
 
-	ingress_https := &v2.Listener{
+	ingress_https := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoy.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoy.ListenerFilters(
-			envoy.TLSInspector(),
+		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoyv2.ListenerFilters(
+			envoyv2.TLSInspector(),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", sec1,
 				httpsFilterFor("example.com"),
 				nil, "h2", "http/1.1"),
 		),
-		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 	}
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			ingress_http,
 			ingress_https,
@@ -152,7 +152,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnUpdate(t1, t2)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			ingress_http,
 			ingress_https,
@@ -178,7 +178,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnUpdate(t2, t3)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
@@ -202,7 +202,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnUpdate(t3, t4)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
@@ -237,7 +237,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	rh.OnAdd(hp1)
 
 	// assert there are no listeners
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			staticListener(),
 		),
@@ -260,7 +260,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnAdd(t5)
 
-	c.Request(listenerType).Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			ingress_http,
 			ingress_https,

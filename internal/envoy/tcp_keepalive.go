@@ -12,11 +12,7 @@
 
 package envoy
 
-import (
-	"syscall"
-
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-)
+import "syscall"
 
 // We only support Envoy on Linux so always configure Linux TCP keep-alive
 // socket options regardless of the platform that Contour is running on.
@@ -34,47 +30,3 @@ const (
 	// is defined here for consistency.
 	IPPROTO_TCP = syscall.IPPROTO_TCP
 )
-
-func TCPKeepaliveSocketOptions() []*envoy_api_v2_core.SocketOption {
-
-	// Note: TCP_KEEPIDLE + (TCP_KEEPINTVL * TCP_KEEPCNT) must be greater than
-	// the grpc.KeepaliveParams time + timeout (currently 60 + 20 = 80 seconds)
-	// otherwise TestGRPC/StreamClusters fails.
-	return []*envoy_api_v2_core.SocketOption{
-		// Enable TCP keep-alive.
-		{
-			Description: "Enable TCP keep-alive",
-			Level:       SOL_SOCKET,
-			Name:        SO_KEEPALIVE,
-			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 1},
-			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
-		},
-		// The time (in seconds) the connection needs to remain idle
-		// before TCP starts sending keepalive probes.
-		{
-			Description: "TCP keep-alive initial idle time",
-			Level:       IPPROTO_TCP,
-			Name:        TCP_KEEPIDLE,
-			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 45},
-			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
-		},
-		// The time (in seconds) between individual keepalive probes.
-		{
-			Description: "TCP keep-alive time between probes",
-			Level:       IPPROTO_TCP,
-			Name:        TCP_KEEPINTVL,
-			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 5},
-			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
-		},
-		// The maximum number of TCP keep-alive probes to send before
-		// giving up and killing the connection if no response is
-		// obtained from the other end.
-		{
-			Description: "TCP keep-alive probe count",
-			Level:       IPPROTO_TCP,
-			Name:        TCP_KEEPCNT,
-			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 9},
-			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
-		},
-	}
-}

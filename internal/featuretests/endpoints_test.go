@@ -16,9 +16,9 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/envoy"
+	v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 )
@@ -70,20 +70,20 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	rh.OnAdd(e1)
 
 	// check that it's been translated correctly.
-	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
+	c.Request(endpointType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.ClusterLoadAssignment{
+			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http",
-				Endpoints: envoy.WeightedEndpoints(1,
-					envoy.SocketAddress("172.16.0.1", 8000), // endpoints and cluster names should be sorted
-					envoy.SocketAddress("172.16.0.2", 8000),
+				Endpoints: v2.WeightedEndpoints(1,
+					v2.SocketAddress("172.16.0.1", 8000), // endpoints and cluster names should be sorted
+					v2.SocketAddress("172.16.0.2", 8000),
 				),
 			},
-			&v2.ClusterLoadAssignment{
+			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https",
-				Endpoints: envoy.WeightedEndpoints(1,
-					envoy.SocketAddress("172.16.0.1", 8443),
-					envoy.SocketAddress("172.16.0.2", 8443),
+				Endpoints: v2.WeightedEndpoints(1,
+					v2.SocketAddress("172.16.0.1", 8443),
+					v2.SocketAddress("172.16.0.2", 8443),
 				),
 			},
 		),
@@ -93,10 +93,10 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	// remove e1 and check that the EDS cache is now empty.
 	rh.OnDelete(e1)
 
-	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
+	c.Request(endpointType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
-			envoy.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
+			v2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
+			v2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 		),
 		TypeUrl: endpointType,
 	})
@@ -161,20 +161,20 @@ func TestAddEndpointComplicated(t *testing.T) {
 
 	rh.OnAdd(e1)
 
-	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
+	c.Request(endpointType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: endpointType,
 		Resources: resources(t,
-			&v2.ClusterLoadAssignment{
+			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "default/kuard/admin",
-				Endpoints: envoy.WeightedEndpoints(1,
-					envoy.SocketAddress("10.48.1.77", 9000),
-					envoy.SocketAddress("10.48.1.78", 9000),
+				Endpoints: v2.WeightedEndpoints(1,
+					v2.SocketAddress("10.48.1.77", 9000),
+					v2.SocketAddress("10.48.1.78", 9000),
 				),
 			},
-			&v2.ClusterLoadAssignment{
+			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "default/kuard/foo",
-				Endpoints: envoy.WeightedEndpoints(1,
-					envoy.SocketAddress("10.48.1.78", 8080),
+				Endpoints: v2.WeightedEndpoints(1,
+					v2.SocketAddress("10.48.1.78", 8080),
 				),
 			},
 		),
@@ -229,20 +229,20 @@ func TestEndpointFilter(t *testing.T) {
 		},
 	))
 
-	c.Request(endpointType, "default/kuard/foo").Equals(&v2.DiscoveryResponse{
+	c.Request(endpointType, "default/kuard/foo").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: endpointType,
 		Resources: resources(t,
-			&v2.ClusterLoadAssignment{
+			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "default/kuard/foo",
-				Endpoints:   envoy.WeightedEndpoints(1, envoy.SocketAddress("10.48.1.78", 8080)),
+				Endpoints:   v2.WeightedEndpoints(1, v2.SocketAddress("10.48.1.78", 8080)),
 			},
 		),
 	})
 
-	c.Request(endpointType, "default/kuard/bar").Equals(&v2.DiscoveryResponse{
+	c.Request(endpointType, "default/kuard/bar").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: endpointType,
 		Resources: resources(t,
-			envoy.ClusterLoadAssignment("default/kuard/bar"),
+			v2.ClusterLoadAssignment("default/kuard/bar"),
 		),
 	})
 }
@@ -278,11 +278,11 @@ func TestIssue602(t *testing.T) {
 	rh.OnAdd(e1)
 
 	// Assert endpoint was added
-	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
+	c.Request(endpointType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.ClusterLoadAssignment{
+			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "default/simple",
-				Endpoints:   envoy.WeightedEndpoints(1, envoy.SocketAddress("192.168.183.24", 8080)),
+				Endpoints:   v2.WeightedEndpoints(1, v2.SocketAddress("192.168.183.24", 8080)),
 			},
 		),
 		TypeUrl: endpointType,
@@ -292,8 +292,8 @@ func TestIssue602(t *testing.T) {
 	e2 := endpoints("default", "simple")
 	rh.OnUpdate(e1, e2)
 
-	c.Request(endpointType).Equals(&v2.DiscoveryResponse{
-		Resources: resources(t, envoy.ClusterLoadAssignment("default/simple")),
+	c.Request(endpointType).Equals(&envoy_api_v2.DiscoveryResponse{
+		Resources: resources(t, v2.ClusterLoadAssignment("default/simple")),
 		TypeUrl:   endpointType,
 	})
 }

@@ -17,11 +17,11 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -52,10 +52,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// check annotation with explicit timeout is propagated
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 80*time.Second),
@@ -79,10 +79,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnUpdate(i1, i2)
 
 	// check annotation with infinite timeout is propogated
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
@@ -106,10 +106,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnUpdate(i2, i3)
 
 	// check annotation with malformed timeout is not propagated
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
@@ -134,10 +134,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnUpdate(i3, i4)
 
 	// assert that projectcontour.io/response-timeout takes priority.
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("*",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 99*time.Second),
@@ -171,9 +171,9 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnAdd(p1)
 
 	// check timeout policy with malformed response timeout is not propogated
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
+			envoyv2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -197,10 +197,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnUpdate(p1, p2)
 
 	// check timeout policy with response timeout is propogated correctly
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 180*time.Second),
@@ -230,10 +230,10 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnUpdate(p2, p3)
 
 	// check timeout policy with explicit infine response timeout is propogated as infinity
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
@@ -275,9 +275,9 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	rh.OnAdd(p1)
 
 	// check timeout policy with malformed response timeout is not propogated
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http"),
+			envoyv2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -301,10 +301,10 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	rh.OnUpdate(p1, p2)
 
 	// check timeout policy with response timeout is propogated correctly
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withIdleTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 180*time.Second),
@@ -334,10 +334,10 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	rh.OnUpdate(p2, p3)
 
 	// check timeout policy with explicit infine response timeout is propogated as infinity
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("test2.test.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withIdleTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity

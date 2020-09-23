@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy
+package v2
 
 import (
 	"fmt"
@@ -32,6 +32,7 @@ import (
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -45,35 +46,6 @@ const (
 	HTTPVersion2    HTTPVersionType = http.HttpConnectionManager_HTTP2
 	HTTPVersion3    HTTPVersionType = http.HttpConnectionManager_HTTP3
 )
-
-// TLSInspector returns a new TLS inspector listener filter.
-func TLSInspector() *envoy_api_v2_listener.ListenerFilter {
-	return &envoy_api_v2_listener.ListenerFilter{
-		Name: wellknown.TlsInspector,
-	}
-}
-
-// ProxyProtocol returns a new Proxy Protocol listener filter.
-func ProxyProtocol() *envoy_api_v2_listener.ListenerFilter {
-	return &envoy_api_v2_listener.ListenerFilter{
-		Name: wellknown.ProxyProtocol,
-	}
-}
-
-// CodecForVersions determines a single Envoy HTTP codec constant
-// that support all the given HTTP protocol versions.
-func CodecForVersions(versions ...HTTPVersionType) HTTPVersionType {
-	switch len(versions) {
-	case 1:
-		return versions[0]
-	case 0:
-		// Default is to autodetect.
-		return HTTPVersionAuto
-	default:
-		// If more than one version is allowed, autodetect and let ALPN sort it out.
-		return HTTPVersionAuto
-	}
-}
 
 // ProtoNamesForVersions returns the slice of ALPN protocol names for the give HTTP versions.
 func ProtoNamesForVersions(versions ...HTTPVersionType) []string {
@@ -108,6 +80,35 @@ func ProtoNamesForVersions(versions ...HTTPVersionType) []string {
 	}
 
 	return alpn
+}
+
+// CodecForVersions determines a single Envoy HTTP codec constant
+// that support all the given HTTP protocol versions.
+func CodecForVersions(versions ...HTTPVersionType) HTTPVersionType {
+	switch len(versions) {
+	case 1:
+		return versions[0]
+	case 0:
+		// Default is to autodetect.
+		return HTTPVersionAuto
+	default:
+		// If more than one version is allowed, autodetect and let ALPN sort it out.
+		return HTTPVersionAuto
+	}
+}
+
+// TLSInspector returns a new TLS inspector listener filter.
+func TLSInspector() *envoy_api_v2_listener.ListenerFilter {
+	return &envoy_api_v2_listener.ListenerFilter{
+		Name: wellknown.TlsInspector,
+	}
+}
+
+// ProxyProtocol returns a new Proxy Protocol listener filter.
+func ProxyProtocol() *envoy_api_v2_listener.ListenerFilter {
+	return &envoy_api_v2_listener.ListenerFilter{
+		Name: wellknown.ProxyProtocol,
+	}
 }
 
 // Listener returns a new v2.Listener for the supplied address, port, and filters.
@@ -277,7 +278,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		},
 		HttpFilters: b.filters,
 		CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
-			IdleTimeout: envoyTimeout(b.connectionIdleTimeout),
+			IdleTimeout: envoy.Timeout(b.connectionIdleTimeout),
 		},
 		HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
 			// Enable support for HTTP/1.0 requests that carry
@@ -291,9 +292,9 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		PreserveExternalRequestId: true,
 		MergeSlashes:              true,
 
-		RequestTimeout:    envoyTimeout(b.requestTimeout),
-		StreamIdleTimeout: envoyTimeout(b.streamIdleTimeout),
-		DrainTimeout:      envoyTimeout(b.connectionShutdownGracePeriod),
+		RequestTimeout:    envoy.Timeout(b.requestTimeout),
+		StreamIdleTimeout: envoy.Timeout(b.streamIdleTimeout),
+		DrainTimeout:      envoy.Timeout(b.connectionShutdownGracePeriod),
 	}
 
 	// Max connection duration is infinite/disabled by default in Envoy, so if the timeout setting
@@ -356,7 +357,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 				TypedConfig: protobuf.MustMarshalAny(&tcp.TcpProxy{
 					StatPrefix: statPrefix,
 					ClusterSpecifier: &tcp.TcpProxy_Cluster{
-						Cluster: Clustername(proxy.Clusters[0]),
+						Cluster: envoy.Clustername(proxy.Clusters[0]),
 					},
 					AccessLog:   accesslogger,
 					IdleTimeout: idleTimeout,
@@ -371,7 +372,7 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 				weight = 1
 			}
 			clusters = append(clusters, &tcp.TcpProxy_WeightedCluster_ClusterWeight{
-				Name:   Clustername(c),
+				Name:   envoy.Clustername(c),
 				Weight: weight,
 			})
 		}
@@ -498,7 +499,7 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 						ClusterName: authzClusterName,
 					},
 				},
-				Timeout: envoyTimeout(timeout),
+				Timeout: envoy.Timeout(timeout),
 				// We don't need to configure metadata here, since we allow
 				// operators to specify authorization context parameters at
 				// the virtual host and route.

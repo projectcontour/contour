@@ -13,14 +13,6 @@
 
 package envoy
 
-import (
-	accesslogv2 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
-	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
-	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	_struct "github.com/golang/protobuf/ptypes/struct"
-	"github.com/projectcontour/contour/internal/protobuf"
-)
-
 //JSONFields is the canonical translation table for JSON fields to Envoy log template formats,
 //used for specifying fields for Envoy to log when JSON logging is enabled.
 //Only fields specified in this map may be used for JSON logging.
@@ -73,56 +65,4 @@ var DefaultFields = []string{
 	"upstream_service_time",
 	"user_agent",
 	"x_forwarded_for",
-}
-
-// FileAccessLogEnvoy returns a new file based access log filter
-// that will output Envoy's default access logs.
-func FileAccessLogEnvoy(path string) []*accesslog.AccessLog {
-	return []*accesslog.AccessLog{{
-		Name: wellknown.FileAccessLog,
-		ConfigType: &accesslog.AccessLog_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&accesslogv2.FileAccessLog{
-				Path: path,
-				// AccessLogFormat left blank to defer to Envoy's default log format.
-			}),
-		},
-	}}
-}
-
-// FileAccessLogJSON returns a new file based access log filter
-// that will log in JSON format
-func FileAccessLogJSON(path string, keys []string) []*accesslog.AccessLog {
-
-	jsonformat := &_struct.Struct{
-		Fields: make(map[string]*_struct.Value),
-	}
-
-	for _, k := range keys {
-		// This will silently ignore invalid headers.
-		// TODO(youngnick): this should tell users if a header is not valid
-		// https://github.com/projectcontour/contour/issues/1507
-		if template, ok := JSONFields[k]; ok {
-			jsonformat.Fields[k] = sv(template)
-		}
-	}
-
-	return []*accesslog.AccessLog{{
-		Name: wellknown.FileAccessLog,
-		ConfigType: &accesslog.AccessLog_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&accesslogv2.FileAccessLog{
-				Path: path,
-				AccessLogFormat: &accesslogv2.FileAccessLog_JsonFormat{
-					JsonFormat: jsonformat,
-				},
-			}),
-		},
-	}}
-}
-
-func sv(s string) *_struct.Value {
-	return &_struct.Value{
-		Kind: &_struct.Value_StringValue{
-			StringValue: s,
-		},
-	}
 }

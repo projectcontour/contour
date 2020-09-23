@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy
+package v2
 
 import (
 	"testing"
@@ -22,6 +22,7 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -766,7 +767,7 @@ func TestRouteMatch(t *testing.T) {
 					Name:        "x-header",
 					InvertMatch: false,
 					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: SafeRegexMatch(".*11-22-33-44.*"),
+						SafeRegexMatch: envoy.SafeRegexMatch(".*11-22-33-44.*"),
 					},
 				}},
 			},
@@ -785,7 +786,7 @@ func TestRouteMatch(t *testing.T) {
 					Name:        "x-header",
 					InvertMatch: false,
 					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: SafeRegexMatch(".*11\\.22\\.33\\.44.*"),
+						SafeRegexMatch: envoy.SafeRegexMatch(".*11\\.22\\.33\\.44.*"),
 					},
 				}},
 			},
@@ -804,7 +805,7 @@ func TestRouteMatch(t *testing.T) {
 					Name:        "x-header",
 					InvertMatch: false,
 					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: SafeRegexMatch(".*11\\.\\[22\\]\\.\\*33\\.44.*"),
+						SafeRegexMatch: envoy.SafeRegexMatch(".*11\\.\\[22\\]\\.\\*33\\.44.*"),
 					},
 				}},
 			},
@@ -832,7 +833,7 @@ func TestRouteMatch(t *testing.T) {
 					// note, unlike header conditions this is not a quoted regex because
 					// the value comes directly from the Ingress.Paths.Path value which
 					// is permitted to be a bare regex.
-					SafeRegex: SafeRegexMatch("/v.1/*"),
+					SafeRegex: envoy.SafeRegexMatch("/v.1/*"),
 				},
 			},
 		},

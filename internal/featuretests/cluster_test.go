@@ -16,14 +16,12 @@ package featuretests
 import (
 	"testing"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
-	"github.com/projectcontour/contour/internal/envoy"
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
-
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,7 +53,7 @@ func TestClusterLongServiceName(t *testing.T) {
 	)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kbujbkuh-c83ceb/8080/da39a3ee5e", "default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r", "default_kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r_8080"),
 		),
@@ -113,7 +111,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	rh.OnAdd(s1)
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),
@@ -128,7 +126,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	rh.OnUpdate(s1, s2)
 
 	// check that we get two CDS records because the port is now named.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
 		),
@@ -148,7 +146,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// check that we get four CDS records. Order is important
 	// because the CDS cache is sorted.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
@@ -167,7 +165,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 
 	// check that we get two CDS records only, and that the 80 and http
 	// records have been removed even though the service object remains.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
 		),
@@ -217,7 +215,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 
 	rh.OnAdd(s1)
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
@@ -231,7 +229,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 
 	rh.OnUpdate(s1, s2)
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard", "default_kuard_443"),
 		),
@@ -241,7 +239,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	// now replace s2 with s1 to check it works in the other direction.
 	rh.OnUpdate(s2, s1)
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/443/da39a3ee5e", "default/kuard/https", "default_kuard_443"),
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard/http", "default_kuard_80"),
@@ -252,7 +250,7 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	// cleanup and check
 	rh.OnDelete(s1)
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: nil,
 		TypeUrl:   clusterType,
 	})
@@ -283,7 +281,7 @@ func TestIssue243(t *testing.T) {
 			WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 		rh.OnAdd(s1)
-		c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+		c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 			Resources: resources(t,
 				cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 			),
@@ -320,7 +318,7 @@ func TestIssue247(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
 
 	rh.OnAdd(s1)
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),
@@ -371,7 +369,7 @@ func TestCDSResourceFiltering(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("httpbin")})
 
 	rh.OnAdd(s2)
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			// note, resources are sorted by Cluster.Name
 			cluster("default/httpbin/8080/da39a3ee5e", "default/httpbin", "default_httpbin_8080"),
@@ -381,14 +379,14 @@ func TestCDSResourceFiltering(t *testing.T) {
 	})
 
 	// assert we can filter on one resource
-	c.Request(clusterType, "default/kuard/80/da39a3ee5e").Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType, "default/kuard/80/da39a3ee5e").Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80")),
 		TypeUrl: clusterType,
 	})
 
 	// assert a non matching filter returns a response with no entries.
-	c.Request(clusterType, "default/httpbin/9000").Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType, "default/httpbin/9000").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: clusterType,
 	})
 }
@@ -421,14 +419,14 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&v2.Cluster{
+			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/8080/da39a3ee5e",
 				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
+				ClusterDiscoveryType: v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
+					EdsConfig:   v2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
@@ -454,14 +452,14 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	rh.OnUpdate(s1, s2)
 
 	// check that it's been translated correctly.
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&v2.Cluster{
+			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/8080/da39a3ee5e",
 				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
+				ClusterDiscoveryType: v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
+					EdsConfig:   v2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
@@ -514,7 +512,7 @@ func TestClusterPerServiceParameters(t *testing.T) {
 		},
 	})
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			// note, resources are sorted by Cluster.Name
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -566,27 +564,27 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 		},
 	})
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			DefaultCluster(&v2.Cluster{
+			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/80/58d888c08a",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
+				ClusterDiscoveryType: v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
+					EdsConfig:   v2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				LbPolicy: v2.Cluster_RANDOM,
+				LbPolicy: envoy_api_v2.Cluster_RANDOM,
 			}),
-			DefaultCluster(&v2.Cluster{
+			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/80/8bf87fefba",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoy.ClusterDiscoveryType(v2.Cluster_EDS),
-				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoy.ConfigSource("contour"),
+				ClusterDiscoveryType: v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
+					EdsConfig:   v2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
-				LbPolicy: v2.Cluster_LEAST_REQUEST,
+				LbPolicy: envoy_api_v2.Cluster_LEAST_REQUEST,
 			}),
 		),
 		TypeUrl: clusterType,
@@ -624,7 +622,7 @@ func TestClusterWithHealthChecks(t *testing.T) {
 		},
 	})
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			clusterWithHealthCheck("default/kuard/80/bc862a33ca", "default/kuard", "default_kuard_80", "/healthz", true),
 		),
@@ -670,7 +668,7 @@ func TestUnreferencedService(t *testing.T) {
 		},
 	})
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),
@@ -682,7 +680,7 @@ func TestUnreferencedService(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
-	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
+	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
 		),

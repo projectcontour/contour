@@ -16,12 +16,12 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -70,20 +70,20 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			&v2.Listener{
+			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoy.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoy.ListenerFilters(
-					envoy.TLSInspector(),
+				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoyv2.ListenerFilters(
+					envoyv2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard.example.com", sec1,
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 			},
 		),
 		TypeUrl: listenerType,
@@ -116,27 +116,27 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	}
 	rh.OnUpdate(i1, i2)
 
-	l1 := &v2.Listener{
+	l1 := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoy.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoy.ListenerFilters(
-			envoy.TLSInspector(),
+		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoyv2.ListenerFilters(
+			envoyv2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
-			envoy.FilterChainTLS(
+			envoyv2.FilterChainTLS(
 				"kuard.example.com",
-				envoy.DownstreamTLSContext(
+				envoyv2.DownstreamTLSContext(
 					&dag.Secret{Object: sec1},
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoy.Filters(httpsFilterFor("kuard.example.com")),
+				envoyv2.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoy.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
 	}
 
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			l1,
 		),
@@ -169,7 +169,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType, "ingress_https").Equals(&v2.DiscoveryResponse{
+	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			l1,
 		),

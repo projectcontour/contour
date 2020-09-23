@@ -17,7 +17,7 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	"github.com/projectcontour/contour/internal/envoy"
+	v22 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 
@@ -57,8 +57,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("hello.world",
+			v22.RouteConfiguration("ingress_http",
+				v22.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeHostRewrite("default/svc1/80/da39a3ee5e", "goodbye.planet"),
@@ -90,8 +90,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("hello.world",
+			v22.RouteConfiguration("ingress_http",
+				v22.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
@@ -131,8 +131,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("hello.world",
+			v22.RouteConfiguration("ingress_http",
+				v22.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
@@ -188,8 +188,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&v2.DiscoveryResponse{
 		Resources: routeResources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("hello.world",
+			v22.RouteConfiguration("ingress_http",
+				v22.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/"),
 						Action: &envoy_api_v2_route.Route_Redirect{
@@ -201,8 +201,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 						},
 					}),
 			),
-			envoy.RouteConfiguration("https/hello.world",
-				envoy.VirtualHost("hello.world",
+			v22.RouteConfiguration("https/hello.world",
+				v22.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeHostRewrite("default/externalname/443/da39a3ee5e", "goodbye.planet"),

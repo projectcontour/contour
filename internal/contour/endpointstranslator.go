@@ -18,12 +18,12 @@ import (
 	"sort"
 	"sync"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
@@ -70,8 +70,8 @@ func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancin
 			sort.Slice(addresses, func(i, j int) bool { return addresses[i].IP < addresses[j].IP })
 
 			for _, a := range addresses {
-				addr := envoy.SocketAddress(a.IP, int(p.Port))
-				lb = append(lb, envoy.LBEndpoint(addr))
+				addr := envoyv2.SocketAddress(a.IP, int(p.Port))
+				lb = append(lb, envoyv2.LBEndpoint(addr))
 			}
 		}
 	}
@@ -102,11 +102,11 @@ type EndpointsCache struct {
 // will be generated for every stale ServerCluster, however, if there
 // are no endpoints for the Services in the ServiceCluster, the
 // ClusterLoadAssignment wil be empty.
-func (c *EndpointsCache) Recalculate() map[string]*v2.ClusterLoadAssignment {
+func (c *EndpointsCache) Recalculate() map[string]*envoy_api_v2.ClusterLoadAssignment {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	assignments := map[string]*v2.ClusterLoadAssignment{}
+	assignments := map[string]*envoy_api_v2.ClusterLoadAssignment{}
 	for _, cluster := range c.stale {
 		// Clusters can be in the stale list multiple times;
 		// skip to avoid duplicate recalculations.
@@ -114,7 +114,7 @@ func (c *EndpointsCache) Recalculate() map[string]*v2.ClusterLoadAssignment {
 			continue
 		}
 
-		cla := v2.ClusterLoadAssignment{
+		cla := envoy_api_v2.ClusterLoadAssignment{
 			ClusterName: cluster.ClusterName,
 			Endpoints:   nil,
 			Policy:      nil,
@@ -224,7 +224,7 @@ func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
 	return &EndpointsTranslator{
 		Cond:        Cond{},
 		FieldLogger: log,
-		entries:     map[string]*v2.ClusterLoadAssignment{},
+		entries:     map[string]*envoy_api_v2.ClusterLoadAssignment{},
 		cache: EndpointsCache{
 			stale:     nil,
 			services:  map[types.NamespacedName][]*dag.ServiceCluster{},
@@ -245,13 +245,13 @@ type EndpointsTranslator struct {
 	cache EndpointsCache
 
 	mu      sync.Mutex // Protects entries.
-	entries map[string]*v2.ClusterLoadAssignment
+	entries map[string]*envoy_api_v2.ClusterLoadAssignment
 }
 
 // Merge combines the given entries with the existing entries in the
 // EndpointsTranslator. If the same key exists in both maps, an existing entry
 // is replaced.
-func (e *EndpointsTranslator) Merge(entries map[string]*v2.ClusterLoadAssignment) {
+func (e *EndpointsTranslator) Merge(entries map[string]*envoy_api_v2.ClusterLoadAssignment) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -372,7 +372,7 @@ func (e *EndpointsTranslator) Contents() []proto.Message {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	values := make([]*v2.ClusterLoadAssignment, 0, len(e.entries))
+	values := make([]*envoy_api_v2.ClusterLoadAssignment, 0, len(e.entries))
 	for _, v := range e.entries {
 		values = append(values, v)
 	}
@@ -385,12 +385,12 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	values := make([]*v2.ClusterLoadAssignment, 0, len(names))
+	values := make([]*envoy_api_v2.ClusterLoadAssignment, 0, len(names))
 	for _, n := range names {
 		v, ok := e.entries[n]
 		if !ok {
 			e.Debugf("no cache entry for %q", n)
-			v = &v2.ClusterLoadAssignment{
+			v = &envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: n,
 			}
 		}

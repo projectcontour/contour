@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package envoy
+package v2
 
 import (
 	"testing"
@@ -26,6 +26,7 @@ import (
 	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
@@ -34,6 +35,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func TestCodecForVersions(t *testing.T) {
+	assert.Equal(t, CodecForVersions(HTTPVersionAuto), HTTPVersionAuto)
+	assert.Equal(t, CodecForVersions(HTTPVersion1, HTTPVersion2), HTTPVersionAuto)
+	assert.Equal(t, CodecForVersions(HTTPVersion1), HTTPVersion1)
+	assert.Equal(t, CodecForVersions(HTTPVersion2), HTTPVersion2)
+}
+
+func TestProtoNamesForVersions(t *testing.T) {
+	assert.Equal(t, ProtoNamesForVersions(), []string{"h2", "http/1.1"})
+	assert.Equal(t, ProtoNamesForVersions(HTTPVersionAuto), []string{"h2", "http/1.1"})
+	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1), []string{"http/1.1"})
+	assert.Equal(t, ProtoNamesForVersions(HTTPVersion2), []string{"h2"})
+	assert.Equal(t, ProtoNamesForVersions(HTTPVersion3), []string(nil))
+	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2), []string{"h2", "http/1.1"})
+}
 
 func TestListener(t *testing.T) {
 	tests := map[string]struct {
@@ -194,7 +211,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 	}
 
 	tlsCertificateSdsSecretConfigs := []*envoy_api_v2_auth.SdsSecretConfig{{
-		Name: Secretname(serverSecret),
+		Name: envoy.Secretname(serverSecret),
 		SdsConfig: &envoy_api_v2_core.ConfigSource{
 			ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
 				ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
@@ -735,7 +752,7 @@ func TestTCPProxy(t *testing.T) {
 					TypedConfig: protobuf.MustMarshalAny(&envoy_config_v2_tcpproxy.TcpProxy{
 						StatPrefix: statPrefix,
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
-							Cluster: Clustername(c1),
+							Cluster: envoy.Clustername(c1),
 						},
 						AccessLog:   FileAccessLogEnvoy(accessLogPath),
 						IdleTimeout: protobuf.Duration(9001 * time.Second),
@@ -755,10 +772,10 @@ func TestTCPProxy(t *testing.T) {
 						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_WeightedClusters{
 							WeightedClusters: &envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster{
 								Clusters: []*envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster_ClusterWeight{{
-									Name:   Clustername(c1),
+									Name:   envoy.Clustername(c1),
 									Weight: 1,
 								}, {
-									Name:   Clustername(c2),
+									Name:   envoy.Clustername(c2),
 									Weight: 20,
 								}},
 							},
@@ -777,22 +794,6 @@ func TestTCPProxy(t *testing.T) {
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
-}
-
-func TestCodecForVersions(t *testing.T) {
-	assert.Equal(t, CodecForVersions(HTTPVersionAuto), HTTPVersionAuto)
-	assert.Equal(t, CodecForVersions(HTTPVersion1, HTTPVersion2), HTTPVersionAuto)
-	assert.Equal(t, CodecForVersions(HTTPVersion1), HTTPVersion1)
-	assert.Equal(t, CodecForVersions(HTTPVersion2), HTTPVersion2)
-}
-
-func TestProtoNamesForVersions(t *testing.T) {
-	assert.Equal(t, ProtoNamesForVersions(), []string{"h2", "http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersionAuto), []string{"h2", "http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1), []string{"http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion2), []string{"h2"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion3), []string(nil))
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2), []string{"h2", "http/1.1"})
 }
 
 // TestBuilderValidation tests that validation checks that

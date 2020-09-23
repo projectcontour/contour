@@ -16,10 +16,10 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -52,10 +52,10 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		})
 	rh.OnAdd(proxy1)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("www.example.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("www.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/cart"),
 						Action: withSessionAffinity(routeCluster("default/app/80/e4f81994fe")),
@@ -88,10 +88,10 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 			}),
 	)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoy.RouteConfiguration("ingress_http",
-				envoy.VirtualHost("www.example.com",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("www.example.com",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/cart"),
 						Action: withSessionAffinity(

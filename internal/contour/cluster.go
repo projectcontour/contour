@@ -17,11 +17,12 @@ import (
 	"sort"
 	"sync"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 )
@@ -29,12 +30,12 @@ import (
 // ClusterCache manages the contents of the gRPC CDS cache.
 type ClusterCache struct {
 	mu     sync.Mutex
-	values map[string]*v2.Cluster
+	values map[string]*envoy_api_v2.Cluster
 	Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *ClusterCache) Update(v map[string]*v2.Cluster) {
+func (c *ClusterCache) Update(v map[string]*envoy_api_v2.Cluster) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -46,7 +47,7 @@ func (c *ClusterCache) Update(v map[string]*v2.Cluster) {
 func (c *ClusterCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*v2.Cluster
+	var values []*envoy_api_v2.Cluster
 	for _, v := range c.values {
 		values = append(values, v)
 	}
@@ -57,7 +58,7 @@ func (c *ClusterCache) Contents() []proto.Message {
 func (c *ClusterCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*v2.Cluster
+	var values []*envoy_api_v2.Cluster
 	for _, n := range names {
 		// if the cluster is not registered we cannot return
 		// a blank cluster because each cluster has a required
@@ -80,13 +81,13 @@ func (c *ClusterCache) OnChange(root *dag.DAG) {
 }
 
 type clusterVisitor struct {
-	clusters map[string]*v2.Cluster
+	clusters map[string]*envoy_api_v2.Cluster
 }
 
-// visitCluster produces a map of *v2.Clusters.
-func visitClusters(root dag.Vertex) map[string]*v2.Cluster {
+// visitCluster produces a map of *envoy_api_v2.Clusters.
+func visitClusters(root dag.Vertex) map[string]*envoy_api_v2.Cluster {
 	cv := clusterVisitor{
-		clusters: make(map[string]*v2.Cluster),
+		clusters: make(map[string]*envoy_api_v2.Cluster),
 	}
 	cv.visit(root)
 	return cv.clusters
@@ -97,12 +98,12 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 	case *dag.Cluster:
 		name := envoy.Clustername(cluster)
 		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoy.Cluster(cluster)
+			v.clusters[name] = envoyv2.Cluster(cluster)
 		}
 	case *dag.ExtensionCluster:
 		name := cluster.Name
 		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoy.ExtensionCluster(cluster)
+			v.clusters[name] = envoyv2.ExtensionCluster(cluster)
 		}
 	}
 
