@@ -152,6 +152,7 @@ func (suh *StatusUpdateHandler) Writer() StatusUpdater {
 // StatusUpdater describes an interface to send status updates somewhere.
 type StatusUpdater interface {
 	Update(name, namespace string, gvr schema.GroupVersionResource, mutator StatusMutator)
+	SendStatusUpdate(su StatusUpdate)
 }
 
 // StatusUpdateCacher takes status updates and applies them to a cache, to be used for testing.
@@ -210,6 +211,11 @@ func (suc *StatusUpdateCacher) Update(name, namespace string, gvr schema.GroupVe
 	}
 }
 
+func (suc *StatusUpdateCacher) SendStatusUpdate(su StatusUpdate) {
+	// TODO: unimplemented.
+
+}
+
 // StatusUpdateWriter takes status updates and sends these to the StatusUpdateHandler via a channel.
 type StatusUpdateWriter struct {
 	UpdateChannel chan StatusUpdate
@@ -228,5 +234,9 @@ func (suw *StatusUpdateWriter) Update(name, namespace string, gvr schema.GroupVe
 		Mutator:  mutator,
 	}
 
+	suw.UpdateChannel <- update
+}
+
+func (suw *StatusUpdateWriter) SendStatusUpdate(update StatusUpdate) {
 	suw.UpdateChannel <- update
 }

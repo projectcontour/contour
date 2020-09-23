@@ -23,6 +23,8 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
 	v1 "k8s.io/api/core/v1"
@@ -64,9 +66,8 @@ func ComposeObservers(observers ...Observer) Observer {
 // between Kubernetes Ingress objects, the backend Services, and Secret objects.
 // The DAG models these relationships as Roots and Vertices.
 type DAG struct {
-	// StatusWriter records Kubernetes object statuses computed
-	// while building this DAG.
-	StatusWriter
+	// StatusCache holds a cache of status updates to send.
+	StatusCache status.Cache
 
 	// roots are the root vertices of this DAG.
 	roots []Vertex
@@ -81,8 +82,8 @@ func (d *DAG) Visit(fn func(Vertex)) {
 
 // Statuses returns a slice of Status objects associated with
 // the computation of this DAG.
-func (d *DAG) Statuses() map[types.NamespacedName]Status {
-	return d.statuses
+func (d *DAG) Statuses() []k8s.StatusUpdate {
+	return d.StatusCache.GetStatusUpdates()
 }
 
 // AddRoot appends the given root to the DAG's roots.

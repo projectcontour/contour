@@ -486,11 +486,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(sh.Start)
 
-	// Now we have the statusUpdateWriter, we can create the StatusWriter, which will take the
+	// Now we have the statusUpdateWriter, we can create the event handler's StatusUpdater, which will take the
 	// status updates from the DAG, and send them to the status update handler.
-	eventHandler.StatusClient = &k8s.StatusWriter{
-		Updater: sh.Writer(),
-	}
+	eventHandler.StatusUpdater = sh.Writer()
 
 	// Set up ingress load balancer status writer.
 	lbsw := loadBalancerStatusWriter{

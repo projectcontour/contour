@@ -85,11 +85,11 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	rand.Seed(time.Now().Unix())
 
-	statusCache := &k8s.StatusCacher{}
+	statusCache := &k8s.StatusUpdateCacher{}
 
 	eh := &contour.EventHandler{
 		IsLeader:        make(chan struct{}),
-		StatusClient:    statusCache,
+		StatusUpdater:   statusCache,
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),
 		HoldoffDelay:    time.Duration(rand.Intn(100)) * time.Millisecond,
