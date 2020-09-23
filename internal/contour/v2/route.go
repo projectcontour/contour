@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package v2
 
 import (
 	"path"
@@ -23,6 +23,7 @@ import (
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -33,7 +34,7 @@ import (
 type RouteCache struct {
 	mu     sync.Mutex
 	values map[string]*envoy_api_v2.RouteConfiguration
-	Cond
+	contour.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.

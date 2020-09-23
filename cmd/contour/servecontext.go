@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/projectcontour/contour/internal/contour"
+	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -166,8 +166,8 @@ func newServeContext() *serveContext {
 		healthPort:            8000,
 		metricsAddr:           "0.0.0.0",
 		metricsPort:           8000,
-		httpAccessLog:         contour.DEFAULT_HTTP_ACCESS_LOG,
-		httpsAccessLog:        contour.DEFAULT_HTTPS_ACCESS_LOG,
+		httpAccessLog:         contourv2.DEFAULT_HTTP_ACCESS_LOG,
+		httpsAccessLog:        contourv2.DEFAULT_HTTPS_ACCESS_LOG,
 		httpAddr:              "0.0.0.0",
 		httpsAddr:             "0.0.0.0",
 		httpPort:              8080,

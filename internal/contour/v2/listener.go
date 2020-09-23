@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package v2
 
 import (
 	"path"
@@ -25,6 +25,7 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
+	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
@@ -222,7 +223,7 @@ type ListenerCache struct {
 	staticValues map[string]*envoy_api_v2.Listener
 
 	Config ListenerConfig
-	Cond
+	contour.Cond
 }
 
 // NewListenerCache returns an instance of a ListenerCache

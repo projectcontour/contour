@@ -16,12 +16,11 @@ package featuretests
 import (
 	"testing"
 
-	v22 "github.com/projectcontour/contour/internal/envoy/v2"
-
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,10 +78,10 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 	}
 	rh.OnAdd(proxy1)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v22.RouteConfiguration("ingress_http",
-				v22.VirtualHost("hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
@@ -142,10 +141,10 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	rh.OnUpdate(proxy1, proxy2)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v22.RouteConfiguration("ingress_http",
-				v22.VirtualHost("hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
@@ -205,10 +204,10 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	rh.OnUpdate(proxy2, proxy3)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v22.RouteConfiguration("ingress_http",
-				v22.VirtualHost("hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
@@ -268,10 +267,10 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	rh.OnUpdate(proxy3, proxy4)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v22.RouteConfiguration("ingress_http",
-				v22.VirtualHost("hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
@@ -331,10 +330,10 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	rh.OnUpdate(proxy4, proxy5)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v22.RouteConfiguration("ingress_http",
-				v22.VirtualHost("hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/blog", dag.HeaderMatchCondition{
 							Name:      "x-header",
@@ -392,10 +391,10 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	rh.OnUpdate(proxy5, proxy6)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v22.RouteConfiguration("ingress_http",
-				v22.VirtualHost("hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",
@@ -451,10 +450,10 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 
 	rh.OnUpdate(proxy6, proxy7)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v22.RouteConfiguration("ingress_http",
-				v22.VirtualHost("hello.world",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/", dag.HeaderMatchCondition{
 							Name:      "x-header",

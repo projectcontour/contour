@@ -11,11 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package v2
 
 import (
 	"sort"
 	"sync"
+
+	"github.com/projectcontour/contour/internal/contour"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
@@ -31,7 +33,7 @@ import (
 type ClusterCache struct {
 	mu     sync.Mutex
 	values map[string]*envoy_api_v2.Cluster
-	Cond
+	contour.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.

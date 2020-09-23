@@ -20,7 +20,7 @@ import (
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -54,8 +54,8 @@ func TestRetryPolicy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v2.RouteConfiguration("ingress_http",
-				v2.VirtualHost("*",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond),
@@ -83,8 +83,8 @@ func TestRetryPolicy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v2.RouteConfiguration("ingress_http",
-				v2.VirtualHost("*",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond),
@@ -112,8 +112,8 @@ func TestRetryPolicy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v2.RouteConfiguration("ingress_http",
-				v2.VirtualHost("*",
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 7, 120*time.Millisecond),
@@ -149,8 +149,8 @@ func TestRetryPolicy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			v2.RouteConfiguration("ingress_http",
-				v2.VirtualHost(hp1.Spec.VirtualHost.Fqdn,
+			envoyv2.RouteConfiguration("ingress_http",
+				envoyv2.VirtualHost(hp1.Spec.VirtualHost.Fqdn,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 5, 105*time.Second),

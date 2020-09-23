@@ -11,14 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour_test
+package contour
 
 import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/projectcontour/contour/internal/contour"
 )
 
 func ExampleCond() {
@@ -26,7 +24,7 @@ func ExampleCond() {
 	defer cancel()
 	ch := make(chan int, 1)
 	last := 0
-	var c contour.Cond
+	var c Cond
 	go func() {
 		for {
 			time.Sleep(100 * time.Millisecond)

@@ -19,7 +19,7 @@ import (
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -424,9 +424,9 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/8080/da39a3ee5e",
 				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-					EdsConfig:   v2.ConfigSource("contour"),
+					EdsConfig:   envoyv2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
@@ -457,9 +457,9 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/8080/da39a3ee5e",
 				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-					EdsConfig:   v2.ConfigSource("contour"),
+					EdsConfig:   envoyv2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
@@ -569,9 +569,9 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/80/58d888c08a",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-					EdsConfig:   v2.ConfigSource("contour"),
+					EdsConfig:   envoyv2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				LbPolicy: envoy_api_v2.Cluster_RANDOM,
@@ -579,9 +579,9 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/80/8bf87fefba",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-					EdsConfig:   v2.ConfigSource("contour"),
+					EdsConfig:   envoyv2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				LbPolicy: envoy_api_v2.Cluster_LEAST_REQUEST,

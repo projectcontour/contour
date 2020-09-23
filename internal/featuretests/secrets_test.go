@@ -19,7 +19,7 @@ import (
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/projectcontour/contour/internal/dag"
-	v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -231,7 +231,7 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 }
 
 func secret(sec *v1.Secret) *envoy_api_v2_auth.Secret {
-	return v2.Secret(&dag.Secret{
+	return envoyv2.Secret(&dag.Secret{
 		Object: sec,
 	})
 }

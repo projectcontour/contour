@@ -21,12 +21,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/projectcontour/contour/internal/contour"
-
+	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	"github.com/prometheus/common/expfmt"
-
 	"github.com/sirupsen/logrus"
-
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -43,7 +40,7 @@ const shutdownReadyFile = "/ok"
 const shutdownReadyCheckInterval = time.Second * 1
 
 func prometheusLabels() []string {
-	return []string{contour.ENVOY_HTTP_LISTENER, contour.ENVOY_HTTPS_LISTENER}
+	return []string{contourv2.ENVOY_HTTP_LISTENER, contourv2.ENVOY_HTTPS_LISTENER}
 }
 
 type shutdownmanagerContext struct {
