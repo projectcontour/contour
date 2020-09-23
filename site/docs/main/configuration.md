@@ -28,6 +28,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | request-timeout | [duration][4] | `0s` | **Deprecated and will be removed in a future release. Use [timeouts.request-timeout](#timeout-configuration) instead.**<br /><br /> This field specifies the default request timeout as a Go duration string. Zero means there is no timeout. |
 | tls | TLS | | The default [TLS configuration](#tls-configuration). |
 | timeouts | TimeoutConfig | | The [timeout configuration](#timeout-configuration). |
+| cluster | ClusterConfig | | The [cluster configuration](#cluster-configuration). |
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
 {: class="table thead-dark table-bordered"}
 <br>
@@ -84,6 +85,16 @@ The timeout configuration block can be used to configure various timeouts for th
 <br>
 _* This is Envoy's default setting value and is not explicitly configured by Contour._
 
+### Cluster Configuration
+
+The cluster configuration block can be used to configure various parameters for Envoy clusters.
+
+| Field Name | Type| Default  | Description |
+|------------|-----|----------|-------------|
+| dns-lookup-family | string | auto | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4, `v6` |
+{: class="table thead-dark table-bordered"}
+<br>
+
 ### Server Configuration
 
 The server configuration block can be used to configure various settings for the `contour serve` command.
@@ -139,6 +150,12 @@ data:
     #  stream-idle-timeout: 5m
     #  max-connection-duration: infinity
     #  connection-shutdown-grace-period: 5s
+    #
+    # Envoy cluster settings.
+    # cluster:
+    #   configure the cluster dns lookup family
+    #   valid options are: auto (default), v4, v6
+    #   dns-lookup-family: auto
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.

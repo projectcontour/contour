@@ -45,6 +45,7 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 	cluster.AltStatName = envoy.AltStatName(service)
 	cluster.LbPolicy = lbPolicy(c.LoadBalancerPolicy)
 	cluster.HealthChecks = edshealthcheck(c)
+	cluster.DnsLookupFamily = parseDNSLookupFamily(c.DNSLookupFamily)
 
 	switch len(service.ExternalName) {
 	case 0:
@@ -222,4 +223,16 @@ func ConfigSource(cluster string) *envoy_api_v2_core.ConfigSource {
 // ClusterDiscoveryType returns the type of a ClusterDiscovery as a Cluster_type.
 func ClusterDiscoveryType(t v2.Cluster_DiscoveryType) *v2.Cluster_Type {
 	return &v2.Cluster_Type{Type: t}
+}
+
+// parseDNSLookupFamily parses the dnsLookupFamily string into a v2.Cluster_DnsLookupFamily
+func parseDNSLookupFamily(value string) v2.Cluster_DnsLookupFamily {
+
+	switch value {
+	case "v4":
+		return v2.Cluster_V4_ONLY
+	case "v6":
+		return v2.Cluster_V6_ONLY
+	}
+	return v2.Cluster_AUTO
 }
