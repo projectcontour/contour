@@ -136,6 +136,22 @@ At a maintainer's discretion, pull requests with multiple commits can be merged 
 Merging pull requests with multiple commits can make sense in cases where a change involves code generation or mechanical changes that can be cleanly separated from semantic changes.
 The maintainer should review commit messages for each commit and make sure that each commit builds and passes tests.
 
+### Import Aliases
+
+Naming is one of the most difficult things in software engineering.
+Contour uses the following pattern to name imports when referencing packages from other packages.
+
+> thing_version: The name+package path of the thing and then the version separated by underscores
+
+Examples:
+
+```
+contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
+```   
+ 
 ### Pre commit CI
 
 Before a change is submitted it should pass all the pre commit CI jobs.
