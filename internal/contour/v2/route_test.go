@@ -20,6 +20,7 @@ import (
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -1651,6 +1652,156 @@ func TestRouteVisit(t *testing.T) {
 						},
 					),
 				),
+			),
+		},
+		"httpproxy with corsPolicy": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							CORSPolicy: &projcontour.CORSPolicy{
+								AllowOrigin:  []string{"*"},
+								AllowMethods: []projcontour.CORSHeaderValue{"GET, PUT, POST"},
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoyv2.RouteConfiguration("ingress_http",
+					envoyv2.CORSVirtualHost("www.example.com",
+						&envoy_api_v2_route.CorsPolicy{
+							AllowCredentials: &wrappers.BoolValue{Value: false},
+							AllowOriginStringMatch: []*matcher.StringMatcher{{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "*",
+								},
+								IgnoreCase: true,
+							}},
+							AllowMethods: "GET, PUT, POST",
+						},
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					),
+				),
+			),
+		},
+		"httpproxy with corsPolicy with tls": {
+			objs: []interface{}{
+				&projcontour.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: projcontour.HTTPProxySpec{
+						VirtualHost: &projcontour.VirtualHost{
+							Fqdn: "www.example.com",
+							CORSPolicy: &projcontour.CORSPolicy{
+								AllowOrigin:  []string{"*"},
+								AllowMethods: []projcontour.CORSHeaderValue{"GET, PUT, POST"},
+							},
+							TLS: &projcontour.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []projcontour.Route{{
+							Services: []projcontour.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoyv2.RouteConfiguration("ingress_http",
+					envoyv2.CORSVirtualHost("www.example.com",
+						&envoy_api_v2_route.CorsPolicy{
+							AllowCredentials: &wrappers.BoolValue{Value: false},
+							AllowOriginStringMatch: []*matcher.StringMatcher{{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "*",
+								},
+								IgnoreCase: true,
+							}},
+							AllowMethods: "GET, PUT, POST",
+						},
+						&envoy_api_v2_route.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_api_v2_route.Route_Redirect{
+								Redirect: &envoy_api_v2_route.RedirectAction{
+									SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+										HttpsRedirect: true,
+									},
+								},
+							},
+						},
+					),
+				),
+				envoyv2.RouteConfiguration("https/www.example.com",
+					envoyv2.CORSVirtualHost("www.example.com",
+						&envoy_api_v2_route.CorsPolicy{
+							AllowCredentials: &wrappers.BoolValue{Value: false},
+							AllowOriginStringMatch: []*matcher.StringMatcher{{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "*",
+								},
+								IgnoreCase: true,
+							}},
+							AllowMethods: "GET, PUT, POST",
+						},
+						&envoy_api_v2_route.Route{
+							Match:  routePrefix("/"),
+							Action: routecluster("default/backend/80/da39a3ee5e"),
+						},
+					)),
 			),
 		},
 		"httpproxy with header contains conditions": {

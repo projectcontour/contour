@@ -23,6 +23,7 @@ import (
 // value. The zero value is a Setting representing "use the default".
 type Setting struct {
 	val      time.Duration
+	valset   bool
 	disabled bool
 }
 
@@ -34,7 +35,7 @@ func (s Setting) IsDisabled() bool {
 // UseDefault returns whether the default proxy timeout value should be
 // used.
 func (s Setting) UseDefault() bool {
-	return !s.disabled && s.val == 0
+	return !s.disabled && !s.valset
 }
 
 // Duration returns the explicit timeout value if one exists.
@@ -54,7 +55,10 @@ func DisabledSetting() Setting {
 
 // DurationSetting returns a timeout setting with the given duration.
 func DurationSetting(duration time.Duration) Setting {
-	return Setting{val: duration}
+	if duration == 0 {
+		return DefaultSetting()
+	}
+	return Setting{val: duration, valset: true}
 }
 
 // Parse parses string representations of timeout settings that we pass
@@ -82,5 +86,31 @@ func Parse(timeout string) (Setting, error) {
 		return Setting{}, fmt.Errorf("unable to parse timeout string %q: %w", timeout, err)
 	}
 
+	if d == 0 {
+		return DefaultSetting(), nil
+	}
+
+	return DurationSetting(d), nil
+}
+
+// ParseMaxAge parses string representations of "max age" values used mostly
+// in cache related settings. An example of this is the MaxAge field of the
+// CORS policy:
+//	- an empty string means "use the default".
+//	- 0 means "disable cache".
+//	- a valid Go duration string is used as the specific timeout value.
+//	- any other input means "use the default".
+func ParseMaxAge(timeout string) (Setting, error) {
+	if timeout == "" {
+		return DefaultSetting(), nil
+	}
+
+	d, err := time.ParseDuration(timeout)
+	if err != nil {
+		return Setting{}, fmt.Errorf("unable to parse timeout string %q: %w", timeout, err)
+	}
+	if d == 0 {
+		return DisabledSetting(), nil
+	}
 	return DurationSetting(d), nil
 }

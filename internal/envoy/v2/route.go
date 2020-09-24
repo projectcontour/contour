@@ -17,11 +17,13 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strings"
 
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	envoy_config_filter_http_ext_authz_v2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/ext_authz/v2"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 	"github.com/golang/protobuf/ptypes/any"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
@@ -253,6 +255,13 @@ func VirtualHost(hostname string, routes ...*envoy_api_v2_route.Route) *envoy_ap
 	}
 }
 
+// CORSVirtualHost creates a new route.VirtualHost with a CORS policy.
+func CORSVirtualHost(hostname string, corspolicy *envoy_api_v2_route.CorsPolicy, routes ...*envoy_api_v2_route.Route) *envoy_api_v2_route.VirtualHost {
+	vh := VirtualHost(hostname, routes...)
+	vh.Cors = corspolicy
+	return vh
+}
+
 // RouteConfiguration returns a *v2.RouteConfiguration.
 func RouteConfiguration(name string, virtualhosts ...*envoy_api_v2_route.VirtualHost) *v2.RouteConfiguration {
 	return &v2.RouteConfiguration{
@@ -262,6 +271,38 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_api_v2_route.Virtual
 			AppendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 		),
 	}
+}
+
+// CORSPolicy returns a *v2.CORSPolicy
+func CORSPolicy(cp *dag.CORSPolicy) *envoy_api_v2_route.CorsPolicy {
+	if cp == nil {
+		return nil
+	}
+	rcp := &envoy_api_v2_route.CorsPolicy{
+		AllowCredentials: protobuf.Bool(cp.AllowCredentials),
+		AllowHeaders:     strings.Join(cp.AllowHeaders, ","),
+		AllowMethods:     strings.Join(cp.AllowMethods, ","),
+		ExposeHeaders:    strings.Join(cp.ExposeHeaders, ","),
+	}
+
+	if cp.MaxAge.IsDisabled() {
+		rcp.MaxAge = "0"
+	} else if !cp.MaxAge.UseDefault() {
+		rcp.MaxAge = fmt.Sprintf("%.0f", cp.MaxAge.Duration().Seconds())
+	}
+
+	rcp.AllowOriginStringMatch = []*matcher.StringMatcher{}
+	for _, ao := range cp.AllowOrigin {
+		rcp.AllowOriginStringMatch = append(rcp.AllowOriginStringMatch, &matcher.StringMatcher{
+			// Even though we use the exact matcher, Envoy always makes an exception for the `*` value
+			// https://github.com/envoyproxy/envoy/blob/d6e2fd0185ca620745479da2c43c0564eeaf35c5/source/extensions/filters/http/cors/cors_filter.cc#L142
+			MatchPattern: &matcher.StringMatcher_Exact{
+				Exact: ao,
+			},
+			IgnoreCase: true,
+		})
+	}
+	return rcp
 }
 
 func Headers(first *envoy_api_v2_core.HeaderValueOption, rest ...*envoy_api_v2_core.HeaderValueOption) []*envoy_api_v2_core.HeaderValueOption {

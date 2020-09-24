@@ -248,6 +248,22 @@ type HeadersPolicy struct {
 	Remove []string
 }
 
+// CORSPolicy allows setting the CORS policy
+type CORSPolicy struct {
+	// Specifies whether the resource allows credentials.
+	AllowCredentials bool
+	// AllowOrigin specifies the origins that will be allowed to do CORS requests.
+	AllowOrigin []string
+	// AllowMethods specifies the content for the *access-control-allow-methods* header.
+	AllowMethods []string
+	// AllowHeaders specifies the content for the *access-control-allow-headers* header.
+	AllowHeaders []string
+	// ExposeHeaders Specifies the content for the *access-control-expose-headers* header.
+	ExposeHeaders []string
+	// MaxAge specifies the content for the *access-control-max-age* header.
+	MaxAge timeout.Setting
+}
+
 type HeaderValue struct {
 	// Name represents a key of a header
 	Key string
@@ -299,6 +315,9 @@ type VirtualHost struct {
 	// Name is the fully qualified domain name of a network host,
 	// as defined by RFC 3986.
 	Name string
+
+	// CORSPolicy is the cross-origin policy to apply to the VirtualHost.
+	CORSPolicy *CORSPolicy
 
 	routes map[string]*Route
 }

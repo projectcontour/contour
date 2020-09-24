@@ -20,7 +20,8 @@ import (
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	"github.com/golang/protobuf/ptypes/wrappers"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
+	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -730,6 +731,199 @@ func TestVirtualHost(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := VirtualHost(tc.hostname)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
+func TestCORSVirtualHost(t *testing.T) {
+	tests := map[string]struct {
+		hostname string
+		cp       *envoy_api_v2_route.CorsPolicy
+		want     *envoy_api_v2_route.VirtualHost
+	}{
+		"nil cors policy": {
+			hostname: "www.example.com",
+			cp:       nil,
+			want: &envoy_api_v2_route.VirtualHost{
+				Name:    "www.example.com",
+				Domains: []string{"www.example.com", "www.example.com:*"},
+			},
+		},
+		"cors policy": {
+			hostname: "www.example.com",
+			cp: &envoy_api_v2_route.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "*",
+						},
+						IgnoreCase: true,
+					}},
+				AllowMethods: "GET,POST,PUT",
+			},
+			want: &envoy_api_v2_route.VirtualHost{
+				Name:    "www.example.com",
+				Domains: []string{"www.example.com", "www.example.com:*"},
+				Cors: &envoy_api_v2_route.CorsPolicy{
+					AllowOriginStringMatch: []*matcher.StringMatcher{
+						{
+							MatchPattern: &matcher.StringMatcher_Exact{
+								Exact: "*",
+							},
+							IgnoreCase: true,
+						}},
+					AllowMethods: "GET,POST,PUT",
+				},
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := CORSVirtualHost(tc.hostname, tc.cp)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
+func TestCORSPolicy(t *testing.T) {
+	tests := map[string]struct {
+		cp   *dag.CORSPolicy
+		want *envoy_api_v2_route.CorsPolicy
+	}{
+		"only required properties set": {
+			cp: &dag.CORSPolicy{
+				AllowOrigin:  []string{"*"},
+				AllowMethods: []string{"GET", "POST", "PUT"},
+			},
+			want: &envoy_api_v2_route.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "*",
+						},
+						IgnoreCase: true,
+					}},
+				AllowCredentials: protobuf.Bool(false),
+				AllowMethods:     "GET,POST,PUT",
+			},
+		},
+		"allow credentials": {
+			cp: &dag.CORSPolicy{
+				AllowOrigin:      []string{"*"},
+				AllowMethods:     []string{"GET", "POST", "PUT"},
+				AllowCredentials: true,
+			},
+			want: &envoy_api_v2_route.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "*",
+						},
+						IgnoreCase: true,
+					}},
+				AllowCredentials: protobuf.Bool(true),
+				AllowMethods:     "GET,POST,PUT",
+			},
+		},
+		"allow headers": {
+			cp: &dag.CORSPolicy{
+				AllowOrigin:  []string{"*"},
+				AllowMethods: []string{"GET", "POST", "PUT"},
+				AllowHeaders: []string{"header-1", "header-2"},
+			},
+			want: &envoy_api_v2_route.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "*",
+						},
+						IgnoreCase: true,
+					}},
+				AllowCredentials: protobuf.Bool(false),
+				AllowMethods:     "GET,POST,PUT",
+				AllowHeaders:     "header-1,header-2",
+			},
+		},
+		"expose headers": {
+			cp: &dag.CORSPolicy{
+				AllowOrigin:   []string{"*"},
+				AllowMethods:  []string{"GET", "POST", "PUT"},
+				ExposeHeaders: []string{"header-1", "header-2"},
+			},
+			want: &envoy_api_v2_route.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "*",
+						},
+						IgnoreCase: true,
+					}},
+				AllowCredentials: protobuf.Bool(false),
+				AllowMethods:     "GET,POST,PUT",
+				ExposeHeaders:    "header-1,header-2",
+			},
+		},
+		"max age": {
+			cp: &dag.CORSPolicy{
+				AllowOrigin:  []string{"*"},
+				AllowMethods: []string{"GET", "POST", "PUT"},
+				MaxAge:       timeout.DurationSetting(10 * time.Minute),
+			},
+			want: &envoy_api_v2_route.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "*",
+						},
+						IgnoreCase: true,
+					}},
+				AllowCredentials: protobuf.Bool(false),
+				AllowMethods:     "GET,POST,PUT",
+				MaxAge:           "600",
+			},
+		},
+		"default max age": {
+			cp: &dag.CORSPolicy{
+				AllowOrigin:  []string{"*"},
+				AllowMethods: []string{"GET", "POST", "PUT"},
+				MaxAge:       timeout.DefaultSetting(),
+			},
+			want: &envoy_api_v2_route.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "*",
+						},
+						IgnoreCase: true,
+					}},
+				AllowCredentials: protobuf.Bool(false),
+				AllowMethods:     "GET,POST,PUT",
+			},
+		},
+		"max age disabled": {
+			cp: &dag.CORSPolicy{
+				AllowOrigin:  []string{"*"},
+				AllowMethods: []string{"GET", "POST", "PUT"},
+				MaxAge:       timeout.DisabledSetting(),
+			},
+			want: &envoy_api_v2_route.CorsPolicy{
+				AllowOriginStringMatch: []*matcher.StringMatcher{
+					{
+						MatchPattern: &matcher.StringMatcher_Exact{
+							Exact: "*",
+						},
+						IgnoreCase: true,
+					}},
+				AllowCredentials: protobuf.Bool(false),
+				AllowMethods:     "GET,POST,PUT",
+				MaxAge:           "0",
+			},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := CORSPolicy(tc.cp)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

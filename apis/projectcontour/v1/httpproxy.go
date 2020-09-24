@@ -207,6 +207,9 @@ type VirtualHost struct {
 	//
 	// +optional
 	Authorization *AuthorizationServer `json:"authorization,omitempty"`
+	// Specifies the cross-origin policy to apply to the VirtualHost.
+	// +optional
+	CORSPolicy *CORSPolicy `json:"corsPolicy,omitempty"`
 }
 
 // TLS describes tls properties. The SNI names that will be matched on
@@ -239,6 +242,37 @@ type TLS struct {
 	// EnableFallbackCertificate defines if the vhost should allow a default certificate to
 	// be applied which handles all requests which don't match the SNI defined in this vhost.
 	EnableFallbackCertificate bool `json:"enableFallbackCertificate,omitempty"`
+}
+
+// CORSHeaderValue specifies the value of the string headers returned by a cross-domain request.
+// +kubebuilder:validation:Pattern="^[a-zA-Z0-9!#$%&'*+.^_`|~-]+$"
+type CORSHeaderValue string
+
+// CORSPolicy allows setting the CORS policy
+type CORSPolicy struct {
+	// Specifies whether the resource allows credentials.
+	//  +optional
+	AllowCredentials bool `json:"allowCredentials,omitempty"`
+	// AllowOrigin specifies the origins that will be allowed to do CORS requests. "*" means
+	// allow any origin.
+	// +kubebuilder:validation:Required
+	AllowOrigin []string `json:"allowOrigin"`
+	// AllowMethods specifies the content for the *access-control-allow-methods* header.
+	// +kubebuilder:validation:Required
+	AllowMethods []CORSHeaderValue `json:"allowMethods"`
+	// AllowHeaders specifies the content for the *access-control-allow-headers* header.
+	//  +optional
+	AllowHeaders []CORSHeaderValue `json:"allowHeaders,omitempty"`
+	// ExposeHeaders Specifies the content for the *access-control-expose-headers* header.
+	//  +optional
+	ExposeHeaders []CORSHeaderValue `json:"exposeHeaders,omitempty"`
+	// MaxAge indicates for how long the results of a preflight request can be cached.
+	// MaxAge durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration).
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// Only positive values are allowed while 0 disables the cache requiring a preflight OPTIONS
+	// check for all cross-origin requests.
+	//  +optional
+	MaxAge string `json:"maxAge,omitempty"`
 }
 
 // Route contains the set of routes for a virtual host.
