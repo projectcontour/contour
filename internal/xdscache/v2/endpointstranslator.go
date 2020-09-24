@@ -18,17 +18,16 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/projectcontour/contour/internal/contour"
-
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"github.com/projectcontour/contour/internal/xdscache"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -72,8 +71,8 @@ func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancin
 			sort.Slice(addresses, func(i, j int) bool { return addresses[i].IP < addresses[j].IP })
 
 			for _, a := range addresses {
-				addr := envoyv2.SocketAddress(a.IP, int(p.Port))
-				lb = append(lb, envoyv2.LBEndpoint(addr))
+				addr := envoy_v2.SocketAddress(a.IP, int(p.Port))
+				lb = append(lb, envoy_v2.LBEndpoint(addr))
 			}
 		}
 	}
@@ -224,7 +223,7 @@ func (c *EndpointsCache) DeleteEndpoint(ep *v1.Endpoints) {
 // NewEndpointsTranslator allocates a new endpoints translator.
 func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
 	return &EndpointsTranslator{
-		Cond:        contour.Cond{},
+		Cond:        xdscache.Cond{},
 		FieldLogger: log,
 		entries:     map[string]*envoy_api_v2.ClusterLoadAssignment{},
 		cache: EndpointsCache{
@@ -239,9 +238,9 @@ func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
 // ClusterLoadAssignment resources.
 type EndpointsTranslator struct {
 	// Observer notifies when the endpoints cache has been updated.
-	Observer contour.Observer
+	Observer xdscache.Observer
 
-	contour.Cond
+	xdscache.Cond
 	logrus.FieldLogger
 
 	cache EndpointsCache

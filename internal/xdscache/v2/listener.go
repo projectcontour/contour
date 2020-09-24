@@ -25,13 +25,13 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/projectcontour/contour/internal/xdscache"
 )
 
 // nolint:golint
@@ -87,7 +87,7 @@ type ListenerConfig struct {
 	// supported versions are accepted. This is applied to both
 	// HTTP and HTTPS listeners but has practical effect only for
 	// HTTPS, because we don't support h2c.
-	DefaultHTTPVersions []envoyv2.HTTPVersionType
+	DefaultHTTPVersions []envoy_v2.HTTPVersionType
 
 	// AccessLogType defines if Envoy logs should be output as Envoy's default or JSON.
 	// Valid values: 'envoy', 'json'
@@ -192,18 +192,18 @@ func (lvc *ListenerConfig) accesslogFields() []string {
 func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_api_v2_accesslog.AccessLog {
 	switch lvc.accesslogType() {
 	case "json":
-		return envoyv2.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields())
+		return envoy_v2.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields())
 	default:
-		return envoyv2.FileAccessLogEnvoy(lvc.httpAccessLog())
+		return envoy_v2.FileAccessLogEnvoy(lvc.httpAccessLog())
 	}
 }
 
 func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_api_v2_accesslog.AccessLog {
 	switch lvc.accesslogType() {
 	case "json":
-		return envoyv2.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields())
+		return envoy_v2.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields())
 	default:
-		return envoyv2.FileAccessLogEnvoy(lvc.httpsAccessLog())
+		return envoy_v2.FileAccessLogEnvoy(lvc.httpsAccessLog())
 	}
 }
 
@@ -223,12 +223,12 @@ type ListenerCache struct {
 	staticValues map[string]*envoy_api_v2.Listener
 
 	Config ListenerConfig
-	contour.Cond
+	xdscache.Cond
 }
 
 // NewListenerCache returns an instance of a ListenerCache
 func NewListenerCache(config ListenerConfig, address string, port int) *ListenerCache {
-	stats := envoyv2.StatsListener(address, port)
+	stats := envoy_v2.StatsListener(address, port)
 	return &ListenerCache{
 		Config: config,
 		staticValues: map[string]*envoy_api_v2.Listener{
@@ -304,7 +304,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_api_
 	lv := listenerVisitor{
 		ListenerConfig: lvc,
 		listeners: map[string]*envoy_api_v2.Listener{
-			ENVOY_HTTPS_LISTENER: envoyv2.Listener(
+			ENVOY_HTTPS_LISTENER: envoy_v2.Listener(
 				ENVOY_HTTPS_LISTENER,
 				lvc.httpsAddress(),
 				lvc.httpsPort(),
@@ -317,8 +317,8 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_api_
 
 	if lv.http {
 		// Add a listener if there are vhosts bound to http.
-		cm := envoyv2.HTTPConnectionManagerBuilder().
-			Codec(envoyv2.CodecForVersions(lv.DefaultHTTPVersions...)).
+		cm := envoy_v2.HTTPConnectionManagerBuilder().
+			Codec(envoy_v2.CodecForVersions(lv.DefaultHTTPVersions...)).
 			DefaultFilters().
 			RouteConfigName(ENVOY_HTTP_LISTENER).
 			MetricsPrefix(ENVOY_HTTP_LISTENER).
@@ -330,7 +330,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_api_
 			ConnectionShutdownGracePeriod(lvc.ConnectionShutdownGracePeriod).
 			Get()
 
-		lv.listeners[ENVOY_HTTP_LISTENER] = envoyv2.Listener(
+		lv.listeners[ENVOY_HTTP_LISTENER] = envoy_v2.Listener(
 			ENVOY_HTTP_LISTENER,
 			lvc.httpAddress(),
 			lvc.httpPort(),
@@ -353,15 +353,15 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_api_
 
 func proxyProtocol(useProxy bool) []*envoy_api_v2_listener.ListenerFilter {
 	if useProxy {
-		return envoyv2.ListenerFilters(
-			envoyv2.ProxyProtocol(),
+		return envoy_v2.ListenerFilters(
+			envoy_v2.ProxyProtocol(),
 		)
 	}
 	return nil
 }
 
 func secureProxyProtocol(useProxy bool) []*envoy_api_v2_listener.ListenerFilter {
-	return append(proxyProtocol(useProxy), envoyv2.TLSInspector())
+	return append(proxyProtocol(useProxy), envoy_v2.TLSInspector())
 }
 
 func (v *listenerVisitor) visit(vertex dag.Vertex) {
@@ -386,7 +386,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			var authFilter *http.HttpFilter
 
 			if vh.AuthorizationService != nil {
-				authFilter = envoyv2.FilterExternalAuthz(
+				authFilter = envoy_v2.FilterExternalAuthz(
 					vh.AuthorizationService.Name,
 					vh.AuthorizationFailOpen,
 					vh.AuthorizationResponseTimeout,
@@ -400,10 +400,10 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// metrics prefix to keep compatibility with previous
 			// Contour versions since the metrics prefix will be
 			// coded into monitoring dashboards.
-			filters = envoyv2.Filters(
-				envoyv2.HTTPConnectionManagerBuilder().
-					Codec(envoyv2.CodecForVersions(v.DefaultHTTPVersions...)).
-					AddFilter(envoyv2.FilterMisdirectedRequests(vh.VirtualHost.Name)).
+			filters = envoy_v2.Filters(
+				envoy_v2.HTTPConnectionManagerBuilder().
+					Codec(envoy_v2.CodecForVersions(v.DefaultHTTPVersions...)).
+					AddFilter(envoy_v2.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
 					AddFilter(authFilter).
 					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
@@ -417,10 +417,10 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					Get(),
 			)
 
-			alpnProtos = envoyv2.ProtoNamesForVersions(v.DefaultHTTPVersions...)
+			alpnProtos = envoy_v2.ProtoNamesForVersions(v.DefaultHTTPVersions...)
 		} else {
-			filters = envoyv2.Filters(
-				envoyv2.TCPProxy(ENVOY_HTTPS_LISTENER,
+			filters = envoy_v2.Filters(
+				envoy_v2.TCPProxy(ENVOY_HTTPS_LISTENER,
 					vh.TCPProxy,
 					v.ListenerConfig.newSecureAccessLog()),
 			)
@@ -437,7 +437,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// Choose the higher of the configured or requested TLS version.
 			vers := max(v.ListenerConfig.minTLSVersion(), vh.MinTLSVersion)
 
-			downstreamTLS = envoyv2.DownstreamTLSContext(
+			downstreamTLS = envoy_v2.DownstreamTLSContext(
 				vh.Secret,
 				vers,
 				vh.DownstreamValidation,
@@ -445,25 +445,25 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		}
 
 		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
-			envoyv2.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
+			envoy_v2.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
 
 		// If this VirtualHost has enabled the fallback certificate then set a default
 		// FilterChain which will allow routes with this vhost to accept non-SNI TLS requests.
 		// Note that we don't add the misdirected requests filter on this chain because at this
 		// point we don't actually know the full set of server names that will be bound to the
 		// filter chain through the ENVOY_FALLBACK_ROUTECONFIG route configuration.
-		if vh.FallbackCertificate != nil && !envoyv2.ContainsFallbackFilterChain(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains) {
+		if vh.FallbackCertificate != nil && !envoy_v2.ContainsFallbackFilterChain(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains) {
 			// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
 			// the value defined in the Contour Configuration file if defined.
-			downstreamTLS = envoyv2.DownstreamTLSContext(
+			downstreamTLS = envoy_v2.DownstreamTLSContext(
 				vh.FallbackCertificate,
 				v.ListenerConfig.minTLSVersion(),
 				vh.DownstreamValidation,
 				alpnProtos...)
 
 			// Default filter chain
-			filters = envoyv2.Filters(
-				envoyv2.HTTPConnectionManagerBuilder().
+			filters = envoy_v2.Filters(
+				envoy_v2.HTTPConnectionManagerBuilder().
 					DefaultFilters().
 					RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
 					MetricsPrefix(ENVOY_HTTPS_LISTENER).
@@ -477,7 +477,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			)
 
 			v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
-				envoyv2.FilterChainTLSFallback(downstreamTLS, filters))
+				envoy_v2.FilterChainTLSFallback(downstreamTLS, filters))
 		}
 
 	default:

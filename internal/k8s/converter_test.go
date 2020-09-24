@@ -17,8 +17,8 @@ import (
 	"errors"
 	"testing"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -60,20 +60,20 @@ func TestConvertUnstructured(t *testing.T) {
 		})
 	}
 
-	proxy1 := &projcontour.HTTPProxy{
+	proxy1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -81,13 +81,13 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	proxyTLSCert1 := &projcontour.TLSCertificateDelegation{
+	proxyTLSCert1 := &contour_api_v1.TLSCertificateDelegation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "delegation",
 			Namespace: "example",
 		},
-		Spec: projcontour.TLSCertificateDelegationSpec{
-			Delegations: []projcontour.CertificateDelegation{{
+		Spec: contour_api_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_api_v1.CertificateDelegation{{
 				SecretName: "sec1",
 				TargetNamespaces: []string{
 					"targetns",
@@ -271,7 +271,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	run(t, "invalidunstructured", testcase{
 		obj:       proxyInvalidUnstructured,
-		want:      &projcontour.HTTPProxy{},
+		want:      &contour_api_v1.HTTPProxy{},
 		wantError: errors.New("unable to convert unstructured object to projectcontour.io/v1, Kind=HTTPProxy: cannot convert int to string"),
 	})
 
@@ -316,7 +316,7 @@ func TestConvertUnstructured(t *testing.T) {
 				},
 			},
 		},
-		want: &projectcontourv1alpha1.ExtensionService{
+		want: &contour_api_v1alpha1.ExtensionService{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "extension",
 				Namespace: "default",

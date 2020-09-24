@@ -14,12 +14,12 @@
 // Package contour contains the translation business logic that listens
 // to Kubernetes ResourceEventHandler events and translates those into
 // additions/deletions in caches connected to the Envoy xDS gRPC API server.
-package contour
+package xdscache
 
 import (
 	"time"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -96,7 +96,7 @@ func calculateRouteMetric(statuses map[types.NamespacedName]dag.Status) metrics.
 
 	for _, v := range statuses {
 		switch o := v.Object.(type) {
-		case *projcontour.HTTPProxy:
+		case *contour_api_v1.HTTPProxy:
 			calcMetrics(v, proxyMetricValid, proxyMetricInvalid, proxyMetricOrphaned, proxyMetricTotal)
 			if o.Spec.VirtualHost != nil {
 				proxyMetricRoots[metrics.Meta{Namespace: v.Object.GetObjectMeta().GetNamespace()}]++

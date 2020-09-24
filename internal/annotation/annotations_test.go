@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -404,7 +404,7 @@ func TestAnnotationKindValidation(t *testing.T) {
 			},
 		},
 		"httpproxy": {
-			obj: &projectcontour.HTTPProxy{},
+			obj: &contour_api_v1.HTTPProxy{},
 			annotations: map[string]status{
 				// Valid only on Service.
 				"projectcontour.io/max-requests": {
@@ -436,7 +436,7 @@ func TestAnnotationKindValidation(t *testing.T) {
 	for _, kind := range []string{
 		kindOf(&v1.Service{}),
 		kindOf(&v1beta1.Ingress{}),
-		kindOf(&projectcontour.HTTPProxy{}),
+		kindOf(&contour_api_v1.HTTPProxy{}),
 	} {
 		for key := range annotationsByKind[kind] {
 			t.Run(fmt.Sprintf("%s is known and valid for %s", key, kind),
@@ -588,9 +588,9 @@ func kindOf(obj interface{}) string {
 		return "Service"
 	case *v1beta1.Ingress:
 		return "Ingress"
-	case *projectcontour.HTTPProxy:
+	case *contour_api_v1.HTTPProxy:
 		return "HTTPProxy"
-	case *projectcontour.TLSCertificateDelegation:
+	case *contour_api_v1.TLSCertificateDelegation:
 		return "TLSCertificateDelegation"
 	default:
 		return ""

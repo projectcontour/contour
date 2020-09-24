@@ -19,7 +19,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/proto"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -313,20 +313,20 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -355,40 +355,40 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www1.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www2.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -417,40 +417,40 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www1.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret-a",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
 						}},
 					},
 				},
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www2.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret-b",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},

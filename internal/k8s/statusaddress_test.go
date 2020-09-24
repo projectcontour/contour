@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -184,7 +184,7 @@ type sauTestcase struct {
 func TestStatusAddressUpdater_OnAdd(t *testing.T) {
 
 	ingressGVR := v1beta1.SchemeGroupVersion.WithResource("ingresses")
-	proxyGVR := projcontour.SchemeGroupVersion.WithResource("httpproxies")
+	proxyGVR := contour_api_v1.SchemeGroupVersion.WithResource("httpproxies")
 
 	log := logrus.New()
 	log.SetLevel(logrus.DebugLevel)
@@ -320,7 +320,7 @@ func TestStatusAddressUpdater_OnAdd(t *testing.T) {
 func TestStatusAddressUpdater_OnUpdate(t *testing.T) {
 
 	ingressGVR := v1beta1.SchemeGroupVersion.WithResource("ingresses")
-	proxyGVR := projcontour.SchemeGroupVersion.WithResource("httpproxies")
+	proxyGVR := contour_api_v1.SchemeGroupVersion.WithResource("httpproxies")
 
 	log := logrus.New()
 	log.SetLevel(logrus.DebugLevel)
@@ -468,8 +468,8 @@ func simpleIngressGenerator(name, ingressClass string, lbstatus v1.LoadBalancerS
 	}
 }
 
-func simpleProxyGenerator(name, ingressClass string, lbstatus v1.LoadBalancerStatus) *projcontour.HTTPProxy {
-	return &projcontour.HTTPProxy{
+func simpleProxyGenerator(name, ingressClass string, lbstatus v1.LoadBalancerStatus) *contour_api_v1.HTTPProxy {
+	return &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: name,
@@ -478,7 +478,7 @@ func simpleProxyGenerator(name, ingressClass string, lbstatus v1.LoadBalancerSta
 			},
 		},
 
-		Status: projcontour.HTTPProxyStatus{
+		Status: contour_api_v1.HTTPProxyStatus{
 			LoadBalancer: lbstatus,
 		},
 	}

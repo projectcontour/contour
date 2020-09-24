@@ -20,19 +20,19 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"github.com/projectcontour/contour/internal/xdscache"
 )
 
 // SecretCache manages the contents of the gRPC SDS cache.
 type SecretCache struct {
 	mu     sync.Mutex
 	values map[string]*envoy_api_v2_auth.Secret
-	contour.Cond
+	xdscache.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
@@ -95,7 +95,7 @@ func visitSecrets(root dag.Vertex) map[string]*envoy_api_v2_auth.Secret {
 func (v *secretVisitor) addSecret(s *dag.Secret) {
 	name := envoy.Secretname(s)
 	if _, ok := v.secrets[name]; !ok {
-		envoySecret := envoyv2.Secret(s)
+		envoySecret := envoy_v2.Secret(s)
 		v.secrets[envoySecret.Name] = envoySecret
 	}
 }

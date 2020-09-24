@@ -19,8 +19,8 @@ import (
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -62,8 +62,8 @@ func TestExternalNameService(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/kuard/80/da39a3ee5e"),
@@ -85,9 +85,9 @@ func TestExternalNameService(t *testing.T) {
 
 	rh.OnAdd(fixture.NewProxy("kuard").
 		WithFQDN("kuard.projectcontour.io").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -97,8 +97,8 @@ func TestExternalNameService(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/kuard/80/da39a3ee5e"),
@@ -118,17 +118,17 @@ func TestExternalNameService(t *testing.T) {
 
 	// After we set the Host header, the cluster should remain
 	// the same, but the Route should do update the Host header.
-	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(projcontour.HTTPProxySpec{}))
+	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(contour_api_v1.HTTPProxySpec{}))
 	rh.OnAdd(fixture.NewProxy("kuard").
 		WithFQDN("kuard.projectcontour.io").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
-				RequestHeadersPolicy: &projcontour.HeadersPolicy{
-					Set: []projcontour.HeaderValue{{
+				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
 						Name:  "Host",
 						Value: "external.address",
 					}},
@@ -140,8 +140,8 @@ func TestExternalNameService(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: routeType,
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeHostRewrite("default/kuard/80/da39a3ee5e", "external.address"),
@@ -162,18 +162,18 @@ func TestExternalNameService(t *testing.T) {
 	// should still find that the same configuration applies, but
 	// TLS is enabled and the SNI server name is overwritten from
 	// the Host header.
-	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(projcontour.HTTPProxySpec{}))
+	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(contour_api_v1.HTTPProxySpec{}))
 	rh.OnAdd(fixture.NewProxy("kuard").
 		WithFQDN("kuard.projectcontour.io").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Protocol: pointer.StringPtr("h2"),
 					Name:     s1.Name,
 					Port:     80,
 				}},
-				RequestHeadersPolicy: &projcontour.HeadersPolicy{
-					Set: []projcontour.HeaderValue{{
+				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
 						Name:  "Host",
 						Value: "external.address",
 					}},
@@ -185,8 +185,8 @@ func TestExternalNameService(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: routeType,
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeHostRewrite("default/kuard/80/da39a3ee5e", "external.address"),
@@ -205,8 +205,8 @@ func TestExternalNameService(t *testing.T) {
 					Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
 				},
 				&envoy_api_v2.Cluster{
-					TransportSocket: envoyv2.UpstreamTLSTransportSocket(
-						envoyv2.UpstreamTLSContext(nil, "external.address", "h2"),
+					TransportSocket: envoy_v2.UpstreamTLSTransportSocket(
+						envoy_v2.UpstreamTLSContext(nil, "external.address", "h2"),
 					),
 				},
 			),
@@ -217,18 +217,18 @@ func TestExternalNameService(t *testing.T) {
 	// means HTTP/1.1 over TLS) rather than HTTP/2. We should get
 	// TLS enabled with the overridden SNI name. but no HTTP/2
 	// protocol config.
-	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(projcontour.HTTPProxySpec{}))
+	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(contour_api_v1.HTTPProxySpec{}))
 	rh.OnAdd(fixture.NewProxy("kuard").
 		WithFQDN("kuard.projectcontour.io").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Protocol: pointer.StringPtr("tls"),
 					Name:     s1.Name,
 					Port:     80,
 				}},
-				RequestHeadersPolicy: &projcontour.HeadersPolicy{
-					Set: []projcontour.HeaderValue{{
+				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
 						Name:  "Host",
 						Value: "external.address",
 					}},
@@ -240,8 +240,8 @@ func TestExternalNameService(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: routeType,
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeHostRewrite("default/kuard/80/da39a3ee5e", "external.address"),
@@ -257,8 +257,8 @@ func TestExternalNameService(t *testing.T) {
 			DefaultCluster(
 				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&envoy_api_v2.Cluster{
-					TransportSocket: envoyv2.UpstreamTLSTransportSocket(
-						envoyv2.UpstreamTLSContext(nil, "external.address"),
+					TransportSocket: envoy_v2.UpstreamTLSTransportSocket(
+						envoy_v2.UpstreamTLSContext(nil, "external.address"),
 					),
 				},
 			),

@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -175,7 +175,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 
 func TestRetryPolicy(t *testing.T) {
 	tests := map[string]struct {
-		rp   *projcontour.RetryPolicy
+		rp   *contour_api_v1.RetryPolicy
 		want *RetryPolicy
 	}{
 		"nil retry policy": {
@@ -183,14 +183,14 @@ func TestRetryPolicy(t *testing.T) {
 			want: nil,
 		},
 		"empty policy": {
-			rp: &projcontour.RetryPolicy{},
+			rp: &contour_api_v1.RetryPolicy{},
 			want: &RetryPolicy{
 				RetryOn:    "5xx",
 				NumRetries: 1,
 			},
 		},
 		"explicitly zero retries": {
-			rp: &projcontour.RetryPolicy{
+			rp: &contour_api_v1.RetryPolicy{
 				NumRetries: 0, // zero value for NumRetries
 			},
 			want: &RetryPolicy{
@@ -199,7 +199,7 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		"no retry count, per try timeout": {
-			rp: &projcontour.RetryPolicy{
+			rp: &contour_api_v1.RetryPolicy{
 				PerTryTimeout: "10s",
 			},
 			want: &RetryPolicy{
@@ -209,7 +209,7 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		"explicit 0s timeout": {
-			rp: &projcontour.RetryPolicy{
+			rp: &contour_api_v1.RetryPolicy{
 				PerTryTimeout: "0s",
 			},
 			want: &RetryPolicy{
@@ -219,8 +219,8 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		"retry on": {
-			rp: &projcontour.RetryPolicy{
-				RetryOn: []projcontour.RetryOn{"gateway-error", "connect-failure"},
+			rp: &contour_api_v1.RetryPolicy{
+				RetryOn: []contour_api_v1.RetryOn{"gateway-error", "connect-failure"},
 			},
 			want: &RetryPolicy{
 				RetryOn:    "gateway-error,connect-failure",
@@ -228,7 +228,7 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		"retriable status codes": {
-			rp: &projcontour.RetryPolicy{
+			rp: &contour_api_v1.RetryPolicy{
 				RetriableStatusCodes: []uint32{502, 503, 504},
 			},
 			want: &RetryPolicy{
@@ -249,7 +249,7 @@ func TestRetryPolicy(t *testing.T) {
 
 func TestTimeoutPolicy(t *testing.T) {
 	tests := map[string]struct {
-		tp      *projcontour.TimeoutPolicy
+		tp      *contour_api_v1.TimeoutPolicy
 		want    TimeoutPolicy
 		wantErr bool
 	}{
@@ -258,11 +258,11 @@ func TestTimeoutPolicy(t *testing.T) {
 			want: TimeoutPolicy{},
 		},
 		"empty timeout policy": {
-			tp:   &projcontour.TimeoutPolicy{},
+			tp:   &contour_api_v1.TimeoutPolicy{},
 			want: TimeoutPolicy{},
 		},
 		"valid response timeout": {
-			tp: &projcontour.TimeoutPolicy{
+			tp: &contour_api_v1.TimeoutPolicy{
 				Response: "1m30s",
 			},
 			want: TimeoutPolicy{
@@ -270,13 +270,13 @@ func TestTimeoutPolicy(t *testing.T) {
 			},
 		},
 		"invalid response timeout": {
-			tp: &projcontour.TimeoutPolicy{
+			tp: &contour_api_v1.TimeoutPolicy{
 				Response: "90", // 90 what?
 			},
 			wantErr: true,
 		},
 		"infinite response timeout": {
-			tp: &projcontour.TimeoutPolicy{
+			tp: &contour_api_v1.TimeoutPolicy{
 				Response: "infinite",
 			},
 			want: TimeoutPolicy{
@@ -284,7 +284,7 @@ func TestTimeoutPolicy(t *testing.T) {
 			},
 		},
 		"idle timeout": {
-			tp: &projcontour.TimeoutPolicy{
+			tp: &contour_api_v1.TimeoutPolicy{
 				Idle: "900s",
 			},
 			want: TimeoutPolicy{
@@ -309,7 +309,7 @@ func TestTimeoutPolicy(t *testing.T) {
 
 func TestLoadBalancerPolicy(t *testing.T) {
 	tests := map[string]struct {
-		lbp  *projcontour.LoadBalancerPolicy
+		lbp  *contour_api_v1.LoadBalancerPolicy
 		want string
 	}{
 		"nil": {
@@ -317,29 +317,29 @@ func TestLoadBalancerPolicy(t *testing.T) {
 			want: "",
 		},
 		"empty": {
-			lbp:  &projcontour.LoadBalancerPolicy{},
+			lbp:  &contour_api_v1.LoadBalancerPolicy{},
 			want: "",
 		},
 		"WeightedLeastRequest": {
-			lbp: &projcontour.LoadBalancerPolicy{
+			lbp: &contour_api_v1.LoadBalancerPolicy{
 				Strategy: "WeightedLeastRequest",
 			},
 			want: "WeightedLeastRequest",
 		},
 		"Random": {
-			lbp: &projcontour.LoadBalancerPolicy{
+			lbp: &contour_api_v1.LoadBalancerPolicy{
 				Strategy: "Random",
 			},
 			want: "Random",
 		},
 		"Cookie": {
-			lbp: &projcontour.LoadBalancerPolicy{
+			lbp: &contour_api_v1.LoadBalancerPolicy{
 				Strategy: "Cookie",
 			},
 			want: "Cookie",
 		},
 		"unknown": {
-			lbp: &projcontour.LoadBalancerPolicy{
+			lbp: &contour_api_v1.LoadBalancerPolicy{
 				Strategy: "please",
 			},
 			want: "",

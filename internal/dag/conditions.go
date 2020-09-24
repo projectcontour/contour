@@ -19,14 +19,14 @@ import (
 	"regexp"
 	"strings"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 // mergePathMatchConditions merges the given slice of prefix MatchConditions into a single
 // prefix Condition.
 // pathMatchConditionsValid guarantees that if a prefix is present, it will start with a
 // / character, so we can simply concatenate.
-func mergePathMatchConditions(conds []projcontour.MatchCondition) MatchCondition {
+func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondition {
 	prefix := ""
 	for _, cond := range conds {
 		prefix = prefix + cond.Prefix
@@ -51,7 +51,7 @@ func mergePathMatchConditions(conds []projcontour.MatchCondition) MatchCondition
 
 // pathMatchConditionsValid validates a slice of MatchConditions can be correctly merged.
 // It encodes the business rules about what is allowed for prefix MatchConditions.
-func pathMatchConditionsValid(conds []projcontour.MatchCondition) error {
+func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 	prefixCount := 0
 
 	for _, cond := range conds {
@@ -69,7 +69,7 @@ func pathMatchConditionsValid(conds []projcontour.MatchCondition) error {
 	return nil
 }
 
-func mergeHeaderMatchConditions(conds []projcontour.MatchCondition) []HeaderMatchCondition {
+func mergeHeaderMatchConditions(conds []contour_api_v1.MatchCondition) []HeaderMatchCondition {
 	var hc []HeaderMatchCondition
 	for _, cond := range conds {
 		switch {
@@ -120,8 +120,8 @@ func mergeHeaderMatchConditions(conds []projcontour.MatchCondition) []HeaderMatc
 //
 // Note that there are additional, more complex scenarios that we could check for here. For
 // example, "exact: foo" and "notcontains: <any substring of foo>" are contradictory.
-func headerMatchConditionsValid(conditions []projcontour.MatchCondition) error {
-	seenMatchConditions := map[projcontour.HeaderMatchCondition]bool{}
+func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) error {
+	seenMatchConditions := map[contour_api_v1.HeaderMatchCondition]bool{}
 	headersWithExactMatch := map[string]bool{}
 
 	for _, v := range conditions {
@@ -139,7 +139,7 @@ func headerMatchConditionsValid(conditions []projcontour.MatchCondition) error {
 			headersWithExactMatch[headerName] = true
 
 			// look for a NotExact condition on the same header with the same value
-			if seenMatchConditions[projcontour.HeaderMatchCondition{
+			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
 				Name:     headerName,
 				NotExact: v.Header.Exact,
 			}] {
@@ -147,7 +147,7 @@ func headerMatchConditionsValid(conditions []projcontour.MatchCondition) error {
 			}
 		case v.Header.NotExact != "":
 			// look for an Exact condition on the same header with the same value
-			if seenMatchConditions[projcontour.HeaderMatchCondition{
+			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
 				Name:  headerName,
 				Exact: v.Header.NotExact,
 			}] {
@@ -155,7 +155,7 @@ func headerMatchConditionsValid(conditions []projcontour.MatchCondition) error {
 			}
 		case v.Header.Contains != "":
 			// look for a NotContains condition on the same header with the same value
-			if seenMatchConditions[projcontour.HeaderMatchCondition{
+			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
 				Name:        headerName,
 				NotContains: v.Header.Contains,
 			}] {
@@ -163,7 +163,7 @@ func headerMatchConditionsValid(conditions []projcontour.MatchCondition) error {
 			}
 		case v.Header.NotContains != "":
 			// look for a Contains condition on the same header with the same value
-			if seenMatchConditions[projcontour.HeaderMatchCondition{
+			if seenMatchConditions[contour_api_v1.HeaderMatchCondition{
 				Name:     headerName,
 				Contains: v.Header.NotContains,
 			}] {

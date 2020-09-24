@@ -14,7 +14,7 @@
 package k8s
 
 import (
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/equality"
 )
@@ -31,9 +31,9 @@ func IsStatusEqual(objA, objB interface{}) bool {
 		case *v1beta1.Ingress:
 			return equality.Semantic.DeepEqual(a.Status, b.Status)
 		}
-	case *projcontour.HTTPProxy:
+	case *contour_api_v1.HTTPProxy:
 		switch b := objB.(type) {
-		case *projcontour.HTTPProxy:
+		case *contour_api_v1.HTTPProxy:
 			return equality.Semantic.DeepEqual(a.Status, b.Status)
 		}
 	}

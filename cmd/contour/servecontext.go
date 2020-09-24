@@ -25,8 +25,8 @@ import (
 	"strings"
 	"time"
 
-	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -166,8 +166,8 @@ func newServeContext() *serveContext {
 		healthPort:            8000,
 		metricsAddr:           "0.0.0.0",
 		metricsPort:           8000,
-		httpAccessLog:         contourv2.DEFAULT_HTTP_ACCESS_LOG,
-		httpsAccessLog:        contourv2.DEFAULT_HTTPS_ACCESS_LOG,
+		httpAccessLog:         xdscache_v2.DEFAULT_HTTP_ACCESS_LOG,
+		httpsAccessLog:        xdscache_v2.DEFAULT_HTTPS_ACCESS_LOG,
 		httpAddr:              "0.0.0.0",
 		httpsAddr:             "0.0.0.0",
 		httpPort:              8080,
@@ -444,21 +444,21 @@ func ParseDNSLookupFamily(value string) (string, error) {
 
 // parseDefaultHTTPVersions parses a list of supported HTTP versions
 //  (of the form "HTTP/xx") into a slice of unique version constants.
-func parseDefaultHTTPVersions(versions []string) ([]envoyv2.HTTPVersionType, error) {
-	wanted := map[envoyv2.HTTPVersionType]struct{}{}
+func parseDefaultHTTPVersions(versions []string) ([]envoy_v2.HTTPVersionType, error) {
+	wanted := map[envoy_v2.HTTPVersionType]struct{}{}
 
 	for _, v := range versions {
 		switch strings.ToLower(v) {
 		case "http/1.1":
-			wanted[envoyv2.HTTPVersion1] = struct{}{}
+			wanted[envoy_v2.HTTPVersion1] = struct{}{}
 		case "http/2":
-			wanted[envoyv2.HTTPVersion2] = struct{}{}
+			wanted[envoy_v2.HTTPVersion2] = struct{}{}
 		default:
 			return nil, fmt.Errorf("invalid HTTP protocol version %q", v)
 		}
 	}
 
-	var parsed []envoyv2.HTTPVersionType
+	var parsed []envoy_v2.HTTPVersionType
 	for k := range wanted {
 		parsed = append(parsed, k)
 

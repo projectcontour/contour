@@ -19,8 +19,8 @@ import (
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,27 +46,27 @@ func TestTCPProxy(t *testing.T) {
 	rh.OnAdd(s1)
 	rh.OnAdd(svc)
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: s1.Name,
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "wrong-backend",
 					Port: 80,
 				}},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
@@ -79,14 +79,14 @@ func TestTCPProxy(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -96,7 +96,7 @@ func TestTCPProxy(t *testing.T) {
 	// check that ingress_http is empty
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -121,34 +121,34 @@ func TestTCPProxyDelegation(t *testing.T) {
 	rh.OnAdd(s1)
 	rh.OnAdd(svc)
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
 			},
 		},
 	}
-	hp2 := &projcontour.HTTPProxy{
+	hp2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "parent",
 			Namespace: s1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: s1.Name,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Include: &projcontour.TCPProxyInclude{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Include: &contour_api_v1.TCPProxyInclude{
 					Name:      hp1.Name,
 					Namespace: hp1.Namespace,
 				},
@@ -163,14 +163,14 @@ func TestTCPProxyDelegation(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "app/backend/80/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -180,7 +180,7 @@ func TestTCPProxyDelegation(t *testing.T) {
 	// check that ingress_http is empty
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -198,27 +198,27 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 
 	rh.OnAdd(svc)
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "wrong-backend",
 					Port: 80,
 				}},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
@@ -231,19 +231,19 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
-					Filters: envoyv2.Filters(
+					Filters: envoy_v2.Filters(
 						tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"kuard-tcp.example.com"},
 					},
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -253,7 +253,7 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 	// check that ingress_http is empty
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -279,20 +279,20 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 		Annotate("projectcontour.io/upstream-protocol.tls", "https,443").
 		WithPorts(v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(6443)})
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubernetesb",
 			Namespace: s1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "k8s.run.ubisoft.org",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: s1.Name,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 443,
 				}},
@@ -308,15 +308,15 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("k8s.run.ubisoft.org", s1,
 						tcpproxy("ingress_https", svc.Namespace+"/"+svc.Name+"/443/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -336,7 +336,7 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 	// check that ingress_http is empty
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
@@ -360,27 +360,27 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: s1.Name,
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
@@ -397,24 +397,24 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 				// ingress_http is present for
 				// http://kuard-tcp.example.com/ -> default/backend:80
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			&envoy_api_v2.Listener{
 				// ingress_https is present for
 				// kuard-tcp.example.com:443 terminated at envoy then forwarded to default/backend:80
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -427,8 +427,8 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 	// is in tcpproxy mode.
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard-tcp.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard-tcp.example.com",
 					upgradeHTTPS(routePrefix("/")),
 				),
 			),
@@ -455,28 +455,28 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: s1.Name,
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions:     matchconditions(prefixMatchCondition("/")),
 				PermitInsecure: true,
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
@@ -493,24 +493,24 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 				// ingress_http is present for
 				// http://kuard-tcp.example.com/ -> default/backend:80
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			&envoy_api_v2.Listener{
 				// ingress_https is present for
 				// kuard-tcp.example.com:443 terminated at envoy then tcpproxied to default/backend:80
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard-tcp.example.com", s1, tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"), nil),
 				),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -522,8 +522,8 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 	// is in tcpproxy mode.
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard-tcp.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard-tcp.example.com",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/"),
 						// this is a regular route cluster, not a 301 upgrade as
@@ -546,27 +546,27 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
@@ -582,29 +582,29 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 				// ingress_http is present for
 				// http://kuard-tcp.example.com/ -> default/backend:80
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			&envoy_api_v2.Listener{
 				// ingress_https is present for
 				// kuard-tcp.example.com:443 direct to default/backend:80
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
-					Filters: envoyv2.Filters(
+					Filters: envoy_v2.Filters(
 						tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"kuard-tcp.example.com"},
 					},
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -614,11 +614,11 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 	// check port 80 is open and the route is a 301 upgrade.
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
+			envoy_v2.RouteConfiguration("ingress_http",
 				// 301 upgrade because permitInsecure is false, thus
 				// the route is present on port 80, but unconditionally
 				// upgrades to HTTPS.
-				envoyv2.VirtualHost("kuard-tcp.example.com",
+				envoy_v2.VirtualHost("kuard-tcp.example.com",
 					upgradeHTTPS(routePrefix("/")),
 				),
 			),
@@ -638,28 +638,28 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard-tcp.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions:     matchconditions(prefixMatchCondition("/")),
 				PermitInsecure: true,
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
@@ -676,30 +676,30 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 				// http://kuard-tcp.example.com/ -> default/backend:80, this is not 301 upgraded
 				// because permitInsecure: true is in use.
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			&envoy_api_v2.Listener{
 				// ingress_https is present for
 				// kuard-tcp.example.com:443 direct to default/backend:80, envoy does not handle
 				// the TLS handshake beyond SNI demux because passthrough: true is in use.
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
-					Filters: envoyv2.Filters(
+					Filters: envoy_v2.Filters(
 						tcpproxy("ingress_https", "default/backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"kuard-tcp.example.com"},
 					},
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -711,8 +711,8 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 	// is in tcpproxy mode.
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard-tcp.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard-tcp.example.com",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/"),
 						// not a 301 upgrade because permitInsecure: true is in use.
@@ -744,25 +744,25 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 	svc := fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
 				// missing TLS:
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
@@ -786,31 +786,31 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		Resources: resources(t,
 			// ingress_http and ingress_https should be empty
 			// as hp1 is not valid.
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
 
-	hp2 := &projcontour.HTTPProxy{
+	hp2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: hp1.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					// invalid, one of Passthrough or SecretName must be provided.
 					Passthrough: false,
 					SecretName:  "",
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 80,
 				}},
@@ -832,7 +832,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		Resources: resources(t,
 			// ingress_http and ingress_https should be empty
 			// as hp2 is not valid.
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})

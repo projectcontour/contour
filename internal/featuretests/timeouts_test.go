@@ -18,11 +18,11 @@ import (
 	"time"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
+	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,18 +36,18 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -56,17 +56,17 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType, contourv2.ENVOY_HTTP_LISTENER).Equals(&envoy_api_v2.DiscoveryResponse{
+	c.Request(listenerType, xdscache_v2.ENVOY_HTTP_LISTENER).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
-				Name:          contourv2.ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
-				FilterChains: envoyv2.FilterChains(envoyv2.HTTPConnectionManagerBuilder().
-					RouteConfigName(contourv2.ENVOY_HTTP_LISTENER).
-					MetricsPrefix(contourv2.ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoyv2.FileAccessLogEnvoy(contourv2.DEFAULT_HTTP_ACCESS_LOG)).
+				Name:          xdscache_v2.ENVOY_HTTP_LISTENER,
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
+				FilterChains: envoy_v2.FilterChains(envoy_v2.HTTPConnectionManagerBuilder().
+					RouteConfigName(xdscache_v2.ENVOY_HTTP_LISTENER).
+					MetricsPrefix(xdscache_v2.ENVOY_HTTP_LISTENER).
+					AccessLoggers(envoy_v2.FileAccessLogEnvoy(xdscache_v2.DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
 					Get(),
 				),
@@ -75,7 +75,7 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 }
 
 func TestNonZeroTimeoutsSpecified(t *testing.T) {
-	withTimeouts := func(conf *contourv2.ListenerConfig) {
+	withTimeouts := func(conf *xdscache_v2.ListenerConfig) {
 		conf.ConnectionIdleTimeout = timeout.DurationSetting(7 * time.Second)
 		conf.StreamIdleTimeout = timeout.DurationSetting(70 * time.Second)
 		conf.MaxConnectionDuration = timeout.DurationSetting(700 * time.Second)
@@ -89,18 +89,18 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -109,17 +109,17 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType, contourv2.ENVOY_HTTP_LISTENER).Equals(&envoy_api_v2.DiscoveryResponse{
+	c.Request(listenerType, xdscache_v2.ENVOY_HTTP_LISTENER).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
-				Name:          contourv2.ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
-				FilterChains: envoyv2.FilterChains(envoyv2.HTTPConnectionManagerBuilder().
-					RouteConfigName(contourv2.ENVOY_HTTP_LISTENER).
-					MetricsPrefix(contourv2.ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoyv2.FileAccessLogEnvoy(contourv2.DEFAULT_HTTP_ACCESS_LOG)).
+				Name:          xdscache_v2.ENVOY_HTTP_LISTENER,
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
+				FilterChains: envoy_v2.FilterChains(envoy_v2.HTTPConnectionManagerBuilder().
+					RouteConfigName(xdscache_v2.ENVOY_HTTP_LISTENER).
+					MetricsPrefix(xdscache_v2.ENVOY_HTTP_LISTENER).
+					AccessLoggers(envoy_v2.FileAccessLogEnvoy(xdscache_v2.DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
 					ConnectionIdleTimeout(timeout.DurationSetting(7 * time.Second)).
 					StreamIdleTimeout(timeout.DurationSetting(70 * time.Second)).

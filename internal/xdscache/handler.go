@@ -14,14 +14,14 @@
 // Package contour contains the translation business logic that listens
 // to Kubernetes ResourceEventHandler events and translates those into
 // additions/deletions in caches connected to the Envoy xDS gRPC API server.
-package contour
+package xdscache
 
 import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
@@ -178,7 +178,7 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 		return e.Builder.Source.Insert(op.obj)
 	case opUpdate:
 		if cmp.Equal(op.oldObj, op.newObj,
-			cmpopts.IgnoreFields(projcontour.HTTPProxy{}, "Status"),
+			cmpopts.IgnoreFields(contour_api_v1.HTTPProxy{}, "Status"),
 			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ResourceVersion")) {
 			e.WithField("op", "update").Debugf("%T skipping update, only status has changed", op.newObj)
 			return false
@@ -225,7 +225,7 @@ func (e *EventHandler) rebuildDAG() {
 func (e *EventHandler) setStatus(statuses map[types.NamespacedName]dag.Status) {
 	for _, st := range statuses {
 		switch obj := st.Object.(type) {
-		case *projcontour.HTTPProxy:
+		case *contour_api_v1.HTTPProxy:
 			err := e.StatusClient.SetStatus(st.Status, st.Description, obj)
 			if err != nil {
 				e.WithError(err).

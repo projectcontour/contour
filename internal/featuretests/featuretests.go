@@ -27,9 +27,7 @@ import (
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
-	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -38,6 +36,8 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
+	"github.com/projectcontour/contour/internal/xdscache"
+	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -63,20 +63,20 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	log := fixture.NewTestLogger(t)
 	log.SetLevel(logrus.DebugLevel)
 
-	et := contourv2.NewEndpointsTranslator(log)
+	et := xdscache_v2.NewEndpointsTranslator(log)
 
-	conf := contourv2.ListenerConfig{}
+	conf := xdscache_v2.ListenerConfig{}
 	for _, opt := range opts {
-		if opt, ok := opt.(func(*contourv2.ListenerConfig)); ok {
+		if opt, ok := opt.(func(*xdscache_v2.ListenerConfig)); ok {
 			opt(&conf)
 		}
 	}
 
-	resources := []contour.ResourceCache{
-		contourv2.NewListenerCache(conf, statsAddress, statsPort),
-		&contourv2.SecretCache{},
-		&contourv2.RouteCache{},
-		&contourv2.ClusterCache{},
+	resources := []xdscache.ResourceCache{
+		xdscache_v2.NewListenerCache(conf, statsAddress, statsPort),
+		&xdscache_v2.SecretCache{},
+		&xdscache_v2.RouteCache{},
+		&xdscache_v2.ClusterCache{},
 		et,
 	}
 
@@ -86,16 +86,16 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	statusCache := &k8s.StatusCacher{}
 
-	eh := &contour.EventHandler{
+	eh := &xdscache.EventHandler{
 		IsLeader:        make(chan struct{}),
 		StatusClient:    statusCache,
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),
 		HoldoffDelay:    time.Duration(rand.Intn(100)) * time.Millisecond,
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
-		Observer: &contour.RebuildMetricsObserver{
+		Observer: &xdscache.RebuildMetricsObserver{
 			Metrics:      metrics.NewMetrics(r),
-			NextObserver: dag.ComposeObservers(contour.ObserversOf(resources)...),
+			NextObserver: dag.ComposeObservers(xdscache.ObserversOf(resources)...),
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
@@ -116,7 +116,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	}
 
 	for _, opt := range opts {
-		if opt, ok := opt.(func(*contour.EventHandler)); ok {
+		if opt, ok := opt.(func(*xdscache.EventHandler)); ok {
 			opt(eh)
 		}
 	}
@@ -128,7 +128,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	require.NoError(t, err)
 
 	srv := xds.RegisterServer(
-		xds.NewContourServer(log, contour.ResourcesOf(resources)...),
+		xds.NewContourServer(log, xdscache.ResourcesOf(resources)...),
 		r /* Prometheus registry */)
 
 	var g workgroup.Group
@@ -255,12 +255,12 @@ type statusResult struct {
 	*Contour
 
 	Err  error
-	Have *projcontour.HTTPProxyStatus
+	Have *contour_api_v1.HTTPProxyStatus
 }
 
 // Equals asserts that the status result is not an error and matches
 // the wanted status exactly.
-func (s *statusResult) Equals(want projcontour.HTTPProxyStatus) *Contour {
+func (s *statusResult) Equals(want contour_api_v1.HTTPProxyStatus) *Contour {
 	s.T.Helper()
 
 	// We should never get an error fetching the status for an
@@ -275,7 +275,7 @@ func (s *statusResult) Equals(want projcontour.HTTPProxyStatus) *Contour {
 
 // Like asserts that the status result is not an error and matches
 // non-empty fields in the wanted status.
-func (s *statusResult) Like(want projcontour.HTTPProxyStatus) *Contour {
+func (s *statusResult) Like(want contour_api_v1.HTTPProxyStatus) *Contour {
 	s.T.Helper()
 
 	// We should never get an error fetching the status for an
@@ -286,15 +286,15 @@ func (s *statusResult) Like(want projcontour.HTTPProxyStatus) *Contour {
 
 	if len(want.CurrentStatus) > 0 {
 		assert.Equal(s.T,
-			projcontour.HTTPProxyStatus{CurrentStatus: want.CurrentStatus},
-			projcontour.HTTPProxyStatus{CurrentStatus: s.Have.CurrentStatus},
+			contour_api_v1.HTTPProxyStatus{CurrentStatus: want.CurrentStatus},
+			contour_api_v1.HTTPProxyStatus{CurrentStatus: s.Have.CurrentStatus},
 		)
 	}
 
 	if len(want.Description) > 0 {
 		assert.Equal(s.T,
-			projcontour.HTTPProxyStatus{Description: want.Description},
-			projcontour.HTTPProxyStatus{Description: s.Have.Description},
+			contour_api_v1.HTTPProxyStatus{Description: want.Description},
+			contour_api_v1.HTTPProxyStatus{Description: s.Have.Description},
 		)
 	}
 

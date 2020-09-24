@@ -16,7 +16,7 @@ package k8s
 import (
 	"fmt"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -55,10 +55,10 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		typed = o.DeepCopy()
 		gvr = v1beta1.SchemeGroupVersion.WithResource("ingresses")
 		kind = "ingress"
-	case *projcontour.HTTPProxy:
-		o.GetObjectKind().SetGroupVersionKind(projcontour.SchemeGroupVersion.WithKind("httpproxy"))
+	case *contour_api_v1.HTTPProxy:
+		o.GetObjectKind().SetGroupVersionKind(contour_api_v1.SchemeGroupVersion.WithKind("httpproxy"))
 		typed = o.DeepCopy()
-		gvr = projcontour.SchemeGroupVersion.WithResource("httpproxies")
+		gvr = contour_api_v1.SchemeGroupVersion.WithResource("httpproxies")
 		kind = "httpproxy"
 	default:
 		s.Logger.
@@ -95,7 +95,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 				dco := o.DeepCopy()
 				dco.Status.LoadBalancer = s.LBStatus
 				return dco
-			case *projcontour.HTTPProxy:
+			case *contour_api_v1.HTTPProxy:
 				dco := o.DeepCopy()
 				dco.Status.LoadBalancer = s.LBStatus
 				return dco

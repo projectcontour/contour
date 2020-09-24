@@ -22,8 +22,8 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -45,9 +45,9 @@ func TestClusterCacheContents(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 				}),
@@ -55,9 +55,9 @@ func TestClusterCacheContents(t *testing.T) {
 				cluster(&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 				}),
@@ -86,9 +86,9 @@ func TestClusterCacheQuery(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 				}),
@@ -97,9 +97,9 @@ func TestClusterCacheQuery(t *testing.T) {
 				cluster(&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 				}),
@@ -110,9 +110,9 @@ func TestClusterCacheQuery(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 				}),
@@ -121,9 +121,9 @@ func TestClusterCacheQuery(t *testing.T) {
 				cluster(&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 				}),
@@ -134,9 +134,9 @@ func TestClusterCacheQuery(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 				}),
@@ -187,9 +187,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard",
 					},
 				}),
@@ -221,9 +221,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard/https",
 					},
 				}),
@@ -259,9 +259,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/80/da39a3ee5e",
 					AltStatName:          "default_kuard_80",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard/http",
 					},
 					Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
@@ -292,29 +292,29 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "beurocra-7fe4b4/tiny-cog-7fe4b4/443/da39a3ee5e",
 					AltStatName:          "beurocratic-company-test-domain-1_tiny-cog-department-test-instance_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "beurocratic-company-test-domain-1/tiny-cog-department-test-instance/svc-0",
 					},
 				}),
 		},
 		"two service ports": {
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							Conditions: []projcontour.MatchCondition{{
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}, {
@@ -340,18 +340,18 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/backend/80/da39a3ee5e",
 					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 				},
 				&envoy_api_v2.Cluster{
 					Name:                 "default/backend/8080/da39a3ee5e",
 					AltStatName:          "default_backend_8080",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/backend/alt",
 					},
 				},
@@ -359,23 +359,23 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"httpproxy with simple path healthcheck": {
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
+						Routes: []contour_api_v1.Route{{
+							HealthCheckPolicy: &contour_api_v1.HTTPHealthCheckPolicy{
 								Path: "/healthy",
 							},
-							Conditions: []projcontour.MatchCondition{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -393,9 +393,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/backend/80/c184349821",
 					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					HealthChecks: []*envoy_api_v2_core.HealthCheck{{
@@ -416,17 +416,17 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"httpproxy with custom healthcheck": {
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
+						Routes: []contour_api_v1.Route{{
+							HealthCheckPolicy: &contour_api_v1.HTTPHealthCheckPolicy{
 								Host:                    "foo-bar-host",
 								Path:                    "/healthy",
 								TimeoutSeconds:          99,
@@ -434,10 +434,10 @@ func TestClusterVisit(t *testing.T) {
 								UnhealthyThresholdCount: 97,
 								HealthyThresholdCount:   96,
 							},
-							Conditions: []projcontour.MatchCondition{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -455,9 +455,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/backend/80/7f8051653a",
 					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					HealthChecks: []*envoy_api_v2_core.HealthCheck{{
@@ -478,23 +478,23 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"httpproxy with RoundRobin lb algorithm": {
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
+						Routes: []contour_api_v1.Route{{
+							LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
 								Strategy: "RoundRobin",
 							},
-							Conditions: []projcontour.MatchCondition{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -512,9 +512,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/backend/80/da39a3ee5e",
 					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 				},
@@ -522,23 +522,23 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"httpproxy with WeightedLeastRequest lb algorithm": {
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
+						Routes: []contour_api_v1.Route{{
+							LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
 								Strategy: "WeightedLeastRequest",
 							},
-							Conditions: []projcontour.MatchCondition{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -556,9 +556,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/backend/80/8bf87fefba",
 					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					LbPolicy: envoy_api_v2.Cluster_LEAST_REQUEST,
@@ -567,23 +567,23 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"httpproxy with Random lb algorithm": {
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
+						Routes: []contour_api_v1.Route{{
+							LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
 								Strategy: "Random",
 							},
-							Conditions: []projcontour.MatchCondition{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -601,9 +601,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/backend/80/58d888c08a",
 					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 					LbPolicy: envoy_api_v2.Cluster_RANDOM,
@@ -614,23 +614,23 @@ func TestClusterVisit(t *testing.T) {
 		// HTTPProxy has LB algorithm as a route-level construct, so it's not possible.
 		"httpproxy with unknown lb algorithm": {
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
+						Routes: []contour_api_v1.Route{{
+							LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
 								Strategy: "lulz",
 							},
-							Conditions: []projcontour.MatchCondition{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -648,9 +648,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/backend/80/da39a3ee5e",
 					AltStatName:          "default_backend_80",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/backend/http",
 					},
 				},
@@ -690,9 +690,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/80/da39a3ee5e",
 					AltStatName:          "default_kuard_80",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard/http",
 					},
 					CircuitBreakers: &envoy_api_v2_cluster.CircuitBreakers{
@@ -737,9 +737,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard/https",
 					},
 				}),
@@ -776,9 +776,9 @@ func TestClusterVisit(t *testing.T) {
 				&envoy_api_v2.Cluster{
 					Name:                 "default/kuard/443/da39a3ee5e",
 					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoyv2.ConfigSource("contour"),
+						EdsConfig:   envoy_v2.ConfigSource("contour"),
 						ServiceName: "default/kuard/https",
 					},
 				}),
@@ -815,7 +815,7 @@ func cluster(c *envoy_api_v2.Cluster) *envoy_api_v2.Cluster {
 	// NOTE: Keep this in sync with envoy.defaultCluster().
 	defaults := &envoy_api_v2.Cluster{
 		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
-		CommonLbConfig: envoyv2.ClusterCommonLBConfig(),
+		CommonLbConfig: envoy_v2.ClusterCommonLBConfig(),
 		LbPolicy:       envoy_api_v2.Cluster_ROUND_ROBIN,
 	}
 

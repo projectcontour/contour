@@ -19,10 +19,10 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/xdscache"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +30,7 @@ import (
 )
 
 func TestTimeoutPolicyRequestTimeout(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	rh, c, done := setup(t, func(reh *xdscache.EventHandler) {})
 	defer done()
 
 	svc := fixture.NewService("kuard").
@@ -54,8 +54,8 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	// check annotation with explicit timeout is propagated
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 80*time.Second),
@@ -78,11 +78,11 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	}
 	rh.OnUpdate(i1, i2)
 
-	// check annotation with infinite timeout is propogated
+	// check annotation with infinite timeout is propagated
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
@@ -108,8 +108,8 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	// check annotation with malformed timeout is not propagated
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
@@ -136,8 +136,8 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	// assert that projectcontour.io/response-timeout takes priority.
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 99*time.Second),
@@ -149,19 +149,19 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 	rh.OnDelete(i4)
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Response: "600", // not 600s
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -173,21 +173,21 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	// check timeout policy with malformed response timeout is not propogated
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
 
-	p2 := &projcontour.HTTPProxy{
+	p2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: p1.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Response: "3m",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -199,8 +199,8 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	// check timeout policy with response timeout is propogated correctly
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 180*time.Second),
@@ -211,16 +211,16 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p3 := &projcontour.HTTPProxy{
+	p3 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: p2.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Response: "infinity",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -232,8 +232,8 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	// check timeout policy with explicit infine response timeout is propogated as infinity
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withResponseTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity
@@ -246,26 +246,26 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 }
 
 func TestTimeoutPolicyIdleTimeout(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	rh, c, done := setup(t, func(reh *xdscache.EventHandler) {})
 	defer done()
 
 	svc := fixture.NewService("kuard").
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Idle: "600", // not 600s
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -277,21 +277,21 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	// check timeout policy with malformed response timeout is not propogated
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
 
-	p2 := &projcontour.HTTPProxy{
+	p2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: p1.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Idle: "3m",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -303,8 +303,8 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	// check timeout policy with response timeout is propogated correctly
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withIdleTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 180*time.Second),
@@ -315,16 +315,16 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p3 := &projcontour.HTTPProxy{
+	p3 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: p2.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Idle: "infinity",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -336,8 +336,8 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	// check timeout policy with explicit infine response timeout is propogated as infinity
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withIdleTimeout(routeCluster("default/kuard/8080/da39a3ee5e"), 0), // zero means infinity

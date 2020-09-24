@@ -14,7 +14,7 @@
 package v1alpha1
 
 import (
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -66,7 +66,7 @@ type ExtensionServiceSpec struct {
 
 	// UpstreamValidation defines how to verify the backend service's certificate
 	// +optional
-	UpstreamValidation *contourv1.UpstreamValidation `json:"validation,omitempty"`
+	UpstreamValidation *contour_api_v1.UpstreamValidation `json:"validation,omitempty"`
 
 	// Protocol may be used to specify (or override) the protocol used to reach this Service.
 	// Values may be tls, h2, h2c. If omitted, protocol-selection falls back on Service annotations.
@@ -79,12 +79,12 @@ type ExtensionServiceSpec struct {
 	// that the `Cookie` load balancing strategy cannot be used here.
 	//
 	// +optional
-	LoadBalancerPolicy *contourv1.LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
+	LoadBalancerPolicy *contour_api_v1.LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 
 	// The timeout policy for requests to the services.
 	//
 	// +optional
-	TimeoutPolicy *contourv1.TimeoutPolicy `json:"timeoutPolicy,omitempty"`
+	TimeoutPolicy *contour_api_v1.TimeoutPolicy `json:"timeoutPolicy,omitempty"`
 
 	// This field sets the version of the GRPC protocol that Envoy uses to
 	// send requests to the extension service. Since Contour always uses the
@@ -111,7 +111,7 @@ type ExtensionServiceStatus struct {
 	// +patchStrategy=merge
 	// +listType=map
 	// +listMapKey=type
-	Conditions []contourv1.DetailedCondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
+	Conditions []contour_api_v1.DetailedCondition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
 }
 
 // +genclient

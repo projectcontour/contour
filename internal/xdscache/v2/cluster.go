@@ -17,23 +17,22 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/projectcontour/contour/internal/contour"
-
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"github.com/projectcontour/contour/internal/xdscache"
 )
 
 // ClusterCache manages the contents of the gRPC CDS cache.
 type ClusterCache struct {
 	mu     sync.Mutex
 	values map[string]*envoy_api_v2.Cluster
-	contour.Cond
+	xdscache.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
@@ -100,12 +99,12 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 	case *dag.Cluster:
 		name := envoy.Clustername(cluster)
 		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoyv2.Cluster(cluster)
+			v.clusters[name] = envoy_v2.Cluster(cluster)
 		}
 	case *dag.ExtensionCluster:
 		name := cluster.Name
 		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoyv2.ExtensionCluster(cluster)
+			v.clusters[name] = envoy_v2.ExtensionCluster(cluster)
 		}
 	}
 

@@ -20,14 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/contour"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/xds"
+	"github.com/projectcontour/contour/internal/xdscache"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -42,7 +41,7 @@ import (
 func TestGRPC(t *testing.T) {
 	// tr and et is recreated before the start of each test.
 	var et *EndpointsTranslator
-	var eh *contour.EventHandler
+	var eh *xdscache.EventHandler
 
 	tests := map[string]func(*testing.T, *grpc.ClientConn){
 		"StreamClusters": func(t *testing.T, cc *grpc.ClientConn) {
@@ -193,7 +192,7 @@ func TestGRPC(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			et = NewEndpointsTranslator(fixture.NewTestLogger(t))
 
-			resources := []contour.ResourceCache{
+			resources := []xdscache.ResourceCache{
 				NewListenerCache(ListenerConfig{}, "", 0),
 				&SecretCache{},
 				&RouteCache{},
@@ -201,12 +200,12 @@ func TestGRPC(t *testing.T) {
 				et,
 			}
 
-			eh = &contour.EventHandler{
-				Observer:    dag.ComposeObservers(contour.ObserversOf(resources)...),
+			eh = &xdscache.EventHandler{
+				Observer:    dag.ComposeObservers(xdscache.ObserversOf(resources)...),
 				FieldLogger: log,
 			}
 
-			srv := xds.RegisterServer(xds.NewContourServer(log, contour.ResourcesOf(resources)...), nil)
+			srv := xds.RegisterServer(xds.NewContourServer(log, xdscache.ResourcesOf(resources)...), nil)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 			done := make(chan error, 1)

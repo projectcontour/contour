@@ -11,35 +11,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package xdscache
 
-import (
-	"context"
-	"fmt"
-	"time"
-)
+// Observer is an interface for receiving notifications.
+type Observer interface {
+	Refresh()
+}
 
-func ExampleCond() {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	ch := make(chan int, 1)
-	last := 0
-	var c Cond
-	go func() {
-		for {
-			time.Sleep(100 * time.Millisecond)
-			c.Notify()
-		}
-	}()
+// ObserverFunc is a function that implements the Observer interface
+// by calling itself. It can be nil.
+type ObserverFunc func()
 
-	for {
-		c.Register(ch, last)
-		select {
-		case last = <-ch:
-			fmt.Println("notification received:", last)
-		case <-ctx.Done():
-			fmt.Println("timeout")
-			return
-		}
+func (f ObserverFunc) Refresh() {
+	if f != nil {
+		f()
 	}
+}
+
+var _ Observer = ObserverFunc(nil)
+
+// ComposeObservers returns a new Observer that calls each of its arguments in turn.
+func ComposeObservers(observers ...Observer) Observer {
+	return ObserverFunc(func() {
+		for _, o := range observers {
+			o.Refresh()
+		}
+	})
 }

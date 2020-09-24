@@ -16,58 +16,58 @@ package featuretests
 // HTTPProxy helpers
 
 import (
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
-func matchconditions(first projcontour.MatchCondition, rest ...projcontour.MatchCondition) []projcontour.MatchCondition {
-	return append([]projcontour.MatchCondition{first}, rest...)
+func matchconditions(first contour_api_v1.MatchCondition, rest ...contour_api_v1.MatchCondition) []contour_api_v1.MatchCondition {
+	return append([]contour_api_v1.MatchCondition{first}, rest...)
 }
 
-func prefixMatchCondition(prefix string) projcontour.MatchCondition {
-	return projcontour.MatchCondition{
+func prefixMatchCondition(prefix string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
 		Prefix: prefix,
 	}
 }
 
-func headerContainsMatchCondition(name, value string) projcontour.MatchCondition {
-	return projcontour.MatchCondition{
-		Header: &projcontour.HeaderMatchCondition{
+func headerContainsMatchCondition(name, value string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		Header: &contour_api_v1.HeaderMatchCondition{
 			Name:     name,
 			Contains: value,
 		},
 	}
 }
 
-func headerNotContainsMatchCondition(name, value string) projcontour.MatchCondition {
-	return projcontour.MatchCondition{
-		Header: &projcontour.HeaderMatchCondition{
+func headerNotContainsMatchCondition(name, value string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		Header: &contour_api_v1.HeaderMatchCondition{
 			Name:        name,
 			NotContains: value,
 		},
 	}
 }
 
-func headerExactMatchCondition(name, value string) projcontour.MatchCondition {
-	return projcontour.MatchCondition{
-		Header: &projcontour.HeaderMatchCondition{
+func headerExactMatchCondition(name, value string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		Header: &contour_api_v1.HeaderMatchCondition{
 			Name:  name,
 			Exact: value,
 		},
 	}
 }
 
-func headerNotExactMatchCondition(name, value string) projcontour.MatchCondition {
-	return projcontour.MatchCondition{
-		Header: &projcontour.HeaderMatchCondition{
+func headerNotExactMatchCondition(name, value string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		Header: &contour_api_v1.HeaderMatchCondition{
 			Name:     name,
 			NotExact: value,
 		},
 	}
 }
 
-func headerPresentMatchCondition(name string) projcontour.MatchCondition {
-	return projcontour.MatchCondition{
-		Header: &projcontour.HeaderMatchCondition{
+func headerPresentMatchCondition(name string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
+		Header: &contour_api_v1.HeaderMatchCondition{
 			Name:    name,
 			Present: true,
 		},

@@ -18,8 +18,8 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
@@ -28,7 +28,7 @@ import (
 )
 
 // Update helper to modify a proxy and call rh.OnUpdate. Returns the modified object.
-func update(rh cache.ResourceEventHandler, old *projcontour.HTTPProxy, modify func(*projcontour.HTTPProxy)) *projcontour.HTTPProxy {
+func update(rh cache.ResourceEventHandler, old *contour_api_v1.HTTPProxy, modify func(*contour_api_v1.HTTPProxy)) *contour_api_v1.HTTPProxy {
 	updated := old.DeepCopy()
 
 	modify(updated)
@@ -45,18 +45,18 @@ func basic(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	vhost := fixture.NewProxy("kuard").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.projectcontour.io",
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/api")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
-				PathRewritePolicy: &projcontour.PathRewritePolicy{
-					ReplacePrefix: []projcontour.ReplacePrefix{
+				PathRewritePolicy: &contour_api_v1.PathRewritePolicy{
+					ReplacePrefix: []contour_api_v1.ReplacePrefix{
 						{
 							Replacement: "/api/v1",
 						},
@@ -69,8 +69,8 @@ func basic(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/api/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1/"),
@@ -84,14 +84,14 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// Update the vhost to make the replacement ambiguous. This should remove the generated config.
 	vhost = update(rh, vhost,
-		func(vhost *projcontour.HTTPProxy) {
+		func(vhost *contour_api_v1.HTTPProxy) {
 			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]projcontour.ReplacePrefix{
+				[]contour_api_v1.ReplacePrefix{
 					{Replacement: "/api/v1"},
 					{Replacement: "/api/envoy_api_v2"},
 				}
@@ -99,19 +99,19 @@ func basic(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
-	}).Status(vhost).Equals(projcontour.HTTPProxyStatus{
+	}).Status(vhost).Equals(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusInvalid,
 		Description:   "ambiguous prefix replacement",
 	})
 
 	// The replacement isn't ambiguous any more because only one of the prefixes matches.
 	vhost = update(rh, vhost,
-		func(vhost *projcontour.HTTPProxy) {
+		func(vhost *contour_api_v1.HTTPProxy) {
 			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]projcontour.ReplacePrefix{
+				[]contour_api_v1.ReplacePrefix{
 					{Prefix: "/foo", Replacement: "/api/v1"},
 					{Prefix: "/api", Replacement: "/api/envoy_api_v2"},
 				}
@@ -119,8 +119,8 @@ func basic(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/api/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/envoy_api_v2/"),
@@ -134,15 +134,15 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// But having duplicate prefixes in the replacements makes
 	// it ambigious again.
 	vhost = update(rh, vhost,
-		func(vhost *projcontour.HTTPProxy) {
+		func(vhost *contour_api_v1.HTTPProxy) {
 			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]projcontour.ReplacePrefix{
+				[]contour_api_v1.ReplacePrefix{
 					{Prefix: "/foo", Replacement: "/api/v1"},
 					{Prefix: "/foo", Replacement: "/api/envoy_api_v2"},
 				}
@@ -150,19 +150,19 @@ func basic(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
-	}).Status(vhost).Equals(projcontour.HTTPProxyStatus{
+	}).Status(vhost).Equals(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusInvalid,
 		Description:   "duplicate replacement prefix '/foo'",
 	})
 
 	// The "/api" prefix should have precedence over the empty prefix.
 	vhost = update(rh, vhost,
-		func(vhost *projcontour.HTTPProxy) {
+		func(vhost *contour_api_v1.HTTPProxy) {
 			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]projcontour.ReplacePrefix{
+				[]contour_api_v1.ReplacePrefix{
 					{Prefix: "/api", Replacement: "/api/full"},
 					{Prefix: "", Replacement: "/api/empty"},
 				}
@@ -170,8 +170,8 @@ func basic(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/api/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/full/"),
@@ -185,21 +185,21 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// If we remove the prefix match condition, the implicit '/' prefix
 	// will be used. So we expect that the default replacement prefix
 	// will be used.
 	update(rh, vhost,
-		func(vhost *projcontour.HTTPProxy) {
+		func(vhost *contour_api_v1.HTTPProxy) {
 			vhost.Spec.Routes[0].Conditions = nil
 		})
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("kuard.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("kuard.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/empty"),
@@ -209,7 +209,7 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 }
 
@@ -221,11 +221,11 @@ func multiInclude(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	vhost1 := fixture.NewProxy("host1").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "host1.projectcontour.io",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:       "app",
 				Namespace:  "default",
 				Conditions: matchconditions(prefixMatchCondition("/v1")),
@@ -233,11 +233,11 @@ func multiInclude(t *testing.T) {
 		})
 
 	vhost2 := fixture.NewProxy("host2").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "host2.projectcontour.io",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:       "app",
 				Namespace:  "default",
 				Conditions: matchconditions(prefixMatchCondition("/envoy_api_v2")),
@@ -245,14 +245,14 @@ func multiInclude(t *testing.T) {
 		})
 
 	app := fixture.NewProxy("app").WithSpec(
-		projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
-				PathRewritePolicy: &projcontour.PathRewritePolicy{
-					ReplacePrefix: []projcontour.ReplacePrefix{
+				PathRewritePolicy: &contour_api_v1.PathRewritePolicy{
+					ReplacePrefix: []contour_api_v1.ReplacePrefix{
 						{Prefix: "/envoy_api_v2", Replacement: "/api/envoy_api_v2"},
 						{Prefix: "/v1", Replacement: "/api/v1"},
 					},
@@ -266,8 +266,8 @@ func multiInclude(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("host1.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("host1.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/v1/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1/"),
@@ -277,7 +277,7 @@ func multiInclude(t *testing.T) {
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1"),
 					},
 				),
-				envoyv2.VirtualHost("host2.projectcontour.io",
+				envoy_v2.VirtualHost("host2.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/envoy_api_v2/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/envoy_api_v2/"),
@@ -291,24 +291,24 @@ func multiInclude(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	).Status(vhost2).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// Remove one of the replacements, and one cluster loses the rewrite.
 	update(rh, app,
-		func(app *projcontour.HTTPProxy) {
+		func(app *contour_api_v1.HTTPProxy) {
 			app.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
-				[]projcontour.ReplacePrefix{
+				[]contour_api_v1.ReplacePrefix{
 					{Prefix: "/v1", Replacement: "/api/v1"},
 				}
 		})
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("host1.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("host1.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/v1/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1/"),
@@ -318,7 +318,7 @@ func multiInclude(t *testing.T) {
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v1"),
 					},
 				),
-				envoyv2.VirtualHost("host2.projectcontour.io",
+				envoy_v2.VirtualHost("host2.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/envoy_api_v2"),
 						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
@@ -328,9 +328,9 @@ func multiInclude(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	).Status(vhost2).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 }
 
@@ -342,18 +342,18 @@ func replaceWithSlash(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	vhost1 := fixture.NewProxy("host1").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "host1.projectcontour.io",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
 				Conditions: matchconditions(prefixMatchCondition("/foo")),
-				PathRewritePolicy: &projcontour.PathRewritePolicy{
-					ReplacePrefix: []projcontour.ReplacePrefix{
+				PathRewritePolicy: &contour_api_v1.PathRewritePolicy{
+					ReplacePrefix: []contour_api_v1.ReplacePrefix{
 						{Replacement: "/"},
 					},
 				},
@@ -361,18 +361,18 @@ func replaceWithSlash(t *testing.T) {
 		})
 
 	vhost2 := fixture.NewProxy("host2").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "host2.projectcontour.io",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
 				Conditions: matchconditions(prefixMatchCondition("/bar/")),
-				PathRewritePolicy: &projcontour.PathRewritePolicy{
-					ReplacePrefix: []projcontour.ReplacePrefix{
+				PathRewritePolicy: &contour_api_v1.PathRewritePolicy{
+					ReplacePrefix: []contour_api_v1.ReplacePrefix{
 						{Replacement: "/"},
 					},
 				},
@@ -387,8 +387,8 @@ func replaceWithSlash(t *testing.T) {
 	// too many '/'s.
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("host1.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("host1.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/foo/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
@@ -398,7 +398,7 @@ func replaceWithSlash(t *testing.T) {
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
 					},
 				),
-				envoyv2.VirtualHost("host2.projectcontour.io",
+				envoy_v2.VirtualHost("host2.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/bar/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
@@ -412,19 +412,19 @@ func replaceWithSlash(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	).Status(vhost2).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 	// Not swap the routing and replacement prefixes. Because the routing
 	// prefix is '/', the replacement should just end up being prepended
 	// to whatever the client URL is. No special handling of trailing '/'.
 	update(rh, vhost2,
-		func(vhost *projcontour.HTTPProxy) {
+		func(vhost *contour_api_v1.HTTPProxy) {
 			vhost.Spec.Routes[0].Conditions = matchconditions(prefixMatchCondition("/"))
-			vhost.Spec.Routes[0].PathRewritePolicy = &projcontour.PathRewritePolicy{
-				ReplacePrefix: []projcontour.ReplacePrefix{
+			vhost.Spec.Routes[0].PathRewritePolicy = &contour_api_v1.PathRewritePolicy{
+				ReplacePrefix: []contour_api_v1.ReplacePrefix{
 					{Replacement: "/bar"},
 				},
 			}
@@ -432,8 +432,8 @@ func replaceWithSlash(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("host1.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("host1.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/foo/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
@@ -443,7 +443,7 @@ func replaceWithSlash(t *testing.T) {
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/"),
 					},
 				),
-				envoyv2.VirtualHost("host2.projectcontour.io",
+				envoy_v2.VirtualHost("host2.projectcontour.io",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/bar"),
@@ -453,9 +453,9 @@ func replaceWithSlash(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	).Status(vhost2).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 }
 
@@ -473,14 +473,14 @@ func artifactoryDocker(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(fixture.NewProxy("artifactory/routes").WithSpec(
-		projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "service",
 					Port: 8080,
 				}},
-				PathRewritePolicy: &projcontour.PathRewritePolicy{
-					ReplacePrefix: []projcontour.ReplacePrefix{
+				PathRewritePolicy: &contour_api_v1.PathRewritePolicy{
+					ReplacePrefix: []contour_api_v1.ReplacePrefix{
 						{Prefix: "/envoy_api_v2/container-sandbox", Replacement: "/artifactory/api/docker/container-sandbox/envoy_api_v2"},
 						{Prefix: "/envoy_api_v2/container-release", Replacement: "/artifactory/api/docker/container-release/envoy_api_v2"},
 						{Prefix: "/envoy_api_v2/container-external", Replacement: "/artifactory/api/docker/container-external/envoy_api_v2"},
@@ -492,11 +492,11 @@ func artifactoryDocker(t *testing.T) {
 	)
 
 	rh.OnAdd(fixture.NewProxy("artifactory/artifactory").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "artifactory.projectcontour.io",
 			},
-			Includes: []projcontour.Include{
+			Includes: []contour_api_v1.Include{
 				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/envoy_api_v2/container-sandbox"))},
 				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/envoy_api_v2/container-release"))},
 				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/envoy_api_v2/container-external"))},
@@ -507,8 +507,8 @@ func artifactoryDocker(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("artifactory.projectcontour.io",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("artifactory.projectcontour.io",
 
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/envoy_api_v2/container-sandbox/"),

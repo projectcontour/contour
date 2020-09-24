@@ -18,8 +18,8 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -65,8 +65,8 @@ func TestWebsocketsIngress(t *testing.T) {
 	// check legacy websocket annotation
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("websocket.hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("websocket.hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
@@ -107,8 +107,8 @@ func TestWebsocketsIngress(t *testing.T) {
 	// check websocket annotation
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("websocket.hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("websocket.hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/ws2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
@@ -132,30 +132,30 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s2)
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "websocket.hello.world"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}, {
 				Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
 				EnableWebsockets: true,
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}, {
 				Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
 				EnableWebsockets: true,
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -166,8 +166,8 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("websocket.hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("websocket.hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/ws-2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
@@ -186,23 +186,23 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	hp2 := &projcontour.HTTPProxy{
+	hp2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "websocket.hello.world"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "websocket.hello.world"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
 			}, {
 				Conditions:       matchconditions(prefixMatchCondition("/ws-1")),
 				EnableWebsockets: true,
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}, {
@@ -212,7 +212,7 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 			}, {
 				Conditions:       matchconditions(prefixMatchCondition("/ws-2")),
 				EnableWebsockets: true,
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -223,8 +223,8 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("websocket.hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("websocket.hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/ws-2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),

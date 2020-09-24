@@ -11,12 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contour
+package xdscache
 
 import (
 	"testing"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -66,21 +66,21 @@ func TestHTTPProxyMetrics(t *testing.T) {
 		})
 	}
 
-	// proxy1 is a valid httpproxy
-	proxy1 := &projcontour.HTTPProxy{
+	// proxy1 is a valid httpproxys
+	proxy1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -89,20 +89,20 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	}
 
 	// proxy2 is invalid because it contains a service with negative port
-	proxy2 := &projcontour.HTTPProxy{
+	proxy2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: -80,
 				}},
@@ -111,20 +111,20 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	}
 
 	// proxy3 is invalid because it lives outside the roots namespace
-	proxy3 := &projcontour.HTTPProxy{
+	proxy3 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "finance",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foobar",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -133,17 +133,17 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	}
 
 	//// proxy4 is invalid because its match prefix does not match its parent's (proxy1)
-	//proxy4 := &projcontour.HTTPProxy{
+	//proxy4 := &contour_api_v1.HTTPProxy{
 	//	ObjectMeta: metav1.ObjectMeta{
 	//		Namespace: "roots",
 	//		Name:      "delegated",
 	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		Routes: []projcontour.Route{{
-	//			Conditions: []projcontour.MatchCondition{{
+	//	Spec: contour_api_v1.HTTPProxySpec{
+	//		Routes: []contour_api_v1.Route{{
+	//			Conditions: []contour_api_v1.MatchCondition{{
 	//				Prefix: "/doesnotmatch",
 	//			}},
-	//			Services: []projcontour.Service{{
+	//			Services: []contour_api_v1.Service{{
 	//				Name: "home",
 	//				Port: 8080,
 	//			}},
@@ -152,18 +152,18 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	//}
 
 	// proxy6 is invalid because it delegates to itself, producing a cycle
-	proxy6 := &projcontour.HTTPProxy{
+	proxy6 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "self",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name: "self",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -171,33 +171,33 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	}
 
 	// proxy7 delegates to proxy8, which is invalid because it delegates back to proxy7
-	proxy7 := &projcontour.HTTPProxy{
+	proxy7 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "parent",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name: "child",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
 		},
 	}
 
-	proxy8 := &projcontour.HTTPProxy{
+	proxy8 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "child",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Includes: []projcontour.Include{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Includes: []contour_api_v1.Include{{
 				Name: "parent",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -205,23 +205,23 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	}
 
 	//// proxy9 is invalid because it has a route that both delegates and has a list of services
-	//proxy9 := &projcontour.HTTPProxy{
+	//proxy9 := &contour_api_v1.HTTPProxy{
 	//	ObjectMeta: metav1.ObjectMeta{
 	//		Namespace: "roots",
 	//		Name:      "parent",
 	//	},
-	//	Spec: projcontour.HTTPProxySpec{
-	//		VirtualHost: &projcontour.VirtualHost{
+	//	Spec: contour_api_v1.HTTPProxySpec{
+	//		VirtualHost: &contour_api_v1.VirtualHost{
 	//			Fqdn: "example.com",
 	//		},
-	//		Includes: []projcontour.Include{{
+	//		Includes: []contour_api_v1.Include{{
 	//			Name: "child",
-	//			Conditions: []projcontour.MatchCondition{{
+	//			Conditions: []contour_api_v1.MatchCondition{{
 	//				Prefix: "/foo",
 	//			}},
 	//		}},
-	//		Routes: []projcontour.Route{{
-	//			Services: []projcontour.Service{{
+	//		Routes: []contour_api_v1.Route{{
+	//			Services: []contour_api_v1.Service{{
 	//				Name: "kuard",
 	//				Port: 8080,
 	//			}},
@@ -230,40 +230,40 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	//}
 
 	// proxy10 delegates to proxy11 and proxy12.
-	proxy10 := &projcontour.HTTPProxy{
+	proxy10 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "parent",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}, {
 				Name: "invalidChild",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/bar",
 				}},
 			}},
 		},
 	}
 
-	proxy11 := &projcontour.HTTPProxy{
+	proxy11 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "validChild",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "foo",
 					Port: 8080,
 				}},
@@ -272,17 +272,17 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	}
 
 	// proxy12 is invalid because it contains an invalid port
-	proxy12 := &projcontour.HTTPProxy{
+	proxy12 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "invalidChild",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/bar",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "foo",
 					Port: 12345678,
 				}},
@@ -291,18 +291,18 @@ func TestHTTPProxyMetrics(t *testing.T) {
 	}
 
 	// proxy13 is invalid because it does not specify and FQDN
-	proxy13 := &projcontour.HTTPProxy{
+	proxy13 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "parent",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "foo",
 					Port: 8080,
 				}},
@@ -310,16 +310,16 @@ func TestHTTPProxyMetrics(t *testing.T) {
 		},
 	}
 
-	proxy14 := &projcontour.HTTPProxy{
+	proxy14 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "invalidParent",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{},
-			Includes: []projcontour.Include{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{},
+			Includes: []contour_api_v1.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
