@@ -2517,7 +2517,7 @@ func TestDAGStatus(t *testing.T) {
 			}: {
 				Object:      invalidResponseTimeout,
 				Status:      "invalid",
-				Description: "route.timeoutPolicy failed to parse: error parsing response timeout: unable to parse timeout string \"invalid-val\": time: invalid duration invalid-val",
+				Description: "route.timeoutPolicy failed to parse: error parsing response timeout: unable to parse timeout string \"invalid-val\": time: invalid duration \"invalid-val\"",
 				Vhost:       invalidResponseTimeout.Spec.VirtualHost.Fqdn,
 			},
 		},
@@ -2556,7 +2556,7 @@ func TestDAGStatus(t *testing.T) {
 			}: {
 				Object:      invalidIdleTimeout,
 				Status:      "invalid",
-				Description: "route.timeoutPolicy failed to parse: error parsing idle timeout: unable to parse timeout string \"invalid-val\": time: invalid duration invalid-val",
+				Description: "route.timeoutPolicy failed to parse: error parsing idle timeout: unable to parse timeout string \"invalid-val\": time: invalid duration \"invalid-val\"",
 				Vhost:       invalidIdleTimeout.Spec.VirtualHost.Fqdn,
 			},
 		},
