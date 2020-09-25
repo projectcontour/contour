@@ -36,6 +36,31 @@ func TestDAGStatus(t *testing.T) {
 		want                map[types.NamespacedName]Status
 	}
 
+	run := func(desc string, tc testcase) {
+		t.Run(desc, func(t *testing.T) {
+			builder := Builder{
+				Source: KubernetesCache{
+					RootNamespaces: []string{"roots", "marketing"},
+					FieldLogger:    fixture.NewTestLogger(t),
+				},
+				Processors: []Processor{
+					&IngressProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&HTTPProxyProcessor{
+						FallbackCertificate: tc.fallbackCertificate,
+					},
+					&ListenerProcessor{},
+				},
+			}
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			dag := builder.Build()
+			got := dag.Statuses()
+			assert.Equal(t, tc.want, got)
+		})
+	}
 	tests := make(map[string]testcase)
 
 	// Common test fixtures (used across more than one test)
@@ -61,12 +86,12 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	// Tests using common fixtures
-	tests["root proxy does not specify FQDN"] = testcase{
+	run("root proxy does not specify FQDN", testcase{
 		objs: []interface{}{proxyNoFQDN},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: {Object: proxyNoFQDN, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 		},
-	}
+	})
 
 	// Simple Valid HTTPProxy
 	proxyValidHomeService := &projcontour.HTTPProxy{
@@ -90,12 +115,12 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["valid proxy"] = testcase{
+	run("valid proxy", testcase{
 		objs: []interface{}{proxyValidHomeService, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyValidHomeService.Name, Namespace: proxyValidHomeService.Namespace}: {Object: proxyValidHomeService, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
 		},
-	}
+	})
 
 	// Multiple Includes, one invalid
 	proxyMultiIncludeOneInvalid := &projcontour.HTTPProxy{
@@ -169,23 +194,23 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy has multiple includes, one is invalid"] = testcase{
+	run("proxy has multiple includes, one is invalid", testcase{
 		objs: []interface{}{proxyMultiIncludeOneInvalid, proxyChildValidFoo2, proxyChildInvalidBadPort, fixture.ServiceRootsFoo2, fixture.ServiceRootsFoo3InvalidPort},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:                 {Object: proxyChildValidFoo2, Status: "valid", Description: "valid HTTPProxy"},
 			{Name: proxyChildInvalidBadPort.Name, Namespace: proxyChildInvalidBadPort.Namespace}:       {Object: proxyChildInvalidBadPort, Status: "invalid", Description: `service "foo3": port must be in the range 1-65535`},
 			{Name: proxyMultiIncludeOneInvalid.Name, Namespace: proxyMultiIncludeOneInvalid.Namespace}: {Object: proxyMultiIncludeOneInvalid, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
 		},
-	}
+	})
 
-	tests["multi-parent children is not orphaned when one of the parents is invalid"] = testcase{
+	run("multi-parent children is not orphaned when one of the parents is invalid", testcase{
 		objs: []interface{}{proxyNoFQDN, proxyChildValidFoo2, proxyIncludeValidChild, fixture.ServiceRootsKuard, fixture.ServiceRootsFoo2},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}:                       {Object: proxyNoFQDN, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:       {Object: proxyChildValidFoo2, Status: "valid", Description: "valid HTTPProxy"},
 			{Name: proxyIncludeValidChild.Name, Namespace: proxyIncludeValidChild.Namespace}: {Object: proxyIncludeValidChild, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
 		},
-	}
+	})
 
 	ingressSharedService := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -226,7 +251,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	// issue 1399
-	tests["service shared across ingress and httpproxy tcpproxy"] = testcase{
+	run("service shared across ingress and httpproxy tcpproxy", testcase{
 		objs: []interface{}{
 			fixture.SecretRootsCert, fixture.ServiceRootsNginx, ingressSharedService, proxyTCPSharedService,
 		},
@@ -238,7 +263,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	proxyDelegatedTCPTLS := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -262,7 +287,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	// issue 1347
-	tests["tcpproxy with tls delegation failure"] = testcase{
+	run("tcpproxy with tls delegation failure", testcase{
 		objs: []interface{}{
 			fixture.SecretProjectContourCert,
 			proxyDelegatedTCPTLS,
@@ -275,7 +300,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       proxyDelegatedTCPTLS.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	proxyDelegatedTLS := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -299,7 +324,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	// issue 1348
-	tests["routes with tls delegation failure"] = testcase{
+	run("routes with tls delegation failure", testcase{
 		objs: []interface{}{
 			fixture.SecretProjectContourCert,
 			proxyDelegatedTLS,
@@ -312,7 +337,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       proxyDelegatedTLS.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	serviceTLSPassthrough := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -365,7 +390,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	// issue 910
-	tests["non tls routes can be combined with tcp proxy"] = testcase{
+	run("non tls routes can be combined with tcp proxy", testcase{
 		objs: []interface{}{
 			serviceTLSPassthrough,
 			proxyPassthroughProxyNonSecure,
@@ -378,7 +403,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       proxyPassthroughProxyNonSecure.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	proxyMultipleIncludersSite1 := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -427,7 +452,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["two root httpproxies delegated to the same object should not conflict on hostname"] = testcase{
+	run("two root httpproxies delegated to the same object should not conflict on hostname", testcase{
 		objs: []interface{}{
 			fixture.ServiceRootsKuard, proxyMultipleIncludersSite1, proxyMultipleIncludersSite2, proxyMultiIncludeChild,
 		},
@@ -450,7 +475,7 @@ func TestDAGStatus(t *testing.T) {
 				Description: "valid HTTPProxy",
 			},
 		},
-	}
+	})
 
 	// proxyInvalidNegativePortHomeService is invalid because it contains a service with negative port
 	proxyInvalidNegativePortHomeService := &projcontour.HTTPProxy{
@@ -474,12 +499,12 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy invalid port in service"] = testcase{
+	run("proxy invalid port in service", testcase{
 		objs: []interface{}{proxyInvalidNegativePortHomeService},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidNegativePortHomeService.Name, Namespace: proxyInvalidNegativePortHomeService.Namespace}: {Object: proxyInvalidNegativePortHomeService, Status: "invalid", Description: `service "home": port must be in the range 1-65535`, Vhost: "example.com"},
 		},
-	}
+	})
 
 	// proxyInvalidOutsideRootNamespace is invalid because it lives outside the roots namespace
 	proxyInvalidOutsideRootNamespace := &projcontour.HTTPProxy{
@@ -503,12 +528,12 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["root proxy outside of roots namespace"] = testcase{
+	run("root proxy outside of roots namespace", testcase{
 		objs: []interface{}{proxyInvalidOutsideRootNamespace},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidOutsideRootNamespace.Name, Namespace: proxyInvalidOutsideRootNamespace.Namespace}: {Object: proxyInvalidOutsideRootNamespace, Status: "invalid", Description: "root HTTPProxy cannot be defined in this namespace"},
 		},
-	}
+	})
 
 	// proxyInvalidIncludeCycle is invalid because it delegates to itself, producing a cycle
 	proxyInvalidIncludeCycle := &projcontour.HTTPProxy{
@@ -536,7 +561,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy self-edge produces a cycle"] = testcase{
+	run("proxy self-edge produces a cycle", testcase{
 		objs: []interface{}{proxyInvalidIncludeCycle, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidIncludeCycle.Name, Namespace: proxyInvalidIncludeCycle.Namespace}: {
@@ -546,7 +571,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	// proxyIncludesProxyWithIncludeCycle delegates to proxy8, which is invalid because proxy8 delegates back to proxy8
 	proxyIncludesProxyWithIncludeCycle := &projcontour.HTTPProxy{
@@ -584,7 +609,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy child delegates to parent, producing a cycle"] = testcase{
+	run("proxy child delegates to parent, producing a cycle", testcase{
 		objs: []interface{}{proxyIncludesProxyWithIncludeCycle, proxyIncludedChildInvalidIncludeCycle},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyIncludesProxyWithIncludeCycle.Name, Namespace: proxyIncludesProxyWithIncludeCycle.Namespace}: {
@@ -599,14 +624,14 @@ func TestDAGStatus(t *testing.T) {
 				Description: "include creates a delegation cycle: roots/parent -> roots/child -> roots/child",
 			},
 		},
-	}
+	})
 
-	tests["proxy orphaned route"] = testcase{
+	run("proxy orphaned route", testcase{
 		objs: []interface{}{proxyIncludedChildInvalidIncludeCycle},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyIncludedChildInvalidIncludeCycle.Name, Namespace: proxyIncludedChildInvalidIncludeCycle.Namespace}: {Object: proxyIncludedChildInvalidIncludeCycle, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
 		},
-	}
+	})
 
 	proxyIncludedChildValid := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -641,13 +666,13 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy invalid parent orphans children"] = testcase{
+	run("proxy invalid parent orphans children", testcase{
 		objs: []interface{}{proxyNotRootIncludeRootProxy, proxyIncludedChildValid},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyNotRootIncludeRootProxy.Name, Namespace: proxyNotRootIncludeRootProxy.Namespace}: {Object: proxyNotRootIncludeRootProxy, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
 			{Name: proxyIncludedChildValid.Name, Namespace: proxyIncludedChildValid.Namespace}:           {Object: proxyIncludedChildValid, Status: "orphaned", Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy"},
 		},
-	}
+	})
 
 	// proxyWildCardFQDN is invalid because it contains a wildcarded fqdn
 	proxyWildCardFQDN := &projcontour.HTTPProxy{
@@ -671,12 +696,12 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy invalid FQDN contains wildcard"] = testcase{
+	run("proxy invalid FQDN contains wildcard", testcase{
 		objs: []interface{}{proxyWildCardFQDN},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyWildCardFQDN.Name, Namespace: proxyWildCardFQDN.Namespace}: {Object: proxyWildCardFQDN, Status: "invalid", Description: `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`, Vhost: "example.*.com"},
 		},
-	}
+	})
 
 	// proxyInvalidServiceInvalid is invalid because it references an invalid service
 	proxyInvalidServiceInvalid := &projcontour.HTTPProxy{
@@ -700,7 +725,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy missing service shows invalid status"] = testcase{
+	run("proxy missing service shows invalid status", testcase{
 		objs: []interface{}{proxyInvalidServiceInvalid},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidServiceInvalid.Name, Namespace: proxyInvalidServiceInvalid.Namespace}: {
@@ -710,7 +735,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       proxyInvalidServiceInvalid.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	// proxyInvalidServicePortInvalid is invalid because it references an invalid port on a service
 	proxyInvalidServicePortInvalid := &projcontour.HTTPProxy{
@@ -734,7 +759,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with service missing port shows invalid status"] = testcase{
+	run("proxy with service missing port shows invalid status", testcase{
 		objs: []interface{}{proxyInvalidServicePortInvalid, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidServicePortInvalid.Name, Namespace: proxyInvalidServicePortInvalid.Namespace}: {
@@ -744,7 +769,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       proxyInvalidServicePortInvalid.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	proxyValidExampleCom := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -786,7 +811,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["insert conflicting proxies due to fqdn reuse"] = testcase{
+	run("insert conflicting proxies due to fqdn reuse", testcase{
 		objs: []interface{}{proxyValidExampleCom, proxyValidReuseExampleCom},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyValidExampleCom.Name, Namespace: proxyValidExampleCom.Namespace}: {
@@ -802,7 +827,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	proxyRootIncludesRoot := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -847,7 +872,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["root proxy including another root"] = testcase{
+	run("root proxy including another root", testcase{
 		objs: []interface{}{proxyRootIncludesRoot, proxyRootIncludedByRoot},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyRootIncludesRoot.Name, Namespace: proxyRootIncludesRoot.Namespace}: {
@@ -863,7 +888,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "blog.containersteve.com",
 			},
 		},
-	}
+	})
 
 	proxyIncludesRootDifferentFQDN := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -902,7 +927,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["root proxy including another root w/ different hostname"] = testcase{
+	run("root proxy including another root w/ different hostname", testcase{
 		objs: []interface{}{proxyIncludesRootDifferentFQDN, proxyRootIncludedByRootDiffFQDN, fixture.ServiceMarketingGreen},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyIncludesRootDifferentFQDN.Name, Namespace: proxyIncludesRootDifferentFQDN.Namespace}: {
@@ -918,7 +943,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "www.containersteve.com",
 			},
 		},
-	}
+	})
 
 	proxyValidIncludeBlogMarketing := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -954,7 +979,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy includes another"] = testcase{
+	run("proxy includes another", testcase{
 		objs: []interface{}{proxyValidIncludeBlogMarketing, proxyRootValidIncludesBlogMarketing, fixture.ServiceRootsKuard, fixture.ServiceMarketingGreen},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyValidIncludeBlogMarketing.Name, Namespace: proxyValidIncludeBlogMarketing.Namespace}: {
@@ -969,7 +994,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	proxyValidWithMirror := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -996,7 +1021,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with mirror"] = testcase{
+	run("proxy with mirror", testcase{
 		objs: []interface{}{proxyValidWithMirror, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyValidWithMirror.Name, Namespace: proxyValidWithMirror.Namespace}: {
@@ -1006,7 +1031,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	proxyInvalidTwoMirrors := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1034,7 +1059,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with two mirrors"] = testcase{
+	run("proxy with two mirrors", testcase{
 		objs: []interface{}{proxyInvalidTwoMirrors, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidTwoMirrors.Name, Namespace: proxyInvalidTwoMirrors.Namespace}: {
@@ -1044,7 +1069,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	// proxy28 is a proxy with duplicated route condition headers
 	proxyInvalidDuplicateMatchConditionHeaders := &projcontour.HTTPProxy{
@@ -1078,7 +1103,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["duplicate route condition headers"] = testcase{
+	run("duplicate route condition headers", testcase{
 		objs: []interface{}{proxyInvalidDuplicateMatchConditionHeaders, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidDuplicateMatchConditionHeaders.Name, Namespace: proxyInvalidDuplicateMatchConditionHeaders.Namespace}: {
@@ -1087,7 +1112,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost: "example.com",
 			},
 		},
-	}
+	})
 
 	// proxy29 is a proxy with duplicated invalid include condition headers
 	proxyInvalidDuplicateIncludeCondtionHeaders := &projcontour.HTTPProxy{
@@ -1139,7 +1164,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["duplicate include condition headers"] = testcase{
+	run("duplicate include condition headers", testcase{
 		objs: []interface{}{proxyInvalidDuplicateIncludeCondtionHeaders, proxyValidDelegatedRoots, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidDuplicateIncludeCondtionHeaders.Name,
@@ -1155,7 +1180,7 @@ func TestDAGStatus(t *testing.T) {
 				Description: "cannot specify duplicate header 'exact match' conditions in the same route",
 				Vhost:       ""},
 		},
-	}
+	})
 
 	// proxy31 is a proxy with duplicated valid route condition headers
 	proxyInvalidRouteConditionHeaders := &projcontour.HTTPProxy{
@@ -1189,7 +1214,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["duplicate valid route condition headers"] = testcase{
+	run("duplicate valid route condition headers", testcase{
 		objs: []interface{}{proxyInvalidRouteConditionHeaders, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidRouteConditionHeaders.Name, Namespace: proxyInvalidRouteConditionHeaders.Namespace}: {
@@ -1198,7 +1223,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost: "example.com",
 			},
 		},
-	}
+	})
 
 	proxyInvalidMultiplePrefixes := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1225,7 +1250,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with two prefix conditions on route"] = testcase{
+	run("proxy with two prefix conditions on route", testcase{
 		objs: []interface{}{proxyInvalidMultiplePrefixes, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidMultiplePrefixes.Name, Namespace: proxyInvalidMultiplePrefixes.Namespace}: {
@@ -1235,7 +1260,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	proxyInvalidTwoPrefixesWithInclude := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1281,7 +1306,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with two prefix conditions orphans include"] = testcase{
+	run("proxy with two prefix conditions orphans include", testcase{
 		objs: []interface{}{proxyInvalidTwoPrefixesWithInclude, proxyValidChildTeamA, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidTwoPrefixesWithInclude.Name, Namespace: proxyInvalidTwoPrefixesWithInclude.Namespace}: {
@@ -1295,7 +1320,7 @@ func TestDAGStatus(t *testing.T) {
 				Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 			},
 		},
-	}
+	})
 
 	proxyInvalidPrefixNoSlash := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1320,7 +1345,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with prefix conditions on route that does not start with slash"] = testcase{
+	run("proxy with prefix conditions on route that does not start with slash", testcase{
 		objs: []interface{}{proxyInvalidPrefixNoSlash, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidPrefixNoSlash.Name, Namespace: proxyInvalidPrefixNoSlash.Namespace}: {
@@ -1330,7 +1355,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	proxyInvalidIncludePrefixNoSlash := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1359,7 +1384,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with include prefix that does not start with slash"] = testcase{
+	run("proxy with include prefix that does not start with slash", testcase{
 		objs: []interface{}{proxyInvalidIncludePrefixNoSlash, proxyValidChildTeamA, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidIncludePrefixNoSlash.Name, Namespace: proxyInvalidIncludePrefixNoSlash.Namespace}: {
@@ -1373,7 +1398,7 @@ func TestDAGStatus(t *testing.T) {
 				Description: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 			},
 		},
-	}
+	})
 
 	// invalid because tcpproxy both includes another httpproxy
 	// and has a list of services.
@@ -1402,7 +1427,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["tcpproxy cannot specify services and include"] = testcase{
+	run("tcpproxy cannot specify services and include", testcase{
 		objs: []interface{}{proxyInvalidTCPProxyIncludeAndService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidTCPProxyIncludeAndService.Name, Namespace: proxyInvalidTCPProxyIncludeAndService.Namespace}: {
@@ -1412,7 +1437,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "passthrough.example.com",
 			},
 		},
-	}
+	})
 
 	// Invalid because tcpproxy neither includes another httpproxy
 	// nor has a list of services.
@@ -1432,7 +1457,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["tcpproxy empty"] = testcase{
+	run("tcpproxy empty", testcase{
 		objs: []interface{}{proxyTCPNoServiceOrInclusion, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyTCPNoServiceOrInclusion.Name, Namespace: proxyTCPNoServiceOrInclusion.Namespace}: {
@@ -1442,7 +1467,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "passthrough.example.com",
 			},
 		},
-	}
+	})
 
 	// proxy38 is invalid when combined with proxy39 as the latter
 	// is a root httpproxy.
@@ -1467,7 +1492,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["tcpproxy w/ missing include"] = testcase{
+	run("tcpproxy w/ missing include", testcase{
 		objs: []interface{}{proxyTCPIncludesFoo, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyTCPIncludesFoo.Name, Namespace: proxyTCPIncludesFoo.Namespace}: {
@@ -1477,7 +1502,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "passthrough.example.com",
 			},
 		},
-	}
+	})
 
 	proxyValidTCPRoot := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1500,7 +1525,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["tcpproxy includes another root"] = testcase{
+	run("tcpproxy includes another root", testcase{
 		objs: []interface{}{proxyTCPIncludesFoo, proxyValidTCPRoot, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyTCPIncludesFoo.Name, Namespace: proxyTCPIncludesFoo.Namespace}: {
@@ -1516,7 +1541,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "www.example.com",
 			},
 		},
-	}
+	})
 
 	proxyTCPValidChildFoo := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1533,7 +1558,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["tcpproxy includes valid child"] = testcase{
+	run("tcpproxy includes valid child", testcase{
 		objs: []interface{}{proxyTCPIncludesFoo, proxyTCPValidChildFoo, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyTCPIncludesFoo.Name, Namespace: proxyTCPIncludesFoo.Namespace}: {
@@ -1549,7 +1574,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "passthrough.example.com",
 			},
 		},
-	}
+	})
 
 	// proxy41 is a proxy with conflicting include conditions
 	proxyInvalidConflictingIncludeConditions := &projcontour.HTTPProxy{
@@ -1624,7 +1649,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["duplicate path conditions on an include"] = testcase{
+	run("duplicate path conditions on an include", testcase{
 		objs: []interface{}{proxyInvalidConflictingIncludeConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidConflictingIncludeConditions.Name,
@@ -1647,7 +1672,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "",
 			},
 		},
-	}
+	})
 
 	// proxy42 is a proxy with conflicting include header conditions
 	proxyInvalidConflictHeaderConditions := &projcontour.HTTPProxy{
@@ -1690,7 +1715,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["duplicate header conditions on an include"] = testcase{
+	run("duplicate header conditions on an include", testcase{
 		objs: []interface{}{proxyInvalidConflictHeaderConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidConflictHeaderConditions.Name,
@@ -1715,7 +1740,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "",
 			},
 		},
-	}
+	})
 
 	// proxy43 is a proxy with conflicting include header conditions
 	proxyInvalidDuplicateHeaderAndPathConditions := &projcontour.HTTPProxy{
@@ -1760,7 +1785,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["duplicate header+path conditions on an include"] = testcase{
+	run("duplicate header+path conditions on an include", testcase{
 		objs: []interface{}{proxyInvalidDuplicateHeaderAndPathConditions, proxyValidBlogTeamA, proxyValidBlogTeamB, fixture.ServiceRootsHome, fixture.ServiceTeamAKuard, fixture.ServiceTeamBKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidDuplicateHeaderAndPathConditions.Name,
@@ -1785,7 +1810,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "",
 			},
 		},
-	}
+	})
 
 	// proxy44's include is missing
 	proxyInvalidMissingInclude := &projcontour.HTTPProxy{
@@ -1803,7 +1828,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["httpproxy w/ missing include"] = testcase{
+	run("httpproxy w/ missing include", testcase{
 		objs: []interface{}{proxyInvalidMissingInclude, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidMissingInclude.Name, Namespace: proxyInvalidMissingInclude.Namespace}: {
@@ -1813,7 +1838,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	proxyTCPInvalidMissingService := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1836,7 +1861,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["httpproxy w/ tcpproxy w/ missing service"] = testcase{
+	run("httpproxy w/ tcpproxy w/ missing service", testcase{
 		objs: []interface{}{proxyTCPInvalidMissingService},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyTCPInvalidMissingService.Name, Namespace: proxyTCPInvalidMissingService.Namespace}: {
@@ -1846,7 +1871,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "tcpproxy.example.com",
 			},
 		},
-	}
+	})
 
 	proxyTCPInvalidPortNotMatched := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1869,7 +1894,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["httpproxy w/ tcpproxy w/ service missing port"] = testcase{
+	run("httpproxy w/ tcpproxy w/ service missing port", testcase{
 		objs: []interface{}{proxyTCPInvalidPortNotMatched, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyTCPInvalidPortNotMatched.Name, Namespace: proxyTCPInvalidPortNotMatched.Namespace}: {
@@ -1879,7 +1904,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "tcpproxy.example.com",
 			},
 		},
-	}
+	})
 
 	proxyTCPInvalidMissingTLS := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1899,7 +1924,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["httpproxy w/ tcpproxy missing tls"] = testcase{
+	run("httpproxy w/ tcpproxy missing tls", testcase{
 		objs: []interface{}{proxyTCPInvalidMissingTLS},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyTCPInvalidMissingTLS.Name, Namespace: proxyTCPInvalidMissingTLS.Namespace}: {
@@ -1909,7 +1934,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "tcpproxy.example.com",
 			},
 		},
-	}
+	})
 
 	proxyInvalidMissingServiceWithTCPProxy := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1937,7 +1962,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["httpproxy w/ tcpproxy missing service"] = testcase{
+	run("httpproxy w/ tcpproxy missing service", testcase{
 		objs: []interface{}{fixture.SecretRootsCert, fixture.ServiceRootsKuard, proxyInvalidMissingServiceWithTCPProxy},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidMissingServiceWithTCPProxy.Name, Namespace: proxyInvalidMissingServiceWithTCPProxy.Namespace}: {
@@ -1947,7 +1972,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "tcpproxy.example.com",
 			},
 		},
-	}
+	})
 
 	proxyRoutePortNotMatchedWithTCP := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1975,7 +2000,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["tcpproxy route unmatched service port"] = testcase{
+	run("tcpproxy route unmatched service port", testcase{
 		objs: []interface{}{fixture.SecretRootsCert, fixture.ServiceRootsKuard, proxyRoutePortNotMatchedWithTCP},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyRoutePortNotMatchedWithTCP.Name, Namespace: proxyRoutePortNotMatchedWithTCP.Namespace}: {
@@ -1985,7 +2010,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "tcpproxy.example.com",
 			},
 		},
-	}
+	})
 
 	proxyTCPValidIncludeChild := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2044,7 +2069,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["valid HTTPProxy.TCPProxy - plural"] = testcase{
+	run("valid HTTPProxy.TCPProxy - plural", testcase{
 		objs: []interface{}{proxyTCPValidIncludesChild, proxyTCPValidChild, fixture.ServiceRootsKuard, fixture.SecretRootsCert},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyTCPValidIncludesChild.Name,
@@ -2062,9 +2087,9 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "tcpproxy.example.com",
 			},
 		},
-	}
+	})
 
-	tests["valid HTTPProxy.TCPProxy"] = testcase{
+	run("valid HTTPProxy.TCPProxy", testcase{
 		objs: []interface{}{proxyTCPValidIncludeChild, proxyTCPValidChild, fixture.ServiceRootsKuard, fixture.SecretRootsCert},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyTCPValidIncludeChild.Name,
@@ -2081,7 +2106,7 @@ func TestDAGStatus(t *testing.T) {
 				Description: "valid HTTPProxy",
 				Vhost:       "tcpproxy.example.com"},
 		},
-	}
+	})
 
 	// issue 2309, each route must have at least one service
 	proxyInvalidNoServices := &projcontour.HTTPProxy{
@@ -2103,7 +2128,7 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	// issue 2309, each route must have at least one service
-	tests["invalid HTTPProxy due to empty route.service"] = testcase{
+	run("invalid HTTPProxy due to empty route.service", testcase{
 		objs: []interface{}{proxyInvalidNoServices, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyInvalidNoServices.Name, Namespace: proxyInvalidNoServices.Namespace}: {
@@ -2113,7 +2138,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "missing-service.example.com",
 			},
 		},
-	}
+	})
 
 	fallbackCertificate := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2140,7 +2165,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["invalid fallback certificate passed to contour"] = testcase{
+	run("invalid fallback certificate passed to contour", testcase{
 		fallbackCertificate: &types.NamespacedName{
 			Name:      "invalid",
 			Namespace: "invalid",
@@ -2155,9 +2180,9 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
-	tests["fallback certificate requested but cert not configured in contour"] = testcase{
+	run("fallback certificate requested but cert not configured in contour", testcase{
 		objs: []interface{}{fallbackCertificate, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]Status{
 			{Name: fallbackCertificate.Name,
@@ -2168,7 +2193,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	fallbackCertificateWithClientValidation := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2198,7 +2223,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["fallback certificate requested and clientValidation also configured"] = testcase{
+	run("fallback certificate requested and clientValidation also configured", testcase{
 		objs: []interface{}{fallbackCertificateWithClientValidation, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]Status{
 			{Name: fallbackCertificateWithClientValidation.Name,
@@ -2209,7 +2234,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "example.com",
 			},
 		},
-	}
+	})
 
 	// a proxy with TLS configured with passthrough and
 	// client validation is invalid
@@ -2232,7 +2257,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["passthrough and client auth are incompatible tlsPassthroughAndValidation"] = testcase{
+	run("passthrough and client auth are incompatible tlsPassthroughAndValidation", testcase{
 		objs: []interface{}{fixture.SecretRootsCert, tlsPassthroughAndValidation},
 		want: map[types.NamespacedName]Status{
 			{Name: tlsPassthroughAndValidation.Name, Namespace: tlsPassthroughAndValidation.Namespace}: {
@@ -2242,7 +2267,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       tlsPassthroughAndValidation.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	// a proxy with TLS configured with *both* passthrough and
 	// a secret name is invalid.
@@ -2263,7 +2288,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["tcpproxy with TLS passthrough and secret name both specified"] = testcase{
+	run("tcpproxy with TLS passthrough and secret name both specified", testcase{
 		objs: []interface{}{
 			fixture.SecretRootsCert,
 			tlsPassthroughAndSecretName,
@@ -2276,7 +2301,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "tcpproxy.example.com",
 			},
 		},
-	}
+	})
 
 	// a proxy with TLS configured with *neither* passthrough nor
 	// a secret name is invalid.
@@ -2297,7 +2322,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["httpproxy w/ tcpproxy with neither TLS passthrough nor secret name specified"] = testcase{
+	run("httpproxy w/ tcpproxy with neither TLS passthrough nor secret name specified", testcase{
 		objs: []interface{}{
 			fixture.SecretRootsCert,
 			tlsNoPassthroughOrSecretName,
@@ -2310,7 +2335,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       "tcpproxy.example.com",
 			},
 		},
-	}
+	})
 
 	// a proxy without any routes, includes, or a tcp proxy
 	// is invalid.
@@ -2326,7 +2351,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with no routes, includes, or tcpproxy is invalid"] = testcase{
+	run("proxy with no routes, includes, or tcpproxy is invalid", testcase{
 		objs: []interface{}{emptyProxy},
 		want: map[types.NamespacedName]Status{
 			{Name: emptyProxy.Name, Namespace: emptyProxy.Namespace}: {
@@ -2336,7 +2361,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       emptyProxy.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	invalidRequestHeadersPolicyService := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2364,7 +2389,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["requestHeadersPolicy, Host header invalid on Service"] = testcase{
+	run("requestHeadersPolicy, Host header invalid on Service", testcase{
 		objs: []interface{}{invalidRequestHeadersPolicyService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: invalidRequestHeadersPolicyService.Name, Namespace: invalidRequestHeadersPolicyService.Namespace}: {
@@ -2374,7 +2399,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       invalidRequestHeadersPolicyService.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	invalidResponseHeadersPolicyService := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2402,7 +2427,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["responseHeadersPolicy, Host header invalid on Service"] = testcase{
+	run("responseHeadersPolicy, Host header invalid on Service", testcase{
 		objs: []interface{}{invalidResponseHeadersPolicyService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: invalidResponseHeadersPolicyService.Name, Namespace: invalidResponseHeadersPolicyService.Namespace}: {
@@ -2412,7 +2437,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       invalidResponseHeadersPolicyService.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	invalidResponseHeadersPolicyRoute := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2440,7 +2465,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["responseHeadersPolicy, Host header invalid on Route"] = testcase{
+	run("responseHeadersPolicy, Host header invalid on Route", testcase{
 		objs: []interface{}{invalidResponseHeadersPolicyRoute, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{Name: invalidResponseHeadersPolicyRoute.Name, Namespace: invalidResponseHeadersPolicyRoute.Namespace}: {
@@ -2450,7 +2475,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       invalidResponseHeadersPolicyRoute.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	proxyAuthFallback := fixture.NewProxy("roots/fallback-incompat").
 		WithSpec(projcontour.HTTPProxySpec{
@@ -2472,7 +2497,7 @@ func TestDAGStatus(t *testing.T) {
 			}},
 		})
 
-	tests["incompat"] = testcase{
+	run("incompat", testcase{
 		objs: []interface{}{fixture.SecretRootsCert, proxyAuthFallback},
 		want: map[types.NamespacedName]Status{
 			{Name: proxyAuthFallback.Name, Namespace: proxyAuthFallback.Namespace}: {
@@ -2482,7 +2507,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       proxyAuthFallback.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	invalidResponseTimeout := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2508,7 +2533,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with invalid response timeout value is invalid"] = testcase{
+	run("proxy with invalid response timeout value is invalid", testcase{
 		objs: []interface{}{invalidResponseTimeout, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{
@@ -2521,7 +2546,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       invalidResponseTimeout.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	invalidIdleTimeout := &projcontour.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2547,7 +2572,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	tests["proxy with invalid idle timeout value is invalid"] = testcase{
+	run("proxy with invalid idle timeout value is invalid", testcase{
 		objs: []interface{}{invalidIdleTimeout, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]Status{
 			{
@@ -2560,7 +2585,7 @@ func TestDAGStatus(t *testing.T) {
 				Vhost:       invalidIdleTimeout.Spec.VirtualHost.Fqdn,
 			},
 		},
-	}
+	})
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
