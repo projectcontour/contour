@@ -40,7 +40,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
 	// Invalid cert in the secret
@@ -63,8 +63,8 @@ func TestDAGInsert(t *testing.T) {
 		Type: v1.SecretTypeTLS,
 		Data: map[string][]byte{
 			CACertificateKey:    []byte(""),
-			v1.TLSCertKey:       []byte(CERTIFICATE),
-			v1.TLSPrivateKeyKey: []byte(RSA_PRIVATE_KEY),
+			v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+			v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
 		},
 	}
 
@@ -74,7 +74,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "root",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
 	fallbackCertificateSecret := &v1.Secret{
@@ -83,7 +83,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
 	fallbackCertificateSecretRootNamespace := &v1.Secret{
@@ -92,7 +92,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "root",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
 	cert1 := &v1.Secret{
@@ -101,7 +101,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			CACertificateKey: []byte(CERTIFICATE),
+			CACertificateKey: []byte(fixture.CERTIFICATE),
 		},
 	}
 
@@ -917,7 +917,7 @@ func TestDAGInsert(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
 	s13a := &v1.Service{
