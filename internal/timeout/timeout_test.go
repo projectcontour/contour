@@ -69,6 +69,48 @@ func TestParse(t *testing.T) {
 	}
 }
 
+func TestParseMaxAge(t *testing.T) {
+	tests := map[string]struct {
+		duration string
+		want     Setting
+		wantErr  bool
+	}{
+		"empty": {
+			duration: "",
+			want:     DefaultSetting(),
+		},
+		"0": {
+			duration: "0",
+			want:     DisabledSetting(),
+		},
+		"0s": {
+			duration: "0s",
+			want:     DisabledSetting(),
+		},
+		"10 seconds": {
+			duration: "10s",
+			want:     DurationSetting(10 * time.Second),
+		},
+		"invalid": {
+			duration: "10", // 10 what?
+			want:     DefaultSetting(),
+			wantErr:  true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, gotErr := ParseMaxAge(tc.duration)
+			assert.Equal(t, tc.want, got)
+			if tc.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
+		})
+	}
+}
+
 func TestDurationSetting(t *testing.T) {
 	assert.Equal(t, 10*time.Second, DurationSetting(10*time.Second).Duration())
 }

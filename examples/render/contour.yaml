@@ -982,6 +982,45 @@ spec:
                     required:
                     - extensionRef
                     type: object
+                  corsPolicy:
+                    description: Specifies the cross-origin policy to apply to the VirtualHost.
+                    properties:
+                      allowCredentials:
+                        description: Specifies whether the resource allows credentials.
+                        type: boolean
+                      allowHeaders:
+                        description: AllowHeaders specifies the content for the *access-control-allow-headers* header.
+                        items:
+                          description: CORSHeaderValue specifies the value of the string headers returned by a cross-domain request.
+                          pattern: ^[a-zA-Z0-9!#$%&'*+.^_`|~-]+$
+                          type: string
+                        type: array
+                      allowMethods:
+                        description: AllowMethods specifies the content for the *access-control-allow-methods* header.
+                        items:
+                          description: CORSHeaderValue specifies the value of the string headers returned by a cross-domain request.
+                          pattern: ^[a-zA-Z0-9!#$%&'*+.^_`|~-]+$
+                          type: string
+                        type: array
+                      allowOrigin:
+                        description: AllowOrigin specifies the origins that will be allowed to do CORS requests. "*" means allow any origin.
+                        items:
+                          type: string
+                        type: array
+                      exposeHeaders:
+                        description: ExposeHeaders Specifies the content for the *access-control-expose-headers* header.
+                        items:
+                          description: CORSHeaderValue specifies the value of the string headers returned by a cross-domain request.
+                          pattern: ^[a-zA-Z0-9!#$%&'*+.^_`|~-]+$
+                          type: string
+                        type: array
+                      maxAge:
+                        description: MaxAge indicates for how long the results of a preflight request can be cached. MaxAge durations are expressed in the Go [Duration format](https://godoc.org/time#ParseDuration). Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h". Only positive values are allowed while 0 disables the cache requiring a preflight OPTIONS check for all cross-origin requests.
+                        type: string
+                    required:
+                    - allowMethods
+                    - allowOrigin
+                    type: object
                   fqdn:
                     description: The fully qualified domain name of the root of the ingress tree all leaves of the DAG rooted at this object relate to the fqdn.
                     type: string

@@ -156,8 +156,14 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 	if len(routes) > 0 {
 		sortRoutes(routes)
 
-		v.routes[ENVOY_HTTP_LISTENER].VirtualHosts = append(v.routes[ENVOY_HTTP_LISTENER].VirtualHosts,
-			envoyv2.VirtualHost(vh.Name, routes...))
+		var evh *envoy_api_v2_route.VirtualHost
+		if cp := envoyv2.CORSPolicy(vh.CORSPolicy); cp != nil {
+			evh = envoyv2.CORSVirtualHost(vh.Name, cp, routes...)
+		} else {
+			evh = envoyv2.VirtualHost(vh.Name, routes...)
+		}
+
+		v.routes[ENVOY_HTTP_LISTENER].VirtualHosts = append(v.routes[ENVOY_HTTP_LISTENER].VirtualHosts, evh)
 	}
 }
 
@@ -211,8 +217,14 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			v.routes[name] = envoyv2.RouteConfiguration(name)
 		}
 
-		v.routes[name].VirtualHosts = append(v.routes[name].VirtualHosts,
-			envoyv2.VirtualHost(svh.VirtualHost.Name, routes...))
+		var evh *envoy_api_v2_route.VirtualHost
+		if cp := envoyv2.CORSPolicy(svh.CORSPolicy); cp != nil {
+			evh = envoyv2.CORSVirtualHost(svh.VirtualHost.Name, cp, routes...)
+		} else {
+			evh = envoyv2.VirtualHost(svh.VirtualHost.Name, routes...)
+		}
+
+		v.routes[name].VirtualHosts = append(v.routes[name].VirtualHosts, evh)
 
 		// A fallback route configuration contains routes for all the vhosts that have the fallback certificate enabled.
 		// When a request is received, the default TLS filterchain will accept the connection,
@@ -223,8 +235,14 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 				v.routes[ENVOY_FALLBACK_ROUTECONFIG] = envoyv2.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG)
 			}
 
-			v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts = append(v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts,
-				envoyv2.VirtualHost(svh.Name, routes...))
+			var fvh *envoy_api_v2_route.VirtualHost
+			if cp := envoyv2.CORSPolicy(svh.CORSPolicy); cp != nil {
+				fvh = envoyv2.CORSVirtualHost(svh.Name, cp, routes...)
+			} else {
+				fvh = envoyv2.VirtualHost(svh.Name, routes...)
+			}
+
+			v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts = append(v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts, fvh)
 		}
 	}
 }

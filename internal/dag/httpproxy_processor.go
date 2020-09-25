@@ -258,12 +258,19 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 
 	routes := p.computeRoutes(sw, proxy, proxy, nil, nil, tlsEnabled)
 	insecure := p.dag.EnsureVirtualHost(host)
+	cp, err := toCORSPolicy(proxy.Spec.VirtualHost.CORSPolicy)
+	if err != nil {
+		sw.SetInvalid(fmt.Sprintf("Spec.VirtualHost.CORSPolicy: %s", err))
+		return
+	}
+	insecure.CORSPolicy = cp
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
 		secure := p.dag.EnsureSecureVirtualHost(host)
+		secure.CORSPolicy = cp
 		addRoutes(secure, routes)
 	}
 }
@@ -805,6 +812,35 @@ func determineSNI(routeRequestHeaders *HeadersPolicy, clusterRequestHeaders *Hea
 	}
 
 	return service.ExternalName
+}
+
+func toCORSPolicy(policy *projcontour.CORSPolicy) (*CORSPolicy, error) {
+	if policy == nil {
+		return nil, nil
+	}
+	maxAge, err := timeout.ParseMaxAge(policy.MaxAge)
+	if err != nil {
+		return nil, err
+	}
+	if maxAge.Duration().Seconds() < 0 {
+		return nil, fmt.Errorf("invalid max age value %q", policy.MaxAge)
+	}
+	return &CORSPolicy{
+		AllowCredentials: policy.AllowCredentials,
+		AllowHeaders:     toStringSlice(policy.AllowHeaders),
+		AllowMethods:     toStringSlice(policy.AllowMethods),
+		AllowOrigin:      policy.AllowOrigin,
+		ExposeHeaders:    toStringSlice(policy.ExposeHeaders),
+		MaxAge:           maxAge,
+	}, nil
+}
+
+func toStringSlice(hvs []projcontour.CORSHeaderValue) []string {
+	s := make([]string, len(hvs))
+	for i, v := range hvs {
+		s[i] = string(v)
+	}
+	return s
 }
 
 func includeMatchConditionsIdentical(includes []projcontour.Include) bool {
