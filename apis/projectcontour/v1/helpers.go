@@ -13,7 +13,10 @@
 
 package v1
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // AuthorizationConfigured returns whether authorization  is
 // configured on this virtual host.
@@ -89,6 +92,8 @@ func (r *Route) AuthorizationContext(parent map[string]string) map[string]string
 // to the existing SubCondition's message.
 func (dc *DetailedCondition) AddError(errorType, reason, message string) {
 
+	message = truncateLongMessage(message)
+
 	// Update the condition so that it indicates there's at least one error
 	// This needs to be here because conditions may be normal-true (positive)
 	// polarity (like `Valid`), or abnormal-true (negative) polarity
@@ -154,6 +159,8 @@ func (dc *DetailedCondition) GetError(errorType string) (SubCondition, bool) {
 // to the existing SubCondition's message.
 func (dc *DetailedCondition) AddWarning(warnType, reason, message string) {
 
+	message = truncateLongMessage(message)
+
 	detailedReason := warnType + reason
 	dc.updateReason(detailedReason, message)
 
@@ -199,6 +206,9 @@ func (dc *DetailedCondition) GetWarning(warnType string) (SubCondition, bool) {
 
 // updateReason updates a DetailedCondition's reason and message correctly
 // if they are different to the existing ones.
+// Note that this helper may be used to build the first iteration of a
+// DetailedCondition, so it's possible that `Reason` and/or `Message` will
+// be empty when it is called.
 func (dc *DetailedCondition) updateReason(reason, message string) {
 	if dc.Reason == "" {
 		dc.Reason = reason
@@ -208,12 +218,17 @@ func (dc *DetailedCondition) updateReason(reason, message string) {
 
 	if dc.Reason != reason {
 		dc.Reason = "MultipleProblems"
-		dc.Message = "Multiple problems were found, see errors for details"
+		dc.Message = "Multiple problems were found, see errors or warnings for details"
 		return
 	}
 
+	// This case covers the same `Reason` being used multiple times.
+	// The only case for this is if we're adding more details about multiple errors for the same reason.
 	if dc.Message != message {
-		dc.Message = dc.Message + ", " + message
+		// Only add the message if it's not already in there somewhere.
+		if !strings.Contains(dc.Message, message) {
+			dc.Message = dc.Message + ", " + message
+		}
 	}
 }
 
@@ -229,7 +244,9 @@ func (sc *SubCondition) updateReason(reason, message string) {
 		sc.Reason = "MultipleReasons"
 	}
 
-	sc.Message = sc.Message + ", " + message
+	if !strings.Contains(sc.Message, message) {
+		sc.Message = sc.Message + ", " + message
+	}
 
 }
 
@@ -247,6 +264,9 @@ func getIndex(condType string, subconds []SubCondition) int {
 
 // GetConditionIndex gets the index of a condition of the given type from
 // the given DetailedCondition slice, or -1 if it is not found.
+// The result of this function should only be used on a single version of a
+// DetailedCondition; the ordering of DetailedConditions is not necessarily
+// stable across trips to the apiserver.
 func GetConditionIndex(condType string, conds []DetailedCondition) int {
 
 	for i, cond := range conds {
@@ -269,4 +289,15 @@ func (dc *DetailedCondition) IsPositivePolarity() bool {
 	default:
 		return false
 	}
+}
+
+const LongMessageLength = 32760
+
+// truncateLongMessage truncates long message strings
+// to near the max size.
+func truncateLongMessage(message string) string {
+	if len(message) > LongMessageLength {
+		return message[:LongMessageLength]
+	}
+	return message
 }
