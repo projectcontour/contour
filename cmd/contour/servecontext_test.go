@@ -381,6 +381,35 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	}
 }
 
+func TestTlsVersionDeprecation(t *testing.T) {
+	// To get tls.Config for the gRPC XDS server, we need to arrange valid TLS certificates and keys.
+	// Create temporary directory to store them for the server.
+	configDir, err := ioutil.TempDir("", "contour-testdata-")
+	checkFatalErr(t, err)
+	defer os.RemoveAll(configDir)
+
+	ctx := serveContext{
+		ServerConfig: ServerConfig{
+			caFile:      filepath.Join(configDir, "CAcert.pem"),
+			contourCert: filepath.Join(configDir, "contourcert.pem"),
+			contourKey:  filepath.Join(configDir, "contourkey.pem"),
+		},
+	}
+
+	err = linkFiles("testdata/1", configDir)
+	checkFatalErr(t, err)
+
+	// Get preliminary TLS config from the serveContext.
+	log := fixture.NewTestLogger(t)
+	preliminaryTLSConfig := ctx.tlsconfig(log)
+
+	// Get actual TLS config that will be used during TLS handshake.
+	tlsConfig, err := preliminaryTLSConfig.GetConfigForClient(nil)
+	checkFatalErr(t, err)
+
+	assert.Equal(t, tlsConfig.MinVersion, uint16(tls.VersionTLS12))
+}
+
 func checkFatalErr(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
