@@ -1,88 +1,22 @@
+// Copyright Project Contour Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package status
 
 import (
-	"fmt"
-
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"k8s.io/apimachinery/pkg/types"
 )
-
-type ConditionType string
-
-const ValidCondition ConditionType = "Valid"
-
-// ProxyUpdate holds status updates for a particular HTTPProxy object
-type ProxyUpdate struct {
-	Object     projcontour.HTTPProxy
-	Conditions map[ConditionType]*projcontour.DetailedCondition
-}
-
-// ConditionFor returns a DetailedCondition for a given ConditionType.
-// Currently only "Valid" is supported.
-func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projcontour.DetailedCondition {
-
-	if cond == "" {
-		return nil
-	}
-
-	dc, ok := pu.Conditions[cond]
-	if !ok {
-		newDc := &projcontour.DetailedCondition{}
-		newDc.Type = string(cond)
-
-		pu.Conditions[cond] = newDc
-		return newDc
-	}
-	return dc
-}
-
-func (pu *ProxyUpdate) StatusMutatorFunc() k8s.StatusMutator {
-
-	return k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
-		switch o := obj.(type) {
-		case *projcontour.HTTPProxy:
-			proxy := o.DeepCopy()
-
-			for condType, cond := range pu.Conditions {
-				condIndex := projcontour.GetConditionIndex(string(condType), proxy.Status.Conditions)
-				if condIndex >= 0 {
-					proxy.Status.Conditions[condIndex] = *cond
-				} else {
-					proxy.Status.Conditions = append(proxy.Status.Conditions, *cond)
-				}
-
-			}
-
-			// Set the old status fields using the Valid DetailedCondition's details.
-			// Other conditions are not relevant for these two fields.
-			validCondIndex := projcontour.GetConditionIndex(string(ValidCondition), proxy.Status.Conditions)
-			if validCondIndex >= 0 {
-				validCond := proxy.Status.Conditions[validCondIndex]
-				switch validCond.Status {
-				case projcontour.ConditionTrue:
-					orphanCond, orphaned := validCond.GetError(k8s.StatusOrphaned)
-					if orphaned {
-						proxy.Status.CurrentStatus = k8s.StatusOrphaned
-						proxy.Status.CurrentStatus = orphanCond.Message
-					}
-					proxy.Status.CurrentStatus = k8s.StatusValid
-					proxy.Status.Description = validCond.Reason + ": " + validCond.Message
-				case projcontour.ConditionFalse:
-					proxy.Status.CurrentStatus = k8s.StatusInvalid
-					proxy.Status.Description = validCond.Reason + ": " + validCond.Message
-				}
-			}
-
-			return proxy
-		default:
-			panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
-				pu.Object.Namespace, pu.Object.Name,
-			))
-		}
-
-	})
-}
 
 // NewCache creates a new Cache for holding status updates.
 func NewCache() Cache {
