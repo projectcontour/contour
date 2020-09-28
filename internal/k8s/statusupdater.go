@@ -230,9 +230,3 @@ func (suw *StatusUpdateWriter) Update(name, namespace string, gvr schema.GroupVe
 
 	suw.UpdateChannel <- update
 }
-
-// SendStatusUpdate sends a given StatusUpdate off to be written.
-// The StatusUpdateHandler will retrieve the object, update it with the mutator, then put it back if it's different.
-func (suw *StatusUpdateWriter) SendStatusUpdate(su StatusUpdate) {
-	suw.UpdateChannel <- su
-}

@@ -49,11 +49,25 @@ type ProxyUpdate struct {
 func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projectcontour.DetailedCondition {
 	dc, ok := pu.Conditions[cond]
 	if !ok {
-		newDc := &projectcontour.DetailedCondition{}
-		newDc.Type = string(cond)
+		panic(fmt.Sprintf("Unsupported %T object %s/%s in status mutator",
+			obj, pu.Fullname.Namespace, pu.Fullname.Name,
+		))
+	}
 
-		pu.Conditions[cond] = newDc
-		return newDc
+	proxy := o.DeepCopy()
+
+	for condType, cond := range pu.Conditions {
+		cond.ObservedGeneration = pu.Generation
+		cond.LastTransitionTime = pu.TransitionTime
+
+		currCond := proxy.Status.GetConditionFor(string(condType))
+		if currCond == nil {
+			proxy.Status.Conditions = append(proxy.Status.Conditions, *cond)
+			continue
+		}
+
+		cond.DeepCopyInto(currCond)
+
 	}
 	return dc
 

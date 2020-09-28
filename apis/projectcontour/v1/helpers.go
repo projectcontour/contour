@@ -15,10 +15,6 @@ package v1
 
 import (
 	"fmt"
-<<<<<<< HEAD
-=======
-	"strings"
->>>>>>> Resolve first round of PR comments
 )
 
 // AuthorizationConfigured returns whether authorization  is
@@ -142,34 +138,12 @@ func (dc *DetailedCondition) GetError(errorType string) (SubCondition, bool) {
 func (dc *DetailedCondition) AddWarning(warnType, reason, message string) {
 	message = truncateLongMessage(message)
 
-<<<<<<< HEAD
 	dc.Warnings = append(dc.Warnings, SubCondition{
 		Type:    warnType,
 		Status:  ConditionTrue,
 		Reason:  reason,
 		Message: message,
 	})
-=======
-	message = truncateLongMessage(message)
-
-	detailedReason := warnType + reason
-	dc.updateReason(detailedReason, message)
-
-	i := getIndex(warnType, dc.Warnings)
-
-	if i == -1 {
-		dc.Warnings = append(dc.Warnings, SubCondition{
-			Type:    warnType,
-			Status:  ConditionTrue,
-			Reason:  reason,
-			Message: message,
-		})
-		return
-	}
-
-	// If the warning is already present, just update the reason and message.
-	dc.Warnings[i].updateReason(reason, message)
->>>>>>> Resolve first round of PR comments
 }
 
 // AddWarningf adds an warning-level Subcondition to the DetailedCondition, using
@@ -231,17 +205,6 @@ func (status *HTTPProxyStatus) GetConditionFor(condType string) *DetailedConditi
 
 // LongMessageLength specifies the maximum size any message field should be.
 // This is enforced on the apiserver side by CRD validation requirements.
-const LongMessageLength = 32760
-
-// truncateLongMessage truncates long message strings
-// to near the max size.
-func truncateLongMessage(message string) string {
-	if len(message) > LongMessageLength {
-		return message[:LongMessageLength]
-	}
-	return message
-}
-
 const LongMessageLength = 32760
 
 // truncateLongMessage truncates long message strings
