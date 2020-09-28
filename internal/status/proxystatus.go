@@ -83,14 +83,15 @@ func (pu *ProxyUpdate) StatusMutatorFunc() k8s.StatusMutator {
 				validCond := proxy.Status.Conditions[validCondIndex]
 				switch validCond.Status {
 				case projectcontour.ConditionTrue:
-					orphanCond, orphaned := validCond.GetError(k8s.StatusOrphaned)
-					if orphaned {
-						proxy.Status.CurrentStatus = k8s.StatusOrphaned
-						proxy.Status.CurrentStatus = orphanCond.Message
-					}
 					proxy.Status.CurrentStatus = k8s.StatusValid
 					proxy.Status.Description = validCond.Reason + ": " + validCond.Message
 				case projectcontour.ConditionFalse:
+					orphanCond, orphaned := validCond.GetError(k8s.StatusOrphaned)
+					if orphaned {
+						proxy.Status.CurrentStatus = k8s.StatusOrphaned
+						proxy.Status.Description = orphanCond.Message
+						break
+					}
 					proxy.Status.CurrentStatus = k8s.StatusInvalid
 					proxy.Status.Description = validCond.Reason + ": " + validCond.Message
 				}

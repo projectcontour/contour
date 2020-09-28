@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -55,21 +56,62 @@ func TestConditionFor(t *testing.T) {
 
 func TestStatusMutatorFunc(t *testing.T) {
 
-	proxyUpdate := ProxyUpdate{
-		Object: projectcontour.HTTPProxy{
-			ObjectMeta: v1.ObjectMeta{
-				Name:       "test",
-				Namespace:  "test",
-				Generation: 5,
+	type testcase struct {
+		proxyUpdate       ProxyUpdate
+		wantConditions    []projectcontour.DetailedCondition
+		wantCurrentStatus string
+		wantDescription   string
+	}
+
+	run := func(desc string, tc testcase) {
+		mutator := tc.proxyUpdate.StatusMutatorFunc()
+		newProxy := mutator.Mutate(&tc.proxyUpdate.Object)
+
+		switch o := newProxy.(type) {
+		case *projectcontour.HTTPProxy:
+			assert.Equal(t, tc.wantConditions, o.Status.Conditions, desc)
+			assert.Equal(t, tc.wantCurrentStatus, o.Status.CurrentStatus, desc)
+			assert.Equal(t, tc.wantDescription, o.Status.Description, desc)
+		default:
+			t.Fatal("Got a non-HTTPProxy object, wow, impressive.")
+		}
+	}
+
+	validConditionWarning := testcase{
+		proxyUpdate: ProxyUpdate{
+			Object: projectcontour.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Name:       "test",
+					Namespace:  "test",
+					Generation: 5,
+				},
+			},
+			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
+				ValidCondition: {
+					Condition: projectcontour.Condition{
+						Type:    string(ValidCondition),
+						Status:  projectcontour.ConditionTrue,
+						Reason:  "TLSErrorTLSConfigError",
+						Message: "Syntax Error in TLS Config",
+					},
+					Warnings: []projectcontour.SubCondition{
+						{
+							Type:    "TLSError",
+							Reason:  "TLSConfigError",
+							Message: "Syntax Error in TLS Config",
+						},
+					},
+				},
 			},
 		},
-		Conditions: map[ConditionType]*projectcontour.DetailedCondition{
-			ValidCondition: {
+		wantConditions: []projectcontour.DetailedCondition{
+			{
 				Condition: projectcontour.Condition{
-					Type:    string(ValidCondition),
-					Status:  projectcontour.ConditionTrue,
-					Reason:  "TLSErrorTLSConfigError",
-					Message: "Syntax Error in TLS Config",
+					Type:               string(ValidCondition),
+					Status:             projectcontour.ConditionTrue,
+					ObservedGeneration: 5,
+					Reason:             "TLSErrorTLSConfigError",
+					Message:            "Syntax Error in TLS Config",
 				},
 				Warnings: []projectcontour.SubCondition{
 					{
@@ -80,37 +122,170 @@ func TestStatusMutatorFunc(t *testing.T) {
 				},
 			},
 		},
+		wantCurrentStatus: k8s.StatusValid,
+		wantDescription:   "TLSErrorTLSConfigError: Syntax Error in TLS Config",
 	}
+	run("valid with one warning", validConditionWarning)
 
-	wantConditions := []projectcontour.DetailedCondition{
-		{
-			Condition: projectcontour.Condition{
-				Type:               string(ValidCondition),
-				Status:             projectcontour.ConditionTrue,
-				ObservedGeneration: 5,
-				Reason:             "TLSErrorTLSConfigError",
-				Message:            "Syntax Error in TLS Config",
+	inValidConditionError := testcase{
+		proxyUpdate: ProxyUpdate{
+			Object: projectcontour.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Name:       "test",
+					Namespace:  "test",
+					Generation: 6,
+				},
 			},
-			Warnings: []projectcontour.SubCondition{
-				{
-					Type:    "TLSError",
-					Reason:  "TLSConfigError",
-					Message: "Syntax Error in TLS Config",
+			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
+				ValidCondition: {
+					Condition: projectcontour.Condition{
+						Type:    string(ValidCondition),
+						Status:  projectcontour.ConditionFalse,
+						Reason:  "TLSErrorTLSConfigError",
+						Message: "Syntax Error in TLS Config",
+					},
+					Errors: []projectcontour.SubCondition{
+						{
+							Type:    "TLSError",
+							Reason:  "TLSConfigError",
+							Message: "Syntax Error in TLS Config",
+						},
+					},
 				},
 			},
 		},
+		wantConditions: []projectcontour.DetailedCondition{
+			{
+				Condition: projectcontour.Condition{
+					Type:               string(ValidCondition),
+					Status:             projectcontour.ConditionFalse,
+					ObservedGeneration: 6,
+					Reason:             "TLSErrorTLSConfigError",
+					Message:            "Syntax Error in TLS Config",
+				},
+				Errors: []projectcontour.SubCondition{
+					{
+						Type:    "TLSError",
+						Reason:  "TLSConfigError",
+						Message: "Syntax Error in TLS Config",
+					},
+				},
+			},
+		},
+		wantCurrentStatus: k8s.StatusInvalid,
+		wantDescription:   "TLSErrorTLSConfigError: Syntax Error in TLS Config",
+	}
+	run("invalid status, one error", inValidConditionError)
+
+	orphanedCondition := testcase{
+		proxyUpdate: ProxyUpdate{
+			Object: projectcontour.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Name:       "test",
+					Namespace:  "test",
+					Generation: 6,
+				},
+			},
+			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
+				ValidCondition: {
+					Condition: projectcontour.Condition{
+						Type:    string(ValidCondition),
+						Status:  projectcontour.ConditionFalse,
+						Reason:  "orphaned",
+						Message: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+					},
+					Errors: []projectcontour.SubCondition{
+						{
+							Type:    "orphaned",
+							Reason:  "Orphaned",
+							Message: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+						},
+					},
+				},
+			},
+		},
+		wantConditions: []projectcontour.DetailedCondition{
+			{
+				Condition: projectcontour.Condition{
+					Type:               string(ValidCondition),
+					Status:             projectcontour.ConditionFalse,
+					ObservedGeneration: 6,
+					Reason:             "orphaned",
+					Message:            "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+				},
+				Errors: []projectcontour.SubCondition{
+					{
+						Type:    "orphaned",
+						Reason:  "Orphaned",
+						Message: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
+					},
+				},
+			},
+		},
+		wantCurrentStatus: k8s.StatusOrphaned,
+		wantDescription:   "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 	}
 
-	mutator := proxyUpdate.StatusMutatorFunc()
-	newProxy := mutator.Mutate(&proxyUpdate.Object)
+	run("orphaned HTTPProxy", orphanedCondition)
 
-	switch o := newProxy.(type) {
-	case *projectcontour.HTTPProxy:
-		assert.Equal(t, wantConditions, o.Status.Conditions)
-		assert.Equal(t, "valid", o.Status.CurrentStatus)
-		assert.Equal(t, "TLSErrorTLSConfigError: Syntax Error in TLS Config", o.Status.Description)
-	default:
-		t.Fatal("Got a non-HTTPProxy object, wow, impressive.")
+	updateExistingValidCond := testcase{
+		proxyUpdate: ProxyUpdate{
+			Object: projectcontour.HTTPProxy{
+				ObjectMeta: v1.ObjectMeta{
+					Name:       "test",
+					Namespace:  "test",
+					Generation: 5,
+				},
+				Status: projectcontour.HTTPProxyStatus{
+					Conditions: []projectcontour.DetailedCondition{
+						{
+							Condition: projectcontour.Condition{
+								Type:   string(ValidCondition),
+								Status: projectcontour.ConditionTrue,
+							},
+						},
+					},
+				},
+			},
+			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
+				ValidCondition: {
+					Condition: projectcontour.Condition{
+						Type:    string(ValidCondition),
+						Status:  projectcontour.ConditionTrue,
+						Reason:  "TLSErrorTLSConfigError",
+						Message: "Syntax Error in TLS Config",
+					},
+					Warnings: []projectcontour.SubCondition{
+						{
+							Type:    "TLSError",
+							Reason:  "TLSConfigError",
+							Message: "Syntax Error in TLS Config",
+						},
+					},
+				},
+			},
+		},
+		wantConditions: []projectcontour.DetailedCondition{
+			{
+				Condition: projectcontour.Condition{
+					Type:               string(ValidCondition),
+					Status:             projectcontour.ConditionTrue,
+					ObservedGeneration: 5,
+					Reason:             "TLSErrorTLSConfigError",
+					Message:            "Syntax Error in TLS Config",
+				},
+				Warnings: []projectcontour.SubCondition{
+					{
+						Type:    "TLSError",
+						Reason:  "TLSConfigError",
+						Message: "Syntax Error in TLS Config",
+					},
+				},
+			},
+		},
+		wantCurrentStatus: k8s.StatusValid,
+		wantDescription:   "TLSErrorTLSConfigError: Syntax Error in TLS Config",
 	}
 
+	run("Test updating existing Valid Condition", updateExistingValidCond)
 }
