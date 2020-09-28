@@ -39,7 +39,7 @@ type StatusMutator interface {
 // StatusMutatorFunc is a function adaptor for StatusMutators.
 type StatusMutatorFunc func(interface{}) interface{}
 
-// Mutate adapts the StatusMutatorFunc to fit through the StatusMutator inferface.
+// Mutate adapts the StatusMutatorFunc to fit through the StatusMutator interface.
 func (m StatusMutatorFunc) Mutate(old interface{}) interface{} {
 	if m == nil {
 		return nil
