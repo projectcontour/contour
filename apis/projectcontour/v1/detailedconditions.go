@@ -112,3 +112,5 @@ type DetailedCondition struct {
 	// +optional
 	Warnings []SubCondition `json:"warnings,omitempty"`
 }
+
+const ValidConditionType string = "Valid"

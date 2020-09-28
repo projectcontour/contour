@@ -91,7 +91,6 @@ func (r *Route) AuthorizationContext(parent map[string]string) map[string]string
 // the reason to "MultipleReasons", and will append the given message
 // to the existing SubCondition's message.
 func (dc *DetailedCondition) AddError(errorType, reason, message string) {
-
 	message = truncateLongMessage(message)
 
 	// Update the condition so that it indicates there's at least one error
@@ -135,7 +134,6 @@ func (dc *DetailedCondition) AddError(errorType, reason, message string) {
 // the reason to "MultipleReasons", and will append the given message
 // to the existing SubCondition's message.
 func (dc *DetailedCondition) AddErrorf(errorType, reason, formatmsg string, args ...interface{}) {
-
 	dc.AddError(errorType, reason, fmt.Sprintf(formatmsg, args...))
 }
 
@@ -143,7 +141,6 @@ func (dc *DetailedCondition) AddErrorf(errorType, reason, formatmsg string, args
 // Similar to a hash lookup, will return true in the second value if a match is
 // found, and false otherwise.
 func (dc *DetailedCondition) GetError(errorType string) (SubCondition, bool) {
-
 	i := getIndex(errorType, dc.Errors)
 
 	if i == -1 {
@@ -158,7 +155,6 @@ func (dc *DetailedCondition) GetError(errorType string) (SubCondition, bool) {
 // the reason to "MultipleReasons", and will append the given message
 // to the existing SubCondition's message.
 func (dc *DetailedCondition) AddWarning(warnType, reason, message string) {
-
 	message = truncateLongMessage(message)
 
 	detailedReason := warnType + reason
@@ -186,7 +182,6 @@ func (dc *DetailedCondition) AddWarning(warnType, reason, message string) {
 // the reason to "MultipleReasons", and will append the given message
 // to the existing SubCondition's message.
 func (dc *DetailedCondition) AddWarningf(warnType, reason, formatmsg string, args ...interface{}) {
-
 	dc.AddWarning(warnType, reason, fmt.Sprintf(formatmsg, args...))
 }
 
@@ -194,7 +189,6 @@ func (dc *DetailedCondition) AddWarningf(warnType, reason, formatmsg string, arg
 // Similar to a hash lookup, will return true in the second value if a match is
 // found, and false otherwise.
 func (dc *DetailedCondition) GetWarning(warnType string) (SubCondition, bool) {
-
 	i := getIndex(warnType, dc.Warnings)
 
 	if i == -1 {
@@ -232,8 +226,18 @@ func (dc *DetailedCondition) updateReason(reason, message string) {
 	}
 }
 
-func (sc *SubCondition) updateReason(reason, message string) {
+// IsPositivePolarity returns true if the DetailedCondition is a positive-polarity
+// condition like `Valid` or `Ready`, and false otherwise.
+func (dc *DetailedCondition) IsPositivePolarity() bool {
+	switch dc.Type {
+	case ValidConditionType:
+		return true
+	default:
+		return false
+	}
+}
 
+func (sc *SubCondition) updateReason(reason, message string) {
 	if sc.Reason == "" {
 		sc.Reason = reason
 		sc.Message = message
@@ -262,35 +266,21 @@ func getIndex(condType string, subconds []SubCondition) int {
 	return -1
 }
 
-// GetConditionIndex gets the index of a condition of the given type from
-// the given DetailedCondition slice, or -1 if it is not found.
-// The result of this function should only be used on a single version of a
-// DetailedCondition; the ordering of DetailedConditions is not necessarily
-// stable across trips to the apiserver.
-func GetConditionIndex(condType string, conds []DetailedCondition) int {
+// GetConditionFor returns the a pointer to the condition for a given type,
+// or nil if there are none currently present.
+func (status *HTTPProxyStatus) GetConditionFor(condType string) *DetailedCondition {
 
-	for i, cond := range conds {
+	for i, cond := range status.Conditions {
 		if cond.Type == condType {
-			return i
+			return &status.Conditions[i]
 		}
 	}
 
-	return -1
-
+	return nil
 }
 
-// IsPositivePolarity returns true if the DetailedCondition is a positive-polarity
-// condition like `Valid` or `Ready`, and false otherwise.
-func (dc *DetailedCondition) IsPositivePolarity() bool {
-
-	switch dc.Type {
-	case "Valid":
-		return true
-	default:
-		return false
-	}
-}
-
+// LongMessageLength specifies the maximum size any message field should be.
+// This is enforced on the apiserver side by CRD validation requirements.
 const LongMessageLength = 32760
 
 // truncateLongMessage truncates long message strings

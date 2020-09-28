@@ -14,6 +14,7 @@ package status
 
 import (
 	"testing"
+	"time"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -22,7 +23,6 @@ import (
 )
 
 func TestConditionFor(t *testing.T) {
-
 	simpleValidCondition := projectcontour.DetailedCondition{
 		Condition: projectcontour.Condition{
 			Type: "Valid",
@@ -30,7 +30,7 @@ func TestConditionFor(t *testing.T) {
 	}
 
 	pu := ProxyUpdate{
-		Object: projectcontour.HTTPProxy{},
+		Fullname: k8s.NamespacedNameFrom("test/test"),
 		Conditions: map[ConditionType]*projectcontour.DetailedCondition{
 			ValidCondition: &simpleValidCondition,
 		},
@@ -44,28 +44,34 @@ func TestConditionFor(t *testing.T) {
 	gotNil := pu.ConditionFor(emptyCondition)
 	assert.Nil(t, gotNil)
 
-	var newCondition ConditionType = "NewCondition"
+	emptyProxyUpdate := ProxyUpdate{
+		Fullname:   k8s.NamespacedNameFrom("test/test"),
+		Conditions: make(map[ConditionType]*projectcontour.DetailedCondition),
+	}
+
 	newDc := projectcontour.DetailedCondition{
 		Condition: projectcontour.Condition{
-			Type: string(newCondition),
+			Type: string(ValidCondition),
 		},
 	}
-	gotEmpty := pu.ConditionFor(newCondition)
+	gotEmpty := emptyProxyUpdate.ConditionFor(ValidCondition)
 	assert.Equal(t, newDc, *gotEmpty)
 }
 
-func TestStatusMutatorFunc(t *testing.T) {
-
+func TestStatusMutator(t *testing.T) {
 	type testcase struct {
+		testProxy         projectcontour.HTTPProxy
 		proxyUpdate       ProxyUpdate
 		wantConditions    []projectcontour.DetailedCondition
 		wantCurrentStatus string
 		wantDescription   string
 	}
 
+	testTransitionTime := v1.NewTime(time.Now())
+	var testGeneration int64 = 7
+
 	run := func(desc string, tc testcase) {
-		mutator := tc.proxyUpdate.StatusMutatorFunc()
-		newProxy := mutator.Mutate(&tc.proxyUpdate.Object)
+		newProxy := tc.proxyUpdate.Mutate(&tc.testProxy)
 
 		switch o := newProxy.(type) {
 		case *projectcontour.HTTPProxy:
@@ -78,14 +84,17 @@ func TestStatusMutatorFunc(t *testing.T) {
 	}
 
 	validConditionWarning := testcase{
-		proxyUpdate: ProxyUpdate{
-			Object: projectcontour.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
-					Name:       "test",
-					Namespace:  "test",
-					Generation: 5,
-				},
+		testProxy: projectcontour.HTTPProxy{
+			ObjectMeta: v1.ObjectMeta{
+				Name:       "test",
+				Namespace:  "test",
+				Generation: testGeneration,
 			},
+		},
+		proxyUpdate: ProxyUpdate{
+			Fullname:       k8s.NamespacedNameFrom("test/test"),
+			Generation:     testGeneration,
+			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
 				ValidCondition: {
 					Condition: projectcontour.Condition{
@@ -109,7 +118,8 @@ func TestStatusMutatorFunc(t *testing.T) {
 				Condition: projectcontour.Condition{
 					Type:               string(ValidCondition),
 					Status:             projectcontour.ConditionTrue,
-					ObservedGeneration: 5,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
 					Reason:             "TLSErrorTLSConfigError",
 					Message:            "Syntax Error in TLS Config",
 				},
@@ -128,14 +138,17 @@ func TestStatusMutatorFunc(t *testing.T) {
 	run("valid with one warning", validConditionWarning)
 
 	inValidConditionError := testcase{
-		proxyUpdate: ProxyUpdate{
-			Object: projectcontour.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
-					Name:       "test",
-					Namespace:  "test",
-					Generation: 6,
-				},
+		testProxy: projectcontour.HTTPProxy{
+			ObjectMeta: v1.ObjectMeta{
+				Name:       "test",
+				Namespace:  "test",
+				Generation: 6,
 			},
+		},
+		proxyUpdate: ProxyUpdate{
+			Fullname:       k8s.NamespacedNameFrom("test/test"),
+			Generation:     testGeneration,
+			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
 				ValidCondition: {
 					Condition: projectcontour.Condition{
@@ -159,7 +172,8 @@ func TestStatusMutatorFunc(t *testing.T) {
 				Condition: projectcontour.Condition{
 					Type:               string(ValidCondition),
 					Status:             projectcontour.ConditionFalse,
-					ObservedGeneration: 6,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
 					Reason:             "TLSErrorTLSConfigError",
 					Message:            "Syntax Error in TLS Config",
 				},
@@ -178,14 +192,17 @@ func TestStatusMutatorFunc(t *testing.T) {
 	run("invalid status, one error", inValidConditionError)
 
 	orphanedCondition := testcase{
-		proxyUpdate: ProxyUpdate{
-			Object: projectcontour.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
-					Name:       "test",
-					Namespace:  "test",
-					Generation: 6,
-				},
+		testProxy: projectcontour.HTTPProxy{
+			ObjectMeta: v1.ObjectMeta{
+				Name:       "test",
+				Namespace:  "test",
+				Generation: testGeneration,
 			},
+		},
+		proxyUpdate: ProxyUpdate{
+			Fullname:       k8s.NamespacedNameFrom("test/test"),
+			Generation:     testGeneration,
+			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
 				ValidCondition: {
 					Condition: projectcontour.Condition{
@@ -209,7 +226,8 @@ func TestStatusMutatorFunc(t *testing.T) {
 				Condition: projectcontour.Condition{
 					Type:               string(ValidCondition),
 					Status:             projectcontour.ConditionFalse,
-					ObservedGeneration: 6,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
 					Reason:             "orphaned",
 					Message:            "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 				},
@@ -229,24 +247,27 @@ func TestStatusMutatorFunc(t *testing.T) {
 	run("orphaned HTTPProxy", orphanedCondition)
 
 	updateExistingValidCond := testcase{
-		proxyUpdate: ProxyUpdate{
-			Object: projectcontour.HTTPProxy{
-				ObjectMeta: v1.ObjectMeta{
-					Name:       "test",
-					Namespace:  "test",
-					Generation: 5,
-				},
-				Status: projectcontour.HTTPProxyStatus{
-					Conditions: []projectcontour.DetailedCondition{
-						{
-							Condition: projectcontour.Condition{
-								Type:   string(ValidCondition),
-								Status: projectcontour.ConditionTrue,
-							},
+		testProxy: projectcontour.HTTPProxy{
+			ObjectMeta: v1.ObjectMeta{
+				Name:       "test",
+				Namespace:  "test",
+				Generation: testGeneration,
+			},
+			Status: projectcontour.HTTPProxyStatus{
+				Conditions: []projectcontour.DetailedCondition{
+					{
+						Condition: projectcontour.Condition{
+							Type:   string(ValidCondition),
+							Status: projectcontour.ConditionTrue,
 						},
 					},
 				},
 			},
+		},
+		proxyUpdate: ProxyUpdate{
+			Fullname:       k8s.NamespacedNameFrom("test/test"),
+			Generation:     testGeneration,
+			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
 				ValidCondition: {
 					Condition: projectcontour.Condition{
@@ -270,7 +291,8 @@ func TestStatusMutatorFunc(t *testing.T) {
 				Condition: projectcontour.Condition{
 					Type:               string(ValidCondition),
 					Status:             projectcontour.ConditionTrue,
-					ObservedGeneration: 5,
+					ObservedGeneration: testGeneration,
+					LastTransitionTime: testTransitionTime,
 					Reason:             "TLSErrorTLSConfigError",
 					Message:            "Syntax Error in TLS Config",
 				},

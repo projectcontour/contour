@@ -432,88 +432,108 @@ func TestAddWarningConditions(t *testing.T) {
 	}
 }
 
-func TestGetConditionIndex(t *testing.T) {
+func TestGetConditionFor(t *testing.T) {
 	tests := map[string]struct {
-		dcs      []DetailedCondition
+		status   HTTPProxyStatus
 		condType string
-		want     int
+		want     *DetailedCondition
 	}{
 		"get valid condition": {
-			dcs: []DetailedCondition{
-				{
-					Condition: Condition{
-						Type:    "Valid",
-						Reason:  "valid",
-						Message: "valid HTTPProxy",
-						Status:  ConditionTrue,
+			status: HTTPProxyStatus{
+				Conditions: []DetailedCondition{
+					{
+						Condition: Condition{
+							Type:    "Valid",
+							Reason:  "valid",
+							Message: "valid HTTPProxy",
+							Status:  ConditionTrue,
+						},
 					},
-				},
-				{
-					Condition: Condition{
-						Type:    "SomeError",
-						Reason:  "ErrorOccurred",
-						Message: "Some error occurred.",
-						Status:  ConditionTrue,
+					{
+						Condition: Condition{
+							Type:    "SomeError",
+							Reason:  "ErrorOccurred",
+							Message: "Some error occurred.",
+							Status:  ConditionTrue,
+						},
 					},
 				},
 			},
 			condType: "Valid",
-			want:     0,
+			want: &DetailedCondition{
+				Condition: Condition{
+					Type:    "Valid",
+					Reason:  "valid",
+					Message: "valid HTTPProxy",
+					Status:  ConditionTrue,
+				},
+			},
 		},
 		"get error condition": {
-			dcs: []DetailedCondition{
-				{
-					Condition: Condition{
-						Type:    "Valid",
-						Reason:  "valid",
-						Message: "valid HTTPProxy",
-						Status:  ConditionTrue,
+			status: HTTPProxyStatus{
+				Conditions: []DetailedCondition{
+					{
+						Condition: Condition{
+							Type:    "Valid",
+							Reason:  "valid",
+							Message: "valid HTTPProxy",
+							Status:  ConditionTrue,
+						},
 					},
-				},
-				{
-					Condition: Condition{
-						Type:    "SomeError",
-						Reason:  "ErrorOccurred",
-						Message: "Some error occurred.",
-						Status:  ConditionTrue,
+					{
+						Condition: Condition{
+							Type:    "SomeError",
+							Reason:  "ErrorOccurred",
+							Message: "Some error occurred.",
+							Status:  ConditionTrue,
+						},
 					},
 				},
 			},
 			condType: "SomeError",
-			want:     1,
+			want: &DetailedCondition{
+				Condition: Condition{
+					Type:    "SomeError",
+					Reason:  "ErrorOccurred",
+					Message: "Some error occurred.",
+					Status:  ConditionTrue,
+				},
+			},
 		},
 		"get nonexistent condition": {
-			dcs: []DetailedCondition{
-				{
-					Condition: Condition{
-						Type:    "Valid",
-						Reason:  "valid",
-						Message: "valid HTTPProxy",
-						Status:  ConditionTrue,
+			status: HTTPProxyStatus{
+				Conditions: []DetailedCondition{
+					{
+						Condition: Condition{
+							Type:    "Valid",
+							Reason:  "valid",
+							Message: "valid HTTPProxy",
+							Status:  ConditionTrue,
+						},
 					},
-				},
-				{
-					Condition: Condition{
-						Type:    "SomeError",
-						Reason:  "ErrorOccurred",
-						Message: "Some error occurred.",
-						Status:  ConditionTrue,
+					{
+						Condition: Condition{
+							Type:    "SomeError",
+							Reason:  "ErrorOccurred",
+							Message: "Some error occurred.",
+							Status:  ConditionTrue,
+						},
 					},
 				},
 			},
 			condType: "Nonexistent",
-			want:     -1,
+			want:     nil,
 		},
 		"get from empty slice condition": {
-			dcs:      []DetailedCondition{},
+			status:   HTTPProxyStatus{},
 			condType: "Nonexistent",
-			want:     -1,
+			want:     nil,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := GetConditionIndex(tc.condType, tc.dcs)
+			got := tc.status.GetConditionFor(tc.condType)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -613,848 +633,361 @@ func TestTruncateLongMessage(t *testing.T) {
 }
 
 // nolint:misspell
-const longMessage = `In a hole in the ground there lived a hobbit. Not a nasty, dirty, wet hole, filled 
-with the ends of worms and an oozy smell, nor yet a dry, bare, sandy hole with 
-nothing in it to sit down on or to eat: it was a hobbit-hole, and that means 
-comfort. 
- 
-It had a perfectly round door like a porthole, painted green, with a shiny 
-yellow brass knob in the exact middle. The door opened on to a tube-shaped hall 
-like a tunnel: a very comfortable tunnel without smoke, with panelled walls, and 
-floors tiled and carpeted, provided with polished chairs, and lots and lots of pegs 
-for hats and coats—the hobbit was fond of visitors. The tunnel wound on and on, 
-going fairly but not quite straight into the side of the hill—The Hill, as all the 
-people for many miles round called it—and many little round doors opened out 
-of it, first on one side and then on another. No going upstairs for the hobbit: 
-bedrooms, bathrooms, cellars, pantries (lots of these), wardrobes (he had whole 
-rooms devoted to clothes), kitchens, dining-rooms, all were on the same floor, 
-and indeed on the same passage. The best rooms were all on the left-hand side 
-(going in), for these were the only ones to have windows, deep-set round 
-windows looking over his garden, and meadows beyond, sloping down to the 
-river. 
- 
-This hobbit was a very well-to-do hobbit, and his name was Baggins. The 
-Bagginses had lived in the neighbourhood of The Hill for time out of mind, and 
-people considered them very respectable, not only because most of them were 
-rich, but also because they never had any adventures or did anything unexpected: 
-you could tell what a Baggins would say on any question without the bother of 
-asking him. This is a story of how a Baggins had an adventure, and found 
-himself doing and saying things altogether unexpected. He may have lost the 
- 
- 
- 
- 
-neighbours’ respect, but he gained—well, you will see whether he gained 
-anything in the end. 
- 
-The mother of our particular hobbit—what is a hobbit? I suppose hobbits 
-need some description nowadays, since they have become rare and shy of the 
-Big People, as they call us. They are (or were) a little people, about half our 
-height, and smaller than the bearded Dwarves. Hobbits have no beards. There is 
-little or no magic about them, except the ordinary everyday sort which helps 
-them to disappear quietly and quickly when large stupid folk like you and me 
-come blundering along, making a noise like elephants which they can hear a 
-mile off. They are inclined to be fat in the stomach; they dress in bright colours 
-(chiefly green and yellow); wear no shoes, because their feet grow natural 
-leathery soles and thick warm brown hair like the stuff on their heads (which is 
-curly); have long clever brown fingers, good-natured faces, and laugh deep 
-fruity laughs (especially after dinner, which they have twice a day when they can 
-get it). Now you know enough to go on with. As I was saying, the mother of this 
-hobbit—of Bilbo Baggins, that is—was the famous Belladonna Took, one of the 
-three remarkable daughters of the Old Took, head of the hobbits who lived 
-across The Water, the small river that ran at the foot of The Hill. It was often said 
-(in other families) that long ago one of the Took ancestors must have taken a 
-fairy wife. That was, of course, absurd, but certainly there was still something 
-not entirely hobbitlike about them, and once in a while members of the Took- 
-clan would go and have adventures. They discreetly disappeared, and the family 
-hushed it up; but the fact remained that the Tooks were not as respectable as the 
-Bagginses, though they were undoubtedly richer. 
- 
-Not that Belladonna Took ever had any adventures after she became Mrs. 
-Bungo Baggins. Bungo, that was Bilbo’s father, built the most luxurious hobbit- 
-hole for her (and partly with her money) that was to be found either under The 
-Hill or over The Hill or across The Water, and there they remained to the end of 
-their days. Still it is probable that Bilbo, her only son, although he looked and 
-behaved exactly like a second edition of his solid and comfortable father, got 
-something a bit queer in his make-up from the Took side, something that only 
-waited for a chance to come out. The chance never arrived, until Bilbo Baggins 
-was grown up, being about fifty years old or so, and living in the beautiful 
-hobbit-hole built by his father, which I have just described for you, until he had 
-in fact apparently settled down immovably. 
- 
-By some curious chance one morning long ago in the quiet of the world, 
-when there was less noise and more green, and the hobbits were still numerous 
- 
- 
- 
-and prosperous, and Bilbo Baggins was standing at his door after breakfast 
-smoking an enormous long wooden pipe that reached nearly down to his woolly 
-toes (neatly brushed)—Gandalf came by. Gandalf! If you had heard only a 
-quarter of what I have heard about him, and I have only heard very little of all 
-there is to hear, you would be prepared for any sort of remarkable tale. Tales and 
-adventures sprouted up all over the place wherever he went, in the most 
-extraordinary fashion. He had not been down that way under The Hill for ages 
-and ages, not since his friend the Old Took died, in fact, and the hobbits had 
-almost forgotten what he looked like. He had been away over The Hill and 
-across The Water on businesses of his own since they were all small hobbit-boys 
-and hobbit-girls. 
- 
-All that the unsuspecting Bilbo saw that morning was an old man with a staff. 
-He had a tall pointed blue hat, a long grey cloak, a silver scarf over which his 
-long white beard hung down below his waist, and immense black boots. 
- 
-“Good Morning!” said Bilbo, and he meant it. The sun was shining, and the 
-grass was very green. But Gandalf looked at him from under long bushy 
-eyebrows that stuck out further than the brim of his shady hat. 
- 
-“What do you mean?” he said. “Do you wish me a good morning, or mean 
-that it is a good morning whether I want it or not; or that you feel good this 
-morning; or that it is a morning to be good on?” 
- 
-“All of them at once,” said Bilbo. “And a very fine morning for a pipe of 
-tobacco out of doors, into the bargain. If you have a pipe about you, sit down and 
-have a fill of mine! There’s no hurry, we have all the day before us!” Then Bilbo 
-sat down on a seat by his door, crossed his legs, and blew out a beautiful grey 
-ring of smoke that sailed up into the air without breaking and floated away over 
-The Hill. 
- 
-“Very pretty!” said Gandalf. “But I have no time to blow smoke-rings this 
-morning. I am looking for someone to share in an adventure that I am arranging, 
-and it’s very difficult to find anyone.” 
- 
-“I should think so—in these parts! We are plain quiet folk and have no use 
-for adventures. Nasty disturbing uncomfortable things! Make you late for 
-dinner! I can’t think what anybody sees in them,” said our Mr. Baggins, and 
-stuck one thumb behind his braces, and blew out another even bigger smoke¬ 
-ring. Then he took out his morning letters, and began to read, pretending to take 
-no more notice of the old man. He had decided that he was not quite his sort, and 
-wanted him to go away. But the old man did not move. He stood leaning on his 
-stick and gazing at the hobbit without saying anything, till Bilbo got quite 
- 
- 
- 
-uncomfortable and even a little cross. 
- 
-“Good morning!” he said at last. “We don’t want any adventures here, thank 
-you! You might try over The Hill or across The Water.” By this he meant that the 
-conversation was at an end. 
- 
-“What a lot of things you do use Good morning for!” said Gandalf. “Now 
-you mean that you want to get rid of me, and that it won’t be good till I move 
-off.” 
- 
-“Not at all, not at all, my dear sir! Let me see, I don’t think I know your 
-name?” 
- 
-“Yes, yes, my dear sir—and I do know your name, Mr. Bilbo Baggins. And 
-you do know my name, though you don’t remember that I belong to it. I am 
-Gandalf, and Gandalf means me! To think that I should have lived to be good- 
-morninged by Belladonna Took’s son, as if I was selling buttons at the door!” 
- 
-“Gandalf, Gandalf! Good gracious me! Not the wandering wizard that gave 
-Old Took a pair of magic diamond studs that fastened themselves and never 
-came undone till ordered? Not the fellow who used to tell such wonderful tales 
-at parties, about dragons and goblins and giants and the rescue of princesses and 
-the unexpected luck of widows’ sons? Not the man that used to make such 
-particularly excellent fireworks! I remember those! Old Took used to have them 
-on Midsummer’s Eve. Splendid! They used to go up like great lilies and 
-snapdragons and laburnums of fire and hang in the twilight all evening!” You 
-will notice already that Mr. Baggins was not quite so prosy as he liked to 
-believe, also that he was very fond of flowers. “Dear me!” he went on. “Not the 
-Gandalf who was responsible for so many quiet lads and lasses going off into the 
-Blue for mad adventures? Anything from climbing trees to visiting elves—or 
-sailing in ships, sailing to other shores! Bless me, life used to be quite inter—I 
-mean, you used to upset things badly in these parts once upon a time. I beg your 
-pardon, but I had no idea you were still in business.” 
- 
-“Where else should I be?” said the wizard. “All the same I am pleased to find 
-you remember something about me. You seem to remember my fireworks 
-kindly, at any rate, and that is not without hope. Indeed for your old grandfather 
-Took’s sake, and for the sake of poor Belladonna, I will give you what you asked 
-for.” 
- 
-“I beg your pardon, I haven’t asked for anything!” 
- 
-“Yes, you have! Twice now. My pardon. I give it you. In fact I will go so far 
-as to send you on this adventure. Very amusing for me, very good for you—and 
-profitable too, very likely, if you ever get over it.” 
- 
- 
- 
-“Sorry! I don’t want any adventures, thank you. Not today. Good morning! 
-But please come to tea—any time you like! Why not tomorrow? Come 
-tomorrow! Good bye!” With that the hobbit turned and scuttled inside his round 
-green door, and shut it as quickly as he dared, not to seem rude. Wizards after all 
-are wizards. 
- 
-“What on earth did I ask him to tea for!” he said to himself, as he went to the 
-pantry. He had only just had breakfast, but he thought a cake or two and a drink 
-of something would do him good after his fright. 
- 
-Gandalf in the meantime was still standing outside the door, and laughing 
-long but quietly. After a while he stepped up, and with the spike on his staff 
-scratched a queer sign on the hobbit’s beautiful green front-door. Then he strode 
-away, just about the time when Bilbo was finishing his second cake and 
-beginning to think that he had escaped adventures very well. 
- 
-The next day he had almost forgotten about Gandalf. He did not remember 
-things very well, unless he put them down on his Engagement Tablet: like this: 
-Gandalf Tea Wednesday. Yesterday he had been too flustered to do anything of 
-the kind. 
- 
-Just before tea-time there came a tremendous ring on the front-door bell, and 
-then he remembered! He rushed and put on the kettle, and put out another cup 
-and saucer, and an extra cake or two, and ran to the door. 
- 
-“I am so sorry to keep you waiting!” he was going to say, when he saw that it 
-was not Gandalf at all. It was a dwarf with a blue beard tucked into a golden 
-belt, and very bright eyes under his dark-green hood. As soon as the door was 
-opened, he pushed inside, just as if he had been expected. 
- 
-He hung his hooded cloak on the nearest peg, and “Dwalin at your service!” 
-he said with a low bow. 
- 
-“Bilbo Baggins at yours!” said the hobbit, too surprised to ask any questions 
-for the moment. When the silence that followed had become uncomfortable, he 
-added: “I am just about to take tea; pray come and have some with me.” A little 
-stiff perhaps, but he meant it kindly. And what would you do, if an uninvited 
-dwarf came and hung his things up in your hall without a word of explanation? 
- 
-They had not been at table long, in fact they had hardly reached the third 
-cake, when there came another even louder ring at the bell. 
- 
-“Excuse me! ” said the hobbit, and off he went to the door. 
- 
-“So you have got here at last!” That was what he was going to say to Gandalf 
-this time. But it was not Gandalf. Instead there was a very old-looking dwarf on 
-the step with a white beard and a scarlet hood; and he too hopped inside as soon 
- 
- 
- 
-as the door was open, just as if he had been invited. 
- 
-“I see they have begun to arrive already,” he said when he caught sight of 
-Dwalin’s green hood hanging up. He hung his red one next to it, and “Balin at 
-your service!” he said with his hand on his breast. 
- 
-“Thank you!” said Bilbo with a gasp. It was not the correct thing to say, but 
-they have begun to arrive had flustered him badly. He liked visitors, but he liked 
-to know them before they arrived, and he preferred to ask them himself. He had 
-a horrible thought that the cakes might run short, and then he—as the host: he 
-knew his duty and stuck to it however painful—he might have to go without. 
- 
-“Come along in, and have some tea!” he managed to say after taking a deep 
-breath. 
- 
-“A little beer would suit me better, if it is all the same to you, my good sir,” 
-said Balin with the white beard. “But I don’t mind some cake—seed-cake, if you 
-have any.” 
- 
-“Lots!” Bilbo found himself answering, to his own surprise; and he found 
-himself scuttling off, too, to the cellar to fill a pint beer-mug, and then to a 
-pantry to fetch two beautiful round seed-cakes which he had baked that 
-afternoon for his after-supper morsel. 
- 
-When he got back Balin and Dwalin were talking at the table like old friends 
-(as a matter of fact they were brothers). Bilbo plumped down the beer and the 
-cake in front of them, when loud came a ring at the bell again, and then another 
-ring. 
- 
-“Gandalf for certain this time,” he thought as he puffed along the passage. 
- 
-But it was not. It was two more dwarves, both with blue hoods, silver belts, and 
-yellow beards; and each of them carried a bag of tools and a spade. In they 
-hopped, as soon as the door began to open—Bilbo was hardly surprised at all. 
- 
-“What can I do for you, my dwarves?” he said. 
- 
-“Kili at your service!” said the one. “And Fili!” added the other; and they 
-both swept off their blue hoods and bowed. 
- 
-“At yours and your family’s!” replied Bilbo, remembering his manners this 
-time. 
- 
-“Dwalin and Balin here already, I see,” said Kili. “Let us join the throng!” 
- 
-“Throng!” thought Mr. Baggins. “I don’t like the sound of that. I really must 
-sit down for a minute and collect my wits, and have a drink.” He had only just 
-had a sip—in the corner, while the four dwarves sat round the table, and talked 
-about mines and gold and troubles with the goblins, and the depredations of 
-dragons, and lots of other things which he did not understand, and did not want 
- 
- 
- 
-to, for they sounded much too adventurous—when, ding-dong-a-ling-dang, his 
-bell rang again, as if some naughty little hobbit-boy was trying to pull the handle 
-off. 
- 
-“Someone at the door!” he said, blinking. 
- 
-“Some four, I should say by the sound,” said Fili. “Besides, we saw them 
-coming along behind us in the distance.” 
- 
-The poor little hobbit sat down in the hall and put his head in his hands, and 
-wondered what had happened, and what was going to happen, and whether they 
-would all stay to supper. Then the bell rang again louder than ever, and he had to 
-mn to the door. It was not four after all, it was five. Another dwarf had come 
-along while he was wondering in the hall. He had hardly turned the knob, before 
-they were all inside, bowing and saying “at your service” one after another. Dori, 
-Nori, Ori, Oin, and Gloin were their names; and very soon two purple hoods, a 
-grey hood, a brown hood, and a white hood were hanging on the pegs, and off 
-they marched with their broad hands stuck in their gold and silver belts to join 
-the others. Already it had almost become a throng. Some called for ale, and 
-some for porter, and one for coffee, and all of them for cakes; so the hobbit was 
-kept very busy for a while. 
- 
-A big jug of coffee had just been set in the hearth, the seed-cakes were gone, 
-and the dwarves were starting on a round of buttered scones, when there came— 
-a loud knock. Not a ring, but a hard rat-tat on the hobbit’s beautiful green door. 
-Somebody was banging with a stick! 
- 
-Bilbo rushed along the passage, very angry, and altogether bewildered and 
-bewuthered—this was the most awkward Wednesday he ever remembered. He 
-pulled open the door with a jerk, and they all fell in, one on top of the other. 
- 
-More dwarves, four more! And there was Gandalf behind, leaning on his staff 
-and laughing. He had made quite a dent on the beautiful door; he had also, by the 
-way, knocked out the secret mark that he had put there the morning before. 
- 
-“Carefully! Carefully!” he said. “It is not like you, Bilbo, to keep friends 
-waiting on the mat, and then open the door like a pop-gun! Let me introduce 
-Bifur, Bofur, Bombur, and especially Thorin!” 
- 
-“At your service!” said Bifur, Bofur, and Bombur standing in a row. Then 
-they hung up two yellow hoods and a pale green one; and also a sky-blue one 
-with a long silver tassel. This last belonged to Thorin, an enormously important 
-dwarf, in fact no other than the great Thorin Oakenshield himself, who was not 
-at all pleased at falling flat on Bilbo’s mat with Bifur, Bofur, and Bombur on top 
-of him. For one thing Bombur was immensely fat and heavy. Thorin indeed was 
- 
- 
- 
-very haughty, and said nothing about service; but poor Mr. Baggins said he was 
-sorry so many times, that at last he grunted “pray don’t mention it,” and stopped 
-frowning. 
- 
-“Now we are all here!” said Gandalf, looking at the row of thirteen hoods— 
-the best detachable party hoods—and his own hat hanging on the pegs. “Quite a 
-merry gathering! I hope there is something left for the late-comers to eat and 
-drink! What’s that? Tea! No thank you! A little red wine, I think for me.” 
- 
-“And for me,” said Thorin. 
- 
-“And raspberry jam and apple-tart,” said Bifur. 
- 
-“And mince-pies and cheese,” said Bofur. 
- 
-“And pork-pie and salad,” said Bombur. 
- 
-“And more cakes—and ale—and coffee, if you don’t mind,” called the other 
-dwarves through the door. 
- 
-“Put on a few eggs, there’s a good fellow!” Gandalf called after him, as the 
-hobbit stumped off to the pantries. “And just bring out the cold chicken and 
-pickles!” 
- 
-“Seems to know as much about the inside of my larders as I do myself!” 
-thought Mr. Baggins, who was feeling positively flummoxed, and was beginning 
-to wonder whether a most wretched adventure had not come right into his house. 
-By the time he had got all the bottles and dishes and knives and forks and glasses 
-and plates and spoons and things piled up on big trays, he was getting very hot, 
-and red in the face, and annoyed. 
- 
-“Confusticate and bebother these dwarves!” he said aloud. “Why don’t they 
-come and lend a hand?” Lo and behold! there stood Balin and Dwalin at the door 
-of the kitchen, and Fili and Kili behind them, and before he could say knife they 
-had whisked the trays and a couple of small tables into the parlour and set out 
-everything afresh. 
- 
-Gandalf sat at the head of the party with the thirteen dwarves all round: and 
-Bilbo sat on a stool at the fireside, nibbling at a biscuit (his appetite was quite 
-taken away), and trying to look as if this was all perfectly ordinary and not in the 
-least an adventure. The dwarves ate and ate, and talked and talked, and time got 
-on. At last they pushed their chairs back, and Bilbo made a move to collect the 
-plates and glasses. 
- 
-“I suppose you will all stay to supper?” he said in his politest unpressing 
-tones. 
- 
-“Of course!” said Thorin. “And after. We shan’t get through the business till 
-late, and we must have some music first. Now to clear up!”
-Thereupon the twelve dwarves—not Thorin, he was too important, and 
-stayed talking to Gandalf—jumped to their feet, and made tall piles of all the 
-things. Off they went, not waiting for trays, balancing columns of plates, each 
-with a bottle on the top, with one hand, while the hobbit ran after them almost 
-squeaking with fright: “please be careful!” and “please, don’t trouble! I can 
-manage.” But the dwarves only started to sing: 
- 
- 
-Chip the glasses and crack the plates! 
- 
-Blunt the knives and bend the forks! 
-That’s what Bilbo Baggins hates- 
-Smash the bottles and burn the corks! 
- 
- 
-Cut the cloth and tread on the fat! 
- 
-Pour the milk on the pantry floor! 
-Leave the bones on the bedroom mat! 
-Splash the wine on every door! 
- 
- 
-Dump the crocks in a boiling bowl; 
- 
-Pound them up with a thumping pole; 
-And when you’ve finished, if any are whole, 
-Send them down the hall to roll! 
- 
- 
-That’s what Bilbo Baggins hates! 
- 
-So, carefully! carefully with the plates! 
- 
- 
-And of course they did none of these dreadful things, and everything was 
-cleaned and put away safe as quick as lightning, while the hobbit was turning 
-round and round in the middle of the kitchen trying to see what they were doing. 
-Then they went back, and found Thorin with his feet on the fender smoking a 
-pipe. He was blowing the most enormous smoke-rings, and wherever he told one 
-to go, it went—up the chimney, or behind the clock on the mantelpiece, or under 
-the table, or round and round the ceiling; but wherever it went it was not quick 
-enough to escape Gandalf. Pop! he sent a smaller smoke-ring from his short 
-clay-pipe straight through each one of Thorin’s. Then Gandalf’s smoke-ring 
- 
- 
- 
-would go green and come back to hover over the wizard’s head. He had a cloud 
-of them about him already, and in the dim light it made him look strange and 
-sorcerous. Bilbo stood still and watched—he loved smoke-rings—and then he 
-blushed to think how proud he had been yesterday morning of the smoke-rings 
-he had sent up the wind over The Hill. 
- 
-“Now for some music!” said Thorin. “Bring out the instruments!” 
- 
-Kili and Fili rushed for their bags and brought back little fiddles; Dori, Nori, 
-and Ori brought out flutes from somewhere inside their coats; Bombur produced 
-a drum from the hall; Bifur and Bofur went out too, and came back with clarinets 
-that they had left among the walking-sticks. Dwalin and Balin said: “Excuse me, 
- 
-I left mine in the porch!” “Just bring mine in with you!” said Thorin. They came 
-back with viols as big as themselves, and with Thorin’s harp wrapped in a green 
-cloth. It was a beautiful golden harp, and when Thorin struck it the music began 
-all at once, so sudden and sweet that Bilbo forgot everything else, and was swept 
-away into dark lands under strange moons, far over The Water and very far from 
-his hobbit-hole under The Hill. 
- 
-The dark came into the room from the little window that opened in the side of 
-The Hill; the firelight flickered—it was April—and still they played on, while 
-the shadow of Gandalf’s beard wagged against the wall. 
- 
-The dark filled all the room, and the fire died down, and the shadows were 
-lost, and still they played on. And suddenly first one and then another began to 
-sing as they played, deep-throated singing of the dwarves in the deep places of 
-their ancient homes; and this is like a fragment of their song, if it can be like 
-their song without their music. 
- 
- 
-Far over the misty mountains cold 
-To dungeons deep and caverns old 
-We must away ere break of day 
-To seek the pale enchanted gold. 
- 
- 
-The dwarves of yore made mighty spells, 
-While hammers fell like ringing bells 
-In places deep, where dark things sleep, 
-In hollow halls beneath the fells. 
- 
- 
- 
-For ancient king and elvish lord 
-There many a gleaming golden hoard 
-They shaped and wrought, and light they caught 
-To hide in gems on hilt of sword. 
- 
- 
-On silver necklaces they strung 
- 
-The flowering stars, on crowns they hung 
- 
-The dragon-fire, in twisted wire 
- 
-They meshed the light of moon and sun. 
- 
- 
-Far over the misty mountains cold 
-To dungeons deep and caverns old 
-We must away, ere break of day, 
- 
-To claim our long-forgotten gold. 
- 
- 
-Goblets they carved there for themselves 
-And harps of gold; where no man delves 
-There lay they long, and many a song 
-Was sung unheard by men or elves. 
- 
- 
-The pines were roaring on the height, 
-The winds were moaning in the night. 
-The fire was red, it flaming spread; 
- 
-The trees like torches blazed with light. 
- 
- 
-The bells were ringing in the dale 
-And men looked up with faces pale; 
-The dragon’s ire more fierce than fire 
-Laid low their towers and houses frail. 
- 
- 
-The mountain smoked beneath the moon; 
-The dwarves, they heard the tramp of doom. 
-They fled their hall to dying fall 
- 
- 
- 
-Beneath his feet, beneath the moon. 
- 
- 
-Far over the misty mountains grim 
-To dungeons deep and caverns dim 
-We must away, ere break of day, 
- 
-To win our harps and gold from him! 
- 
- 
-As they sang the hobbit felt the love of beautiful things made by hands and 
-by cunning and by magic moving through him, a fierce and a jealous love, the 
-desire of the hearts of dwarves. Then something Tookish woke up inside him, 
-and he wished to go and see the great mountains, and hear the pine-trees and the 
-waterfalls, and explore the caves, and wear a sword instead of a walking-stick. 
- 
-He looked out of the window. The stars were out in a dark sky above the trees. 
- 
-He thought of the jewels of the dwarves shining in dark caverns. Suddenly in the 
-wood beyond The Water a flame leapt up—probably somebody lighting a wood- 
-fire—and he thought of plundering dragons settling on his quiet Hill and 
-kindling it all to flames. He shuddered; and very quickly he was plain Mr. 
-Baggins of Bag-End, Under-Hill, again. 
- 
-He got up trembling. He had less than half a mind to fetch the lamp, and 
-more than half a mind to pretend to, and go and hide behind the beer-barrels in 
-the cellar, and not come out again until all the dwarves had gone away. Suddenly 
-he found that the music and the singing had stopped, and they were all looking at 
-him with eyes shining in the dark. 
- 
-“Where are you going?” said Thorin, in a tone that seemed to show that he 
-guessed both halves of the hobbit’s mind. 
- 
-“What about a little light?” said Bilbo apologetically. 
- 
-“We like the dark,” said all the dwarves. “Dark for dark business! There are 
-many hours before dawn.” 
- 
-“Of course! ” said Bilbo, and sat down in a hurry. He missed the stool and sat 
-in the fender, knocking over the poker and shovel with a crash. 
- 
-“Hush!” said Gandalf. “Let Thorin speak!” And this is how Thorin began. 
- 
-“Gandalf, dwarves and Mr. Baggins! We are met together in the house of our 
-friend and fellow conspirator, this most excellent and audacious hobbit—may 
-the hair on his toes never fall out! all praise to his wine and ale!—” He paused 
-for breath and for a polite remark from the hobbit, but the compliments were 
-quite lost on poor Bilbo Baggins, who was wagging his mouth in protest at being 
- 
- 
- 
-called audacious and worst of all fellow conspirator, though no noise came out, 
-he was so flummoxed. So Thorin went on: 
- 
-“We are met to discuss our plans, our ways, means, policy and devices. We 
-shall soon before the break of day start on our long journey, a journey from 
-which some of us, or perhaps all of us (except our friend and counsellor, the 
-ingenious wizard Gandalf) may never return. It is a solemn moment. Our object 
-is, I take it, well known to us all. To the estimable Mr. Baggins, and perhaps to 
-one or two of the younger dwarves (I think I should be right in naming Kili and 
-Fili, for instance), the exact situation at the moment may require a little brief 
-explanation—” 
- 
-This was Thorin’s style. He was an important dwarf. If he had been allowed, 
-he would probably have gone on like this until he was out of breath, without 
-telling any one there anything that was not known already. But he was rudely 
-interrupted. Poor Bilbo couldn’t bear it any longer. At may never return he began 
-to feel a shriek coming up inside, and very soon it burst out like the whistle of an 
-engine coming out of a tunnel. All the dwarves sprang up, knocking over the 
-table. Gandalf struck a blue light on the end of his magic staff, and in its 
-firework glare the poor little hobbit could be seen kneeling on the hearth-rug, 
-shaking like a jelly that was melting. Then he fell flat on the floor, and kept on 
-calling out “struck by lightning, struck by lightning!” over and over again; and 
-that was all they could get out of him for a long time. So they took him and laid 
-him out of the way on the drawing-room sofa with a drink at his elbow, and they 
-went back to their dark business. 
- 
-“Excitable little fellow,” said Gandalf, as they sat down again. “Gets funny 
-queer fits, but he is one of the best, one of the best—as fierce as a dragon in a 
-pinch.” 
- 
-If you have ever seen a dragon in a pinch, you will realize that this was only 
-poetical exaggeration applied to any hobbit, even to Old Took’s great-grand¬ 
-uncle Bullroarer, who was so huge (for a hobbit) that he could ride a horse. He 
-charged the ranks of the goblins of Mount Gram in the Battle of the Green 
-Fields, and knocked their king Golfimbul’s head clean off with a wooden club. It 
-sailed a hundred yards through the air and went down a rabbit-hole, and in this 
-way the battle was won and the game of Golf invented at the same moment. 
- 
-In the meanwhile, however, Bullroarer’s gentler descendant was reviving in 
-the drawing-room. After a while and a drink he crept nervously to the door of the 
-parlour. This is what he heard, Gloin speaking: “Humph!” (or some snort more 
-or less like that). “Will he do, do you think? It is all very well for Gandalf to talk 
- 
- 
- 
-about this hobbit being fierce, but one shriek like that in a moment of excitement 
-would be enough to wake the dragon and all his relatives, and kill the lot of us. I 
-think it sounded more like fright than excitement! In fact, if it had not been for 
-the sign on the door, I should have been sure we had come to the wrong house. 
-As soon as I clapped eyes on the little fellow bobbing and puffing on the mat, I 
-had my doubts. He looks more like a grocer than a burglar!” 
- 
-Then Mr. Baggins turned the handle and went in. The Took side had won. He 
-suddenly felt he would go without bed and breakfast to be thought fierce. As for 
-little fellow bobbing on the mat it almost made him really fierce. Many a time 
-afterwards the Baggins part regretted what he did now, and he said to himself: 
-“Bilbo, you were a fool; you walked right in and put your foot in it.” 
- 
-“Pardon me,” he said, “if I have overheard words that you were saying. I 
-don’t pretend to understand what you are talking about, or your reference to 
-burglars, but I think I am right in believing” (this is what he called being on his 
-dignity) “that you think I am no good. I will show you. I have no signs on my 
-door—it was painted a week ago—, and I am quite sure you have come to the 
-wrong house. As soon as I saw your funny faces on the door-step, I had my 
-doubts. But treat it as the right one. Tell me what you want done, and I will try it, 
-if I have to walk from here to the East of East and fight the wild Were-worms in 
-the Last Desert. I had a great-great-great-grand-uncle once, Bullroarer Took, and 
- 
-“Yes, yes, but that was long ago,” said Gloin. “I was talking about you. And I 
-assure you there is a mark on this door—the usual one in the trade, or used to be. 
-Burglar wants a good job, plenty of Excitement and reasonable Reward, that’s 
-how it is usually read. You can say Expert Treasure-hunter instead of Burglar if 
-you like. Some of them do. It’s all the same to us. Gandalf told us that there was 
-a man of the sort in these parts looking for a Job at once, and that he had 
-arranged for a meeting here this Wednesday tea-time.” 
- 
-“Of course there is a mark,” said Gandalf. “I put it there myself. For very 
-good reasons. You asked me to find the fourteenth man for your expedition, and 
-I chose Mr. Baggins. Just let any one say I chose the wrong man or the wrong 
-house, and you can stop at thirteen and have all the bad luck you like, or go back 
-to digging coal.” 
- 
-He scowled so angrily at Gloin that the dwarf huddled back in his chair; and 
-when Bilbo tried to open his mouth to ask a question, he turned and frowned at 
-him and stuck out his bushy eyebrows, till Bilbo shut his mouth tight with a 
-snap. “That’s right,” said Gandalf. “Let’s have no more argument. I have chosen 
- 
- 
- 
-Mr. Baggins and that ought to be enough for all of you. If I say he is a Burglar, a 
-Burglar he is, or will be when the time comes. There is a lot more in him than 
-you guess, and a deal more than he has any idea of himself. You may (possibly) 
-all live to thank me yet. Now Bilbo, my boy, fetch the lamp, and let’s have a 
-little light on this!” 
- 
-On the table in the light of a big lamp with a red shade he spread a piece of 
-parchment rather like a map. 
- 
-“This was made by Thror, your grandfather, Thorin,” he said in answer to the 
-dwarves’ excited questions. “It is a plan of the Mountain.” 
- 
-“I don’t see that this will help us much,” said Thorin disappointedly after a 
-glance. “I remember the Mountain well enough and the lands about it. And I 
-know where Mirkwood is, and the Withered Heath where the great dragons 
-bred.” 
- 
-“There is a dragon marked in red on the Mountain,” said Balin, “but it will be 
-easy enough to find him without that, if ever we arrive there.” 
- 
-“There is one point that you haven’t noticed,” said the wizard, “and that is the 
-secret entrance. You see that rune on the West side, and the hand pointing to it 
-from the other runes? That marks a hidden passage to the Lower Halls.” (Look at 
-the map at the beginning of this book, and you will see there the runes.) 
- 
-“It may have been secret once,” said Thorin, “but how do we know that it is 
-secret any longer? Old Smaug has lived there long enough now to find out 
-anything there is to know about those caves.” 
- 
-“He may—but he can’t have used it for years and years.” 
- 
-“Why?” 
- 
-“Because it is too small. ‘ Five feet high the door and three may walk abreast ’ 
-say the runes, but Smaug could not creep into a hole that size, not even when he 
-was a young dragon, certainly not after devouring so many of the dwarves and 
-men of Dale.” 
- 
-“It seems a great big hole to me,” squeaked Bilbo (who had no experience of 
-dragons and only of hobbit-holes). He was getting excited and interested again, 
-so that he forgot to keep his mouth shut. He loved maps, and in his hall there 
-hung a large one of the Country Round with all his favourite walks marked on it 
-in red ink. “How could such a large door be kept secret from everybody outside, 
-apart from the dragon?” he asked. He was only a little hobbit you must 
-remember. 
- 
-“In lots of ways,” said Gandalf. “But in what way this one has been hidden 
-we don’t know without going to see. From what it says on the map I should 
- 
- 
- 
-guess there is a closed door which has been made to look exactly like the side of 
-the Mountain. That is the usual dwarves’ method—I think that is right, isn’t it?” 
- 
-“Quite right,” said Thorin. 
- 
-“Also,” went on Gandalf, “I forgot to mention that with the map went a key, a 
-small and curious key. Here it is!” he said, and handed to Thorin a key with a 
-long barrel and intricate wards, made of silver. “Keep it safe!” 
- 
-“Indeed I will,” said Thorin, and he fastened it upon a fine chain that hung 
-about his neck and under his jacket. “Now things begin to look more hopeful. 
-This news alters them much for the better. So far we have had no clear idea what 
-to do. We thought of going East, as quiet and careful as we could, as far as the 
-Long Lake. After that the trouble would begin—.” 
- 
-“A long time before that, if I know anything about the roads East,” 
-interrupted Gandalf. 
- 
-“We might go from there up along the River Running,” went on Thorin 
-taking no notice, “and so to the ruins of Dale—the old town in the valley there, 
-under the shadow of the Mountain. But we none of us liked the idea of the Eront 
-Gate. The river runs right out of it through the great cliff at the South of the 
-Mountain, and out of it comes the dragon too—far too often, unless he has 
-changed his habits.” 
- 
-“That would be no good,” said the wizard, “not without a mighty Warrior, 
-even a Hero. I tried to find one; but warriors are busy fighting one another in 
-distant lands, and in this neighbourhood heroes are scarce, or simply not to be 
-found. Swords in these parts are mostly blunt, and axes are used for trees, and 
-shields as cradles or dish-covers; and dragons are comfortably far-off (and 
-therefore legendary). That is why I settled on burglary —especially when I 
-remembered the existence of a Side-door. And here is our little Bilbo Baggins, 
-the burglar, the chosen and selected burglar. So now let’s get on and make some 
-plans.” 
- 
-“Very well then,” said Thorin, “supposing the burglar-expert gives us some 
-ideas or suggestions.” He turned with mock-politeness to Bilbo. 
- 
-“First I should like to know a bit more about things,” said he, feeling all 
-confused and a bit shaky inside, but so far still Tookishly determined to go on 
-with things. “I mean about the gold and the dragon, and all that, and how it got 
-there, and who it belongs to, and so on and further.” 
- 
-“Bless me!” said Thorin, “haven’t you got a map? and didn’t you hear our 
-song? and haven’t we been talking about all this for hours?” 
- 
-“All the same, I should like it all plain and clear,” said he obstinately, putting 
- 
- 
- 
-on his business manner (usually reserved for people who tried to borrow money 
-off him), and doing his best to appear wise and pmdent and professional and live 
-up to Gandalf’s recommendation. “Also I should like to know about risks, out- 
-of-pocket expenses, time required and remuneration, and so forth”—by which he 
-meant: “What am I going to get out of it? and am I going to come back alive?” 
- 
-“O very well,” said Thorin. “Long ago in my grandfather Thror’s time our 
-family was driven out of the far North, and came back with all their wealth and 
-their tools to this Mountain on the map. It had been discovered by my far 
-ancestor, Thrain the Old, but now they mined and they tunnelled and they made 
-huger halls and greater workshops—and in addition I believe they found a good 
-deal of gold and a great many jewels too. Anyway they grew immensely rich and 
-famous, and my grandfather was King under the Mountain again, and treated 
-with great reverence by the mortal men, who lived to the South, and were 
-gradually spreading up the Running River as far as the valley overshadowed by 
-the Mountain. They built the merry town of Dale there in those days. Kings used 
-to send for our smiths, and reward even the least skillful most richly. Fathers 
-would beg us to take their sons as apprentices, and pay us handsomely, 
-especially in food-supplies, which we never bothered to grow or find for 
-ourselves. Altogether those were good days for us, and the poorest of us had 
-money to spend and to lend, and leisure to make beautiful things just for the fun 
-of it, not to speak of the most marvellous and magical toys, the like of which is 
-not to be found in the world now-a-days. So my grandfather’s halls became full 
-of armour and jewels and carvings and cups, and the toy market of Dale was the 
-wonder of the North. 
- 
-“Undoubtedly that was what brought the dragon. Dragons steal gold and 
-jewels, you know, from men and elves and dwarves, wherever they can find 
-them; and they guard their plunder as long as they live (which is practically for 
-ever, unless they are killed), and never enjoy a brass ring of it. Indeed they 
-hardly know a good bit of work from a bad, though they usually have a good 
-notion of the current market value; and they can’t make a thing for themselves, 
-not even mend a little loose scale of their armour. There were lots of dragons in 
-the North in those days, and gold was probably getting scarce up there, with the 
-dwarves flying south or getting killed, and all the general waste and destruction 
-that dragons make going from bad to worse. There was a most specially greedy, 
-strong and wicked worm called Smaug. One day he flew up into the air and 
-came south. The first we heard of it was a noise like a hurricane coming from the 
-North, and the pine-trees on the Mountain creaking and cracking in the wind. 
- 
- 
- 
-Some of the dwarves who happened to be outside (I was one luckily—a fine 
-adventurous lad in those days, always wandering about, and it saved my life that 
-day)—well, from a good way off we saw the dragon settle on our mountain in a 
-spout of flame. Then he came down the slopes and when he reached the woods 
-they all went up in fire. By that time all the bells were ringing in Dale and the 
-warriors were arming. The dwarves rushed out of their great gate; but there was 
-the dragon waiting for them. None escaped that way. The river rushed up in 
-steam and a fog fell on Dale, and in the fog the dragon came on them and 
-destroyed most of the warriors—the usual unhappy story, it was only too 
-common in those days. Then he went back and crept in through the Front Gate 
-and routed out all the halls, and lanes, and tunnels, alleys, cellars, mansions and 
-passages. After that there were no dwarves left alive inside, and he took all their 
-wealth for himself. Probably, for that is the dragons’ way, he has piled it all up in 
-a great heap far inside, and sleeps on it for a bed. Later he used to crawl out of 
-the great gate and come by night to Dale, and carry away people, especially 
-maidens, to eat, until Dale was ruined, and all the people dead or gone. What 
-goes on there now I don’t know for certain, but I don’t suppose any one lives 
-nearer to the Mountain than the far edge of the Long Lake now-a-days. 
- 
-“The few of us that were well outside sat and wept in hiding, and cursed 
-Smaug; and there we were unexpectedly joined by my father and my grandfather 
-with singed beards. They looked very grim but they said very little. When I 
-asked how they had got away, they told me to hold my tongue, and said that one 
-day in the proper time I should know. After that we went away, and we have had 
-to earn our livings as best we could up and down the lands, often enough sinking 
-as low as blacksmith-work or even coalmining. But we have never forgotten our 
-stolen treasure. And even now, when I will allow we have a good bit laid by and 
-are not so badly off”—here Thorin stroked the gold chain round his neck—“we 
-still mean to get it back, and to bring our curses home to Smaug—if we can. 
- 
-“I have often wondered about my father’s and my grandfather’s escape. I see 
-now they must have had a private Side-door which only they knew about. But 
-apparently they made a map, and I should like to know how Gandalf got hold of 
-it, and why it did not come down to me, the rightful heir.” 
- 
-“I did not 'get hold of it,’ I was given it,” said the wizard. “Your grandfather 
-Thror was killed, you remember, in the mines of Moria by Azog the Goblin .” 
- 
-“Curse his name, yes,” said Thorin. 
- 
-“And Thrain your father went away on the twenty-first of April, a hundred 
-years ago last Thursday, and has never been seen by you since—” 
- 
- 
- 
- 
-“True, true,” said Thorin. 
- 
-“Well, your father gave me this to give to you; and if I have chosen my own 
-time and way for handing it over, you can hardly blame me, considering the 
-trouble I had to find you. Your father could not remember his own name when he 
-gave me the paper, and he never told me yours; so on the whole I think I ought to 
-be praised and thanked! Here it is,” said he handing the map to Thorin. 
- 
-“I don’t understand,” said Thorin, and Bilbo felt he would have liked to say 
-the same. The explanation did not seem to explain.
+const longMessage = `It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.
+
+However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered the rightful property of some one or other of their daughters.
+
+“My dear Mr. Bennet,” said his lady to him one day, “have you heard that Netherfield Park is let at last?”
+
+Mr. Bennet replied that he had not.
+
+“But it is,” returned she; “for Mrs. Long has just been here, and she told me all about it.”
+
+Mr. Bennet made no answer.
+
+“Do you not want to know who has taken it?” cried his wife impatiently.
+
+“You want to tell me, and I have no objection to hearing it.”
+
+This was invitation enough.
+
+“Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England; that he came down on Monday in a chaise and four to see the place, and was so much delighted with it, that he agreed with Mr. Morris immediately; that he is to take possession before Michaelmas, and some of his servants are to be in the house by the end of next week.”
+
+“What is his name?”
+
+“Bingley.”
+
+“Is he married or single?”
+
+“Oh! Single, my dear, to be sure! A single man of large fortune; four or five thousand a year. What a fine thing for our girls!”
+
+“How so? How can it affect them?”
+
+“My dear Mr. Bennet,” replied his wife, “how can you be so tiresome! You must know that I am thinking of his marrying one of them.”
+
+“Is that his design in settling here?”
+
+“Design! Nonsense, how can you talk so! But it is very likely that he may fall in love with one of them, and therefore you must visit him as soon as he comes.”
+
+“I see no occasion for that. You and the girls may go, or you may send them by themselves, which perhaps will be still better, for as you are as handsome as any of them, Mr. Bingley may like you the best of the party.”
+
+“My dear, you flatter me. I certainly have had my share of beauty, but I do not pretend to be anything extraordinary now. When a woman has five grown-up daughters, she ought to give over thinking of her own beauty.”
+
+“In such cases, a woman has not often much beauty to think of.”
+
+“But, my dear, you must indeed go and see Mr. Bingley when he comes into the neighbourhood.”
+
+“It is more than I engage for, I assure you.”
+
+“But consider your daughters. Only think what an establishment it would be for one of them. Sir William and Lady Lucas are determined to go, merely on that account, for in general, you know, they visit no newcomers. Indeed you must go, for it will be impossible for us to visit him if you do not.”
+
+“You are over-scrupulous, surely. I dare say Mr. Bingley will be very glad to see you; and I will send a few lines by you to assure him of my hearty consent to his marrying whichever he chooses of the girls; though I must throw in a good word for my little Lizzy.”
+
+“I desire you will do no such thing. Lizzy is not a bit better than the others; and I am sure she is not half so handsome as Jane, nor half so good-humoured as Lydia. But you are always giving her the preference.”
+
+“They have none of them much to recommend them,” replied he; “they are all silly and ignorant like other girls; but Lizzy has something more of quickness than her sisters.”
+
+“Mr. Bennet, how can you abuse your own children in such a way? You take delight in vexing me. You have no compassion for my poor nerves.”
+
+“You mistake me, my dear. I have a high respect for your nerves. They are my old friends. I have heard you mention them with consideration these last twenty years at least.”
+
+“Ah, you do not know what I suffer.”
+
+“But I hope you will get over it, and live to see many young men of four thousand a year come into the neighbourhood.”
+
+“It will be no use to us, if twenty such should come, since you will not visit them.”
+
+“Depend upon it, my dear, that when there are twenty, I will visit them all.”
+
+Mr. Bennet was so odd a mixture of quick parts, sarcastic humour, reserve, and caprice, that the experience of three-and-twenty years had been insufficient to make his wife understand his character. Her mind was less difficult to develop. She was a woman of mean understanding, little information, and uncertain temper. When she was discontented, she fancied herself nervous. The business of her life was to get her daughters married; its solace was visiting and news.
+
+
+Chapter 2
+Mr. Bennet was among the earliest of those who waited on Mr. Bingley. He had always intended to visit him, though to the last always assuring his wife that he should not go; and till the evening after the visit was paid she had no knowledge of it. It was then disclosed in the following manner. Observing his second daughter employed in trimming a hat, he suddenly addressed her with:
+
+“I hope Mr. Bingley will like it, Lizzy.”
+
+“We are not in a way to know what Mr. Bingley likes,” said her mother resentfully, “since we are not to visit.”
+
+“But you forget, mamma,” said Elizabeth, “that we shall meet him at the assemblies, and that Mrs. Long promised to introduce him.”
+
+“I do not believe Mrs. Long will do any such thing. She has two nieces of her own. She is a selfish, hypocritical woman, and I have no opinion of her.”
+
+“No more have I,” said Mr. Bennet; “and I am glad to find that you do not depend on her serving you.”
+
+Mrs. Bennet deigned not to make any reply, but, unable to contain herself, began scolding one of her daughters.
+
+“Don’t keep coughing so, Kitty, for Heaven’s sake! Have a little compassion on my nerves. You tear them to pieces.”
+
+“Kitty has no discretion in her coughs,” said her father; “she times them ill.”
+
+“I do not cough for my own amusement,” replied Kitty fretfully. “When is your next ball to be, Lizzy?”
+
+“To-morrow fortnight.”
+
+“Aye, so it is,” cried her mother, “and Mrs. Long does not come back till the day before; so it will be impossible for her to introduce him, for she will not know him herself.”
+
+“Then, my dear, you may have the advantage of your friend, and introduce Mr. Bingley to her.”
+
+“Impossible, Mr. Bennet, impossible, when I am not acquainted with him myself; how can you be so teasing?”
+
+“I honour your circumspection. A fortnight’s acquaintance is certainly very little. One cannot know what a man really is by the end of a fortnight. But if we do not venture somebody else will; and after all, Mrs. Long and her nieces must stand their chance; and, therefore, as she will think it an act of kindness, if you decline the office, I will take it on myself.”
+
+The girls stared at their father. Mrs. Bennet said only, “Nonsense, nonsense!”
+
+“What can be the meaning of that emphatic exclamation?” cried he. “Do you consider the forms of introduction, and the stress that is laid on them, as nonsense? I cannot quite agree with you there. What say you, Mary? For you are a young lady of deep reflection, I know, and read great books and make extracts.”
+
+Mary wished to say something sensible, but knew not how.
+
+“While Mary is adjusting her ideas,” he continued, “let us return to Mr. Bingley.”
+
+“I am sick of Mr. Bingley,” cried his wife.
+
+“I am sorry to hear that; but why did not you tell me that before? If I had known as much this morning I certainly would not have called on him. It is very unlucky; but as I have actually paid the visit, we cannot escape the acquaintance now.”
+
+The astonishment of the ladies was just what he wished; that of Mrs. Bennet perhaps surpassing the rest; though, when the first tumult of joy was over, she began to declare that it was what she had expected all the while.
+
+“How good it was in you, my dear Mr. Bennet! But I knew I should persuade you at last. I was sure you loved your girls too well to neglect such an acquaintance. Well, how pleased I am! and it is such a good joke, too, that you should have gone this morning and never said a word about it till now.”
+
+“Now, Kitty, you may cough as much as you choose,” said Mr. Bennet; and, as he spoke, he left the room, fatigued with the raptures of his wife.
+
+“What an excellent father you have, girls!” said she, when the door was shut. “I do not know how you will ever make him amends for his kindness; or me, either, for that matter. At our time of life it is not so pleasant, I can tell you, to be making new acquaintances every day; but for your sakes, we would do anything. Lydia, my love, though you are the youngest, I dare say Mr. Bingley will dance with you at the next ball.”
+
+“Oh!” said Lydia stoutly, “I am not afraid; for though I am the youngest, I’m the tallest.”
+
+The rest of the evening was spent in conjecturing how soon he would return Mr. Bennet’s visit, and determining when they should ask him to dinner.
+
+
+Chapter 3
+Not all that Mrs. Bennet, however, with the assistance of her five daughters, could ask on the subject, was sufficient to draw from her husband any satisfactory description of Mr. Bingley. They attacked him in various ways—with barefaced questions, ingenious suppositions, and distant surmises; but he eluded the skill of them all, and they were at last obliged to accept the second-hand intelligence of their neighbour, Lady Lucas. Her report was highly favourable. Sir William had been delighted with him. He was quite young, wonderfully handsome, extremely agreeable, and, to crown the whole, he meant to be at the next assembly with a large party. Nothing could be more delightful! To be fond of dancing was a certain step towards falling in love; and very lively hopes of Mr. Bingley’s heart were entertained.
+
+“If I can but see one of my daughters happily settled at Netherfield,” said Mrs. Bennet to her husband, “and all the others equally well married, I shall have nothing to wish for.”
+
+In a few days Mr. Bingley returned Mr. Bennet’s visit, and sat about ten minutes with him in his library. He had entertained hopes of being admitted to a sight of the young ladies, of whose beauty he had heard much; but he saw only the father. The ladies were somewhat more fortunate, for they had the advantage of ascertaining from an upper window that he wore a blue coat, and rode a black horse.
+
+An invitation to dinner was soon afterwards dispatched; and already had Mrs. Bennet planned the courses that were to do credit to her housekeeping, when an answer arrived which deferred it all. Mr. Bingley was obliged to be in town the following day, and, consequently, unable to accept the honour of their invitation, etc. Mrs. Bennet was quite disconcerted. She could not imagine what business he could have in town so soon after his arrival in Hertfordshire; and she began to fear that he might be always flying about from one place to another, and never settled at Netherfield as he ought to be. Lady Lucas quieted her fears a little by starting the idea of his being gone to London only to get a large party for the ball; and a report soon followed that Mr. Bingley was to bring twelve ladies and seven gentlemen with him to the assembly. The girls grieved over such a number of ladies, but were comforted the day before the ball by hearing, that instead of twelve he brought only six with him from London—his five sisters and a cousin. And when the party entered the assembly room it consisted of only five altogether—Mr. Bingley, his two sisters, the husband of the eldest, and another young man.
+
+Mr. Bingley was good-looking and gentlemanlike; he had a pleasant countenance, and easy, unaffected manners. His sisters were fine women, with an air of decided fashion. His brother-in-law, Mr. Hurst, merely looked the gentleman; but his friend Mr. Darcy soon drew the attention of the room by his fine, tall person, handsome features, noble mien, and the report which was in general circulation within five minutes after his entrance, of his having ten thousand a year. The gentlemen pronounced him to be a fine figure of a man, the ladies declared he was much handsomer than Mr. Bingley, and he was looked at with great admiration for about half the evening, till his manners gave a disgust which turned the tide of his popularity; for he was discovered to be proud; to be above his company, and above being pleased; and not all his large estate in Derbyshire could then save him from having a most forbidding, disagreeable countenance, and being unworthy to be compared with his friend.
+
+Mr. Bingley had soon made himself acquainted with all the principal people in the room; he was lively and unreserved, danced every dance, was angry that the ball closed so early, and talked of giving one himself at Netherfield. Such amiable qualities must speak for themselves. What a contrast between him and his friend! Mr. Darcy danced only once with Mrs. Hurst and once with Miss Bingley, declined being introduced to any other lady, and spent the rest of the evening in walking about the room, speaking occasionally to one of his own party. His character was decided. He was the proudest, most disagreeable man in the world, and everybody hoped that he would never come there again. Amongst the most violent against him was Mrs. Bennet, whose dislike of his general behaviour was sharpened into particular resentment by his having slighted one of her daughters.
+
+Elizabeth Bennet had been obliged, by the scarcity of gentlemen, to sit down for two dances; and during part of that time, Mr. Darcy had been standing near enough for her to hear a conversation between him and Mr. Bingley, who came from the dance for a few minutes, to press his friend to join it.
+
+“Come, Darcy,” said he, “I must have you dance. I hate to see you standing about by yourself in this stupid manner. You had much better dance.”
+
+“I certainly shall not. You know how I detest it, unless I am particularly acquainted with my partner. At such an assembly as this it would be insupportable. Your sisters are engaged, and there is not another woman in the room whom it would not be a punishment to me to stand up with.”
+
+“I would not be so fastidious as you are,” cried Mr. Bingley, “for a kingdom! Upon my honour, I never met with so many pleasant girls in my life as I have this evening; and there are several of them you see uncommonly pretty.”
+
+“You are dancing with the only handsome girl in the room,” said Mr. Darcy, looking at the eldest Miss Bennet.
+
+“Oh! She is the most beautiful creature I ever beheld! But there is one of her sisters sitting down just behind you, who is very pretty, and I dare say very agreeable. Do let me ask my partner to introduce you.”
+
+“Which do you mean?” and turning round he looked for a moment at Elizabeth, till catching her eye, he withdrew his own and coldly said: “She is tolerable, but not handsome enough to tempt me; I am in no humour at present to give consequence to young ladies who are slighted by other men. You had better return to your partner and enjoy her smiles, for you are wasting your time with me.”
+
+Mr. Bingley followed his advice. Mr. Darcy walked off; and Elizabeth remained with no very cordial feelings toward him. She told the story, however, with great spirit among her friends; for she had a lively, playful disposition, which delighted in anything ridiculous.
+
+The evening altogether passed off pleasantly to the whole family. Mrs. Bennet had seen her eldest daughter much admired by the Netherfield party. Mr. Bingley had danced with her twice, and she had been distinguished by his sisters. Jane was as much gratified by this as her mother could be, though in a quieter way. Elizabeth felt Jane’s pleasure. Mary had heard herself mentioned to Miss Bingley as the most accomplished girl in the neighbourhood; and Catherine and Lydia had been fortunate enough never to be without partners, which was all that they had yet learnt to care for at a ball. They returned, therefore, in good spirits to Longbourn, the village where they lived, and of which they were the principal inhabitants. They found Mr. Bennet still up. With a book he was regardless of time; and on the present occasion he had a good deal of curiosity as to the event of an evening which had raised such splendid expectations. He had rather hoped that his wife’s views on the stranger would be disappointed; but he soon found out that he had a different story to hear.
+
+“Oh, my dear Mr. Bennet,” as she entered the room, “we have had a most delightful evening, a most excellent ball. I wish you had been there. Jane was so admired, nothing could be like it. Everybody said how well she looked; and Mr. Bingley thought her quite beautiful, and danced with her twice! Only think of that, my dear; he actually danced with her twice! and she was the only creature in the room that he asked a second time. First of all, he asked Miss Lucas. I was so vexed to see him stand up with her! But, however, he did not admire her at all; indeed, nobody can, you know; and he seemed quite struck with Jane as she was going down the dance. So he inquired who she was, and got introduced, and asked her for the two next. Then the two third he danced with Miss King, and the two fourth with Maria Lucas, and the two fifth with Jane again, and the two sixth with Lizzy, and the Boulanger—”
+
+“If he had had any compassion for me,” cried her husband impatiently, “he would not have danced half so much! For God’s sake, say no more of his partners. Oh that he had sprained his ankle in the first dance!”
+
+“Oh! my dear, I am quite delighted with him. He is so excessively handsome! And his sisters are charming women. I never in my life saw anything more elegant than their dresses. I dare say the lace upon Mrs. Hurst’s gown—”
+
+Here she was interrupted again. Mr. Bennet protested against any description of finery. She was therefore obliged to seek another branch of the subject, and related, with much bitterness of spirit and some exaggeration, the shocking rudeness of Mr. Darcy.
+
+“But I can assure you,” she added, “that Lizzy does not lose much by not suiting his fancy; for he is a most disagreeable, horrid man, not at all worth pleasing. So high and so conceited that there was no enduring him! He walked here, and he walked there, fancying himself so very great! Not handsome enough to dance with! I wish you had been there, my dear, to have given him one of your set-downs. I quite detest the man.”
+
+
+Chapter 4
+When Jane and Elizabeth were alone, the former, who had been cautious in her praise of Mr. Bingley before, expressed to her sister just how very much she admired him.
+
+“He is just what a young man ought to be,” said she, “sensible, good-humoured, lively; and I never saw such happy manners!—so much ease, with such perfect good breeding!”
+
+“He is also handsome,” replied Elizabeth, “which a young man ought likewise to be, if he possibly can. His character is thereby complete.”
+
+“I was very much flattered by his asking me to dance a second time. I did not expect such a compliment.”
+
+“Did not you? I did for you. But that is one great difference between us. Compliments always take you by surprise, and me never. What could be more natural than his asking you again? He could not help seeing that you were about five times as pretty as every other woman in the room. No thanks to his gallantry for that. Well, he certainly is very agreeable, and I give you leave to like him. You have liked many a stupider person.”
+
+“Dear Lizzy!”
+
+“Oh! you are a great deal too apt, you know, to like people in general. You never see a fault in anybody. All the world are good and agreeable in your eyes. I never heard you speak ill of a human being in your life.”
+
+“I would not wish to be hasty in censuring anyone; but I always speak what I think.”
+
+“I know you do; and it is that which makes the wonder. With your good sense, to be so honestly blind to the follies and nonsense of others! Affectation of candour is common enough—one meets with it everywhere. But to be candid without ostentation or design—to take the good of everybody’s character and make it still better, and say nothing of the bad—belongs to you alone. And so you like this man’s sisters, too, do you? Their manners are not equal to his.”
+
+“Certainly not—at first. But they are very pleasing women when you converse with them. Miss Bingley is to live with her brother, and keep his house; and I am much mistaken if we shall not find a very charming neighbour in her.”
+
+Elizabeth listened in silence, but was not convinced; their behaviour at the assembly had not been calculated to please in general; and with more quickness of observation and less pliancy of temper than her sister, and with a judgement too unassailed by any attention to herself, she was very little disposed to approve them. They were in fact very fine ladies; not deficient in good humour when they were pleased, nor in the power of making themselves agreeable when they chose it, but proud and conceited. They were rather handsome, had been educated in one of the first private seminaries in town, had a fortune of twenty thousand pounds, were in the habit of spending more than they ought, and of associating with people of rank, and were therefore in every respect entitled to think well of themselves, and meanly of others. They were of a respectable family in the north of England; a circumstance more deeply impressed on their memories than that their brother’s fortune and their own had been acquired by trade.
+
+Mr. Bingley inherited property to the amount of nearly a hundred thousand pounds from his father, who had intended to purchase an estate, but did not live to do it. Mr. Bingley intended it likewise, and sometimes made choice of his county; but as he was now provided with a good house and the liberty of a manor, it was doubtful to many of those who best knew the easiness of his temper, whether he might not spend the remainder of his days at Netherfield, and leave the next generation to purchase.
+
+His sisters were anxious for his having an estate of his own; but, though he was now only established as a tenant, Miss Bingley was by no means unwilling to preside at his table—nor was Mrs. Hurst, who had married a man of more fashion than fortune, less disposed to consider his house as her home when it suited her. Mr. Bingley had not been of age two years, when he was tempted by an accidental recommendation to look at Netherfield House. He did look at it, and into it for half-an-hour—was pleased with the situation and the principal rooms, satisfied with what the owner said in its praise, and took it immediately.
+
+Between him and Darcy there was a very steady friendship, in spite of great opposition of character. Bingley was endeared to Darcy by the easiness, openness, and ductility of his temper, though no disposition could offer a greater contrast to his own, and though with his own he never appeared dissatisfied. On the strength of Darcy’s regard, Bingley had the firmest reliance, and of his judgement the highest opinion. In understanding, Darcy was the superior. Bingley was by no means deficient, but Darcy was clever. He was at the same time haughty, reserved, and fastidious, and his manners, though well-bred, were not inviting. In that respect his friend had greatly the advantage. Bingley was sure of being liked wherever he appeared, Darcy was continually giving offense.
+
+The manner in which they spoke of the Meryton assembly was sufficiently characteristic. Bingley had never met with more pleasant people or prettier girls in his life; everybody had been most kind and attentive to him; there had been no formality, no stiffness; he had soon felt acquainted with all the room; and, as to Miss Bennet, he could not conceive an angel more beautiful. Darcy, on the contrary, had seen a collection of people in whom there was little beauty and no fashion, for none of whom he had felt the smallest interest, and from none received either attention or pleasure. Miss Bennet he acknowledged to be pretty, but she smiled too much.
+
+Mrs. Hurst and her sister allowed it to be so—but still they admired her and liked her, and pronounced her to be a sweet girl, and one whom they would not object to know more of. Miss Bennet was therefore established as a sweet girl, and their brother felt authorized by such commendation to think of her as he chose.
+
+
+Chapter 5
+Within a short walk of Longbourn lived a family with whom the Bennets were particularly intimate. Sir William Lucas had been formerly in trade in Meryton, where he had made a tolerable fortune, and risen to the honour of knighthood by an address to the king during his mayoralty. The distinction had perhaps been felt too strongly. It had given him a disgust to his business, and to his residence in a small market town; and, in quitting them both, he had removed with his family to a house about a mile from Meryton, denominated from that period Lucas Lodge, where he could think with pleasure of his own importance, and, unshackled by business, occupy himself solely in being civil to all the world. For, though elated by his rank, it did not render him supercilious; on the contrary, he was all attention to everybody. By nature inoffensive, friendly, and obliging, his presentation at St. James’s had made him courteous.
+
+Lady Lucas was a very good kind of woman, not too clever to be a valuable neighbour to Mrs. Bennet. They had several children. The eldest of them, a sensible, intelligent young woman, about twenty-seven, was Elizabeth’s intimate friend.
+
+That the Miss Lucases and the Miss Bennets should meet to talk over a ball was absolutely necessary; and the morning after the assembly brought the former to Longbourn to hear and to communicate.
+
+“You began the evening well, Charlotte,” said Mrs. Bennet with civil self-command to Miss Lucas. “You were Mr. Bingley’s first choice.”
+
+“Yes; but he seemed to like his second better.”
+
+“Oh! you mean Jane, I suppose, because he danced with her twice. To be sure that did seem as if he admired her—indeed I rather believe he did—I heard something about it—but I hardly know what—something about Mr. Robinson.”
+
+“Perhaps you mean what I overheard between him and Mr. Robinson; did not I mention it to you? Mr. Robinson’s asking him how he liked our Meryton assemblies, and whether he did not think there were a great many pretty women in the room, and which he thought the prettiest? and his answering immediately to the last question: ‘Oh! the eldest Miss Bennet, beyond a doubt; there cannot be two opinions on that point.’”
+
+“Upon my word! Well, that is very decided indeed—that does seem as if—but, however, it may all come to nothing, you know.”
+
+“My overhearings were more to the purpose than yours, Eliza,” said Charlotte. “Mr. Darcy is not so well worth listening to as his friend, is he?—poor Eliza!—to be only just tolerable.”
+
+“I beg you would not put it into Lizzy’s head to be vexed by his ill-treatment, for he is such a disagreeable man, that it would be quite a misfortune to be liked by him. Mrs. Long told me last night that he sat close to her for half-an-hour without once opening his lips.”
+
+“Are you quite sure, ma’am?—is not there a little mistake?” said Jane. “I certainly saw Mr. Darcy speaking to her.”
+
+“Aye—because she asked him at last how he liked Netherfield, and he could not help answering her; but she said he seemed quite angry at being spoke to.”
+
+“Miss Bingley told me,” said Jane, “that he never speaks much, unless among his intimate acquaintances. With them he is remarkably agreeable.”
+
+“I do not believe a word of it, my dear. If he had been so very agreeable, he would have talked to Mrs. Long. But I can guess how it was; everybody says that he is eat up with pride, and I dare say he had heard somehow that Mrs. Long does not keep a carriage, and had come to the ball in a hack chaise.”
+
+“I do not mind his not talking to Mrs. Long,” said Miss Lucas, “but I wish he had danced with Eliza.”
+
+“Another time, Lizzy,” said her mother, “I would not dance with him, if I were you.”
+
+“I believe, ma’am, I may safely promise you never to dance with him.”
+
+“His pride,” said Miss Lucas, “does not offend me so much as pride often does, because there is an excuse for it. One cannot wonder that so very fine a young man, with family, fortune, everything in his favour, should think highly of himself. If I may so express it, he has a right to be proud.”
+
+“That is very true,” replied Elizabeth, “and I could easily forgive his pride, if he had not mortified mine.”
+
+“Pride,” observed Mary, who piqued herself upon the solidity of her reflections, “is a very common failing, I believe. By all that I have ever read, I am convinced that it is very common indeed; that human nature is particularly prone to it, and that there are very few of us who do not cherish a feeling of self-complacency on the score of some quality or other, real or imaginary. Vanity and pride are different things, though the words are often used synonymously. A person may be proud without being vain. Pride relates more to our opinion of ourselves, vanity to what we would have others think of us.”
+
+“If I were as rich as Mr. Darcy,” cried a young Lucas, who came with his sisters, “I should not care how proud I was. I would keep a pack of foxhounds, and drink a bottle of wine a day.”
+
+“Then you would drink a great deal more than you ought,” said Mrs. Bennet; “and if I were to see you at it, I should take away your bottle directly.”
+
+The boy protested that she should not; she continued to declare that she would, and the argument ended only with the visit.
+
+
+Chapter 6
+The ladies of Longbourn soon waited on those of Netherfield. The visit was soon returned in due form. Miss Bennet’s pleasing manners grew on the goodwill of Mrs. Hurst and Miss Bingley; and though the mother was found to be intolerable, and the younger sisters not worth speaking to, a wish of being better acquainted with them was expressed towards the two eldest. By Jane, this attention was received with the greatest pleasure, but Elizabeth still saw superciliousness in their treatment of everybody, hardly excepting even her sister, and could not like them; though their kindness to Jane, such as it was, had a value as arising in all probability from the influence of their brother’s admiration. It was generally evident whenever they met, that he did admire her and to her it was equally evident that Jane was yielding to the preference which she had begun to entertain for him from the first, and was in a way to be very much in love; but she considered with pleasure that it was not likely to be discovered by the world in general, since Jane united, with great strength of feeling, a composure of temper and a uniform cheerfulness of manner which would guard her from the suspicions of the impertinent. She mentioned this to her friend Miss Lucas.
+
+“It may perhaps be pleasant,” replied Charlotte, “to be able to impose on the public in such a case; but it is sometimes a disadvantage to be so very guarded. If a woman conceals her affection with the same skill from the object of it, she may lose the opportunity of fixing him; and it will then be but poor consolation to believe the world equally in the dark. There is so much of gratitude or vanity in almost every attachment, that it is not safe to leave any to itself. We can all begin freely—a slight preference is natural enough; but there are very few of us who have heart enough to be really in love without encouragement. In nine cases out of ten a woman had better show more affection than she feels. Bingley likes your sister undoubtedly; but he may never do more than like her, if she does not help him on.”
+
+“But she does help him on, as much as her nature will allow. If I can perceive her regard for him, he must be a simpleton, indeed, not to discover it too.”
+
+“Remember, Eliza, that he does not know Jane’s disposition as you do.”
+
+“But if a woman is partial to a man, and does not endeavour to conceal it, he must find it out.”
+
+“Perhaps he must, if he sees enough of her. But, though Bingley and Jane meet tolerably often, it is never for many hours together; and, as they always see each other in large mixed parties, it is impossible that every moment should be employed in conversing together. Jane should therefore make the most of every half-hour in which she can command his attention. When she is secure of him, there will be more leisure for falling in love as much as she chooses.”
+
+“Your plan is a good one,” replied Elizabeth, “where nothing is in question but the desire of being well married, and if I were determined to get a rich husband, or any husband, I dare say I should adopt it. But these are not Jane’s feelings; she is not acting by design. As yet, she cannot even be certain of the degree of her own regard nor of its reasonableness. She has known him only a fortnight. She danced four dances with him at Meryton; she saw him one morning at his own house, and has since dined with him in company four times. This is not quite enough to make her understand his character.”
+
+“Not as you represent it. Had she merely dined with him, she might only have discovered whether he had a good appetite; but you must remember that four evenings have also been spent together—and four evenings may do a great deal.”
+
+“Yes; these four evenings have enabled them to ascertain that they both like Vingt-un better than Commerce; but with respect to any other leading characteristic, I do not imagine that much has been unfolded.”
+
+“Well,” said Charlotte, “I wish Jane success with all my heart; and if she were married to him to-morrow, I should think she had as good a chance of happiness as if she were to be studying his character for a twelvemonth. Happiness in marriage is entirely a matter of chance. If the dispositions of the parties are ever so well known to each other or ever so similar beforehand, it does not advance their felicity in the least. They always continue to grow sufficiently unlike afterwards to have their share of vexation; and it is better to know as little as possible of the defects of the person with whom you are to pass your life.”
+
+“You make me laugh, Charlotte; but it is not sound. You know it is not sound, and that you would never act in this way yourself.”
+
+Occupied in observing Mr. Bingley’s attentions to her sister, Elizabeth was far from suspecting that she was herself becoming an object of some interest in the eyes of his friend. Mr. Darcy had at first scarcely allowed her to be pretty; he had looked at her without admiration at the ball; and when they next met, he looked at her only to criticise. But no sooner had he made it clear to himself and his friends that she hardly had a good feature in her face, than he began to find it was rendered uncommonly intelligent by the beautiful expression of her dark eyes. To this discovery succeeded some others equally mortifying. Though he had detected with a critical eye more than one failure of perfect symmetry in her form, he was forced to acknowledge her figure to be light and pleasing; and in spite of his asserting that her manners were not those of the fashionable world, he was caught by their easy playfulness. Of this she was perfectly unaware; to her he was only the man who made himself agreeable nowhere, and who had not thought her handsome enough to dance with.
+
+He began to wish to know more of her, and as a step towards conversing with her himself, attended to her conversation with others. His doing so drew her notice. It was at Sir William Lucas’s, where a large party were assembled.
+
+“What does Mr. Darcy mean,” said she to Charlotte, “by listening to my conversation with Colonel Forster?”
+
+“That is a question which Mr. Darcy only can answer.”
+
+“But if he does it any more I shall certainly let him know that I see what he is about. He has a very satirical eye, and if I do not begin by being impertinent myself, I shall soon grow afraid of him.”
+
+On his approaching them soon afterwards, though without seeming to have any intention of speaking, Miss Lucas defied her friend to mention such a subject to him; which immediately provoking Elizabeth to do it, she turned to him and said:
+
+“Did you not think, Mr. Darcy, that I expressed myself uncommonly well just now, when I was teasing Colonel Forster to give us a ball at Meryton?”
+
+“With great energy; but it is always a subject which makes a lady energetic.”
+
+“You are severe on us.”
+
+“It will be her turn soon to be teased,” said Miss Lucas. “I am going to open the instrument, Eliza, and you know what follows.”
+
+“You are a very strange creature by way of a friend!—always wanting me to play and sing before anybody and everybody! If my vanity had taken a musical turn, you would have been invaluable; but as it is, I would really rather not sit down before those who must be in the habit of hearing the very best performers.” On Miss Lucas’s persevering, however, she added, “Very well, if it must be so, it must.” And gravely glancing at Mr. Darcy, “There is a fine old saying, which everybody here is of course familiar with: ‘Keep your breath to cool your porridge’; and I shall keep mine to swell my song.”
+
+Her performance was pleasing, though by no means capital. After a song or two, and before she could reply to the entreaties of several that she would sing again, she was eagerly succeeded at the instrument by her sister Mary, who having, in consequence of being the only plain one in the family, worked hard for knowledge and accomplishments, was always impatient for display.
+
+Mary had neither genius nor taste; and though vanity had given her application, it had given her likewise a pedantic air and conceited manner, which would have injured a higher degree of excellence than she had reached. Elizabeth, easy and unaffected, had been listened to with much more pleasure, though not playing half so well; and Mary, at the end of a long concerto, was glad to purchase praise and gratitude by Scotch and Irish airs, at the request of her younger sisters, who, with some of the Lucases, and two or three officers, joined eagerly in dancing at one end of the room.
+
+Mr. Darcy stood near them in silent indignation at such a mode of passing the evening, to the exclusion of all conversation, and was too much engrossed by his thoughts to perceive that Sir William Lucas was his neighbour, till Sir William thus began:
+
+“What a charming amusement for young people this is, Mr. Darcy! There is nothing like dancing after all. I consider it as one of the first refinements of polished society.”
+
+“Certainly, sir; and it has the advantage also of being in vogue amongst the less polished societies of the world. Every savage can dance.”
+
+Sir William only smiled. “Your friend performs delightfully,” he continued after a pause, on seeing Bingley join the group; “and I doubt not that you are an adept in the science yourself, Mr. Darcy.”
+
+“You saw me dance at Meryton, I believe, sir.”
+
+“Yes, indeed, and received no inconsiderable pleasure from the sight. Do you often dance at St. James’s?”
+
+“Never, sir.”
+
+“Do you not think it would be a proper compliment to the place?”
+
+“It is a compliment which I never pay to any place if I can avoid it.”
+
+“You have a house in town, I conclude?”
+
+Mr. Darcy bowed.
+
+“I had once had some thought of fixing in town myself—for I am fond of superior society; but I did not feel quite certain that the air of London would agree with Lady Lucas.”
+
+He paused in hopes of an answer; but his companion was not disposed to make any; and Elizabeth at that instant moving towards them, he was struck with the action of doing a very gallant thing, and called out to her:
+
+“My dear Miss Eliza, why are you not dancing? Mr. Darcy, you must allow me to present this young lady to you as a very desirable partner. You cannot refuse to dance, I am sure when so much beauty is before you.” And, taking her hand, he would have given it to Mr. Darcy who, though extremely surprised, was not unwilling to receive it, when she instantly drew back, and said with some discomposure to Sir William:
+
+“Indeed, sir, I have not the least intention of dancing. I entreat you not to suppose that I moved this way in order to beg for a partner.”
+
+Mr. Darcy, with grave propriety, requested to be allowed the honour of her hand, but in vain. Elizabeth was determined; nor did Sir William at all shake her purpose by his attempt at persuasion.
+
+“You excel so much in the dance, Miss Eliza, that it is cruel to deny me the happiness of seeing you; and though this gentleman dislikes the amusement in general, he can have no objection, I am sure, to oblige us for one half-hour.”
+
+“Mr. Darcy is all politeness,” said Elizabeth, smiling.
+
+“He is, indeed; but, considering the inducement, my dear Miss Eliza, we cannot wonder at his complaisance—for who would object to such a partner?”
+
+Elizabeth looked archly, and turned away. Her resistance had not injured her with the gentleman, and he was thinking of her with some complacency, when thus accosted by Miss Bingley:
+
+“I can guess the subject of your reverie.”
+
+“I should imagine not.”
+
+“You are considering how insupportable it would be to pass many evenings in this manner—in such society; and indeed I am quite of your opinion. I was never more annoyed! The insipidity, and yet the noise—the nothingness, and yet the self-importance of all those people! What would I give to hear your strictures on them!”
+
+“Your conjecture is totally wrong, I assure you. My mind was more agreeably engaged. I have been meditating on the very great pleasure which a pair of fine eyes in the face of a pretty woman can bestow.”
+
+Miss Bingley immediately fixed her eyes on his face, and desired he would tell her what lady had the credit of inspiring such reflections. Mr. Darcy replied with great intrepidity:
+
+“Miss Elizabeth Bennet.”
+
+“Miss Elizabeth Bennet!” repeated Miss Bingley. “I am all astonishment. How long has she been such a favourite?—and pray, when am I to wish you joy?”
+
+“That is exactly the question which I expected you to ask. A lady’s imagination is very rapid; it jumps from admiration to love, from love to matrimony, in a moment. I knew you would be wishing me joy.”
+
+“Nay, if you are serious about it, I shall consider the matter is absolutely settled. You will be having a charming mother-in-law, indeed; and, of course, she will always be at Pemberley with you.”
+
+He listened to her with perfect indifference while she chose to entertain herself in this manner; and as his composure convinced her that all was safe, her wit flowed long.
 `

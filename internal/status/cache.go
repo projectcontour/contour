@@ -10,11 +10,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package status holds pieces for handling status updates propagated from
+// the DAG back to Kubernetes
 package status
 
 import (
+	"time"
+
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -38,10 +44,11 @@ type Cache struct {
 // The commit function pattern is used so that the ProxyUpdate does not need to know anything
 // the cache internals.
 func (c Cache) ProxyAccessor(proxy *projcontour.HTTPProxy) (*ProxyUpdate, func()) {
-
 	pu := &ProxyUpdate{
-		Object:     *proxy,
-		Conditions: make(map[ConditionType]*projcontour.DetailedCondition),
+		Fullname:       k8s.NamespacedNameOf(proxy),
+		Generation:     proxy.Generation,
+		TransitionTime: v1.NewTime(time.Now()),
+		Conditions:     make(map[ConditionType]*projcontour.DetailedCondition),
 	}
 
 	return pu, func() {
@@ -50,28 +57,21 @@ func (c Cache) ProxyAccessor(proxy *projcontour.HTTPProxy) (*ProxyUpdate, func()
 }
 
 func (c Cache) commitProxy(pu *ProxyUpdate) {
-	if len((pu.Conditions)) == 0 {
+	if len(pu.Conditions) == 0 {
 		return
 	}
 
-	fullname := types.NamespacedName{
-		Name:      pu.Object.Name,
-		Namespace: pu.Object.Namespace,
-	}
-
-	c.proxyUpdates[fullname] = pu
+	c.proxyUpdates[pu.Fullname] = pu
 }
 
 // GetStatusUpdates returns a slice of StatusUpdates, ready to be sent off
 // to the StatusUpdater by the event handler.
 // As more kinds are handled by Cache, we'll update this method.
 func (c Cache) GetStatusUpdates() []k8s.StatusUpdate {
-
 	return c.getProxyStatusUpdates()
 }
 
 func (c Cache) getProxyStatusUpdates() []k8s.StatusUpdate {
-
 	var psu []k8s.StatusUpdate
 
 	for fullname, pu := range c.proxyUpdates {
@@ -79,7 +79,7 @@ func (c Cache) getProxyStatusUpdates() []k8s.StatusUpdate {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
 			Resource:       projcontour.HTTPProxyGVR,
-			Mutator:        pu.StatusMutatorFunc(),
+			Mutator:        pu,
 		}
 
 		psu = append(psu, update)
