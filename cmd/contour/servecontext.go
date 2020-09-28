@@ -385,6 +385,7 @@ func (ctx *serveContext) tlsconfig(log logrus.FieldLogger) *tls.Config {
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 			ClientCAs:    certPool,
 			Rand:         rand.Reader,
+			MinVersion:   tls.VersionTLS12,
 		}, nil
 	}
 
