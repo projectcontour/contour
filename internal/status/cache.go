@@ -16,18 +16,16 @@
 package status
 
 import (
-	"time"
-
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/k8s"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 // NewCache creates a new Cache for holding status updates.
 func NewCache() Cache {
 	return Cache{
-		proxyUpdates: make(map[types.NamespacedName]*ProxyUpdate),
+		updates: make(map[string]map[types.NamespacedName]k8s.StatusUpdate),
 	}
 }
 
@@ -35,7 +33,17 @@ func NewCache() Cache {
 // It holds a per-Kind cache, and is intended to be accessed with a
 // KindAccessor.
 type Cache struct {
-	proxyUpdates map[types.NamespacedName]*ProxyUpdate
+	updates map[string]map[types.NamespacedName]k8s.StatusUpdate
+}
+
+func (c *Cache) accessorFor(obj k8s.Object) (string, *Accessor) {
+	kind := k8s.KindOf(obj)
+
+	if _, ok := c.updates[kind]; !ok {
+		c.updates[kind] = make(map[types.NamespacedName]k8s.StatusUpdate)
+	}
+
+	return kind, NewAccessor(obj)
 }
 
 // ProxyAccessor returns a ProxyUpdate that allows a client to build up a list of
@@ -43,47 +51,44 @@ type Cache struct {
 // back to the cache when everything is done.
 // The commit function pattern is used so that the ProxyUpdate does not need to know anything
 // the cache internals.
-func (c Cache) ProxyAccessor(proxy *projcontour.HTTPProxy) (*ProxyUpdate, func()) {
-	pu := &ProxyUpdate{
-		Fullname:       k8s.NamespacedNameOf(proxy),
-		Generation:     proxy.Generation,
-		TransitionTime: v1.NewTime(time.Now()),
-		Conditions:     make(map[ConditionType]*projcontour.DetailedCondition),
-	}
+func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*Accessor, func()) {
+	kind, a := c.accessorFor(proxy)
 
-	return pu, func() {
-		c.commitProxy(pu)
+	return a, func() {
+		if len(a.Conditions) > 0 {
+			c.updates[kind][a.Name] = k8s.StatusUpdate{
+				NamespacedName: a.Name,
+				Resource:       contour_api_v1.HTTPProxyGVR,
+				Mutator:        ProxyStatusMutator(a),
+			}
+		}
 	}
 }
 
-func (c Cache) commitProxy(pu *ProxyUpdate) {
-	if len(pu.Conditions) == 0 {
-		return
-	}
+func (c *Cache) ExtensionAccessor(ext *contour_api_v1alpha1.ExtensionService) (*Accessor, func()) {
+	kind, a := c.accessorFor(ext)
 
-	c.proxyUpdates[pu.Fullname] = pu
+	return a, func() {
+		if len(a.Conditions) > 0 {
+			c.updates[kind][a.Name] = k8s.StatusUpdate{
+				NamespacedName: a.Name,
+				Resource:       contour_api_v1alpha1.ExtensionServiceGVR,
+				Mutator:        ExtensionStatusMutator(a),
+			}
+		}
+	}
 }
 
 // GetStatusUpdates returns a slice of StatusUpdates, ready to be sent off
 // to the StatusUpdater by the event handler.
-// As more kinds are handled by Cache, we'll update this method.
-func (c Cache) GetStatusUpdates() []k8s.StatusUpdate {
-	return c.getProxyStatusUpdates()
-}
+func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
+	var flattened []k8s.StatusUpdate
 
-func (c Cache) getProxyStatusUpdates() []k8s.StatusUpdate {
-	var psu []k8s.StatusUpdate
-
-	for fullname, pu := range c.proxyUpdates {
-
-		update := k8s.StatusUpdate{
-			NamespacedName: fullname,
-			Resource:       projcontour.HTTPProxyGVR,
-			Mutator:        pu,
+	for _, byKind := range c.updates {
+		for _, u := range byKind {
+			flattened = append(flattened, u)
 		}
-
-		psu = append(psu, update)
 	}
-	return psu
 
+	return flattened
 }

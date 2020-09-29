@@ -17,10 +17,13 @@ import (
 	"path"
 	"strings"
 
-	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -32,10 +35,19 @@ type ExtensionServiceProcessor struct {
 var _ Processor = &ExtensionServiceProcessor{}
 
 func (p *ExtensionServiceProcessor) Run(dag *DAG, cache *KubernetesCache) {
+	statusCache := status.NewCache() // XXX obtain from builder?
+
 	for _, e := range cache.extensions {
-		if ext := p.buildExtensionService(cache, e); ext != nil {
-			dag.AddRoot(ext)
+		extStatus, commit := statusCache.ExtensionAccessor(e)
+		validCondition := extStatus.ConditionFor(status.ValidCondition)
+
+		if ext := p.buildExtensionService(cache, e, validCondition); ext != nil {
+			if len(validCondition.Errors) == 0 {
+				dag.AddRoot(ext)
+			}
 		}
+
+		commit()
 	}
 }
 
@@ -57,13 +69,12 @@ func extensionClusterName(meta types.NamespacedName) string {
 // TODO(jpeach): Publish status conditions in https://github.com/projectcontour/contour/issues/2874.
 func (p *ExtensionServiceProcessor) buildExtensionService(
 	cache *KubernetesCache,
-	ext *v1alpha1.ExtensionService,
+	ext *contour_api_v1alpha1.ExtensionService,
+	validCondition *contour_api_v1.DetailedCondition,
 ) *ExtensionCluster {
 	tp, err := timeoutPolicy(ext.Spec.TimeoutPolicy)
 	if err != nil {
-		// TODO(jpeach): Add status condition, #2874.
-		p.WithError(err).Error("failed to parse timeout policy values")
-		return nil
+		validCondition.AddError("FieldValueError", "InvalidTimeout", err.Error())
 	}
 
 	extension := ExtensionCluster{
@@ -86,8 +97,9 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	// doesn't have an idle timeout (only a request
 	// timeout), so validate that it is not provided here.
 	if timeouts := ext.Spec.TimeoutPolicy; timeouts != nil && timeouts.Idle != "" {
-		// TODO(jpeach): Add status condition, #2874.
-		p.Infof("%s ignored", ".Spec.TimeoutPolicy.Idle")
+		validCondition.AddWarningf("FieldValueError", "IgnoredField",
+			"Ignoring field %q; idle timeouts are not supported for ExtensionClusters",
+			".Spec.TimeoutPolicy.Idle")
 	}
 
 	// API server validation ensures that the protocol is "h2" or "h2c".
@@ -96,30 +108,26 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	}
 
 	if v := ext.Spec.UpstreamValidation; v != nil {
-		uv, err := cache.LookupUpstreamValidation(v, ext.GetNamespace())
-		if err != nil {
-			// TODO(jpeach): Add status condition, #2874.
-			p.WithError(err).Error("failed to resolve upstream validation")
-			return nil
+		if uv, err := cache.LookupUpstreamValidation(v, ext.GetNamespace()); err != nil {
+			//p.WithError(err).Error("failed to resolve upstream validation")
+			validCondition.AddErrorf("LookupError", "SecretResolve", err.Error())
+		} else {
+			extension.UpstreamValidation = uv
+
+			// Default the SNI server name to the name
+			// we need to validate. It is a bit onerous
+			// to also have to provide a CA bundle here,
+			// but maybe we can make that optional in the
+			// future.
+			//
+			// TODO(jpeach): expose SNI in the API, https://github.com/projectcontour/contour/issues/2893.
+			extension.SNI = uv.SubjectName
 		}
 
 		if extension.Protocol != "h2" {
-			// TODO(jpeach): Add status condition, #2874.
-			p.WithError(err).Errorf(
+			validCondition.AddErrorf("FieldValueError", "InconsistentProtocol",
 				"upstream TLS validation not supported for %q protocol", extension.Protocol)
-			return nil
 		}
-
-		extension.UpstreamValidation = uv
-
-		// Default the SNI server name to the name
-		// we need to validate. It is a bit onerous
-		// to also have to provide a CA bundle here,
-		// but maybe we can make that optional in the
-		// future.
-		//
-		// TODO(jpeach): expose SNI in the API, https://github.com/projectcontour/contour/issues/2893.
-		extension.SNI = uv.SubjectName
 	}
 
 	for _, target := range ext.Spec.Services {
@@ -134,21 +142,16 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 
 		svc, port, err := cache.LookupService(svcName, intstr.FromInt(target.Port))
 		if err != nil {
-			// TODO(jpeach): Add status condition, #2874.
-			p.WithError(err).
-				WithField("name", svcName).
-				WithField("port", target.Port).
-				Error("failed to look up service")
-			return nil
+			validCondition.AddErrorf("ResourceResolutionError", "Service",
+				"Failed to look up service %q: %s", svcName, err)
+			continue
 		}
 
 		// TODO(jpeach): Add ExternalName support in https://github.com/projectcontour/contour/issues/2875.
 		if svc.Spec.ExternalName != "" {
-			p.WithError(err).
-				WithField("name", svcName).
-				WithField("port", target.Port).
-				Error("failed to look up service")
-			return nil
+			validCondition.AddErrorf("ResourceResolutionError", "UnsupportedServiceType",
+				"Service %q is of unsupported type %q.", svcName, corev1.ServiceTypeExternalName)
+			continue
 		}
 
 		extension.Upstream.AddWeightedService(target.Weight, svcName, port)

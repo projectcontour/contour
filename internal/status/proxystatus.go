@@ -17,8 +17,6 @@ import (
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // ConditionType is used to ensure we only use a limited set of possible values
@@ -29,80 +27,48 @@ type ConditionType string
 // ValidCondition is the ConditionType for Valid.
 const ValidCondition ConditionType = "Valid"
 
-// ProxyUpdate holds status updates for a particular HTTPProxy object
-type ProxyUpdate struct {
-	// Object holds a copy of the HTTPProxy object that the Conditions refer to.
-	// This is intended for read-only use; any changes made to this object will
-	// be lost.
-	Fullname       types.NamespacedName
-	Generation     int64
-	TransitionTime v1.Time
-
-	// Conditions holds all the DetailedConditions to add to the object
-	// keyed by the Type (since that's what the apiserver will end up
-	// doing.)
-	Conditions map[ConditionType]*projectcontour.DetailedCondition
-}
-
-// ConditionFor returns a DetailedCondition for a given ConditionType.
-// Currently only "Valid" is used.
-func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projectcontour.DetailedCondition {
-	dc, ok := pu.Conditions[cond]
-	if !ok {
-		newDc := &projectcontour.DetailedCondition{}
-		newDc.Type = string(cond)
-
-		pu.Conditions[cond] = newDc
-		return newDc
-	}
-	return dc
-
-}
-
-func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
-	o, ok := obj.(*projectcontour.HTTPProxy)
-	if !ok {
-		panic(fmt.Sprintf("Unsupported %T object %s/%s in status mutator",
-			obj, pu.Fullname.Namespace, pu.Fullname.Name,
-		))
-	}
-
-	proxy := o.DeepCopy()
-
-	for condType, cond := range pu.Conditions {
-		cond.ObservedGeneration = pu.Generation
-		cond.LastTransitionTime = pu.TransitionTime
-
-		currCond := proxy.Status.GetConditionFor(string(condType))
-		if currCond == nil {
-			proxy.Status.Conditions = append(proxy.Status.Conditions, *cond)
-			continue
+func ProxyStatusMutator(a *Accessor) k8s.StatusMutator {
+	return k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+		o, ok := obj.(*projectcontour.HTTPProxy)
+		if !ok {
+			panic(fmt.Sprintf("unsupported %T object %q in status mutator", obj, a.Name))
 		}
 
-		cond.DeepCopyInto(currCond)
+		proxy := o.DeepCopy()
 
-	}
+		for condType, cond := range a.Conditions {
+			cond.ObservedGeneration = a.Generation
+			cond.LastTransitionTime = a.TransitionTime
 
-	// Set the old status fields using the Valid DetailedCondition's details.
-	// Other conditions are not relevant for these two fields.
-	validCond := proxy.Status.GetConditionFor(projectcontour.ValidConditionType)
+			currCond := proxy.Status.GetConditionFor(string(condType))
+			if currCond == nil {
+				proxy.Status.Conditions = append(proxy.Status.Conditions, *cond)
+				continue
+			}
 
-	switch validCond.Status {
-	case projectcontour.ConditionTrue:
-		// TODO(youngnick): bring the k8s.StatusValid constants in here?
-		proxy.Status.CurrentStatus = k8s.StatusValid
-		proxy.Status.Description = validCond.Reason + ": " + validCond.Message
-	case projectcontour.ConditionFalse:
-		orphanCond, orphaned := validCond.GetError(k8s.StatusOrphaned)
-		if orphaned {
-			proxy.Status.CurrentStatus = k8s.StatusOrphaned
-			proxy.Status.Description = orphanCond.Message
-			break
+			cond.DeepCopyInto(currCond)
 		}
-		proxy.Status.CurrentStatus = k8s.StatusInvalid
-		proxy.Status.Description = validCond.Reason + ": " + validCond.Message
-	}
 
-	return proxy
+		// Set the old status fields using the Valid DetailedCondition's details.
+		// Other conditions are not relevant for these two fields.
+		validCond := proxy.Status.GetConditionFor(projectcontour.ValidConditionType)
 
+		switch validCond.Status {
+		case projectcontour.ConditionTrue:
+			// TODO(youngnick): bring the k8s.StatusValid constants in here?
+			proxy.Status.CurrentStatus = k8s.StatusValid
+			proxy.Status.Description = validCond.Reason + ": " + validCond.Message
+		case projectcontour.ConditionFalse:
+			orphanCond, orphaned := validCond.GetError(k8s.StatusOrphaned)
+			if orphaned {
+				proxy.Status.CurrentStatus = k8s.StatusOrphaned
+				proxy.Status.Description = orphanCond.Message
+				break
+			}
+			proxy.Status.CurrentStatus = k8s.StatusInvalid
+			proxy.Status.Description = validCond.Reason + ": " + validCond.Message
+		}
+
+		return proxy
+	})
 }

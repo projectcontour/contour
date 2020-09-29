@@ -29,8 +29,8 @@ func TestConditionFor(t *testing.T) {
 		},
 	}
 
-	pu := ProxyUpdate{
-		Fullname: k8s.NamespacedNameFrom("test/test"),
+	pu := Accessor{
+		Name: k8s.NamespacedNameFrom("test/test"),
 		Conditions: map[ConditionType]*projectcontour.DetailedCondition{
 			ValidCondition: &simpleValidCondition,
 		},
@@ -40,8 +40,8 @@ func TestConditionFor(t *testing.T) {
 
 	assert.Equal(t, simpleValidCondition, *got.DeepCopy())
 
-	emptyProxyUpdate := ProxyUpdate{
-		Fullname:   k8s.NamespacedNameFrom("test/test"),
+	emptyProxyUpdate := Accessor{
+		Name:       k8s.NamespacedNameFrom("test/test"),
 		Conditions: make(map[ConditionType]*projectcontour.DetailedCondition),
 	}
 
@@ -58,7 +58,7 @@ func TestConditionFor(t *testing.T) {
 func TestStatusMutator(t *testing.T) {
 	type testcase struct {
 		testProxy         projectcontour.HTTPProxy
-		proxyUpdate       ProxyUpdate
+		proxyUpdate       Accessor
 		wantConditions    []projectcontour.DetailedCondition
 		wantCurrentStatus string
 		wantDescription   string
@@ -68,7 +68,7 @@ func TestStatusMutator(t *testing.T) {
 	var testGeneration int64 = 7
 
 	run := func(desc string, tc testcase) {
-		newProxy := tc.proxyUpdate.Mutate(&tc.testProxy)
+		newProxy := ProxyStatusMutator(&tc.proxyUpdate).Mutate(&tc.testProxy)
 
 		switch o := newProxy.(type) {
 		case *projectcontour.HTTPProxy:
@@ -88,8 +88,8 @@ func TestStatusMutator(t *testing.T) {
 				Generation: testGeneration,
 			},
 		},
-		proxyUpdate: ProxyUpdate{
-			Fullname:       k8s.NamespacedNameFrom("test/test"),
+		proxyUpdate: Accessor{
+			Name:           k8s.NamespacedNameFrom("test/test"),
 			Generation:     testGeneration,
 			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
@@ -142,8 +142,8 @@ func TestStatusMutator(t *testing.T) {
 				Generation: 6,
 			},
 		},
-		proxyUpdate: ProxyUpdate{
-			Fullname:       k8s.NamespacedNameFrom("test/test"),
+		proxyUpdate: Accessor{
+			Name:           k8s.NamespacedNameFrom("test/test"),
 			Generation:     testGeneration,
 			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
@@ -196,8 +196,8 @@ func TestStatusMutator(t *testing.T) {
 				Generation: testGeneration,
 			},
 		},
-		proxyUpdate: ProxyUpdate{
-			Fullname:       k8s.NamespacedNameFrom("test/test"),
+		proxyUpdate: Accessor{
+			Name:           k8s.NamespacedNameFrom("test/test"),
 			Generation:     testGeneration,
 			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
@@ -261,8 +261,8 @@ func TestStatusMutator(t *testing.T) {
 				},
 			},
 		},
-		proxyUpdate: ProxyUpdate{
-			Fullname:       k8s.NamespacedNameFrom("test/test"),
+		proxyUpdate: Accessor{
+			Name:           k8s.NamespacedNameFrom("test/test"),
 			Generation:     testGeneration,
 			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*projectcontour.DetailedCondition{
