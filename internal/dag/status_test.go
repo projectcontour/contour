@@ -33,7 +33,7 @@ func TestDAGStatus(t *testing.T) {
 	type testcase struct {
 		objs                []interface{}
 		fallbackCertificate *types.NamespacedName
-		want                map[types.NamespacedName]Status
+		want                map[types.NamespacedName]projcontour.DetailedCondition
 	}
 
 	run := func(desc string, tc testcase) {
@@ -67,8 +67,9 @@ func TestDAGStatus(t *testing.T) {
 	// proxyNoFQDN is invalid because it does not specify and FQDN
 	proxyNoFQDN := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "parent",
+			Namespace:  "roots",
+			Name:       "parent",
+			Generation: 23,
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{},
@@ -87,16 +88,18 @@ func TestDAGStatus(t *testing.T) {
 	// Tests using common fixtures
 	run("root proxy does not specify FQDN", testcase{
 		objs: []interface{}{proxyNoFQDN},
-		want: map[types.NamespacedName]Status{
-			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: {Object: proxyNoFQDN, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
+		want: map[types.NamespacedName]projcontour.DetailedCondition{
+			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: fixture.NewValidCondition().WithGeneration(23).
+				WithError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
 		},
 	})
 
 	// Simple Valid HTTPProxy
 	proxyValidHomeService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "example",
+			Namespace:  "roots",
+			Name:       "example",
+			Generation: 24,
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
@@ -116,16 +119,22 @@ func TestDAGStatus(t *testing.T) {
 
 	run("valid proxy", testcase{
 		objs: []interface{}{proxyValidHomeService, fixture.ServiceRootsHome},
-		want: map[types.NamespacedName]Status{
-			{Name: proxyValidHomeService.Name, Namespace: proxyValidHomeService.Namespace}: {Object: proxyValidHomeService, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
+		want: map[types.NamespacedName]projcontour.DetailedCondition{
+			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: fixture.NewValidCondition().WithGeneration(24).
+				WithError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
 		},
+
+		// map[types.NamespacedName]Status{
+		// 	{Name: proxyValidHomeService.Name, Namespace: proxyValidHomeService.Namespace}: {Object: proxyValidHomeService, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
+		// },
 	})
 
 	// Multiple Includes, one invalid
 	proxyMultiIncludeOneInvalid := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "parent",
+			Namespace:  "roots",
+			Name:       "parent",
+			Generation: 45,
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
@@ -165,8 +174,9 @@ func TestDAGStatus(t *testing.T) {
 
 	proxyChildValidFoo2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "roots",
-			Name:      "validChild",
+			Namespace:  "roots",
+			Name:       "validChild",
+			Generation: 1,
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			Routes: []contour_api_v1.Route{{
@@ -195,19 +205,19 @@ func TestDAGStatus(t *testing.T) {
 
 	run("proxy has multiple includes, one is invalid", testcase{
 		objs: []interface{}{proxyMultiIncludeOneInvalid, proxyChildValidFoo2, proxyChildInvalidBadPort, fixture.ServiceRootsFoo2, fixture.ServiceRootsFoo3InvalidPort},
-		want: map[types.NamespacedName]Status{
-			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:                 {Object: proxyChildValidFoo2, Status: "valid", Description: "valid HTTPProxy"},
-			{Name: proxyChildInvalidBadPort.Name, Namespace: proxyChildInvalidBadPort.Namespace}:       {Object: proxyChildInvalidBadPort, Status: "invalid", Description: `service "foo3": port must be in the range 1-65535`},
-			{Name: proxyMultiIncludeOneInvalid.Name, Namespace: proxyMultiIncludeOneInvalid.Namespace}: {Object: proxyMultiIncludeOneInvalid, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
+		want: map[types.NamespacedName]projcontour.DetailedCondition{
+			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:                 fixture.NewValidCondition().WithGeneration(proxyChildValidFoo2.Generation).Valid(),
+			{Name: proxyChildInvalidBadPort.Name, Namespace: proxyChildInvalidBadPort.Namespace}:       fixture.NewValidCondition().WithGeneration(proxyChildInvalidBadPort.Generation).WithError("ServiceError", "ServicePortInvalid", `service "foo3": port must be in the range 1-65535`),
+			{Name: proxyMultiIncludeOneInvalid.Name, Namespace: proxyMultiIncludeOneInvalid.Namespace}: fixture.NewValidCondition().WithGeneration(proxyMultiIncludeOneInvalid.Generation).Valid(),
 		},
 	})
 
 	run("multi-parent child is not orphaned when one of the parents is invalid", testcase{
 		objs: []interface{}{proxyNoFQDN, proxyChildValidFoo2, proxyIncludeValidChild, fixture.ServiceRootsKuard, fixture.ServiceRootsFoo2},
-		want: map[types.NamespacedName]Status{
-			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}:                       {Object: proxyNoFQDN, Status: "invalid", Description: "Spec.VirtualHost.Fqdn must be specified"},
-			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:       {Object: proxyChildValidFoo2, Status: "valid", Description: "valid HTTPProxy"},
-			{Name: proxyIncludeValidChild.Name, Namespace: proxyIncludeValidChild.Namespace}: {Object: proxyIncludeValidChild, Status: "valid", Description: "valid HTTPProxy", Vhost: "example.com"},
+		want: map[types.NamespacedName]projcontour.DetailedCondition{
+			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}:                       fixture.NewValidCondition().WithGeneration(proxyNoFQDN.Generation).WithError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
+			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:       fixture.NewValidCondition().WithGeneration(proxyChildValidFoo2.Generation).Valid(),
+			{Name: proxyIncludeValidChild.Name, Namespace: proxyIncludeValidChild.Namespace}: fixture.NewValidCondition().WithGeneration(proxyIncludeValidChild.Generation).Valid(),
 		},
 	})
 

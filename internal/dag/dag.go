@@ -23,7 +23,7 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	"github.com/projectcontour/contour/internal/k8s"
+	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
@@ -82,8 +82,8 @@ func (d *DAG) Visit(fn func(Vertex)) {
 
 // Statuses returns a slice of Status objects associated with
 // the computation of this DAG.
-func (d *DAG) Statuses() []k8s.StatusUpdate {
-	return d.StatusCache.GetStatusUpdates()
+func (d *DAG) Statuses() map[types.NamespacedName]projectcontour.DetailedCondition {
+	return d.StatusCache.GetProxyValidConditions()
 }
 
 // AddRoot appends the given root to the DAG's roots.

@@ -87,3 +87,13 @@ func (c Cache) getProxyStatusUpdates() []k8s.StatusUpdate {
 	return psu
 
 }
+
+func (c Cache) GetProxyValidConditions() map[types.NamespacedName]projcontour.DetailedCondition {
+	validConds := make(map[types.NamespacedName]projcontour.DetailedCondition)
+
+	for fullname, pu := range c.proxyUpdates {
+		validConds[fullname] = *pu.Conditions[ValidCondition]
+	}
+
+	return validConds
+}
