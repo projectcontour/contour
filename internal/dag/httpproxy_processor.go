@@ -18,8 +18,8 @@ import (
 	"sort"
 	"strings"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	projcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -29,9 +29,9 @@ import (
 )
 
 // defaultExtensionRef populates the unset fields in ref with default values.
-func defaultExtensionRef(ref projcontour.ExtensionServiceReference) projcontour.ExtensionServiceReference {
+func defaultExtensionRef(ref contour_api_v1.ExtensionServiceReference) contour_api_v1.ExtensionServiceReference {
 	if ref.APIVersion == "" {
-		ref.APIVersion = projcontourv1alpha1.GroupVersion.String()
+		ref.APIVersion = contour_api_v1alpha1.GroupVersion.String()
 
 	}
 
@@ -98,7 +98,7 @@ func (p *HTTPProxyProcessor) Run(dag *DAG, source *KubernetesCache) {
 	}
 }
 
-func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
+func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	sw, commit := p.dag.WithObject(proxy)
 	defer commit()
 
@@ -218,7 +218,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 				auth := proxy.Spec.VirtualHost.Authorization
 				ref := defaultExtensionRef(auth.ExtensionServiceRef)
 
-				if ref.APIVersion != projcontourv1alpha1.GroupVersion.String() {
+				if ref.APIVersion != contour_api_v1alpha1.GroupVersion.String() {
 					sw.SetInvalid("Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource version %q",
 						auth.ExtensionServiceRef.APIVersion)
 					return
@@ -292,10 +292,10 @@ func addRoutes(vhost vhost, routes []*Route) {
 
 func (p *HTTPProxyProcessor) computeRoutes(
 	sw *ObjectStatusWriter,
-	rootProxy *projcontour.HTTPProxy,
-	proxy *projcontour.HTTPProxy,
-	conditions []projcontour.MatchCondition,
-	visited []*projcontour.HTTPProxy,
+	rootProxy *contour_api_v1.HTTPProxy,
+	proxy *contour_api_v1.HTTPProxy,
+	conditions []contour_api_v1.MatchCondition,
+	visited []*contour_api_v1.HTTPProxy,
 	enforceTLS bool,
 ) []*Route {
 	for _, v := range visited {
@@ -546,7 +546,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 // following the chain of spec.tcpproxy.include references. It returns true if processing
 // was successful, otherwise false if an error was encountered. The details of the error
 // will be recorded on the status of the relevant HTTPProxy object,
-func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *projcontour.HTTPProxy, visited []*projcontour.HTTPProxy, host string) bool {
+func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, httpproxy *contour_api_v1.HTTPProxy, visited []*contour_api_v1.HTTPProxy, host string) bool {
 	tcpproxy := httpproxy.Spec.TCPProxy
 	if tcpproxy == nil {
 		// nothing to do
@@ -639,13 +639,13 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 	return ok
 }
 
-// validHTTPProxies returns a slice of *projcontour.HTTPProxy objects.
+// validHTTPProxies returns a slice of *contour_api_v1.HTTPProxy objects.
 // invalid HTTPProxy objects are excluded from the slice and their status
 // updated accordingly.
-func (p *HTTPProxyProcessor) validHTTPProxies() []*projcontour.HTTPProxy {
+func (p *HTTPProxyProcessor) validHTTPProxies() []*contour_api_v1.HTTPProxy {
 	// ensure that a given fqdn is only referenced in a single HTTPProxy resource
-	var valid []*projcontour.HTTPProxy
-	fqdnHTTPProxies := make(map[string][]*projcontour.HTTPProxy)
+	var valid []*contour_api_v1.HTTPProxy
+	fqdnHTTPProxies := make(map[string][]*contour_api_v1.HTTPProxy)
 	for _, proxy := range p.source.httpproxies {
 		if proxy.Spec.VirtualHost == nil {
 			valid = append(valid, proxy)
@@ -789,7 +789,7 @@ func expandPrefixMatches(routes []*Route) []*Route {
 	return expandedRoutes
 }
 
-func getProtocol(service projcontour.Service, s *Service) (string, error) {
+func getProtocol(service contour_api_v1.Service, s *Service) (string, error) {
 	// Determine the protocol to use to speak to this Cluster.
 	var protocol string
 	if service.Protocol != nil {
@@ -828,7 +828,7 @@ func determineSNI(routeRequestHeaders *HeadersPolicy, clusterRequestHeaders *Hea
 	return service.ExternalName
 }
 
-func toCORSPolicy(policy *projcontour.CORSPolicy) (*CORSPolicy, error) {
+func toCORSPolicy(policy *contour_api_v1.CORSPolicy) (*CORSPolicy, error) {
 	if policy == nil {
 		return nil, nil
 	}
@@ -849,7 +849,7 @@ func toCORSPolicy(policy *projcontour.CORSPolicy) (*CORSPolicy, error) {
 	}, nil
 }
 
-func toStringSlice(hvs []projcontour.CORSHeaderValue) []string {
+func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 	s := make([]string, len(hvs))
 	for i, v := range hvs {
 		s[i] = string(v)
@@ -857,7 +857,7 @@ func toStringSlice(hvs []projcontour.CORSHeaderValue) []string {
 	return s
 }
 
-func includeMatchConditionsIdentical(includes []projcontour.Include) bool {
+func includeMatchConditionsIdentical(includes []contour_api_v1.Include) bool {
 	j := 0
 	for i := 1; i < len(includes); i++ {
 		// Now compare each include's set of conditions

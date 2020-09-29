@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
@@ -30,7 +30,7 @@ import (
 
 // retryOn transforms a slice of retry on values to a comma-separated string.
 // CRD validation ensures that all retry on values are valid.
-func retryOn(ro []projcontour.RetryOn) string {
+func retryOn(ro []contour_api_v1.RetryOn) string {
 	if len(ro) == 0 {
 		return "5xx"
 	}
@@ -42,7 +42,7 @@ func retryOn(ro []projcontour.RetryOn) string {
 	return strings.Join(ss, ",")
 }
 
-func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
+func retryPolicy(rp *contour_api_v1.RetryPolicy) *RetryPolicy {
 	if rp == nil {
 		return nil
 	}
@@ -65,12 +65,12 @@ func retryPolicy(rp *projcontour.RetryPolicy) *RetryPolicy {
 	}
 }
 
-func headersPolicyService(policy *projcontour.HeadersPolicy) (*HeadersPolicy, error) {
+func headersPolicyService(policy *contour_api_v1.HeadersPolicy) (*HeadersPolicy, error) {
 	return headersPolicyRoute(policy, false)
 
 }
 
-func headersPolicyRoute(policy *projcontour.HeadersPolicy, allowHostRewrite bool) (*HeadersPolicy, error) {
+func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite bool) (*HeadersPolicy, error) {
 	if policy == nil {
 		return nil, nil
 	}
@@ -170,7 +170,7 @@ func ingressTimeoutPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) Time
 	}
 	// if the request timeout annotation is present on this ingress
 	// construct and use the HTTPProxy timeout policy logic.
-	tp, err := timeoutPolicy(&projcontour.TimeoutPolicy{
+	tp, err := timeoutPolicy(&contour_api_v1.TimeoutPolicy{
 		Response: response,
 	})
 	if err != nil {
@@ -181,7 +181,7 @@ func ingressTimeoutPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) Time
 	return tp
 }
 
-func timeoutPolicy(tp *projcontour.TimeoutPolicy) (TimeoutPolicy, error) {
+func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy) (TimeoutPolicy, error) {
 	if tp == nil {
 		return TimeoutPolicy{
 			ResponseTimeout: timeout.DefaultSetting(),
@@ -205,7 +205,7 @@ func timeoutPolicy(tp *projcontour.TimeoutPolicy) (TimeoutPolicy, error) {
 	}, nil
 }
 
-func httpHealthCheckPolicy(hc *projcontour.HTTPHealthCheckPolicy) *HTTPHealthCheckPolicy {
+func httpHealthCheckPolicy(hc *contour_api_v1.HTTPHealthCheckPolicy) *HTTPHealthCheckPolicy {
 	if hc == nil {
 		return nil
 	}
@@ -219,7 +219,7 @@ func httpHealthCheckPolicy(hc *projcontour.HTTPHealthCheckPolicy) *HTTPHealthChe
 	}
 }
 
-func tcpHealthCheckPolicy(hc *projcontour.TCPHealthCheckPolicy) *TCPHealthCheckPolicy {
+func tcpHealthCheckPolicy(hc *contour_api_v1.TCPHealthCheckPolicy) *TCPHealthCheckPolicy {
 	if hc == nil {
 		return nil
 	}
@@ -233,7 +233,7 @@ func tcpHealthCheckPolicy(hc *projcontour.TCPHealthCheckPolicy) *TCPHealthCheckP
 
 // loadBalancerPolicy returns the load balancer strategy or
 // blank if no valid strategy is supplied.
-func loadBalancerPolicy(lbp *projcontour.LoadBalancerPolicy) string {
+func loadBalancerPolicy(lbp *contour_api_v1.LoadBalancerPolicy) string {
 	if lbp == nil {
 		return ""
 	}
@@ -256,7 +256,7 @@ func max(a, b uint32) uint32 {
 	return b
 }
 
-func prefixReplacementsAreValid(replacements []projcontour.ReplacePrefix) error {
+func prefixReplacementsAreValid(replacements []contour_api_v1.ReplacePrefix) error {
 	prefixes := map[string]bool{}
 
 	for _, r := range replacements {

@@ -17,8 +17,8 @@ import (
 	"testing"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 )
@@ -36,9 +36,9 @@ func TestAddRemoveEndpoints(t *testing.T) {
 
 	rh.OnAdd(fixture.NewProxy("super-long-namespace-name-oh-boy/proxy").
 		WithFQDN("proxy.example.com").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "what-a-descriptive-service-name-you-must-be-so-proud",
 					Port: 8000,
 				}, {
@@ -74,16 +74,16 @@ func TestAddRemoveEndpoints(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http",
-				Endpoints: envoyv2.WeightedEndpoints(1,
-					envoyv2.SocketAddress("172.16.0.1", 8000), // endpoints and cluster names should be sorted
-					envoyv2.SocketAddress("172.16.0.2", 8000),
+				Endpoints: envoy_v2.WeightedEndpoints(1,
+					envoy_v2.SocketAddress("172.16.0.1", 8000), // endpoints and cluster names should be sorted
+					envoy_v2.SocketAddress("172.16.0.2", 8000),
 				),
 			},
 			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https",
-				Endpoints: envoyv2.WeightedEndpoints(1,
-					envoyv2.SocketAddress("172.16.0.1", 8443),
-					envoyv2.SocketAddress("172.16.0.2", 8443),
+				Endpoints: envoy_v2.WeightedEndpoints(1,
+					envoy_v2.SocketAddress("172.16.0.1", 8443),
+					envoy_v2.SocketAddress("172.16.0.2", 8443),
 				),
 			},
 		),
@@ -95,8 +95,8 @@ func TestAddRemoveEndpoints(t *testing.T) {
 
 	c.Request(endpointType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
-			envoyv2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
+			envoy_v2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
+			envoy_v2.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 		),
 		TypeUrl: endpointType,
 	})
@@ -113,20 +113,20 @@ func TestAddEndpointComplicated(t *testing.T) {
 
 	rh.OnAdd(fixture.NewProxy("kuard").
 		WithFQDN("kuard.example.com").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
 			}, {
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/admin",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 9000,
 				}},
@@ -166,15 +166,15 @@ func TestAddEndpointComplicated(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "default/kuard/admin",
-				Endpoints: envoyv2.WeightedEndpoints(1,
-					envoyv2.SocketAddress("10.48.1.77", 9000),
-					envoyv2.SocketAddress("10.48.1.78", 9000),
+				Endpoints: envoy_v2.WeightedEndpoints(1,
+					envoy_v2.SocketAddress("10.48.1.77", 9000),
+					envoy_v2.SocketAddress("10.48.1.78", 9000),
 				),
 			},
 			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "default/kuard/foo",
-				Endpoints: envoyv2.WeightedEndpoints(1,
-					envoyv2.SocketAddress("10.48.1.78", 8080),
+				Endpoints: envoy_v2.WeightedEndpoints(1,
+					envoy_v2.SocketAddress("10.48.1.78", 8080),
 				),
 			},
 		),
@@ -192,9 +192,9 @@ func TestEndpointFilter(t *testing.T) {
 
 	rh.OnAdd(fixture.NewProxy("default/kuard").
 		WithFQDN("kuard.example.com").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -234,7 +234,7 @@ func TestEndpointFilter(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "default/kuard/foo",
-				Endpoints:   envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("10.48.1.78", 8080)),
+				Endpoints:   envoy_v2.WeightedEndpoints(1, envoy_v2.SocketAddress("10.48.1.78", 8080)),
 			},
 		),
 	})
@@ -242,7 +242,7 @@ func TestEndpointFilter(t *testing.T) {
 	c.Request(endpointType, "default/kuard/bar").Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: endpointType,
 		Resources: resources(t,
-			envoyv2.ClusterLoadAssignment("default/kuard/bar"),
+			envoy_v2.ClusterLoadAssignment("default/kuard/bar"),
 		),
 	})
 }
@@ -259,9 +259,9 @@ func TestIssue602(t *testing.T) {
 
 	rh.OnAdd(fixture.NewProxy("simple").
 		WithFQDN("simple.example.com").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "simple",
 					Port: 8080,
 				}},
@@ -282,7 +282,7 @@ func TestIssue602(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: "default/simple",
-				Endpoints:   envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.24", 8080)),
+				Endpoints:   envoy_v2.WeightedEndpoints(1, envoy_v2.SocketAddress("192.168.183.24", 8080)),
 			},
 		),
 		TypeUrl: endpointType,
@@ -293,7 +293,7 @@ func TestIssue602(t *testing.T) {
 	rh.OnUpdate(e1, e2)
 
 	c.Request(endpointType).Equals(&envoy_api_v2.DiscoveryResponse{
-		Resources: resources(t, envoyv2.ClusterLoadAssignment("default/simple")),
+		Resources: resources(t, envoy_v2.ClusterLoadAssignment("default/simple")),
 		TypeUrl:   endpointType,
 	})
 }

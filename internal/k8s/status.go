@@ -17,7 +17,7 @@ import (
 	"errors"
 	"fmt"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 const (
@@ -29,17 +29,17 @@ const (
 // StatusClient updates the HTTPProxyStatus on a Kubernetes object.
 type StatusClient interface {
 	SetStatus(status string, desc string, obj interface{}) error
-	GetStatus(obj interface{}) (*projcontour.HTTPProxyStatus, error)
+	GetStatus(obj interface{}) (*contour_api_v1.HTTPProxyStatus, error)
 }
 
 // StatusCacher keeps a cache of the latest status updates for Kubernetes objects.
 type StatusCacher struct {
-	objectStatus map[string]projcontour.HTTPProxyStatus
+	objectStatus map[string]contour_api_v1.HTTPProxyStatus
 }
 
 func objectKey(obj interface{}) string {
 	switch obj := obj.(type) {
-	case *projcontour.HTTPProxy:
+	case *contour_api_v1.HTTPProxy:
 		return fmt.Sprintf("%s/%s/%s",
 			KindOf(obj),
 			obj.GetObjectMeta().GetNamespace(),
@@ -53,7 +53,7 @@ func objectKey(obj interface{}) string {
 // the status cache.
 func (c *StatusCacher) IsCacheable(obj interface{}) bool {
 	switch obj.(type) {
-	case *projcontour.HTTPProxy:
+	case *contour_api_v1.HTTPProxy:
 		return true
 	default:
 		return false
@@ -68,9 +68,9 @@ func (c *StatusCacher) Delete(obj interface{}) {
 }
 
 // GetStatus returns the status (if any) for this given object.
-func (c *StatusCacher) GetStatus(obj interface{}) (*projcontour.HTTPProxyStatus, error) {
+func (c *StatusCacher) GetStatus(obj interface{}) (*contour_api_v1.HTTPProxyStatus, error) {
 	if c.objectStatus == nil {
-		c.objectStatus = make(map[string]projcontour.HTTPProxyStatus)
+		c.objectStatus = make(map[string]contour_api_v1.HTTPProxyStatus)
 	}
 
 	s, ok := c.objectStatus[objectKey(obj)]
@@ -84,10 +84,10 @@ func (c *StatusCacher) GetStatus(obj interface{}) (*projcontour.HTTPProxyStatus,
 // SetStatus sets the HTTPProxy status field to an Valid or Invalid status
 func (c *StatusCacher) SetStatus(status, desc string, obj interface{}) error {
 	if c.objectStatus == nil {
-		c.objectStatus = make(map[string]projcontour.HTTPProxyStatus)
+		c.objectStatus = make(map[string]contour_api_v1.HTTPProxyStatus)
 	}
 
-	c.objectStatus[objectKey(obj)] = projcontour.HTTPProxyStatus{
+	c.objectStatus[objectKey(obj)] = contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: status,
 		Description:   desc,
 	}
@@ -101,22 +101,22 @@ type StatusWriter struct {
 }
 
 // GetStatus is not implemented for StatusWriter.
-func (irs *StatusWriter) GetStatus(obj interface{}) (*projcontour.HTTPProxyStatus, error) {
+func (irs *StatusWriter) GetStatus(obj interface{}) (*contour_api_v1.HTTPProxyStatus, error) {
 	return nil, errors.New("not implemented")
 }
 
 // SetStatus sets the HTTPProxy status field to an Valid or Invalid status
 func (irs *StatusWriter) SetStatus(status, desc string, existing interface{}) error {
 	switch exist := existing.(type) {
-	case *projcontour.HTTPProxy:
+	case *contour_api_v1.HTTPProxy:
 		// StatusUpdateWriters only apply an update if required, so
 		// we don't need to check here.
 		irs.Updater.Update(exist.Name,
 			exist.Namespace,
-			projcontour.HTTPProxyGVR,
+			contour_api_v1.HTTPProxyGVR,
 			StatusMutatorFunc(func(obj interface{}) interface{} {
 				switch o := obj.(type) {
-				case *projcontour.HTTPProxy:
+				case *contour_api_v1.HTTPProxy:
 					dco := o.DeepCopy()
 					dco.Status.CurrentStatus = status
 					dco.Status.Description = desc

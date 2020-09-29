@@ -23,7 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 )
@@ -95,7 +95,7 @@ func visitSecrets(root dag.Vertex) map[string]*envoy_api_v2_auth.Secret {
 func (v *secretVisitor) addSecret(s *dag.Secret) {
 	name := envoy.Secretname(s)
 	if _, ok := v.secrets[name]; !ok {
-		envoySecret := envoyv2.Secret(s)
+		envoySecret := envoy_v2.Secret(s)
 		v.secrets[envoySecret.Name] = envoySecret
 	}
 }

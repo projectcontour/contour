@@ -18,8 +18,8 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -38,13 +38,13 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 	// simple single service
 	proxy1 := fixture.NewProxy("simple").
 		WithFQDN("www.example.com").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/cart")),
-				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
 					Strategy: "Cookie",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -54,8 +54,8 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("www.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("www.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/cart"),
 						Action: withSessionAffinity(routeCluster("default/app/80/e4f81994fe")),
@@ -71,13 +71,13 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 		proxy1,
 		fixture.NewProxy("simple").
 			WithFQDN("www.example.com").
-			WithSpec(projcontour.HTTPProxySpec{
-				Routes: []projcontour.Route{{
+			WithSpec(contour_api_v1.HTTPProxySpec{
+				Routes: []contour_api_v1.Route{{
 					Conditions: matchconditions(prefixMatchCondition("/cart")),
-					LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
+					LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
 						Strategy: "Cookie",
 					},
-					Services: []projcontour.Service{{
+					Services: []contour_api_v1.Service{{
 						Name: s1.Name,
 						Port: 80,
 					}, {
@@ -90,8 +90,8 @@ func TestLoadBalancerPolicySessionAffinity(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("www.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("www.example.com",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/cart"),
 						Action: withSessionAffinity(

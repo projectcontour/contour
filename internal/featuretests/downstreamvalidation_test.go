@@ -17,9 +17,9 @@ import (
 	"testing"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
@@ -57,18 +57,18 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnAdd(service)
 
 	proxy := fixture.NewProxy("example.com").
-		WithSpec(projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: serverTLSSecret.Name,
-					ClientValidation: &projcontour.DownstreamValidation{
+					ClientValidation: &contour_api_v1.DownstreamValidation{
 						CACertificate: clientCASecret.Name,
 					},
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -79,18 +79,18 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 
 	ingress_http := &envoy_api_v2.Listener{
 		Name:    "ingress_http",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-		FilterChains: envoyv2.FilterChains(
-			envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+		FilterChains: envoy_v2.FilterChains(
+			envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 		),
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 
 	ingress_https := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: appendFilterChains(
 			filterchaintls("example.com", serverTLSSecret,
@@ -103,7 +103,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 				"h2", "http/1.1",
 			),
 		),
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
@@ -114,7 +114,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		),
 		TypeUrl: listenerType,
 	}).Status(proxy).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
 	)
 
 }

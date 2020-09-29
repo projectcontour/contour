@@ -16,7 +16,7 @@ package dag
 import (
 	"fmt"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -88,7 +88,7 @@ func (osw *ObjectStatusWriter) SetInvalid(format string, args ...interface{}) {
 
 func (osw *ObjectStatusWriter) SetValid() {
 	switch osw.obj.(type) {
-	case *projcontour.HTTPProxy:
+	case *contour_api_v1.HTTPProxy:
 		osw.WithValue("description", "valid HTTPProxy").WithValue("status", k8s.StatusValid)
 	default:
 		// not a supported type

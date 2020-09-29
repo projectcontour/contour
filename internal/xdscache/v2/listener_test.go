@@ -23,9 +23,9 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	"github.com/golang/protobuf/proto"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
@@ -46,16 +46,16 @@ func TestListenerCacheContents(t *testing.T) {
 		"simple": {
 			contents: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 			want: []proto.Message{
 				&envoy_api_v2.Listener{
 					Name:          ENVOY_HTTP_LISTENER,
-					Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-					FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-					SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+					Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+					FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 				},
 			},
 		},
@@ -80,43 +80,43 @@ func TestListenerCacheQuery(t *testing.T) {
 		"exact match": {
 			contents: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 			query: []string{ENVOY_HTTP_LISTENER},
 			want: []proto.Message{
 				&envoy_api_v2.Listener{
 					Name:          ENVOY_HTTP_LISTENER,
-					Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-					FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-					SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+					Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+					FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 				},
 			},
 		},
 		"partial match": {
 			contents: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 			query: []string{ENVOY_HTTP_LISTENER, "stats-listener"},
 			want: []proto.Message{
 				&envoy_api_v2.Listener{
 					Name:          ENVOY_HTTP_LISTENER,
-					Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-					FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-					SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+					Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+					FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+					SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 				},
 			},
 		},
 		"no match": {
 			contents: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 			query: []string{"stats-listener"},
 			want:  nil,
@@ -135,20 +135,20 @@ func TestListenerCacheQuery(t *testing.T) {
 
 func TestListenerVisit(t *testing.T) {
 	httpsFilterFor := func(vhost string) *envoy_api_v2_listener.Filter {
-		return envoyv2.HTTPConnectionManagerBuilder().
-			AddFilter(envoyv2.FilterMisdirectedRequests(vhost)).
+		return envoy_v2.HTTPConnectionManagerBuilder().
+			AddFilter(envoy_v2.FilterMisdirectedRequests(vhost)).
 			DefaultFilters().
 			MetricsPrefix(ENVOY_HTTPS_LISTENER).
 			RouteConfigName(path.Join("https", vhost)).
-			AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+			AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 			Get()
 	}
 
-	fallbackCertFilter := envoyv2.HTTPConnectionManagerBuilder().
+	fallbackCertFilter := envoy_v2.HTTPConnectionManagerBuilder().
 		DefaultFilters().
 		MetricsPrefix(ENVOY_HTTPS_LISTENER).
 		RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-		AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+		AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 		Get()
 
 	tests := map[string]struct {
@@ -188,27 +188,27 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"one http only httpproxy": {
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							Conditions: []projcontour.MatchCondition{{
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -231,9 +231,9 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"simple ingress with secret": {
@@ -284,23 +284,23 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("whatever.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("whatever.example.com")),
 				}},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"multiple tls ingress with secrets should be sorted": {
@@ -373,29 +373,29 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"sortedfirst.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("sortedfirst.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("sortedfirst.example.com")),
 				}, {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"sortedsecond.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("sortedsecond.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("sortedsecond.example.com")),
 				}},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"simple ingress with missing secret": {
@@ -446,27 +446,27 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"simple httpproxy with secret": {
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -497,23 +497,23 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("www.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"ingress with allow-http: false": {
@@ -584,18 +584,18 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("www.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"http listener on non default port": { // issue 72
@@ -652,23 +652,23 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("127.0.0.100", 9100),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("127.0.0.100", 9100),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("127.0.0.200", 9200),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("127.0.0.200", 9200),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("whatever.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("whatever.example.com")),
 				}},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"use proxy proto": {
@@ -722,27 +722,27 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.ProxyProtocol(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.ProxyProtocol(),
 				),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.ProxyProtocol(),
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.ProxyProtocol(),
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("whatever.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("whatever.example.com")),
 				}},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"--envoy-http-access-log": {
@@ -797,29 +797,29 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress(DEFAULT_HTTP_LISTENER_ADDRESS, DEFAULT_HTTP_LISTENER_PORT),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy("/tmp/http_access.log"), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress(DEFAULT_HTTP_LISTENER_ADDRESS, DEFAULT_HTTP_LISTENER_PORT),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy("/tmp/http_access.log"), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress(DEFAULT_HTTPS_LISTENER_ADDRESS, DEFAULT_HTTPS_LISTENER_PORT),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress(DEFAULT_HTTPS_LISTENER_ADDRESS, DEFAULT_HTTPS_LISTENER_PORT),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters: envoyv2.Filters(envoyv2.HTTPConnectionManagerBuilder().
-						AddFilter(envoyv2.FilterMisdirectedRequests("whatever.example.com")).
+					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v2.FilterMisdirectedRequests("whatever.example.com")).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "whatever.example.com")).
-						AccessLoggers(envoyv2.FileAccessLogEnvoy("/tmp/https_access.log")).
+						AccessLoggers(envoy_v2.FileAccessLogEnvoy("/tmp/https_access.log")).
 						Get()),
 				}},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"tls-min-protocol-version from config": {
@@ -873,23 +873,23 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("whatever.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("whatever.example.com")),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"tls-min-protocol-version from config overridden by annotation": {
@@ -946,23 +946,23 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
-					Filters:         envoyv2.Filters(httpsFilterFor("whatever.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("whatever.example.com")),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"tls-min-protocol-version from config overridden by legacy annotation": {
@@ -1019,23 +1019,23 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
-					Filters:         envoyv2.Filters(httpsFilterFor("whatever.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("whatever.example.com")),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"tls-min-protocol-version from config overridden by httpproxy": {
@@ -1043,21 +1043,21 @@ func TestListenerVisit(t *testing.T) {
 				MinimumTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName:             "secret",
 								MinimumProtocolVersion: "1.2",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -1088,23 +1088,23 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_3, "h2", "http/1.1"), // note, cannot downgrade from the configured version
-					Filters:         envoyv2.Filters(httpsFilterFor("www.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpproxy with fallback certificate": {
@@ -1113,22 +1113,22 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []projcontour.Route{
+						Routes: []contour_api_v1.Route{
 							{
-								Services: []projcontour.Service{
+								Services: []contour_api_v1.Service{
 									{
 										Name: "backend",
 										Port: 80,
@@ -1170,30 +1170,30 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("www.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 				}, {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						TransportProtocol: "tls",
 					},
 					TransportSocket: transportSocket("fallbacksecret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(fallbackCertFilter),
+					Filters:         envoy_v2.Filters(fallbackCertFilter),
 					Name:            "fallback-certificate",
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"multiple httpproxies with fallback certificate": {
@@ -1202,22 +1202,22 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple2",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.another.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []projcontour.Route{
+						Routes: []contour_api_v1.Route{
 							{
-								Services: []projcontour.Service{
+								Services: []contour_api_v1.Service{
 									{
 										Name: "backend",
 										Port: 80,
@@ -1227,22 +1227,22 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []projcontour.Route{
+						Routes: []contour_api_v1.Route{
 							{
-								Services: []projcontour.Service{
+								Services: []contour_api_v1.Service{
 									{
 										Name: "backend",
 										Port: 80,
@@ -1284,39 +1284,39 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					{
 						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							ServerNames: []string{"www.another.com"},
 						},
 						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-						Filters:         envoyv2.Filters(httpsFilterFor("www.another.com")),
+						Filters:         envoy_v2.Filters(httpsFilterFor("www.another.com")),
 					},
 					{
 						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							ServerNames: []string{"www.example.com"},
 						},
 						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-						Filters:         envoyv2.Filters(httpsFilterFor("www.example.com")),
+						Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 					},
 					{
 						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							TransportProtocol: "tls",
 						},
 						TransportSocket: transportSocket("fallbacksecret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-						Filters:         envoyv2.Filters(fallbackCertFilter),
+						Filters:         envoy_v2.Filters(fallbackCertFilter),
 						Name:            "fallback-certificate",
 					}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpproxy with fallback certificate - no cert passed": {
@@ -1325,22 +1325,22 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "",
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: true,
 							},
 						},
-						Routes: []projcontour.Route{
+						Routes: []contour_api_v1.Route{
 							{
-								Services: []projcontour.Service{
+								Services: []contour_api_v1.Service{
 									{
 										Name: "backend",
 										Port: 80,
@@ -1380,22 +1380,22 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName:                "secret",
 								EnableFallbackCertificate: false,
 							},
 						},
-						Routes: []projcontour.Route{
+						Routes: []contour_api_v1.Route{
 							{
-								Services: []projcontour.Service{
+								Services: []contour_api_v1.Service{
 									{
 										Name: "backend",
 										Port: 80,
@@ -1429,23 +1429,23 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters:         envoyv2.Filters(httpsFilterFor("www.example.com")),
+					Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpproxy with connection idle timeout set in visitor config": {
@@ -1453,20 +1453,20 @@ func TestListenerVisit(t *testing.T) {
 				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							Conditions: []projcontour.MatchCondition{{
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -1489,17 +1489,17 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManagerBuilder().
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
 						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpproxy with stream idle timeout set in visitor config": {
@@ -1507,20 +1507,20 @@ func TestListenerVisit(t *testing.T) {
 				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							Conditions: []projcontour.MatchCondition{{
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -1543,17 +1543,17 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManagerBuilder().
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
 						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpproxy with max connection duration set in visitor config": {
@@ -1561,20 +1561,20 @@ func TestListenerVisit(t *testing.T) {
 				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							Conditions: []projcontour.MatchCondition{{
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -1597,17 +1597,17 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManagerBuilder().
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpproxy with connection shutdown grace period set in visitor config": {
@@ -1615,20 +1615,20 @@ func TestListenerVisit(t *testing.T) {
 				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
 						},
-						Routes: []projcontour.Route{{
-							Conditions: []projcontour.MatchCondition{{
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -1651,17 +1651,17 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManagerBuilder().
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
 						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpsproxy with secret with connection idle timeout set in visitor config": {
@@ -1669,20 +1669,20 @@ func TestListenerVisit(t *testing.T) {
 				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -1713,37 +1713,37 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(envoyv2.HTTPConnectionManagerBuilder().
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(envoy_v2.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+					AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
 					ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 					Get(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters: envoyv2.Filters(envoyv2.HTTPConnectionManagerBuilder().
-						AddFilter(envoyv2.FilterMisdirectedRequests("www.example.com")).
+					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v2.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpsproxy with secret with stream idle timeout set in visitor config": {
@@ -1751,20 +1751,20 @@ func TestListenerVisit(t *testing.T) {
 				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -1795,37 +1795,37 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(envoyv2.HTTPConnectionManagerBuilder().
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(envoy_v2.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+					AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
 					StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 					Get(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters: envoyv2.Filters(envoyv2.HTTPConnectionManagerBuilder().
-						AddFilter(envoyv2.FilterMisdirectedRequests("www.example.com")).
+					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v2.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpsproxy with secret with max connection duration set in visitor config": {
@@ -1833,20 +1833,20 @@ func TestListenerVisit(t *testing.T) {
 				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -1877,37 +1877,37 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(envoyv2.HTTPConnectionManagerBuilder().
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(envoy_v2.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+					AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
 					MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 					Get(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters: envoyv2.Filters(envoyv2.HTTPConnectionManagerBuilder().
-						AddFilter(envoyv2.FilterMisdirectedRequests("www.example.com")).
+					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v2.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 		"httpsproxy with secret with connection shutdown grace period set in visitor config": {
@@ -1915,20 +1915,20 @@ func TestListenerVisit(t *testing.T) {
 				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 			},
 			objs: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "www.example.com",
-							TLS: &projcontour.TLS{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret",
 							},
 						},
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "backend",
 								Port: 80,
 							}},
@@ -1959,37 +1959,37 @@ func TestListenerVisit(t *testing.T) {
 			},
 			want: listenermap(&envoy_api_v2.Listener{
 				Name:    ENVOY_HTTP_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(envoyv2.HTTPConnectionManagerBuilder().
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(envoy_v2.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+					AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
 					ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 					Get(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}, &envoy_api_v2.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{{
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
 					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
-					Filters: envoyv2.Filters(envoyv2.HTTPConnectionManagerBuilder().
-						AddFilter(envoyv2.FilterMisdirectedRequests("www.example.com")).
+					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v2.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoyv2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AccessLoggers(envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			}),
 		},
 	}
@@ -2014,8 +2014,8 @@ func transportSocket(secretname string, tlsMinProtoVersion envoy_api_v2_auth.Tls
 			Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 		},
 	}
-	return envoyv2.DownstreamTLSTransportSocket(
-		envoyv2.DownstreamTLSContext(secret, tlsMinProtoVersion, nil, alpnprotos...),
+	return envoy_v2.DownstreamTLSTransportSocket(
+		envoy_v2.DownstreamTLSContext(secret, tlsMinProtoVersion, nil, alpnprotos...),
 	)
 }
 

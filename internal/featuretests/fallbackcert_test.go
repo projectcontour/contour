@@ -19,10 +19,10 @@ import (
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,16 +71,16 @@ func TestFallbackCertificate(t *testing.T) {
 
 	// Valid HTTPProxy without FallbackCertificate enabled
 	proxy1 := fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "fallback.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:                "secret",
 					EnableFallbackCertificate: false,
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -95,32 +95,32 @@ func TestFallbackCertificate(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("fallback.example.com", sec1,
 						httpsFilterFor("fallback.example.com"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
 
 	// Valid HTTPProxy with FallbackCertificate enabled
 	proxy2 := fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "fallback.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:                "secret",
 					EnableFallbackCertificate: true,
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -135,13 +135,13 @@ func TestFallbackCertificate(t *testing.T) {
 		TypeUrl:   listenerType,
 	})
 
-	certDelegationAll := &projcontour.TLSCertificateDelegation{
+	certDelegationAll := &contour_api_v1.TLSCertificateDelegation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "fallbackcertdelegation",
 			Namespace: "admin",
 		},
-		Spec: projcontour.TLSCertificateDelegationSpec{
-			Delegations: []projcontour.CertificateDelegation{{
+		Spec: contour_api_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_api_v1.CertificateDelegation{{
 				SecretName:       "fallbacksecret",
 				TargetNamespaces: []string{"*"},
 			}},
@@ -157,9 +157,9 @@ func TestFallbackCertificate(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("fallback.example.com", sec1,
@@ -167,7 +167,7 @@ func TestFallbackCertificate(t *testing.T) {
 						nil, "h2", "http/1.1"),
 					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
@@ -179,13 +179,13 @@ func TestFallbackCertificate(t *testing.T) {
 		TypeUrl:   listenerType,
 	})
 
-	certDelegationSingle := &projcontour.TLSCertificateDelegation{
+	certDelegationSingle := &contour_api_v1.TLSCertificateDelegation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "fallbackcertdelegation",
 			Namespace: "admin",
 		},
-		Spec: projcontour.TLSCertificateDelegationSpec{
-			Delegations: []projcontour.CertificateDelegation{{
+		Spec: contour_api_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_api_v1.CertificateDelegation{{
 				SecretName:       "fallbacksecret",
 				TargetNamespaces: []string{"default"},
 			}},
@@ -199,9 +199,9 @@ func TestFallbackCertificate(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("fallback.example.com", sec1,
@@ -209,26 +209,26 @@ func TestFallbackCertificate(t *testing.T) {
 						nil, "h2", "http/1.1"),
 					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})
 
 	// Invalid HTTPProxy with FallbackCertificate enabled along with ClientValidation
 	proxy3 := fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "fallback.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:                "secret",
 					EnableFallbackCertificate: true,
-					ClientValidation: &projcontour.DownstreamValidation{
+					ClientValidation: &contour_api_v1.DownstreamValidation{
 						CACertificate: "something",
 					},
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -244,16 +244,16 @@ func TestFallbackCertificate(t *testing.T) {
 
 	// Valid HTTPProxy with FallbackCertificate enabled
 	proxy4 := fixture.NewProxy("simple-two").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "anotherfallback.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:                "secret",
 					EnableFallbackCertificate: true,
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},
@@ -268,9 +268,9 @@ func TestFallbackCertificate(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("anotherfallback.example.com", sec1,
@@ -281,7 +281,7 @@ func TestFallbackCertificate(t *testing.T) {
 						nil, "h2", "http/1.1"),
 					filterchaintlsfallback(fallbackSecret, nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 		),
 	})

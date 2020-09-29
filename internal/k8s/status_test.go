@@ -20,8 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,8 +28,8 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 	type testcase struct {
 		msg      string
 		desc     string
-		existing *projectcontour.HTTPProxy
-		expected *projectcontour.HTTPProxy
+		existing *contour_api_v1.HTTPProxy
+		expected *contour_api_v1.HTTPProxy
 	}
 
 	run := func(t *testing.T, name string, tc testcase) {
@@ -44,13 +43,13 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 				Updater: suc,
 			}
 
-			suc.AddObject(tc.existing.Name, tc.existing.Namespace, projcontour.HTTPProxyGVR, tc.existing)
+			suc.AddObject(tc.existing.Name, tc.existing.Namespace, contour_api_v1.HTTPProxyGVR, tc.existing)
 
 			if err := proxysw.SetStatus(tc.msg, tc.desc, tc.existing); err != nil {
 				t.Fatal(fmt.Errorf("unable to set proxy status: %s", err))
 			}
 
-			toProxy := suc.GetObject(tc.existing.Name, tc.existing.Namespace, projcontour.HTTPProxyGVR)
+			toProxy := suc.GetObject(tc.existing.Name, tc.existing.Namespace, contour_api_v1.HTTPProxyGVR)
 
 			if toProxy == nil && tc.expected == nil {
 				return
@@ -67,22 +66,22 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 	run(t, "simple update", testcase{
 		msg:  "valid",
 		desc: "this is a valid HTTPProxy",
-		existing: &projcontour.HTTPProxy{
+		existing: &contour_api_v1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.HTTPProxyStatus{
+			Status: contour_api_v1.HTTPProxyStatus{
 				CurrentStatus: "",
 				Description:   "",
 			},
 		},
-		expected: &projcontour.HTTPProxy{
+		expected: &contour_api_v1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.HTTPProxyStatus{
+			Status: contour_api_v1.HTTPProxyStatus{
 				CurrentStatus: "valid",
 				Description:   "this is a valid HTTPProxy",
 			},
@@ -92,22 +91,22 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 	run(t, "no update", testcase{
 		msg:  "valid",
 		desc: "this is a valid HTTPProxy",
-		existing: &projcontour.HTTPProxy{
+		existing: &contour_api_v1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.HTTPProxyStatus{
+			Status: contour_api_v1.HTTPProxyStatus{
 				CurrentStatus: "valid",
 				Description:   "this is a valid HTTPProxy",
 			},
 		},
-		expected: &projcontour.HTTPProxy{
+		expected: &contour_api_v1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.HTTPProxyStatus{
+			Status: contour_api_v1.HTTPProxyStatus{
 				CurrentStatus: "valid",
 				Description:   "this is a valid HTTPProxy",
 			},
@@ -117,22 +116,22 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 	run(t, "replace existing status", testcase{
 		msg:  "valid",
 		desc: "this is a valid HTTPProxy",
-		existing: &projcontour.HTTPProxy{
+		existing: &contour_api_v1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.HTTPProxyStatus{
+			Status: contour_api_v1.HTTPProxyStatus{
 				CurrentStatus: "invalid",
 				Description:   "boo hiss",
 			},
 		},
-		expected: &projcontour.HTTPProxy{
+		expected: &contour_api_v1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test",
 				Namespace: "default",
 			},
-			Status: projcontour.HTTPProxyStatus{
+			Status: contour_api_v1.HTTPProxyStatus{
 				CurrentStatus: "valid",
 				Description:   "this is a valid HTTPProxy",
 			},
@@ -143,7 +142,7 @@ func TestSetHTTPProxyStatus(t *testing.T) {
 func TestGetStatus(t *testing.T) {
 	type testcase struct {
 		input          interface{}
-		expectedStatus *projcontour.HTTPProxyStatus
+		expectedStatus *contour_api_v1.HTTPProxyStatus
 		expectedError  error
 	}
 

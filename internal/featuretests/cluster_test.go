@@ -18,8 +18,8 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_cluster "github.com/envoyproxy/go-control-plane/envoy/api/v2/cluster"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -424,9 +424,9 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/8080/da39a3ee5e",
 				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoyv2.ConfigSource("contour"),
+					EdsConfig:   envoy_v2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
@@ -457,9 +457,9 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/8080/da39a3ee5e",
 				AltStatName:          "default_kuard_8080",
-				ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoyv2.ConfigSource("contour"),
+					EdsConfig:   envoy_v2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				CircuitBreakers: &envoy_cluster.CircuitBreakers{
@@ -483,27 +483,27 @@ func TestClusterPerServiceParameters(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
 	)
 
-	rh.OnAdd(&projcontour.HTTPProxy{
+	rh.OnAdd(&contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
 				}},
 			}, {
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 60,
@@ -531,32 +531,32 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
 	)
 
-	rh.OnAdd(&projcontour.HTTPProxy{
+	rh.OnAdd(&contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
 					Strategy: "Random",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
 			}, {
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/b",
 				}},
-				LoadBalancerPolicy: &projcontour.LoadBalancerPolicy{
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
 					Strategy: "WeightedLeastRequest",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
@@ -569,9 +569,9 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/80/58d888c08a",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoyv2.ConfigSource("contour"),
+					EdsConfig:   envoy_v2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				LbPolicy: envoy_api_v2.Cluster_RANDOM,
@@ -579,9 +579,9 @@ func TestClusterLoadBalancerStrategyPerRoute(t *testing.T) {
 			DefaultCluster(&envoy_api_v2.Cluster{
 				Name:                 "default/kuard/80/8bf87fefba",
 				AltStatName:          "default_kuard_80",
-				ClusterDiscoveryType: envoyv2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
+				ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
 				EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-					EdsConfig:   envoyv2.ConfigSource("contour"),
+					EdsConfig:   envoy_v2.ConfigSource("contour"),
 					ServiceName: "default/kuard",
 				},
 				LbPolicy: envoy_api_v2.Cluster_LEAST_REQUEST,
@@ -599,21 +599,21 @@ func TestClusterWithHealthChecks(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
 	)
 
-	rh.OnAdd(&projcontour.HTTPProxy{
+	rh.OnAdd(&contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				HealthCheckPolicy: &projcontour.HTTPHealthCheckPolicy{
+				HealthCheckPolicy: &contour_api_v1.HTTPHealthCheckPolicy{
 					Path: "/healthz",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
@@ -639,27 +639,27 @@ func TestUnreferencedService(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("8080")}),
 	)
 
-	rh.OnAdd(&projcontour.HTTPProxy{
+	rh.OnAdd(&contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
 				}},
 			}, {
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/b",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 60,

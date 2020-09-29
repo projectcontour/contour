@@ -24,9 +24,9 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	envoy_config_filter_http_ext_authz_v2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/ext_authz/v2"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -52,16 +52,16 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 	p := fixture.NewProxy("proxy").
 		WithFQDN(fqdn).
 		WithCertificate("certificate").
-		WithAuthServer(projcontour.AuthorizationServer{
-			ExtensionServiceRef: projcontour.ExtensionServiceReference{
+		WithAuthServer(contour_api_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
 				Namespace: "auth",
 				Name:      "extension",
 			},
 			ResponseTimeout: "10m",
 		}).
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{Name: "app-server", Port: 80}},
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{Name: "app-server", Port: 80}},
 			}},
 		})
 
@@ -76,9 +76,9 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 			defaultHTTPListener(),
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					filterchaintls(fqdn,
@@ -100,10 +100,10 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 						),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener()),
-	}).Status(p).Like(projcontour.HTTPProxyStatus{
+	}).Status(p).Like(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusValid,
 	})
 }
@@ -114,16 +114,16 @@ func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c 
 	p := fixture.NewProxy("proxy").
 		WithFQDN(fqdn).
 		WithCertificate("certificate").
-		WithAuthServer(projcontour.AuthorizationServer{
-			ExtensionServiceRef: projcontour.ExtensionServiceReference{
+		WithAuthServer(contour_api_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
 				Namespace: "auth",
 				Name:      "extension",
 			},
 			ResponseTimeout: "invalid-timeout",
 		}).
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{Name: "app-server", Port: 80}},
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{Name: "app-server", Port: 80}},
 			}},
 		})
 
@@ -135,7 +135,7 @@ func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c 
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(p).Equals(projcontour.HTTPProxyStatus{
+	}).Status(p).Equals(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusInvalid,
 		Description:   `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`,
 	})
@@ -147,16 +147,16 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := fixture.NewProxy("proxy").
 		WithFQDN(fqdn).
 		WithCertificate("certificate").
-		WithAuthServer(projcontour.AuthorizationServer{
-			ExtensionServiceRef: projcontour.ExtensionServiceReference{
+		WithAuthServer(contour_api_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
 				Namespace: "auth",
 				Name:      "extension",
 			},
 			FailOpen: true,
 		}).
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{Name: "app-server", Port: 80}},
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{Name: "app-server", Port: 80}},
 			}},
 		})
 
@@ -168,9 +168,9 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 			defaultHTTPListener(),
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					filterchaintls(fqdn,
@@ -193,10 +193,10 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 						),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener()),
-	}).Status(p).Like(projcontour.HTTPProxyStatus{
+	}).Status(p).Like(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusValid,
 	})
 }
@@ -205,15 +205,15 @@ func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	p := fixture.NewProxy("proxy").
 		WithFQDN("echo.projectcontour.io").
 		WithCertificate("certificate").
-		WithAuthServer(projcontour.AuthorizationServer{
-			ExtensionServiceRef: projcontour.ExtensionServiceReference{
+		WithAuthServer(contour_api_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
 				Namespace: "auth",
 				Name:      "extension",
 			},
 		}).
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{Name: "app-server", Port: 80}},
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{Name: "app-server", Port: 80}},
 			}},
 		})
 
@@ -224,7 +224,7 @@ func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(p).Equals(projcontour.HTTPProxyStatus{
+	}).Status(p).Equals(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusInvalid,
 		Description:   `Spec.Virtualhost.TLS fallback & client authorization are incompatible`,
 	})
@@ -234,7 +234,7 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	const enabled = "enabled.projectcontour.io"
 	const disabled = "disabled.projectcontour.io"
 
-	var extensionRef = projcontour.ExtensionServiceReference{
+	var extensionRef = contour_api_v1.ExtensionServiceReference{
 		Namespace: "auth",
 		Name:      "extension",
 	}
@@ -242,18 +242,18 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	rh.OnAdd(fixture.NewProxy("enabled").
 		WithFQDN(enabled).
 		WithCertificate("certificate").
-		WithAuthServer(projcontour.AuthorizationServer{
+		WithAuthServer(contour_api_v1.AuthorizationServer{
 			ExtensionServiceRef: extensionRef,
-			AuthPolicy:          &projcontour.AuthorizationPolicy{Disabled: false},
+			AuthPolicy:          &contour_api_v1.AuthorizationPolicy{Disabled: false},
 		}).
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/disabled")),
-				Services:   []projcontour.Service{{Name: "app-server", Port: 80}},
-				AuthPolicy: &projcontour.AuthorizationPolicy{Disabled: true},
+				Services:   []contour_api_v1.Service{{Name: "app-server", Port: 80}},
+				AuthPolicy: &contour_api_v1.AuthorizationPolicy{Disabled: true},
 			}, {
 				Conditions: matchconditions(prefixMatchCondition("/default")),
-				Services:   []projcontour.Service{{Name: "app-server", Port: 80}},
+				Services:   []contour_api_v1.Service{{Name: "app-server", Port: 80}},
 			}},
 		}),
 	)
@@ -261,18 +261,18 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	rh.OnAdd(fixture.NewProxy("disabled").
 		WithFQDN(disabled).
 		WithCertificate("certificate").
-		WithAuthServer(projcontour.AuthorizationServer{
+		WithAuthServer(contour_api_v1.AuthorizationServer{
 			ExtensionServiceRef: extensionRef,
-			AuthPolicy:          &projcontour.AuthorizationPolicy{Disabled: true},
+			AuthPolicy:          &contour_api_v1.AuthorizationPolicy{Disabled: true},
 		}).
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/enabled")),
-				Services:   []projcontour.Service{{Name: "app-server", Port: 80}},
-				AuthPolicy: &projcontour.AuthorizationPolicy{},
+				Services:   []contour_api_v1.Service{{Name: "app-server", Port: 80}},
+				AuthPolicy: &contour_api_v1.AuthorizationPolicy{},
 			}, {
 				Conditions: matchconditions(prefixMatchCondition("/default")),
-				Services:   []projcontour.Service{{Name: "app-server", Port: 80}},
+				Services:   []contour_api_v1.Service{{Name: "app-server", Port: 80}},
 			}},
 		}),
 	)
@@ -291,9 +291,9 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: routeType,
 		Resources: resources(t,
-			envoyv2.RouteConfiguration(
+			envoy_v2.RouteConfiguration(
 				path.Join("https", disabled),
-				envoyv2.VirtualHost(disabled,
+				envoy_v2.VirtualHost(disabled,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/enabled"),
 						Action: routeCluster("default/app-server/80/da39a3ee5e"),
@@ -305,9 +305,9 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 					},
 				),
 			),
-			envoyv2.RouteConfiguration(
+			envoy_v2.RouteConfiguration(
 				path.Join("https", enabled),
-				envoyv2.VirtualHost(enabled,
+				envoy_v2.VirtualHost(enabled,
 					&envoy_api_v2_route.Route{
 						Match:                routePrefix("/disabled"),
 						Action:               routeCluster("default/app-server/80/da39a3ee5e"),
@@ -319,9 +319,9 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 					},
 				),
 			),
-			envoyv2.RouteConfiguration(
+			envoy_v2.RouteConfiguration(
 				"ingress_http",
-				envoyv2.VirtualHost(disabled,
+				envoy_v2.VirtualHost(disabled,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/enabled"),
 						Action: withRedirect(),
@@ -331,7 +331,7 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 						Action: withRedirect(),
 					},
 				),
-				envoyv2.VirtualHost(enabled,
+				envoy_v2.VirtualHost(enabled,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/disabled"),
 						Action: withRedirect(),
@@ -352,33 +352,33 @@ func authzMergeRouteContext(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 	rh.OnAdd(fixture.NewProxy("proxy-root").
 		WithFQDN(fqdn).
 		WithCertificate("certificate").
-		WithAuthServer(projcontour.AuthorizationServer{
-			ExtensionServiceRef: projcontour.ExtensionServiceReference{
+		WithAuthServer(contour_api_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
 				Namespace: "auth",
 				Name:      "extension",
 			},
-			AuthPolicy: &projcontour.AuthorizationPolicy{
+			AuthPolicy: &contour_api_v1.AuthorizationPolicy{
 				Context: map[string]string{
 					"root-element":   "root",
 					"common-element": "root",
 				},
 			},
 		}).
-		WithSpec(projcontour.HTTPProxySpec{
-			Includes: []projcontour.Include{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Includes: []contour_api_v1.Include{{
 				Name: "proxy-leaf",
 			}},
 		}),
 	)
 
 	rh.OnAdd(fixture.NewProxy("proxy-leaf").
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "app-server",
 					Port: 80,
 				}},
-				AuthPolicy: &projcontour.AuthorizationPolicy{
+				AuthPolicy: &contour_api_v1.AuthorizationPolicy{
 					Context: map[string]string{
 						"common-element": "leaf",
 						"leaf-element":   "leaf",
@@ -399,9 +399,9 @@ func authzMergeRouteContext(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl: routeType,
 		Resources: resources(t,
-			envoyv2.RouteConfiguration(
+			envoy_v2.RouteConfiguration(
 				path.Join("https", fqdn),
-				envoyv2.VirtualHost(fqdn,
+				envoy_v2.VirtualHost(fqdn,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/app-server/80/da39a3ee5e"),
@@ -416,9 +416,9 @@ func authzMergeRouteContext(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 					},
 				),
 			),
-			envoyv2.RouteConfiguration(
+			envoy_v2.RouteConfiguration(
 				"ingress_http",
-				envoyv2.VirtualHost(fqdn,
+				envoy_v2.VirtualHost(fqdn,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withRedirect(),
@@ -435,17 +435,17 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	invalid := fixture.NewProxy("proxy").
 		WithFQDN(fqdn).
 		WithCertificate("certificate").
-		WithAuthServer(projcontour.AuthorizationServer{}).
-		WithSpec(projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		WithAuthServer(contour_api_v1.AuthorizationServer{}).
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "app-server",
 					Port: 80,
 				}},
 			}},
 		})
 
-	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = projcontour.ExtensionServiceReference{
+	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_api_v1.ExtensionServiceReference{
 		APIVersion: "foo/bar",
 		Namespace:  "",
 		Name:       "",
@@ -457,12 +457,12 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(invalid).Equals(projcontour.HTTPProxyStatus{
+	}).Status(invalid).Equals(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusInvalid,
 		Description:   `Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource version "foo/bar"`,
 	})
 
-	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = projcontour.ExtensionServiceReference{
+	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_api_v1.ExtensionServiceReference{
 		APIVersion: "projectcontour.io/v1alpha1",
 		Namespace:  "missing",
 		Name:       "extension",
@@ -474,12 +474,12 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(invalid).Equals(projcontour.HTTPProxyStatus{
+	}).Status(invalid).Equals(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusInvalid,
 		Description:   `Spec.Virtualhost.Authorization.ServiceRef extension service "missing/extension" not found`,
 	})
 
-	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = projcontour.ExtensionServiceReference{
+	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_api_v1.ExtensionServiceReference{
 		Namespace: "auth",
 		Name:      "extension",
 	}
@@ -493,9 +493,9 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			defaultHTTPListener(),
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					filterchaintls(fqdn,
@@ -518,10 +518,10 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 						),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener()),
-	}).Status(invalid).Like(projcontour.HTTPProxyStatus{
+	}).Status(invalid).Like(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: k8s.StatusValid,
 	})
 }

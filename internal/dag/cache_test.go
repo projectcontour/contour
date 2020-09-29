@@ -17,8 +17,8 @@ import (
 	"errors"
 	"testing"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
@@ -183,13 +183,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 						}},
 					},
 				},
-				&projcontour.TLSCertificateDelegation{
+				&contour_api_v1.TLSCertificateDelegation{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
-					Spec: projcontour.TLSCertificateDelegationSpec{
-						Delegations: []projcontour.CertificateDelegation{{
+					Spec: contour_api_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_api_v1.CertificateDelegation{{
 							SecretName: "secret",
 							TargetNamespaces: []string{
 								"extra",
@@ -222,13 +222,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 
-				&projcontour.TLSCertificateDelegation{
+				&contour_api_v1.TLSCertificateDelegation{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
-					Spec: projcontour.TLSCertificateDelegationSpec{
-						Delegations: []projcontour.CertificateDelegation{{
+					Spec: contour_api_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_api_v1.CertificateDelegation{{
 							SecretName: "secret",
 							TargetNamespaces: []string{
 								"*",
@@ -249,14 +249,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert secret referenced by httpproxy": {
 			pre: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
-							TLS: &projcontour.TLS{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "secret",
 							},
 						},
@@ -275,26 +275,26 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert secret referenced by httpproxy via tls delegation": {
 			pre: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "extra",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
-							TLS: &projcontour.TLS{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "default/secret",
 							},
 						},
 					},
 				},
-				&projcontour.TLSCertificateDelegation{
+				&contour_api_v1.TLSCertificateDelegation{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
-					Spec: projcontour.TLSCertificateDelegationSpec{
-						Delegations: []projcontour.CertificateDelegation{{
+					Spec: contour_api_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_api_v1.CertificateDelegation{{
 							SecretName: "secret",
 							TargetNamespaces: []string{
 								"extra",
@@ -315,26 +315,26 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert secret referenced by httpproxy via wildcard tls delegation": {
 			pre: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "extra",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
-							TLS: &projcontour.TLS{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							TLS: &contour_api_v1.TLS{
 								SecretName: "default/secret",
 							},
 						},
 					},
 				},
-				&projcontour.TLSCertificateDelegation{
+				&contour_api_v1.TLSCertificateDelegation{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
-					Spec: projcontour.TLSCertificateDelegationSpec{
-						Delegations: []projcontour.CertificateDelegation{{
+					Spec: contour_api_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_api_v1.CertificateDelegation{{
 							SecretName: "secret",
 							TargetNamespaces: []string{
 								"*",
@@ -372,23 +372,23 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert certificate secret referenced by httpproxy": {
 			pre: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "example-com",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						VirtualHost: &projcontour.VirtualHost{
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
 							Fqdn: "example.com",
 						},
-						Routes: []projcontour.Route{{
-							Conditions: []projcontour.MatchCondition{{
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
 								Prefix: "/",
 							}},
-							Services: []projcontour.Service{{
+							Services: []contour_api_v1.Service{{
 								Name: "kuard",
 								Port: 8080,
-								UpstreamValidation: &projcontour.UpstreamValidation{
+								UpstreamValidation: &contour_api_v1.UpstreamValidation{
 									CACertificate: "ca",
 									SubjectName:   "example.com",
 								},
@@ -491,7 +491,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert httpproxy empty ingress annotation": {
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
@@ -500,7 +500,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert httpproxy incorrect contour.heptio.com/ingress.class": {
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -512,7 +512,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert httpproxy incorrect kubernetes.io/ingress.class": {
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -524,7 +524,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert httpproxy incorrect projectcontour.io/ingress.class": {
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -536,7 +536,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert httpproxy: explicit contour.heptio.com/ingress.class": {
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
@@ -548,7 +548,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert httpproxy explicit kubernetes.io/ingress.class": {
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
@@ -560,7 +560,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert httpproxy explicit projectcontour.io/ingress.class": {
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
@@ -571,8 +571,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert tls projcontour/v1.certificatedelegation": {
-			obj: &projcontour.TLSCertificateDelegation{
+		"insert tls contour_api_v1/v1.certificatedelegation": {
+			obj: &contour_api_v1.TLSCertificateDelegation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "delegate",
 					Namespace: "default",
@@ -581,7 +581,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert httpproxy": {
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
@@ -648,14 +648,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert service referenced by httpproxy": {
 			pre: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						Routes: []projcontour.Route{{
-							Services: []projcontour.Service{{
+					Spec: contour_api_v1.HTTPProxySpec{
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
 								Name: "service",
 							}},
 						}},
@@ -672,14 +672,14 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert service referenced by httpproxy tcpproxy": {
 			pre: []interface{}{
-				&projcontour.HTTPProxy{
+				&contour_api_v1.HTTPProxy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: projcontour.HTTPProxySpec{
-						TCPProxy: &projcontour.TCPProxy{
-							Services: []projcontour.Service{{
+					Spec: contour_api_v1.HTTPProxySpec{
+						TCPProxy: &contour_api_v1.TCPProxy{
+							Services: []contour_api_v1.Service{{
 								Name: "service",
 							}},
 						},
@@ -731,7 +731,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert extension service": {
-			obj: &projectcontourv1alpha1.ExtensionService{
+			obj: &contour_api_v1alpha1.ExtensionService{
 				ObjectMeta: fixture.ObjectMeta("default/extension"),
 			},
 			want: true,
@@ -841,13 +841,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: false,
 		},
 		"remove httpproxy": {
-			cache: cache(&projcontour.HTTPProxy{
+			cache: cache(&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
 				},
 			}),
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
@@ -856,7 +856,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: true,
 		},
 		"remove httpproxy incorrect ingressclass": {
-			cache: cache(&projcontour.HTTPProxy{
+			cache: cache(&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
@@ -865,7 +865,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					},
 				},
 			}),
-			obj: &projcontour.HTTPProxy{
+			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
@@ -937,10 +937,10 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: true,
 		},
 		"remove extension service": {
-			cache: cache(&projectcontourv1alpha1.ExtensionService{
+			cache: cache(&contour_api_v1alpha1.ExtensionService{
 				ObjectMeta: fixture.ObjectMeta("default/extension"),
 			}),
-			obj: &projectcontourv1alpha1.ExtensionService{
+			obj: &contour_api_v1alpha1.ExtensionService{
 				ObjectMeta: fixture.ObjectMeta("default/extension"),
 			},
 			want: true,

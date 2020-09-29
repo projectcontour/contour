@@ -18,7 +18,7 @@ import (
 
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/build"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -69,7 +69,7 @@ func main() {
 	case sdmShutdown.FullCommand():
 		sdmShutdownCtx.shutdownHandler()
 	case bootstrap.FullCommand():
-		if err := envoyv2.WriteBootstrap(bootstrapCtx); err != nil {
+		if err := envoy_v2.WriteBootstrap(bootstrapCtx); err != nil {
 			log.WithError(err).Fatal("failed to write bootstrap configuration")
 		}
 	case certgenApp.FullCommand():

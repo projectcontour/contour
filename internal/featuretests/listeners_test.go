@@ -19,9 +19,9 @@ import (
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	v1 "k8s.io/api/core/v1"
@@ -68,9 +68,9 @@ func TestNonTLSListener(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:          "ingress_http",
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -127,9 +127,9 @@ func TestNonTLSListener(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:          "ingress_http",
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -198,22 +198,22 @@ func TestTLSListener(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:          "ingress_http",
-				Address:       envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				Address:       envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					filterchaintls("kuard.example.com", s1,
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -256,16 +256,16 @@ func TestTLSListener(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					filterchaintls("kuard.example.com", s1,
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -300,24 +300,24 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 
 	// p1 is a tls httpproxy
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.1",
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc1.Name,
 					Port: int(svc1.Spec.Ports[0].Port),
 				}},
@@ -326,24 +326,24 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	}
 
 	// p2 is a tls httpproxy
-	p2 := &projcontour.HTTPProxy{
+	p2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:             secret1.Name,
 					MinimumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc1.Name,
 					Port: int(svc1.Spec.Ports[0].Port),
 				}},
@@ -364,16 +364,16 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 
 	l1 := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			filterchaintls("kuard.example.com", secret1,
 				httpsFilterFor("kuard.example.com"),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 
 	// add service
@@ -386,11 +386,11 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			l1,
 			staticListener(),
@@ -413,22 +413,22 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh.OnAdd(secret1)
 	l2 := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
-			envoyv2.FilterChainTLS(
+			envoy_v2.FilterChainTLS(
 				"kuard.example.com",
-				envoyv2.DownstreamTLSContext(
+				envoy_v2.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoyv2.Filters(httpsFilterFor("kuard.example.com")),
+				envoy_v2.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 
 	// add ingress and assert the existence of ingress_http and ingres_https
@@ -437,11 +437,11 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			l2,
 			staticListener(),
@@ -503,16 +503,16 @@ func TestLDSFilter(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: []*envoy_api_v2_listener.FilterChain{
 					filterchaintls("kuard.example.com", s1,
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				},
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 		),
 		TypeUrl: listenerType,
@@ -523,11 +523,11 @@ func TestLDSFilter(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 		),
 		TypeUrl: listenerType,
@@ -593,12 +593,12 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.ProxyProtocol(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.ProxyProtocol(),
 				),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -670,28 +670,28 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 
 	ingress_https := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.ProxyProtocol(),
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.ProxyProtocol(),
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			filterchaintls("kuard.example.com", s1,
 				httpsFilterFor("kuard.example.com"),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.ProxyProtocol(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.ProxyProtocol(),
 				),
-				FilterChains:  envoyv2.FilterChains(envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0)),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				FilterChains:  envoy_v2.FilterChains(envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			ingress_https,
 			staticListener(),
@@ -768,24 +768,24 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 
 	ingress_http := &envoy_api_v2.Listener{
 		Name:    "ingress_http",
-		Address: envoyv2.SocketAddress("127.0.0.100", 9100),
-		FilterChains: envoyv2.FilterChains(
-			envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+		Address: envoy_v2.SocketAddress("127.0.0.100", 9100),
+		FilterChains: envoy_v2.FilterChains(
+			envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 		),
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 	ingress_https := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("127.0.0.200", 9200),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("127.0.0.200", 9200),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			filterchaintls("kuard.example.com", s1,
 				httpsFilterFor("kuard.example.com"),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
@@ -861,30 +861,30 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 	ingress_http := &envoy_api_v2.Listener{
 		Name:    "ingress_http",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-		FilterChains: envoyv2.FilterChains(
-			envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/tmp/http_access.log"), 0),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+		FilterChains: envoy_v2.FilterChains(
+			envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/tmp/http_access.log"), 0),
 		),
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 	ingress_https := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			filterchaintls("kuard.example.com", s1,
-				envoyv2.HTTPConnectionManagerBuilder().
-					AddFilter(envoyv2.FilterMisdirectedRequests("kuard.example.com")).
+				envoy_v2.HTTPConnectionManagerBuilder().
+					AddFilter(envoy_v2.FilterMisdirectedRequests("kuard.example.com")).
 					DefaultFilters().
 					RouteConfigName("https/kuard.example.com").
 					MetricsPrefix(xdscache_v2.ENVOY_HTTPS_LISTENER).
-					AccessLoggers(envoyv2.FileAccessLogEnvoy("/tmp/https_access.log")).
+					AccessLoggers(envoy_v2.FileAccessLogEnvoy("/tmp/https_access.log")).
 					Get(),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
@@ -923,23 +923,23 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 	}
 
 	// p1 is a httpproxy that has TLS
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: "secret",
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -961,25 +961,25 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 
 	ingressHTTP := &envoy_api_v2.Listener{
 		Name:    "ingress_http",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-		FilterChains: envoyv2.FilterChains(
-			envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+		FilterChains: envoy_v2.FilterChains(
+			envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 		),
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 
 	ingressHTTPS := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			filterchaintls("example.com", s1,
 				httpsFilterFor("example.com"),
 				nil, "h2", "http/1.1"),
 		},
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
@@ -1015,24 +1015,24 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// p1 is a tls httpproxy
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.1",
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
@@ -1043,22 +1043,22 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 
 	l1 := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
-			envoyv2.FilterChainTLS(
+			envoy_v2.FilterChainTLS(
 				"kuard.example.com",
-				envoyv2.DownstreamTLSContext(
+				envoy_v2.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_api_v2_auth.TlsParameters_TLSv1_2,
 					nil,
 					"h2", "http/1.1"),
-				envoyv2.Filters(httpsFilterFor("kuard.example.com")),
+				envoy_v2.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 
 	// verify that p1's TLS 1.1 minimum has been upgraded to 1.2
@@ -1066,11 +1066,11 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			l1,
 			staticListener(),
@@ -1079,25 +1079,25 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	})
 
 	// p2 is a tls httpproxy
-	p2 := &projcontour.HTTPProxy{
+	p2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:             "secret",
 					MinimumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
 
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "backend",
 					Port: 80,
 				}},
@@ -1108,22 +1108,22 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 
 	l2 := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
-			envoyv2.FilterChainTLS(
+			envoy_v2.FilterChainTLS(
 				"kuard.example.com",
-				envoyv2.DownstreamTLSContext(
+				envoy_v2.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoyv2.Filters(httpsFilterFor("kuard.example.com")),
+				envoy_v2.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 
 	// verify that p2's TLS 1.3 minimum has NOT been downgraded to 1.2
@@ -1131,11 +1131,11 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			l2,
 			staticListener(),
@@ -1151,20 +1151,20 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	rh.OnAdd(fixture.NewService("marketing/green").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
-	child := &projcontour.HTTPProxy{
+	child := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
 			Namespace: "marketing",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "green",
 					Port: 80,
 				}},
@@ -1173,17 +1173,17 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	}
 	rh.OnAdd(child)
 
-	root := &projcontour.HTTPProxy{
+	root := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
-			Includes: []projcontour.Include{{
-				Conditions: []projcontour.MatchCondition{{
+			Includes: []contour_api_v1.Include{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
 				Name:      child.Name,
@@ -1199,11 +1199,11 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),

@@ -19,9 +19,9 @@ import (
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -74,16 +74,16 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-				ListenerFilters: envoyv2.ListenerFilters(
-					envoyv2.TLSInspector(),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v2.ListenerFilters(
+					envoy_v2.TLSInspector(),
 				),
 				FilterChains: appendFilterChains(
 					filterchaintls("kuard.example.com", sec1,
 						httpsFilterFor("kuard.example.com"),
 						nil, "h2", "http/1.1"),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 		),
 		TypeUrl: listenerType,
@@ -118,22 +118,22 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 
 	l1 := &envoy_api_v2.Listener{
 		Name:    "ingress_https",
-		Address: envoyv2.SocketAddress("0.0.0.0", 8443),
-		ListenerFilters: envoyv2.ListenerFilters(
-			envoyv2.TLSInspector(),
+		Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v2.ListenerFilters(
+			envoy_v2.TLSInspector(),
 		),
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
-			envoyv2.FilterChainTLS(
+			envoy_v2.FilterChainTLS(
 				"kuard.example.com",
-				envoyv2.DownstreamTLSContext(
+				envoy_v2.DownstreamTLSContext(
 					&dag.Secret{Object: sec1},
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,
 					"h2", "http/1.1"),
-				envoyv2.Filters(httpsFilterFor("kuard.example.com")),
+				envoy_v2.Filters(httpsFilterFor("kuard.example.com")),
 			),
 		},
-		SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+		SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 	}
 
 	c.Request(listenerType, "ingress_https").Equals(&envoy_api_v2.DiscoveryResponse{
@@ -145,22 +145,22 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 
 	rh.OnDelete(i2)
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:             sec1.Namespace + "/" + sec1.Name,
 					MinimumProtocolVersion: "1.3",
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: s1.Name,
 					Port: 80,
 				}},

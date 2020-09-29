@@ -16,12 +16,12 @@ package featuretests
 import (
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
@@ -38,14 +38,14 @@ func TestCorsPolicy(t *testing.T) {
 
 	// Allow origin
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
-				CORSPolicy: &projcontour.CORSPolicy{
+				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin: []string{"*"},
 				},
-			}, Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
@@ -53,10 +53,10 @@ func TestCorsPolicy(t *testing.T) {
 		}),
 	)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.CORSVirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.CORSVirtualHost("hello.world",
 					&envoy_api_v2_route.CorsPolicy{
 						AllowCredentials: &wrappers.BoolValue{Value: false},
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
@@ -77,15 +77,15 @@ func TestCorsPolicy(t *testing.T) {
 
 	// Allow credentials
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
-				CORSPolicy: &projcontour.CORSPolicy{
+				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
 					AllowCredentials: true,
 				},
-			}, Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
@@ -93,10 +93,10 @@ func TestCorsPolicy(t *testing.T) {
 		}),
 	)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.CORSVirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.CORSVirtualHost("hello.world",
 					&envoy_api_v2_route.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
@@ -117,16 +117,16 @@ func TestCorsPolicy(t *testing.T) {
 
 	// Allow methods
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
-				CORSPolicy: &projcontour.CORSPolicy{
+				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
 					AllowCredentials: true,
-					AllowMethods:     []projcontour.CORSHeaderValue{"GET", "POST", "OPTIONS"},
+					AllowMethods:     []contour_api_v1.CORSHeaderValue{"GET", "POST", "OPTIONS"},
 				},
-			}, Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
@@ -134,10 +134,10 @@ func TestCorsPolicy(t *testing.T) {
 		}),
 	)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.CORSVirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.CORSVirtualHost("hello.world",
 					&envoy_api_v2_route.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
@@ -159,16 +159,16 @@ func TestCorsPolicy(t *testing.T) {
 
 	// Allow headers
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
-				CORSPolicy: &projcontour.CORSPolicy{
+				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
 					AllowCredentials: true,
-					AllowHeaders:     []projcontour.CORSHeaderValue{"custom-header-1", "custom-header-2"},
+					AllowHeaders:     []contour_api_v1.CORSHeaderValue{"custom-header-1", "custom-header-2"},
 				},
-			}, Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
@@ -176,10 +176,10 @@ func TestCorsPolicy(t *testing.T) {
 		}),
 	)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.CORSVirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.CORSVirtualHost("hello.world",
 					&envoy_api_v2_route.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
@@ -201,16 +201,16 @@ func TestCorsPolicy(t *testing.T) {
 
 	// Expose headers
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
-				CORSPolicy: &projcontour.CORSPolicy{
+				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
 					AllowCredentials: true,
-					ExposeHeaders:    []projcontour.CORSHeaderValue{"custom-header-1", "custom-header-2"},
+					ExposeHeaders:    []contour_api_v1.CORSHeaderValue{"custom-header-1", "custom-header-2"},
 				},
-			}, Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
@@ -218,10 +218,10 @@ func TestCorsPolicy(t *testing.T) {
 		}),
 	)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.CORSVirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.CORSVirtualHost("hello.world",
 					&envoy_api_v2_route.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
@@ -244,16 +244,16 @@ func TestCorsPolicy(t *testing.T) {
 
 	// Max Age
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
-				CORSPolicy: &projcontour.CORSPolicy{
+				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
 					AllowCredentials: true,
 					MaxAge:           "10m",
 				},
-			}, Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
@@ -261,10 +261,10 @@ func TestCorsPolicy(t *testing.T) {
 		}),
 	)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.CORSVirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.CORSVirtualHost("hello.world",
 					&envoy_api_v2_route.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
@@ -286,16 +286,16 @@ func TestCorsPolicy(t *testing.T) {
 
 	// Disable preflight request caching
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
-				CORSPolicy: &projcontour.CORSPolicy{
+				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
 					AllowCredentials: true,
 					MaxAge:           "0s",
 				},
-			}, Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
@@ -303,10 +303,10 @@ func TestCorsPolicy(t *testing.T) {
 		}),
 	)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.CORSVirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.CORSVirtualHost("hello.world",
 					&envoy_api_v2_route.CorsPolicy{
 						AllowOriginStringMatch: []*matcher.StringMatcher{{
 							MatchPattern: &matcher.StringMatcher_Exact{
@@ -327,18 +327,18 @@ func TestCorsPolicy(t *testing.T) {
 	})
 
 	// Virtual hosts with an invalid max age in their policy are not added
-	invvhost := &projcontour.HTTPProxy{
+	invvhost := &contour_api_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("simple"),
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
-				CORSPolicy: &projcontour.CORSPolicy{
+				CORSPolicy: &contour_api_v1.CORSPolicy{
 					AllowOrigin:      []string{"*"},
 					AllowCredentials: true,
 					MaxAge:           "-10m",
 				},
-			}, Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
@@ -348,12 +348,12 @@ func TestCorsPolicy(t *testing.T) {
 
 	rh.OnAdd(invvhost)
 
-	c.Request(routeType).Equals(&v2.DiscoveryResponse{
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http")),
+			envoy_v2.RouteConfiguration("ingress_http")),
 		TypeUrl: routeType,
 	}).Status(invvhost).Like(
-		projcontour.HTTPProxyStatus{CurrentStatus: k8s.StatusInvalid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusInvalid},
 	)
 
 }
