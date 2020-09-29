@@ -53,8 +53,8 @@ func TestAddErrorConditions(t *testing.T) {
 				Condition: Condition{
 					Type:    "AnError",
 					Status:  ConditionTrue,
-					Reason:  "SimpleTestTestReason",
-					Message: "We had a straightforward error",
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
 				},
 				Errors: []SubCondition{
 					{
@@ -83,8 +83,8 @@ func TestAddErrorConditions(t *testing.T) {
 				Condition: Condition{
 					Type:    "Valid",
 					Status:  ConditionFalse,
-					Reason:  "SimpleTestTestReason",
-					Message: "We had a straightforward error",
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
 				},
 				Errors: []SubCondition{
 					{
@@ -119,8 +119,8 @@ func TestAddErrorConditions(t *testing.T) {
 				Condition: Condition{
 					Type:    "Valid",
 					Status:  ConditionFalse,
-					Reason:  "MultipleProblems",
-					Message: "Multiple problems were found, see errors or warnings for details",
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
 				},
 				Errors: []SubCondition{
 					{
@@ -160,8 +160,8 @@ func TestAddErrorConditions(t *testing.T) {
 				Condition: Condition{
 					Type:    "Valid",
 					Status:  ConditionFalse,
-					Reason:  "MultipleProblems",
-					Message: "Multiple problems were found, see errors or warnings for details",
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
 				},
 				Errors: []SubCondition{
 					{
@@ -201,14 +201,20 @@ func TestAddErrorConditions(t *testing.T) {
 				Condition: Condition{
 					Type:    "Valid",
 					Status:  ConditionFalse,
-					Reason:  "SimpleTestTestReason",
-					Message: "We had a straightforward error, We had an extra straightforward error",
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
 				},
 				Errors: []SubCondition{
 					{
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
-						Message: "We had a straightforward error, We had an extra straightforward error",
+						Message: "We had a straightforward error",
+						Status:  ConditionTrue,
+					},
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason",
+						Message: "We had an extra straightforward error",
 						Status:  ConditionTrue,
 					},
 				},
@@ -236,14 +242,20 @@ func TestAddErrorConditions(t *testing.T) {
 				Condition: Condition{
 					Type:    "Valid",
 					Status:  ConditionFalse,
-					Reason:  "MultipleProblems",
-					Message: "Multiple problems were found, see errors or warnings for details",
+					Reason:  "ErrorPresent",
+					Message: "At least one error present, see Errors for details",
 				},
 				Errors: []SubCondition{
 					{
 						Type:    "SimpleTest",
-						Reason:  "MultipleReasons",
-						Message: "We had a straightforward error, We had an extra straightforward error",
+						Reason:  "TestReason",
+						Message: "We had a straightforward error",
+						Status:  ConditionTrue,
+					},
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason2",
+						Message: "We had an extra straightforward error",
 						Status:  ConditionTrue,
 					},
 				},
@@ -278,10 +290,6 @@ func TestAddWarningConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: Condition{
-					Reason:  "SimpleTestTestReason",
-					Message: "We had a straightforward warning",
-				},
 				Warnings: []SubCondition{
 					{
 						Type:    "SimpleTest",
@@ -307,10 +315,6 @@ func TestAddWarningConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: Condition{
-					Reason:  "MultipleProblems",
-					Message: "Multiple problems were found, see errors or warnings for details",
-				},
 				Warnings: []SubCondition{
 					{
 						Type:    "SimpleTest",
@@ -342,10 +346,6 @@ func TestAddWarningConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: Condition{
-					Reason:  "MultipleProblems",
-					Message: "Multiple problems were found, see errors or warnings for details",
-				},
 				Warnings: []SubCondition{
 					{
 						Type:    "SimpleTest",
@@ -377,15 +377,17 @@ func TestAddWarningConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: Condition{
-					Reason:  "SimpleTestTestReason",
-					Message: "We had a straightforward warning, We had an extra straightforward warning",
-				},
 				Warnings: []SubCondition{
 					{
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
-						Message: "We had a straightforward warning, We had an extra straightforward warning",
+						Message: "We had a straightforward warning",
+						Status:  ConditionTrue,
+					},
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason",
+						Message: "We had an extra straightforward warning",
 						Status:  ConditionTrue,
 					},
 				},
@@ -406,15 +408,17 @@ func TestAddWarningConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: Condition{
-					Reason:  "MultipleProblems",
-					Message: "Multiple problems were found, see errors or warnings for details",
-				},
 				Warnings: []SubCondition{
 					{
 						Type:    "SimpleTest",
-						Reason:  "MultipleReasons",
-						Message: "We had a straightforward warning, We had an extra straightforward warning",
+						Reason:  "TestReason",
+						Message: "We had a straightforward warning",
+						Status:  ConditionTrue,
+					},
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason2",
+						Message: "We had an extra straightforward warning",
 						Status:  ConditionTrue,
 					},
 				},
