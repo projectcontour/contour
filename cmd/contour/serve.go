@@ -29,7 +29,6 @@ import (
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
-	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
 	"github.com/projectcontour/contour/internal/health"
@@ -39,6 +38,8 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
+	"github.com/projectcontour/contour/internal/xdscache"
+	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -247,7 +248,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return fmt.Errorf("error parsing request timeout: %w", err)
 	}
 
-	listenerConfig := contourv2.ListenerConfig{
+	listenerConfig := xdscache_v2.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
 		HTTPPort:                      ctx.httpPort,
@@ -276,13 +277,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
-	endpointHandler := contourv2.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
+	endpointHandler := xdscache_v2.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
 
-	resources := []contour.ResourceCache{
-		contourv2.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort),
-		&contourv2.SecretCache{},
-		&contourv2.RouteCache{},
-		&contourv2.ClusterCache{},
+	resources := []xdscache.ResourceCache{
+		xdscache_v2.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort),
+		&xdscache_v2.SecretCache{},
+		&xdscache_v2.RouteCache{},
+		&xdscache_v2.ClusterCache{},
 		endpointHandler,
 	}
 
@@ -292,7 +293,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log.WithField("context", "xDS"))
 
 	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
-	snapshotHandler := contour.NewSnapshotHandler(snapshotCache, resources, log.WithField("context", "snapshotHandler"))
+	snapshotHandler := xdscache.NewSnapshotHandler(snapshotCache, resources, log.WithField("context", "snapshotHandler"))
 
 	// register observer for endpoints updates.
 	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
@@ -306,7 +307,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	eventHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
-		Observer:        dag.ComposeObservers(append(contour.ObserversOf(resources), snapshotHandler)...),
+		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				RootNamespaces: ctx.proxyRootNamespaces(),
@@ -514,7 +515,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		switch ctx.XDSServerType {
 		case "contour":
 			grpcServer = xds.RegisterServer(
-				xds.NewContourServer(log, contour.ResourcesOf(resources)...),
+				xds.NewContourServer(log, xdscache.ResourcesOf(resources)...),
 				registry,
 				ctx.grpcOptions(log)...)
 		case "envoy":

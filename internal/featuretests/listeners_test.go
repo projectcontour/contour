@@ -20,10 +20,10 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	"github.com/projectcontour/contour/internal/dag"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
+	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -552,7 +552,7 @@ func TestLDSStreamEmpty(t *testing.T) {
 }
 
 func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
-	rh, c, done := setup(t, func(conf *contourv2.ListenerConfig) {
+	rh, c, done := setup(t, func(conf *xdscache_v2.ListenerConfig) {
 		conf.UseProxyProto = true
 	})
 	defer done()
@@ -608,7 +608,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
-	rh, c, done := setup(t, func(conf *contourv2.ListenerConfig) {
+	rh, c, done := setup(t, func(conf *xdscache_v2.ListenerConfig) {
 		conf.UseProxyProto = true
 	})
 	defer done()
@@ -701,7 +701,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 }
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
-	rh, c, done := setup(t, func(conf *contourv2.ListenerConfig) {
+	rh, c, done := setup(t, func(conf *xdscache_v2.ListenerConfig) {
 		conf.HTTPAddress = "127.0.0.100"
 		conf.HTTPPort = 9100
 		conf.HTTPSAddress = "127.0.0.200"
@@ -798,7 +798,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 }
 
 func TestLDSCustomAccessLogPaths(t *testing.T) {
-	rh, c, done := setup(t, func(conf *contourv2.ListenerConfig) {
+	rh, c, done := setup(t, func(conf *xdscache_v2.ListenerConfig) {
 		conf.HTTPAccessLog = "/tmp/http_access.log"
 		conf.HTTPSAccessLog = "/tmp/https_access.log"
 	})
@@ -879,7 +879,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 					AddFilter(envoyv2.FilterMisdirectedRequests("kuard.example.com")).
 					DefaultFilters().
 					RouteConfigName("https/kuard.example.com").
-					MetricsPrefix(contourv2.ENVOY_HTTPS_LISTENER).
+					MetricsPrefix(xdscache_v2.ENVOY_HTTPS_LISTENER).
 					AccessLoggers(envoyv2.FileAccessLogEnvoy("/tmp/https_access.log")).
 					Get(),
 				nil, "h2", "http/1.1"),
@@ -994,7 +994,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 }
 
 func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
-	rh, c, done := setup(t, func(conf *contourv2.ListenerConfig) {
+	rh, c, done := setup(t, func(conf *xdscache_v2.ListenerConfig) {
 		conf.MinimumTLSVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
 	})
 
