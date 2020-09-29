@@ -20,14 +20,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/contour"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/xds"
+	"github.com/projectcontour/contour/internal/xdscache"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -193,7 +193,7 @@ func TestGRPC(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			et = NewEndpointsTranslator(fixture.NewTestLogger(t))
 
-			resources := []contour.ResourceCache{
+			resources := []xdscache.ResourceCache{
 				NewListenerCache(ListenerConfig{}, "", 0),
 				&SecretCache{},
 				&RouteCache{},
@@ -202,11 +202,11 @@ func TestGRPC(t *testing.T) {
 			}
 
 			eh = &contour.EventHandler{
-				Observer:    dag.ComposeObservers(contour.ObserversOf(resources)...),
+				Observer:    dag.ComposeObservers(xdscache.ObserversOf(resources)...),
 				FieldLogger: log,
 			}
 
-			srv := xds.RegisterServer(xds.NewContourServer(log, contour.ResourcesOf(resources)...), nil)
+			srv := xds.RegisterServer(xds.NewContourServer(log, xdscache.ResourcesOf(resources)...), nil)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 			done := make(chan error, 1)

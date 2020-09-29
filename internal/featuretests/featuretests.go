@@ -29,7 +29,6 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
-	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -38,6 +37,8 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
+	"github.com/projectcontour/contour/internal/xdscache"
+	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -63,20 +64,20 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	log := fixture.NewTestLogger(t)
 	log.SetLevel(logrus.DebugLevel)
 
-	et := contourv2.NewEndpointsTranslator(log)
+	et := xdscache_v2.NewEndpointsTranslator(log)
 
-	conf := contourv2.ListenerConfig{}
+	conf := xdscache_v2.ListenerConfig{}
 	for _, opt := range opts {
-		if opt, ok := opt.(func(*contourv2.ListenerConfig)); ok {
+		if opt, ok := opt.(func(*xdscache_v2.ListenerConfig)); ok {
 			opt(&conf)
 		}
 	}
 
-	resources := []contour.ResourceCache{
-		contourv2.NewListenerCache(conf, statsAddress, statsPort),
-		&contourv2.SecretCache{},
-		&contourv2.RouteCache{},
-		&contourv2.ClusterCache{},
+	resources := []xdscache.ResourceCache{
+		xdscache_v2.NewListenerCache(conf, statsAddress, statsPort),
+		&xdscache_v2.SecretCache{},
+		&xdscache_v2.RouteCache{},
+		&xdscache_v2.ClusterCache{},
 		et,
 	}
 
@@ -95,7 +96,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
 		Observer: &contour.RebuildMetricsObserver{
 			Metrics:      metrics.NewMetrics(r),
-			NextObserver: dag.ComposeObservers(contour.ObserversOf(resources)...),
+			NextObserver: dag.ComposeObservers(xdscache.ObserversOf(resources)...),
 		},
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
@@ -128,7 +129,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	require.NoError(t, err)
 
 	srv := xds.RegisterServer(
-		xds.NewContourServer(log, contour.ResourcesOf(resources)...),
+		xds.NewContourServer(log, xdscache.ResourcesOf(resources)...),
 		r /* Prometheus registry */)
 
 	var g workgroup.Group

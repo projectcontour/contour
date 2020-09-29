@@ -25,8 +25,8 @@ import (
 	"strings"
 	"time"
 
-	contourv2 "github.com/projectcontour/contour/internal/contour/v2"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -166,8 +166,8 @@ func newServeContext() *serveContext {
 		healthPort:            8000,
 		metricsAddr:           "0.0.0.0",
 		metricsPort:           8000,
-		httpAccessLog:         contourv2.DEFAULT_HTTP_ACCESS_LOG,
-		httpsAccessLog:        contourv2.DEFAULT_HTTPS_ACCESS_LOG,
+		httpAccessLog:         xdscache_v2.DEFAULT_HTTP_ACCESS_LOG,
+		httpsAccessLog:        xdscache_v2.DEFAULT_HTTPS_ACCESS_LOG,
 		httpAddr:              "0.0.0.0",
 		httpsAddr:             "0.0.0.0",
 		httpPort:              8080,
