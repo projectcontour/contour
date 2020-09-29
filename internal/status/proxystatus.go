@@ -45,23 +45,17 @@ type ProxyUpdate struct {
 }
 
 // ConditionFor returns a DetailedCondition for a given ConditionType.
-// Currently only "Valid" is supported.
+// Currently only "Valid" is used.
 func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projectcontour.DetailedCondition {
+	dc, ok := pu.Conditions[cond]
+	if !ok {
+		newDc := &projectcontour.DetailedCondition{}
+		newDc.Type = string(cond)
 
-	switch cond {
-	case ValidCondition:
-		dc, ok := pu.Conditions[cond]
-		if !ok {
-			newDc := &projectcontour.DetailedCondition{}
-			newDc.Type = string(cond)
-
-			pu.Conditions[cond] = newDc
-			return newDc
-		}
-		return dc
-	default:
-		return nil
+		pu.Conditions[cond] = newDc
+		return newDc
 	}
+	return dc
 
 }
 

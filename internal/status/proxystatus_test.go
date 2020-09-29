@@ -40,10 +40,6 @@ func TestConditionFor(t *testing.T) {
 
 	assert.Equal(t, simpleValidCondition, *got.DeepCopy())
 
-	var emptyCondition ConditionType
-	gotNil := pu.ConditionFor(emptyCondition)
-	assert.Nil(t, gotNil)
-
 	emptyProxyUpdate := ProxyUpdate{
 		Fullname:   k8s.NamespacedNameFrom("test/test"),
 		Conditions: make(map[ConditionType]*projectcontour.DetailedCondition),
@@ -56,6 +52,7 @@ func TestConditionFor(t *testing.T) {
 	}
 	gotEmpty := emptyProxyUpdate.ConditionFor(ValidCondition)
 	assert.Equal(t, newDc, *gotEmpty)
+
 }
 
 func TestStatusMutator(t *testing.T) {
