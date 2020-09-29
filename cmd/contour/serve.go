@@ -24,6 +24,7 @@ import (
 	"syscall"
 	"time"
 
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -178,6 +179,13 @@ func validateCRDs(dynamicClient dynamic.Interface, log logrus.FieldLogger) {
 
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
+	// log a warning if the Contour config file doesn't already disable TLS 1.1 and 1.0.
+	if annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion) <= envoy_api_v2_auth.TlsParameters_TLSv1_1 {
+		log.Warn("In Contour 1.10, TLS 1.1 will be disabled by default. HTTPProxies with no Spec.VirtualHost.TLS.MinimumProtocolVersion" +
+			" and Ingresses without the projectcontour.io/tls-minimum-protocol-version annotation will default to TLS 1.2. If TLS 1.1" +
+			" is required for any of your HTTPProxies or Ingresses going forward, you must explicitly specify 1.1, though we recommend" +
+			" against continuing to use TLS 1.1 as it's end-of-life.")
+	}
 
 	// Establish k8s core & dynamic client connections.
 	clients, err := k8s.NewClients(ctx.Kubeconfig, ctx.InCluster)
