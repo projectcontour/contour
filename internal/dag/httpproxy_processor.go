@@ -183,7 +183,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 			// same routes installed on multiple managers with
 			// inconsistent authorization settings.
 			if tls.EnableFallbackCertificate && proxy.Spec.VirtualHost.AuthorizationConfigured() {
-				validCond.AddError("TLSError", "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client validation are incompatible")
+				validCond.AddError("TLSError", "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible")
 				return
 			}
 
@@ -308,7 +308,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		}
 		if v.Name == proxy.Name && v.Namespace == proxy.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", proxy.Namespace, proxy.Name))
-			validCond.AddErrorf("IncludeError", "IncludeCreatesCucle", "include creates a delegation cycle: %s", strings.Join(path, " -> "))
+			validCond.AddErrorf("IncludeError", "IncludeCreatesCycle", "include creates an include cycle: %s", strings.Join(path, " -> "))
 			return nil
 		}
 	}
@@ -505,7 +505,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			if p.ClientCertificate != nil {
 				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validSecret)
 				if err != nil {
-					sw.SetInvalid("tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
+					validCond.AddErrorf("TLSError", "SecretNotValid", "tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
 					return nil
 				}
 			}
@@ -626,7 +626,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *projcontour.Det
 	for _, hp := range visited {
 		if dest.Name == hp.Name && dest.Namespace == hp.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
-			validCond.AddErrorf("TCPProxyIncludeError", "IncludeCreatesCycle", "include creates a delegation cycle: %s", strings.Join(path, " -> "))
+			validCond.AddErrorf("TCPProxyIncludeError", "IncludeCreatesCycle", "include creates an include cycle: %s", strings.Join(path, " -> "))
 			return false
 		}
 	}

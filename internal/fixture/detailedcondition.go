@@ -39,8 +39,17 @@ func (dcb *DetailedConditionBuilder) WithGeneration(gen int64) *DetailedConditio
 func (dcb *DetailedConditionBuilder) Valid() v1.DetailedCondition {
 
 	dc := (*v1.DetailedCondition)(dcb)
-	dc.Reason = "valid"
-	dc.Message = "valid HTTPProxy"
+	dc.Status = v1.ConditionTrue
+	dc.Reason = "Valid"
+	dc.Message = "Valid HTTPProxy"
+
+	return *dc
+}
+
+func (dcb *DetailedConditionBuilder) Orphaned() v1.DetailedCondition {
+
+	dc := (*v1.DetailedCondition)(dcb)
+	dc.AddError("orphaned", "Orphaned", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 
 	return *dc
 }
@@ -54,10 +63,28 @@ func (dcb *DetailedConditionBuilder) WithError(errorType, reason, message string
 
 }
 
+func (dcb *DetailedConditionBuilder) WithErrorf(errorType, reason, formatmsg string, args ...interface{}) v1.DetailedCondition {
+
+	dc := (*v1.DetailedCondition)(dcb)
+	dc.AddErrorf(errorType, reason, formatmsg, args)
+
+	return *dc
+
+}
+
 func (dcb *DetailedConditionBuilder) WithWarning(errorType, reason, message string) v1.DetailedCondition {
 
 	dc := (*v1.DetailedCondition)(dcb)
 	dc.AddWarning(errorType, reason, message)
+
+	return *dc
+
+}
+
+func (dcb *DetailedConditionBuilder) WithWarningf(warnType, reason, formatmsg string, args ...interface{}) v1.DetailedCondition {
+
+	dc := (*v1.DetailedCondition)(dcb)
+	dc.AddErrorf(warnType, reason, formatmsg, args)
 
 	return *dc
 

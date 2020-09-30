@@ -90,8 +90,6 @@ func (r *Route) AuthorizationContext(parent map[string]string) map[string]string
 func (dc *DetailedCondition) AddError(errorType, reason, message string) {
 	message = truncateLongMessage(message)
 
-	message = truncateLongMessage(message)
-
 	// Update the condition so that it indicates there's at least one error
 	// This needs to be here because conditions may be normal-true (positive)
 	// polarity (like `Valid`), or abnormal-true (negative) polarity
@@ -101,6 +99,7 @@ func (dc *DetailedCondition) AddError(errorType, reason, message string) {
 	} else {
 		dc.Status = ConditionTrue
 	}
+
 	dc.Reason = "ErrorPresent"
 	dc.Message = "At least one error present, see Errors for details"
 

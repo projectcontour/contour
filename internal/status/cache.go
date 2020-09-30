@@ -44,6 +44,7 @@ type Cache struct {
 // The commit function pattern is used so that the ProxyUpdate does not need to know anything
 // the cache internals.
 func (c Cache) ProxyAccessor(proxy *projcontour.HTTPProxy) (*ProxyUpdate, func()) {
+
 	pu := &ProxyUpdate{
 		Fullname:       k8s.NamespacedNameOf(proxy),
 		Generation:     proxy.Generation,
@@ -59,6 +60,12 @@ func (c Cache) ProxyAccessor(proxy *projcontour.HTTPProxy) (*ProxyUpdate, func()
 func (c Cache) commitProxy(pu *ProxyUpdate) {
 	if len(pu.Conditions) == 0 {
 		return
+	}
+
+	validCond := pu.ConditionFor(ValidCondition)
+	if validCond.Reason == "" {
+		validCond.Reason = "Valid"
+		validCond.Message = "Valid HTTPProxy"
 	}
 
 	c.proxyUpdates[pu.Fullname] = pu
