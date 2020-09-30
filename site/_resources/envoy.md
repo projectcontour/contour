@@ -11,6 +11,9 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 
 | Contour Version | Envoy Version        |
 | --------------- | :------------------- |
+| 1.8.2           | 1.15.1<sup>7</sup>   |
+| 1.8.1           | 1.15.0               |
+| 1.8.0           | 1.15.0               |
 | 1.7.0           | 1.15.0               |
 | 1.6.1           | 1.14.3<sup>5</sup>   |
 | 1.6.0           | 1.14.2<sup>5</sup>   |
@@ -33,6 +36,7 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 4. [CVE-2020-8659, CVE-2020-8661, CVE-2020-8664, CVE-2020-8660][5]
 5. [CVE-2020-11080][6]
 6. [CVE-2020-12603, CVE-2020-12605, CVE-2020-8663, CVE-2020-12604][7]
+7. [CVE-2020-25017][8]
 
 ## Envoy extensions
 
@@ -54,3 +58,4 @@ If you are providing your own Envoy it must be compiled with the following exten
 [5]: https://groups.google.com/forum/#!msg/envoy-announce/sVqmxy0un2s/8aq430xiHAAJ
 [6]: https://groups.google.com/d/msg/envoy-announce/y4C7hXH6WrU/eRoMZ6WaAgAJ
 [7]: https://groups.google.com/d/msg/envoy-announce/qrrF8klFl-I/nz12XtqmAAAJ
+[8]: https://groups.google.com/g/envoy-announce/c/5P0060xsRxc/m/dhIXZLjgCAAJ
