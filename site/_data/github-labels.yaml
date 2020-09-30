@@ -308,5 +308,10 @@ default:
       name: size/XXL
       target: prs
       addedBy: prow
+    - color: 7057ff
+      description: Denotes an issue ready for any "Hacktoberfest" contributor.
+      name: 'Hacktoberfest'
+      target: issues
+      addedBy: anyone
 
 repos:
