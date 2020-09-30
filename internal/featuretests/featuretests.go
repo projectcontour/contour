@@ -27,7 +27,7 @@ import (
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -256,12 +256,12 @@ type statusResult struct {
 	*Contour
 
 	Err  error
-	Have *projcontour.HTTPProxyStatus
+	Have *contour_api_v1.HTTPProxyStatus
 }
 
 // Equals asserts that the status result is not an error and matches
 // the wanted status exactly.
-func (s *statusResult) Equals(want projcontour.HTTPProxyStatus) *Contour {
+func (s *statusResult) Equals(want contour_api_v1.HTTPProxyStatus) *Contour {
 	s.T.Helper()
 
 	// We should never get an error fetching the status for an
@@ -276,7 +276,7 @@ func (s *statusResult) Equals(want projcontour.HTTPProxyStatus) *Contour {
 
 // Like asserts that the status result is not an error and matches
 // non-empty fields in the wanted status.
-func (s *statusResult) Like(want projcontour.HTTPProxyStatus) *Contour {
+func (s *statusResult) Like(want contour_api_v1.HTTPProxyStatus) *Contour {
 	s.T.Helper()
 
 	// We should never get an error fetching the status for an
@@ -287,15 +287,15 @@ func (s *statusResult) Like(want projcontour.HTTPProxyStatus) *Contour {
 
 	if len(want.CurrentStatus) > 0 {
 		assert.Equal(s.T,
-			projcontour.HTTPProxyStatus{CurrentStatus: want.CurrentStatus},
-			projcontour.HTTPProxyStatus{CurrentStatus: s.Have.CurrentStatus},
+			contour_api_v1.HTTPProxyStatus{CurrentStatus: want.CurrentStatus},
+			contour_api_v1.HTTPProxyStatus{CurrentStatus: s.Have.CurrentStatus},
 		)
 	}
 
 	if len(want.Description) > 0 {
 		assert.Equal(s.T,
-			projcontour.HTTPProxyStatus{Description: want.Description},
-			projcontour.HTTPProxyStatus{Description: s.Have.Description},
+			contour_api_v1.HTTPProxyStatus{Description: want.Description},
+			contour_api_v1.HTTPProxyStatus{Description: s.Have.Description},
 		)
 	}
 

@@ -18,9 +18,9 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,18 +58,18 @@ func TestRootNamespaces(t *testing.T) {
 	})
 
 	// hp1 is not in the root namespace set.
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hp1.example.com",
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc1.Name,
 					Port: 8080,
 				}},
@@ -89,24 +89,24 @@ func TestRootNamespaces(t *testing.T) {
 	// assert that the route tables are present but empty.
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
 
 	// hp2 is in the root namespace set.
-	hp2 := &projcontour.HTTPProxy{
+	hp2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc2.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hp2.example.com",
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc2.Name,
 					Port: 8080,
 				}},
@@ -120,11 +120,11 @@ func TestRootNamespaces(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -134,8 +134,8 @@ func TestRootNamespaces(t *testing.T) {
 	// assert that hp2.example.com's routes are visible.
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("hp2.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("hp2.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("roots/kuard/8080/da39a3ee5e"),

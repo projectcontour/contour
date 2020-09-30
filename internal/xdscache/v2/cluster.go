@@ -23,7 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 )
@@ -99,12 +99,12 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 	case *dag.Cluster:
 		name := envoy.Clustername(cluster)
 		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoyv2.Cluster(cluster)
+			v.clusters[name] = envoy_v2.Cluster(cluster)
 		}
 	case *dag.ExtensionCluster:
 		name := cluster.Name
 		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoyv2.ExtensionCluster(cluster)
+			v.clusters[name] = envoy_v2.ExtensionCluster(cluster)
 		}
 	}
 

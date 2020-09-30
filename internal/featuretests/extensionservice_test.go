@@ -21,10 +21,10 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -48,7 +48,7 @@ func extBasic(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 			DefaultCluster(
 				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
 				&envoy_api_v2.Cluster{
-					TransportSocket: envoyv2.UpstreamTLSTransportSocket(
+					TransportSocket: envoy_v2.UpstreamTLSTransportSocket(
 						&envoy_api_v2_auth.UpstreamTlsContext{
 							CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
 								AlpnProtocols: []string{"h2"},
@@ -66,8 +66,8 @@ func extBasic(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 		Resources: resources(t, &envoy_api_v2.ClusterLoadAssignment{
 			ClusterName: "extension/ns/ext",
 			Endpoints: []*envoy_api_v2_endpoint.LocalityLbEndpoints{
-				envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.20", 8081))[0],
-				envoyv2.WeightedEndpoints(1, envoyv2.SocketAddress("192.168.183.21", 8082))[0],
+				envoy_v2.WeightedEndpoints(1, envoy_v2.SocketAddress("192.168.183.20", 8081))[0],
+				envoy_v2.WeightedEndpoints(1, envoy_v2.SocketAddress("192.168.183.21", 8082))[0],
 			},
 		}),
 	})
@@ -102,7 +102,7 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			Services: []v1alpha1.ExtensionServiceTarget{
 				{Name: "svc1", Port: 8081},
 			},
-			UpstreamValidation: &projcontour.UpstreamValidation{
+			UpstreamValidation: &contour_api_v1.UpstreamValidation{
 				CACertificate: "cacert",
 				SubjectName:   "ext.projectcontour.io",
 			},
@@ -112,7 +112,7 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	rh.OnAdd(ext)
 
 	// Enabling validation add SNI as well as CA and server altname validation.
-	tlsSocket := envoyv2.UpstreamTLSTransportSocket(
+	tlsSocket := envoy_v2.UpstreamTLSTransportSocket(
 		&envoy_api_v2_auth.UpstreamTlsContext{
 			Sni: "ext.projectcontour.io",
 			CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
@@ -152,7 +152,7 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			Services: []v1alpha1.ExtensionServiceTarget{
 				{Name: "svc1", Port: 8081},
 			},
-			UpstreamValidation: &projcontour.UpstreamValidation{
+			UpstreamValidation: &contour_api_v1.UpstreamValidation{
 				CACertificate: "missing",
 				SubjectName:   "ext.projectcontour.io",
 			},
@@ -215,7 +215,7 @@ func extInvalidTimeout(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) 
 				{Name: "svc1", Port: 8081},
 				{Name: "svc2", Port: 8082},
 			},
-			TimeoutPolicy: &projcontour.TimeoutPolicy{
+			TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 				Response: "invalid",
 			},
 		},
@@ -234,7 +234,7 @@ func extInconsistentProto(_ *testing.T, rh cache.ResourceEventHandler, c *Contou
 				{Name: "svc1", Port: 8081},
 			},
 			Protocol: pointer.StringPtr("h2c"),
-			UpstreamValidation: &projcontour.UpstreamValidation{
+			UpstreamValidation: &contour_api_v1.UpstreamValidation{
 				CACertificate: "cacert",
 				SubjectName:   "ext.projectcontour.io",
 			},

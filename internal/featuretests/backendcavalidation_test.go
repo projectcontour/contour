@@ -17,9 +17,9 @@ import (
 	"testing"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,18 +44,18 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Annotate("contour.heptio.com/upstream-protocol.tls", "securebackend,443").
 		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8080)})
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 443,
 				}},
@@ -71,11 +71,11 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -90,21 +90,21 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
-	p2 := &projcontour.HTTPProxy{
+	p2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 443,
-					UpstreamValidation: &projcontour.UpstreamValidation{
+					UpstreamValidation: &contour_api_v1.UpstreamValidation{
 						CACertificate: secret.Name,
 						SubjectName:   "subjname",
 					},
@@ -119,11 +119,11 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),
@@ -149,19 +149,19 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 
 	rh.OnDelete(p2)
 
-	hp1 := &projcontour.HTTPProxy{
+	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "www.example.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "www.example.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/a")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 443,
-					UpstreamValidation: &projcontour.UpstreamValidation{
+					UpstreamValidation: &contour_api_v1.UpstreamValidation{
 						CACertificate: secret.Name,
 						SubjectName:   "subjname",
 					},
@@ -176,11 +176,11 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Resources: resources(t,
 			&envoy_api_v2.Listener{
 				Name:    "ingress_http",
-				Address: envoyv2.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoyv2.FilterChains(
-					envoyv2.HTTPConnectionManager("ingress_http", envoyv2.FileAccessLogEnvoy("/dev/stdout"), 0),
+				Address: envoy_v2.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v2.FilterChains(
+					envoy_v2.HTTPConnectionManager("ingress_http", envoy_v2.FileAccessLogEnvoy("/dev/stdout"), 0),
 				),
-				SocketOptions: envoyv2.TCPKeepaliveSocketOptions(),
+				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
 		),

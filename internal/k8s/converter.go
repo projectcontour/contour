@@ -16,8 +16,8 @@ package k8s
 import (
 	"context"
 
-	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	projectcontourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -87,8 +87,8 @@ type UnstructuredConverter struct {
 // NewUnstructuredConverter returns a new UnstructuredConverter initialized
 func NewUnstructuredConverter() (*UnstructuredConverter, error) {
 	schemeBuilder := runtime.SchemeBuilder{
-		projectcontour.AddToScheme,
-		projectcontourv1alpha1.AddToScheme,
+		contour_api_v1.AddToScheme,
+		contour_api_v1alpha1.AddToScheme,
 		scheme.AddToScheme,
 		serviceapis.AddToScheme,
 		v1beta1.AddToScheme,

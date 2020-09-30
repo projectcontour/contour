@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/stretchr/testify/assert"
@@ -65,18 +65,18 @@ func TestDAGStatus(t *testing.T) {
 	// Common test fixtures (used across more than one test)
 
 	// proxyNoFQDN is invalid because it does not specify and FQDN
-	proxyNoFQDN := &projcontour.HTTPProxy{
+	proxyNoFQDN := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "parent",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "foo",
 					Port: 8080,
 				}},
@@ -93,20 +93,20 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// Simple Valid HTTPProxy
-	proxyValidHomeService := &projcontour.HTTPProxy{
+	proxyValidHomeService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -122,55 +122,55 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// Multiple Includes, one invalid
-	proxyMultiIncludeOneInvalid := &projcontour.HTTPProxy{
+	proxyMultiIncludeOneInvalid := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "parent",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}, {
 				Name: "invalidChild",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/bar",
 				}},
 			}},
 		},
 	}
 
-	proxyIncludeValidChild := &projcontour.HTTPProxy{
+	proxyIncludeValidChild := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "parentvalidchild",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name: "validChild",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
 		},
 	}
 
-	proxyChildValidFoo2 := &projcontour.HTTPProxy{
+	proxyChildValidFoo2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "validChild",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "foo2",
 					Port: 8080,
 				}},
@@ -178,14 +178,14 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyChildInvalidBadPort := &projcontour.HTTPProxy{
+	proxyChildInvalidBadPort := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "invalidChild",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "foo3",
 					Port: 12345678,
 				}},
@@ -228,20 +228,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyTCPSharedService := &projcontour.HTTPProxy{
+	proxyTCPSharedService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx",
 			Namespace: fixture.ServiceRootsNginx.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: fixture.SecretRootsCert.Name,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsNginx.Name,
 					Port: 80,
 				}},
@@ -264,20 +264,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyDelegatedTCPTLS := &projcontour.HTTPProxy{
+	proxyDelegatedTCPTLS := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "app-with-tls-delegation",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: fixture.SecretProjectContourCert.Namespace + "/" + fixture.SecretProjectContourCert.Name,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: "sample-app",
 					Port: 80,
 				}},
@@ -301,20 +301,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyDelegatedTLS := &projcontour.HTTPProxy{
+	proxyDelegatedTLS := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "app-with-tls-delegation",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "app-with-tls-delegation.127.0.0.1.nip.io",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: fixture.SecretProjectContourCert.Namespace + "/" + fixture.SecretProjectContourCert.Name,
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "sample-app",
 					Port: 80,
 				}},
@@ -358,29 +358,29 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyPassthroughProxyNonSecure := &projcontour.HTTPProxy{
+	proxyPassthroughProxyNonSecure := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-tcp",
 			Namespace: serviceTLSPassthrough.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "kuard.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: serviceTLSPassthrough.Name,
 					Port: 80, // proxy non secure traffic to port 80
 				}},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: serviceTLSPassthrough.Name,
 					Port: 443, // ssl passthrough to secure port
 				}},
@@ -404,46 +404,46 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyMultipleIncludersSite1 := &projcontour.HTTPProxy{
+	proxyMultipleIncludersSite1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "site1",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "site1.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "www",
 				Namespace: fixture.ServiceRootsKuard.Namespace,
 			}},
 		},
 	}
 
-	proxyMultipleIncludersSite2 := &projcontour.HTTPProxy{
+	proxyMultipleIncludersSite2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "site2",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "site2.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "www",
 				Namespace: fixture.ServiceRootsKuard.Namespace,
 			}},
 		},
 	}
 
-	proxyMultiIncludeChild := &projcontour.HTTPProxy{
+	proxyMultiIncludeChild := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "www",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -477,20 +477,20 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// proxyInvalidNegativePortHomeService is invalid because it contains a service with negative port
-	proxyInvalidNegativePortHomeService := &projcontour.HTTPProxy{
+	proxyInvalidNegativePortHomeService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: -80,
 				}},
@@ -506,20 +506,20 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// proxyInvalidOutsideRootNamespace is invalid because it lives outside the roots namespace
-	proxyInvalidOutsideRootNamespace := &projcontour.HTTPProxy{
+	proxyInvalidOutsideRootNamespace := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "finance",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foobar",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -535,24 +535,24 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// proxyInvalidIncludeCycle is invalid because it delegates to itself, producing a cycle
-	proxyInvalidIncludeCycle := &projcontour.HTTPProxy{
+	proxyInvalidIncludeCycle := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "self",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "self",
 				Namespace: "roots",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "green",
 					Port: 80,
 				}},
@@ -573,35 +573,35 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// proxyIncludesProxyWithIncludeCycle delegates to proxy8, which is invalid because proxy8 delegates back to proxy8
-	proxyIncludesProxyWithIncludeCycle := &projcontour.HTTPProxy{
+	proxyIncludesProxyWithIncludeCycle := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "parent",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "child",
 				Namespace: "roots",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
 		},
 	}
 
-	proxyIncludedChildInvalidIncludeCycle := &projcontour.HTTPProxy{
+	proxyIncludedChildInvalidIncludeCycle := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "child",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Includes: []projcontour.Include{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Includes: []contour_api_v1.Include{{
 				Name:      "child",
 				Namespace: "roots",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -632,14 +632,14 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyIncludedChildValid := &projcontour.HTTPProxy{
+	proxyIncludedChildValid := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "validChild",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "foo2",
 					Port: 8080,
 				}},
@@ -648,17 +648,17 @@ func TestDAGStatus(t *testing.T) {
 	}
 
 	// proxyNotRootIncludeRootProxy delegates to proxyWildCardFQDN but it is invalid because it is missing fqdn
-	proxyNotRootIncludeRootProxy := &projcontour.HTTPProxy{
+	proxyNotRootIncludeRootProxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "invalidParent",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{},
-			Includes: []projcontour.Include{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{},
+			Includes: []contour_api_v1.Include{{
 				Name:      "validChild",
 				Namespace: "roots",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
 			}},
@@ -674,20 +674,20 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// proxyWildCardFQDN is invalid because it contains a wildcarded fqdn
-	proxyWildCardFQDN := &projcontour.HTTPProxy{
+	proxyWildCardFQDN := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.*.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -703,20 +703,20 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// proxyInvalidServiceInvalid is invalid because it references an invalid service
-	proxyInvalidServiceInvalid := &projcontour.HTTPProxy{
+	proxyInvalidServiceInvalid := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "invalidir",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "invalid",
 					Port: 8080,
 				}},
@@ -737,20 +737,20 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// proxyInvalidServicePortInvalid is invalid because it references an invalid port on a service
-	proxyInvalidServicePortInvalid := &projcontour.HTTPProxy{
+	proxyInvalidServicePortInvalid := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "invalidir",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 9999,
 				}},
@@ -770,20 +770,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyValidExampleCom := &projcontour.HTTPProxy{
+	proxyValidExampleCom := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -791,17 +791,17 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyValidReuseExampleCom := &projcontour.HTTPProxy{
+	proxyValidReuseExampleCom := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "other-example",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 8080,
 				}},
@@ -827,42 +827,42 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyRootIncludesRoot := &projcontour.HTTPProxy{
+	proxyRootIncludesRoot := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: "blog-containersteve-com",
 				},
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "blog",
 				Namespace: "marketing",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
 			}},
 		},
 	}
 
-	proxyRootIncludedByRoot := &projcontour.HTTPProxy{
+	proxyRootIncludedByRoot := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
 			Namespace: fixture.ServiceMarketingGreen.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: "blog-containersteve-com",
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceMarketingGreen.Name,
 					Port: 80,
 				}},
@@ -888,36 +888,36 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyIncludesRootDifferentFQDN := &projcontour.HTTPProxy{
+	proxyIncludesRootDifferentFQDN := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "blog",
 				Namespace: "marketing",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
 			}},
 		},
 	}
 
-	proxyRootIncludedByRootDiffFQDN := &projcontour.HTTPProxy{
+	proxyRootIncludedByRootDiffFQDN := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
 			Namespace: fixture.ServiceMarketingGreen.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceMarketingGreen.Name,
 					Port: 80,
 				}},
@@ -943,14 +943,14 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyValidIncludeBlogMarketing := &projcontour.HTTPProxy{
+	proxyValidIncludeBlogMarketing := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
 			Namespace: fixture.ServiceMarketingGreen.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceMarketingGreen.Name,
 					Port: 80,
 				}},
@@ -958,19 +958,19 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyRootValidIncludesBlogMarketing := &projcontour.HTTPProxy{
+	proxyRootValidIncludesBlogMarketing := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      proxyValidIncludeBlogMarketing.Name,
 				Namespace: proxyValidIncludeBlogMarketing.Namespace,
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}},
@@ -994,17 +994,17 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyValidWithMirror := &projcontour.HTTPProxy{
+	proxyValidWithMirror := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "www",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}, {
@@ -1031,17 +1031,17 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidTwoMirrors := &projcontour.HTTPProxy{
+	proxyInvalidTwoMirrors := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "www",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}, {
@@ -1069,30 +1069,30 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidDuplicateMatchConditionHeaders := &projcontour.HTTPProxy{
+	proxyInvalidDuplicateMatchConditionHeaders := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}, {
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "1234",
 					},
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -1111,48 +1111,48 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidDuplicateIncludeCondtionHeaders := &projcontour.HTTPProxy{
+	proxyInvalidDuplicateIncludeCondtionHeaders := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "delegated",
 				Namespace: "roots",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}, {
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:  "x-header",
 						Exact: "1234",
 					},
 				}},
 			}},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
 			}},
 		},
 	}
-	proxyValidDelegatedRoots := &projcontour.HTTPProxy{
+	proxyValidDelegatedRoots := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "delegated",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -1178,30 +1178,30 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidRouteConditionHeaders := &projcontour.HTTPProxy{
+	proxyInvalidRouteConditionHeaders := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}, {
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						NotExact: "abc",
 					},
 				}, {
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						NotExact: "1234",
 					},
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -1220,24 +1220,24 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidMultiplePrefixes := &projcontour.HTTPProxy{
+	proxyInvalidMultiplePrefixes := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "www",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{
 					{
 						Prefix: "/api",
 					}, {
 						Prefix: "/v1",
 					},
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1257,19 +1257,19 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidTwoPrefixesWithInclude := &projcontour.HTTPProxy{
+	proxyInvalidTwoPrefixesWithInclude := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "www",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "child",
 				Namespace: "teama",
-				Conditions: []projcontour.MatchCondition{
+				Conditions: []contour_api_v1.MatchCondition{
 					{
 						Prefix: "/api",
 					}, {
@@ -1277,8 +1277,8 @@ func TestDAGStatus(t *testing.T) {
 					},
 				},
 			}},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1286,14 +1286,14 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyValidChildTeamA := &projcontour.HTTPProxy{
+	proxyValidChildTeamA := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "child",
 			Namespace: "teama",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1317,22 +1317,22 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidPrefixNoSlash := &projcontour.HTTPProxy{
+	proxyInvalidPrefixNoSlash := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "www",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{
 					{
 						Prefix: "api",
 					},
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1352,26 +1352,26 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidIncludePrefixNoSlash := &projcontour.HTTPProxy{
+	proxyInvalidIncludePrefixNoSlash := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "www",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "child",
 				Namespace: "teama",
-				Conditions: []projcontour.MatchCondition{
+				Conditions: []contour_api_v1.MatchCondition{
 					{
 						Prefix: "api",
 					},
 				},
 			}},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1395,24 +1395,24 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidTCPProxyIncludeAndService := &projcontour.HTTPProxy{
+	proxyInvalidTCPProxyIncludeAndService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "passthrough.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Include: &projcontour.TCPProxyInclude{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Include: &contour_api_v1.TCPProxyInclude{
 					Name:      "foo",
 					Namespace: "roots",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1432,19 +1432,19 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyTCPNoServiceOrInclusion := &projcontour.HTTPProxy{
+	proxyTCPNoServiceOrInclusion := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "passthrough.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{},
+			TCPProxy: &contour_api_v1.TCPProxy{},
 		},
 	}
 
@@ -1460,20 +1460,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyTCPIncludesFoo := &projcontour.HTTPProxy{
+	proxyTCPIncludesFoo := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "passthrough.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Include: &projcontour.TCPProxyInclude{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Include: &contour_api_v1.TCPProxyInclude{
 					Name:      "foo",
 					Namespace: fixture.ServiceRootsKuard.Namespace,
 				},
@@ -1493,20 +1493,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyValidTCPRoot := &projcontour.HTTPProxy{
+	proxyValidTCPRoot := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "www.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1532,14 +1532,14 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyTCPValidChildFoo := &projcontour.HTTPProxy{
+	proxyTCPValidChildFoo := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1565,33 +1565,33 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidConflictingIncludeConditions := &projcontour.HTTPProxy{
+	proxyInvalidConflictingIncludeConditions := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}, {
 				Name:      "blogteamb",
 				Namespace: "teamb",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
 				}},
 			}},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -1599,17 +1599,17 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyValidBlogTeamA := &projcontour.HTTPProxy{
+	proxyValidBlogTeamA := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "blogteama",
 			Name:      "teama",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceTeamAKuard.Name,
 					Port: 8080,
 				}},
@@ -1617,17 +1617,17 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyValidBlogTeamB := &projcontour.HTTPProxy{
+	proxyValidBlogTeamB := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "blogteamb",
 			Name:      "teamb",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceTeamBKuard.Name,
 					Port: 8080,
 				}},
@@ -1660,20 +1660,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidConflictHeaderConditions := &projcontour.HTTPProxy{
+	proxyInvalidConflictHeaderConditions := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.MatchCondition{{
-					Header: &projcontour.HeaderMatchCondition{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -1681,18 +1681,18 @@ func TestDAGStatus(t *testing.T) {
 			}, {
 				Name:      "blogteamb",
 				Namespace: "teamb",
-				Conditions: []projcontour.MatchCondition{{
-					Header: &projcontour.HeaderMatchCondition{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -1727,21 +1727,21 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidDuplicateHeaderAndPathConditions := &projcontour.HTTPProxy{
+	proxyInvalidDuplicateHeaderAndPathConditions := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -1749,19 +1749,19 @@ func TestDAGStatus(t *testing.T) {
 			}, {
 				Name:      "blogteamb",
 				Namespace: "teamb",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -1796,16 +1796,16 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidMissingInclude := &projcontour.HTTPProxy{
+	proxyInvalidMissingInclude := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name: "child",
 			}},
 		},
@@ -1823,20 +1823,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyTCPInvalidMissingService := &projcontour.HTTPProxy{
+	proxyTCPInvalidMissingService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "missing-tcp-proxy-service",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: "not-found",
 					Port: 8080,
 				}},
@@ -1856,20 +1856,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyTCPInvalidPortNotMatched := &projcontour.HTTPProxy{
+	proxyTCPInvalidPortNotMatched := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tcp-proxy-service-missing-port",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 9999,
 				}},
@@ -1889,17 +1889,17 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyTCPInvalidMissingTLS := &projcontour.HTTPProxy{
+	proxyTCPInvalidMissingTLS := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "missing-tls",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1919,25 +1919,25 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyInvalidMissingServiceWithTCPProxy := &projcontour.HTTPProxy{
+	proxyInvalidMissingServiceWithTCPProxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "missing-route-service",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: fixture.SecretRootsCert.Name,
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{
 					{Name: "missing", Port: 9000},
 				},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1957,25 +1957,25 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyRoutePortNotMatchedWithTCP := &projcontour.HTTPProxy{
+	proxyRoutePortNotMatchedWithTCP := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "missing-route-service-port",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: fixture.SecretRootsCert.Name,
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{
 					{Name: fixture.ServiceRootsKuard.Name, Port: 9999},
 				},
 			}},
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -1995,20 +1995,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	proxyTCPValidIncludeChild := &projcontour.HTTPProxy{
+	proxyTCPValidIncludeChild := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "validtcpproxy",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: fixture.SecretRootsCert.Name,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				Include: &projcontour.TCPProxyInclude{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Include: &contour_api_v1.TCPProxyInclude{
 					Name:      "child",
 					Namespace: fixture.ServiceRootsKuard.Namespace,
 				},
@@ -2016,20 +2016,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyTCPValidIncludesChild := &projcontour.HTTPProxy{
+	proxyTCPValidIncludesChild := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "validtcpproxy",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: fixture.SecretRootsCert.Name,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{
-				IncludesDeprecated: &projcontour.TCPProxyInclude{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				IncludesDeprecated: &contour_api_v1.TCPProxyInclude{
 					Name:      "child",
 					Namespace: fixture.ServiceRootsKuard.Namespace,
 				},
@@ -2037,14 +2037,14 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	proxyTCPValidChild := &projcontour.HTTPProxy{
+	proxyTCPValidChild := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "child",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			TCPProxy: &projcontour.TCPProxy{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
 					Name: fixture.ServiceRootsKuard.Name,
 					Port: 8080,
 				}},
@@ -2092,17 +2092,17 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	// issue 2309
-	proxyInvalidNoServices := &projcontour.HTTPProxy{
+	proxyInvalidNoServices := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "missing-service",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "missing-service.example.com",
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
 				Services: nil, // missing
@@ -2122,24 +2122,24 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	fallbackCertificate := &projcontour.HTTPProxy{
+	fallbackCertificate := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:                "ssl-cert",
 					EnableFallbackCertificate: true,
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -2177,27 +2177,27 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	fallbackCertificateWithClientValidation := &projcontour.HTTPProxy{
+	fallbackCertificateWithClientValidation := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:                "ssl-cert",
 					EnableFallbackCertificate: true,
-					ClientValidation: &projcontour.DownstreamValidation{
+					ClientValidation: &contour_api_v1.DownstreamValidation{
 						CACertificate: "something",
 					},
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/foo",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "home",
 					Port: 8080,
 				}},
@@ -2218,22 +2218,22 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	tlsPassthroughAndValidation := &projcontour.HTTPProxy{
+	tlsPassthroughAndValidation := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "invalid",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
-					ClientValidation: &projcontour.DownstreamValidation{
+					ClientValidation: &contour_api_v1.DownstreamValidation{
 						CACertificate: "aCAcert",
 					},
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{},
+			TCPProxy: &contour_api_v1.TCPProxy{},
 		},
 	}
 
@@ -2249,20 +2249,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	tlsPassthroughAndSecretName := &projcontour.HTTPProxy{
+	tlsPassthroughAndSecretName := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "invalid",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: true,
 					SecretName:  fixture.SecretRootsCert.Name,
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{},
+			TCPProxy: &contour_api_v1.TCPProxy{},
 		},
 	}
 
@@ -2281,20 +2281,20 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	tlsNoPassthroughOrSecretName := &projcontour.HTTPProxy{
+	tlsNoPassthroughOrSecretName := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "invalid",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "tcpproxy.example.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					Passthrough: false,
 					SecretName:  "",
 				},
 			},
-			TCPProxy: &projcontour.TCPProxy{},
+			TCPProxy: &contour_api_v1.TCPProxy{},
 		},
 	}
 
@@ -2313,13 +2313,13 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	emptyProxy := &projcontour.HTTPProxy{
+	emptyProxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "empty",
 			Namespace: "roots",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
 		},
@@ -2337,22 +2337,22 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	invalidRequestHeadersPolicyService := &projcontour.HTTPProxy{
+	invalidRequestHeadersPolicyService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "invalidRHPService",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{
 					{
 						Name: fixture.ServiceRootsKuard.Name,
 						Port: 8080,
-						RequestHeadersPolicy: &projcontour.HeadersPolicy{
-							Set: []projcontour.HeaderValue{{
+						RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+							Set: []contour_api_v1.HeaderValue{{
 								Name:  "Host",
 								Value: "external.com",
 							}},
@@ -2375,22 +2375,22 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	invalidResponseHeadersPolicyService := &projcontour.HTTPProxy{
+	invalidResponseHeadersPolicyService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "invalidRHPService",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{
 					{
 						Name: fixture.ServiceRootsKuard.Name,
 						Port: 8080,
-						ResponseHeadersPolicy: &projcontour.HeadersPolicy{
-							Set: []projcontour.HeaderValue{{
+						ResponseHeadersPolicy: &contour_api_v1.HeadersPolicy{
+							Set: []contour_api_v1.HeaderValue{{
 								Name:  "Host",
 								Value: "external.com",
 							}},
@@ -2413,24 +2413,24 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	invalidResponseHeadersPolicyRoute := &projcontour.HTTPProxy{
+	invalidResponseHeadersPolicyRoute := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "invalidRHPRoute",
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{
 					{
 						Name: fixture.ServiceRootsKuard.Name,
 						Port: 8080,
 					},
 				},
-				ResponseHeadersPolicy: &projcontour.HeadersPolicy{
-					Set: []projcontour.HeaderValue{{
+				ResponseHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
 						Name:  "Host",
 						Value: "external.com",
 					}},
@@ -2452,22 +2452,22 @@ func TestDAGStatus(t *testing.T) {
 	})
 
 	proxyAuthFallback := fixture.NewProxy("roots/fallback-incompat").
-		WithSpec(projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "invalid.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName:                "ssl-cert",
 					EnableFallbackCertificate: true,
 				},
-				Authorization: &projcontour.AuthorizationServer{
-					ExtensionServiceRef: projcontour.ExtensionServiceReference{
+				Authorization: &contour_api_v1.AuthorizationServer{
+					ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
 						Namespace: "auth",
 						Name:      "extension",
 					},
 				},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{Name: "app-server", Port: 80}},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{Name: "app-server", Port: 80}},
 			}},
 		})
 
@@ -2483,23 +2483,23 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	invalidResponseTimeout := &projcontour.HTTPProxy{
+	invalidResponseTimeout := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 			Name:      "invalid-timeouts",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{
+			Routes: []contour_api_v1.Route{
 				{
-					Services: []projcontour.Service{
+					Services: []contour_api_v1.Service{
 						{
 							Name: fixture.ServiceRootsKuard.Name,
 						},
 					},
-					TimeoutPolicy: &projcontour.TimeoutPolicy{
+					TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 						Response: "invalid-val",
 					},
 				},
@@ -2522,23 +2522,23 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	invalidIdleTimeout := &projcontour.HTTPProxy{
+	invalidIdleTimeout := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: fixture.ServiceRootsKuard.Namespace,
 			Name:      "invalid-timeouts",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Routes: []projcontour.Route{
+			Routes: []contour_api_v1.Route{
 				{
-					Services: []projcontour.Service{
+					Services: []contour_api_v1.Service{
 						{
 							Name: fixture.ServiceRootsKuard.Name,
 						},
 					},
-					TimeoutPolicy: &projcontour.TimeoutPolicy{
+					TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 						Idle: "invalid-val",
 					},
 				},

@@ -21,10 +21,10 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -86,8 +86,8 @@ func TestEditIngress(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*", &envoy_api_v2_route.Route{
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*", &envoy_api_v2_route.Route{
 					Match:  routePrefix("/"),
 					Action: routecluster("default/kuard/80/da39a3ee5e"),
 				}),
@@ -121,8 +121,8 @@ func TestEditIngress(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*", &envoy_api_v2_route.Route{
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*", &envoy_api_v2_route.Route{
 					Match:  routePrefix("/testing"),
 					Action: routecluster("default/kuard/80/da39a3ee5e"),
 				}),
@@ -180,8 +180,8 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/hello"),
 						Action: routecluster("default/hello/80/da39a3ee5e"),
@@ -230,8 +230,8 @@ func TestEditIngressInPlace(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("hello.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routecluster("default/wowie/80/da39a3ee5e"),
@@ -273,8 +273,8 @@ func TestEditIngressInPlace(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "3",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("hello.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/whoop"),
 						Action: routecluster("default/kerpow/9000/da39a3ee5e"),
@@ -325,15 +325,15 @@ func TestEditIngressInPlace(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "4",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("hello.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/whoop"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 				),
 			),
@@ -391,20 +391,20 @@ func TestEditIngressInPlace(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "5",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("hello.example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/whoop"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 				),
 			),
-			envoyv2.RouteConfiguration("https/hello.example.com",
-				envoyv2.VirtualHost("hello.example.com",
+			envoy_v2.RouteConfiguration("https/hello.example.com",
+				envoy_v2.VirtualHost("hello.example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/whoop"),
 						Action: routecluster("default/kerpow/9000/da39a3ee5e"),
@@ -497,18 +497,18 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 8009, TargetPort: intstr.FromInt(8080)}))
 
 	assertRDS(t, c, "5", virtualhosts(
-		envoyv2.VirtualHost("example.com",
+		envoy_v2.VirtualHost("example.com",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 				Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 			},
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"), // match all
-				Action: envoyv2.UpgradeHTTPS(),
+				Action: envoy_v2.UpgradeHTTPS(),
 			},
 		),
 	), virtualhosts(
-		envoyv2.VirtualHost("example.com",
+		envoy_v2.VirtualHost("example.com",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 				Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
@@ -565,7 +565,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 	})
 
 	assertRDS(t, c, "1", virtualhosts(
-		envoyv2.VirtualHost("kuard.io",
+		envoy_v2.VirtualHost("kuard.io",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"),
 				Action: routecluster("default/kuard/80/da39a3ee5e"),
@@ -584,14 +584,14 @@ func TestInvalidCertInIngress(t *testing.T) {
 	})
 
 	assertRDS(t, c, "2", virtualhosts(
-		envoyv2.VirtualHost("kuard.io",
+		envoy_v2.VirtualHost("kuard.io",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"),
 				Action: routecluster("default/kuard/80/da39a3ee5e"),
 			},
 		),
 	), virtualhosts(
-		envoyv2.VirtualHost("kuard.io",
+		envoy_v2.VirtualHost("kuard.io",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"),
 				Action: routecluster("default/kuard/80/da39a3ee5e"),
@@ -639,7 +639,7 @@ func TestIssue257(t *testing.T) {
 	rh.OnAdd(s1)
 
 	assertRDS(t, c, "2", virtualhosts(
-		envoyv2.VirtualHost("*",
+		envoy_v2.VirtualHost("*",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"),
 				Action: routecluster("default/kuard/80/da39a3ee5e"),
@@ -692,7 +692,7 @@ func TestIssue257(t *testing.T) {
 	rh.OnUpdate(i1, i2)
 
 	assertRDS(t, c, "3", virtualhosts(
-		envoyv2.VirtualHost("kuard.db.gd-ms.com",
+		envoy_v2.VirtualHost("kuard.db.gd-ms.com",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"),
 				Action: routecluster("default/kuard/80/da39a3ee5e"),
@@ -779,20 +779,20 @@ func TestRDSFilter(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "5",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("example.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 						Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 					},
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"), // match all
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 				),
 			),
-			envoyv2.RouteConfiguration("https/example.com",
-				envoyv2.VirtualHost("example.com",
+			envoy_v2.RouteConfiguration("https/example.com",
+				envoy_v2.VirtualHost("example.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 						Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
@@ -867,8 +867,8 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/kuard"),
 						Action: routecluster("default/kuard/8080/da39a3ee5e"),
@@ -878,7 +878,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
 					},
 				),
-				envoyv2.VirtualHost("test-gui",
+				envoy_v2.VirtualHost("test-gui",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routecluster("default/test-gui/80/da39a3ee5e"),
@@ -920,7 +920,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 	assertRDS(t, c, "1", virtualhosts(
-		envoyv2.VirtualHost("*",
+		envoy_v2.VirtualHost("*",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"),
 				Action: routecluster("default/kuard/8080/da39a3ee5e"),
@@ -981,7 +981,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	}
 	rh.OnUpdate(i3, i4)
 	assertRDS(t, c, "3", virtualhosts(
-		envoyv2.VirtualHost("*",
+		envoy_v2.VirtualHost("*",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"),
 				Action: routecluster("default/kuard/8080/da39a3ee5e"),
@@ -1006,7 +1006,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	}
 	rh.OnUpdate(i4, i5)
 	assertRDS(t, c, "4", virtualhosts(
-		envoyv2.VirtualHost("*",
+		envoy_v2.VirtualHost("*",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"),
 				Action: routecluster("default/kuard/8080/da39a3ee5e"),
@@ -1032,18 +1032,18 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 
 	go func() {
 		for i := 0; i < 100; i++ {
-			rh.OnAdd(&projcontour.HTTPProxy{
+			rh.OnAdd(&contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fmt.Sprintf("simple-%d", i),
 					Namespace: "default",
 				},
-				Spec: projcontour.HTTPProxySpec{
-					VirtualHost: &projcontour.VirtualHost{Fqdn: fmt.Sprintf("example-%d.com", i)},
-					Routes: []projcontour.Route{{
-						Conditions: []projcontour.MatchCondition{{
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{Fqdn: fmt.Sprintf("example-%d.com", i)},
+					Routes: []contour_api_v1.Route{{
+						Conditions: []contour_api_v1.MatchCondition{{
 							Prefix: "/",
 						}},
-						Services: []projcontour.Service{{
+						Services: []contour_api_v1.Service{{
 							Name: "kuard",
 							Port: 80,
 						}},
@@ -1116,7 +1116,7 @@ func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 9001, TargetPort: intstr.FromInt(8080)}))
 
 	assertRDS(t, c, "2", virtualhosts(
-		envoyv2.VirtualHost("test2.test.com",
+		envoy_v2.VirtualHost("test2.test.com",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/"),
 				Action: routecluster("default/network-test/9001/da39a3ee5e"),
@@ -1132,18 +1132,18 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 	rh.OnAdd(fixture.NewService("kuard").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90, // ignored
@@ -1154,7 +1154,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 
 	rh.OnAdd(p1)
 	assertRDS(t, c, "1", virtualhosts(
-		envoyv2.VirtualHost("test2.test.com",
+		envoy_v2.VirtualHost("test2.test.com",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/a"),
 				Action: routecluster("default/kuard/80/da39a3ee5e"),
@@ -1162,18 +1162,18 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 		),
 	), nil)
 
-	p2 := &projcontour.HTTPProxy{
+	p2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
@@ -1188,7 +1188,7 @@ func TestRouteWithAServiceWeight(t *testing.T) {
 
 	rh.OnUpdate(p1, p2)
 	assertRDS(t, c, "2", virtualhosts(
-		envoyv2.VirtualHost("test2.test.com",
+		envoy_v2.VirtualHost("test2.test.com",
 			&envoy_api_v2_route.Route{
 				Match: routePrefix("/a"),
 				Action: routeweightedcluster(
@@ -1215,23 +1215,23 @@ func TestRouteWithTLS(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: "example-tls",
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/a",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
@@ -1245,16 +1245,16 @@ func TestRouteWithTLS(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 						Match:  routePrefix("/a"),
 					},
 				),
 			),
-			envoyv2.RouteConfiguration("https/test2.test.com",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("https/test2.test.com",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/a"),
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
@@ -1286,31 +1286,31 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: "example-tls",
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/insecure",
 				}},
 				PermitInsecure: true,
-				Services: []projcontour.Service{{Name: "kuard",
+				Services: []contour_api_v1.Service{{Name: "kuard",
 					Port: 80,
 				}},
 			}, {
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/secure",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
@@ -1324,11 +1324,11 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/insecure"),
@@ -1336,8 +1336,8 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 					},
 				),
 			),
-			envoyv2.RouteConfiguration("https/test2.test.com",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("https/test2.test.com",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
 						Action: routecluster("default/svc2/80/da39a3ee5e"),
@@ -1382,32 +1382,32 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: "example-tls",
 				},
 			},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/insecure",
 				}},
 				PermitInsecure: true,
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
 			}, {
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/secure",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
@@ -1421,20 +1421,20 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/insecure"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 				),
 			),
-			envoyv2.RouteConfiguration("https/test2.test.com",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("https/test2.test.com",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
 						Action: routecluster("default/svc2/80/da39a3ee5e"),
@@ -1491,8 +1491,8 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("*",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*",
 					&envoy_api_v2_route.Route{
 						Match:  routeRegex("/[^/]+/invoices(/.*|/?)"),
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
@@ -1513,12 +1513,12 @@ func assertRDS(t *testing.T, c *Contour, versioninfo string, ingressHTTP, ingres
 	t.Helper()
 
 	routes := []*envoy_api_v2.RouteConfiguration{
-		envoyv2.RouteConfiguration("ingress_http", ingressHTTP...),
+		envoy_v2.RouteConfiguration("ingress_http", ingressHTTP...),
 	}
 
 	for _, vh := range ingressHTTPS {
 		routes = append(routes,
-			envoyv2.RouteConfiguration(path.Join("https", vh.Name), vh))
+			envoy_v2.RouteConfiguration(path.Join("https", vh.Name), vh))
 	}
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
@@ -1535,7 +1535,7 @@ type weightedcluster struct {
 }
 
 func routeRegex(regex string, headers ...dag.HeaderMatchCondition) *envoy_api_v2_route.RouteMatch {
-	return envoyv2.RouteMatch(&dag.Route{
+	return envoy_v2.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.RegexMatchCondition{
 			Regex: regex,
 		},
@@ -1584,16 +1584,16 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 	rh.OnAdd(fixture.NewService("kuard").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
-	proxy1 := &projcontour.HTTPProxy{
+	proxy1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: conditions(prefixCondition("/a")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90, // ignored
@@ -1604,7 +1604,7 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 
 	rh.OnAdd(proxy1)
 	assertRDS(t, c, "1", virtualhosts(
-		envoyv2.VirtualHost("test2.test.com",
+		envoy_v2.VirtualHost("test2.test.com",
 			&envoy_api_v2_route.Route{
 				Match:  routePrefix("/a"),
 				Action: routecluster("default/kuard/80/da39a3ee5e"),
@@ -1612,16 +1612,16 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 		),
 	), nil)
 
-	proxy2 := &projcontour.HTTPProxy{
+	proxy2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: conditions(prefixCondition("/a")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name:   "kuard",
 					Port:   80,
 					Weight: 90,
@@ -1636,7 +1636,7 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 
 	rh.OnUpdate(proxy1, proxy2)
 	assertRDS(t, c, "2", virtualhosts(
-		envoyv2.VirtualHost("test2.test.com",
+		envoy_v2.VirtualHost("test2.test.com",
 			&envoy_api_v2_route.Route{
 				Match: routePrefix("/a"),
 				Action: routeweightedcluster(
@@ -1663,21 +1663,21 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	proxy1 := &projcontour.HTTPProxy{
+	proxy1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: "example-tls",
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions: conditions(prefixCondition("/a")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
@@ -1691,16 +1691,16 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/a"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 				),
 			),
-			envoyv2.RouteConfiguration("https/test2.test.com",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("https/test2.test.com",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/a"),
 						Action: routecluster("default/kuard/80/da39a3ee5e"),
@@ -1732,27 +1732,27 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	proxy1 := &projcontour.HTTPProxy{
+	proxy1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: "example-tls",
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions:     conditions(prefixCondition("/insecure")),
 				PermitInsecure: true,
-				Services: []projcontour.Service{{Name: "kuard",
+				Services: []contour_api_v1.Service{{Name: "kuard",
 					Port: 80,
 				}},
 			}, {
 				Conditions: conditions(prefixCondition("/secure")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
@@ -1766,11 +1766,11 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/insecure"),
@@ -1778,8 +1778,8 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 					},
 				),
 			),
-			envoyv2.RouteConfiguration("https/test2.test.com",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("https/test2.test.com",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
 						Action: routecluster("default/svc2/80/da39a3ee5e"),
@@ -1824,28 +1824,28 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 	})
 
-	proxy1 := &projcontour.HTTPProxy{
+	proxy1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "test2.test.com",
-				TLS: &projcontour.TLS{
+				TLS: &contour_api_v1.TLS{
 					SecretName: "example-tls",
 				},
 			},
-			Routes: []projcontour.Route{{
+			Routes: []contour_api_v1.Route{{
 				Conditions:     conditions(prefixCondition("/insecure")),
 				PermitInsecure: true,
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "kuard",
 					Port: 80,
 				}},
 			}, {
 				Conditions: conditions(prefixCondition("/secure")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc2",
 					Port: 80,
 				}},
@@ -1859,20 +1859,20 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/insecure"),
-						Action: envoyv2.UpgradeHTTPS(),
+						Action: envoy_v2.UpgradeHTTPS(),
 					},
 				),
 			),
-			envoyv2.RouteConfiguration("https/test2.test.com",
-				envoyv2.VirtualHost("test2.test.com",
+			envoy_v2.RouteConfiguration("https/test2.test.com",
+				envoy_v2.VirtualHost("test2.test.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/secure"),
 						Action: routecluster("default/svc2/80/da39a3ee5e"),
@@ -1897,17 +1897,17 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(svc1)
 
-	child := &projcontour.HTTPProxy{
+	child := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blog",
 			Namespace: svc1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "www.containersteve.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: svc1.Name,
 					Port: 80,
 				}},
@@ -1916,16 +1916,16 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	}
 	rh.OnAdd(child)
 
-	root := &projcontour.HTTPProxy{
+	root := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root-blog",
 			Namespace: "default",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "blog.containersteve.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      child.Name,
 				Namespace: child.Namespace,
 			}},
@@ -1938,8 +1938,8 @@ func TestRDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("www.containersteve.com",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("www.containersteve.com",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routecluster("marketing/green/80/da39a3ee5e"),
@@ -1968,21 +1968,21 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc3)
 
-	proxyRoot := &projcontour.HTTPProxy{
+	proxyRoot := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "root",
 			Namespace: svc1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "example.com",
 			},
-			Includes: []projcontour.Include{{
+			Includes: []contour_api_v1.Include{{
 				Name:      "blogteama",
 				Namespace: "teama",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
@@ -1990,19 +1990,19 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 			}, {
 				Name:      "blogteama",
 				Namespace: "teamb",
-				Conditions: []projcontour.MatchCondition{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/blog",
-					Header: &projcontour.HeaderMatchCondition{
+					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:     "x-header",
 						Contains: "abc",
 					},
 				}},
 			}},
-			Routes: []projcontour.Route{{
-				Conditions: []projcontour.MatchCondition{{
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
 					Prefix: "/",
 				}},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc1.Name,
 					Port: 8080,
 				}},
@@ -2010,14 +2010,14 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 		},
 	}
 
-	proxyChildA := &projcontour.HTTPProxy{
+	proxyChildA := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blogteama",
 			Namespace: "teama",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: svc2.Name,
 					Port: 8080,
 				}},
@@ -2025,14 +2025,14 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 		},
 	}
 
-	proxyChildB := &projcontour.HTTPProxy{
+	proxyChildB := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "blogteamb",
 			Namespace: "teamb",
 		},
-		Spec: projcontour.HTTPProxySpec{
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: svc3.Name,
 					Port: 8080,
 				}},
@@ -2046,7 +2046,7 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "2",
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http"),
+			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 		Nonce:   "2",
@@ -2055,10 +2055,10 @@ func TestRDSHTTPProxyDuplicateIncludeConditions(t *testing.T) {
 
 func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }
 
-func conditions(c ...projcontour.MatchCondition) []projcontour.MatchCondition { return c }
+func conditions(c ...contour_api_v1.MatchCondition) []contour_api_v1.MatchCondition { return c }
 
-func prefixCondition(prefix string) projcontour.MatchCondition {
-	return projcontour.MatchCondition{
+func prefixCondition(prefix string) contour_api_v1.MatchCondition {
+	return contour_api_v1.MatchCondition{
 		Prefix: prefix,
 	}
 }

@@ -20,8 +20,8 @@ import (
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,15 +37,15 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 	)
 
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
-				RequestHeadersPolicy: &projcontour.HeadersPolicy{
-					Set: []projcontour.HeaderValue{{
+				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
 						Name:  "Host",
 						Value: "goodbye.planet",
 					}},
@@ -56,8 +56,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeHostRewrite("default/svc1/80/da39a3ee5e", "goodbye.planet"),
@@ -70,15 +70,15 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	// Non-Host header
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
-				RequestHeadersPolicy: &projcontour.HeadersPolicy{
-					Set: []projcontour.HeaderValue{{
+				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
 						Name:  "x-header",
 						Value: "goodbye.planet",
 					}},
@@ -89,8 +89,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
@@ -112,15 +112,15 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	// Empty value for replaceHeader in HeadersPolicy
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "hello.world"},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "svc1",
 					Port: 80,
 				}},
-				RequestHeadersPolicy: &projcontour.HeadersPolicy{
-					Set: []projcontour.HeaderValue{{
+				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
 						Name: "Host",
 					}},
 				},
@@ -130,8 +130,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
@@ -165,18 +165,18 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	// Proxy with SNI
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
 				Fqdn: "hello.world",
-				TLS:  &projcontour.TLS{SecretName: "foo"},
+				TLS:  &contour_api_v1.TLS{SecretName: "foo"},
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
 					Name: "externalname",
 					Port: 443,
 				}},
-				RequestHeadersPolicy: &projcontour.HeadersPolicy{
-					Set: []projcontour.HeaderValue{{
+				RequestHeadersPolicy: &contour_api_v1.HeadersPolicy{
+					Set: []contour_api_v1.HeaderValue{{
 						Name:  "Host",
 						Value: "goodbye.planet",
 					}},
@@ -187,8 +187,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: routeResources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match: routePrefix("/"),
 						Action: &envoy_api_v2_route.Route_Redirect{
@@ -200,8 +200,8 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 						},
 					}),
 			),
-			envoyv2.RouteConfiguration("https/hello.world",
-				envoyv2.VirtualHost("hello.world",
+			envoy_v2.RouteConfiguration("https/hello.world",
+				envoy_v2.VirtualHost("hello.world",
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: routeHostRewrite("default/externalname/443/da39a3ee5e", "goodbye.planet"),

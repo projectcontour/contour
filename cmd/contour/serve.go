@@ -27,7 +27,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v2"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -158,7 +158,7 @@ func validateCRDs(dynamicClient dynamic.Interface, log logrus.FieldLogger) {
 	for _, crd := range crds.Items {
 		log = log.WithField("crd", crd.GetName())
 
-		if group, _, _ := unstructured.NestedString(crd.Object, "spec", "group"); group != contourv1.GroupName {
+		if group, _, _ := unstructured.NestedString(crd.Object, "spec", "group"); group != contour_api_v1.GroupName {
 			log.Debugf("CRD is not in projectcontour.io API group, ignoring")
 			continue
 		}

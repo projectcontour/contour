@@ -18,9 +18,9 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,16 +38,16 @@ func TestMirrorPolicy(t *testing.T) {
 	rh.OnAdd(svc1)
 	rh.OnAdd(svc2)
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc1.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "example.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "example.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc1.Name,
 					Port: 8080,
 				}, {
@@ -62,8 +62,8 @@ func TestMirrorPolicy(t *testing.T) {
 
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			envoyv2.RouteConfiguration("ingress_http",
-				envoyv2.VirtualHost(p1.Spec.VirtualHost.Fqdn,
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost(p1.Spec.VirtualHost.Fqdn,
 					&envoy_api_v2_route.Route{
 						Match:  routePrefix("/"),
 						Action: withMirrorPolicy(routeCluster("default/kuard/8080/da39a3ee5e"), "default/mirror/8080/da39a3ee5e"),

@@ -19,7 +19,7 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -149,19 +149,19 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 	rh.OnDelete(i4)
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Response: "600", // not 600s
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -178,16 +178,16 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p2 := &projcontour.HTTPProxy{
+	p2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: p1.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Response: "3m",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -211,16 +211,16 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p3 := &projcontour.HTTPProxy{
+	p3 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: p2.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Response: "infinity",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -253,19 +253,19 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
-	p1 := &projcontour.HTTPProxy{
+	p1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Idle: "600", // not 600s
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -282,16 +282,16 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p2 := &projcontour.HTTPProxy{
+	p2 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: p1.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Idle: "3m",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},
@@ -315,16 +315,16 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p3 := &projcontour.HTTPProxy{
+	p3 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: p2.ObjectMeta,
-		Spec: projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []projcontour.Route{{
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
 				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &projcontour.TimeoutPolicy{
+				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
 					Idle: "infinity",
 				},
-				Services: []projcontour.Service{{
+				Services: []contour_api_v1.Service{{
 					Name: svc.Name,
 					Port: 8080,
 				}},

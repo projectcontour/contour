@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -563,7 +563,7 @@ func TestParseHTTPVersions(t *testing.T) {
 	cases := map[string]struct {
 		versions      []string
 		parseError    error
-		parseVersions []envoyv2.HTTPVersionType
+		parseVersions []envoy_v2.HTTPVersionType
 	}{
 		"empty": {
 			versions:      []string{},
@@ -578,17 +578,17 @@ func TestParseHTTPVersions(t *testing.T) {
 		"http/1.1": {
 			versions:      []string{"http/1.1", "HTTP/1.1"},
 			parseError:    nil,
-			parseVersions: []envoyv2.HTTPVersionType{envoyv2.HTTPVersion1},
+			parseVersions: []envoy_v2.HTTPVersionType{envoy_v2.HTTPVersion1},
 		},
 		"http/1.1+http/2": {
 			versions:      []string{"http/1.1", "http/2"},
 			parseError:    nil,
-			parseVersions: []envoyv2.HTTPVersionType{envoyv2.HTTPVersion1, envoyv2.HTTPVersion2},
+			parseVersions: []envoy_v2.HTTPVersionType{envoy_v2.HTTPVersion1, envoy_v2.HTTPVersion2},
 		},
 		"http/1.1+http/2 duplicated": {
 			versions:      []string{"http/1.1", "http/2", "http/1.1", "http/2"},
 			parseError:    nil,
-			parseVersions: []envoyv2.HTTPVersionType{envoyv2.HTTPVersion1, envoyv2.HTTPVersion2},
+			parseVersions: []envoy_v2.HTTPVersionType{envoy_v2.HTTPVersion1, envoy_v2.HTTPVersion2},
 		},
 	}
 

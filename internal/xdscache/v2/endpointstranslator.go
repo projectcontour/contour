@@ -20,11 +20,11 @@ import (
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	resource2 "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
-	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
@@ -71,8 +71,8 @@ func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancin
 			sort.Slice(addresses, func(i, j int) bool { return addresses[i].IP < addresses[j].IP })
 
 			for _, a := range addresses {
-				addr := envoyv2.SocketAddress(a.IP, int(p.Port))
-				lb = append(lb, envoyv2.LBEndpoint(addr))
+				addr := envoy_v2.SocketAddress(a.IP, int(p.Port))
+				lb = append(lb, envoy_v2.LBEndpoint(addr))
 			}
 		}
 	}
@@ -122,7 +122,7 @@ func (c *EndpointsCache) Recalculate() map[string]*envoy_api_v2.ClusterLoadAssig
 		}
 
 		// Look up each service, and if we have endpoints for that service,
-		// attach them as a new LocalityEndpoints resource.
+		// attach them as a new LocalityEndpoints resource2.
 		for _, w := range cluster.Services {
 			n := types.NamespacedName{Namespace: w.ServiceNamespace, Name: w.ServiceName}
 			if lb := RecalculateEndpoints(w.ServicePort, c.endpoints[n]); lb != nil {
@@ -402,4 +402,4 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }
+func (*EndpointsTranslator) TypeURL() string { return resource2.EndpointType }

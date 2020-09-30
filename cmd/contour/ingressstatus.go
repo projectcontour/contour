@@ -18,7 +18,7 @@ import (
 	"strings"
 	"sync"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -99,7 +99,7 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 			// Create new informer for the new LoadBalancerStatus
 			factory := isw.clients.NewInformerFactory()
 			factory.ForResource(v1beta1.SchemeGroupVersion.WithResource("ingresses")).Informer().AddEventHandler(sau)
-			factory.ForResource(projcontour.HTTPProxyGVR).Informer().AddEventHandler(sau)
+			factory.ForResource(contour_api_v1.HTTPProxyGVR).Informer().AddEventHandler(sau)
 
 			shutdown = make(chan struct{})
 			ingressInformers.Add(1)
