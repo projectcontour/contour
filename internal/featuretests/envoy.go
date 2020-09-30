@@ -296,7 +296,7 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_liste
 		domain,
 		envoy_v2.DownstreamTLSContext(
 			&dag.Secret{Object: secret},
-			envoy_api_v2_auth.TlsParameters_TLSv1_1,
+			envoy_api_v2_auth.TlsParameters_TLSv1_2,
 			peerValidationContext,
 			alpn...),
 		envoy_v2.Filters(filter),

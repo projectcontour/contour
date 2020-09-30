@@ -249,8 +249,8 @@ See TLS Certificate Delegation below for more information.
 The TLS **Minimum Protocol Version** a vhost should negotiate can be specified by setting the `spec.virtualhost.tls.minimumProtocolVersion`:
 
 - 1.3
-- 1.2
-- 1.1 (Default)
+- 1.2  (Default)
+- 1.1
 
 ##### Fallback Certificate
 

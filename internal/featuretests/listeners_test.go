@@ -310,7 +310,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				Fqdn: "kuard.example.com",
 				TLS: &contour_api_v1.TLS{
 					SecretName:             secret1.Name,
-					MinimumProtocolVersion: "1.1",
+					MinimumProtocolVersion: "1.2",
 				},
 			},
 			Routes: []contour_api_v1.Route{{

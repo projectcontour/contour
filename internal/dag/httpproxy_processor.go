@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strings"
 
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
@@ -180,7 +181,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 			svhost := p.dag.EnsureSecureVirtualHost(host)
 			svhost.Secret = sec
-			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion)
+			// default to a minimum TLS version of 1.2 if it's not specified
+			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion, envoy_api_v2_auth.TlsParameters_TLSv1_2)
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
