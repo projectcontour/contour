@@ -328,7 +328,7 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 				svc.Namespace+"/"+svc.Name+"/443/da39a3ee5e",
 				svc.Namespace+"/"+svc.Name+"/https",
 				svc.Namespace+"_"+svc.Name+"_443",
-			), nil, "", ""),
+			), nil, "", "", nil),
 		),
 		TypeUrl: clusterType,
 	})

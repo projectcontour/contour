@@ -93,6 +93,20 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
+	clientSecret := &dag.Secret{
+		Object: &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "clientcertsecret",
+				Namespace: "default",
+			},
+			Type: v1.SecretTypeTLS,
+			Data: map[string][]byte{
+				v1.TLSCertKey:       []byte("cert"),
+				v1.TLSPrivateKeyKey: []byte("key"),
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		cluster *dag.Cluster
 		want    *v2.Cluster
@@ -141,7 +155,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "", "h2"),
+					UpstreamTLSContext(nil, "", nil, "h2"),
 				),
 				Http2ProtocolOptions: &envoy_api_v2_core.Http2ProtocolOptions{},
 			},
@@ -223,7 +237,7 @@ func TestCluster(t *testing.T) {
 					ServiceName: "default/kuard/http",
 				},
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, ""),
+					UpstreamTLSContext(nil, "", nil),
 				),
 			},
 		},
@@ -239,7 +253,7 @@ func TestCluster(t *testing.T) {
 				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_STRICT_DNS),
 				LoadAssignment:       StaticClusterLoadAssignment(service(svcExternal, "tls")),
 				TransportSocket: UpstreamTLSTransportSocket(
-					UpstreamTLSContext(nil, "projectcontour.local"),
+					UpstreamTLSContext(nil, "projectcontour.local", nil),
 				),
 			},
 		},
@@ -266,7 +280,8 @@ func TestCluster(t *testing.T) {
 							CACertificate: secret,
 							SubjectName:   "foo.bar.io",
 						},
-						""),
+						"",
+						nil),
 				),
 			},
 		},
@@ -453,6 +468,25 @@ func TestCluster(t *testing.T) {
 						TcpHealthCheck: &envoy_api_v2_core.HealthCheck_TcpHealthCheck{},
 					},
 				}},
+			},
+		},
+		"use client certificate to authentication towards backend": {
+			cluster: &dag.Cluster{
+				Upstream:          service(s1, "tls"),
+				Protocol:          "tls",
+				ClientCertificate: clientSecret,
+			},
+			want: &v2.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(v2.Cluster_EDS),
+				EdsClusterConfig: &v2.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				TransportSocket: UpstreamTLSTransportSocket(
+					UpstreamTLSContext(nil, "", clientSecret),
+				),
 			},
 		},
 	}

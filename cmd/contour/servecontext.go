@@ -208,7 +208,11 @@ type TLSConfig struct {
 
 	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
 	// use as fallback when a non-SNI request is received.
-	FallbackCertificate FallbackCertificate `yaml:"fallback-certificate,omitempty"`
+	FallbackCertificate NamespacedName `yaml:"fallback-certificate,omitempty"`
+
+	// ClientCertificate defines the namespace/name of Kubernetes secret containing client
+	// certificate andprivate key to be used when establishing TLS connection to upstream cluster.
+	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
 }
 
 type ServerConfig struct {
@@ -222,32 +226,40 @@ type ServerConfig struct {
 	XDSServerType string `yaml:"xds-server-type,omitempty"`
 }
 
-// FallbackCertificate defines the namespace/name of the Kubernetes secret to
-// use as fallback when a non-SNI request is received.
-type FallbackCertificate struct {
+// NamespacedName defines the namespace/name of the Kubernetes resource referred from the configuration file.
+// Used for Contour configuration YAML file parsing, otherwise we could use K8s types.NamespacedName.
+type NamespacedName struct {
 	Name      string `yaml:"name"`
 	Namespace string `yaml:"namespace"`
 }
 
-func (ctx *serveContext) fallbackCertificate() (*types.NamespacedName, error) {
-	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Name)) == 0 && len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Namespace)) == 0 {
+func namespacedName(name NamespacedName) (*types.NamespacedName, error) {
+	if len(strings.TrimSpace(name.Name)) == 0 && len(strings.TrimSpace(name.Namespace)) == 0 {
 		return nil, nil
 	}
 
 	// Validate namespace is defined
-	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Namespace)) == 0 {
+	if len(strings.TrimSpace(name.Namespace)) == 0 {
 		return nil, errors.New("namespace must be defined")
 	}
 
 	// Validate name is defined
-	if len(strings.TrimSpace(ctx.TLSConfig.FallbackCertificate.Name)) == 0 {
+	if len(strings.TrimSpace(name.Name)) == 0 {
 		return nil, errors.New("name must be defined")
 	}
 
 	return &types.NamespacedName{
-		Name:      ctx.TLSConfig.FallbackCertificate.Name,
-		Namespace: ctx.TLSConfig.FallbackCertificate.Namespace,
+		Name:      name.Name,
+		Namespace: name.Namespace,
 	}, nil
+}
+
+func (ctx *serveContext) fallbackCertificate() (*types.NamespacedName, error) {
+	return namespacedName(ctx.TLSConfig.FallbackCertificate)
+}
+
+func (ctx *serveContext) envoyClientCertificate() (*types.NamespacedName, error) {
+	return namespacedName(ctx.TLSConfig.ClientCertificate)
 }
 
 // LeaderElectionConfig holds the config bits for leader election inside the

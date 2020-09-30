@@ -206,7 +206,7 @@ func TestExternalNameService(t *testing.T) {
 				},
 				&envoy_api_v2.Cluster{
 					TransportSocket: envoyv2.UpstreamTLSTransportSocket(
-						envoyv2.UpstreamTLSContext(nil, "external.address", "h2"),
+						envoyv2.UpstreamTLSContext(nil, "external.address", nil, "h2"),
 					),
 				},
 			),
@@ -258,7 +258,7 @@ func TestExternalNameService(t *testing.T) {
 				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&envoy_api_v2.Cluster{
 					TransportSocket: envoyv2.UpstreamTLSTransportSocket(
-						envoyv2.UpstreamTLSContext(nil, "external.address"),
+						envoyv2.UpstreamTLSContext(nil, "external.address", nil),
 					),
 				},
 			),

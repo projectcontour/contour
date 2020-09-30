@@ -532,6 +532,10 @@ type Cluster struct {
 	// in the IPv4 family.
 	// Note: This only applies to externalName clusters.
 	DNSLookupFamily string
+
+	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
+	// private key to be used when establishing TLS connection to upstream cluster.
+	ClientCertificate *Secret
 }
 
 func (c Cluster) Visit(f func(Vertex)) {
@@ -707,6 +711,10 @@ type ExtensionCluster struct {
 
 	// SNI is used when a route proxies an upstream using TLS.
 	SNI string
+
+	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
+	// private key to be used when establishing TLS connection to upstream cluster.
+	ClientCertificate *Secret
 }
 
 // Visit processes extension clusters.

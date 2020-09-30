@@ -80,6 +80,7 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 			UpstreamTLSContext(
 				c.UpstreamValidation,
 				c.SNI,
+				c.ClientCertificate,
 			),
 		)
 	case "h2":
@@ -88,6 +89,7 @@ func Cluster(c *dag.Cluster) *v2.Cluster {
 			UpstreamTLSContext(
 				c.UpstreamValidation,
 				c.SNI,
+				c.ClientCertificate,
 				"h2",
 			),
 		)
@@ -132,6 +134,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *v2.Cluster {
 			UpstreamTLSContext(
 				ext.UpstreamValidation,
 				ext.SNI,
+				ext.ClientCertificate,
 				"h2",
 			),
 		)

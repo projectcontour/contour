@@ -30,6 +30,10 @@ type IngressProcessor struct {
 
 	dag    *DAG
 	source *KubernetesCache
+
+	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
+	// private key to be used when establishing TLS connection to upstream cluster.
+	ClientCertificate *types.NamespacedName
 }
 
 // Run translates Ingresses into DAG objects and
@@ -111,6 +115,21 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 		// if host name is blank, rewrite to Envoy's * default host.
 		host = "*"
 	}
+
+	var clientCertSecret *Secret
+	var err error
+	if p.ClientCertificate != nil {
+		clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validSecret)
+		if err != nil {
+			p.WithError(err).
+				WithField("name", ing.GetName()).
+				WithField("namespace", ing.GetNamespace()).
+				WithField("secret", clientCertSecret).
+				Error("tls.envoy-client-certificate contains unresolved secret reference")
+			return
+		}
+	}
+
 	for _, httppath := range httppaths(rule) {
 		path := stringOrDefault(httppath.Path, "/")
 		be := httppath.Backend
@@ -120,7 +139,7 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 			continue
 		}
 
-		r := route(ing, path, s, p.FieldLogger)
+		r := route(ing, path, s, clientCertSecret, p.FieldLogger)
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
@@ -138,7 +157,7 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 }
 
 // route builds a dag.Route for the supplied Ingress.
-func route(ingress *v1beta1.Ingress, path string, service *Service, log logrus.FieldLogger) *Route {
+func route(ingress *v1beta1.Ingress, path string, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) *Route {
 	log = log.WithFields(logrus.Fields{
 		"name":      ingress.Name,
 		"namespace": ingress.Namespace,
@@ -150,8 +169,9 @@ func route(ingress *v1beta1.Ingress, path string, service *Service, log logrus.F
 		TimeoutPolicy: ingressTimeoutPolicy(ingress, log),
 		RetryPolicy:   ingressRetryPolicy(ingress, log),
 		Clusters: []*Cluster{{
-			Upstream: service,
-			Protocol: service.Protocol,
+			Upstream:          service,
+			Protocol:          service.Protocol,
+			ClientCertificate: clientCertSecret,
 		}},
 	}
 

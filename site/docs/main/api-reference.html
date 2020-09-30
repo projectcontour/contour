@@ -705,12 +705,21 @@ of the condition.</p>
 <p><code>errors</code> holds information about sub-conditions which are fatal to that condition and render its state False.</p>
 <p><code>warnings</code> holds information about sub-conditions which are not fatal to that condition and do not force the state to be False.</p>
 <p>Remember that Conditions have a type, a status, and a reason.</p>
-<p>The type is the type of the condition, the most important one in this CRD set is <code>Valid</code>.</p>
-<p>In the case of <code>Valid</code>, <code>status: true</code> means that the object is has been ingested into Contour with no errors.
-<code>warnings</code> may still be present, and will be indicated in the Reason field.</p>
+<p>The type is the type of the condition, the most important one in this CRD set is <code>Valid</code>.
+<code>Valid</code> is a positive-polarity condition: when it is <code>status: true</code> there are no problems.</p>
+<p>In more detail, <code>status: true</code> means that the object is has been ingested into Contour with no errors.
+<code>warnings</code> may still be present, and will be indicated in the Reason field. There must be zero entries in the <code>errors</code>
+slice in this case.</p>
 <p><code>Valid</code>, <code>status: false</code> means that the object has had one or more fatal errors during processing into Contour.
-The details of the errors will be present under the <code>errors</code> field.</p>
-<p>There should never be subconditions under <code>errors</code> when <code>status</code> is <code>true</code>.</p>
+The details of the errors will be present under the <code>errors</code> field. There must be at least one error in the <code>errors</code>
+slice if <code>status</code> is <code>false</code>.</p>
+<p>For DetailedConditions of types other than <code>Valid</code>, the Condition must be in the negative polarity.
+When they have <code>status</code> <code>true</code>, there is an error. There must be at least one entry in the <code>errors</code> Subcondition slice.
+When they have <code>status</code> <code>false</code>, there are no serious errors, and there must be zero entries in the <code>errors</code> slice.
+In either case, there may be entries in the <code>warnings</code> slice.</p>
+<p>Regardless of the polarity, the <code>reason</code> and <code>message</code> fields must be updated with either the detail of the reason
+(if there is one and only one entry in total across both the <code>errors</code> and <code>warnings</code> slices), or
+<code>MultipleReasons</code> if there is more than one entry.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">

@@ -213,7 +213,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(externalNameCluster("default/externalname/443/da39a3ee5e", "default/externalname/https", "default_externalname_443", "goodbye.planet", 443), nil, "goodbye.planet", "goodbye.planet"),
+			tlsCluster(externalNameCluster("default/externalname/443/da39a3ee5e", "default/externalname/https", "default_externalname_443", "goodbye.planet", 443), nil, "goodbye.planet", "goodbye.planet", nil),
 		),
 		TypeUrl: clusterType,
 	})

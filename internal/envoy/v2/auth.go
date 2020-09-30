@@ -25,10 +25,19 @@ import (
 // UpstreamTLSContext creates an envoy_api_v2_auth.UpstreamTlsContext. By default
 // UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
 // additional ALPN protocols can be provided.
-func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni string, alpnProtocols ...string) *envoy_api_v2_auth.UpstreamTlsContext {
+func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni string, clientSecret *dag.Secret, alpnProtocols ...string) *envoy_api_v2_auth.UpstreamTlsContext {
+	var clientSecretConfigs []*envoy_api_v2_auth.SdsSecretConfig
+	if clientSecret != nil {
+		clientSecretConfigs = []*envoy_api_v2_auth.SdsSecretConfig{{
+			Name:      envoy.Secretname(clientSecret),
+			SdsConfig: ConfigSource("contour"),
+		}}
+	}
+
 	context := &envoy_api_v2_auth.UpstreamTlsContext{
 		CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
-			AlpnProtocols: alpnProtocols,
+			AlpnProtocols:                  alpnProtocols,
+			TlsCertificateSdsSecretConfigs: clientSecretConfigs,
 		},
 		Sni: sni,
 	}

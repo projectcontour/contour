@@ -79,14 +79,24 @@ type SubCondition struct {
 // Remember that Conditions have a type, a status, and a reason.
 //
 // The type is the type of the condition, the most important one in this CRD set is `Valid`.
+// `Valid` is a positive-polarity condition: when it is `status: true` there are no problems.
 //
-// In the case of `Valid`, `status: true` means that the object is has been ingested into Contour with no errors.
-// `warnings` may still be present, and will be indicated in the Reason field.
+// In more detail, `status: true` means that the object is has been ingested into Contour with no errors.
+// `warnings` may still be present, and will be indicated in the Reason field. There must be zero entries in the `errors`
+// slice in this case.
 //
 // `Valid`, `status: false` means that the object has had one or more fatal errors during processing into Contour.
-//  The details of the errors will be present under the `errors` field.
+//  The details of the errors will be present under the `errors` field. There must be at least one error in the `errors`
+// slice if `status` is `false`.
 //
-// There should never be subconditions under `errors` when `status` is `true`.
+// For DetailedConditions of types other than `Valid`, the Condition must be in the negative polarity.
+// When they have `status` `true`, there is an error. There must be at least one entry in the `errors` Subcondition slice.
+// When they have `status` `false`, there are no serious errors, and there must be zero entries in the `errors` slice.
+// In either case, there may be entries in the `warnings` slice.
+//
+// Regardless of the polarity, the `reason` and `message` fields must be updated with either the detail of the reason
+// (if there is one and only one entry in total across both the `errors` and `warnings` slices), or
+// `MultipleReasons` if there is more than one entry.
 type DetailedCondition struct {
 	Condition `json:",inline"`
 	// Errors contains a slice of relevant error subconditions for this object.
@@ -102,3 +112,5 @@ type DetailedCondition struct {
 	// +optional
 	Warnings []SubCondition `json:"warnings,omitempty"`
 }
+
+const ValidConditionType string = "Valid"

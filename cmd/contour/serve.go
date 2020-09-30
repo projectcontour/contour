@@ -24,6 +24,7 @@ import (
 	"syscall"
 	"time"
 
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -178,6 +179,13 @@ func validateCRDs(dynamicClient dynamic.Interface, log logrus.FieldLogger) {
 
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
+	// log a warning if the Contour config file doesn't already disable TLS 1.1 and 1.0.
+	if annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion) <= envoy_api_v2_auth.TlsParameters_TLSv1_1 {
+		log.Warn("In Contour 1.10, TLS 1.1 will be disabled by default. HTTPProxies with no Spec.VirtualHost.TLS.MinimumProtocolVersion" +
+			" and Ingresses without the projectcontour.io/tls-minimum-protocol-version annotation will default to TLS 1.2. If TLS 1.1" +
+			" is required for any of your HTTPProxies or Ingresses going forward, you must explicitly specify 1.1, though we recommend" +
+			" against continuing to use TLS 1.1 as it's end-of-life.")
+	}
 
 	// Establish k8s core & dynamic client connections.
 	clients, err := k8s.NewClients(ctx.Kubeconfig, ctx.InCluster)
@@ -194,10 +202,16 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Factories for per-namespace informers.
 	namespacedInformerFactories := map[string]k8s.InformerFactory{}
 
-	// Validate fallback certificate parameters
+	// Validate fallback certificate parameters.
 	fallbackCert, err := ctx.fallbackCertificate()
 	if err != nil {
 		log.WithField("context", "fallback-certificate").Fatalf("invalid fallback certificate configuration: %q", err)
+	}
+
+	// Validate client certificate parameters.
+	clientCert, err := ctx.envoyClientCertificate()
+	if err != nil {
+		log.WithField("context", "envoy-client-certificate").Fatalf("invalid client certificate configuration: %q", err)
 	}
 
 	if rootNamespaces := ctx.proxyRootNamespaces(); len(rootNamespaces) > 0 {
@@ -205,6 +219,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		if !contains(rootNamespaces, ctx.TLSConfig.FallbackCertificate.Namespace) && fallbackCert != nil {
 			rootNamespaces = append(rootNamespaces, ctx.FallbackCertificate.Namespace)
 			log.WithField("context", "fallback-certificate").Infof("fallback certificate namespace %q not defined in 'root-namespaces', adding namespace to watch", ctx.FallbackCertificate.Namespace)
+		}
+
+		if !contains(rootNamespaces, ctx.TLSConfig.ClientCertificate.Namespace) && clientCert != nil {
+			rootNamespaces = append(rootNamespaces, ctx.ClientCertificate.Namespace)
+			log.WithField("context", "envoy-client-certificate").Infof("client certificate namespace %q not defined in 'root-namespaces', adding namespace to watch", ctx.ClientCertificate.Namespace)
 		}
 
 		for _, ns := range rootNamespaces {
@@ -316,15 +335,18 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			},
 			Processors: []dag.Processor{
 				&dag.IngressProcessor{
-					FieldLogger: log.WithField("context", "IngressProcessor"),
+					FieldLogger:       log.WithField("context", "IngressProcessor"),
+					ClientCertificate: clientCert,
 				},
 				&dag.ExtensionServiceProcessor{
-					FieldLogger: log.WithField("context", "ExtensionServiceProcessor"),
+					FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
+					ClientCertificate: clientCert,
 				},
 				&dag.HTTPProxyProcessor{
 					DisablePermitInsecure: ctx.DisablePermitInsecure,
 					FallbackCertificate:   fallbackCert,
 					DNSLookupFamily:       dnsLookupFamily,
+					ClientCertificate:     clientCert,
 				},
 				&dag.ListenerProcessor{},
 			},
@@ -335,6 +357,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Log that we're using the fallback certificate if configured.
 	if fallbackCert != nil {
 		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
+	}
+
+	if clientCert != nil {
+		log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", clientCert)
 	}
 
 	// Wrap eventHandler in a converter for objects from the dynamic client.

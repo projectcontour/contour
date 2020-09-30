@@ -27,6 +27,10 @@ import (
 
 type ExtensionServiceProcessor struct {
 	logrus.FieldLogger
+
+	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
+	// private key to be used when establishing TLS connection to upstream cluster.
+	ClientCertificate *types.NamespacedName
 }
 
 var _ Processor = &ExtensionServiceProcessor{}
@@ -66,6 +70,15 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		return nil
 	}
 
+	var clientCertSecret *Secret
+	if p.ClientCertificate != nil {
+		clientCertSecret, err = cache.LookupSecret(*p.ClientCertificate, validSecret)
+		if err != nil {
+			p.WithError(err).Errorf("tls.envoy-client-certificate Secret %q is invalid", p.ClientCertificate)
+			return nil
+		}
+	}
+
 	extension := ExtensionCluster{
 		Name: extensionClusterName(k8s.NamespacedNameOf(ext)),
 		Upstream: ServiceCluster{
@@ -79,6 +92,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		LoadBalancerPolicy: loadBalancerPolicy(ext.Spec.LoadBalancerPolicy),
 		TimeoutPolicy:      tp,
 		SNI:                "",
+		ClientCertificate:  clientCertSecret,
 	}
 
 	// Timeouts are specified above the cluster (e.g.

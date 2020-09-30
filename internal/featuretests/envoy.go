@@ -135,7 +135,12 @@ func cluster(name, servicename, statName string) *envoy_api_v2.Cluster {
 	})
 }
 
-func tlsCluster(c *envoy_api_v2.Cluster, ca []byte, subjectName string, sni string, alpnProtocols ...string) *envoy_api_v2.Cluster {
+func tlsCluster(c *envoy_api_v2.Cluster, ca []byte, subjectName string, sni string, clientSecret *v1.Secret, alpnProtocols ...string) *envoy_api_v2.Cluster {
+	var secret *dag.Secret
+	if clientSecret != nil {
+		secret = &dag.Secret{Object: clientSecret}
+	}
+
 	c.TransportSocket = envoyv2.UpstreamTLSTransportSocket(
 		envoyv2.UpstreamTLSContext(
 			&dag.PeerValidationContext{
@@ -149,6 +154,24 @@ func tlsCluster(c *envoy_api_v2.Cluster, ca []byte, subjectName string, sni stri
 				}},
 				SubjectName: subjectName},
 			sni,
+			secret,
+			alpnProtocols...,
+		),
+	)
+	return c
+}
+
+func tlsClusterWithoutValidation(c *envoy_api_v2.Cluster, sni string, clientSecret *v1.Secret, alpnProtocols ...string) *envoy_api_v2.Cluster {
+	var secret *dag.Secret
+	if clientSecret != nil {
+		secret = &dag.Secret{Object: clientSecret}
+	}
+
+	c.TransportSocket = envoyv2.UpstreamTLSTransportSocket(
+		envoyv2.UpstreamTLSContext(
+			nil,
+			sni,
+			secret,
 			alpnProtocols...,
 		),
 	)

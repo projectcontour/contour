@@ -254,7 +254,7 @@ The TLS **Minimum Protocol Version** a vhost should negotiate can be specified b
 
 ##### Fallback Certificate
 
-Contour provides virtual host based routing, so that any TLS request is routed to the appropriate service based on both the server name requested by the TLS client and the HOST header in the HTTP request. 
+Contour provides virtual host based routing, so that any TLS request is routed to the appropriate service based on both the server name requested by the TLS client and the HOST header in the HTTP request.
 
 As the HOST Header is encrypted during TLS handshake, it can’t be used for virtual host based routing unless the client sends HTTPS requests specifying hostname using the TLS server name, or the request is first decrypted using a default TLS certificate.
 
@@ -348,6 +348,12 @@ spec:
     app: secure-backend
 
 ```
+
+##### Envoy Client Certificate
+
+Contour can be configured with a `namespace/name` in the [Contour configuration file][11] of a Kubernetes secret which Envoy uses as a client certificate when upstream TLS is configured for the backend.
+Envoy will send the certificate during TLS handshake when the backend applications request the client to present its certificate.
+Backend applications can validate the certificate to ensure that the connection is coming from Envoy.
 
 ##### Error conditions
 
@@ -1417,4 +1423,3 @@ Some examples of invalid configurations that Contour provides statuses for:
  [10]: /docs/{{site.latest}}/api/#projectcontour.io/v1.Service
  [11]: configuration.md#fallback-certificate
  [12]: {{site.github.repository_url}}/tree/{{page.version}}/examples/root-rbac
-
