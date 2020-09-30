@@ -25,7 +25,6 @@ Where Contour settings can also be specified with command-line flags, the comman
 | json-fields | string array | [fields][5]| This is the list the field names to include in the JSON [access log format][2]. |
 | kubeconfig | string | `$HOME/.kube/config` | Path to a Kubernetes [kubeconfig file][3] for when Contour is executed outside a cluster. |
 | leaderelection | leaderelection | | The [leader election configuration](#leader-election-configuration). |
-| request-timeout | [duration][4] | `0s` | **Deprecated and will be removed in a future release. Use [timeouts.request-timeout](#timeout-configuration) instead.**<br /><br /> This field specifies the default request timeout as a Go duration string. Zero means there is no timeout. |
 | tls | TLS | | The default [TLS configuration](#tls-configuration). |
 | timeouts | TimeoutConfig | | The [timeout configuration](#timeout-configuration). |
 | cluster | ClusterConfig | | The [cluster configuration](#cluster-configuration). |

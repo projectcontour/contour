@@ -119,12 +119,6 @@ type serveContext struct {
 	// be set in the config file.
 	TimeoutConfig `yaml:"timeouts,omitempty"`
 
-	// RequestTimeoutDeprecated sets the client request timeout globally for Contour.
-	//
-	// Deprecated: this field has been replaced with TimeoutConfig.RequestTimeout,
-	// and will be removed in a future release.
-	RequestTimeoutDeprecated time.Duration `yaml:"request-timeout,omitempty"`
-
 	// Should Contour register to watch the new service-apis types?
 	// By default this value is false, meaning Contour will not do anything with any of the new
 	// types.
