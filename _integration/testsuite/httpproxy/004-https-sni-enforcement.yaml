@@ -105,42 +105,25 @@ spec:
 
 ---
 
-fqdn := "echo-one.projectcontour.io"
-
-default proxy_is_present = false
-proxy_is_present {
-  data.resources.httpproxies["echo-one"]
-}
+import data.contour.resources
 
 fatal_proxy_is_not_present[msg] {
-  not proxy_is_present
-  msg := sprintf("HTTPProxy for %q is not present", [ fqdn ])
+  not resources.is_present("httpproxies", "echo-one")
+  msg := sprintf("HTTPProxy %q is not present", [ "echo-one" ])
 }
 
 ---
 
-Name := "echo-one"
-
-default proxy_is_valid = false
-proxy_is_valid {
-  proxy := data.resources.httpproxies[Name]
-  proxy.status.currentStatus == "valid"
-}
+import data.contour.resources
 
 fatal_proxy_is_not_valid[msg] {
-  not proxy_is_valid
-  msg := "Invalid proxy"
-}
+  status := resources.status("httpproxies", "echo-one")
+  resultStatus := object.get(status, "currentStatus", "not-present")
 
-fatal_proxy_is_not_valid[msg] {
-  proxy := data.resources.httpproxies[Name]
-  fqdn := proxy.spec.virtualhost.fqdn
-  status := proxy.status
+  not resultStatus == "valid"
 
-  status.currentStatus != "valid"
-
-  msg := sprintf("HTTP proxy for '%s' is not valid\n%s", [
-    fqdn, yaml.marshal(status)
+  msg := sprintf("HTTP proxy %q status is %q\n%s", [
+    "echo-one", resultStatus, yaml.marshal(status)
   ])
 }
 
@@ -208,7 +191,7 @@ metadata:
   name: echo-two-cert
 spec:
   dnsNames:
-  - echo-two.jpeach.org
+  - echo-two.projectcontour.io
   secretName: echo-two
   issuerRef:
     name: selfsigned
@@ -231,42 +214,25 @@ spec:
 
 ---
 
-fqdn := "echo-two.projectcontour.io"
-
-default proxy_is_present = false
-proxy_is_present {
-  data.resources.httpproxies["echo-two"]
-}
+import data.contour.resources
 
 fatal_proxy_is_not_present[msg] {
-  not proxy_is_present
-  msg := sprintf("HTTPProxy for %q is not present", [ fqdn ])
+  not resources.is_present("httpproxies", "echo-two")
+  msg := sprintf("HTTPProxy %q is not present", [ "echo-two" ])
 }
 
 ---
 
-Name := "echo-two"
-
-default proxy_is_valid = false
-proxy_is_valid {
-  proxy := data.resources.httpproxies[Name]
-  proxy.status.currentStatus == "valid"
-}
+import data.contour.resources
 
 fatal_proxy_is_not_valid[msg] {
-  not proxy_is_valid
-  msg := "Invalid proxy"
-}
+  status := resources.status("httpproxies", "echo-two")
+  resultStatus := object.get(status, "currentStatus", "not-present")
 
-fatal_proxy_is_not_valid[msg] {
-  proxy := data.resources.httpproxies[Name]
-  fqdn := proxy.spec.virtualhost.fqdn
-  status := proxy.status
+  not resultStatus == "valid"
 
-  not proxy_is_valid
-
-  msg := sprintf("HTTP proxy for '%s' is not valid\n%s", [
-    fqdn, yaml.marshal(status)
+  msg := sprintf("HTTP proxy %q status is %q\n%s", [
+    "echo-two", resultStatus, yaml.marshal(status)
   ])
 }
 
