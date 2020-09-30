@@ -48,12 +48,10 @@ yaml=${yaml##$(dirname "${REPO}")}
 token=$(path::absolute "${TOKEN}")
 token=${token##$(dirname "${REPO}")}
 
-labelsync \
-    --debug \
-    --confirm \
-    --orgs projectcontour \
-    --skip projectcontour/toc \
-    --config "${yaml}" \
-    --token "${token}"
+labelsync bazel run //label_sync -- \
+  --config $(pwd)/label_sync/labels.yaml \
+  --token /path/to/github_oauth_token \
+  --orgs kubernetes \
+  --skip kubernetes/helm
 
 # TODO(jpeach): add the -confirm flag to enable changes.
