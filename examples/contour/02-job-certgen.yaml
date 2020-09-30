@@ -36,7 +36,7 @@ rules:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: contour-certgen-v1.8.1
+  name: contour-certgen-v1.8.2
   namespace: projectcontour
 spec:
   ttlSecondsAfterFinished: 0
