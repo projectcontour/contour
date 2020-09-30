@@ -54,3 +54,73 @@ spec:
   selector:
     app.kubernetes.io/name: *name
 
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &name ingress-conformance-echo-tls
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: *name
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: *name
+    spec:
+      containers:
+      - name: conformance-echo
+        image: tsaarni/echoserver:latest
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: TLS_SERVER_CERT
+          value: /run/secrets/certs/tls.crt
+        - name: TLS_SERVER_PRIVKEY
+          value: /run/secrets/certs/tls.key
+        - name: TLS_CLIENT_CACERTS
+          value: /run/secrets/certs/ca.crt
+        ports:
+        - name: http-api
+          containerPort: 3000
+        - name: https-api
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+        volumeMounts:
+          - mountPath: /run/secrets/certs/
+            name: backend-server-cert
+            readOnly: true
+      volumes:
+      - name: backend-server-cert
+        secret:
+          secretName: backend-server-cert
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: &name ingress-conformance-echo-tls
+  annotations:
+    projectcontour.io/upstream-protocol.tls: "443"
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: http-api
+  - name: https
+    port: 443
+    targetPort: https-api
+  selector:
+    app.kubernetes.io/name: *name
