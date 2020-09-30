@@ -42,6 +42,7 @@ Contour should provision TLS hosts.
 |------------|-----|----------|-------------|
 | minimum-protocol-version| string | `""` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.2` and `1.3`. Any other value defaults to TLS 1.1. |
 | fallback-certificate | | | [Fallback certificate configuration](#fallback-certificate). |
+| envoy-client-certificate | | | [Client certificate configuration for Envoy](#envoy-client-certificate). |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -51,6 +52,15 @@ Contour should provision TLS hosts.
 |------------|-----|----------|-------------|
 | name       | string | `""` | This field specifies the name of the Kubernetes secret to use as the fallback certificate.      |
 | namespace  | string | `""` | This field specifies the namespace of the Kubernetes secret to use as the fallback certificate. |
+{: class="table thead-dark table-bordered"}
+<br>
+
+### Envoy Client Certificate
+
+| Field Name | Type| Default  | Description |
+|------------|-----|----------|-------------|
+| name       | string | `""` | This field specifies the name of the Kubernetes secret to use as the client certificate and private key when establishing TLS connections to the backend service. |
+| namespace  | string | `""` | This field specifies the namespace of the Kubernetes secret to use as the client certificate and private key when establishing TLS connections to the backend service. |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -134,6 +144,9 @@ data:
       # minimumProtocolVersion: "1.1"
       fallback-certificate:
       # name: fallback-secret-name
+      # namespace: projectcontour
+      envoy-client-certificate:
+      # name: envoy-client-cert-secret-name
       # namespace: projectcontour
     # The following config shows the defaults for the leader election.
     # leaderelection:

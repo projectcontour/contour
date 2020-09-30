@@ -32,6 +32,7 @@ import (
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/types"
@@ -233,7 +234,7 @@ func TestFallbackCertificateParams(t *testing.T) {
 		"fallback cert params passed correctly": {
 			ctx: serveContext{
 				TLSConfig: TLSConfig{
-					FallbackCertificate: FallbackCertificate{
+					FallbackCertificate: NamespacedName{
 						Name:      "fallbacksecret",
 						Namespace: "root-namespace",
 					},
@@ -248,7 +249,7 @@ func TestFallbackCertificateParams(t *testing.T) {
 		"missing namespace": {
 			ctx: serveContext{
 				TLSConfig: TLSConfig{
-					FallbackCertificate: FallbackCertificate{
+					FallbackCertificate: NamespacedName{
 						Name: "fallbacksecret",
 					},
 				},
@@ -259,7 +260,7 @@ func TestFallbackCertificateParams(t *testing.T) {
 		"missing name": {
 			ctx: serveContext{
 				TLSConfig: TLSConfig{
-					FallbackCertificate: FallbackCertificate{
+					FallbackCertificate: NamespacedName{
 						Namespace: "root-namespace",
 					},
 				},
@@ -285,6 +286,70 @@ func TestFallbackCertificateParams(t *testing.T) {
 			goterror := err != nil
 			if goterror != tc.expecterror {
 				t.Errorf("Expected Fallback Certificate error: %s", err)
+			}
+		})
+	}
+}
+
+func TestEnvoyClientCertificate(t *testing.T) {
+	tests := map[string]struct {
+		ctx         serveContext
+		want        *types.NamespacedName
+		expecterror bool
+	}{
+		"envoy client cert params passed correctly": {
+			ctx: serveContext{
+				TLSConfig: TLSConfig{
+					ClientCertificate: NamespacedName{
+						Name:      "envoysecret",
+						Namespace: "root-namespace",
+					},
+				},
+			},
+			want: &types.NamespacedName{
+				Name:      "envoysecret",
+				Namespace: "root-namespace",
+			},
+			expecterror: false,
+		},
+		"missing namespace": {
+			ctx: serveContext{
+				TLSConfig: TLSConfig{
+					ClientCertificate: NamespacedName{
+						Name: "envoysecret",
+					},
+				},
+			},
+			want:        nil,
+			expecterror: true,
+		},
+		"missing name": {
+			ctx: serveContext{
+				TLSConfig: TLSConfig{
+					ClientCertificate: NamespacedName{
+						Namespace: "root-namespace",
+					},
+				},
+			},
+			want:        nil,
+			expecterror: true,
+		},
+		"envoy client cert not defined": {
+			ctx:         serveContext{},
+			want:        nil,
+			expecterror: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := tc.ctx.envoyClientCertificate()
+
+			require.Equal(t, tc.want, got)
+
+			goterror := err != nil
+			if goterror != tc.expecterror {
+				t.Errorf("Expected Envoy Client Certificate error: %s", err)
 			}
 		})
 	}

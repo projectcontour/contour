@@ -63,6 +63,10 @@ type HTTPProxyProcessor struct {
 	// in the IPv4 family.
 	// Note: This only applies to externalName clusters.
 	DNSLookupFamily string
+
+	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
+	// private key to be used when establishing TLS connection to upstream cluster.
+	ClientCertificate *types.NamespacedName
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -495,6 +499,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				return nil
 			}
 
+			var clientCertSecret *Secret
+			if p.ClientCertificate != nil {
+				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validSecret)
+				if err != nil {
+					sw.SetInvalid("tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
+					return nil
+				}
+			}
+
 			c := &Cluster{
 				Upstream:              s,
 				LoadBalancerPolicy:    loadBalancerPolicy(route.LoadBalancerPolicy),
@@ -506,6 +519,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				Protocol:              protocol,
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
 				DNSLookupFamily:       p.DNSLookupFamily,
+				ClientCertificate:     clientCertSecret,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				sw.SetInvalid("only one service per route may be nominated as mirror")
