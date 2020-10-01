@@ -616,7 +616,7 @@ func TestDAGStatus(t *testing.T) {
 				WithGeneration(proxyIncludesProxyWithIncludeCycle.Generation).Valid(),
 			{Name: proxyIncludedChildInvalidIncludeCycle.Name, Namespace: proxyIncludedChildInvalidIncludeCycle.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyIncludedChildInvalidIncludeCycle.Generation).
-				WithError("IncludeError", "IncludeCreatesCycle", "include creates a delegation cycle: roots/parent -> roots/child -> roots/child"),
+				WithError("IncludeError", "IncludeCreatesCycle", "include creates an include cycle: roots/parent -> roots/child -> roots/child"),
 		},
 	})
 
@@ -1225,12 +1225,6 @@ func TestDAGStatus(t *testing.T) {
 			{Name: proxyInvalidMultiplePrefixes.Name, Namespace: proxyInvalidMultiplePrefixes.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidMultiplePrefixes.Generation).
 				WithError("RouteError", "PathMatchConditionsNotValid", "route: more than one prefix is not allowed in a condition block"),
-			// {
-			// 	Object:      proxyInvalidMultiplePrefixes,
-			// 	Status:      "invalid",
-			// 	Description: "route: more than one prefix is not allowed in a condition block",
-			// 	Vhost:       "example.com",
-			// },
 		},
 	})
 

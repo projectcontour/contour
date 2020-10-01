@@ -345,10 +345,10 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		inc, commit := p.dag.StatusCache.ProxyAccessor(includedProxy)
+		inc, incCommit := p.dag.StatusCache.ProxyAccessor(includedProxy)
 		incValidCond := inc.ConditionFor(status.ValidCondition)
 		routes = append(routes, p.computeRoutes(incValidCond, rootProxy, includedProxy, append(conditions, include.Conditions...), visited, enforceTLS)...)
-		commit()
+		incCommit()
 
 		// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
 		delete(p.orphaned, types.NamespacedName{Name: includedProxy.Name, Namespace: includedProxy.Namespace})
@@ -627,7 +627,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	for _, hp := range visited {
 		if dest.Name == hp.Name && dest.Namespace == hp.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
-			validCond.AddErrorf("TCPProxyIncludeError", "IncludeCreatesCycle", "include creates an include cycle: %s", strings.Join(path, " -> "))
+			validCond.AddErrorf("TCPProxyIncludeError", "IncludeCreatesCycle", "include creates a cycle: %s", strings.Join(path, " -> "))
 			return false
 		}
 	}

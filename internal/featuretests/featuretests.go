@@ -309,7 +309,7 @@ func (s *statusResult) Like(want contour_api_v1.HTTPProxyStatus) *Contour {
 // that matches the given values.
 func (s *statusResult) HasError(condType, reason, message string) *Contour {
 	assert.Equal(s.T, k8s.StatusInvalid, s.Have.CurrentStatus)
-	assert.Equal(s.T, `ErrorPresent: At least one error present, see Errors for details`, s.Have.Description)
+	assert.Equal(s.T, `At least one error present, see Errors for details`, s.Have.Description)
 	validCond := s.Have.GetConditionFor(contour_api_v1.ValidConditionType)
 	assert.NotNil(s.T, validCond)
 

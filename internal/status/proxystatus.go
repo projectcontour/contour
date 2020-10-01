@@ -52,6 +52,8 @@ func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projectcontour.Detailed
 		newDc.ObservedGeneration = pu.Generation
 		if newDc.IsPositivePolarity() {
 			newDc.Status = projectcontour.ConditionTrue
+			newDc.Reason = "Valid"
+			newDc.Message = "Valid HTTPProxy"
 		} else {
 			newDc.Status = projectcontour.ConditionFalse
 		}
@@ -103,7 +105,9 @@ func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
 			break
 		}
 		proxy.Status.CurrentStatus = k8s.StatusInvalid
-		proxy.Status.Description = validCond.Reason + ": " + validCond.Message
+
+		// proxy.Status.Description = validCond.Reason + ": " + validCond.Message
+		proxy.Status.Description = validCond.Message
 	}
 
 	return proxy
