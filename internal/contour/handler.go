@@ -212,7 +212,7 @@ func (e *EventHandler) rebuildDAG() {
 	e.Observer.OnChange(latestDAG)
 
 	for _, upd := range latestDAG.StatusCache.GetStatusUpdates() {
-		e.StatusUpdater.SendStatusUpdate(upd)
+		e.StatusUpdater.Send(upd)
 	}
 
 }

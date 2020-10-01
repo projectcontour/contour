@@ -356,7 +356,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 	for _, route := range proxy.Spec.Routes {
 		if err := pathMatchConditionsValid(route.Conditions); err != nil {
-			validCond.AddErrorf("RouteError", "PathMatchConditionsNotValid", "include: %s", err)
+			validCond.AddErrorf("RouteError", "PathMatchConditionsNotValid", "route: %s", err)
 			return nil
 		}
 

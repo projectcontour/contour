@@ -35,7 +35,6 @@ import (
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
-	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/projectcontour/contour/internal/xdscache"
@@ -86,7 +85,6 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	rand.Seed(time.Now().Unix())
 
-	statusCache := status.NewCache()
 	statusUpdateCacher := &k8s.StatusUpdateCacher{}
 	eh := &contour.EventHandler{
 		IsLeader:        make(chan struct{}),
@@ -189,7 +187,7 @@ type resourceEventHandler struct {
 
 func (r *resourceEventHandler) OnAdd(obj interface{}) {
 	if r.statusUpdateCacher.IsCacheable(obj) {
-		r.statusUpdateCacher.DeleteByObject(obj)
+		r.statusUpdateCacher.OnAdd(obj)
 	}
 
 	switch obj.(type) {
@@ -204,7 +202,11 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	// Ensure that tests don't sample stale status.
 	if r.statusUpdateCacher.IsCacheable(oldObj) {
-		r.statusUpdateCacher.DeleteByObject(oldObj)
+		r.statusUpdateCacher.OnDelete(oldObj)
+	}
+
+	if r.statusUpdateCacher.IsCacheable(newObj) {
+		r.statusUpdateCacher.OnAdd(newObj)
 	}
 
 	switch newObj.(type) {
@@ -220,7 +222,7 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 	// Delete this object from the status cache before we make
 	// the deletion visible.
 	if r.statusUpdateCacher.IsCacheable(obj) {
-		r.statusUpdateCacher.DeleteByObject(obj)
+		r.statusUpdateCacher.OnDelete(obj)
 	}
 
 	switch obj.(type) {
@@ -299,6 +301,24 @@ func (s *statusResult) Like(want contour_api_v1.HTTPProxyStatus) *Contour {
 			contour_api_v1.HTTPProxyStatus{Description: s.Have.Description},
 		)
 	}
+
+	return s.Contour
+}
+
+// HasError asserts that there is an error on the Valid Condition in the proxy
+// that matches the given values.
+func (s *statusResult) HasError(condType, reason, message string) *Contour {
+	assert.Equal(s.T, k8s.StatusInvalid, s.Have.CurrentStatus)
+	assert.Equal(s.T, `ErrorPresent: At least one error present, see Errors for details`, s.Have.Description)
+	validCond := s.Have.GetConditionFor(contour_api_v1.ValidConditionType)
+	assert.NotNil(s.T, validCond)
+
+	subCond, ok := validCond.GetError(condType)
+	if !ok {
+		s.T.Fatalf("Did not find error %s", condType)
+	}
+	assert.Equal(s.T, subCond.Reason, reason)
+	assert.Equal(s.T, subCond.Message, message)
 
 	return s.Contour
 }

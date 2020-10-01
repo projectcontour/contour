@@ -135,10 +135,7 @@ func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c 
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(p).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`,
-	})
+	}).Status(p).HasError("AuthError", "AuthReponseTimeoutInvalid", `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`)
 }
 
 func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
@@ -224,10 +221,7 @@ func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(p).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.TLS fallback & client authorization are incompatible`,
-	})
+	}).Status(p).HasError("TLSError", "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible")
 }
 
 func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
@@ -457,10 +451,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(invalid).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource version "foo/bar"`,
-	})
+	}).Status(invalid).HasError("AuthError", "AuthBadResourceVersion", `Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version "foo/bar"`)
 
 	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_api_v1.ExtensionServiceReference{
 		APIVersion: "projectcontour.io/v1alpha1",
@@ -474,10 +465,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(invalid).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.Authorization.ServiceRef extension service "missing/extension" not found`,
-	})
+	}).Status(invalid).HasError("AuthError", "ExtensionServiceNotFound", `Spec.Virtualhost.Authorization.ServiceRef extension service "missing/extension" not found`)
 
 	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_api_v1.ExtensionServiceReference{
 		Namespace: "auth",

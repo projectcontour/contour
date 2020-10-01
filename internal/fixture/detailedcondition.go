@@ -66,7 +66,7 @@ func (dcb *DetailedConditionBuilder) WithError(errorType, reason, message string
 func (dcb *DetailedConditionBuilder) WithErrorf(errorType, reason, formatmsg string, args ...interface{}) v1.DetailedCondition {
 
 	dc := (*v1.DetailedCondition)(dcb)
-	dc.AddErrorf(errorType, reason, formatmsg, args)
+	dc.AddErrorf(errorType, reason, formatmsg, args...)
 
 	return *dc
 
@@ -84,7 +84,7 @@ func (dcb *DetailedConditionBuilder) WithWarning(errorType, reason, message stri
 func (dcb *DetailedConditionBuilder) WithWarningf(warnType, reason, formatmsg string, args ...interface{}) v1.DetailedCondition {
 
 	dc := (*v1.DetailedCondition)(dcb)
-	dc.AddErrorf(warnType, reason, formatmsg, args)
+	dc.AddErrorf(warnType, reason, formatmsg, args...)
 
 	return *dc
 

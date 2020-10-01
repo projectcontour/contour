@@ -14,10 +14,12 @@
 package k8s
 
 import (
-	"errors"
-	"fmt"
+	"context"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -26,107 +28,154 @@ const (
 	StatusOrphaned = "orphaned"
 )
 
-// StatusClient updates the HTTPProxyStatus on a Kubernetes object.
-type StatusClient interface {
-	SetStatus(status string, desc string, obj interface{}) error
-	GetStatus(obj interface{}) (*contour_api_v1.HTTPProxyStatus, error)
+// StatusUpdate contains an all the information needed to change an object's status to perform a specific update.
+// Send down a channel to the goroutine that actually writes the changes back.
+type StatusUpdate struct {
+	NamespacedName types.NamespacedName
+	Resource       schema.GroupVersionResource
+	Mutator        StatusMutator
 }
 
-// StatusCacher keeps a cache of the latest status updates for Kubernetes objects.
-type StatusCacher struct {
-	objectStatus map[string]contour_api_v1.HTTPProxyStatus
-}
-
-func objectKey(obj interface{}) string {
-	switch obj := obj.(type) {
-	case *contour_api_v1.HTTPProxy:
-		return fmt.Sprintf("%s/%s/%s",
-			KindOf(obj),
-			obj.GetObjectMeta().GetNamespace(),
-			obj.GetObjectMeta().GetName())
-	default:
-		panic(fmt.Sprintf("status caching not supported for object type %T", obj))
+func NewStatusUpdate(name, namespace string, gvr schema.GroupVersionResource, mutator StatusMutator) StatusUpdate {
+	return StatusUpdate{
+		NamespacedName: types.NamespacedName{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Resource: gvr,
+		Mutator:  mutator,
 	}
 }
 
-// IsCacheable returns whether this type of object can be stored in
-// the status cache.
-func (c *StatusCacher) IsCacheable(obj interface{}) bool {
-	switch obj.(type) {
-	case *contour_api_v1.HTTPProxy:
-		return true
-	default:
-		return false
+// StatusMutator is an interface to hold mutator functions for status updates.
+type StatusMutator interface {
+	Mutate(obj interface{}) interface{}
+}
+
+// StatusMutatorFunc is a function adaptor for StatusMutators.
+type StatusMutatorFunc func(interface{}) interface{}
+
+// Mutate adapts the StatusMutatorFunc to fit through the StatusMutator interface.
+func (m StatusMutatorFunc) Mutate(old interface{}) interface{} {
+	if m == nil {
+		return nil
+	}
+
+	return m(old)
+}
+
+// StatusUpdateHandler holds the details required to actually write an Update back to the referenced object.
+type StatusUpdateHandler struct {
+	Log             logrus.FieldLogger
+	Clients         *Clients
+	UpdateChannel   chan StatusUpdate
+	LeaderElected   chan struct{}
+	IsLeader        bool
+	Converter       *UnstructuredConverter
+	InformerFactory InformerFactory
+}
+
+// Start runs the goroutine to perform status writes.
+// Until the Contour is elected leader, will drop updates on the floor.
+func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
+
+	for {
+		select {
+		case <-stop:
+			return nil
+		case <-suh.LeaderElected:
+			suh.Log.Info("elected leader")
+			suh.IsLeader = true
+			// disable this case
+			suh.LeaderElected = nil
+		case upd := <-suh.UpdateChannel:
+			if !suh.IsLeader {
+				suh.Log.WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
+					Debug("not leader, not applying update")
+				continue
+			}
+
+			suh.Log.WithField("name", upd.NamespacedName.Name).
+				WithField("namespace", upd.NamespacedName.Namespace).
+				Debug("received a status update")
+
+			// Fetch the lister cache for the informer associated with this resource.
+			lister := suh.InformerFactory.ForResource(upd.Resource).Lister()
+			uObj, err := lister.ByNamespace(upd.NamespacedName.Namespace).Get(upd.NamespacedName.Name)
+			if err != nil {
+				suh.Log.WithError(err).
+					WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
+					WithField("resource", upd.Resource).
+					Error("unable to retrieve object for updating")
+				continue
+			}
+
+			obj, err := suh.Converter.FromUnstructured(uObj)
+			if err != nil {
+				suh.Log.WithError(err).
+					WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
+					Error("unable to convert from unstructured")
+				continue
+			}
+
+			newObj := upd.Mutator.Mutate(obj)
+
+			if IsStatusEqual(obj, newObj) {
+				suh.Log.WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
+					Debug("Update was a no-op")
+				continue
+			}
+
+			usNewObj, err := suh.Converter.ToUnstructured(newObj)
+			if err != nil {
+				suh.Log.WithError(err).
+					WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
+					Error("unable to convert update to unstructured")
+				continue
+			}
+
+			_, err = suh.Clients.DynamicClient().Resource(upd.Resource).Namespace(upd.NamespacedName.Namespace).UpdateStatus(context.TODO(), usNewObj, metav1.UpdateOptions{})
+			if err != nil {
+				suh.Log.WithError(err).
+					WithField("name", upd.NamespacedName.Name).
+					WithField("namespace", upd.NamespacedName.Namespace).
+					Error("unable to update status")
+				continue
+			}
+		}
+
+	}
+
+}
+
+// Writer retrieves the interface that should be used to write to the StatusUpdateHandler.
+func (suh *StatusUpdateHandler) Writer() StatusUpdater {
+
+	if suh.UpdateChannel == nil {
+		suh.UpdateChannel = make(chan StatusUpdate, 100)
+	}
+
+	return &StatusUpdateWriter{
+		UpdateChannel: suh.UpdateChannel,
 	}
 }
 
-// Delete removes an object from the status cache.
-func (c *StatusCacher) Delete(obj interface{}) {
-	if c.objectStatus != nil {
-		delete(c.objectStatus, objectKey(obj))
-	}
+// StatusUpdater describes an interface to send status updates somewhere.
+type StatusUpdater interface {
+	Send(su StatusUpdate)
 }
 
-// GetStatus returns the status (if any) for this given object.
-func (c *StatusCacher) GetStatus(obj interface{}) (*contour_api_v1.HTTPProxyStatus, error) {
-	if c.objectStatus == nil {
-		c.objectStatus = make(map[string]contour_api_v1.HTTPProxyStatus)
-	}
-
-	s, ok := c.objectStatus[objectKey(obj)]
-	if !ok {
-		return nil, fmt.Errorf("no status for key '%s'", objectKey(obj))
-	}
-
-	return &s, nil
+// StatusUpdateWriter takes status updates and sends these to the StatusUpdateHandler via a channel.
+type StatusUpdateWriter struct {
+	UpdateChannel chan StatusUpdate
 }
 
-// SetStatus sets the HTTPProxy status field to an Valid or Invalid status
-func (c *StatusCacher) SetStatus(status, desc string, obj interface{}) error {
-	if c.objectStatus == nil {
-		c.objectStatus = make(map[string]contour_api_v1.HTTPProxyStatus)
-	}
-
-	c.objectStatus[objectKey(obj)] = contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: status,
-		Description:   desc,
-	}
-
-	return nil
-}
-
-// StatusWriter updates the object's HTTPProxyStatus field.
-type StatusWriter struct {
-	Updater StatusUpdater
-}
-
-// GetStatus is not implemented for StatusWriter.
-func (irs *StatusWriter) GetStatus(obj interface{}) (*contour_api_v1.HTTPProxyStatus, error) {
-	return nil, errors.New("not implemented")
-}
-
-// SetStatus sets the HTTPProxy status field to an Valid or Invalid status
-func (irs *StatusWriter) SetStatus(status, desc string, existing interface{}) error {
-	switch exist := existing.(type) {
-	case *contour_api_v1.HTTPProxy:
-		// StatusUpdateWriters only apply an update if required, so
-		// we don't need to check here.
-		irs.Updater.Update(exist.Name,
-			exist.Namespace,
-			contour_api_v1.HTTPProxyGVR,
-			StatusMutatorFunc(func(obj interface{}) interface{} {
-				switch o := obj.(type) {
-				case *contour_api_v1.HTTPProxy:
-					dco := o.DeepCopy()
-					dco.Status.CurrentStatus = status
-					dco.Status.Description = desc
-					return dco
-				default:
-					panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
-						exist.Namespace, exist.Name,
-					))
-				}
-			}))
-	}
-	return nil
+// Send sends the given StatusUpdate off to the update channel for writing by the StatusUpdateHandler.
+func (suw *StatusUpdateWriter) Send(update StatusUpdate) {
+	suw.UpdateChannel <- update
 }

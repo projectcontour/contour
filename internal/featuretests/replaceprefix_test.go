@@ -102,10 +102,7 @@ func basic(t *testing.T) {
 			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
-	}).Status(vhost).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   "ambiguous prefix replacement",
-	})
+	}).Status(vhost).HasError("PrefixReplaceError", "PrefixReplaceError", "ambiguous prefix replacement")
 
 	// The replacement isn't ambiguous any more because only one of the prefixes matches.
 	vhost = update(rh, vhost,
@@ -153,10 +150,7 @@ func basic(t *testing.T) {
 			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
-	}).Status(vhost).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   "duplicate replacement prefix '/foo'",
-	})
+	}).Status(vhost).HasError("PrefixReplaceError", "PrefixReplaceError", "duplicate replacement prefix '/foo'")
 
 	// The "/api" prefix should have precedence over the empty prefix.
 	vhost = update(rh, vhost,
