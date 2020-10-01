@@ -100,7 +100,7 @@ func (p *HTTPProxyProcessor) Run(dag *DAG, source *KubernetesCache) {
 	}
 }
 
-func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
+func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	pa, commit := p.dag.StatusCache.ProxyAccessor(proxy)
 	validCond := pa.ConditionFor(status.ValidCondition)
 
@@ -223,7 +223,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 				auth := proxy.Spec.VirtualHost.Authorization
 				ref := defaultExtensionRef(auth.ExtensionServiceRef)
 
-				if ref.APIVersion != projcontourv1alpha1.GroupVersion.String() {
+				if ref.APIVersion != contour_api_v1alpha1.GroupVersion.String() {
 					validCond.AddErrorf("AuthError", "AuthBadResourceVersion", "Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version %q", auth.ExtensionServiceRef.APIVersion)
 					return
 				}
@@ -294,11 +294,11 @@ func addRoutes(vhost vhost, routes []*Route) {
 }
 
 func (p *HTTPProxyProcessor) computeRoutes(
-	validCond *projcontour.DetailedCondition,
-	rootProxy *projcontour.HTTPProxy,
-	proxy *projcontour.HTTPProxy,
-	conditions []projcontour.MatchCondition,
-	visited []*projcontour.HTTPProxy,
+	validCond *contour_api_v1.DetailedCondition,
+	rootProxy *contour_api_v1.HTTPProxy,
+	proxy *contour_api_v1.HTTPProxy,
+	conditions []contour_api_v1.MatchCondition,
+	visited []*contour_api_v1.HTTPProxy,
 	enforceTLS bool,
 ) []*Route {
 	for _, v := range visited {
@@ -548,7 +548,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 // following the chain of spec.tcpproxy.include references. It returns true if processing
 // was successful, otherwise false if an error was encountered. The details of the error
 // will be recorded on the status of the relevant HTTPProxy object,
-func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *projcontour.DetailedCondition, httpproxy *projcontour.HTTPProxy, visited []*projcontour.HTTPProxy, host string) bool {
+func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.DetailedCondition, httpproxy *contour_api_v1.HTTPProxy, visited []*contour_api_v1.HTTPProxy, host string) bool {
 	tcpproxy := httpproxy.Spec.TCPProxy
 	if tcpproxy == nil {
 		// nothing to do

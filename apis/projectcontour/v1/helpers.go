@@ -99,7 +99,6 @@ func (dc *DetailedCondition) AddError(errorType, reason, message string) {
 	} else {
 		dc.Status = ConditionTrue
 	}
-
 	dc.Reason = "ErrorPresent"
 	dc.Message = "At least one error present, see Errors for details"
 

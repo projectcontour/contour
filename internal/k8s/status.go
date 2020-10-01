@@ -27,15 +27,27 @@ const (
 )
 
 // StatusClient updates the HTTPProxyStatus on a Kubernetes object.
-// type StatusClient interface {
-// 	SetStatus(status string, desc string, obj interface{}) error
-// 	GetStatus(obj interface{}) (*projcontour.HTTPProxyStatus, error)
-// }
+type StatusClient interface {
+	SetStatus(status string, desc string, obj interface{}) error
+	GetStatus(obj interface{}) (*contour_api_v1.HTTPProxyStatus, error)
+}
 
 // StatusCacher keeps a cache of the latest status updates for Kubernetes objects.
-// type StatusCacher struct {
-// 	objectStatus map[string]projcontour.HTTPProxyStatus
-// }
+type StatusCacher struct {
+	objectStatus map[string]contour_api_v1.HTTPProxyStatus
+}
+
+func objectKey(obj interface{}) string {
+	switch obj := obj.(type) {
+	case *contour_api_v1.HTTPProxy:
+		return fmt.Sprintf("%s/%s/%s",
+			KindOf(obj),
+			obj.GetObjectMeta().GetNamespace(),
+			obj.GetObjectMeta().GetName())
+	default:
+		panic(fmt.Sprintf("status caching not supported for object type %T", obj))
+	}
+}
 
 // IsCacheable returns whether this type of object can be stored in
 // the status cache.

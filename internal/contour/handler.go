@@ -215,27 +215,4 @@ func (e *EventHandler) rebuildDAG() {
 		e.StatusUpdater.SendStatusUpdate(upd)
 	}
 
-<<<<<<< HEAD
-// setStatus updates the status of objects.
-func (e *EventHandler) setStatus(statuses map[types.NamespacedName]dag.Status) {
-	for _, st := range statuses {
-		switch obj := st.Object.(type) {
-		case *contour_api_v1.HTTPProxy:
-			err := e.StatusClient.SetStatus(st.Status, st.Description, obj)
-			if err != nil {
-				e.WithError(err).
-					WithField("status", st.Status).
-					WithField("desc", st.Description).
-					WithField("name", obj.Name).
-					WithField("namespace", obj.Namespace).
-					Error("failed to set status")
-			}
-		default:
-			e.WithField("namespace", obj.GetObjectMeta().GetNamespace()).
-				WithField("name", obj.GetObjectMeta().GetName()).
-				Error("set status: unknown object type")
-		}
-	}
-=======
->>>>>>> Update DAG to use Conditions
 }
