@@ -17,6 +17,7 @@ import (
 	"context"
 	"fmt"
 
+	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -160,6 +161,30 @@ type StatusUpdateCacher struct {
 	objectCache map[string]interface{}
 }
 
+// IsCacheable returns whether this type of object can be stored in
+// the status cache.
+func (suc *StatusUpdateCacher) IsCacheable(obj interface{}) bool {
+	switch obj.(type) {
+	case *projcontour.HTTPProxy:
+		return true
+	default:
+		return false
+	}
+}
+
+// DeleteByObject removes an object from the status cache.
+func (suc *StatusUpdateCacher) DeleteByObject(obj interface{}) {
+	if suc.objectCache != nil {
+		switch o := obj.(type) {
+		case *projcontour.HTTPProxy:
+			delete(suc.objectCache, suc.objKey(o.Name, o.Namespace, projcontour.HTTPProxyGVR))
+		default:
+			panic(fmt.Sprintf("status caching not supported for object type %T", obj))
+		}
+
+	}
+}
+
 // GetObject allows retrieval of objects from the cache.
 func (suc *StatusUpdateCacher) GetObject(name, namespace string, gvr schema.GroupVersionResource) interface{} {
 
@@ -167,7 +192,7 @@ func (suc *StatusUpdateCacher) GetObject(name, namespace string, gvr schema.Grou
 		suc.objectCache = make(map[string]interface{})
 	}
 
-	obj, ok := suc.objectCache[suc.objectPrefix(name, namespace, gvr)]
+	obj, ok := suc.objectCache[suc.objKey(name, namespace, gvr)]
 	if ok {
 		return obj
 	}
@@ -181,7 +206,7 @@ func (suc *StatusUpdateCacher) AddObject(name, namespace string, gvr schema.Grou
 		suc.objectCache = make(map[string]interface{})
 	}
 
-	prefix := suc.objectPrefix(name, namespace, gvr)
+	prefix := suc.objKey(name, namespace, gvr)
 	_, ok := suc.objectCache[prefix]
 	if ok {
 		return false
@@ -193,18 +218,17 @@ func (suc *StatusUpdateCacher) AddObject(name, namespace string, gvr schema.Grou
 
 }
 
-func (suc *StatusUpdateCacher) objectPrefix(name, namespace string, gvr schema.GroupVersionResource) string {
-	return fmt.Sprintf("%s/%s/%s", namespace, name, gvr)
+func (suc *StatusUpdateCacher) objKey(name, namespace string, gvr schema.GroupVersionResource) string {
+	return fmt.Sprintf("%s/%s/%s", gvr, namespace, name)
 }
 
 // Update updates the cache with the requested update.
 func (suc *StatusUpdateCacher) Update(name, namespace string, gvr schema.GroupVersionResource, mutator StatusMutator) {
-
 	if suc.objectCache == nil {
 		suc.objectCache = make(map[string]interface{})
 	}
 
-	objKey := fmt.Sprintf("%s/%s/%s", namespace, name, gvr)
+	objKey := suc.objKey(name, namespace, gvr)
 	obj, ok := suc.objectCache[objKey]
 	if ok {
 		suc.objectCache[objKey] = mutator.Mutate(obj)
@@ -212,7 +236,15 @@ func (suc *StatusUpdateCacher) Update(name, namespace string, gvr schema.GroupVe
 }
 
 func (suc *StatusUpdateCacher) SendStatusUpdate(su StatusUpdate) {
-	// TODO: unimplemented.
+	if suc.objectCache == nil {
+		suc.objectCache = make(map[string]interface{})
+	}
+
+	objKey := suc.objKey(su.NamespacedName.Namespace, su.NamespacedName.Name, su.Resource)
+	obj, ok := suc.objectCache[objKey]
+	if ok {
+		suc.objectCache[objKey] = su.Mutator.Mutate(obj)
+	}
 
 }
 
