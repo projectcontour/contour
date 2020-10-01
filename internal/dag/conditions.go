@@ -57,6 +57,7 @@ func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 	for _, cond := range conds {
 		if cond.Prefix != "" {
 			prefixCount++
+
 			if cond.Prefix[0] != '/' {
 				return fmt.Errorf("prefix conditions must start with /, %s was supplied", cond.Prefix)
 			}
@@ -130,12 +131,14 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 		}
 
 		headerName := strings.ToLower(v.Header.Name)
+
 		switch {
 		case v.Header.Exact != "":
 			// Look for duplicate "exact match" headers on conditions
 			if headersWithExactMatch[headerName] {
 				return errors.New("cannot specify duplicate header 'exact match' conditions in the same route")
 			}
+
 			headersWithExactMatch[headerName] = true
 
 			// look for a NotExact condition on the same header with the same value

@@ -24,7 +24,9 @@ func ExampleCond() {
 	defer cancel()
 	ch := make(chan int, 1)
 	last := 0
+
 	var c Cond
+
 	go func() {
 		for {
 			time.Sleep(100 * time.Millisecond)

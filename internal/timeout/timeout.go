@@ -58,6 +58,7 @@ func DurationSetting(duration time.Duration) Setting {
 	if duration == 0 {
 		return DefaultSetting()
 	}
+
 	return Setting{val: duration, valset: true}
 }
 
@@ -109,8 +110,10 @@ func ParseMaxAge(timeout string) (Setting, error) {
 	if err != nil {
 		return Setting{}, fmt.Errorf("unable to parse timeout string %q: %w", timeout, err)
 	}
+
 	if d == 0 {
 		return DisabledSetting(), nil
 	}
+
 	return DurationSetting(d), nil
 }

@@ -32,7 +32,6 @@ import (
 func defaultExtensionRef(ref contour_api_v1.ExtensionServiceReference) contour_api_v1.ExtensionServiceReference {
 	if ref.APIVersion == "" {
 		ref.APIVersion = contour_api_v1alpha1.GroupVersion.String()
-
 	}
 
 	return ref
@@ -131,6 +130,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	}
 
 	var tlsEnabled bool
+
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
 		if !isBlank(tls.SecretName) && tls.Passthrough {
 			sw.SetInvalid("Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
@@ -344,6 +344,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		sw, commit := p.dag.WithObject(delegate)
 		routes = append(routes, p.computeRoutes(sw, rootProxy, delegate, append(conditions, include.Conditions...), visited, enforceTLS)...)
+
 		commit()
 
 		// dest is not an orphaned httpproxy, as there is an httpproxy that points to it
@@ -454,7 +455,6 @@ func (p *HTTPProxyProcessor) computeRoutes(
 					}
 				}
 			}
-
 		}
 
 		for _, service := range route.Services {
@@ -521,6 +521,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				DNSLookupFamily:       p.DNSLookupFamily,
 				ClientCertificate:     clientCertSecret,
 			}
+
 			if service.Mirror && r.MirrorPolicy != nil {
 				sw.SetInvalid("only one service per route may be nominated as mirror")
 				return nil
@@ -533,6 +534,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				r.Clusters = append(r.Clusters, c)
 			}
 		}
+
 		routes = append(routes, r)
 	}
 
@@ -576,6 +578,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 				sw.SetInvalid("Spec.TCPProxy unresolved service reference: %s", err)
 				return false
 			}
+
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream:             s,
 				Protocol:             s.Protocol,
@@ -621,6 +624,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 	for _, hp := range visited {
 		path = append(path, fmt.Sprintf("%s/%s", hp.Namespace, hp.Name))
 	}
+
 	for _, hp := range visited {
 		if dest.Name == hp.Name && dest.Namespace == hp.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
@@ -645,12 +649,15 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(sw *ObjectStatusWriter, ht
 func (p *HTTPProxyProcessor) validHTTPProxies() []*contour_api_v1.HTTPProxy {
 	// ensure that a given fqdn is only referenced in a single HTTPProxy resource
 	var valid []*contour_api_v1.HTTPProxy
+
 	fqdnHTTPProxies := make(map[string][]*contour_api_v1.HTTPProxy)
+
 	for _, proxy := range p.source.httpproxies {
 		if proxy.Spec.VirtualHost == nil {
 			valid = append(valid, proxy)
 			continue
 		}
+
 		fqdnHTTPProxies[proxy.Spec.VirtualHost.Fqdn] = append(fqdnHTTPProxies[proxy.Spec.VirtualHost.Fqdn], proxy)
 	}
 
@@ -664,7 +671,9 @@ func (p *HTTPProxyProcessor) validHTTPProxies() []*contour_api_v1.HTTPProxy {
 			for _, proxy := range proxies {
 				conflicting = append(conflicting, proxy.Namespace+"/"+proxy.Name)
 			}
+
 			sort.Strings(conflicting) // sort for test stability
+
 			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
 			for _, proxy := range proxies {
 				sw, commit := p.dag.WithObject(proxy)
@@ -782,8 +791,8 @@ func expandPrefixMatches(routes []*Route) []*Route {
 		default:
 			// This can't happen unless there are routes
 			// with duplicate prefix paths.
+			continue
 		}
-
 	}
 
 	return expandedRoutes
@@ -810,7 +819,6 @@ func getProtocol(service contour_api_v1.Service, s *Service) (string, error) {
 // Policies set on service are used before policies set on a route. Otherwise the value of the externalService
 // is used if the route is configured to proxy to an externalService type.
 func determineSNI(routeRequestHeaders *HeadersPolicy, clusterRequestHeaders *HeadersPolicy, service *Service) string {
-
 	// Service RequestHeadersPolicy take precedence
 	if clusterRequestHeaders != nil {
 		if clusterRequestHeaders.HostRewrite != "" {
@@ -859,6 +867,7 @@ func toStringSlice(hvs []contour_api_v1.CORSHeaderValue) []string {
 
 func includeMatchConditionsIdentical(includes []contour_api_v1.Include) bool {
 	j := 0
+
 	for i := 1; i < len(includes); i++ {
 		// Now compare each include's set of conditions
 		for _, cA := range includes[i].Conditions {

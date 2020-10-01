@@ -106,6 +106,7 @@ func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, r *http.R
 func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *http.Request) {
 	l := s.WithField("context", "shutdownReadyHandler")
 	ctx := r.Context()
+
 	for {
 		_, err := os.Stat(s.shutdownReadyFile)
 		if os.IsNotExist(err) {
@@ -168,6 +169,7 @@ func (s *shutdownContext) shutdownHandler() {
 				WithField("min_connections", s.minOpenConnections).
 				Info("polled open connections")
 		}
+
 		time.Sleep(s.checkInterval)
 	}
 }
@@ -205,6 +207,7 @@ func getOpenConnections() (int, error) {
 // parseOpenConnections returns the sum of open connections from a Prometheus HTTP request
 func parseOpenConnections(stats io.Reader) (int, error) {
 	var parser expfmt.TextParser
+
 	openConnections := 0
 
 	if stats == nil {
@@ -236,7 +239,6 @@ func parseOpenConnections(stats io.Reader) (int, error) {
 }
 
 func doShutdownManager(config *shutdownmanagerContext) {
-
 	config.Info("started envoy shutdown manager")
 	defer config.Info("stopped")
 

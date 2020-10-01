@@ -30,7 +30,9 @@ func TestGroupRunWithNoRegisteredFunctions(t *testing.T) {
 
 func TestGroupFirstReturnValueIsReturnedToRunsCaller(t *testing.T) {
 	var g Group
+
 	wait := make(chan int)
+
 	g.Add(func(<-chan struct{}) error {
 		<-wait
 		return io.EOF
@@ -42,16 +44,20 @@ func TestGroupFirstReturnValueIsReturnedToRunsCaller(t *testing.T) {
 	})
 
 	result := make(chan error)
+
 	go func() {
 		result <- g.Run(context.TODO())
 	}()
+
 	close(wait)
 	assert(t, io.EOF, <-result)
 }
 
 func TestGroupAddContext(t *testing.T) {
 	var g Group
+
 	wait := make(chan int)
+
 	g.Add(func(<-chan struct{}) error {
 		<-wait
 		return io.EOF
@@ -62,6 +68,7 @@ func TestGroupAddContext(t *testing.T) {
 	})
 
 	result := make(chan error)
+
 	go func() {
 		result <- g.Run(context.TODO())
 	}()
@@ -71,6 +78,7 @@ func TestGroupAddContext(t *testing.T) {
 
 func TestGroupCancellation(t *testing.T) {
 	var g Group
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	const tasks = 100
@@ -86,6 +94,7 @@ func TestGroupCancellation(t *testing.T) {
 	}
 
 	done := make(chan error)
+
 	go func() {
 		done <- g.Run(ctx)
 	}()
@@ -100,6 +109,7 @@ func TestGroupCancellation(t *testing.T) {
 
 func assert(t *testing.T, want, got error) {
 	t.Helper()
+
 	if want != got {
 		t.Fatalf("expected: %v, got: %v", want, got)
 	}

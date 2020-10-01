@@ -82,13 +82,17 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 		if _, ok := set[key]; ok {
 			return nil, fmt.Errorf("duplicate header addition: %q", key)
 		}
+
 		if key == "Host" {
 			if !allowHostRewrite {
 				return nil, fmt.Errorf("rewriting %q header is not supported", key)
 			}
+
 			hostRewrite = entry.Value
+
 			continue
 		}
+
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
 		}
@@ -104,6 +108,7 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid remove header %q: %v", key, msgs)
 		}
+
 		remove.Insert(key)
 	}
 	rl := remove.List()
@@ -237,6 +242,7 @@ func loadBalancerPolicy(lbp *contour_api_v1.LoadBalancerPolicy) string {
 	if lbp == nil {
 		return ""
 	}
+
 	switch lbp.Strategy {
 	case "WeightedLeastRequest":
 		return "WeightedLeastRequest"

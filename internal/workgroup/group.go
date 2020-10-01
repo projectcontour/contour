@@ -65,13 +65,13 @@ func (g *Group) AddContext(fn func(context.Context)) {
 // the caller of Run.
 // If ctx is canceled, Run will return with the corresponding error.
 func (g *Group) Run(ctx context.Context) error {
-
 	// if there are no registered functions, return immediately.
 	if len(g.fn) < 1 {
 		return nil
 	}
 
 	var wg sync.WaitGroup
+
 	wg.Add(len(g.fn))
 
 	stop := make(chan struct{})

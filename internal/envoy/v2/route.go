@@ -156,6 +156,7 @@ func retryPolicy(r *dag.Route) *envoy_api_v2_route.RetryPolicy {
 	if r.RetryPolicy == nil {
 		return nil
 	}
+
 	if r.RetryPolicy.RetryOn == "" {
 		return nil
 	}
@@ -167,6 +168,7 @@ func retryPolicy(r *dag.Route) *envoy_api_v2_route.RetryPolicy {
 	if r.RetryPolicy.NumRetries > 0 {
 		rp.NumRetries = protobuf.UInt32(r.RetryPolicy.NumRetries)
 	}
+
 	rp.PerTryTimeout = envoy.Timeout(r.RetryPolicy.PerTryTimeout)
 
 	return rp
@@ -210,6 +212,7 @@ func HeaderValueList(hvm map[string]string, app bool) []*envoy_api_v2_core.Heade
 func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedCluster {
 	var wc envoy_api_v2_route.WeightedCluster
 	var total uint32
+
 	for _, cluster := range clusters {
 		total += cluster.Weight
 
@@ -221,10 +224,12 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedClust
 			c.RequestHeadersToAdd = HeaderValueList(cluster.RequestHeadersPolicy.Set, false)
 			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
 		}
+
 		if cluster.ResponseHeadersPolicy != nil {
 			c.ResponseHeadersToAdd = HeaderValueList(cluster.ResponseHeadersPolicy.Set, false)
 			c.ResponseHeadersToRemove = cluster.ResponseHeadersPolicy.Remove
 		}
+
 		wc.Clusters = append(wc.Clusters, c)
 	}
 	// Check if no weights were defined, if not default to even distribution
@@ -232,8 +237,10 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedClust
 		for _, c := range wc.Clusters {
 			c.Weight.Value = 1
 		}
+
 		total = uint32(len(clusters))
 	}
+
 	wc.TotalWeight = protobuf.UInt32(total)
 
 	sort.Stable(sorter.For(wc.Clusters))
@@ -278,6 +285,7 @@ func CORSPolicy(cp *dag.CORSPolicy) *envoy_api_v2_route.CorsPolicy {
 	if cp == nil {
 		return nil
 	}
+
 	rcp := &envoy_api_v2_route.CorsPolicy{
 		AllowCredentials: protobuf.Bool(cp.AllowCredentials),
 		AllowHeaders:     strings.Join(cp.AllowHeaders, ","),
@@ -336,6 +344,7 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_api_v2_route.Hea
 		case "present":
 			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_PresentMatch{PresentMatch: true}
 		}
+
 		envoyHeaders = append(envoyHeaders, header)
 	}
 	return envoyHeaders

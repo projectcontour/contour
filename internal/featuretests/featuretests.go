@@ -67,6 +67,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	et := xdscache_v2.NewEndpointsTranslator(log)
 
 	conf := xdscache_v2.ListenerConfig{}
+
 	for _, opt := range opts {
 		if opt, ok := opt.(func(*xdscache_v2.ListenerConfig)); ok {
 			opt(&conf)
@@ -156,6 +157,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	ctx, cancel := context.WithCancel(context.Background())
 
 	done := make(chan error)
+
 	go func() {
 		done <- g.Run(ctx)
 	}()
@@ -240,7 +242,9 @@ func routeResources(t *testing.T, routes ...*envoy_api_v2.RouteConfiguration) []
 
 func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 	t.Helper()
+
 	anys := make([]*any.Any, 0, len(protos))
+
 	for _, pb := range protos {
 		anys = append(anys, protobuf.MustMarshalAny(pb))
 	}
@@ -332,38 +336,52 @@ func (c *Contour) NoStatus(obj interface{}) *Contour {
 
 func (c *Contour) Request(typeurl string, names ...string) *Response {
 	c.Helper()
+
 	var st grpcStream
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	switch typeurl {
 	case secretType:
 		sds := discovery.NewSecretDiscoveryServiceClient(c.ClientConn)
 		sts, err := sds.StreamSecrets(ctx)
+
 		require.NoError(c, err)
+
 		st = sts
 	case routeType:
 		rds := envoy_api_v2.NewRouteDiscoveryServiceClient(c.ClientConn)
 		str, err := rds.StreamRoutes(ctx)
+
 		require.NoError(c, err)
+
 		st = str
 	case clusterType:
 		cds := envoy_api_v2.NewClusterDiscoveryServiceClient(c.ClientConn)
 		stc, err := cds.StreamClusters(ctx)
+
 		require.NoError(c, err)
+
 		st = stc
 	case listenerType:
 		lds := envoy_api_v2.NewListenerDiscoveryServiceClient(c.ClientConn)
 		stl, err := lds.StreamListeners(ctx)
+
 		require.NoError(c, err)
+
 		st = stl
 	case endpointType:
 		eds := envoy_api_v2.NewEndpointDiscoveryServiceClient(c.ClientConn)
 		ste, err := eds.StreamEndpoints(ctx)
+
 		require.NoError(c, err)
+
 		st = ste
 	default:
 		c.Fatal("unknown typeURL:", typeurl)
 	}
+
 	resp := c.sendRequest(st, &envoy_api_v2.DiscoveryRequest{
 		TypeUrl:       typeurl,
 		ResourceNames: names,

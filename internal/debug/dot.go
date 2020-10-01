@@ -41,7 +41,9 @@ func (c *ctx) writeVertex(v dag.Vertex) {
 	if c.nodes[v] {
 		return
 	}
+
 	c.nodes[v] = true
+
 	switch v := v.(type) {
 	case *dag.Listener:
 		fmt.Fprintf(c.w, `"%p" [shape=record, label="{listener|%s:%d}"]`+"\n", v, v.Address, v.Port)
@@ -67,7 +69,9 @@ func (c *ctx) writeEdge(parent, child dag.Vertex) {
 	if c.edges[pair{parent, child}] {
 		return
 	}
+
 	c.edges[pair{parent, child}] = true
+
 	fmt.Fprintf(c.w, `"%p" -> "%p"`+"\n", parent, child)
 }
 

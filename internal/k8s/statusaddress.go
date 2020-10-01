@@ -153,9 +153,11 @@ func (s *ServiceStatusLoadBalancerWatcher) OnUpdate(oldObj, newObj interface{}) 
 		// not a service
 		return
 	}
+
 	if svc.Name != s.ServiceName {
 		return
 	}
+
 	s.Log.WithField("name", svc.Name).
 		WithField("namespace", svc.Namespace).
 		Debug("received new service address")

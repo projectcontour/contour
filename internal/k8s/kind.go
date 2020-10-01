@@ -52,9 +52,11 @@ func KindOf(obj interface{}) string {
 			return ""
 		}
 	}
+
 	for _, gv := range gvk {
 		return gv.GroupKind().Kind
 	}
+
 	return ""
 }
 

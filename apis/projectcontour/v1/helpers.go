@@ -57,6 +57,7 @@ func (r *Route) GetPrefixReplacements() []ReplacePrefix {
 	if r.PathRewritePolicy != nil {
 		return r.PathRewritePolicy.ReplacePrefix
 	}
+
 	return nil
 }
 
@@ -99,6 +100,7 @@ func (dc *DetailedCondition) AddError(errorType, reason, message string) {
 	} else {
 		dc.Status = ConditionTrue
 	}
+
 	dc.Reason = "ErrorPresent"
 	dc.Message = "At least one error present, see Errors for details"
 
@@ -179,19 +181,18 @@ func (dc *DetailedCondition) IsPositivePolarity() bool {
 // getIndex checks if a SubCondition of type condType exists in the
 // slice, and returns its index if so. If not, returns -1.
 func getIndex(condType string, subconds []SubCondition) int {
-
 	for i, cond := range subconds {
 		if cond.Type == condType {
 			return i
 		}
 	}
+
 	return -1
 }
 
 // GetConditionFor returns the a pointer to the condition for a given type,
 // or nil if there are none currently present.
 func (status *HTTPProxyStatus) GetConditionFor(condType string) *DetailedCondition {
-
 	for i, cond := range status.Conditions {
 		if cond.Type == condType {
 			return &status.Conditions[i]
@@ -211,5 +212,6 @@ func truncateLongMessage(message string) string {
 	if len(message) > LongMessageLength {
 		return message[:LongMessageLength]
 	}
+
 	return message
 }

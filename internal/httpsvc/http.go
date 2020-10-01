@@ -58,11 +58,14 @@ func (svc *Service) Start(stop <-chan struct{}) (err error) {
 
 		// shutdown the server with 5 seconds grace.
 		ctx := context.Background()
+
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
+
 		_ = s.Shutdown(ctx) // ignored, will always be a cancelation error
 	}()
 
 	svc.WithField("address", s.Addr).Info("started HTTP server")
+
 	return s.ListenAndServe()
 }

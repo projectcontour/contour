@@ -62,6 +62,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			}},
 		},
 	}
+
 	rh.OnAdd(secret)
 	rh.OnAdd(svc)
 	rh.OnAdd(p1)
@@ -203,5 +204,4 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 		Resources: nil,
 		TypeUrl:   secretType,
 	})
-
 }

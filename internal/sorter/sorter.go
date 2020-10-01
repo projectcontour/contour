@@ -176,7 +176,6 @@ type filterChainSorter []*envoy_api_v2_listener.FilterChain
 func (s filterChainSorter) Len() int      { return len(s) }
 func (s filterChainSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s filterChainSorter) Less(i, j int) bool {
-
 	// If i's ServerNames aren't defined, then it should not swap
 	if len(s[i].FilterChainMatch.ServerNames) == 0 {
 		return false

@@ -162,6 +162,7 @@ func validatePrivateKey(data []byte) error {
 		if block == nil {
 			return errors.New("failed to parse PEM block")
 		}
+
 		switch block.Type {
 		case "PRIVATE KEY":
 			if _, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil {

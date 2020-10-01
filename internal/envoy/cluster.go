@@ -27,21 +27,27 @@ import (
 func Clustername(cluster *dag.Cluster) string {
 	service := cluster.Upstream
 	buf := cluster.LoadBalancerPolicy
+
 	if hc := cluster.HTTPHealthCheckPolicy; hc != nil {
 		if hc.Timeout > 0 {
 			buf += hc.Timeout.String()
 		}
+
 		if hc.Interval > 0 {
 			buf += hc.Interval.String()
 		}
+
 		if hc.UnhealthyThreshold > 0 {
 			buf += strconv.Itoa(int(hc.UnhealthyThreshold))
 		}
+
 		if hc.HealthyThreshold > 0 {
 			buf += strconv.Itoa(int(hc.HealthyThreshold))
 		}
+
 		buf += hc.Path
 	}
+
 	if uv := cluster.UpstreamValidation; uv != nil {
 		buf += uv.CACertificate.Object.ObjectMeta.Name
 		buf += uv.SubjectName
@@ -76,10 +82,13 @@ func Hashname(l int, s ...string) string {
 		// we're under the limit, nothing to do
 		return r
 	}
+
 	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(r)))
+
 	for n := len(s) - 1; n >= 0; n-- {
 		s[n] = truncate(l/len(s), s[n], hash[:shorthash])
 		r = strings.Join(s, "/")
+
 		if l > len(r) {
 			return r
 		}
@@ -96,6 +105,7 @@ func truncate(l int, s, suffix string) string {
 		// under the limit, nothing to do
 		return s
 	}
+
 	if l <= len(suffix) {
 		// easy case, just return the start of the suffix
 		return suffix[:min(l, len(suffix))]
@@ -115,6 +125,7 @@ func AnyPositive(first uint32, rest ...uint32) bool {
 	if first > 0 {
 		return true
 	}
+
 	for _, v := range rest {
 		if v > 0 {
 			return true

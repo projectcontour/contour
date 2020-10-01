@@ -36,7 +36,6 @@ type Client struct {
 }
 
 func (c *Client) dial() *grpc.ClientConn {
-
 	var options []grpc.DialOption
 
 	// Check the TLS setup
@@ -84,6 +83,7 @@ func (c *Client) dial() *grpc.ClientConn {
 func (c *Client) ClusterStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewClusterDiscoveryServiceClient(c.dial()).StreamClusters(context.Background())
 	kingpin.FatalIfError(err, "failed to fetch stream of Clusters")
+
 	return stream
 }
 
@@ -91,6 +91,7 @@ func (c *Client) ClusterStream() v2.ClusterDiscoveryService_StreamClustersClient
 func (c *Client) EndpointStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewEndpointDiscoveryServiceClient(c.dial()).StreamEndpoints(context.Background())
 	kingpin.FatalIfError(err, "failed to fetch stream of Endpoints")
+
 	return stream
 }
 
@@ -98,6 +99,7 @@ func (c *Client) EndpointStream() v2.ClusterDiscoveryService_StreamClustersClien
 func (c *Client) ListenerStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewListenerDiscoveryServiceClient(c.dial()).StreamListeners(context.Background())
 	kingpin.FatalIfError(err, "failed to fetch stream of Listeners")
+
 	return stream
 }
 
@@ -105,6 +107,7 @@ func (c *Client) ListenerStream() v2.ClusterDiscoveryService_StreamClustersClien
 func (c *Client) RouteStream() v2.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := v2.NewRouteDiscoveryServiceClient(c.dial()).StreamRoutes(context.Background())
 	kingpin.FatalIfError(err, "failed to fetch stream of Routes")
+
 	return stream
 }
 
@@ -118,6 +121,7 @@ func watchstream(st stream, typeURL string, resources []string) {
 		Compact:   false,
 		ExpandAny: true,
 	}
+
 	for {
 		req := &v2.DiscoveryRequest{
 			TypeUrl:       typeURL,

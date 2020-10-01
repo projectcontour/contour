@@ -44,6 +44,7 @@ func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 	}
 
 	var clients Clients
+
 	clients.core, err = kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err

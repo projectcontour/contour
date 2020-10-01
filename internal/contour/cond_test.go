@@ -31,6 +31,7 @@ func TestCondRegisterBeforeNotifyShouldNotBroadcast(t *testing.T) {
 func TestCondRegisterAfterNotifyShouldBroadcast(t *testing.T) {
 	var c Cond
 	ch := make(chan int, 1)
+
 	c.Notify()
 	c.Register(ch, 0)
 	select {
@@ -46,6 +47,7 @@ func TestCondRegisterAfterNotifyShouldBroadcast(t *testing.T) {
 func TestCondRegisterAfterNotifyWithCorrectSequenceShouldNotBroadcast(t *testing.T) {
 	var c Cond
 	ch := make(chan int, 1)
+
 	c.Notify()
 	c.Register(ch, 0)
 	seq := <-ch

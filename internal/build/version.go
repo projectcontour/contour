@@ -37,9 +37,11 @@ var Version string
 // PrintBuildInfo prints the build information.
 func PrintBuildInfo() string {
 	buildInfo := &BuildInfo{Branch, Sha, Version}
+
 	out, err := yaml.Marshal(buildInfo)
 	if err != nil {
 		panic(err)
 	}
+
 	return string(out)
 }

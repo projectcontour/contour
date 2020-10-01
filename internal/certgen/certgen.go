@@ -71,11 +71,14 @@ func newSecret(secretType corev1.SecretType, name string, namespace string, data
 // WritePEM writes a certificate out to its filename in outputDir.
 func writePEM(outputDir, filename string, data []byte, force OverwritePolicy) error {
 	filepath := path.Join(outputDir, filename)
+
 	f, err := createFile(filepath, force == Overwrite)
 	if err != nil {
 		return err
 	}
+
 	_, err = f.Write(data)
+
 	return checkFile(filepath, err)
 }
 
@@ -110,10 +113,12 @@ func WriteCertsPEM(outputDir string, certdata map[string][]byte, force Overwrite
 func WriteSecretsYAML(outputDir string, secrets []*corev1.Secret, force OverwritePolicy) error {
 	for _, s := range secrets {
 		filename := path.Join(outputDir, s.Name+".yaml")
+
 		f, err := createFile(filename, force == Overwrite)
 		if err != nil {
 			return err
 		}
+
 		if err := checkFile(filename, writeSecret(f, s)); err != nil {
 			return err
 		}

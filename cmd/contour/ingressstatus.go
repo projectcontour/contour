@@ -51,7 +51,6 @@ type loadBalancerStatusWriter struct {
 }
 
 func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
-
 	// Await leadership election.
 	isw.log.Info("awaiting leadership election")
 	select {
@@ -64,6 +63,7 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 
 	var shutdown chan struct{}
 	var ingressInformers sync.WaitGroup
+
 	for {
 		select {
 		case <-stop:
@@ -71,13 +71,16 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 			if shutdown != nil {
 				close(shutdown)
 			}
+
 			ingressInformers.Wait()
+
 			return nil
 		case lbs := <-isw.lbStatus:
 			// Stop the existing informer.
 			if shutdown != nil {
 				close(shutdown)
 			}
+
 			ingressInformers.Wait()
 
 			isw.log.WithField("loadbalancer-address", lbAddress(lbs)).Info("received a new address for status.loadBalancer")
@@ -102,8 +105,11 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 			factory.ForResource(contour_api_v1.HTTPProxyGVR).Informer().AddEventHandler(sau)
 
 			shutdown = make(chan struct{})
+
 			ingressInformers.Add(1)
+
 			fn := startInformer(factory, log)
+
 			go func() {
 				defer ingressInformers.Done()
 				if err := fn(shutdown); err != nil {
@@ -115,7 +121,6 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 }
 
 func parseStatusFlag(status string) v1.LoadBalancerStatus {
-
 	// Support ','-separated lists.
 	ingresses := []v1.LoadBalancerIngress{}
 
@@ -145,7 +150,6 @@ func parseStatusFlag(status string) v1.LoadBalancerStatus {
 
 // lbAddress gets the string representation of the first address, for logging.
 func lbAddress(lb v1.LoadBalancerStatus) string {
-
 	if len(lb.Ingress) == 0 {
 		return ""
 	}

@@ -394,6 +394,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	// Create temporary directory to store certificates and key for the server.
 	configDir, err := ioutil.TempDir("", "contour-testdata-")
 	checkFatalErr(t, err)
+
 	defer os.RemoveAll(configDir)
 
 	ctx := serveContext{
@@ -412,6 +413,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	// Start a dummy server.
 	log := fixture.NewTestLogger(t)
 	opts := ctx.grpcOptions(log)
+
 	g := grpc.NewServer(opts...)
 	if g == nil {
 		t.Error("failed to create server")
@@ -425,6 +427,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 		err := g.Serve(l)
 		checkFatalErr(t, err)
 	}()
+
 	defer g.GracefulStop()
 
 	for name, tc := range tests {
@@ -451,6 +454,7 @@ func TestTlsVersionDeprecation(t *testing.T) {
 	// Create temporary directory to store them for the server.
 	configDir, err := ioutil.TempDir("", "contour-testdata-")
 	checkFatalErr(t, err)
+
 	defer os.RemoveAll(configDir)
 
 	ctx := serveContext{
@@ -497,6 +501,7 @@ func linkFiles(src string, dst string) error {
 	for _, filename := range matches {
 		basename := filepath.Base(filename)
 		os.Remove(filepath.Join(dst, basename))
+
 		err := os.Symlink(filename, filepath.Join(dst, basename))
 		if err != nil {
 			return err
@@ -511,6 +516,7 @@ func linkFiles(src string, dst string) error {
 func tryConnect(address string, clientCredentialsDir string) (*x509.Certificate, error) {
 	clientCert := filepath.Join(clientCredentialsDir, "envoycert.pem")
 	clientKey := filepath.Join(clientCredentialsDir, "envoykey.pem")
+
 	cert, err := tls.LoadX509KeyPair(clientCert, clientKey)
 	if err != nil {
 		return nil, err
@@ -521,6 +527,7 @@ func tryConnect(address string, clientCredentialsDir string) (*x509.Certificate,
 		Certificates:       []tls.Certificate{cert},
 		InsecureSkipVerify: true, // nolint:gosec
 	}
+
 	conn, err := tls.Dial("tcp", address, clientConfig)
 	if err != nil {
 		return nil, err
@@ -540,6 +547,7 @@ func loadCertificate(path string) (*x509.Certificate, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	block, _ := pem.Decode(buf)
 	return x509.ParseCertificate(block.Bytes)
 }
@@ -550,6 +558,7 @@ func loadCertificate(path string) (*x509.Certificate, error) {
 // Adapted from https://golang.org/src/crypto/tls/handshake_client_test.go
 func peekError(conn net.Conn) error {
 	_ = conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+
 	_, err := conn.Read(make([]byte, 1))
 	if err != nil {
 		if netErr, ok := err.(net.Error); !ok || !netErr.Timeout() {
@@ -594,6 +603,7 @@ func TestParseHTTPVersions(t *testing.T) {
 
 	for name, testcase := range cases {
 		testcase := testcase
+
 		t.Run(name, func(t *testing.T) {
 			vers, err := parseDefaultHTTPVersions(testcase.versions)
 
@@ -644,6 +654,7 @@ func TestParseDNSLookupFamily(t *testing.T) {
 
 	for name, testcase := range cases {
 		testcase := testcase
+
 		t.Run(name, func(t *testing.T) {
 			got, err := ParseDNSLookupFamily(testcase.input)
 			assert.Equal(t, testcase.expectedError, err)

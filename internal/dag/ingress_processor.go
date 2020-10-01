@@ -68,6 +68,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 					WithField("namespace", ing.GetNamespace()).
 					WithField("secret", secretName).
 					Error("unresolved secret reference")
+
 				continue
 			}
 
@@ -77,6 +78,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 					WithField("namespace", ing.GetNamespace()).
 					WithField("secret", secretName).
 					Error("certificate delegation not permitted")
+
 				continue
 			}
 
@@ -96,7 +98,6 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 func (p *IngressProcessor) computeIngresses() {
 	// deconstruct each ingress into routes and virtualhost entries
 	for _, ing := range p.source.ingresses {
-
 		// rewrite the default ingress to a stock ingress rule.
 		rules := rulesFromSpec(ing.Spec)
 		for _, rule := range rules {
@@ -189,6 +190,7 @@ func route(ingress *v1beta1.Ingress, path string, service *Service, clientCertSe
 // rule representing the default backend.
 func rulesFromSpec(spec v1beta1.IngressSpec) []v1beta1.IngressRule {
 	rules := spec.Rules
+
 	if backend := spec.Backend; backend != nil {
 		rule := defaultBackendRule(backend)
 		rules = append(rules, rule)

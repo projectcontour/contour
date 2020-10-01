@@ -75,6 +75,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		configFile string
 		parsed     bool
 	)
+
 	ctx := newServeContext()
 
 	parseConfig := func(_ *kingpin.ParseContext) error {
@@ -83,6 +84,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 			// already parsed it, return immediately.
 			return nil
 		}
+
 		f, err := os.Open(configFile)
 		if err != nil {
 			return err
@@ -91,6 +93,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		dec := yaml.NewDecoder(f)
 		dec.SetStrict(true)
 		parsed = true
+
 		if err := dec.Decode(&ctx); err != nil {
 			return fmt.Errorf("failed to parse contour configuration: %w", err)
 		}
@@ -250,18 +253,22 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if err != nil {
 		return fmt.Errorf("error parsing connection idle timeout: %w", err)
 	}
+
 	streamIdleTimeout, err := timeout.Parse(ctx.StreamIdleTimeout)
 	if err != nil {
 		return fmt.Errorf("error parsing stream idle timeout: %w", err)
 	}
+
 	maxConnectionDuration, err := timeout.Parse(ctx.MaxConnectionDuration)
 	if err != nil {
 		return fmt.Errorf("error parsing max connection duration: %w", err)
 	}
+
 	connectionShutdownGracePeriod, err := timeout.Parse(ctx.ConnectionShutdownGracePeriod)
 	if err != nil {
 		return fmt.Errorf("error parsing connection shutdown grace period: %w", err)
 	}
+
 	requestTimeout, err := getRequestTimeout(log, ctx)
 	if err != nil {
 		return fmt.Errorf("error parsing request timeout: %w", err)
@@ -413,6 +420,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Set up workgroup runner and register informers.
 	var g workgroup.Group
+
 	g.Add(startInformer(clusterInformerFactory, log.WithField("context", "contourinformers")))
 
 	for ns, factory := range namespacedInformerFactories {

@@ -56,11 +56,13 @@ func (d *DynamicClientHandler) OnUpdate(oldObj, newObj interface{}) {
 		d.Logger.Error(err)
 		return
 	}
+
 	newObj, err = d.Converter.FromUnstructured(newObj)
 	if err != nil {
 		d.Logger.Error(err)
 		return
 	}
+
 	d.Next.OnUpdate(oldObj, newObj)
 }
 
@@ -70,6 +72,7 @@ func (d *DynamicClientHandler) OnDelete(obj interface{}) {
 		d.Logger.Error(err)
 		return
 	}
+
 	d.Next.OnDelete(obj)
 }
 

@@ -11,6 +11,7 @@ linters:
   - misspell
   - unconvert
   - unparam
+  - wsl
 
 # TODO(jpeach): enable these later:
 #  - gocyclo
@@ -54,3 +55,7 @@ issues:
   - linters:
     - golint
     text: "don't use ALL_CAPS in Go names; use CamelCase"
+  # https://github.com/bombsimon/wsl/blob/master/doc/rules.md#declarations-should-never-be-cuddled
+  - linters:
+    - wsl
+    text: "declarations should never be cuddled"

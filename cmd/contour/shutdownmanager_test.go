@@ -61,11 +61,13 @@ func TestShutdownManager_ShutdownReadyHandler_Success(t *testing.T) {
 
 	mgr := newShutdownManagerContext()
 	mgr.FieldLogger = fixture.NewTestLogger(t)
+
 	tmpdir, err := ioutil.TempDir("", "shutdownmanager_test-*")
 	defer os.RemoveAll(tmpdir)
 	if err != nil {
 		t.Error(err)
 	}
+
 	mgr.shutdownReadyFile = path.Join(tmpdir, "ok")
 	mgr.shutdownReadyCheckInterval = time.Millisecond * 20
 
@@ -75,6 +77,7 @@ func TestShutdownManager_ShutdownReadyHandler_Success(t *testing.T) {
 
 	go func() {
 		time.Sleep(50 * time.Millisecond)
+
 		file, err := os.Create(mgr.shutdownReadyFile)
 		if err != nil {
 			t.Error(err)

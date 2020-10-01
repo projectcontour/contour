@@ -46,6 +46,7 @@ func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancin
 	}
 
 	var lb []*LoadBalancingEndpoint
+
 	for _, s := range ep.Subsets {
 		// Skip subsets without ready addresses.
 		if len(s.Addresses) < 1 {
@@ -108,6 +109,7 @@ func (c *EndpointsCache) Recalculate() map[string]*envoy_api_v2.ClusterLoadAssig
 	defer c.mu.Unlock()
 
 	assignments := map[string]*envoy_api_v2.ClusterLoadAssignment{}
+
 	for _, cluster := range c.stale {
 		// Clusters can be in the stale list multiple times;
 		// skip to avoid duplicate recalculations.
@@ -311,6 +313,7 @@ func (e *EndpointsTranslator) OnAdd(obj interface{}) {
 		e.cache.UpdateEndpoint(obj)
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
+
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -344,6 +347,7 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
 		e.cache.UpdateEndpoint(newObj)
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
+
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -358,6 +362,7 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 		e.cache.DeleteEndpoint(obj)
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
+
 		if e.Observer != nil {
 			e.Observer.Refresh()
 		}
@@ -387,14 +392,17 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	defer e.mu.Unlock()
 
 	values := make([]*envoy_api_v2.ClusterLoadAssignment, 0, len(names))
+
 	for _, n := range names {
 		v, ok := e.entries[n]
 		if !ok {
 			e.Debugf("no cache entry for %q", n)
+
 			v = &envoy_api_v2.ClusterLoadAssignment{
 				ClusterName: n,
 			}
 		}
+
 		values = append(values, v)
 	}
 

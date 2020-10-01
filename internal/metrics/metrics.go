@@ -142,6 +142,7 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 	}
 	m.buildInfoGauge.WithLabelValues(build.Branch, build.Sha, build.Version).Set(1)
 	m.register(registry)
+
 	return &m
 }
 
@@ -197,18 +198,22 @@ func (m *Metrics) SetHTTPProxyMetric(metrics RouteMetric) {
 		m.proxyTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
 		delete(m.proxyMetricCache.Total, meta)
 	}
+
 	for meta, value := range metrics.Invalid {
 		m.proxyInvalidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
 		delete(m.proxyMetricCache.Invalid, meta)
 	}
+
 	for meta, value := range metrics.Orphaned {
 		m.proxyOrphanedGauge.WithLabelValues(meta.Namespace).Set(float64(value))
 		delete(m.proxyMetricCache.Orphaned, meta)
 	}
+
 	for meta, value := range metrics.Valid {
 		m.proxyValidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
 		delete(m.proxyMetricCache.Valid, meta)
 	}
+
 	for meta, value := range metrics.Root {
 		m.proxyRootTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
 		delete(m.proxyMetricCache.Root, meta)
@@ -218,15 +223,19 @@ func (m *Metrics) SetHTTPProxyMetric(metrics RouteMetric) {
 	for meta := range m.proxyMetricCache.Total {
 		m.proxyTotalGauge.DeleteLabelValues(meta.Namespace)
 	}
+
 	for meta := range m.proxyMetricCache.Invalid {
 		m.proxyInvalidGauge.DeleteLabelValues(meta.Namespace, meta.VHost)
 	}
+
 	for meta := range m.proxyMetricCache.Orphaned {
 		m.proxyOrphanedGauge.DeleteLabelValues(meta.Namespace)
 	}
+
 	for meta := range m.proxyMetricCache.Valid {
 		m.proxyValidGauge.DeleteLabelValues(meta.Namespace, meta.VHost)
 	}
+
 	for meta := range m.proxyMetricCache.Root {
 		m.proxyRootTotalGauge.DeleteLabelValues(meta.Namespace)
 	}

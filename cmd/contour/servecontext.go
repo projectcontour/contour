@@ -358,6 +358,7 @@ func (ctx *serveContext) grpcOptions(log logrus.FieldLogger) []grpc.ServerOption
 			Timeout: 20 * time.Second,
 		}),
 	}
+
 	if !ctx.PermitInsecureGRPC {
 		tlsconfig := ctx.tlsconfig(log)
 		creds := credentials.NewTLS(tlsconfig)
@@ -434,6 +435,7 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 	if strings.TrimSpace(ctx.rootNamespaces) == "" {
 		return nil
 	}
+
 	var ns []string
 	for _, s := range strings.Split(ctx.rootNamespaces, ",") {
 		ns = append(ns, strings.TrimSpace(s))
@@ -444,7 +446,6 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 // ParseDNSLookupFamily parses the dnsLookupFamily returning the value
 // configured or the default of "auto" if invalid.
 func ParseDNSLookupFamily(value string) (string, error) {
-
 	dlf := strings.ToLower(value)
 	switch dlf {
 	case "auto", "v4", "v6":
@@ -474,7 +475,6 @@ func parseDefaultHTTPVersions(versions []string) ([]envoy_v2.HTTPVersionType, er
 	var parsed []envoy_v2.HTTPVersionType
 	for k := range wanted {
 		parsed = append(parsed, k)
-
 	}
 
 	return parsed, nil
