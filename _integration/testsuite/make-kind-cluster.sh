@@ -74,9 +74,15 @@ for t in $TAGS ; do
     kind::cluster::load docker.io/projectcontour/contour:$t
 done
 
-# Pull the util image & push image into the cluster.
-docker pull docker.io/kennethreitz/httpbin
-kind::cluster::load docker.io/kennethreitz/httpbin
+# Push test images into the cluster.
+for i in \
+    "agervais/ingress-conformance-echo:latest" \
+    "docker.io/kennethreitz/httpbin" \
+    "docker.io/projectcontour/contour-authserver:v2"
+do
+    docker pull "$i"
+    kind::cluster::load "$i"
+done
 
 # Install Contour.
 #

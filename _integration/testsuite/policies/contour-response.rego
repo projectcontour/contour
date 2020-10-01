@@ -61,3 +61,30 @@ is_4xx(resp) = true {
 } else = false {
   true
 }
+
+# Return true if the response body reports a header with the given value.
+#
+# This function expects the respose body to be a JSON object of the form:
+#     {
+#       "TestId": "echo",
+#       "Path": "/first/allow/3666",
+#       "Host": "echo.projectcontour.io:9443",
+#       "Method": "GET",
+#       "Proto": "HTTP/1.1",
+#       "Headers": {
+#         "Auth-Context-Hostname": [
+#           "echo.projectcontour.io",
+#           "something else",
+#         ],
+#       }
+#     }
+body_has_header_value(resp, name, value) = true {
+  response_body := body(resp)
+  response_headers := object.get(response_body, "Headers", {})
+  header_values := object.get(response_headers, name, set())
+
+  some v
+  header_values[v] == value
+} else = false {
+  true
+}
