@@ -19,12 +19,11 @@ package contour
 import (
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -82,25 +81,22 @@ func (m *RebuildMetricsObserver) OnChange(d *dag.DAG) {
 	select {
 	// If we are leader, the IsLeader channel is closed.
 	case <-m.IsLeader:
-		m.Metrics.SetHTTPProxyMetric(calculateRouteMetric(d.Statuses()))
+		m.Metrics.SetHTTPProxyMetric(calculateRouteMetric(d.StatusCache.GetProxyStatusMetrics()))
 	default:
 	}
 }
 
-func calculateRouteMetric(statuses map[types.NamespacedName]dag.Status) metrics.RouteMetric {
+func calculateRouteMetric(statuses []status.Metric) metrics.RouteMetric {
 	proxyMetricTotal := make(map[metrics.Meta]int)
 	proxyMetricValid := make(map[metrics.Meta]int)
 	proxyMetricInvalid := make(map[metrics.Meta]int)
 	proxyMetricOrphaned := make(map[metrics.Meta]int)
 	proxyMetricRoots := make(map[metrics.Meta]int)
 
-	for _, v := range statuses {
-		switch o := v.Object.(type) {
-		case *contour_api_v1.HTTPProxy:
-			calcMetrics(v, proxyMetricValid, proxyMetricInvalid, proxyMetricOrphaned, proxyMetricTotal)
-			if o.Spec.VirtualHost != nil {
-				proxyMetricRoots[metrics.Meta{Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
-			}
+	for _, s := range statuses {
+		calcMetrics(s, proxyMetricValid, proxyMetricInvalid, proxyMetricOrphaned, proxyMetricTotal)
+		if s.Vhost != "" {
+			proxyMetricRoots[metrics.Meta{Namespace: s.Namespace}]++
 		}
 	}
 
@@ -113,14 +109,14 @@ func calculateRouteMetric(statuses map[types.NamespacedName]dag.Status) metrics.
 	}
 }
 
-func calcMetrics(v dag.Status, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
-	switch v.Status {
+func calcMetrics(s status.Metric, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
+	switch s.Status {
 	case k8s.StatusValid:
-		metricValid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
+		metricValid[metrics.Meta{VHost: s.Vhost, Namespace: s.Namespace}]++
 	case k8s.StatusInvalid:
-		metricInvalid[metrics.Meta{VHost: v.Vhost, Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
+		metricInvalid[metrics.Meta{VHost: s.Vhost, Namespace: s.Namespace}]++
 	case k8s.StatusOrphaned:
-		metricOrphaned[metrics.Meta{Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
+		metricOrphaned[metrics.Meta{Namespace: s.Namespace}]++
 	}
-	metricTotal[metrics.Meta{Namespace: v.Object.GetObjectMeta().GetNamespace()}]++
+	metricTotal[metrics.Meta{Namespace: s.Namespace}]++
 }

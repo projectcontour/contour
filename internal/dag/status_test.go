@@ -121,7 +121,9 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "valid proxy", testcase{
 		objs: []interface{}{proxyValidHomeService, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyValidHomeService.Name, Namespace: proxyValidHomeService.Namespace}: fixture.NewValidCondition().WithGeneration(proxyValidHomeService.Generation).Valid(),
+			{Name: proxyValidHomeService.Name, Namespace: proxyValidHomeService.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyValidHomeService.Generation).
+				Valid(),
 		},
 	})
 
@@ -202,18 +204,30 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "proxy has multiple includes, one is invalid", testcase{
 		objs: []interface{}{proxyMultiIncludeOneInvalid, proxyChildValidFoo2, proxyChildInvalidBadPort, fixture.ServiceRootsFoo2, fixture.ServiceRootsFoo3InvalidPort},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:                 fixture.NewValidCondition().WithGeneration(proxyChildValidFoo2.Generation).Valid(),
-			{Name: proxyChildInvalidBadPort.Name, Namespace: proxyChildInvalidBadPort.Namespace}:       fixture.NewValidCondition().WithGeneration(proxyChildInvalidBadPort.Generation).WithError("ServiceError", "ServicePortInvalid", `service "foo3": port must be in the range 1-65535`),
-			{Name: proxyMultiIncludeOneInvalid.Name, Namespace: proxyMultiIncludeOneInvalid.Namespace}: fixture.NewValidCondition().WithGeneration(proxyMultiIncludeOneInvalid.Generation).Valid(),
+			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyChildValidFoo2.Generation).
+				Valid(),
+			{Name: proxyChildInvalidBadPort.Name, Namespace: proxyChildInvalidBadPort.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyChildInvalidBadPort.Generation).
+				WithError("ServiceError", "ServicePortInvalid", `service "foo3": port must be in the range 1-65535`),
+			{Name: proxyMultiIncludeOneInvalid.Name, Namespace: proxyMultiIncludeOneInvalid.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyMultiIncludeOneInvalid.Generation).
+				Valid(),
 		},
 	})
 
 	run(t, "multi-parent child is not orphaned when one of the parents is invalid", testcase{
 		objs: []interface{}{proxyNoFQDN, proxyChildValidFoo2, proxyIncludeValidChild, fixture.ServiceRootsKuard, fixture.ServiceRootsFoo2},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}:                       fixture.NewValidCondition().WithGeneration(proxyNoFQDN.Generation).WithError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
-			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}:       fixture.NewValidCondition().WithGeneration(proxyChildValidFoo2.Generation).Valid(),
-			{Name: proxyIncludeValidChild.Name, Namespace: proxyIncludeValidChild.Namespace}: fixture.NewValidCondition().WithGeneration(proxyIncludeValidChild.Generation).Valid(),
+			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyNoFQDN.Generation).
+				WithError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
+			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyChildValidFoo2.Generation).
+				Valid(),
+			{Name: proxyIncludeValidChild.Name, Namespace: proxyIncludeValidChild.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyIncludeValidChild.Generation).
+				Valid(),
 		},
 	})
 
@@ -261,7 +275,9 @@ func TestDAGStatus(t *testing.T) {
 			fixture.SecretRootsCert, fixture.ServiceRootsNginx, ingressSharedService, proxyTCPSharedService,
 		},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyTCPSharedService.Name, Namespace: proxyTCPSharedService.Namespace}: fixture.NewValidCondition().WithGeneration(proxyTCPSharedService.Generation).Valid(),
+			{Name: proxyTCPSharedService.Name, Namespace: proxyTCPSharedService.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyTCPSharedService.Generation).
+				Valid(),
 		},
 	})
 
@@ -293,7 +309,8 @@ func TestDAGStatus(t *testing.T) {
 			proxyDelegatedTCPTLS,
 		},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyDelegatedTCPTLS.Name, Namespace: proxyDelegatedTCPTLS.Namespace}: fixture.NewValidCondition().WithGeneration(proxyDelegatedTCPTLS.Generation).
+			{Name: proxyDelegatedTCPTLS.Name, Namespace: proxyDelegatedTCPTLS.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyDelegatedTCPTLS.Generation).
 				WithError("TLSError", "DelegationNotPermitted", `Spec.VirtualHost.TLS Secret "projectcontour/default-ssl-cert" certificate delegation not permitted`),
 		},
 	})
@@ -326,7 +343,8 @@ func TestDAGStatus(t *testing.T) {
 			proxyDelegatedTLS,
 		},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyDelegatedTLS.Name, Namespace: proxyDelegatedTLS.Namespace}: fixture.NewValidCondition().WithGeneration(proxyDelegatedTCPTLS.Generation).
+			{Name: proxyDelegatedTLS.Name, Namespace: proxyDelegatedTLS.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyDelegatedTCPTLS.Generation).
 				WithError("TLSError", "DelegationNotPermitted", `Spec.VirtualHost.TLS Secret "projectcontour/default-ssl-cert" certificate delegation not permitted`),
 		},
 	})
@@ -388,7 +406,9 @@ func TestDAGStatus(t *testing.T) {
 			proxyPassthroughProxyNonSecure,
 		},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyPassthroughProxyNonSecure.Name, Namespace: proxyPassthroughProxyNonSecure.Namespace}: fixture.NewValidCondition().WithGeneration(proxyPassthroughProxyNonSecure.Generation).Valid(),
+			{Name: proxyPassthroughProxyNonSecure.Name, Namespace: proxyPassthroughProxyNonSecure.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyPassthroughProxyNonSecure.Generation).
+				Valid(),
 		},
 	})
 
@@ -444,9 +464,15 @@ func TestDAGStatus(t *testing.T) {
 			fixture.ServiceRootsKuard, proxyMultipleIncludersSite1, proxyMultipleIncludersSite2, proxyMultiIncludeChild,
 		},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyMultipleIncludersSite1.Name, Namespace: proxyMultipleIncludersSite1.Namespace}: fixture.NewValidCondition().WithGeneration(proxyMultipleIncludersSite1.Generation).Valid(),
-			{Name: proxyMultipleIncludersSite2.Name, Namespace: proxyMultipleIncludersSite2.Namespace}: fixture.NewValidCondition().WithGeneration(proxyMultipleIncludersSite2.Generation).Valid(),
-			{Name: proxyMultiIncludeChild.Name, Namespace: proxyMultiIncludeChild.Namespace}:           fixture.NewValidCondition().WithGeneration(proxyMultiIncludeChild.Generation).Valid(),
+			{Name: proxyMultipleIncludersSite1.Name, Namespace: proxyMultipleIncludersSite1.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyMultipleIncludersSite1.Generation).
+				Valid(),
+			{Name: proxyMultipleIncludersSite2.Name, Namespace: proxyMultipleIncludersSite2.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyMultipleIncludersSite2.Generation).
+				Valid(),
+			{Name: proxyMultiIncludeChild.Name, Namespace: proxyMultiIncludeChild.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyMultiIncludeChild.Generation).
+				Valid(),
 		},
 	})
 
@@ -475,7 +501,9 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "invalid port in service", testcase{
 		objs: []interface{}{proxyInvalidNegativePortHomeService},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyInvalidNegativePortHomeService.Name, Namespace: proxyInvalidNegativePortHomeService.Namespace}: fixture.NewValidCondition().WithGeneration(proxyInvalidNegativePortHomeService.Generation).WithError("ServiceError", "ServicePortInvalid", `service "home": port must be in the range 1-65535`),
+			{Name: proxyInvalidNegativePortHomeService.Name, Namespace: proxyInvalidNegativePortHomeService.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyInvalidNegativePortHomeService.Generation).
+				WithError("ServiceError", "ServicePortInvalid", `service "home": port must be in the range 1-65535`),
 		},
 	})
 
@@ -504,7 +532,9 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "root proxy outside of roots namespace", testcase{
 		objs: []interface{}{proxyInvalidOutsideRootNamespace},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyInvalidOutsideRootNamespace.Name, Namespace: proxyInvalidOutsideRootNamespace.Namespace}: fixture.NewValidCondition().WithGeneration(proxyInvalidNegativePortHomeService.Generation).WithError("RootNamespaceError", "RootProxyNotAllowedInNamespace", "root HTTPProxy cannot be defined in this namespace"),
+			{Name: proxyInvalidOutsideRootNamespace.Name, Namespace: proxyInvalidOutsideRootNamespace.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyInvalidNegativePortHomeService.Generation).
+				WithError("RootNamespaceError", "RootProxyNotAllowedInNamespace", "root HTTPProxy cannot be defined in this namespace"),
 		},
 	})
 
@@ -537,7 +567,9 @@ func TestDAGStatus(t *testing.T) {
 	run(t, "proxy self-edge produces a cycle", testcase{
 		objs: []interface{}{proxyInvalidIncludeCycle, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]projcontour.DetailedCondition{
-			{Name: proxyInvalidIncludeCycle.Name, Namespace: proxyInvalidIncludeCycle.Namespace}: fixture.NewValidCondition().WithGeneration(proxyInvalidIncludeCycle.Generation).WithError("IncludeError", "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
+			{Name: proxyInvalidIncludeCycle.Name, Namespace: proxyInvalidIncludeCycle.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyInvalidIncludeCycle.Generation).
+				WithError("IncludeError", "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
 		},
 	})
 

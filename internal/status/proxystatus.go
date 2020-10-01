@@ -31,12 +31,10 @@ const ValidCondition ConditionType = "Valid"
 
 // ProxyUpdate holds status updates for a particular HTTPProxy object
 type ProxyUpdate struct {
-	// Object holds a copy of the HTTPProxy object that the Conditions refer to.
-	// This is intended for read-only use; any changes made to this object will
-	// be lost.
 	Fullname       types.NamespacedName
 	Generation     int64
 	TransitionTime v1.Time
+	Vhost          string
 
 	// Conditions holds all the DetailedConditions to add to the object
 	// keyed by the Type (since that's what the apiserver will end up

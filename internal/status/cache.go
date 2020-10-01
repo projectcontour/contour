@@ -24,6 +24,14 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+type ProxyStatus string
+
+const (
+	ProxyStatusValid    ProxyStatus = "valid"
+	ProxyStatusInvalid  ProxyStatus = "invalid"
+	ProxyStatusOrphaned ProxyStatus = "orphaned"
+)
+
 // NewCache creates a new Cache for holding status updates.
 func NewCache() Cache {
 	return Cache{
@@ -51,6 +59,10 @@ func (c Cache) ProxyAccessor(proxy *projcontour.HTTPProxy) (*ProxyUpdate, func()
 		TransitionTime: v1.NewTime(time.Now()),
 		Conditions:     make(map[ConditionType]*projcontour.DetailedCondition),
 	}
+
+	// if proxy.Spec.VirtualHost != nil {
+	// 	pu.Vhost = proxy.Spec.VirtualHost.Fqdn
+	// }
 
 	return pu, func() {
 		c.commitProxy(pu)
@@ -103,4 +115,36 @@ func (c Cache) GetProxyValidConditions() map[types.NamespacedName]projcontour.De
 	}
 
 	return validConds
+}
+
+type Metric struct {
+	Vhost     string
+	Status    ProxyStatus
+	Namespace string
+}
+
+func (c Cache) GetProxyStatusMetrics() []Metric {
+	var statusMetrics []Metric
+	for name, pu := range c.proxyUpdates {
+		metric := Metric{
+			Vhost:     pu.Vhost,
+			Namespace: name.Namespace,
+		}
+		validCond := pu.ConditionFor(ValidCondition)
+		switch validCond.Status {
+		case projcontour.ConditionTrue:
+			metric.Status = ProxyStatusValid
+		case projcontour.ConditionFalse:
+			_, ok := validCond.GetError("orphaned")
+			if ok {
+				metric.Status = ProxyStatusOrphaned
+			} else {
+				metric.Status = ProxyStatusInvalid
+			}
+		}
+
+		statusMetrics = append(statusMetrics, metric)
+
+	}
+	return statusMetrics
 }

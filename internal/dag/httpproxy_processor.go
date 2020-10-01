@@ -123,6 +123,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *projcontour.HTTPProxy) {
 		validCond.AddError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified")
 		return
 	}
+	pa.Vhost = host
 
 	if strings.Contains(host, "*") {
 		validCond.AddErrorf("VirtualHostError", "WildCardNotAllowed", "Spec.VirtualHost.Fqdn %q cannot use wildcards", host)
@@ -668,6 +669,7 @@ func (p *HTTPProxyProcessor) validHTTPProxies() []*contour_api_v1.HTTPProxy {
 			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
 			for _, proxy := range proxies {
 				pa, commit := p.dag.StatusCache.ProxyAccessor(proxy)
+				pa.Vhost = fqdn
 				pa.ConditionFor(status.ValidCondition).AddError("VirtualHostError",
 					"DuplicateVhost",
 					msg)
