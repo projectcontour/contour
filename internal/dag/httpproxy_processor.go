@@ -92,7 +92,7 @@ func (p *HTTPProxyProcessor) Run(dag *DAG, source *KubernetesCache) {
 		proxy, ok := p.source.httpproxies[meta]
 		if ok {
 			pa, commit := p.dag.StatusCache.ProxyAccessor(proxy)
-			pa.ConditionFor(status.ValidCondition).AddError(k8s.StatusOrphaned,
+			pa.ConditionFor(status.ValidCondition).AddError(status.OrphanedConditionType,
 				"Orphaned",
 				"this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 			commit()

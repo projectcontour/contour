@@ -58,7 +58,7 @@ func TestDAGStatus(t *testing.T) {
 			}
 			dag := builder.Build()
 			t.Logf("%#v\n", dag.StatusCache)
-			got := dag.Statuses()
+			got := dag.GetTestStatuses()
 			assert.Equal(t, tc.want, got)
 		})
 	}

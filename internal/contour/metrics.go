@@ -19,6 +19,7 @@ package contour
 import (
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
@@ -81,22 +82,22 @@ func (m *RebuildMetricsObserver) OnChange(d *dag.DAG) {
 	select {
 	// If we are leader, the IsLeader channel is closed.
 	case <-m.IsLeader:
-		m.Metrics.SetHTTPProxyMetric(calculateRouteMetric(d.StatusCache.GetProxyStatusMetrics()))
+		m.Metrics.SetHTTPProxyMetric(calculateRouteMetric(d.StatusCache.GetProxyUpdates()))
 	default:
 	}
 }
 
-func calculateRouteMetric(statuses []status.Metric) metrics.RouteMetric {
+func calculateRouteMetric(updates []*status.ProxyUpdate) metrics.RouteMetric {
 	proxyMetricTotal := make(map[metrics.Meta]int)
 	proxyMetricValid := make(map[metrics.Meta]int)
 	proxyMetricInvalid := make(map[metrics.Meta]int)
 	proxyMetricOrphaned := make(map[metrics.Meta]int)
 	proxyMetricRoots := make(map[metrics.Meta]int)
 
-	for _, s := range statuses {
-		calcMetrics(s, proxyMetricValid, proxyMetricInvalid, proxyMetricOrphaned, proxyMetricTotal)
-		if s.Vhost != "" {
-			proxyMetricRoots[metrics.Meta{Namespace: s.Namespace}]++
+	for _, u := range updates {
+		calcMetrics(u, proxyMetricValid, proxyMetricInvalid, proxyMetricOrphaned, proxyMetricTotal)
+		if u.Vhost != "" {
+			proxyMetricRoots[metrics.Meta{Namespace: u.Fullname.Namespace}]++
 		}
 	}
 
@@ -109,14 +110,18 @@ func calculateRouteMetric(statuses []status.Metric) metrics.RouteMetric {
 	}
 }
 
-func calcMetrics(s status.Metric, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
-	switch s.Status {
-	case k8s.StatusValid:
-		metricValid[metrics.Meta{VHost: s.Vhost, Namespace: s.Namespace}]++
-	case k8s.StatusInvalid:
-		metricInvalid[metrics.Meta{VHost: s.Vhost, Namespace: s.Namespace}]++
-	case k8s.StatusOrphaned:
-		metricOrphaned[metrics.Meta{Namespace: s.Namespace}]++
+func calcMetrics(u *status.ProxyUpdate, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
+	validCond := u.ConditionFor(status.ValidCondition)
+	switch validCond.Status {
+	case contour_api_v1.ConditionTrue:
+		metricValid[metrics.Meta{VHost: u.Vhost, Namespace: u.Fullname.Namespace}]++
+	case contour_api_v1.ConditionFalse:
+		_, ok := validCond.GetError(status.OrphanedConditionType)
+		if ok {
+			metricOrphaned[metrics.Meta{Namespace: u.Fullname.Namespace}]++
+			break
+		}
+		metricInvalid[metrics.Meta{VHost: u.Vhost, Namespace: u.Fullname.Namespace}]++
 	}
-	metricTotal[metrics.Meta{Namespace: s.Namespace}]++
+	metricTotal[metrics.Meta{Namespace: u.Fullname.Namespace}]++
 }

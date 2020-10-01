@@ -30,6 +30,8 @@ const (
 	ProxyStatusValid    ProxyStatus = "valid"
 	ProxyStatusInvalid  ProxyStatus = "invalid"
 	ProxyStatusOrphaned ProxyStatus = "orphaned"
+
+	OrphanedConditionType string = "Orphaned"
 )
 
 // NewCache creates a new Cache for holding status updates.
@@ -113,44 +115,15 @@ func (c Cache) getProxyStatusUpdates() []k8s.StatusUpdate {
 
 }
 
-func (c Cache) GetProxyValidConditions() map[types.NamespacedName]contour_api_v1.DetailedCondition {
-	validConds := make(map[types.NamespacedName]contour_api_v1.DetailedCondition)
+// GetProxyUpdates gets the underlying ProxyUpdate objects
+// from the cache, used by various things (`internal/contour/metrics.go` and `internal/dag/status_test.go`)
+// to retrieve info they need.
+// TODO(youngnick): This could conceivably be replaced with a Walk pattern.
+func (c Cache) GetProxyUpdates() []*ProxyUpdate {
 
-	for fullname, pu := range c.proxyUpdates {
-		validConds[fullname] = *pu.Conditions[ValidCondition]
+	var allUpdates []*ProxyUpdate
+	for _, pu := range c.proxyUpdates {
+		allUpdates = append(allUpdates, pu)
 	}
-
-	return validConds
-}
-
-type Metric struct {
-	Vhost     string
-	Status    ProxyStatus
-	Namespace string
-}
-
-func (c Cache) GetProxyStatusMetrics() []Metric {
-	var statusMetrics []Metric
-	for name, pu := range c.proxyUpdates {
-		metric := Metric{
-			Vhost:     pu.Vhost,
-			Namespace: name.Namespace,
-		}
-		validCond := pu.ConditionFor(ValidCondition)
-		switch validCond.Status {
-		case contour_api_v1.ConditionTrue:
-			metric.Status = ProxyStatusValid
-		case contour_api_v1.ConditionFalse:
-			_, ok := validCond.GetError("orphaned")
-			if ok {
-				metric.Status = ProxyStatusOrphaned
-			} else {
-				metric.Status = ProxyStatusInvalid
-			}
-		}
-
-		statusMetrics = append(statusMetrics, metric)
-
-	}
-	return statusMetrics
+	return allUpdates
 }

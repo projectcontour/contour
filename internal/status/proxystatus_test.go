@@ -208,12 +208,12 @@ func TestStatusMutator(t *testing.T) {
 					Condition: contour_api_v1.Condition{
 						Type:    string(ValidCondition),
 						Status:  contour_api_v1.ConditionFalse,
-						Reason:  "orphaned",
+						Reason:  "Orphaned",
 						Message: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 					},
 					Errors: []contour_api_v1.SubCondition{
 						{
-							Type:    "orphaned",
+							Type:    "Orphaned",
 							Reason:  "Orphaned",
 							Message: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 						},
@@ -228,12 +228,12 @@ func TestStatusMutator(t *testing.T) {
 					Status:             contour_api_v1.ConditionFalse,
 					ObservedGeneration: testGeneration,
 					LastTransitionTime: testTransitionTime,
-					Reason:             "orphaned",
+					Reason:             "Orphaned",
 					Message:            "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 				},
 				Errors: []contour_api_v1.SubCondition{
 					{
-						Type:    "orphaned",
+						Type:    "Orphaned",
 						Reason:  "Orphaned",
 						Message: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 					},

@@ -49,7 +49,7 @@ func (dcb *DetailedConditionBuilder) Valid() v1.DetailedCondition {
 func (dcb *DetailedConditionBuilder) Orphaned() v1.DetailedCondition {
 
 	dc := (*v1.DetailedCondition)(dcb)
-	dc.AddError("orphaned", "Orphaned", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
+	dc.AddError("Orphaned", "Orphaned", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 
 	return *dc
 }

@@ -58,7 +58,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 
 			dag := builder.Build()
 
-			gotProxy := calculateRouteMetric(dag.StatusCache.GetProxyStatusMetrics())
+			gotProxy := calculateRouteMetric(dag.StatusCache.GetProxyUpdates())
 
 			if tc.wantProxy != nil {
 				assert.Equal(t, *tc.wantProxy, gotProxy)

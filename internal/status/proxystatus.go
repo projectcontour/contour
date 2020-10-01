@@ -98,7 +98,7 @@ func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
 		proxy.Status.CurrentStatus = k8s.StatusValid
 		proxy.Status.Description = validCond.Message
 	case projectcontour.ConditionFalse:
-		orphanCond, orphaned := validCond.GetError(k8s.StatusOrphaned)
+		orphanCond, orphaned := validCond.GetError(OrphanedConditionType)
 		if orphaned {
 			proxy.Status.CurrentStatus = k8s.StatusOrphaned
 			proxy.Status.Description = orphanCond.Message
