@@ -18,6 +18,7 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/status"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -83,13 +84,13 @@ func (osw *ObjectStatusWriter) WithValue(key, val string) *ObjectStatusWriter {
 }
 
 func (osw *ObjectStatusWriter) SetInvalid(format string, args ...interface{}) {
-	osw.WithValue("description", fmt.Sprintf(format, args...)).WithValue("status", k8s.StatusInvalid)
+	osw.WithValue("description", fmt.Sprintf(format, args...)).WithValue("status", string(status.ProxyStatusInvalid))
 }
 
 func (osw *ObjectStatusWriter) SetValid() {
 	switch osw.obj.(type) {
 	case *contour_api_v1.HTTPProxy:
-		osw.WithValue("description", "valid HTTPProxy").WithValue("status", k8s.StatusValid)
+		osw.WithValue("description", "valid HTTPProxy").WithValue("status", string(status.ProxyStatusValid))
 	default:
 		// not a supported type
 	}

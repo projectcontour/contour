@@ -22,12 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-const (
-	StatusValid    = "valid"
-	StatusInvalid  = "invalid"
-	StatusOrphaned = "orphaned"
-)
-
 // StatusUpdate contains an all the information needed to change an object's status to perform a specific update.
 // Send down a channel to the goroutine that actually writes the changes back.
 type StatusUpdate struct {

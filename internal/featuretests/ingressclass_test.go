@@ -22,7 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/status"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -545,7 +545,7 @@ func TestIngressClassUpdate(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 
 	// Updating to the non-configured ingress class should remove the

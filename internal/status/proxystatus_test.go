@@ -132,7 +132,7 @@ func TestStatusMutator(t *testing.T) {
 				},
 			},
 		},
-		wantCurrentStatus: k8s.StatusValid,
+		wantCurrentStatus: string(ProxyStatusValid),
 		wantDescription:   "Valid HTTPProxy",
 	}
 	run("valid with one warning", validConditionWarning)
@@ -186,7 +186,7 @@ func TestStatusMutator(t *testing.T) {
 				},
 			},
 		},
-		wantCurrentStatus: k8s.StatusInvalid,
+		wantCurrentStatus: string(ProxyStatusInvalid),
 		wantDescription:   "At least one error present, see Errors for details",
 	}
 	run("invalid status, one error", inValidConditionError)
@@ -240,7 +240,7 @@ func TestStatusMutator(t *testing.T) {
 				},
 			},
 		},
-		wantCurrentStatus: k8s.StatusOrphaned,
+		wantCurrentStatus: string(ProxyStatusOrphaned),
 		wantDescription:   "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 	}
 
@@ -305,7 +305,7 @@ func TestStatusMutator(t *testing.T) {
 				},
 			},
 		},
-		wantCurrentStatus: k8s.StatusValid,
+		wantCurrentStatus: string(ProxyStatusValid),
 		wantDescription:   "Valid HTTPProxy",
 	}
 

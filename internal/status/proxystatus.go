@@ -16,7 +16,6 @@ import (
 	"fmt"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -94,16 +93,16 @@ func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
 
 	switch validCond.Status {
 	case projectcontour.ConditionTrue:
-		// TODO(youngnick): bring the k8s.StatusValid constants in here?
-		proxy.Status.CurrentStatus = k8s.StatusValid
+		// TODO(youngnick): bring the string(ProxyStatusValid) constants in here?
+		proxy.Status.CurrentStatus = string(ProxyStatusValid)
 		proxy.Status.Description = validCond.Message
 	case projectcontour.ConditionFalse:
 		if orphanCond, ok := validCond.GetError(string(OrphanedConditionType)); ok {
-			proxy.Status.CurrentStatus = k8s.StatusOrphaned
+			proxy.Status.CurrentStatus = string(ProxyStatusOrphaned)
 			proxy.Status.Description = orphanCond.Message
 			break
 		}
-		proxy.Status.CurrentStatus = k8s.StatusInvalid
+		proxy.Status.CurrentStatus = string(ProxyStatusInvalid)
 
 		// proxy.Status.Description = validCond.Reason + ": " + validCond.Message
 		proxy.Status.Description = validCond.Message

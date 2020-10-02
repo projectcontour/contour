@@ -35,6 +35,7 @@ import (
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/projectcontour/contour/internal/xdscache"
@@ -308,8 +309,8 @@ func (s *statusResult) Like(want contour_api_v1.HTTPProxyStatus) *Contour {
 // HasError asserts that there is an error on the Valid Condition in the proxy
 // that matches the given values.
 func (s *statusResult) HasError(condType, reason, message string) *Contour {
-	assert.Equal(s.T, k8s.StatusInvalid, s.Have.CurrentStatus)
-	assert.Equal(s.T, `At least one error present, see Errors for details`, s.Have.Description)
+	assert.Equal(s.T, s.Have.CurrentStatus, string(status.ProxyStatusInvalid))
+	assert.Equal(s.T, s.Have.Description, `At least one error present, see Errors for details`)
 	validCond := s.Have.GetConditionFor(contour_api_v1.ValidConditionType)
 	assert.NotNil(s.T, validCond)
 
@@ -317,8 +318,8 @@ func (s *statusResult) HasError(condType, reason, message string) *Contour {
 	if !ok {
 		s.T.Fatalf("Did not find error %s", condType)
 	}
-	assert.Equal(s.T, subCond.Reason, reason)
-	assert.Equal(s.T, subCond.Message, message)
+	assert.Equal(s.T, reason, subCond.Reason)
+	assert.Equal(s.T, message, subCond.Message)
 
 	return s.Contour
 }
