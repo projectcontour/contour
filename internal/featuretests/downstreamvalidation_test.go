@@ -21,7 +21,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/status"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -114,7 +114,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		),
 		TypeUrl: listenerType,
 	}).Status(proxy).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 
 }

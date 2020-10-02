@@ -85,7 +85,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		WithField("defined-ingress-class", s.IngressClass).
 		Debug("received an object, sending status address update")
 
-	s.StatusUpdater.Update(
+	s.StatusUpdater.Send(NewStatusUpdate(
 		typed.GetObjectMeta().GetName(),
 		typed.GetObjectMeta().GetNamespace(),
 		gvr,
@@ -105,7 +105,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 				))
 			}
 		}),
-	)
+	))
 }
 
 func (s *StatusAddressUpdater) OnUpdate(oldObj, newObj interface{}) {

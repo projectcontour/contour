@@ -23,7 +23,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/status"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -353,7 +353,7 @@ func TestCorsPolicy(t *testing.T) {
 			envoy_v2.RouteConfiguration("ingress_http")),
 		TypeUrl: routeType,
 	}).Status(invvhost).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusInvalid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusInvalid)},
 	)
 
 }

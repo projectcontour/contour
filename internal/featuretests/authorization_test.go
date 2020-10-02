@@ -28,8 +28,8 @@ import (
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/status"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -104,7 +104,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 			},
 			staticListener()),
 	}).Status(p).Like(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusValid,
+		CurrentStatus: string(status.ProxyStatusValid),
 	})
 }
 
@@ -135,10 +135,7 @@ func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c 
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(p).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`,
-	})
+	}).Status(p).HasError("AuthError", "AuthReponseTimeoutInvalid", `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`)
 }
 
 func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
@@ -197,7 +194,7 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 			},
 			staticListener()),
 	}).Status(p).Like(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusValid,
+		CurrentStatus: string(status.ProxyStatusValid),
 	})
 }
 
@@ -224,10 +221,7 @@ func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(p).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.TLS fallback & client authorization are incompatible`,
-	})
+	}).Status(p).HasError("TLSError", "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible")
 }
 
 func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
@@ -457,10 +451,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(invalid).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.Authorization.ServiceRef specifies an unsupported resource version "foo/bar"`,
-	})
+	}).Status(invalid).HasError("AuthError", "AuthBadResourceVersion", `Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version "foo/bar"`)
 
 	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_api_v1.ExtensionServiceReference{
 		APIVersion: "projectcontour.io/v1alpha1",
@@ -474,10 +465,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(invalid).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   `Spec.Virtualhost.Authorization.ServiceRef extension service "missing/extension" not found`,
-	})
+	}).Status(invalid).HasError("AuthError", "ExtensionServiceNotFound", `Spec.Virtualhost.Authorization.ServiceRef extension service "missing/extension" not found`)
 
 	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_api_v1.ExtensionServiceReference{
 		Namespace: "auth",
@@ -522,7 +510,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			},
 			staticListener()),
 	}).Status(invalid).Like(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusValid,
+		CurrentStatus: string(status.ProxyStatusValid),
 	})
 }
 

@@ -21,7 +21,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/status"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
@@ -84,7 +84,7 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 
 	// Update the vhost to make the replacement ambiguous. This should remove the generated config.
@@ -102,10 +102,7 @@ func basic(t *testing.T) {
 			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
-	}).Status(vhost).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   "ambiguous prefix replacement",
-	})
+	}).Status(vhost).HasError("PrefixReplaceError", "AmbiguousReplacement", "ambiguous prefix replacement")
 
 	// The replacement isn't ambiguous any more because only one of the prefixes matches.
 	vhost = update(rh, vhost,
@@ -134,7 +131,7 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 
 	// But having duplicate prefixes in the replacements makes
@@ -153,10 +150,7 @@ func basic(t *testing.T) {
 			envoy_v2.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
-	}).Status(vhost).Equals(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: k8s.StatusInvalid,
-		Description:   "duplicate replacement prefix '/foo'",
-	})
+	}).Status(vhost).HasError("PrefixReplaceError", "DuplicateReplacement", "duplicate replacement prefix '/foo'")
 
 	// The "/api" prefix should have precedence over the empty prefix.
 	vhost = update(rh, vhost,
@@ -185,7 +179,7 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 
 	// If we remove the prefix match condition, the implicit '/' prefix
@@ -209,7 +203,7 @@ func basic(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 }
 
@@ -291,9 +285,9 @@ func multiInclude(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	).Status(vhost2).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 
 	// Remove one of the replacements, and one cluster loses the rewrite.
@@ -328,9 +322,9 @@ func multiInclude(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	).Status(vhost2).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 }
 
@@ -412,9 +406,9 @@ func replaceWithSlash(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	).Status(vhost2).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 
 	// Not swap the routing and replacement prefixes. Because the routing
@@ -453,9 +447,9 @@ func replaceWithSlash(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).Status(vhost1).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	).Status(vhost2).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: k8s.StatusValid},
+		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
 	)
 }
 

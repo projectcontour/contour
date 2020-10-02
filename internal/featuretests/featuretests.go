@@ -35,6 +35,7 @@ import (
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/projectcontour/contour/internal/xdscache"
@@ -85,11 +86,10 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	rand.Seed(time.Now().Unix())
 
-	statusCache := &k8s.StatusCacher{}
-
+	statusUpdateCacher := &k8s.StatusUpdateCacher{}
 	eh := &contour.EventHandler{
 		IsLeader:        make(chan struct{}),
-		StatusClient:    statusCache,
+		StatusUpdater:   statusUpdateCacher,
 		FieldLogger:     log,
 		Sequence:        make(chan int, 1),
 		HoldoffDelay:    time.Duration(rand.Intn(100)) * time.Millisecond,
@@ -147,10 +147,10 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	require.NoError(t, err)
 
 	rh := &resourceEventHandler{
-		EventHandler:     eh,
-		EndpointsHandler: et,
-		Sequence:         eh.Sequence,
-		statusCache:      statusCache,
+		EventHandler:       eh,
+		EndpointsHandler:   et,
+		Sequence:           eh.Sequence,
+		statusUpdateCacher: statusUpdateCacher,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -161,9 +161,9 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	}()
 
 	return rh, &Contour{
-			T:           t,
-			ClientConn:  cc,
-			statusCache: statusCache,
+			T:                 t,
+			ClientConn:        cc,
+			statusUpdateCache: statusUpdateCacher,
 		}, func() {
 			// close client connection
 			cc.Close()
@@ -183,12 +183,12 @@ type resourceEventHandler struct {
 
 	Sequence chan int
 
-	statusCache *k8s.StatusCacher
+	statusUpdateCacher *k8s.StatusUpdateCacher
 }
 
 func (r *resourceEventHandler) OnAdd(obj interface{}) {
-	if r.statusCache.IsCacheable(obj) {
-		r.statusCache.Delete(obj)
+	if r.statusUpdateCacher.IsCacheable(obj) {
+		r.statusUpdateCacher.OnAdd(obj)
 	}
 
 	switch obj.(type) {
@@ -202,8 +202,12 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 
 func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	// Ensure that tests don't sample stale status.
-	if r.statusCache.IsCacheable(oldObj) {
-		r.statusCache.Delete(oldObj)
+	if r.statusUpdateCacher.IsCacheable(oldObj) {
+		r.statusUpdateCacher.OnDelete(oldObj)
+	}
+
+	if r.statusUpdateCacher.IsCacheable(newObj) {
+		r.statusUpdateCacher.OnAdd(newObj)
 	}
 
 	switch newObj.(type) {
@@ -218,8 +222,8 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 func (r *resourceEventHandler) OnDelete(obj interface{}) {
 	// Delete this object from the status cache before we make
 	// the deletion visible.
-	if r.statusCache.IsCacheable(obj) {
-		r.statusCache.Delete(obj)
+	if r.statusUpdateCacher.IsCacheable(obj) {
+		r.statusUpdateCacher.OnDelete(obj)
 	}
 
 	switch obj.(type) {
@@ -302,17 +306,35 @@ func (s *statusResult) Like(want contour_api_v1.HTTPProxyStatus) *Contour {
 	return s.Contour
 }
 
+// HasError asserts that there is an error on the Valid Condition in the proxy
+// that matches the given values.
+func (s *statusResult) HasError(condType, reason, message string) *Contour {
+	assert.Equal(s.T, s.Have.CurrentStatus, string(status.ProxyStatusInvalid))
+	assert.Equal(s.T, s.Have.Description, `At least one error present, see Errors for details`)
+	validCond := s.Have.GetConditionFor(contour_api_v1.ValidConditionType)
+	assert.NotNil(s.T, validCond)
+
+	subCond, ok := validCond.GetError(condType)
+	if !ok {
+		s.T.Fatalf("Did not find error %s", condType)
+	}
+	assert.Equal(s.T, reason, subCond.Reason)
+	assert.Equal(s.T, message, subCond.Message)
+
+	return s.Contour
+}
+
 type Contour struct {
 	*grpc.ClientConn
 	*testing.T
 
-	statusCache *k8s.StatusCacher
+	statusUpdateCache *k8s.StatusUpdateCacher
 }
 
 // Status returns a statusResult object that can be used to assert
 // on object status fields.
 func (c *Contour) Status(obj interface{}) *statusResult {
-	s, err := c.statusCache.GetStatus(obj)
+	s, err := c.statusUpdateCache.GetStatus(obj)
 
 	return &statusResult{
 		Contour: c,
@@ -323,7 +345,7 @@ func (c *Contour) Status(obj interface{}) *statusResult {
 
 // NoStatus asserts that the given object did not get any status set.
 func (c *Contour) NoStatus(obj interface{}) *Contour {
-	if _, err := c.statusCache.GetStatus(obj); err == nil {
+	if _, err := c.statusUpdateCache.GetStatus(obj); err == nil {
 		c.T.Errorf("found cached object status, wanted no status")
 	}
 

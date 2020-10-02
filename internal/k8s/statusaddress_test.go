@@ -204,7 +204,7 @@ func TestStatusAddressUpdater_OnAdd(t *testing.T) {
 
 	run := func(t *testing.T, name string, tc sauTestcase) {
 		suc := StatusUpdateCacher{}
-		if !suc.AddObject(tc.objname, tc.objname, tc.gvr, tc.preop) {
+		if !suc.Add(tc.objname, tc.objname, tc.gvr, tc.preop) {
 			t.Fatal("unable to add object to cache")
 		}
 
@@ -218,7 +218,7 @@ func TestStatusAddressUpdater_OnAdd(t *testing.T) {
 
 		isu.OnAdd(tc.preop)
 
-		newObj := suc.GetObject(tc.objname, tc.objname, tc.gvr)
+		newObj := suc.Get(tc.objname, tc.objname, tc.gvr)
 		if !IsStatusEqual(tc.postop, newObj) {
 			t.Fatalf("%s: Status not equal: %s\n", name, cmp.Diff(tc.postop, newObj))
 		}
@@ -340,7 +340,7 @@ func TestStatusAddressUpdater_OnUpdate(t *testing.T) {
 
 	run := func(t *testing.T, name string, tc sauTestcase) {
 		suc := StatusUpdateCacher{}
-		if !suc.AddObject(tc.objname, tc.objname, tc.gvr, tc.preop) {
+		if !suc.Add(tc.objname, tc.objname, tc.gvr, tc.preop) {
 			t.Fatal("unable to add object to cache")
 		}
 
@@ -354,7 +354,7 @@ func TestStatusAddressUpdater_OnUpdate(t *testing.T) {
 
 		isu.OnUpdate(tc.preop, tc.preop)
 
-		newObj := suc.GetObject(tc.objname, tc.objname, tc.gvr)
+		newObj := suc.Get(tc.objname, tc.objname, tc.gvr)
 		if !IsStatusEqual(tc.postop, newObj) {
 			t.Fatalf("%s: Status not equal: %s\n", name, cmp.Diff(tc.postop, newObj))
 		}

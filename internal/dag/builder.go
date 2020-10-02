@@ -14,7 +14,7 @@
 package dag
 
 import (
-	"k8s.io/apimachinery/pkg/types"
+	"github.com/projectcontour/contour/internal/status"
 )
 
 // Processor constructs part of a DAG.
@@ -47,9 +47,7 @@ type Builder struct {
 // configured DAG processors, in order.
 func (b *Builder) Build() *DAG {
 	dag := DAG{
-		StatusWriter: StatusWriter{
-			statuses: map[types.NamespacedName]Status{},
-		},
+		StatusCache: status.NewCache(),
 	}
 
 	for _, p := range b.Processors {

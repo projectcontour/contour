@@ -18,10 +18,20 @@ package status
 import (
 	"time"
 
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+)
+
+type ProxyStatus string
+
+const (
+	ProxyStatusValid    ProxyStatus = "valid"
+	ProxyStatusInvalid  ProxyStatus = "invalid"
+	ProxyStatusOrphaned ProxyStatus = "orphaned"
+
+	OrphanedConditionType ConditionType = "Orphaned"
 )
 
 // NewCache creates a new Cache for holding status updates.
@@ -43,12 +53,12 @@ type Cache struct {
 // back to the cache when everything is done.
 // The commit function pattern is used so that the ProxyUpdate does not need to know anything
 // the cache internals.
-func (c Cache) ProxyAccessor(proxy *projcontour.HTTPProxy) (*ProxyUpdate, func()) {
+func (c Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, func()) {
 	pu := &ProxyUpdate{
 		Fullname:       k8s.NamespacedNameOf(proxy),
 		Generation:     proxy.Generation,
 		TransitionTime: v1.NewTime(time.Now()),
-		Conditions:     make(map[ConditionType]*projcontour.DetailedCondition),
+		Conditions:     make(map[ConditionType]*contour_api_v1.DetailedCondition),
 	}
 
 	return pu, func() {
@@ -61,6 +71,19 @@ func (c Cache) commitProxy(pu *ProxyUpdate) {
 		return
 	}
 
+	_, ok := c.proxyUpdates[pu.Fullname]
+	if ok {
+		// When we're committing, if we already have a Valid Condition with an error, and we're trying to
+		// set the object back to Valid, skip the commit, as we've visited too far down.
+		// If this is removed, the status reporting for when a parent delegates to a child that delegates to itself
+		// will not work. Yes, I know, problems everywhere. I'm sorry.
+		// TODO(youngnick)#2968: This issue has more details.
+		if c.proxyUpdates[pu.Fullname].Conditions[ValidCondition].Status == contour_api_v1.ConditionFalse {
+			if pu.Conditions[ValidCondition].Status == contour_api_v1.ConditionTrue {
+				return
+			}
+		}
+	}
 	c.proxyUpdates[pu.Fullname] = pu
 }
 
@@ -78,7 +101,7 @@ func (c Cache) getProxyStatusUpdates() []k8s.StatusUpdate {
 
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource:       projcontour.HTTPProxyGVR,
+			Resource:       contour_api_v1.HTTPProxyGVR,
 			Mutator:        pu,
 		}
 
@@ -86,4 +109,17 @@ func (c Cache) getProxyStatusUpdates() []k8s.StatusUpdate {
 	}
 	return psu
 
+}
+
+// GetProxyUpdates gets the underlying ProxyUpdate objects
+// from the cache, used by various things (`internal/contour/metrics.go` and `internal/dag/status_test.go`)
+// to retrieve info they need.
+// TODO(youngnick)#2969: This could conceivably be replaced with a Walk pattern.
+func (c Cache) GetProxyUpdates() []*ProxyUpdate {
+
+	var allUpdates []*ProxyUpdate
+	for _, pu := range c.proxyUpdates {
+		allUpdates = append(allUpdates, pu)
+	}
+	return allUpdates
 }

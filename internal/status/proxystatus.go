@@ -16,7 +16,6 @@ import (
 	"fmt"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -31,12 +30,10 @@ const ValidCondition ConditionType = "Valid"
 
 // ProxyUpdate holds status updates for a particular HTTPProxy object
 type ProxyUpdate struct {
-	// Object holds a copy of the HTTPProxy object that the Conditions refer to.
-	// This is intended for read-only use; any changes made to this object will
-	// be lost.
 	Fullname       types.NamespacedName
 	Generation     int64
 	TransitionTime v1.Time
+	Vhost          string
 
 	// Conditions holds all the DetailedConditions to add to the object
 	// keyed by the Type (since that's what the apiserver will end up
@@ -51,7 +48,14 @@ func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projectcontour.Detailed
 	if !ok {
 		newDc := &projectcontour.DetailedCondition{}
 		newDc.Type = string(cond)
-
+		newDc.ObservedGeneration = pu.Generation
+		if cond == ValidCondition {
+			newDc.Status = projectcontour.ConditionTrue
+			newDc.Reason = "Valid"
+			newDc.Message = "Valid HTTPProxy"
+		} else {
+			newDc.Status = projectcontour.ConditionFalse
+		}
 		pu.Conditions[cond] = newDc
 		return newDc
 	}
@@ -89,18 +93,19 @@ func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
 
 	switch validCond.Status {
 	case projectcontour.ConditionTrue:
-		// TODO(youngnick): bring the k8s.StatusValid constants in here?
-		proxy.Status.CurrentStatus = k8s.StatusValid
-		proxy.Status.Description = validCond.Reason + ": " + validCond.Message
+		// TODO(youngnick): bring the string(ProxyStatusValid) constants in here?
+		proxy.Status.CurrentStatus = string(ProxyStatusValid)
+		proxy.Status.Description = validCond.Message
 	case projectcontour.ConditionFalse:
-		orphanCond, orphaned := validCond.GetError(k8s.StatusOrphaned)
-		if orphaned {
-			proxy.Status.CurrentStatus = k8s.StatusOrphaned
+		if orphanCond, ok := validCond.GetError(string(OrphanedConditionType)); ok {
+			proxy.Status.CurrentStatus = string(ProxyStatusOrphaned)
 			proxy.Status.Description = orphanCond.Message
 			break
 		}
-		proxy.Status.CurrentStatus = k8s.StatusInvalid
-		proxy.Status.Description = validCond.Reason + ": " + validCond.Message
+		proxy.Status.CurrentStatus = string(ProxyStatusInvalid)
+
+		// proxy.Status.Description = validCond.Reason + ": " + validCond.Message
+		proxy.Status.Description = validCond.Message
 	}
 
 	return proxy

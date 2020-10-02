@@ -23,6 +23,8 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
 	v1 "k8s.io/api/core/v1"
@@ -64,9 +66,8 @@ func ComposeObservers(observers ...Observer) Observer {
 // between Kubernetes Ingress objects, the backend Services, and Secret objects.
 // The DAG models these relationships as Roots and Vertices.
 type DAG struct {
-	// StatusWriter records Kubernetes object statuses computed
-	// while building this DAG.
-	StatusWriter
+	// StatusCache holds a cache of status updates to send.
+	StatusCache status.Cache
 
 	// roots are the root vertices of this DAG.
 	roots []Vertex
@@ -79,10 +80,17 @@ func (d *DAG) Visit(fn func(Vertex)) {
 	}
 }
 
-// Statuses returns a slice of Status objects associated with
-// the computation of this DAG.
-func (d *DAG) Statuses() map[types.NamespacedName]Status {
-	return d.statuses
+// GetProxyStatusesTesting returns a slice of Status objects associated with
+// the computation of this DAG, for testing status output.
+// TODO(youngnick)#2967: This should be removed, see the linked issue for details.
+func (d *DAG) GetProxyStatusesTesting() map[types.NamespacedName]contour_api_v1.DetailedCondition {
+	validConds := make(map[types.NamespacedName]contour_api_v1.DetailedCondition)
+
+	for _, pu := range d.StatusCache.GetProxyUpdates() {
+		validConds[pu.Fullname] = *pu.Conditions[status.ValidCondition]
+	}
+
+	return validConds
 }
 
 // AddRoot appends the given root to the DAG's roots.
