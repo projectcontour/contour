@@ -92,7 +92,7 @@ func (p *HTTPProxyProcessor) Run(dag *DAG, source *KubernetesCache) {
 		proxy, ok := p.source.httpproxies[meta]
 		if ok {
 			pa, commit := p.dag.StatusCache.ProxyAccessor(proxy)
-			pa.ConditionFor(status.ValidCondition).AddError(status.OrphanedConditionType,
+			pa.ConditionFor(status.ValidCondition).AddError(string(status.OrphanedConditionType),
 				"Orphaned",
 				"this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 			commit()
@@ -114,41 +114,48 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	// ensure root httpproxy lives in allowed namespace
 	if !p.rootAllowed(proxy.Namespace) {
-		validCond.AddError("RootNamespaceError", "RootProxyNotAllowedInNamespace", "root HTTPProxy cannot be defined in this namespace")
+		validCond.AddError("RootNamespaceError", "RootProxyNotAllowedInNamespace",
+			"root HTTPProxy cannot be defined in this namespace")
 		return
 	}
 
 	host := proxy.Spec.VirtualHost.Fqdn
 	if isBlank(host) {
-		validCond.AddError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified")
+		validCond.AddError("VirtualHostError", "FQDNNotSpecified",
+			"Spec.VirtualHost.Fqdn must be specified")
 		return
 	}
 	pa.Vhost = host
 
 	if strings.Contains(host, "*") {
-		validCond.AddErrorf("VirtualHostError", "WildCardNotAllowed", "Spec.VirtualHost.Fqdn %q cannot use wildcards", host)
+		validCond.AddErrorf("VirtualHostError", "WildCardNotAllowed",
+			"Spec.VirtualHost.Fqdn %q cannot use wildcards", host)
 		return
 	}
 
 	if len(proxy.Spec.Routes) == 0 && len(proxy.Spec.Includes) == 0 && proxy.Spec.TCPProxy == nil {
-		validCond.AddError("SpecError", "NothingDefined", "HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy")
+		validCond.AddError("SpecError", "NothingDefined",
+			"HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy")
 		return
 	}
 
 	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
 		if !isBlank(tls.SecretName) && tls.Passthrough {
-			validCond.AddError("TLSError", "TLSConfigNotValid", "Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
+			validCond.AddError("TLSError", "TLSConfigNotValid",
+				"Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
 			return
 		}
 
 		if isBlank(tls.SecretName) && !tls.Passthrough {
-			validCond.AddError("TLSError", "TLSConfigNotValid", "Spec.VirtualHost.TLS: neither Passthrough nor SecretName were specified")
+			validCond.AddError("TLSError", "TLSConfigNotValid",
+				"Spec.VirtualHost.TLS: neither Passthrough nor SecretName were specified")
 			return
 		}
 
 		if tls.Passthrough && tls.ClientValidation != nil {
-			validCond.AddError("TLSError", "TLSIncompatibleFeatures", "Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation")
+			validCond.AddError("TLSError", "TLSIncompatibleFeatures",
+				"Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation")
 			return
 		}
 
@@ -159,12 +166,14 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
 			sec, err := p.source.LookupSecret(secretName, validSecret)
 			if err != nil {
-				validCond.AddErrorf("TLSError", "SecretNotValid", "Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
+				validCond.AddErrorf("TLSError", "SecretNotValid",
+					"Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
 				return
 			}
 
 			if !p.source.DelegationPermitted(secretName, proxy.Namespace) {
-				validCond.AddErrorf("TLSError", "DelegationNotPermitted", "Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
+				validCond.AddErrorf("TLSError", "DelegationNotPermitted",
+					"Spec.VirtualHost.TLS Secret %q certificate delegation not permitted", tls.SecretName)
 				return
 			}
 
@@ -174,7 +183,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
-				validCond.AddError("TLSError", "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client validation are incompatible")
+				validCond.AddError("TLSError", "TLSIncompatibleFeatures",
+					"Spec.Virtualhost.TLS fallback & client validation are incompatible")
 				return
 			}
 
@@ -184,25 +194,29 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			// same routes installed on multiple managers with
 			// inconsistent authorization settings.
 			if tls.EnableFallbackCertificate && proxy.Spec.VirtualHost.AuthorizationConfigured() {
-				validCond.AddError("TLSError", "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible")
+				validCond.AddError("TLSError", "TLSIncompatibleFeatures",
+					"Spec.Virtualhost.TLS fallback & client authorization are incompatible")
 				return
 			}
 
 			// If FallbackCertificate is enabled, but no cert passed, set error
 			if tls.EnableFallbackCertificate {
 				if p.FallbackCertificate == nil {
-					validCond.AddError("TLSError", "FallbackNotPresent", "Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file")
+					validCond.AddError("TLSError", "FallbackNotPresent",
+						"Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file")
 					return
 				}
 
 				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validSecret)
 				if err != nil {
-					validCond.AddErrorf("TLSError", "FallbackNotValid", "Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
+					validCond.AddErrorf("TLSError", "FallbackNotValid",
+						"Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
 					return
 				}
 
 				if !p.source.DelegationPermitted(*p.FallbackCertificate, proxy.Namespace) {
-					validCond.AddErrorf("TLSError", "FallbackNotDelegated", "Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", p.FallbackCertificate)
+					validCond.AddErrorf("TLSError", "FallbackNotDelegated",
+						"Spec.VirtualHost.TLS fallback Secret %q is not configured for certificate delegation", p.FallbackCertificate)
 					return
 				}
 
@@ -213,7 +227,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			if tls.ClientValidation != nil {
 				dv, err := p.source.LookupDownstreamValidation(tls.ClientValidation, proxy.Namespace)
 				if err != nil {
-					validCond.AddErrorf("TLSError", "ClientValidationInvalid", "Spec.VirtualHost.TLS client validation is invalid: %s", err)
+					validCond.AddErrorf("TLSError", "ClientValidationInvalid",
+						"Spec.VirtualHost.TLS client validation is invalid: %s", err)
 					return
 				}
 				svhost.DownstreamValidation = dv
@@ -224,7 +239,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				ref := defaultExtensionRef(auth.ExtensionServiceRef)
 
 				if ref.APIVersion != contour_api_v1alpha1.GroupVersion.String() {
-					validCond.AddErrorf("AuthError", "AuthBadResourceVersion", "Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version %q", auth.ExtensionServiceRef.APIVersion)
+					validCond.AddErrorf("AuthError", "AuthBadResourceVersion",
+						"Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version %q", auth.ExtensionServiceRef.APIVersion)
 					return
 				}
 
@@ -236,7 +252,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 				ext := p.dag.GetExtensionCluster(extensionClusterName(extensionName))
 				if ext == nil {
-					validCond.AddErrorf("AuthError", "ExtensionServiceNotFound", "Spec.Virtualhost.Authorization.ServiceRef extension service %q not found", extensionName)
+					validCond.AddErrorf("AuthError", "ExtensionServiceNotFound",
+						"Spec.Virtualhost.Authorization.ServiceRef extension service %q not found", extensionName)
 					return
 				}
 
@@ -245,7 +262,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 				timeout, err := timeout.Parse(auth.ResponseTimeout)
 				if err != nil {
-					validCond.AddErrorf("AuthError", "AuthReponseTimeoutInvalid", "Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
+					validCond.AddErrorf("AuthError", "AuthReponseTimeoutInvalid",
+						"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
 					return
 				}
 				svhost.AuthorizationResponseTimeout = timeout
@@ -255,7 +273,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	if proxy.Spec.TCPProxy != nil {
 		if !tlsEnabled {
-			validCond.AddError("TCPProxyError", "TLSMustBeConfigured", "Spec.TCPProxy requires that either Spec.TLS.Passthrough or Spec.TLS.SecretName be set")
+			validCond.AddError("TCPProxyError", "TLSMustBeConfigured",
+				"Spec.TCPProxy requires that either Spec.TLS.Passthrough or Spec.TLS.SecretName be set")
 			return
 		}
 		if !p.processHTTPProxyTCPProxy(validCond, proxy, nil, host) {
@@ -267,7 +286,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	insecure := p.dag.EnsureVirtualHost(host)
 	cp, err := toCORSPolicy(proxy.Spec.VirtualHost.CORSPolicy)
 	if err != nil {
-		validCond.AddErrorf("CORSError", "PolicyDidNotParse", "Spec.VirtualHost.CORSPolicy: %s", err)
+		validCond.AddErrorf("CORSError", "PolicyDidNotParse",
+			"Spec.VirtualHost.CORSPolicy: %s", err)
 		return
 	}
 	insecure.CORSPolicy = cp
@@ -309,7 +329,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		}
 		if v.Name == proxy.Name && v.Namespace == proxy.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", proxy.Namespace, proxy.Name))
-			validCond.AddErrorf("IncludeError", "IncludeCreatesCycle", "include creates an include cycle: %s", strings.Join(path, " -> "))
+			validCond.AddErrorf("IncludeError", "IncludeCreatesCycle",
+				"include creates an include cycle: %s", strings.Join(path, " -> "))
 			return nil
 		}
 	}
@@ -319,7 +340,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 	// Check for duplicate conditions on the includes
 	if includeMatchConditionsIdentical(proxy.Spec.Includes) {
-		validCond.AddError("IncludeError", "DuplicateMatchConditions", "duplicate conditions defined on an include")
+		validCond.AddError("IncludeError", "DuplicateMatchConditions",
+			"duplicate conditions defined on an include")
 		return nil
 	}
 
@@ -332,16 +354,19 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		includedProxy, ok := p.source.httpproxies[types.NamespacedName{Name: include.Name, Namespace: namespace}]
 		if !ok {
-			validCond.AddErrorf("IncludeError", "IncludeNotFound", "include %s/%s not found", namespace, include.Name)
+			validCond.AddErrorf("IncludeError", "IncludeNotFound",
+				"include %s/%s not found", namespace, include.Name)
 			return nil
 		}
 		if includedProxy.Spec.VirtualHost != nil {
-			validCond.AddErrorf("IncludeError", "RootIncludesRoot", "root httpproxy cannot include another root httpproxy")
+			validCond.AddErrorf("IncludeError", "RootIncludesRoot",
+				"root httpproxy cannot include another root httpproxy")
 			return nil
 		}
 
 		if err := pathMatchConditionsValid(include.Conditions); err != nil {
-			validCond.AddErrorf("IncludeError", "PathMatchConditionsNotValid", "include: %s", err)
+			validCond.AddErrorf("IncludeError", "PathMatchConditionsNotValid",
+				"include: %s", err)
 			return nil
 		}
 
@@ -356,7 +381,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 	for _, route := range proxy.Spec.Routes {
 		if err := pathMatchConditionsValid(route.Conditions); err != nil {
-			validCond.AddErrorf("RouteError", "PathMatchConditionsNotValid", "route: %s", err)
+			validCond.AddErrorf("RouteError", "PathMatchConditionsNotValid",
+				"route: %s", err)
 			return nil
 		}
 
@@ -364,30 +390,35 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		// Look for invalid header conditions on this route
 		if err := headerMatchConditionsValid(conds); err != nil {
-			validCond.AddError("RouteError", "HeaderMatchConditionsNotValid", err.Error())
+			validCond.AddError("RouteError", "HeaderMatchConditionsNotValid",
+				err.Error())
 			return nil
 		}
 
 		reqHP, err := headersPolicyRoute(route.RequestHeadersPolicy, true /* allow Host */)
 		if err != nil {
-			validCond.AddErrorf("RouteError", "RequestHeadersPolicyInvalid", "%s on request headers", err)
+			validCond.AddErrorf("RouteError", "RequestHeadersPolicyInvalid",
+				"%s on request headers", err)
 			return nil
 		}
 
 		respHP, err := headersPolicyRoute(route.ResponseHeadersPolicy, false /* disallow Host */)
 		if err != nil {
-			validCond.AddErrorf("RouteError", "ResponseHeaderPolicyInvalid", "%s on response headers", err)
+			validCond.AddErrorf("RouteError", "ResponseHeaderPolicyInvalid",
+				"%s on response headers", err)
 			return nil
 		}
 
 		if len(route.Services) < 1 {
-			validCond.AddError("RouteError", "NoServicesPresent", "route.services must have at least one entry")
+			validCond.AddError("RouteError", "NoServicesPresent",
+				"route.services must have at least one entry")
 			return nil
 		}
 
 		tp, err := timeoutPolicy(route.TimeoutPolicy)
 		if err != nil {
-			validCond.AddErrorf("RouteError", "TimeoutPolicyNotValid", "route.timeoutPolicy failed to parse: %s", err)
+			validCond.AddErrorf("RouteError", "TimeoutPolicyNotValid",
+				"route.timeoutPolicy failed to parse: %s", err)
 			return nil
 		}
 
@@ -426,12 +457,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		if len(route.GetPrefixReplacements()) > 0 {
 			if !r.HasPathPrefix() {
-				validCond.AddError("PrefixReplaceError", "MustHavePrefix", "cannot specify prefix replacements without a prefix condition")
+				validCond.AddError("PrefixReplaceError", "MustHavePrefix",
+					"cannot specify prefix replacements without a prefix condition")
 				return nil
 			}
 
-			if err := prefixReplacementsAreValid(route.GetPrefixReplacements()); err != nil {
-				validCond.AddError("PrefixReplaceError", "PrefixReplaceError", err.Error())
+			if reason, err := prefixReplacementsAreValid(route.GetPrefixReplacements()); err != nil {
+				validCond.AddError("PrefixReplaceError", reason, err.Error())
 				return nil
 			}
 
@@ -463,13 +495,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		for _, service := range route.Services {
 			if service.Port < 1 || service.Port > 65535 {
-				validCond.AddErrorf("ServiceError", "ServicePortInvalid", "service %q: port must be in the range 1-65535", service.Name)
+				validCond.AddErrorf("ServiceError", "ServicePortInvalid",
+					"service %q: port must be in the range 1-65535", service.Name)
 				return nil
 			}
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
 			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source)
 			if err != nil {
-				validCond.AddErrorf("ServiceError", "ServiceUnresolvedReference", "Spec.Routes unresolved service reference: %s", err)
+				validCond.AddErrorf("ServiceError", "ServiceUnresolvedReference",
+					"Spec.Routes unresolved service reference: %s", err)
 				return nil
 			}
 
@@ -485,20 +519,23 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				// we can only validate TLS connections to services that talk TLS
 				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
 				if err != nil {
-					validCond.AddErrorf("ServiceError", "TLSUpstreamValidation", "Service [%s:%d] TLS upstream validation policy error: %s", service.Name, service.Port, err)
+					validCond.AddErrorf("ServiceError", "TLSUpstreamValidation",
+						"Service [%s:%d] TLS upstream validation policy error: %s", service.Name, service.Port, err)
 					return nil
 				}
 			}
 
 			reqHP, err := headersPolicyService(service.RequestHeadersPolicy)
 			if err != nil {
-				validCond.AddErrorf("ServiceError", "RequestHeadersPolicyInvalid", "%s on request headers", err)
+				validCond.AddErrorf("ServiceError", "RequestHeadersPolicyInvalid",
+					"%s on request headers", err)
 				return nil
 			}
 
 			respHP, err := headersPolicyService(service.ResponseHeadersPolicy)
 			if err != nil {
-				validCond.AddErrorf("ServiceError", "ResponseHeadersPolicyInvalid", "%s on response headers", err)
+				validCond.AddErrorf("ServiceError", "ResponseHeadersPolicyInvalid",
+					"%s on response headers", err)
 				return nil
 			}
 
@@ -506,7 +543,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			if p.ClientCertificate != nil {
 				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validSecret)
 				if err != nil {
-					validCond.AddErrorf("TLSError", "SecretNotValid", "tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
+					validCond.AddErrorf("TLSError", "SecretNotValid",
+						"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
 					return nil
 				}
 			}
@@ -525,7 +563,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				ClientCertificate:     clientCertSecret,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
-				validCond.AddError("ServiceError", "OnlyOneMirror", "only one service per route may be nominated as mirror")
+				validCond.AddError("ServiceError", "OnlyOneMirror",
+					"only one service per route may be nominated as mirror")
 				return nil
 			}
 			if service.Mirror {
@@ -565,7 +604,8 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	}
 
 	if len(tcpproxy.Services) > 0 && tcpProxyInclude != nil {
-		validCond.AddError("TCPProxyError", "NoServicesAndInclude", "cannot specify services and include in the same httpproxy")
+		validCond.AddError("TCPProxyError", "NoServicesAndInclude",
+			"cannot specify services and include in the same httpproxy")
 		return false
 	}
 
@@ -575,7 +615,8 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
 			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source)
 			if err != nil {
-				validCond.AddErrorf("TCPProxyError", "UnresolvedServiceRef", "Spec.TCPProxy unresolved service reference: %s", err)
+				validCond.AddErrorf("TCPProxyError", "UnresolvedServiceRef",
+					"Spec.TCPProxy unresolved service reference: %s", err)
 				return false
 			}
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
@@ -593,7 +634,8 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 
 	if tcpProxyInclude == nil {
 		// We don't allow an empty TCPProxy object.
-		validCond.AddError("TCPProxyError", "NothingDefined", "either services or inclusion must be specified")
+		validCond.AddError("TCPProxyError", "NothingDefined",
+			"either services or inclusion must be specified")
 		return false
 	}
 
@@ -606,13 +648,15 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	m := types.NamespacedName{Name: tcpProxyInclude.Name, Namespace: namespace}
 	dest, ok := p.source.httpproxies[m]
 	if !ok {
-		validCond.AddErrorf("TCPProxyIncludeError", "IncludeNotFound", "include %s/%s not found", m.Namespace, m.Name)
+		validCond.AddErrorf("TCPProxyIncludeError", "IncludeNotFound",
+			"include %s/%s not found", m.Namespace, m.Name)
 		return false
 	}
 
 	if dest.Spec.VirtualHost != nil {
 
-		validCond.AddErrorf("TCPProxyIncludeError", "RootIncludesRoot", "root httpproxy cannot include another root httpproxy")
+		validCond.AddErrorf("TCPProxyIncludeError", "RootIncludesRoot",
+			"root httpproxy cannot include another root httpproxy")
 		return false
 	}
 
@@ -627,7 +671,8 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	for _, hp := range visited {
 		if dest.Name == hp.Name && dest.Namespace == hp.Namespace {
 			path = append(path, fmt.Sprintf("%s/%s", dest.Namespace, dest.Name))
-			validCond.AddErrorf("TCPProxyIncludeError", "IncludeCreatesCycle", "include creates a cycle: %s", strings.Join(path, " -> "))
+			validCond.AddErrorf("TCPProxyIncludeError", "IncludeCreatesCycle",
+				"include creates a cycle: %s", strings.Join(path, " -> "))
 			return false
 		}
 	}

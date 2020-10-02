@@ -478,7 +478,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	sh := k8s.StatusUpdateHandler{
-		Log:             log.WithField("context", "StatusUpdateWriter"),
+		Log:             log.WithField("context", "StatusUpdateHandler"),
 		Clients:         clients,
 		LeaderElected:   eventHandler.IsLeader,
 		Converter:       converter,
@@ -486,7 +486,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 	g.Add(sh.Start)
 
-	// Now we have the statusUpdateWriter, we can create the event handler's StatusUpdater, which will take the
+	// Now we have the statusUpdateHandler, we can create the event handler's StatusUpdater, which will take the
 	// status updates from the DAG, and send them to the status update handler.
 	eventHandler.StatusUpdater = sh.Writer()
 

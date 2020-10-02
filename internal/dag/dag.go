@@ -80,9 +80,10 @@ func (d *DAG) Visit(fn func(Vertex)) {
 	}
 }
 
-// GetTestStatuses returns a slice of Status objects associated with
+// GetProxyStatusesTesting returns a slice of Status objects associated with
 // the computation of this DAG, for testing status output.
-func (d *DAG) GetTestStatuses() map[types.NamespacedName]contour_api_v1.DetailedCondition {
+// TODO(youngnick)#2967: This should be removed, see the linked issue for details.
+func (d *DAG) GetProxyStatusesTesting() map[types.NamespacedName]contour_api_v1.DetailedCondition {
 	validConds := make(map[types.NamespacedName]contour_api_v1.DetailedCondition)
 
 	for _, pu := range d.StatusCache.GetProxyUpdates() {

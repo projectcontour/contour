@@ -256,21 +256,21 @@ func max(a, b uint32) uint32 {
 	return b
 }
 
-func prefixReplacementsAreValid(replacements []contour_api_v1.ReplacePrefix) error {
+func prefixReplacementsAreValid(replacements []contour_api_v1.ReplacePrefix) (string, error) {
 	prefixes := map[string]bool{}
 
 	for _, r := range replacements {
 		if prefixes[r.Prefix] {
 			if len(r.Prefix) > 0 {
 				// The replacements are not valid if there are duplicates.
-				return fmt.Errorf("duplicate replacement prefix '%s'", r.Prefix)
+				return "DuplicateReplacement", fmt.Errorf("duplicate replacement prefix '%s'", r.Prefix)
 			}
 			// Can't replace the empty prefix multiple times.
-			return fmt.Errorf("ambiguous prefix replacement")
+			return "AmbiguousReplacement", fmt.Errorf("ambiguous prefix replacement")
 		}
 
 		prefixes[r.Prefix] = true
 	}
 
-	return nil
+	return "", nil
 }

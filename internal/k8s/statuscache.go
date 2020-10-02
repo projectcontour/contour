@@ -58,7 +58,6 @@ func (suc *StatusUpdateCacher) OnAdd(obj interface{}) {
 	switch o := obj.(type) {
 	case *contour_api_v1.HTTPProxy:
 		suc.objectCache[suc.objKey(o.Name, o.Namespace, contour_api_v1.HTTPProxyGVR)] = obj
-		// fmt.Printf("Saved %s to cache, cache has %d entries\n", suc.objKey(o.Name, o.Namespace, contour_api_v1.HTTPProxyGVR), len(suc.objectCache))
 	default:
 		panic(fmt.Sprintf("status caching not supported for object type %T", obj))
 	}
@@ -109,7 +108,6 @@ func (suc *StatusUpdateCacher) GetStatus(obj interface{}) (*contour_api_v1.HTTPP
 				return &c.Status, nil
 			}
 		}
-		fmt.Printf("%#v\n", suc.objectCache)
 		return nil, fmt.Errorf("no status for key '%s'", objectKey)
 	default:
 		panic(fmt.Sprintf("status caching not supported for object type %T", obj))

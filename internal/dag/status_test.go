@@ -58,12 +58,10 @@ func TestDAGStatus(t *testing.T) {
 			}
 			dag := builder.Build()
 			t.Logf("%#v\n", dag.StatusCache)
-			got := dag.GetTestStatuses()
+			got := dag.GetProxyStatusesTesting()
 			assert.Equal(t, tc.want, got)
 		})
 	}
-
-	// Common test fixtures (used across more than one test)
 
 	// proxyNoFQDN is invalid because it does not specify and FQDN
 	proxyNoFQDN := &contour_api_v1.HTTPProxy{
@@ -733,12 +731,6 @@ func TestDAGStatus(t *testing.T) {
 			{Name: proxyInvalidServiceInvalid.Name, Namespace: proxyInvalidServiceInvalid.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidServiceInvalid.Generation).
 				WithError("ServiceError", "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "roots/invalid" not found`),
-			// {
-			// 	Object:      proxyInvalidServiceInvalid,
-			// 	Status:      "invalid",
-			// 	Description: `Spec.Routes unresolved service reference: service "roots/invalid" not found`,
-			// 	Vhost:       proxyInvalidServiceInvalid.Spec.VirtualHost.Fqdn,
-			// },
 		},
 	})
 
@@ -1080,11 +1072,6 @@ func TestDAGStatus(t *testing.T) {
 			{Name: proxyInvalidDuplicateMatchConditionHeaders.Name, Namespace: proxyInvalidDuplicateMatchConditionHeaders.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidDuplicateMatchConditionHeaders.Generation).
 				WithError("RouteError", "HeaderMatchConditionsNotValid", "cannot specify duplicate header 'exact match' conditions in the same route"),
-			// {
-			// 	Object: proxyInvalidDuplicateMatchConditionHeaders,
-			// 	Status: "invalid", Description: "cannot specify duplicate header 'exact match' conditions in the same route",
-			// 	Vhost: "example.com",
-			// },
 		},
 	})
 
@@ -1186,11 +1173,6 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidRouteConditionHeaders.Name, Namespace: proxyInvalidRouteConditionHeaders.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidRouteConditionHeaders.Generation).Valid(),
-			// {
-			// 	Object: proxyInvalidRouteConditionHeaders,
-			// 	Status: "valid", Description: "valid HTTPProxy",
-			// 	Vhost: "example.com",
-			// },
 		},
 	})
 
@@ -2311,7 +2293,8 @@ func TestDAGStatus(t *testing.T) {
 			{
 				Name:      invalidResponseTimeout.Name,
 				Namespace: invalidResponseTimeout.Namespace,
-			}: fixture.NewValidCondition().WithError("RouteError", "TimeoutPolicyNotValid", `route.timeoutPolicy failed to parse: error parsing response timeout: unable to parse timeout string "invalid-val": time: invalid duration "invalid-val"`),
+			}: fixture.NewValidCondition().WithError("RouteError", "TimeoutPolicyNotValid",
+				`route.timeoutPolicy failed to parse: error parsing response timeout: unable to parse timeout string "invalid-val": time: invalid duration "invalid-val"`),
 		},
 	})
 
@@ -2345,7 +2328,8 @@ func TestDAGStatus(t *testing.T) {
 			{
 				Name:      invalidIdleTimeout.Name,
 				Namespace: invalidIdleTimeout.Namespace,
-			}: fixture.NewValidCondition().WithError("RouteError", "TimeoutPolicyNotValid", `route.timeoutPolicy failed to parse: error parsing idle timeout: unable to parse timeout string "invalid-val": time: invalid duration "invalid-val"`),
+			}: fixture.NewValidCondition().WithError("RouteError", "TimeoutPolicyNotValid",
+				`route.timeoutPolicy failed to parse: error parsing idle timeout: unable to parse timeout string "invalid-val": time: invalid duration "invalid-val"`),
 		},
 	})
 

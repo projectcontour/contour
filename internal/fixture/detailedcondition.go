@@ -20,7 +20,7 @@ import (
 // DetailedConditionBuilder is a builder object to make creating HTTPProxy fixtures more succinct.
 type DetailedConditionBuilder v1.DetailedCondition
 
-// NewProxy creates a new ProxyBuilder with the specified object name.
+// NewValidCondition creates a new DetailedConditionBuilder.
 func NewValidCondition() *DetailedConditionBuilder {
 	b := &DetailedConditionBuilder{
 		Condition: v1.Condition{

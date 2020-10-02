@@ -31,7 +31,7 @@ const (
 	ProxyStatusInvalid  ProxyStatus = "invalid"
 	ProxyStatusOrphaned ProxyStatus = "orphaned"
 
-	OrphanedConditionType string = "Orphaned"
+	OrphanedConditionType ConditionType = "Orphaned"
 )
 
 // NewCache creates a new Cache for holding status updates.
@@ -54,17 +54,12 @@ type Cache struct {
 // The commit function pattern is used so that the ProxyUpdate does not need to know anything
 // the cache internals.
 func (c Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, func()) {
-
 	pu := &ProxyUpdate{
 		Fullname:       k8s.NamespacedNameOf(proxy),
 		Generation:     proxy.Generation,
 		TransitionTime: v1.NewTime(time.Now()),
 		Conditions:     make(map[ConditionType]*contour_api_v1.DetailedCondition),
 	}
-
-	// if proxy.Spec.VirtualHost != nil {
-	// 	pu.Vhost = proxy.Spec.VirtualHost.Fqdn
-	// }
 
 	return pu, func() {
 		c.commitProxy(pu)
@@ -82,6 +77,7 @@ func (c Cache) commitProxy(pu *ProxyUpdate) {
 		// set the object back to Valid, skip the commit, as we've visited too far down.
 		// If this is removed, the status reporting for when a parent delegates to a child that delegates to itself
 		// will not work. Yes, I know, problems everywhere. I'm sorry.
+		// TODO(youngnick)#2968: This issue has more details.
 		if c.proxyUpdates[pu.Fullname].Conditions[ValidCondition].Status == contour_api_v1.ConditionFalse {
 			if pu.Conditions[ValidCondition].Status == contour_api_v1.ConditionTrue {
 				return
@@ -118,7 +114,7 @@ func (c Cache) getProxyStatusUpdates() []k8s.StatusUpdate {
 // GetProxyUpdates gets the underlying ProxyUpdate objects
 // from the cache, used by various things (`internal/contour/metrics.go` and `internal/dag/status_test.go`)
 // to retrieve info they need.
-// TODO(youngnick): This could conceivably be replaced with a Walk pattern.
+// TODO(youngnick)#2969: This could conceivably be replaced with a Walk pattern.
 func (c Cache) GetProxyUpdates() []*ProxyUpdate {
 
 	var allUpdates []*ProxyUpdate
