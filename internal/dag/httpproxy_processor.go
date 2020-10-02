@@ -120,7 +120,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	}
 	pa.Vhost = host
 
-	// ensure root httpproxy lives in allowed namespace
+	// Ensure root httpproxy lives in allowed namespace.
+	// This check must be after we can determine the vhost in order to be able to calculate metrics correctly.
 	if !p.rootAllowed(proxy.Namespace) {
 		validCond.AddError("RootNamespaceError", "RootProxyNotAllowedInNamespace",
 			"root HTTPProxy cannot be defined in this namespace")
