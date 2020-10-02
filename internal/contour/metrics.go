@@ -97,7 +97,7 @@ func calculateRouteMetric(updates []*status.ProxyUpdate) metrics.RouteMetric {
 	for _, u := range updates {
 		calcMetrics(u, proxyMetricValid, proxyMetricInvalid, proxyMetricOrphaned, proxyMetricTotal)
 		if u.Vhost != "" {
-			proxyMetricRoots[metrics.Meta{Namespace: u.Fullname.Namespace}]++
+			proxyMetricRoots[metrics.Meta{VHost: u.Vhost, Namespace: u.Fullname.Namespace}]++
 		}
 	}
 

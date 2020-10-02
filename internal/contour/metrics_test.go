@@ -378,7 +378,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			},
 			Orphaned: map[metrics.Meta]int{},
 			Root: map[metrics.Meta]int{
-				{Namespace: "roots"}: 1,
+				{Namespace: "roots", VHost: "example.com"}: 1,
 			},
 			Total: map[metrics.Meta]int{
 				{Namespace: "roots"}: 1,
@@ -396,7 +396,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			Valid:    map[metrics.Meta]int{},
 			Orphaned: map[metrics.Meta]int{},
 			Root: map[metrics.Meta]int{
-				{Namespace: "roots"}: 1,
+				{Namespace: "roots", VHost: "example.com"}: 1,
 			},
 			Total: map[metrics.Meta]int{
 				{Namespace: "roots"}: 1,
@@ -409,11 +409,13 @@ func TestHTTPProxyMetrics(t *testing.T) {
 		wantIR: nil,
 		wantProxy: &metrics.RouteMetric{
 			Invalid: map[metrics.Meta]int{
-				{Namespace: "finance"}: 1,
+				{Namespace: "finance", VHost: "example.com"}: 1,
 			},
 			Valid:    map[metrics.Meta]int{},
 			Orphaned: map[metrics.Meta]int{},
-			Root:     map[metrics.Meta]int{},
+			Root: map[metrics.Meta]int{
+				{Namespace: "finance", VHost: "example.com"}: 1,
+			},
 			Total: map[metrics.Meta]int{
 				{Namespace: "finance"}: 1,
 			},
@@ -447,7 +449,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			Valid:    map[metrics.Meta]int{},
 			Orphaned: map[metrics.Meta]int{},
 			Root: map[metrics.Meta]int{
-				{Namespace: "roots"}: 1,
+				{Namespace: "roots", VHost: "example.com"}: 1,
 			},
 			Total: map[metrics.Meta]int{
 				{Namespace: "roots"}: 1,
@@ -467,7 +469,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			},
 			Orphaned: map[metrics.Meta]int{},
 			Root: map[metrics.Meta]int{
-				{Namespace: "roots"}: 1,
+				{Namespace: "roots", VHost: "example.com"}: 1,
 			},
 			Total: map[metrics.Meta]int{
 				{Namespace: "roots"}: 2,
@@ -504,7 +506,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			},
 			Orphaned: map[metrics.Meta]int{},
 			Root: map[metrics.Meta]int{
-				{Namespace: "roots"}: 1,
+				{Namespace: "roots", VHost: "example.com"}: 1,
 			},
 			Total: map[metrics.Meta]int{
 				{Namespace: "roots"}: 3,
@@ -543,7 +545,7 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			},
 			Orphaned: map[metrics.Meta]int{},
 			Root: map[metrics.Meta]int{
-				{Namespace: "roots"}: 1,
+				{Namespace: "roots", VHost: "example.com"}: 1,
 			},
 			Total: map[metrics.Meta]int{
 				{Namespace: "roots"}: 3,
