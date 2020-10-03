@@ -88,11 +88,13 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	statusUpdateCacher := &k8s.StatusUpdateCacher{}
 	eh := &contour.EventHandler{
-		IsLeader:        make(chan struct{}),
-		StatusUpdater:   statusUpdateCacher,
-		FieldLogger:     log,
-		Sequence:        make(chan int, 1),
-		HoldoffDelay:    time.Duration(rand.Intn(100)) * time.Millisecond,
+		IsLeader:      make(chan struct{}),
+		StatusUpdater: statusUpdateCacher,
+		FieldLogger:   log,
+		Sequence:      make(chan int, 1),
+		//nolint:gosec
+		HoldoffDelay: time.Duration(rand.Intn(100)) * time.Millisecond,
+		//nolint:gosec
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
 		Observer: &contour.RebuildMetricsObserver{
 			Metrics:      metrics.NewMetrics(r),

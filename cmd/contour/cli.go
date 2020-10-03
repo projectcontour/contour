@@ -36,7 +36,6 @@ type Client struct {
 }
 
 func (c *Client) dial() *grpc.ClientConn {
-
 	var options []grpc.DialOption
 
 	// Check the TLS setup
@@ -68,6 +67,7 @@ func (c *Client) dial() *grpc.ClientConn {
 			ServerName:   "contour",
 			Certificates: []tls.Certificate{certificate},
 			RootCAs:      certPool,
+			MinVersion:   tls.VersionTLS12,
 		})
 		options = append(options, grpc.WithTransportCredentials(creds))
 	default:
