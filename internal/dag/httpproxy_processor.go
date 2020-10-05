@@ -84,7 +84,7 @@ func (p *HTTPProxyProcessor) Run(dag *DAG, source *KubernetesCache) {
 		p.orphaned = nil
 	}()
 
-	for _, proxy := range p.validHTTPProxies() {
+	for _, proxy := range p.listRootProxies() {
 		p.computeHTTPProxy(proxy)
 	}
 
@@ -686,33 +686,36 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	return ok
 }
 
-// validHTTPProxies returns a slice of *contour_api_v1.HTTPProxy objects.
-// invalid HTTPProxy objects are excluded from the slice and their status
-// updated accordingly.
-func (p *HTTPProxyProcessor) validHTTPProxies() []*contour_api_v1.HTTPProxy {
-	// ensure that a given fqdn is only referenced in a single HTTPProxy resource
+// listRootProxies returns a slice of root *contour_api_v1.HTTPProxy
+// objects, where "root objects" is defined by the presence of the
+// .Spec.VirtualHost.Fqdn field.
+// Proxies with conflicting FQDNs are excluded from the result, and
+// have their status updated with the corresponding error.
+func (p *HTTPProxyProcessor) listRootProxies() []*contour_api_v1.HTTPProxy {
+	// Ensure that a given FQDN is only referenced in a single HTTPProxy resource.
 	var valid []*contour_api_v1.HTTPProxy
-	fqdnHTTPProxies := make(map[string][]*contour_api_v1.HTTPProxy)
+	roots := make(map[string][]*contour_api_v1.HTTPProxy)
+
 	for _, proxy := range p.source.httpproxies {
 		if proxy.Spec.VirtualHost == nil {
 			valid = append(valid, proxy)
 			continue
 		}
-		fqdnHTTPProxies[proxy.Spec.VirtualHost.Fqdn] = append(fqdnHTTPProxies[proxy.Spec.VirtualHost.Fqdn], proxy)
+		roots[proxy.Spec.VirtualHost.Fqdn] = append(roots[proxy.Spec.VirtualHost.Fqdn], proxy)
 	}
 
-	for fqdn, proxies := range fqdnHTTPProxies {
+	for fqdn, proxies := range roots {
 		switch len(proxies) {
 		case 1:
 			valid = append(valid, proxies[0])
 		default:
-			// multiple proxies use the same fqdn. mark them as invalid.
+			// Multiple proxies use the same FQDN, mark them as invalid.
 			var conflicting []string
 			for _, proxy := range proxies {
 				conflicting = append(conflicting, proxy.Namespace+"/"+proxy.Name)
 			}
 			sort.Strings(conflicting) // sort for test stability
-			msg := fmt.Sprintf("fqdn %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
+			msg := fmt.Sprintf("FQDN %q is used in multiple HTTPProxies: %s", fqdn, strings.Join(conflicting, ", "))
 			for _, proxy := range proxies {
 				pa, commit := p.dag.StatusCache.ProxyAccessor(proxy)
 				pa.Vhost = fqdn

@@ -809,10 +809,10 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidExampleCom.Name, Namespace: proxyValidExampleCom.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidExampleCom.Generation).
-				WithError("VirtualHostError", "DuplicateVhost", `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`),
+				WithError("VirtualHostError", "DuplicateVhost", `FQDN "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`),
 			{Name: proxyValidReuseExampleCom.Name, Namespace: proxyValidReuseExampleCom.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidReuseExampleCom.Generation).
-				WithError("VirtualHostError", "DuplicateVhost", `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`),
+				WithError("VirtualHostError", "DuplicateVhost", `FQDN "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`),
 		},
 	})
 
@@ -864,10 +864,10 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyRootIncludesRoot.Name, Namespace: proxyRootIncludesRoot.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyRootIncludesRoot.Generation).
-				WithError("VirtualHostError", "DuplicateVhost", `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`),
+				WithError("VirtualHostError", "DuplicateVhost", `FQDN "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`),
 			{Name: proxyRootIncludedByRoot.Name, Namespace: proxyRootIncludedByRoot.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyRootIncludedByRoot.Generation).
-				WithError("VirtualHostError", "DuplicateVhost", `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`),
+				WithError("VirtualHostError", "DuplicateVhost", `FQDN "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`),
 		},
 	})
 
