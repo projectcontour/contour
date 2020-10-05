@@ -14,27 +14,39 @@
 package k8s
 
 import (
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"k8s.io/api/networking/v1beta1"
-	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // IsStatusEqual checks that two objects of supported Kubernetes types
 // have equivalent Status structs.
+//
 // Currently supports:
 // networking.k8s.io/ingress/v1beta1
+// projectcontour.io/v1
 func IsStatusEqual(objA, objB interface{}) bool {
 
 	switch a := objA.(type) {
 	case *v1beta1.Ingress:
 		switch b := objB.(type) {
 		case *v1beta1.Ingress:
-			return equality.Semantic.DeepEqual(a.Status, b.Status)
+			if cmp.Equal(a.Status, b.Status) {
+				return true
+			}
 		}
 	case *contour_api_v1.HTTPProxy:
 		switch b := objB.(type) {
 		case *contour_api_v1.HTTPProxy:
-			return equality.Semantic.DeepEqual(a.Status, b.Status)
+			// Compare the status of the object ignoring the LastTransitionTime which is always
+			// updated on each DAG rebuild regardless if the status of object changed or not.
+			// Not ignoring this causes each status to be updated each time since the objects
+			// are always different for each DAG rebuild (Issue #2979).
+			if cmp.Equal(a.Status, b.Status,
+				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
+				return true
+			}
 		}
 	}
 
