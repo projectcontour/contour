@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -73,23 +74,17 @@ func Test_parseStatusFlag(t *testing.T) {
 		{
 			name:   "Empty",
 			status: "",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{},
-			},
+			want:   v1.LoadBalancerStatus{},
 		},
 		{
 			name:   "EmptyComma",
 			status: ",",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{},
-			},
+			want:   v1.LoadBalancerStatus{},
 		},
 		{
 			name:   "EmptySpace",
 			status: "    ",
-			want: v1.LoadBalancerStatus{
-				Ingress: []v1.LoadBalancerIngress{},
-			},
+			want:   v1.LoadBalancerStatus{},
 		},
 		{
 			name:   "SingleComma",
@@ -150,9 +145,7 @@ func Test_parseStatusFlag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if diff := cmp.Diff(parseStatusFlag(tt.status), tt.want); diff != "" {
-				t.Errorf("parseStatusFlag failed: %s", diff)
-			}
+			assert.Equal(t, tt.want, parseStatusFlag(tt.status))
 		})
 	}
 }

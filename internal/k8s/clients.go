@@ -14,15 +14,16 @@
 package k8s
 
 import (
-	"time"
+	"context"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
@@ -32,6 +33,7 @@ type Clients struct {
 
 	core    *kubernetes.Clientset
 	dynamic dynamic.Interface
+	cache   cache.Cache
 }
 
 // NewClients returns a new set of the various API clients required
@@ -39,6 +41,11 @@ type Clients struct {
 // environment variables if inCluster is true.
 func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 	config, err := newRestConfig(kubeconfig, inCluster)
+	if err != nil {
+		return nil, err
+	}
+
+	scheme, err := NewContourScheme()
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +66,14 @@ func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 		return nil, err
 	}
 
+	clients.cache, err = cache.New(config, cache.Options{
+		Scheme: scheme,
+		Mapper: clients.RESTMapper,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &clients, nil
 }
 
@@ -69,20 +84,30 @@ func newRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
 	return rest.InClusterConfig()
 }
 
-// note: 0 means resync timers are disabled
-const resyncInterval time.Duration = 0
+type Informer = cache.Informer
 
-type InformerFactory = dynamicinformer.DynamicSharedInformerFactory
+func (c *Clients) InformerForResource(gvr schema.GroupVersionResource) (Informer, error) {
+	gvk, err := c.KindFor(gvr)
+	if err != nil {
+		return nil, err
+	}
 
-// NewInformerFactory returns a new InformerFactory for
-// use with any registered Kubernetes API type.
-func (c *Clients) NewInformerFactory() InformerFactory {
-	return dynamicinformer.NewDynamicSharedInformerFactory(c.dynamic, resyncInterval)
+	return c.cache.GetInformerForKind(context.Background(), gvk)
 }
 
-// NewInformerFactoryForNamespace returns a new InformerFactory bound to the given namespace.
-func (c *Clients) NewInformerFactoryForNamespace(ns string) InformerFactory {
-	return dynamicinformer.NewFilteredDynamicSharedInformerFactory(c.dynamic, resyncInterval, ns, nil)
+func (c *Clients) StartInformers(stopChan <-chan struct{}) error {
+	return c.cache.Start(stopChan)
+}
+
+func (c *Clients) WaitForCacheSync(stopChan <-chan struct{}) bool {
+	// Note that in later controller-runtime releases, the API
+	// takes a context.Context argument so we have to use context
+	// cancellation to propagate the stop.
+	return c.cache.WaitForCacheSync(stopChan)
+}
+
+func (c *Clients) Cache() client.Reader {
+	return c.cache
 }
 
 // ClientSet returns the Kubernetes Core v1 ClientSet.

@@ -83,6 +83,11 @@ func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
 			continue
 		}
 
+		// Don't update the condition if our observation is stale.
+		if currCond.ObservedGeneration > cond.ObservedGeneration {
+			continue
+		}
+
 		cond.DeepCopyInto(currCond)
 
 	}

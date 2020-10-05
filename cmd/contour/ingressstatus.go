@@ -14,32 +14,36 @@
 package main
 
 import (
+	"context"
 	"net"
 	"strings"
-	"sync"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// loadBalancerStatusWriter manages the lifetime of IngressStatusUpdaters.
+// loadBalancerStatusWriter orchestrates LoadBalancer address status
+// updates for HTTPProxy and Ingress objects. Actually updating the
+// address in the object status is performed by k8s.StatusAddressUpdater.
 //
 // The theory of operation of the loadBalancerStatusWriter is as follows:
+//
 // 1. On startup the loadBalancerStatusWriter waits to be elected leader.
 // 2. Once elected leader, the loadBalancerStatusWriter waits to receive a
 //    v1.LoadBalancerStatus value.
-// 3. Once a v1.LoadBalancerStatus value has been received, any existing informer
-//    is stopped and a new informer started in its place. This ensures that all existing
-//    Ingress objects will have OnAdd events fired to the new event handler.
-// 4. Each informer is connected to a k8s.IngressStatusUpdater which reacts to
-//    OnAdd events for networking.k8s.io/ingress.v1beta1 objects. For each OnAdd
-//    the object is patched with the v1.LoadBalancerStatus value obtained on creation.
-//    OnUpdate and OnDelete events are ignored.If a new v1.LoadBalancerStatus value
-//    is been received, operation restarts at step 3.
-// 5. If the worker is stopped, any existing informer is stopped before the worker stops.
+// 3. Once a v1.LoadBalancerStatus value has been received, the
+//    cached address is updated so that it will be applied to objects
+//    received in any subsequent informer events.
+// 4. All Ingress and HTTPProxy objects are listed from the informer
+//    cache and an attempt is made to update their status with the new
+//    address. This update may end up being a no-op in which case it
+//    doesn't make an API server call.
+// 5. If the worker is stopped, the informer continues but no further
+//    status updates are made.
 type loadBalancerStatusWriter struct {
 	log           logrus.FieldLogger
 	clients       *k8s.Clients
@@ -51,7 +55,6 @@ type loadBalancerStatusWriter struct {
 }
 
 func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
-
 	// Await leadership election.
 	isw.log.Info("awaiting leadership election")
 	select {
@@ -62,62 +65,76 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 		isw.log.Info("elected leader")
 	}
 
-	var shutdown chan struct{}
-	var ingressInformers sync.WaitGroup
+	u := &k8s.StatusAddressUpdater{
+		Logger: func() logrus.FieldLogger {
+			// Configure the StatusAddressUpdater logger.
+			log := isw.log.WithField("context", "StatusAddressUpdater")
+			if isw.ingressClass != "" {
+				return log.WithField("target-ingress-class", isw.ingressClass)
+			}
+
+			return log
+		}(),
+		IngressClass:  isw.ingressClass,
+		StatusUpdater: isw.statusUpdater,
+		Converter:     isw.Converter,
+	}
+
+	// Create informers for the types that need load balancer
+	// address status. The client should have already started
+	// informers, so new informers will auto-start.
+	for _, r := range []schema.GroupVersionResource{
+		v1beta1.SchemeGroupVersion.WithResource("ingresses"),
+		contour_api_v1.HTTPProxyGVR,
+	} {
+		inf, err := isw.clients.InformerForResource(r)
+		if err != nil {
+			isw.log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
+		}
+
+		inf.AddEventHandler(u)
+	}
+
 	for {
 		select {
 		case <-stop:
-			// Use the shutdown channel to stop existing informer and shut down
-			if shutdown != nil {
-				close(shutdown)
-			}
-			ingressInformers.Wait()
+			// Once started, there's no way to stop the
+			// informer from here. Clear the load balancer
+			// status so that subsequent informer events
+			// will have no effect.
+			u.Set(v1.LoadBalancerStatus{})
 			return nil
 		case lbs := <-isw.lbStatus:
-			// Stop the existing informer.
-			if shutdown != nil {
-				close(shutdown)
-			}
-			ingressInformers.Wait()
+			isw.log.WithField("loadbalancer-address", lbAddress(lbs)).
+				Info("received a new address for status.loadBalancer")
 
-			isw.log.WithField("loadbalancer-address", lbAddress(lbs)).Info("received a new address for status.loadBalancer")
+			u.Set(lbs)
 
-			// Configure the StatusAddressUpdater logger
-			log := isw.log.WithField("context", "StatusAddressUpdater")
-			if isw.ingressClass != "" {
-				log = log.WithField("target-ingress-class", isw.ingressClass)
-			}
+			var ingressList v1beta1.IngressList
+			var proxyList contour_api_v1.HTTPProxyList
 
-			sau := &k8s.StatusAddressUpdater{
-				Logger:        log,
-				LBStatus:      lbs,
-				IngressClass:  isw.ingressClass,
-				StatusUpdater: isw.statusUpdater,
-				Converter:     isw.Converter,
-			}
-
-			// Create new informer for the new LoadBalancerStatus
-			factory := isw.clients.NewInformerFactory()
-			factory.ForResource(v1beta1.SchemeGroupVersion.WithResource("ingresses")).Informer().AddEventHandler(sau)
-			factory.ForResource(contour_api_v1.HTTPProxyGVR).Informer().AddEventHandler(sau)
-
-			shutdown = make(chan struct{})
-			ingressInformers.Add(1)
-			fn := startInformer(factory, log)
-			go func() {
-				defer ingressInformers.Done()
-				if err := fn(shutdown); err != nil {
-					return
+			if err := isw.clients.Cache().List(context.Background(), &ingressList); err != nil {
+				isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
+			} else {
+				for _, i := range ingressList.Items {
+					u.OnAdd(i)
 				}
-			}()
+			}
+
+			if err := isw.clients.Cache().List(context.Background(), &proxyList); err != nil {
+				isw.log.WithError(err).WithField("kind", "HTTPProxy").Error("failed to list objects")
+			} else {
+				for _, i := range proxyList.Items {
+					u.OnAdd(i)
+				}
+			}
 		}
 	}
 }
 
 func parseStatusFlag(status string) v1.LoadBalancerStatus {
-
 	// Support ','-separated lists.
-	ingresses := []v1.LoadBalancerIngress{}
+	var ingresses []v1.LoadBalancerIngress
 
 	for _, item := range strings.Split(status, ",") {
 		item = strings.TrimSpace(item)
@@ -145,7 +162,6 @@ func parseStatusFlag(status string) v1.LoadBalancerStatus {
 
 // lbAddress gets the string representation of the first address, for logging.
 func lbAddress(lb v1.LoadBalancerStatus) string {
-
 	if len(lb.Ingress) == 0 {
 		return ""
 	}
