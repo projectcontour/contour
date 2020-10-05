@@ -1469,8 +1469,8 @@ spec:
       serviceAccountName: contour-certgen
       securityContext:
         runAsNonRoot: true
-        runAsUser: 65534
-        runAsGroup: 65534
+        runAsUser: 65532
+        runAsGroup: 65532
   parallelism: 1
   completions: 1
   backoffLimit: 1
@@ -1733,8 +1733,8 @@ spec:
       serviceAccountName: contour
       securityContext:
         runAsNonRoot: true
-        runAsUser: 65534
-        runAsGroup: 65534
+        runAsUser: 65532
+        runAsGroup: 65532
       volumes:
         - name: contourcert
           secret:
