@@ -6,7 +6,7 @@ Contour also introduces a new ingress API [HTTPProxy][2] which is implemented vi
 Its goal is to expand upon the functionality of the Ingress API to allow for a richer user experience as well as solve shortcomings in the original design.
 
 ## Prerequisites
-Contour is tested with Kubernetes clusters running version [1.15 and later][4], but should work with earlier versions where Custom Resource Definitions are supported (Kubernetes 1.7+).
+Contour is tested with Kubernetes clusters running version [1.16 and later][4].
 
 RBAC must be enabled on your cluster.
 
