@@ -216,7 +216,3 @@ func (e *EventHandler) rebuildDAG() {
 	}
 
 }
-
-func unUsedFunc() interface{} {
-	return nil
-}
