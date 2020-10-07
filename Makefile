@@ -298,7 +298,7 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 .PHONY: site-devel
 site-devel: ## Launch the website in a Docker container
 	docker run --rm -p $(JEKYLL_PORT):$(JEKYLL_PORT) -p $(JEKYLL_LIVERELOAD_PORT):$(JEKYLL_LIVERELOAD_PORT) -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
-		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll serve --host 0.0.0.0 --port $(JEKYLL_PORT) --livereload_port $(JEKYLL_LIVERELOAD_PORT) --livereload"
+		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll serve --host 0.0.0.0 --port $(JEKYLL_PORT) --livereload_port $(JEKYLL_LIVERELOAD_PORT) --livereload --force_polling --incremental"
 
 .PHONY: site-check
 site-check: ## Test the site's links
