@@ -178,7 +178,9 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 	case opUpdate:
 		if cmp.Equal(op.oldObj, op.newObj,
 			cmpopts.IgnoreFields(contour_api_v1.HTTPProxy{}, "Status"),
-			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ResourceVersion")) {
+			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ResourceVersion"),
+			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ManagedFields"),
+		) {
 			e.WithField("op", "update").Debugf("%T skipping update, only status has changed", op.newObj)
 			return false
 		}
