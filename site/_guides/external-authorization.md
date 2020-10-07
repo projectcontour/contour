@@ -3,8 +3,6 @@ title: External Authorization Support
 layout: page
 ---
 
-<div id="toc" class="navigation"></div>
-
 Starting in version 1.9, Contour supports routing client requests to an
 external authorization server. This feature can be used to centralize
 client authorization so that applications don't have to implement their
@@ -18,7 +16,7 @@ that implements this protocol.
 
 You can bind an authorization server to Contour by creating a
 [`ExtensionService`][4] resource.
-This resource tells Contour that the service exists, and that it should
+This resource tells Contour the service exists, and that it should
 program Envoy with an upstream cluster directing traffic to it.
 Note that the `ExtensionService` resource just binds the server; at this
 point Contour doesn't assume that the server is an authorization server.
@@ -36,7 +34,7 @@ the request to the upstream application.
 It is helpful to have a mental model of how requests flow through the various
 servers involved in authorizing HTTP requests.
 The flow diagram below shows the actors that participate in the successful
-authorization of a HTTP request.
+authorization of an HTTP request.
 Note that in some cases, these actors can be combined into a single
 application server.
 For example, there is no requirement for the external authorization server to
@@ -74,7 +72,7 @@ be a separate application from the authorization provider.
      |                           |                             |                          |              |
 ```
 
-A HTTP Client generates a HTTP request and sends it to the Proxy.
+A HTTP Client generates an HTTP request and sends it to the Proxy.
 The Proxy is an Envoy instance that Contour has programmed with an external
 authorization configuration.
 The Proxy holds the HTTP request and sends an authorization check request
@@ -85,19 +83,19 @@ server to verify or obtain an authorization token.
 
 In this flow, the ExtAuth server is able to authorize the request, and sends an
 authorization response back to the Proxy.
-The response includes the authorization status and a set of HTTP headers
+The response includes the authorization status, and a set of HTTP headers
 modifications to make to the HTTP request.
 Since this authorization was successful, the Proxy modifies the request and
 forwards it to the application.
 If the authorization was not successful, the Proxy would have immediately
-responded to the client with a HTTP error.
+responded to the client with an HTTP error.
 
 ## Using the Contour Authorization Server
 
 The Contour project has built a simple authorization server named
 [`contour-authserver`][1]. `contour-authserver` supports an authorization
-testing server and a HTTP basic authorization server that accesses
-credentials in stored in [htpasswd][2] format.
+testing server, and an HTTP basic authorization server that accesses
+credentials stored in [htpasswd][2] format.
 
 To get started, ensure that Contour is deployed and that you have
 [cert-manager][6] installed in your cluster so that you can easily issue
@@ -122,7 +120,7 @@ clusterissuer.cert-manager.io/selfsigned created
 
 The first step is to deploy `contour-authserver` to the `projectcontour-auth`
 namespace.
-To to this, we will use [`kustomize`][8] to build a set of YAML object that we can
+To do this, we will use [`kustomize`][8] to build a set of YAML object that we can
 deploy using kubectl.
 In a new directory, create the following `kustomization.yaml` file:
 
@@ -226,7 +224,7 @@ spec:
 
 The `ExtensionService` resource must be created in the same namespace
 as the services that it binds.
-This policy ensure that the creator of the `ExtensionService` also has
+This policy ensures that the creator of the `ExtensionService` also has
 the authority over those services.
 
 ```bash
@@ -264,9 +262,7 @@ spec:
           httpGet:
             path: /health
             port: 3000
-
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
@@ -304,9 +300,7 @@ spec:
   issuerRef:
     name: selfsigned
     kind: ClusterIssuer
-
 ---
-
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
@@ -322,7 +316,7 @@ spec:
       port: 80
 ```
 
-Note that we created a TLS secret and exposed the application over HTTPS.
+_Note that we created a TLS secret and exposed the application over HTTPS._
 
 ```bash
 $ kubectl apply -f echo-proxy.yaml
@@ -366,7 +360,6 @@ spec:
   - services:
     - name: ingress-conformance-echo
       port: 80
-
 ```
 
 ```bash
@@ -397,7 +390,7 @@ $ curl -k --user user1:password1 https://local.projectcontour.io/test/$((RANDOM)
 
 ## Caveats
 
-There are a small number of caveats to consider when deploying external
+There are a few caveats to consider when deploying external
 authorization:
 
 1. Only one external authorization server can be configured on a virtual host
