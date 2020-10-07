@@ -262,7 +262,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if err != nil {
 		return fmt.Errorf("error parsing connection shutdown grace period: %w", err)
 	}
-	requestTimeout, err := getRequestTimeout(log, ctx)
+	requestTimeout, err := timeout.Parse(ctx.RequestTimeout)
 	if err != nil {
 		return fmt.Errorf("error parsing request timeout: %w", err)
 	}
@@ -612,18 +612,4 @@ func startInformer(inf k8s.InformerFactory, log logrus.FieldLogger) func(stop <-
 		<-stop
 		return nil
 	}
-}
-
-// getRequestTimeout gets the request timeout setting from ctx.TimeoutConfig.RequestTimeout
-// if it's set, or else ctx.RequestTimeoutDeprecated if it's set, or else a default setting.
-func getRequestTimeout(log logrus.FieldLogger, ctx *serveContext) (timeout.Setting, error) {
-	if ctx.RequestTimeout != "" {
-		return timeout.Parse(ctx.RequestTimeout)
-	}
-	if ctx.RequestTimeoutDeprecated > 0 {
-		log.Warn("The request-timeout field in the Contour config file is deprecated and will be removed in a future release. Use timeout-config.request-timeout instead.")
-		return timeout.DurationSetting(ctx.RequestTimeoutDeprecated), nil
-	}
-
-	return timeout.DefaultSetting(), nil
 }
