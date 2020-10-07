@@ -16,15 +16,10 @@ package k8s
 import (
 	"context"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
-	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
 )
 
 // DynamicClientHandler converts *unstructured.Unstructured from the
@@ -86,23 +81,12 @@ type UnstructuredConverter struct {
 
 // NewUnstructuredConverter returns a new UnstructuredConverter initialized
 func NewUnstructuredConverter() (*UnstructuredConverter, error) {
-	schemeBuilder := runtime.SchemeBuilder{
-		contour_api_v1.AddToScheme,
-		contour_api_v1alpha1.AddToScheme,
-		scheme.AddToScheme,
-		serviceapis.AddToScheme,
-		v1beta1.AddToScheme,
-	}
-
-	uc := &UnstructuredConverter{
-		scheme: runtime.NewScheme(),
-	}
-
-	if err := schemeBuilder.AddToScheme(uc.scheme); err != nil {
+	s, err := NewContourScheme()
+	if err != nil {
 		return nil, err
 	}
 
-	return uc, nil
+	return &UnstructuredConverter{scheme: s}, nil
 }
 
 // FromUnstructured converts an unstructured.Unstructured to typed struct. If obj
