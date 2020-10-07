@@ -1,0 +1,18 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo
+  namespace: projectcontour-auth
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    tls:
+      secretName: envoycert
+    authorization:
+      extensionRef:
+        name: htpasswd
+        namespace: projectcontour-auth
+  routes:
+    - services:
+        - name: ingress-conformance-echo
+          port: 80
