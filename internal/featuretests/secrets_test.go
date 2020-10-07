@@ -21,6 +21,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -89,11 +90,15 @@ func TestSDSVisibility(t *testing.T) {
 	})
 }
 
-// TODO(youngnick)#2782: This test has been a noop for a long time - because it compares
-// the values of VersionInfo and Nonce, which are ignored in assert.Equal.
 func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
+
+	assertEqualVersion := func(t *testing.T, expected string, r *Response) {
+		t.Helper()
+		assert.Equal(t, expected, r.VersionInfo, "got unexpected VersionInfo")
+		assert.Equal(t, expected, r.Nonce, "got unexpected Nonce")
+	}
 
 	// s1 is a tls secret
 	s1 := &v1.Secret{
@@ -137,22 +142,21 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 
 	rh.OnAdd(fixture.NewService("backend").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
-	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources:   resources(t, secret(s1)),
-		TypeUrl:     secretType,
-		Nonce:       "2",
+
+	res := c.Request(secretType)
+	res.Equals(&envoy_api_v2.DiscoveryResponse{
+		Resources: resources(t, secret(s1)),
 	})
+	// Equals(...) only checks resources, so explicitly
+	// check version & nonce here and subsequently.
+	assertEqualVersion(t, "2", res)
 
 	// verify that requesting the same resource without change
 	// does not bump the current version_info.
-
 	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources:   resources(t, secret(s1)),
-		TypeUrl:     secretType,
-		Nonce:       "2",
+		Resources: resources(t, secret(s1)),
 	})
+	assertEqualVersion(t, "2", res)
 
 	// s2 is not referenced by any active ingress object.
 	s2 := &v1.Secret{
@@ -166,11 +170,9 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	rh.OnAdd(s2)
 
 	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
-		VersionInfo: "2",
-		Resources:   resources(t, secret(s1)),
-		TypeUrl:     secretType,
-		Nonce:       "2",
+		Resources: resources(t, secret(s1)),
 	})
+	assertEqualVersion(t, "2", res)
 }
 
 // issue 1169, an invalid certificate should not be
