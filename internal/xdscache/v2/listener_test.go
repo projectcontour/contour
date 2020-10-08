@@ -297,7 +297,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
@@ -386,13 +386,13 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"sortedfirst.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(httpsFilterFor("sortedfirst.example.com")),
 				}, {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"sortedsecond.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(httpsFilterFor("sortedsecond.example.com")),
 				}},
 				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
@@ -507,7 +507,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 				}},
 				ListenerFilters: envoy_v2.ListenerFilters(
@@ -589,7 +589,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 				}},
 				ListenerFilters: envoy_v2.ListenerFilters(
@@ -665,7 +665,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
@@ -739,7 +739,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(httpsFilterFor("whatever.example.com")),
 				}},
 				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
@@ -810,7 +810,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"whatever.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
 						AddFilter(envoy_v2.FilterMisdirectedRequests("whatever.example.com")).
 						DefaultFilters().
@@ -1180,7 +1180,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 				}, {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
@@ -1295,14 +1295,14 @@ func TestListenerVisit(t *testing.T) {
 						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							ServerNames: []string{"www.another.com"},
 						},
-						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 						Filters:         envoy_v2.Filters(httpsFilterFor("www.another.com")),
 					},
 					{
 						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							ServerNames: []string{"www.example.com"},
 						},
-						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 						Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 					},
 					{
@@ -1439,7 +1439,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(httpsFilterFor("www.example.com")),
 				}},
 				ListenerFilters: envoy_v2.ListenerFilters(
@@ -1730,7 +1730,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
 						AddFilter(envoy_v2.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().
@@ -1812,7 +1812,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
 						AddFilter(envoy_v2.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().
@@ -1894,7 +1894,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
 						AddFilter(envoy_v2.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().
@@ -1976,7 +1976,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters: envoy_v2.Filters(envoy_v2.HTTPConnectionManagerBuilder().
 						AddFilter(envoy_v2.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().

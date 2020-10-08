@@ -179,14 +179,6 @@ func validateCRDs(dynamicClient dynamic.Interface, log logrus.FieldLogger) {
 
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
-	// log a warning if the Contour config file doesn't already disable TLS 1.1 and 1.0.
-	if annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion) <= envoy_api_v2_auth.TlsParameters_TLSv1_1 {
-		log.Warn("In Contour 1.10, TLS 1.1 will be disabled by default. HTTPProxies with no Spec.VirtualHost.TLS.MinimumProtocolVersion" +
-			" and Ingresses without the projectcontour.io/tls-minimum-protocol-version annotation will default to TLS 1.2. If TLS 1.1" +
-			" is required for any of your HTTPProxies or Ingresses going forward, you must explicitly specify 1.1, though we recommend" +
-			" against continuing to use TLS 1.1 as it's end-of-life.")
-	}
-
 	// Establish k8s core & dynamic client connections.
 	clients, err := k8s.NewClients(ctx.Kubeconfig, ctx.InCluster)
 	if err != nil {
@@ -267,6 +259,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return fmt.Errorf("error parsing request timeout: %w", err)
 	}
 
+	// Set the global minimum allowed TLS version to 1.1, which allows proxies/ingresses
+	// that are explicitly using 1.1 to continue working by default. However, the
+	// *default* minimum TLS version for proxies/ingresses that don't specify it
+	// is 1.2, set in the DAG processors.
+	globalMinTLSVersion := annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion, envoy_api_v2_auth.TlsParameters_TLSv1_1)
+
 	listenerConfig := xdscache_v2.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
@@ -277,7 +275,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HTTPSAccessLog:                ctx.httpsAccessLog,
 		AccessLogType:                 ctx.AccessLogFormat,
 		AccessLogFields:               ctx.AccessLogFields,
-		MinimumTLSVersion:             annotation.MinTLSVersion(ctx.TLSConfig.MinimumProtocolVersion),
+		MinimumTLSVersion:             globalMinTLSVersion,
 		RequestTimeout:                requestTimeout,
 		ConnectionIdleTimeout:         connectionIdleTimeout,
 		StreamIdleTimeout:             streamIdleTimeout,
