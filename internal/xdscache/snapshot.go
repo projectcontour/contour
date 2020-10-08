@@ -79,11 +79,8 @@ func (s *SnapshotHandler) generateNewSnapshot() {
 		asResources(s.resources[envoy_xds.Cluster].Contents()),
 		asResources(s.resources[envoy_xds.Route].Contents()),
 		asResources(s.resources[envoy_xds.Listener].Contents()),
-		nil)
-
-	// Update the Secrets xDS resource manually until a new version of go-control-plane is released.
-	// ref: https://github.com/envoyproxy/go-control-plane/pull/314
-	snapshot.Resources[envoy_xds.Secret] = cache.NewResources(snapshotVersion, asResources(s.resources[envoy_xds.Secret].Contents()))
+		nil,
+		asResources(s.resources[envoy_xds.Secret].Contents()))
 
 	if err := s.snapshotCache.SetSnapshot(xds.DefaultHash.String(), snapshot); err != nil {
 		s.Errorf("OnChange: Error setting snapshot: %q", err)
