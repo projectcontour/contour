@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
+
+	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
@@ -121,7 +123,7 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 					ValidationContext: &envoy_api_v2_auth.CertificateValidationContext{
 						TrustedCa: &envoy_api_v2_core.DataSource{
 							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
-								InlineBytes: []byte(CERTIFICATE),
+								InlineBytes: []byte(featuretests.CERTIFICATE),
 							},
 						},
 						MatchSubjectAltNames: []*matcher.StringMatcher{{
@@ -269,21 +271,21 @@ func TestExtensionService(t *testing.T) {
 			rh.OnAdd(&corev1.Secret{
 				ObjectMeta: fixture.ObjectMeta("ns/cacert"),
 				Data: map[string][]byte{
-					dag.CACertificateKey: []byte(CERTIFICATE),
+					dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 				},
 			})
 
 			rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(corev1.ServicePort{Port: 8081}))
 			rh.OnAdd(fixture.NewService("ns/svc2").WithPorts(corev1.ServicePort{Port: 8082}))
 
-			rh.OnAdd(endpoints("ns", "svc1", corev1.EndpointSubset{
-				Addresses: addresses("192.168.183.20"),
-				Ports:     ports(port("", 8081)),
+			rh.OnAdd(featuretests.Endpoints("ns", "svc1", corev1.EndpointSubset{
+				Addresses: featuretests.Addresses("192.168.183.20"),
+				Ports:     featuretests.Ports(featuretests.Port("", 8081)),
 			}))
 
-			rh.OnAdd(endpoints("ns", "svc2", corev1.EndpointSubset{
-				Addresses: addresses("192.168.183.21"),
-				Ports:     ports(port("", 8082)),
+			rh.OnAdd(featuretests.Endpoints("ns", "svc2", corev1.EndpointSubset{
+				Addresses: featuretests.Addresses("192.168.183.21"),
+				Ports:     featuretests.Ports(featuretests.Port("", 8082)),
 			}))
 
 			f(t, rh, c)

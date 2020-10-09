@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
+
+	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -67,7 +69,7 @@ func clientSecret() *v1.Secret {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 }
 
@@ -78,7 +80,7 @@ func caSecret() *v1.Secret {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			dag.CACertificateKey: []byte(CERTIFICATE),
+			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 		},
 	}
 }
@@ -117,7 +119,7 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 
 	c.Request(clusterType).Equals(&v2.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/backend/443/d411a4160f", "default/backend/http", "default_backend_443"), []byte(CERTIFICATE), "subjname", "", sec1),
+			tlsCluster(cluster("default/backend/443/d411a4160f", "default/backend/http", "default_backend_443"), []byte(featuretests.CERTIFICATE), "subjname", "", sec1),
 		),
 		TypeUrl: clusterType,
 	})
@@ -208,7 +210,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
-					Data: map[string][]byte{dag.CACertificateKey: []byte(CERTIFICATE)},
+					Data: map[string][]byte{dag.CACertificateKey: []byte(featuretests.CERTIFICATE)},
 				}},
 				SubjectName: "subjname"},
 			"subjname",

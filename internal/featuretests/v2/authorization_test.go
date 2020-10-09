@@ -11,12 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"path"
 	"testing"
 	"time"
+
+	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -85,7 +87,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 						&corev1.Secret{
 							ObjectMeta: fixture.ObjectMeta("certificate"),
 							Type:       "kubernetes.io/tls",
-							Data:       secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 						},
 						authzFilterFor(
 							fqdn,
@@ -174,7 +176,7 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 						&corev1.Secret{
 							ObjectMeta: fixture.ObjectMeta("certificate"),
 							Type:       "kubernetes.io/tls",
-							Data:       secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 						},
 						authzFilterFor(
 							fqdn,
@@ -490,7 +492,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 						&corev1.Secret{
 							ObjectMeta: fixture.ObjectMeta("certificate"),
 							Type:       "kubernetes.io/tls",
-							Data:       secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 						},
 						authzFilterFor(
 							fqdn,
@@ -536,9 +538,9 @@ func TestAuthorization(t *testing.T) {
 			rh.OnAdd(fixture.NewService("auth/oidc-server").
 				WithPorts(corev1.ServicePort{Port: 8081}))
 
-			rh.OnAdd(endpoints("auth", "oidc-server", corev1.EndpointSubset{
-				Addresses: addresses("192.168.183.21"),
-				Ports:     ports(port("", 8081)),
+			rh.OnAdd(featuretests.Endpoints("auth", "oidc-server", corev1.EndpointSubset{
+				Addresses: featuretests.Addresses("192.168.183.21"),
+				Ports:     featuretests.Ports(featuretests.Port("", 8081)),
 			}))
 
 			rh.OnAdd(&v1alpha1.ExtensionService{
@@ -553,15 +555,15 @@ func TestAuthorization(t *testing.T) {
 			rh.OnAdd(fixture.NewService("app-server").
 				WithPorts(corev1.ServicePort{Port: 80}))
 
-			rh.OnAdd(endpoints("auth", "app-server", corev1.EndpointSubset{
-				Addresses: addresses("192.168.183.21"),
-				Ports:     ports(port("", 80)),
+			rh.OnAdd(featuretests.Endpoints("auth", "app-server", corev1.EndpointSubset{
+				Addresses: featuretests.Addresses("192.168.183.21"),
+				Ports:     featuretests.Ports(featuretests.Port("", 80)),
 			}))
 
 			rh.OnAdd(&corev1.Secret{
 				ObjectMeta: fixture.ObjectMeta("certificate"),
 				Type:       "kubernetes.io/tls",
-				Data:       secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 			})
 
 			f(t, rh, c)

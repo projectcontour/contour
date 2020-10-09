@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
+
+	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -52,17 +54,17 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	// e1 is a simple endpoint for two hosts, and two ports
 	// it has a long name to check that it's clustername is _not_
 	// hashed.
-	e1 := endpoints(
+	e1 := featuretests.Endpoints(
 		"super-long-namespace-name-oh-boy",
 		"what-a-descriptive-service-name-you-must-be-so-proud",
 		v1.EndpointSubset{
-			Addresses: addresses(
+			Addresses: featuretests.Addresses(
 				"172.16.0.2",
 				"172.16.0.1",
 			),
-			Ports: ports(
-				port("https", 8443),
-				port("http", 8000),
+			Ports: featuretests.Ports(
+				featuretests.Port("https", 8443),
+				featuretests.Port("http", 8000),
 			),
 		},
 	)
@@ -134,27 +136,27 @@ func TestAddEndpointComplicated(t *testing.T) {
 		}),
 	)
 
-	e1 := endpoints(
+	e1 := featuretests.Endpoints(
 		"default",
 		"kuard",
 		v1.EndpointSubset{
-			Addresses: addresses(
+			Addresses: featuretests.Addresses(
 				"10.48.1.78",
 			),
-			NotReadyAddresses: addresses(
+			NotReadyAddresses: featuretests.Addresses(
 				"10.48.1.77",
 			),
-			Ports: ports(
-				port("foo", 8080),
+			Ports: featuretests.Ports(
+				featuretests.Port("foo", 8080),
 			),
 		},
 		v1.EndpointSubset{
-			Addresses: addresses(
+			Addresses: featuretests.Addresses(
 				"10.48.1.78",
 				"10.48.1.77",
 			),
-			Ports: ports(
-				port("admin", 9000),
+			Ports: featuretests.Ports(
+				featuretests.Port("admin", 9000),
 			),
 		},
 	)
@@ -204,27 +206,27 @@ func TestEndpointFilter(t *testing.T) {
 
 	// a single endpoint that represents several
 	// cluster load assignments.
-	rh.OnAdd(endpoints(
+	rh.OnAdd(featuretests.Endpoints(
 		"default",
 		"kuard",
 		v1.EndpointSubset{
-			Addresses: addresses(
+			Addresses: featuretests.Addresses(
 				"10.48.1.78",
 			),
-			NotReadyAddresses: addresses(
+			NotReadyAddresses: featuretests.Addresses(
 				"10.48.1.77",
 			),
-			Ports: ports(
-				port("foo", 8080),
+			Ports: featuretests.Ports(
+				featuretests.Port("foo", 8080),
 			),
 		},
 		v1.EndpointSubset{
-			Addresses: addresses(
+			Addresses: featuretests.Addresses(
 				"10.48.1.77",
 				"10.48.1.78",
 			),
-			Ports: ports(
-				port("admin", 9000),
+			Ports: featuretests.Ports(
+				featuretests.Port("admin", 9000),
 			),
 		},
 	))
@@ -269,10 +271,10 @@ func TestIssue602(t *testing.T) {
 		}),
 	)
 
-	e1 := endpoints("default", "simple", v1.EndpointSubset{
-		Addresses: addresses("192.168.183.24"),
-		Ports: ports(
-			port("", 8080),
+	e1 := featuretests.Endpoints("default", "simple", v1.EndpointSubset{
+		Addresses: featuretests.Addresses("192.168.183.24"),
+		Ports: featuretests.Ports(
+			featuretests.Port("", 8080),
 		),
 	})
 	rh.OnAdd(e1)
@@ -289,7 +291,7 @@ func TestIssue602(t *testing.T) {
 	})
 
 	// e2 is the same as e1, but without endpoint subsets
-	e2 := endpoints("default", "simple")
+	e2 := featuretests.Endpoints("default", "simple")
 	rh.OnUpdate(e1, e2)
 
 	c.Request(endpointType).Equals(&envoy_api_v2.DiscoveryResponse{

@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
+
+	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -37,7 +39,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: v1.SecretTypeTLS,
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 	rh.OnAdd(serverTLSSecret)
 
@@ -47,7 +49,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			dag.CACertificateKey: []byte(CERTIFICATE),
+			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 		},
 	}
 	rh.OnAdd(clientCASecret)
