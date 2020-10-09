@@ -37,7 +37,7 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/workgroup"
-	"github.com/projectcontour/contour/internal/xds"
+	contour_xds_v2 "github.com/projectcontour/contour/internal/xds/v2"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/prometheus/client_golang/prometheus"
@@ -130,8 +130,8 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
-	srv := xds.RegisterServer(
-		xds.NewContourServer(log, xdscache.ResourcesOf(resources)...),
+	srv := contour_xds_v2.RegisterServer(
+		contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...),
 		r /* Prometheus registry */)
 
 	var g workgroup.Group

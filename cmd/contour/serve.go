@@ -40,6 +40,7 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
+	contour_xds_v2 "github.com/projectcontour/contour/internal/xds/v2"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/prometheus/client_golang/prometheus"
@@ -623,12 +624,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		switch ctx.XDSServerType {
 		case "contour":
-			grpcServer = xds.RegisterServer(
-				xds.NewContourServer(log, xdscache.ResourcesOf(resources)...),
+			grpcServer = contour_xds_v2.RegisterServer(
+				contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...),
 				registry,
 				ctx.grpcOptions(log)...)
 		case "envoy":
-			grpcServer = xds.RegisterServer(
+			grpcServer = contour_xds_v2.RegisterServer(
 				server.NewServer(context.Background(), snapshotCache, nil),
 				registry,
 				ctx.grpcOptions(log)...)
