@@ -36,6 +36,7 @@ debug: false
 kubeconfig: TestParseDefaults/.kube/config
 server:
   xds-server-type: contour
+  xds-server-version: v2
 accesslog-format: envoy
 json-fields:
 - '@timestamp'

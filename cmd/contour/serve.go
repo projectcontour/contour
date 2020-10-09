@@ -27,8 +27,8 @@ import (
 	"time"
 
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	pkg_cache_v2 "github.com/envoyproxy/go-control-plane/pkg/cache/v2"
-	pkg_server_v2 "github.com/envoyproxy/go-control-plane/pkg/server/v2"
+	envoy_cache_v2 "github.com/envoyproxy/go-control-plane/pkg/cache/v2"
+	envoy_server_v2 "github.com/envoyproxy/go-control-plane/pkg/server/v2"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
@@ -42,6 +42,7 @@ import (
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v2 "github.com/projectcontour/contour/internal/xds/v2"
+	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/projectcontour/contour/pkg/config"
@@ -390,7 +391,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// snapshotCache is used to store the state of what all xDS services should
 	// contain at any given point in time.
-	snapshotCache := pkg_cache_v2.NewSnapshotCache(false, xds.DefaultHash,
+	snapshotCache := envoy_cache_v2.NewSnapshotCache(false, xds.DefaultHash,
 		log.WithField("context", "xDS"))
 
 	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
@@ -652,15 +653,28 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		switch ctx.Config.Server.XDSServerType {
 		case config.ContourServerType:
-			grpcServer = contour_xds_v2.RegisterServer(
-				contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...),
-				registry,
-				ctx.grpcOptions(log)...)
+			switch ctx.Config.Server.XDSServerVersion {
+			case config.XDSv3:
+				grpcServer = contour_xds_v3.RegisterServer(
+					contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...),
+					registry,
+					ctx.grpcOptions(log)...)
+			default:
+				grpcServer = contour_xds_v2.RegisterServer(
+					contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...),
+					registry,
+					ctx.grpcOptions(log)...)
+			}
 		case config.EnvoyServerType:
-			grpcServer = contour_xds_v2.RegisterServer(
-				pkg_server_v2.NewServer(context.Background(), snapshotCache, nil),
-				registry,
-				ctx.grpcOptions(log)...)
+			switch ctx.Config.Server.XDSServerVersion {
+			case config.XDSv3:
+				log.Fatalf("xDS server type %q not yet implemented for server type %q!", ctx.Config.Server.XDSServerVersion, ctx.Config.Server.XDSServerType)
+			default:
+				grpcServer = contour_xds_v2.RegisterServer(
+					envoy_server_v2.NewServer(context.Background(), snapshotCache, nil),
+					registry,
+					ctx.grpcOptions(log)...)
+			}
 		default:
 			// XXX(jpeach) can't happen due to config validation.
 			log.Fatalf("invalid xdsServerType %q configured", ctx.Config.Server.XDSServerType)
@@ -677,7 +691,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			log = log.WithField("insecure", true)
 		}
 
-		log.Info("started xDS server")
+		log.Infof("started xDS server type: %q version: %q", ctx.Config.Server.XDSServerType, ctx.Config.Server.XDSServerVersion)
 		defer log.Info("stopped xDS server")
 
 		go func() {
