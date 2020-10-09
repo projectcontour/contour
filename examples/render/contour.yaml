@@ -1408,7 +1408,7 @@ metadata:
   name: contour-certgen
   namespace: projectcontour
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: contour
@@ -1422,7 +1422,7 @@ subjects:
   name: contour-certgen
   namespace: projectcontour
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: contour-certgen
@@ -1477,7 +1477,7 @@ spec:
 
 ---
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: contour
