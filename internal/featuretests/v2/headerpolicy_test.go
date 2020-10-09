@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
+
+	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -160,7 +162,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	// Proxy with SNI

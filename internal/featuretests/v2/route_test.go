@@ -12,12 +12,14 @@
 // limitations under the License.
 
 // End to ends tests for translator to grpc operations.
-package featuretests
+package v2
 
 import (
 	"fmt"
 	"path"
 	"testing"
+
+	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -348,7 +350,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	// i4 is the same as i3, and includes a TLS spec object to enable ingress_https routes
@@ -465,7 +467,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	rh.OnAdd(fixture.NewService("app-service").
@@ -532,7 +534,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata("wrong", RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata("wrong", featuretests.RSA_PRIVATE_KEY),
 	}
 	rh.OnAdd(secret)
 
@@ -580,7 +582,7 @@ func TestInvalidCertInIngress(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	assertRDS(t, c, "2", virtualhosts(
@@ -743,7 +745,7 @@ func TestRDSFilter(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	s1 := fixture.NewService("app-service").
@@ -1212,7 +1214,7 @@ func TestRouteWithTLS(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	p1 := &contour_api_v1.HTTPProxy{
@@ -1283,7 +1285,7 @@ func TestRouteWithTLS_InsecurePaths(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	p1 := &contour_api_v1.HTTPProxy{
@@ -1379,7 +1381,7 @@ func TestRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	p1 := &contour_api_v1.HTTPProxy{
@@ -1660,7 +1662,7 @@ func TestHTTPProxyRouteWithTLS(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	proxy1 := &contour_api_v1.HTTPProxy{
@@ -1729,7 +1731,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	proxy1 := &contour_api_v1.HTTPProxy{
@@ -1821,7 +1823,7 @@ func TestHTTPProxyRouteWithTLS_InsecurePaths_DisablePermitInsecureTrue(t *testin
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
 	proxy1 := &contour_api_v1.HTTPProxy{

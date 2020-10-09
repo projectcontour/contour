@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
@@ -21,6 +21,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/status"
 	v1 "k8s.io/api/core/v1"
@@ -57,7 +58,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: backend(svc),
+				Backend: featuretests.Backend(svc),
 			},
 		}
 
@@ -87,7 +88,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: backend(svc),
+				Backend: featuretests.Backend(svc),
 			},
 		}
 
@@ -107,7 +108,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 				Namespace: Namespace,
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: backend(svc),
+				Backend: featuretests.Backend(svc),
 			},
 		}
 		rh.OnUpdate(ingressWrongClass, ingressNoClass)
@@ -279,7 +280,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 				Namespace: Namespace,
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: backend(svc),
+				Backend: featuretests.Backend(svc),
 			},
 		}
 
@@ -309,7 +310,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: backend(svc),
+				Backend: featuretests.Backend(svc),
 			},
 		}
 
@@ -339,7 +340,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: backend(svc),
+				Backend: featuretests.Backend(svc),
 			},
 		}
 		rh.OnUpdate(ingressMatchingClass, ingressNonMatchingClass)

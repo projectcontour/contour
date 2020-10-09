@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
@@ -21,6 +21,7 @@ import (
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -47,7 +48,7 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend(s1),
+			Backend: featuretests.Backend(s1),
 		},
 	}
 	rh.OnAdd(i1)
@@ -76,7 +77,7 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend(s1),
+			Backend: featuretests.Backend(s1),
 		},
 	}
 	rh.OnUpdate(i1, i2)
@@ -105,7 +106,7 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend(s1),
+			Backend: featuretests.Backend(s1),
 		},
 	}
 	rh.OnUpdate(i2, i3)

@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func backend(svc *v1.Service) *v1beta1.IngressBackend {
+func Backend(svc *v1.Service) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{
 		ServiceName: svc.Name,
 		ServicePort: intstr.FromInt(int(svc.Spec.Ports[0].Port)),
@@ -80,14 +80,14 @@ dk98FvYdyAjjgNsxXCyx7vIgYU3OgVNgvFsFubX/Uk66fcfCpPBMLg==
 -----END RSA PRIVATE KEY-----`
 )
 
-func secretdata(cert, key string) map[string][]byte {
+func Secretdata(cert, key string) map[string][]byte {
 	return map[string][]byte{
 		v1.TLSCertKey:       []byte(cert),
 		v1.TLSPrivateKeyKey: []byte(key),
 	}
 }
 
-func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
+func Endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
 	return &v1.Endpoints{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -97,11 +97,11 @@ func endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
 	}
 }
 
-func ports(eps ...v1.EndpointPort) []v1.EndpointPort {
+func Ports(eps ...v1.EndpointPort) []v1.EndpointPort {
 	return eps
 }
 
-func port(name string, port int32) v1.EndpointPort {
+func Port(name string, port int32) v1.EndpointPort {
 	return v1.EndpointPort{
 		Name:     name,
 		Port:     port,
@@ -109,7 +109,7 @@ func port(name string, port int32) v1.EndpointPort {
 	}
 }
 
-func addresses(ips ...string) []v1.EndpointAddress {
+func Addresses(ips ...string) []v1.EndpointAddress {
 	var addrs []v1.EndpointAddress
 	for _, ip := range ips {
 		addrs = append(addrs, v1.EndpointAddress{IP: ip})

@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
+
+	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
@@ -37,7 +39,7 @@ func TestTCPProxy(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
 	svc := fixture.NewService("correct-backend").
@@ -112,7 +114,7 @@ func TestTCPProxyDelegation(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
 	svc := fixture.NewService("app/backend").
@@ -272,7 +274,7 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
 	svc := fixture.NewService("kubernetes").
@@ -354,7 +356,7 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
 	svc := fixture.NewService("backend").
@@ -449,7 +451,7 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
 	svc := fixture.NewService("backend").
@@ -738,7 +740,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 			Namespace: "default",
 		},
 		Type: "kubernetes.io/tls",
-		Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
 	svc := fixture.NewService("backend").

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
@@ -22,6 +22,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -46,7 +47,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: backend(svc),
+			Backend: featuretests.Backend(svc),
 		},
 	}
 	rh.OnAdd(i1)

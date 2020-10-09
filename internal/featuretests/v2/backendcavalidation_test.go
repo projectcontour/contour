@@ -11,10 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package featuretests
+package v2
 
 import (
 	"testing"
+
+	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -36,7 +38,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 			Namespace: "default",
 		},
 		Data: map[string][]byte{
-			dag.CACertificateKey: []byte(CERTIFICATE),
+			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 		},
 	}
 
@@ -133,7 +135,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	// assert that the cluster now has a certificate and subject name.
 	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443"), []byte(CERTIFICATE), "subjname", "", nil),
+			tlsCluster(cluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443"), []byte(featuretests.CERTIFICATE), "subjname", "", nil),
 		),
 		TypeUrl: clusterType,
 	})
@@ -190,7 +192,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	// assert that the cluster now has a certificate and subject name.
 	c.Request(clusterType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
-			tlsCluster(cluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443"), []byte(CERTIFICATE), "subjname", "", nil),
+			tlsCluster(cluster("default/kuard/443/98c0f31c72", "default/kuard/securebackend", "default_kuard_443"), []byte(featuretests.CERTIFICATE), "subjname", "", nil),
 		),
 		TypeUrl: clusterType,
 	})

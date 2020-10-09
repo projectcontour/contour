@@ -12,7 +12,7 @@
 // limitations under the License.
 
 // Package featuretests provides end to end tests of specific features.
-package featuretests
+package v2
 
 import (
 	"context"
