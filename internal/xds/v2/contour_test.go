@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xds
+package v2
 
 import (
 	"context"
@@ -20,8 +20,9 @@ import (
 	"io/ioutil"
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/golang/protobuf/proto"
+	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,7 +39,7 @@ func TestXDSHandlerStream(t *testing.T) {
 			xh: contourServer{FieldLogger: log},
 			stream: &mockStream{
 				context: context.Background,
-				recv: func() (*v2.DiscoveryRequest, error) {
+				recv: func() (*envoy_api_v2.DiscoveryRequest, error) {
 					return nil, io.EOF
 				},
 			},
@@ -48,8 +49,8 @@ func TestXDSHandlerStream(t *testing.T) {
 			xh: contourServer{FieldLogger: log},
 			stream: &mockStream{
 				context: context.Background,
-				recv: func() (*v2.DiscoveryRequest, error) {
-					return &v2.DiscoveryRequest{
+				recv: func() (*envoy_api_v2.DiscoveryRequest, error) {
+					return &envoy_api_v2.DiscoveryRequest{
 						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
@@ -59,7 +60,7 @@ func TestXDSHandlerStream(t *testing.T) {
 		"failed to convert values to any": {
 			xh: contourServer{
 				FieldLogger: log,
-				resources: map[string]Resource{
+				resources: map[string]xds.Resource{
 					"io.projectcontour.potato": &mockResource{
 						register: func(ch chan int, i int) {
 							ch <- i + 1
@@ -73,8 +74,8 @@ func TestXDSHandlerStream(t *testing.T) {
 			},
 			stream: &mockStream{
 				context: context.Background,
-				recv: func() (*v2.DiscoveryRequest, error) {
-					return &v2.DiscoveryRequest{
+				recv: func() (*envoy_api_v2.DiscoveryRequest, error) {
+					return &envoy_api_v2.DiscoveryRequest{
 						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
@@ -84,13 +85,13 @@ func TestXDSHandlerStream(t *testing.T) {
 		"failed to send": {
 			xh: contourServer{
 				FieldLogger: log,
-				resources: map[string]Resource{
+				resources: map[string]xds.Resource{
 					"io.projectcontour.potato": &mockResource{
 						register: func(ch chan int, i int) {
 							ch <- i + 1
 						},
 						contents: func() []proto.Message {
-							return []proto.Message{new(v2.ClusterLoadAssignment)}
+							return []proto.Message{new(envoy_api_v2.ClusterLoadAssignment)}
 						},
 						typeurl: func() string { return "io.projectcontour.potato" },
 					},
@@ -98,12 +99,12 @@ func TestXDSHandlerStream(t *testing.T) {
 			},
 			stream: &mockStream{
 				context: context.Background,
-				recv: func() (*v2.DiscoveryRequest, error) {
-					return &v2.DiscoveryRequest{
+				recv: func() (*envoy_api_v2.DiscoveryRequest, error) {
+					return &envoy_api_v2.DiscoveryRequest{
 						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
-				send: func(resp *v2.DiscoveryResponse) error {
+				send: func(resp *envoy_api_v2.DiscoveryResponse) error {
 					return io.EOF
 				},
 			},
@@ -112,7 +113,7 @@ func TestXDSHandlerStream(t *testing.T) {
 		"context canceled": {
 			xh: contourServer{
 				FieldLogger: log,
-				resources: map[string]Resource{
+				resources: map[string]xds.Resource{
 					"io.projectcontour.potato": &mockResource{
 						register: func(ch chan int, i int) {
 							// do nothing
@@ -128,12 +129,12 @@ func TestXDSHandlerStream(t *testing.T) {
 					cancel()
 					return ctx
 				},
-				recv: func() (*v2.DiscoveryRequest, error) {
-					return &v2.DiscoveryRequest{
+				recv: func() (*envoy_api_v2.DiscoveryRequest, error) {
+					return &envoy_api_v2.DiscoveryRequest{
 						TypeUrl: "io.projectcontour.potato",
 					}, nil
 				},
-				send: func(resp *v2.DiscoveryResponse) error {
+				send: func(resp *envoy_api_v2.DiscoveryResponse) error {
 					return io.EOF
 				},
 			},
@@ -151,13 +152,13 @@ func TestXDSHandlerStream(t *testing.T) {
 
 type mockStream struct {
 	context func() context.Context
-	send    func(*v2.DiscoveryResponse) error
-	recv    func() (*v2.DiscoveryRequest, error)
+	send    func(*envoy_api_v2.DiscoveryResponse) error
+	recv    func() (*envoy_api_v2.DiscoveryRequest, error)
 }
 
-func (m *mockStream) Context() context.Context              { return m.context() }
-func (m *mockStream) Send(resp *v2.DiscoveryResponse) error { return m.send(resp) }
-func (m *mockStream) Recv() (*v2.DiscoveryRequest, error)   { return m.recv() }
+func (m *mockStream) Context() context.Context                        { return m.context() }
+func (m *mockStream) Send(resp *envoy_api_v2.DiscoveryResponse) error { return m.send(resp) }
+func (m *mockStream) Recv() (*envoy_api_v2.DiscoveryRequest, error)   { return m.recv() }
 
 type mockResource struct {
 	contents func() []proto.Message

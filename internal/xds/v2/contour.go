@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xds
+package v2
 
 import (
 	"context"
@@ -19,34 +19,19 @@ import (
 	"strconv"
 	"sync/atomic"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 )
 
-// Resource represents a source of proto.Messages that can be registered
-// for interest.
-type Resource interface {
-	// Contents returns the contents of this resource.
-	Contents() []proto.Message
-
-	// Query returns an entry for each resource name supplied.
-	Query(names []string) []proto.Message
-
-	// Register registers ch to receive a value when Notify is called.
-	Register(chan int, int, ...string)
-
-	// TypeURL returns the typeURL of messages returned from Values.
-	TypeURL() string
-}
-
 type grpcStream interface {
 	Context() context.Context
-	Send(*v2.DiscoveryResponse) error
-	Recv() (*v2.DiscoveryRequest, error)
+	Send(*envoy_api_v2.DiscoveryResponse) error
+	Recv() (*envoy_api_v2.DiscoveryRequest, error)
 }
 
 // counter holds an atomically incrementing counter.
@@ -61,10 +46,10 @@ var connections counter
 // NewContourServer creates an internally implemented Server that streams the
 // provided set of Resource objects. The returned Server implements the xDS
 // State of the World (SotW) variant.
-func NewContourServer(log logrus.FieldLogger, resources ...Resource) Server {
+func NewContourServer(log logrus.FieldLogger, resources ...xds.Resource) Server {
 	c := contourServer{
 		FieldLogger: log,
-		resources:   map[string]Resource{},
+		resources:   map[string]xds.Resource{},
 	}
 
 	for i, r := range resources {
@@ -80,13 +65,13 @@ type contourServer struct {
 	// the unimplemented gRPC endpoints.
 	discovery.UnimplementedAggregatedDiscoveryServiceServer
 	discovery.UnimplementedSecretDiscoveryServiceServer
-	v2.UnimplementedRouteDiscoveryServiceServer
-	v2.UnimplementedEndpointDiscoveryServiceServer
-	v2.UnimplementedClusterDiscoveryServiceServer
-	v2.UnimplementedListenerDiscoveryServiceServer
+	envoy_api_v2.UnimplementedRouteDiscoveryServiceServer
+	envoy_api_v2.UnimplementedEndpointDiscoveryServiceServer
+	envoy_api_v2.UnimplementedClusterDiscoveryServiceServer
+	envoy_api_v2.UnimplementedListenerDiscoveryServiceServer
 
 	logrus.FieldLogger
-	resources map[string]Resource
+	resources map[string]xds.Resource
 }
 
 // stream processes a stream of DiscoveryRequests.
@@ -174,7 +159,7 @@ func (s *contourServer) stream(st grpcStream) error {
 				any = append(any, a)
 			}
 
-			resp := &v2.DiscoveryResponse{
+			resp := &envoy_api_v2.DiscoveryResponse{
 				VersionInfo: strconv.Itoa(last),
 				Resources:   any,
 				TypeUrl:     r.TypeURL(),
@@ -191,19 +176,19 @@ func (s *contourServer) stream(st grpcStream) error {
 	}
 }
 
-func (s *contourServer) StreamClusters(srv v2.ClusterDiscoveryService_StreamClustersServer) error {
+func (s *contourServer) StreamClusters(srv envoy_api_v2.ClusterDiscoveryService_StreamClustersServer) error {
 	return s.stream(srv)
 }
 
-func (s *contourServer) StreamEndpoints(srv v2.EndpointDiscoveryService_StreamEndpointsServer) error {
+func (s *contourServer) StreamEndpoints(srv envoy_api_v2.EndpointDiscoveryService_StreamEndpointsServer) error {
 	return s.stream(srv)
 }
 
-func (s *contourServer) StreamListeners(srv v2.ListenerDiscoveryService_StreamListenersServer) error {
+func (s *contourServer) StreamListeners(srv envoy_api_v2.ListenerDiscoveryService_StreamListenersServer) error {
 	return s.stream(srv)
 }
 
-func (s *contourServer) StreamRoutes(srv v2.RouteDiscoveryService_StreamRoutesServer) error {
+func (s *contourServer) StreamRoutes(srv envoy_api_v2.RouteDiscoveryService_StreamRoutesServer) error {
 	return s.stream(srv)
 }
 
