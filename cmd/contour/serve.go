@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -47,8 +48,10 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
+	networking_api_v1beta1 "k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 )
@@ -177,6 +180,84 @@ func validateCRDs(dynamicClient dynamic.Interface, log logrus.FieldLogger) {
 	}
 }
 
+// warnTLS logs a warning for HTTPProxies/Ingresses that specify a minimum protocol
+// version of 1.1, but the config file isn't explicitly allowing 1.1, since in a
+// future release the config file default will bump to 1.2 which will change the behavior
+// for these proxies.
+//
+// TODO(#3010): remove this function after the config file default has switched to 1.2.
+func warnTLS(log logrus.FieldLogger, client dynamic.Interface, ctx *serveContext) {
+	// if the config file specifies a valid minimum protocol version, behavior
+	// won't change, so there's nothing to warn on.
+	switch ctx.TLSConfig.MinimumProtocolVersion {
+	case "1.1", "1.2", "1.3":
+		return
+	}
+
+	getWarning := func(kindPlural string, items []string) string {
+		template := "In an upcoming Contour release, TLS 1.1 will be globally disabled by default since it's end-of-life. The following %s currently allow " +
+			"TLS 1.1: [%s]. You must either update the %s to have a minimum TLS protocol version of 1.2 (which is now the Contour default), or explicitly " +
+			"allow TLS 1.1 to be used in Contour by setting \"tls.minimum-protocol-version\" to \"1.1\" in the Contour config file."
+
+		return fmt.Sprintf(template, kindPlural, strings.Join(items, ", "), kindPlural)
+	}
+
+	// Check for & warn on HTTPProxies that have a minimum protocol version of 1.1.
+	proxyList, err := client.Resource(contour_api_v1.HTTPProxyGVR).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("error listing HTTPProxies: %v", err)
+	} else {
+		var warn []string
+		for _, p := range proxyList.Items {
+			var proxy contour_api_v1.HTTPProxy
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(p.Object, &proxy); err != nil {
+				log.Warnf("error converting HTTPProxy %s/%s from unstructured: %v", p.GetNamespace(), p.GetName(), err)
+				continue
+			}
+
+			if proxy.Spec.VirtualHost == nil || proxy.Spec.VirtualHost.TLS == nil || proxy.Spec.VirtualHost.TLS.MinimumProtocolVersion != "1.1" {
+				continue
+			}
+
+			warn = append(warn, k8s.NamespacedNameOf(&proxy).String())
+		}
+
+		if len(warn) > 0 {
+			log.Warn(getWarning("HTTPProxies", warn))
+		}
+	}
+
+	// Check for & warn on Ingresses that have a minimum protocol version of 1.1.
+	ingressGVR := networking_api_v1beta1.SchemeGroupVersion.WithResource("ingresses")
+	ingressList, err := client.Resource(ingressGVR).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("error listing Ingresses: %v", err)
+	} else {
+		var warn []string
+		for _, ing := range ingressList.Items {
+			var ingress networking_api_v1beta1.Ingress
+			if err := runtime.DefaultUnstructuredConverter.FromUnstructured(ing.Object, &ingress); err != nil {
+				log.Warnf("error converting Ingress %s/%s from unstructured: %v", ing.GetNamespace(), ing.GetName(), err)
+				continue
+			}
+
+			if !annotation.MatchesIngressClass(&ingress, ctx.ingressClass) {
+				continue
+			}
+
+			if annotation.CompatAnnotation(&ingress, "tls-minimum-protocol-version") != "1.1" {
+				continue
+			}
+
+			warn = append(warn, k8s.NamespacedNameOf(&ingress).String())
+		}
+
+		if len(warn) > 0 {
+			log.Warn(getWarning("Ingresses", warn))
+		}
+	}
+}
+
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Establish k8s core & dynamic client connections.
@@ -187,6 +268,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Validate that Contour CRDs have been updated to v1.
 	validateCRDs(clients.DynamicClient(), log)
+
+	// Warn on proxies/ingresses using TLS 1.1 without it being
+	// explicitly allowed via the config file, since in an
+	// upcoming Contour release, TLS 1.1 will be disallowed by
+	// default.
+	warnTLS(log, clients.DynamicClient(), ctx)
 
 	// Factory for cluster-wide informers.
 	clusterInformerFactory := clients.NewInformerFactory()
