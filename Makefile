@@ -97,6 +97,16 @@ container: ## Build the Contour container image
 		$(shell pwd) \
 		--tag $(IMAGE):$(VERSION)
 
+debug-container: ## Build the Contour debug container image
+	docker build \
+		-f Dockerfile.debug \
+		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
+		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
+		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
+		$(DOCKER_BUILD_LABELS) \
+		$(shell pwd) \
+		--tag $(IMAGE)-debug:$(VERSION)
+
 push: ## Push the Contour container image to the Docker registry
 push: container
 	docker push $(IMAGE):$(VERSION)
