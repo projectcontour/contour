@@ -17,8 +17,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
-	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -28,14 +26,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"gopkg.in/yaml.v2"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestServeContextProxyRootNamespaces(t *testing.T) {
@@ -120,236 +115,6 @@ func TestServeContextTLSParams(t *testing.T) {
 			goterror := err != nil
 			if goterror != tc.expecterror {
 				t.Errorf("TLS Config: %s", err)
-			}
-		})
-	}
-}
-
-func TestConfigFileDefaultOverrideImport(t *testing.T) {
-	tests := map[string]struct {
-		yamlIn string
-		want   func() *serveContext
-	}{
-		"empty configuration": {
-			yamlIn: ``,
-			want:   newServeContext,
-		},
-		"defaults in yaml": {
-			yamlIn: `
-incluster: false
-disablePermitInsecure: false
-leaderelection:
-  configmap-name: leader-elect
-  configmap-namespace: projectcontour
-  lease-duration: 15s
-  renew-deadline: 10s
-  retry-period: 2s
-`,
-			want: newServeContext,
-		},
-		"blank tls configuration": {
-			yamlIn: `
-tls:
-`,
-			want: newServeContext,
-		},
-		"tls configuration only": {
-			yamlIn: `
-tls:
-  minimum-protocol-version: 1.2
-`,
-			want: func() *serveContext {
-				ctx := newServeContext()
-				ctx.TLSConfig.MinimumProtocolVersion = "1.2"
-				return ctx
-			},
-		},
-		"leader election namespace and configmap only": {
-			yamlIn: `
-leaderelection:
-  configmap-name: foo
-  configmap-namespace: bar
-`,
-			want: func() *serveContext {
-				ctx := newServeContext()
-				ctx.LeaderElectionConfig.Name = "foo"
-				ctx.LeaderElectionConfig.Namespace = "bar"
-				return ctx
-			},
-		},
-		"leader election all fields set": {
-			yamlIn: `
-leaderelection:
-  configmap-name: foo
-  configmap-namespace: bar
-  lease-duration: 600s
-  renew-deadline: 500s
-  retry-period: 60s
-`,
-			want: func() *serveContext {
-				ctx := newServeContext()
-				ctx.LeaderElectionConfig.Name = "foo"
-				ctx.LeaderElectionConfig.Namespace = "bar"
-				ctx.LeaderElectionConfig.LeaseDuration = 600 * time.Second
-				ctx.LeaderElectionConfig.RenewDeadline = 500 * time.Second
-				ctx.LeaderElectionConfig.RetryPeriod = 60 * time.Second
-				return ctx
-			},
-		},
-		"default http versions": {
-			yamlIn: `
-default-http-versions:
-- http/1.1
-- http/2
-- http/99
-`,
-			want: func() *serveContext {
-				ctx := newServeContext()
-				// Note that version validity isn't checked at this point.
-				ctx.DefaultHTTPVersions = []string{"http/1.1", "http/2", "http/99"}
-				return ctx
-			},
-		},
-	}
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := newServeContext()
-			err := yaml.UnmarshalStrict([]byte(tc.yamlIn), got)
-			checkFatalErr(t, err)
-			want := tc.want()
-
-			if diff := cmp.Diff(*want, *got, cmp.AllowUnexported(serveContext{}, ServerConfig{})); diff != "" {
-				t.Error(diff)
-			}
-		})
-	}
-}
-
-func TestFallbackCertificateParams(t *testing.T) {
-	tests := map[string]struct {
-		ctx         serveContext
-		want        *types.NamespacedName
-		expecterror bool
-	}{
-		"fallback cert params passed correctly": {
-			ctx: serveContext{
-				TLSConfig: TLSConfig{
-					FallbackCertificate: NamespacedName{
-						Name:      "fallbacksecret",
-						Namespace: "root-namespace",
-					},
-				},
-			},
-			want: &types.NamespacedName{
-				Name:      "fallbacksecret",
-				Namespace: "root-namespace",
-			},
-			expecterror: false,
-		},
-		"missing namespace": {
-			ctx: serveContext{
-				TLSConfig: TLSConfig{
-					FallbackCertificate: NamespacedName{
-						Name: "fallbacksecret",
-					},
-				},
-			},
-			want:        nil,
-			expecterror: true,
-		},
-		"missing name": {
-			ctx: serveContext{
-				TLSConfig: TLSConfig{
-					FallbackCertificate: NamespacedName{
-						Namespace: "root-namespace",
-					},
-				},
-			},
-			want:        nil,
-			expecterror: true,
-		},
-		"fallback cert not defined": {
-			ctx:         serveContext{},
-			want:        nil,
-			expecterror: false,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got, err := tc.ctx.fallbackCertificate()
-
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatal(diff)
-			}
-
-			goterror := err != nil
-			if goterror != tc.expecterror {
-				t.Errorf("Expected Fallback Certificate error: %s", err)
-			}
-		})
-	}
-}
-
-func TestEnvoyClientCertificate(t *testing.T) {
-	tests := map[string]struct {
-		ctx         serveContext
-		want        *types.NamespacedName
-		expecterror bool
-	}{
-		"envoy client cert params passed correctly": {
-			ctx: serveContext{
-				TLSConfig: TLSConfig{
-					ClientCertificate: NamespacedName{
-						Name:      "envoysecret",
-						Namespace: "root-namespace",
-					},
-				},
-			},
-			want: &types.NamespacedName{
-				Name:      "envoysecret",
-				Namespace: "root-namespace",
-			},
-			expecterror: false,
-		},
-		"missing namespace": {
-			ctx: serveContext{
-				TLSConfig: TLSConfig{
-					ClientCertificate: NamespacedName{
-						Name: "envoysecret",
-					},
-				},
-			},
-			want:        nil,
-			expecterror: true,
-		},
-		"missing name": {
-			ctx: serveContext{
-				TLSConfig: TLSConfig{
-					ClientCertificate: NamespacedName{
-						Namespace: "root-namespace",
-					},
-				},
-			},
-			want:        nil,
-			expecterror: true,
-		},
-		"envoy client cert not defined": {
-			ctx:         serveContext{},
-			want:        nil,
-			expecterror: false,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got, err := tc.ctx.envoyClientCertificate()
-
-			require.Equal(t, tc.want, got)
-
-			goterror := err != nil
-			if goterror != tc.expecterror {
-				t.Errorf("Expected Envoy Client Certificate error: %s", err)
 			}
 		})
 	}
@@ -561,33 +326,25 @@ func peekError(conn net.Conn) error {
 
 func TestParseHTTPVersions(t *testing.T) {
 	cases := map[string]struct {
-		versions      []string
-		parseError    error
+		versions      []config.HTTPVersionType
 		parseVersions []envoy_v2.HTTPVersionType
 	}{
 		"empty": {
-			versions:      []string{},
-			parseError:    nil,
-			parseVersions: nil,
-		},
-		"invalid proto": {
-			versions:      []string{"foo"},
-			parseError:    errors.New("invalid HTTP protocol version \"foo\""),
+			versions:      []config.HTTPVersionType{},
 			parseVersions: nil,
 		},
 		"http/1.1": {
-			versions:      []string{"http/1.1", "HTTP/1.1"},
-			parseError:    nil,
+			versions:      []config.HTTPVersionType{config.HTTPVersion1},
 			parseVersions: []envoy_v2.HTTPVersionType{envoy_v2.HTTPVersion1},
 		},
 		"http/1.1+http/2": {
-			versions:      []string{"http/1.1", "http/2"},
-			parseError:    nil,
+			versions:      []config.HTTPVersionType{config.HTTPVersion1, config.HTTPVersion2},
 			parseVersions: []envoy_v2.HTTPVersionType{envoy_v2.HTTPVersion1, envoy_v2.HTTPVersion2},
 		},
 		"http/1.1+http/2 duplicated": {
-			versions:      []string{"http/1.1", "http/2", "http/1.1", "http/2"},
-			parseError:    nil,
+			versions: []config.HTTPVersionType{
+				config.HTTPVersion1, config.HTTPVersion2,
+				config.HTTPVersion1, config.HTTPVersion2},
 			parseVersions: []envoy_v2.HTTPVersionType{envoy_v2.HTTPVersion1, envoy_v2.HTTPVersion2},
 		},
 	}
@@ -595,7 +352,7 @@ func TestParseHTTPVersions(t *testing.T) {
 	for name, testcase := range cases {
 		testcase := testcase
 		t.Run(name, func(t *testing.T) {
-			vers, err := parseDefaultHTTPVersions(testcase.versions)
+			vers := parseDefaultHTTPVersions(testcase.versions)
 
 			// parseDefaultHTTPVersions doesn't guarantee a stable result, but the order doesn't matter.
 			sort.Slice(vers,
@@ -603,51 +360,7 @@ func TestParseHTTPVersions(t *testing.T) {
 			sort.Slice(testcase.parseVersions,
 				func(i, j int) bool { return testcase.parseVersions[i] < testcase.parseVersions[j] })
 
-			assert.Equal(t, testcase.parseError, err)
 			assert.Equal(t, testcase.parseVersions, vers)
-		})
-	}
-}
-
-func TestParseDNSLookupFamily(t *testing.T) {
-	cases := map[string]struct {
-		input         string
-		expectedError error
-		expected      string
-	}{
-		"empty": {
-			input:         "",
-			expectedError: nil,
-			expected:      "auto",
-		},
-		"auto": {
-			input:         "auto",
-			expectedError: nil,
-			expected:      "auto",
-		},
-		"v4": {
-			input:         "v4",
-			expectedError: nil,
-			expected:      "v4",
-		},
-		"v6": {
-			input:         "v6",
-			expectedError: nil,
-			expected:      "v6",
-		},
-		"invalid": {
-			input:         "abcdefg",
-			expectedError: fmt.Errorf("invalid dns lookup family \"abcdefg\" configured, defaulting to \"auto\""),
-			expected:      "auto",
-		},
-	}
-
-	for name, testcase := range cases {
-		testcase := testcase
-		t.Run(name, func(t *testing.T) {
-			got, err := ParseDNSLookupFamily(testcase.input)
-			assert.Equal(t, testcase.expectedError, err)
-			assert.Equal(t, testcase.expected, got)
 		})
 	}
 }

@@ -100,11 +100,18 @@ func main() {
 			k8s.LogLevelOption(int(serveCtx.KubernetesDebug)),
 		)
 
-		if serveCtx.Debug {
+		if serveCtx.Config.Debug {
 			log.SetLevel(logrus.DebugLevel)
 		}
 
 		log.Infof("args: %v", args)
+
+		// Validate the result of applying the command-line
+		// flags on top of the config file.
+		if err := serveCtx.Config.Validate(); err != nil {
+			log.WithError(err).Fatal("invalid configuration")
+		}
+
 		if err := doServe(log, serveCtx); err != nil {
 			log.WithError(err).Fatal("Contour server failed")
 		}

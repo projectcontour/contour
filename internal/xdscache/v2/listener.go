@@ -27,11 +27,11 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
-	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/projectcontour/contour/pkg/config"
 )
 
 // nolint:golint
@@ -45,7 +45,6 @@ const (
 	DEFAULT_HTTPS_ACCESS_LOG       = "/dev/stdout"
 	DEFAULT_HTTPS_LISTENER_ADDRESS = DEFAULT_HTTP_LISTENER_ADDRESS
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
-	DEFAULT_ACCESS_LOG_TYPE        = "envoy"
 )
 
 // ListenerConfig holds configuration parameters for building Envoy Listeners.
@@ -92,7 +91,7 @@ type ListenerConfig struct {
 	// AccessLogType defines if Envoy logs should be output as Envoy's default or JSON.
 	// Valid values: 'envoy', 'json'
 	// If not set, defaults to 'envoy'
-	AccessLogType string
+	AccessLogType config.AccessLogType
 
 	// AccessLogFields sets the fields that should be shown in JSON logs.
 	// Valid entries are the keys from internal/envoy/accesslog.go:jsonheaders
@@ -175,9 +174,9 @@ func (lvc *ListenerConfig) httpsAccessLog() string {
 // across all listener types or DEFAULT_ACCESS_LOG_TYPE if not configured.
 func (lvc *ListenerConfig) accesslogType() string {
 	if lvc.AccessLogType != "" {
-		return lvc.AccessLogType
+		return string(lvc.AccessLogType)
 	}
-	return DEFAULT_ACCESS_LOG_TYPE
+	return string(config.DEFAULT_ACCESS_LOG_TYPE)
 }
 
 // accesslogFields returns the access log fields that should be configured
@@ -186,12 +185,12 @@ func (lvc *ListenerConfig) accesslogFields() []string {
 	if lvc.AccessLogFields != nil {
 		return lvc.AccessLogFields
 	}
-	return envoy.DefaultFields
+	return config.DefaultFields
 }
 
 func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_api_v2_accesslog.AccessLog {
 	switch lvc.accesslogType() {
-	case "json":
+	case string(config.JSONAccessLog):
 		return envoy_v2.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields())
 	default:
 		return envoy_v2.FileAccessLogEnvoy(lvc.httpAccessLog())

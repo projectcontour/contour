@@ -14,6 +14,7 @@
 package sorter
 
 import (
+	"math/rand"
 	"sort"
 	"testing"
 
@@ -26,6 +27,18 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 )
+
+func shuffleRoutes(routes []*envoy_api_v2_route.Route) []*envoy_api_v2_route.Route {
+	shuffled := make([]*envoy_api_v2_route.Route, len(routes))
+
+	copy(shuffled, routes)
+
+	rand.Shuffle(len(shuffled), func(i, j int) {
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	})
+
+	return shuffled
+}
 
 func TestInvalidSorter(t *testing.T) {
 	assert.Equal(t, nil, For([]string{"invalid"}))
@@ -129,12 +142,7 @@ func TestSortRoutesLongestPath(t *testing.T) {
 			}},
 	}
 
-	have := []*envoy_api_v2_route.Route{
-		want[1],
-		want[3],
-		want[0],
-		want[2],
-	}
+	have := shuffleRoutes(want)
 
 	sort.Stable(For(have))
 	assert.Equal(t, have, want)
@@ -142,40 +150,41 @@ func TestSortRoutesLongestPath(t *testing.T) {
 
 func TestSortRoutesLongestHeaders(t *testing.T) {
 	want := []*envoy_api_v2_route.Route{
-		// Although the header names are the same, this value
-		// should sort before the next one because it is
-		// textually longer.
 		{
+			// Although the header names are the same, this value
+			// should sort before the next one because it is
+			// textually longer.
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
 				Headers: []*envoy_api_v2_route.HeaderMatcher{
 					exactHeader("header-name", "header-value"),
 				},
-			}},
-		{
+			},
+		}, {
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
 				Headers: []*envoy_api_v2_route.HeaderMatcher{
 					presentHeader("header-name"),
 				},
-			}},
-		{
+			},
+		}, {
 			Match: &envoy_api_v2_route.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
 				Headers: []*envoy_api_v2_route.HeaderMatcher{
 					exactHeader("long-header-name", "long-header-value"),
 				},
-			}},
+			},
+		}, {
+			Match: &envoy_api_v2_route.RouteMatch{
+				PathSpecifier: matchPrefix("/path"),
+			},
+		},
 	}
 
-	have := []*envoy_api_v2_route.Route{
-		want[1],
-		want[0],
-		want[2],
-	}
+	have := shuffleRoutes(want)
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortSecrets(t *testing.T) {

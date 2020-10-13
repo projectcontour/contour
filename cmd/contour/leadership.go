@@ -20,29 +20,35 @@ import (
 	"github.com/google/uuid"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/workgroup"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
 
+func disableLeaderElection(log logrus.FieldLogger) chan struct{} {
+	log.Info("Leader election disabled")
+
+	leader := make(chan struct{})
+	close(leader)
+	return leader
+}
+
 // setupLeadershipElection registers leadership workers with the group and returns
 // a channel which will become ready when this process becomes the leader, or, in the
 // event that leadership election is disabled, the channel will be ready immediately.
-func setupLeadershipElection(g *workgroup.Group, log logrus.FieldLogger, ctx *serveContext, clients *k8s.Clients, updateNow func()) chan struct{} {
-	if ctx.DisableLeaderElection {
-		log.Info("Leader election disabled")
-
-		leader := make(chan struct{})
-		close(leader)
-		return leader
-	}
-
-	le, leader, deposed := newLeaderElector(log, ctx, clients)
+func setupLeadershipElection(
+	g *workgroup.Group,
+	log logrus.FieldLogger,
+	conf *config.LeaderElectionParameters,
+	clients *k8s.Clients, updateNow func(),
+) chan struct{} {
+	le, leader, deposed := newLeaderElector(log, conf, clients)
 
 	g.AddContext(func(electionCtx context.Context) {
 		log.WithFields(logrus.Fields{
-			"configmapname":      ctx.LeaderElectionConfig.Name,
-			"configmapnamespace": ctx.LeaderElectionConfig.Namespace,
+			"configmapname":      conf.Name,
+			"configmapnamespace": conf.Namespace,
 		}).Info("started leader election")
 
 		le.Run(electionCtx)
@@ -76,7 +82,11 @@ func setupLeadershipElection(g *workgroup.Group, log logrus.FieldLogger, ctx *se
 
 // newLeaderElector creates a new leaderelection.LeaderElector and associated
 // channels by which to observe elections and depositions.
-func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, clients *k8s.Clients) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
+func newLeaderElector(
+	log logrus.FieldLogger,
+	conf *config.LeaderElectionParameters,
+	clients *k8s.Clients,
+) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
 	log = log.WithField("context", "leaderelection")
 	// leaderOK will block gRPC startup until it's closed.
 	leaderOK := make(chan struct{})
@@ -84,14 +94,14 @@ func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, clients *k8s.Cl
 	// we are deposed as leader so that we can clean up.
 	deposed := make(chan struct{})
 
-	rl := newResourceLock(ctx, clients, log)
+	rl := newResourceLock(log, conf, clients)
 
 	// Make the leader elector, ready to be used in the Workgroup.
 	le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
 		Lock:          rl,
-		LeaseDuration: ctx.LeaderElectionConfig.LeaseDuration,
-		RenewDeadline: ctx.LeaderElectionConfig.RenewDeadline,
-		RetryPeriod:   ctx.LeaderElectionConfig.RetryPeriod,
+		LeaseDuration: conf.LeaseDuration,
+		RenewDeadline: conf.RenewDeadline,
+		RetryPeriod:   conf.RetryPeriod,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(_ context.Context) {
 				log.WithFields(logrus.Fields{
@@ -115,7 +125,7 @@ func newLeaderElector(log logrus.FieldLogger, ctx *serveContext, clients *k8s.Cl
 
 // newResourceLock creates a new resourcelock.Interface based on the Pod's name,
 // or a uuid if the name cannot be determined.
-func newResourceLock(ctx *serveContext, clients *k8s.Clients, log logrus.FieldLogger) resourcelock.Interface {
+func newResourceLock(log logrus.FieldLogger, conf *config.LeaderElectionParameters, clients *k8s.Clients) resourcelock.Interface {
 	resourceLockID, found := os.LookupEnv("POD_NAME")
 	if !found {
 		resourceLockID = uuid.New().String()
@@ -127,8 +137,8 @@ func newResourceLock(ctx *serveContext, clients *k8s.Clients, log logrus.FieldLo
 		// cycle (ie nine months).
 		// Figure out the resource lock ID
 		resourcelock.ConfigMapsResourceLock,
-		ctx.LeaderElectionConfig.Namespace,
-		ctx.LeaderElectionConfig.Name,
+		conf.Namespace,
+		conf.Name,
 		clients.ClientSet().CoreV1(),
 		clients.ClientSet().CoordinationV1(),
 		resourcelock.ResourceLockConfig{
@@ -137,8 +147,8 @@ func newResourceLock(ctx *serveContext, clients *k8s.Clients, log logrus.FieldLo
 	)
 	if err != nil {
 		log.WithError(err).
-			WithField("name", ctx.LeaderElectionConfig.Name).
-			WithField("namespace", ctx.LeaderElectionConfig.Namespace).
+			WithField("name", conf.Name).
+			WithField("namespace", conf.Namespace).
 			WithField("identity", resourceLockID).
 			Fatal("failed to create new resource lock")
 	}
