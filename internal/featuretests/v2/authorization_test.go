@@ -36,6 +36,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+const defaultResponseTimeout = time.Minute * 60
+
 func grpcCluster(name string) *envoy_config_filter_http_ext_authz_v2.ExtAuthz_GrpcService {
 	return &envoy_config_filter_http_ext_authz_v2.ExtAuthz_GrpcService{
 		GrpcService: &envoy_api_v2_core.GrpcService{
@@ -44,6 +46,7 @@ func grpcCluster(name string) *envoy_config_filter_http_ext_authz_v2.ExtAuthz_Gr
 					ClusterName: name,
 				},
 			},
+			Timeout: protobuf.Duration(defaultResponseTimeout),
 		},
 	}
 }
@@ -76,6 +79,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			defaultHTTPListener(),
+
 			&envoy_api_v2.Listener{
 				Name:    "ingress_https",
 				Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
@@ -104,6 +108,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 				},
 				SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
 			},
+
 			staticListener()),
 	}).Status(p).Like(contour_api_v1.HTTPProxyStatus{
 		CurrentStatus: string(status.ProxyStatusValid),
@@ -131,13 +136,10 @@ func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c 
 
 	rh.OnAdd(p)
 
-	cluster := grpcCluster("extension/auth/extension")
-	cluster.GrpcService.Timeout = protobuf.Duration(10 * time.Minute)
-
 	c.Request(listenerType).Equals(&envoy_api_v2.DiscoveryResponse{
 		TypeUrl:   listenerType,
 		Resources: resources(t, staticListener()),
-	}).Status(p).HasError("AuthError", "AuthReponseTimeoutInvalid", `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`)
+	}).Status(p).HasError("AuthError", "AuthResponseTimeoutInvalid", `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`)
 }
 
 func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
@@ -548,6 +550,9 @@ func TestAuthorization(t *testing.T) {
 				Spec: v1alpha1.ExtensionServiceSpec{
 					Services: []v1alpha1.ExtensionServiceTarget{
 						{Name: "oidc-server", Port: 8081},
+					},
+					TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
+						Response: defaultResponseTimeout.String(),
 					},
 				},
 			})

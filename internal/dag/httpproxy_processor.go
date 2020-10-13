@@ -265,11 +265,16 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 				timeout, err := timeout.Parse(auth.ResponseTimeout)
 				if err != nil {
-					validCond.AddErrorf("AuthError", "AuthReponseTimeoutInvalid",
+					validCond.AddErrorf("AuthError", "AuthResponseTimeoutInvalid",
 						"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
 					return
 				}
-				svhost.AuthorizationResponseTimeout = timeout
+
+				if timeout.UseDefault() {
+					svhost.AuthorizationResponseTimeout = ext.TimeoutPolicy.ResponseTimeout
+				} else {
+					svhost.AuthorizationResponseTimeout = timeout
+				}
 			}
 		}
 	}
