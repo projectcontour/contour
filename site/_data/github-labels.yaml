@@ -221,6 +221,11 @@ default:
         - name: question
 
 # Lifecycle.
+    - color: ff5050
+      description: Indicates that an issue needs to be triaged by a project contributor.
+      name: lifecycle/needs-triage
+      target: both
+      addedBy: anyone
     - color: d3e2f0
       description: Indicates that an issue or PR should not be auto-closed due to staleness.
       name: lifecycle/frozen
