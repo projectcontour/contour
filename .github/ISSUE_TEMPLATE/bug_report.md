@@ -2,7 +2,7 @@
 name: Bug report
 about: Tell us about a problem you are experiencing
 title: ''
-labels: kind/bug
+labels: kind/bug, area/dependency
 assignees: ''
 
 ---
