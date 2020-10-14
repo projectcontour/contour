@@ -24,10 +24,6 @@ LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | hea
 # Sets GIT_REF to a tag if it's present, otherwise the short git sha will be used.
 GIT_REF = $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --short=8 --verify HEAD)
 VERSION ?= $(GIT_REF)
-# Used for the tag-latest action.
-# The tag-latest action will be a noop unless this is explicitly
-# set outside this Makefile, as a safety valve.
-LATEST_VERSION ?= NOLATEST
 
 # Stash the ISO 8601 date. Note that the GMT offset is missing the :
 # separator, but there doesn't seem to be a way to do that without
@@ -102,15 +98,6 @@ push: container
 	docker push $(IMAGE):$(VERSION)
 ifeq ($(TAG_LATEST), true)
 	docker tag $(IMAGE):$(VERSION) $(IMAGE):latest
-	docker push $(IMAGE):latest
-endif
-
-tag-latest: ## Tag the Docker registry container image at $LATEST_VERSION as :latest
-ifeq ($(LATEST_VERSION), NOLATEST)
-	@echo "LATEST_VERSION not set, not proceeding"
-else
-	docker pull $(IMAGE):$(LATEST_VERSION)
-	docker tag $(IMAGE):$(LATEST_VERSION) $(IMAGE):latest
 	docker push $(IMAGE):latest
 endif
 

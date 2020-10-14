@@ -24,5 +24,5 @@ jobs:
         TAG_LATEST: "false"
       run: |
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        make push
+        ./hack/actions/build-and-push-release-images.sh
         docker logout
