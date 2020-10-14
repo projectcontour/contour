@@ -15,11 +15,13 @@ package k8s
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 )
 
 // StatusUpdate contains an all the information needed to change an object's status to perform a specific update.
@@ -60,19 +62,71 @@ func (m StatusMutatorFunc) Mutate(old interface{}) interface{} {
 
 // StatusUpdateHandler holds the details required to actually write an Update back to the referenced object.
 type StatusUpdateHandler struct {
-	Log             logrus.FieldLogger
-	Clients         *Clients
-	UpdateChannel   chan StatusUpdate
-	LeaderElected   chan struct{}
-	IsLeader        bool
-	Converter       *UnstructuredConverter
-	InformerFactory InformerFactory
+	Log           logrus.FieldLogger
+	Clients       *Clients
+	UpdateChannel chan StatusUpdate
+	LeaderElected chan struct{}
+	IsLeader      bool
+	Converter     *UnstructuredConverter
+}
+
+func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
+	gvk, err := suh.Clients.KindFor(upd.Resource)
+	if err != nil {
+		suh.Log.WithError(err).
+			WithField("name", upd.NamespacedName.Name).
+			WithField("namespace", upd.NamespacedName.Namespace).
+			WithField("resource", upd.Resource).
+			Error("failed to map Resource to Kind ")
+		return
+	}
+
+	obj, err := suh.Converter.scheme.New(gvk)
+	if err != nil {
+		suh.Log.WithError(err).
+			WithField("name", upd.NamespacedName.Name).
+			WithField("namespace", upd.NamespacedName.Namespace).
+			WithField("kind", gvk).
+			Error("failed to allocate template object")
+		return
+	}
+
+	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		// Fetch the lister cache for the informer associated with this resource.
+		if err := suh.Clients.Cache().Get(context.Background(), upd.NamespacedName, obj); err != nil {
+			return err
+		}
+
+		newObj := upd.Mutator.Mutate(obj)
+
+		if IsStatusEqual(obj, newObj) {
+			suh.Log.WithField("name", upd.NamespacedName.Name).
+				WithField("namespace", upd.NamespacedName.Namespace).
+				Debug("update was a no-op")
+			return nil
+		}
+
+		usNewObj, err := suh.Converter.ToUnstructured(newObj)
+		if err != nil {
+			return fmt.Errorf("unable to convert object: %w", err)
+		}
+
+		_, err = suh.Clients.DynamicClient().
+			Resource(upd.Resource).
+			Namespace(upd.NamespacedName.Namespace).
+			UpdateStatus(context.Background(), usNewObj, metav1.UpdateOptions{})
+		return err
+	}); err != nil {
+		suh.Log.WithError(err).
+			WithField("name", upd.NamespacedName.Name).
+			WithField("namespace", upd.NamespacedName.Namespace).
+			Error("unable to update status")
+	}
 }
 
 // Start runs the goroutine to perform status writes.
 // Until the Contour is elected leader, will drop updates on the floor.
 func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
-
 	for {
 		select {
 		case <-stop:
@@ -94,53 +148,7 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 				WithField("namespace", upd.NamespacedName.Namespace).
 				Debug("received a status update")
 
-			// Fetch the lister cache for the informer associated with this resource.
-			lister := suh.InformerFactory.ForResource(upd.Resource).Lister()
-			uObj, err := lister.ByNamespace(upd.NamespacedName.Namespace).Get(upd.NamespacedName.Name)
-			if err != nil {
-				suh.Log.WithError(err).
-					WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					WithField("resource", upd.Resource).
-					Error("unable to retrieve object for updating")
-				continue
-			}
-
-			obj, err := suh.Converter.FromUnstructured(uObj)
-			if err != nil {
-				suh.Log.WithError(err).
-					WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					Error("unable to convert from unstructured")
-				continue
-			}
-
-			newObj := upd.Mutator.Mutate(obj)
-
-			if IsStatusEqual(obj, newObj) {
-				suh.Log.WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					Debug("Update was a no-op")
-				continue
-			}
-
-			usNewObj, err := suh.Converter.ToUnstructured(newObj)
-			if err != nil {
-				suh.Log.WithError(err).
-					WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					Error("unable to convert update to unstructured")
-				continue
-			}
-
-			_, err = suh.Clients.DynamicClient().Resource(upd.Resource).Namespace(upd.NamespacedName.Namespace).UpdateStatus(context.TODO(), usNewObj, metav1.UpdateOptions{})
-			if err != nil {
-				suh.Log.WithError(err).
-					WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					Error("unable to update status")
-				continue
-			}
+			suh.apply(upd)
 		}
 
 	}
@@ -149,7 +157,6 @@ func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
 
 // Writer retrieves the interface that should be used to write to the StatusUpdateHandler.
 func (suh *StatusUpdateHandler) Writer() StatusUpdater {
-
 	if suh.UpdateChannel == nil {
 		suh.UpdateChannel = make(chan StatusUpdate, 100)
 	}

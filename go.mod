@@ -8,6 +8,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 // indirect
 	github.com/client9/misspell v0.3.4
 	github.com/envoyproxy/go-control-plane v0.9.7
+	github.com/go-logr/logr v0.2.1 // indirect
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.5.0
 	github.com/google/uuid v1.1.1
@@ -27,7 +28,7 @@ require (
 	k8s.io/client-go v0.19.2
 	k8s.io/klog v1.0.0
 	k8s.io/utils v0.0.0-20200729134348-d5654de09c73
-	sigs.k8s.io/controller-runtime v0.6.2
+	sigs.k8s.io/controller-runtime v0.6.3
 	sigs.k8s.io/controller-tools v0.2.9
 	sigs.k8s.io/kustomize/kyaml v0.1.1
 	sigs.k8s.io/service-apis v0.0.0-20200213014236-51691dd89266

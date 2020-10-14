@@ -82,6 +82,11 @@ func (e *ExtensionCacheEntry) AsStatusUpdate() k8s.StatusUpdate {
 				continue
 			}
 
+			// Don't update the condition if our observation is stale.
+			if currCond.ObservedGeneration > cond.ObservedGeneration {
+				continue
+			}
+
 			cond.DeepCopyInto(currCond)
 		}
 

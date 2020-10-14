@@ -15,6 +15,7 @@ package k8s
 
 import (
 	"fmt"
+	"sync"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
@@ -35,9 +36,33 @@ type StatusAddressUpdater struct {
 	IngressClass  string
 	StatusUpdater StatusUpdater
 	Converter     Converter
+
+	// mu guards the LBStatus field, which can be updated dynamically.
+	mu sync.Mutex
 }
 
+// Set updates the LBStatus field.
+func (s *StatusAddressUpdater) Set(status v1.LoadBalancerStatus) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.LBStatus = status
+}
+
+// OnAdd updates the given Ingress or HTTPProxy object with the
+// current load balancer address. Note that this method can be called
+// concurrently from an informer or from Contour itself.
 func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
+	// Hold the mutex to get a shallow copy. We don't need to
+	// deep copy, since all the references are read-only.
+	s.mu.Lock()
+	loadBalancerStatus := s.LBStatus
+	s.mu.Unlock()
+
+	// Do nothing if we don't have any addresses to set.
+	if len(loadBalancerStatus.Ingress) == 0 {
+		return
+	}
 
 	obj, err := s.Converter.FromUnstructured(obj)
 	if err != nil {
@@ -93,11 +118,11 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 			switch o := obj.(type) {
 			case *v1beta1.Ingress:
 				dco := o.DeepCopy()
-				dco.Status.LoadBalancer = s.LBStatus
+				dco.Status.LoadBalancer = loadBalancerStatus
 				return dco
 			case *contour_api_v1.HTTPProxy:
 				dco := o.DeepCopy()
-				dco.Status.LoadBalancer = s.LBStatus
+				dco.Status.LoadBalancer = loadBalancerStatus
 				return dco
 			default:
 				panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
