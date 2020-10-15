@@ -11,15 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"context"
 	"fmt"
 	"strconv"
 
-	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
+	envoy_service_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_service_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
+	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
+	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
+	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -29,8 +33,8 @@ import (
 
 type grpcStream interface {
 	Context() context.Context
-	Send(*envoy_api_v2.DiscoveryResponse) error
-	Recv() (*envoy_api_v2.DiscoveryRequest, error)
+	Send(*envoy_service_discovery_v3.DiscoveryResponse) error
+	Recv() (*envoy_service_discovery_v3.DiscoveryRequest, error)
 }
 
 // NewContourServer creates an internally implemented Server that streams the
@@ -53,12 +57,12 @@ type contourServer struct {
 	// Since we only implement the streaming state of the world
 	// protocol, embed the default null implementations to handle
 	// the unimplemented gRPC endpoints.
-	discovery.UnimplementedAggregatedDiscoveryServiceServer
-	discovery.UnimplementedSecretDiscoveryServiceServer
-	envoy_api_v2.UnimplementedRouteDiscoveryServiceServer
-	envoy_api_v2.UnimplementedEndpointDiscoveryServiceServer
-	envoy_api_v2.UnimplementedClusterDiscoveryServiceServer
-	envoy_api_v2.UnimplementedListenerDiscoveryServiceServer
+	envoy_service_discovery_v3.UnimplementedAggregatedDiscoveryServiceServer
+	envoy_service_secret_v3.UnimplementedSecretDiscoveryServiceServer
+	envoy_service_route_v3.UnimplementedRouteDiscoveryServiceServer
+	envoy_service_endpoint_v3.UnimplementedEndpointDiscoveryServiceServer
+	envoy_service_cluster_v3.UnimplementedClusterDiscoveryServiceServer
+	envoy_service_listener_v3.UnimplementedListenerDiscoveryServiceServer
 
 	logrus.FieldLogger
 	resources   map[string]xds.Resource
@@ -150,7 +154,7 @@ func (s *contourServer) stream(st grpcStream) error {
 				any = append(any, a)
 			}
 
-			resp := &envoy_api_v2.DiscoveryResponse{
+			resp := &envoy_service_discovery_v3.DiscoveryResponse{
 				VersionInfo: strconv.Itoa(last),
 				Resources:   any,
 				TypeUrl:     r.TypeURL(),
@@ -167,22 +171,22 @@ func (s *contourServer) stream(st grpcStream) error {
 	}
 }
 
-func (s *contourServer) StreamClusters(srv envoy_api_v2.ClusterDiscoveryService_StreamClustersServer) error {
+func (s *contourServer) StreamClusters(srv envoy_service_cluster_v3.ClusterDiscoveryService_StreamClustersServer) error {
 	return s.stream(srv)
 }
 
-func (s *contourServer) StreamEndpoints(srv envoy_api_v2.EndpointDiscoveryService_StreamEndpointsServer) error {
+func (s *contourServer) StreamEndpoints(srv envoy_service_endpoint_v3.EndpointDiscoveryService_StreamEndpointsServer) error {
 	return s.stream(srv)
 }
 
-func (s *contourServer) StreamListeners(srv envoy_api_v2.ListenerDiscoveryService_StreamListenersServer) error {
+func (s *contourServer) StreamListeners(srv envoy_service_listener_v3.ListenerDiscoveryService_StreamListenersServer) error {
 	return s.stream(srv)
 }
 
-func (s *contourServer) StreamRoutes(srv envoy_api_v2.RouteDiscoveryService_StreamRoutesServer) error {
+func (s *contourServer) StreamRoutes(srv envoy_service_route_v3.RouteDiscoveryService_StreamRoutesServer) error {
 	return s.stream(srv)
 }
 
-func (s *contourServer) StreamSecrets(srv discovery.SecretDiscoveryService_StreamSecretsServer) error {
+func (s *contourServer) StreamSecrets(srv envoy_service_secret_v3.SecretDiscoveryService_StreamSecretsServer) error {
 	return s.stream(srv)
 }

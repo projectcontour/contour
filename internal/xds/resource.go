@@ -13,7 +13,11 @@
 
 package xds
 
-import "github.com/golang/protobuf/proto"
+import (
+	"sync/atomic"
+
+	"github.com/golang/protobuf/proto"
+)
 
 // Resource represents a source of proto.Messages that can be registered
 // for interest.
@@ -29,4 +33,11 @@ type Resource interface {
 
 	// TypeURL returns the typeURL of messages returned from Values.
 	TypeURL() string
+}
+
+// Counter holds an atomically incrementing counter.
+type Counter uint64
+
+func (c *Counter) Next() uint64 {
+	return atomic.AddUint64((*uint64)(c), 1)
 }
