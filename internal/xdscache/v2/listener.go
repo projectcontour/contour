@@ -99,6 +99,11 @@ type ListenerConfig struct {
 	// Defaults to a particular set of fields.
 	AccessLogFields []string
 
+	// AccessLogCustomFieldsMapping are custom fields that extend the existing
+	// field mapping (envoy.JSONFields).
+	// Useful for logging custom headers.
+	AccessLogCustomFieldsMapping map[string]string
+
 	// RequestTimeout configures the request_timeout for all Connection Managers.
 	RequestTimeout timeout.Setting
 
@@ -192,7 +197,7 @@ func (lvc *ListenerConfig) accesslogFields() []string {
 func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_api_v2_accesslog.AccessLog {
 	switch lvc.accesslogType() {
 	case "json":
-		return envoy_v2.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields())
+		return envoy_v2.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields(), lvc.AccessLogCustomFieldsMapping)
 	default:
 		return envoy_v2.FileAccessLogEnvoy(lvc.httpAccessLog())
 	}
@@ -201,7 +206,7 @@ func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_api_v2_accesslog.Acce
 func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_api_v2_accesslog.AccessLog {
 	switch lvc.accesslogType() {
 	case "json":
-		return envoy_v2.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields())
+		return envoy_v2.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields(), lvc.AccessLogCustomFieldsMapping)
 	default:
 		return envoy_v2.FileAccessLogEnvoy(lvc.httpsAccessLog())
 	}

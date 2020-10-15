@@ -100,6 +100,10 @@ type serveContext struct {
 	// output when AccessLogFormat is json.
 	AccessLogFields []string `yaml:"json-fields,omitempty"`
 
+	// AccessLogCustomFieldsMapping adds additional fields to the JSON logging
+	// output when AccessLogFormat is json.
+	AccessLogCustomFieldsMapping map[string]string `yaml:"custom-json-fields,omitempty"`
+
 	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
 	PermitInsecureGRPC bool `yaml:"-"`
 

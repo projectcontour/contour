@@ -38,8 +38,8 @@ func FileAccessLogEnvoy(path string) []*accesslog.AccessLog {
 
 // FileAccessLogJSON returns a new file based access log filter
 // that will log in JSON format
-func FileAccessLogJSON(path string, keys []string) []*accesslog.AccessLog {
-
+func FileAccessLogJSON(path string, keys []string, customFields map[string]string) []*accesslog.AccessLog {
+	jsonFields := mergeFields(envoy.JSONFields, customFields)
 	jsonformat := &_struct.Struct{
 		Fields: make(map[string]*_struct.Value),
 	}
@@ -48,7 +48,7 @@ func FileAccessLogJSON(path string, keys []string) []*accesslog.AccessLog {
 		// This will silently ignore invalid headers.
 		// TODO(youngnick): this should tell users if a header is not valid
 		// https://github.com/projectcontour/contour/issues/1507
-		if template, ok := envoy.JSONFields[k]; ok {
+		if template, ok := jsonFields[k]; ok {
 			jsonformat.Fields[k] = sv(template)
 		}
 	}
@@ -64,6 +64,23 @@ func FileAccessLogJSON(path string, keys []string) []*accesslog.AccessLog {
 			}),
 		},
 	}}
+}
+
+func mergeFields(a map[string]string, b map[string]string) map[string]string {
+	if b == nil {
+		return a
+	}
+
+	out := map[string]string{}
+
+	for k, v := range a {
+		out[k] = v
+	}
+	for k, v := range b {
+		out[k] = v
+	}
+
+	return out
 }
 
 func sv(s string) *_struct.Value {

@@ -359,6 +359,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HTTPSAccessLog:                ctx.httpsAccessLog,
 		AccessLogType:                 ctx.AccessLogFormat,
 		AccessLogFields:               ctx.AccessLogFields,
+		AccessLogCustomFieldsMapping:  ctx.AccessLogCustomFieldsMapping,
 		MinimumTLSVersion:             globalMinTLSVersion,
 		RequestTimeout:                requestTimeout,
 		ConnectionIdleTimeout:         connectionIdleTimeout,

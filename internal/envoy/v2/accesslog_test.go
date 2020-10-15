@@ -53,6 +53,7 @@ func TestJSONFileAccessLog(t *testing.T) {
 	tests := map[string]struct {
 		path    string
 		headers []string
+		custom  map[string]string
 		want    []*envoy_accesslog.AccessLog
 	}{
 		"only timestamp": {
@@ -100,10 +101,42 @@ func TestJSONFileAccessLog(t *testing.T) {
 			},
 			},
 		},
+		"custom fields should appear": {
+			path: "/dev/stdout",
+			headers: []string{
+				"@timestamp",
+				"method",
+				"custom1",
+				"custom2",
+			},
+			custom: map[string]string{
+				"custom1": "field1",
+				"custom2": "field2",
+			},
+			want: []*envoy_accesslog.AccessLog{{
+				Name: wellknown.FileAccessLog,
+				ConfigType: &envoy_accesslog.AccessLog_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&accesslog_v2.FileAccessLog{
+						Path: "/dev/stdout",
+						AccessLogFormat: &accesslog_v2.FileAccessLog_JsonFormat{
+							JsonFormat: &_struct.Struct{
+								Fields: map[string]*_struct.Value{
+									"@timestamp": sv(envoy.JSONFields["@timestamp"]),
+									"method":     sv(envoy.JSONFields["method"]),
+									"custom1":    sv("field1"),
+									"custom2":    sv("field2"),
+								},
+							},
+						},
+					}),
+				},
+			},
+			},
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := FileAccessLogJSON(tc.path, tc.headers)
+			got := FileAccessLogJSON(tc.path, tc.headers, tc.custom)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
