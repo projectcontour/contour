@@ -151,16 +151,10 @@ error_non_200_response [msg] {
   msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
 }
 
-error_wrong_routing [msg] {
-  not response.has_testid(Response)
-  msg := "response has missing body or test ID"
-}
-
 error_wrong_routing[msg] {
   wanted := "echo"
-  testid := response.testid(Response)
-  testid != wanted
-  msg := sprintf("got test ID %q, wanted %q", [testid, wanted])
+  not response.service(Response) == wanted
+  msg := sprintf("got service ID %q, wanted %q", [response.service(Response), wanted])
 }
 
 ---

@@ -88,7 +88,7 @@ error_unexpected_path [msg] {
   merged := concat("/", [ p | parts[i] != ""; p := parts[i] ])
 
   # Get the Path field, or empty string if it's not present.
-  path := object.get(body, "Path", "")
+  path := object.get(body, "path", "")
 
   not contains(path, merged)
 
