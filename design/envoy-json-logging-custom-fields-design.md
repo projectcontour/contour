@@ -61,6 +61,10 @@ If the field name is repeated the last entry in the configuration takes precedes
 If the field name is not defined in the default fields transition map and the user doesn't specify the Envoy field format, then Contour will raise a validation error.
 Currently, Contour silently ignores unknown fields (see [#1507](https://github.com/projectcontour/contour/issues/1507)).
 
+#### Additional built-in translations
+
+For newly supported non-parameterized methods like `%RESPONSE_DURATION%`, we will add them to the built-in translation mapping.
+
 ### Example
 
 This Contour configuration contains both old- and new-style fields:
@@ -69,8 +73,8 @@ This Contour configuration contains both old- and new-style fields:
 json-fields:
    - @timestamp
    - method
+   - response_duration
    - content-id=%REQ(X-CONTENT-ID)%
-   - response_duration=%RESPONSE_DURATION%
 ```
 
 The following is the resulting JSON config for Envoy:
@@ -79,8 +83,8 @@ The following is the resulting JSON config for Envoy:
 {
    "timestamp": "%START_TIME%",
    "method:" "%REQ(:METHOD)%",
-   "content-id": "%REQ(X-CONTENT-ID)%",
-   "response_duration": "%RESPONSE_DURATION%"
+   "response_duration": "%RESPONSE_DURATION%",
+   "content-id": "%REQ(X-CONTENT-ID)%"
 }
 ```
 
@@ -100,11 +104,10 @@ In this alternative, the example configuration would be written as the following
 json-fields:
    - @timestamp
    - method
-   - content-id
    - response_duration
+   - content-id
 extra-json-fields:
    content-id: %REQ(X-CONTENT-ID)%
-   response_duration: %RESPONSE_DURATION%
 ```
 
 ### Map Syntax
@@ -115,32 +118,27 @@ In this approach, the example configuration would look like the following:
 json-fields:
    @timestamp:
    method:
+   response_duration:
    content-id: %REQ(X-CONTENT-ID)%
-   response_duration: %RESPONSE_DURATION%
 ```
 
 This approach is not backward-compatible because the structure of `json-fields` is changing from an array to a map.
-Existing configuration would not work.
+In order to make this work, a new field would need to be introduced so that existing configuration would work.
+Then, the original `json-fields` key would be deprecated over several versions.
+The built-in translations would continue to work as before (just with empty values in the new map syntax).
+
 The other drawback of this approach is aesthetic: it could be argued that empty values for the keys with default translations is ugly.
 
 ## Security Considerations
 Misconfiguration of the property can leak unwanted information to the access log file.
 
 ## Compatibility
-Both original and the alternative translation table high-level designs don't introduce breaking changes, but the map syntax alternative would be a breaking change.
+Both original and alternatives high-level designs don't introduce breaking changes.
 The current implementation skips unknown fields so any new custom fields will be ignored.
 
 ## Open Issues
-
-* Should all the fields with obvious translations consistently either require parameterization or not?
-  - In the current implementation, `method` becomes `"method": "%REQ(:METHOD)%"`.
-  - When the new implementation adds a way to achieve the JSON config `"response_duration": "%RESPONSE_DURATION%"`, should the user write:
-    * `response_duration`, or
-    * `response_durationn=%RESPONSE_DURATION%`
-  - This is related to [#2523](https://github.com/projectcontour/contour/issues/2523)
 * Is one of the alternative approaches preferable?
    - [User-defined Translation Table](#user-defined-translation-table) seems easier to implement because it was partially implemented in #3033 and because the configuration is more structured and easier to work with as there no need for additional string parsing.
    - [Map Syntax](#map-syntax) is not backward-compatible, but does avoid string parsing.
-
 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage#command-operators
