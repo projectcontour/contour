@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/klog"
+	klog "k8s.io/klog/v2"
 )
 
 type klogParams struct {
