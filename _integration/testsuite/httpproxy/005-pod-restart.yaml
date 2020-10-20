@@ -15,32 +15,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: &name ingress-conformance-echo
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: *name
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: *name
-    spec:
-      containers:
-      - name: conformance-echo
-        image: agervais/ingress-conformance-echo:latest
-        env:
-        - name: TEST_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        ports:
-        - name: http-api
-          containerPort: 3000
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
+  name: ingress-conformance-echo
+$apply: fixture
 
 ---
 
@@ -73,8 +49,8 @@ RunId := data.test.params["run-id"]
 error_pod_unready [msg] {
   pod := data.resources.pods[_]
 
-  pod.metadata.labels["app.kubernetes.io/name"] == "ingress-conformance-echo"
-  pod.metadata.annotations["modden/run-id"] == RunId
+  object.get(pod.metadata.labels, "app.kubernetes.io/name", "") == "ingress-conformance-echo"
+  object.get(pod.metadata.annotations, "integration-tester/run-id", "") == RunId
 
   # Find combinations of _ and i where the condition is Ready/True.
   cond := pod.status.conditions[i]
@@ -86,9 +62,11 @@ error_pod_unready [msg] {
 
 ---
 
-import data.contour.http.response
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.response
+
+Service := "ingress-conformance-echo"
 
 Response := client.Get({
   "url": url.http(sprintf("/pre-delete/%d", [time.now_ns()])),
@@ -99,20 +77,19 @@ Response := client.Get({
 })
 
 error_non_200_response [msg] {
-  Response.status_code != 200
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+  not response.status_is(Response, 200)
+
+  msg := sprintf("got status %d, wanted %d", [
+    response.status_code(Response), 200,
+   ])
 }
 
-error_missing_testid [msg] {
-  not response.has_testid(Response)
-  msg := "response has missing body or test ID"
-}
+error_wrong_routing[msg] {
+  not response.service(Response) == Service
 
-error[msg] {
-  testid := response.testid(Response)
-  not data.resources.pods[testid]
-
-  msg := sprintf("no pod for test ID %q", [testid])
+  msg := sprintf("got service %q, wanted %q", [
+    response.service(Response), Service,
+  ])
 }
 
 ---
@@ -138,9 +115,11 @@ error_pod_exists [msg] {
 
 ---
 
-import data.contour.http.response
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.response
+
+Service := "ingress-conformance-echo"
 
 Response := client.Get({
   "url": url.http(sprintf("/post-delete/%d", [time.now_ns()])),
@@ -155,14 +134,17 @@ error_non_200_response [msg] {
   msg :=  sprintf("got status %d, wanted %d", [Response.status_code, 200])
 }
 
-error_missing_testid [msg] {
-  not response.has_testid(Response)
-  msg := "response has missing body or test ID"
+error_wrong_routing[msg] {
+  not response.service(Response) == Service
+
+  msg := sprintf("got service %q, wanted %q", [
+    response.service(Response), Service,
+  ])
 }
 
 error[msg] {
-  testid := response.testid(Response)
-  not data.resources.pods[testid]
+  pod := response.pod(Response)
 
-  msg := sprintf("no pod for test ID %q", [testid])
+  not data.resources.pods[pod]
+  msg := sprintf("no pod for pod name %q", [pod])
 }

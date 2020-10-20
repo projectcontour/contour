@@ -123,6 +123,7 @@ error_proxy_is_not_valid[msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.response
 
 cases := [
   [ "/", "echo-slash-default" ],
@@ -147,10 +148,10 @@ request_for_path[path] = request {
   }
 }
 
-response_for_path[path] = response {
+response_for_path[path] = resp {
   path := cases[_][0]
   request := request_for_path[path]
-  response := http.send(request)
+  resp := http.send(request)
 }
 
 # Ensure that we get a response for each test case.
@@ -160,23 +161,25 @@ error_missing_responses {
 
 error_non_200_response [msg] {
   path := cases[_][0]
-  response := response_for_path[path]
+  resp := response_for_path[path]
 
-  response.status_code != 200
+  not response.status_is(resp, 200)
+
   msg :=  sprintf("got status %d for path %q, wanted %d", [
-    response.status_code, path, 200,
+    response.status_code(resp), path, 200,
   ])
 }
 
-error_path_routing_mismatch[msg] {
+error_wrong_routing[msg] {
   c := cases[_]
 
   path := c[0]
-  testid := c[1]
-  response := response_for_path[path]
+  svc := c[1]
+  resp := response_for_path[path]
 
-  response.body.TestId != testid
+  not svc == response.service(resp)
+
   msg :=  sprintf("got wrong service %q for path %q, wanted %q", [
-    response.body.TestId, path, testid,
+    response.service(resp), path, svc,
   ])
 }

@@ -131,8 +131,9 @@ fatal_proxy_is_not_valid[msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.response
 
-TestID := "echo-one"
+Service := "echo-one"
 
 Response := client.Get({
   "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
@@ -148,18 +149,18 @@ error_no_response {
 }
 
 error_non_200_response [msg] {
-  Response.status_code != 200
+  not response.status_is(Response, 200)
 
   msg :=  sprintf("got status %d, wanted %d", [
-    Response.status_code, 200
+    response.status_code(Response), 200
   ])
 }
 
-error_path_routing_mismatch[msg] {
-  Response.body.TestId != TestID
+error_wrong_routing[msg] {
+  not response.service(Response) == Service
 
   msg :=  sprintf("got wrong service %q, wanted %q", [
-    Response.body.TestId, TestID,
+    response.service(Response), Service,
   ])
 }
 
@@ -240,8 +241,9 @@ fatal_proxy_is_not_valid[msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.response
 
-TestID := "echo-two"
+Service := "echo-two"
 
 Response := client.Get({
   "url": url.https(sprintf("/https-sni-enforcement/%d", [time.now_ns()])),
@@ -257,18 +259,18 @@ error_no_response {
 }
 
 error_non_200_response [msg] {
-  Response.status_code != 200
+  not response.status_is(Response, 200)
 
   msg :=  sprintf("got status %d, wanted %d", [
-    Response.status_code, 200
+    response.status_code(Response), 200
   ])
 }
 
-error_path_routing_mismatch[msg] {
-  Response.body.TestId != TestID
+error_wrong_routing[msg] {
+  not response.service(Response) == Service
 
   msg :=  sprintf("got wrong service %q, wanted %q", [
-    Response.body.TestId, TestID,
+    response.service(Response), Service,
   ])
 }
 

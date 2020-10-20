@@ -376,26 +376,14 @@ Response := client.Get({
 })
 
 error_non_200_response [msg] {
-  not Response
-  msg := "no response"
-}
-
-error_non_200_response [msg] {
-  status := object.get(Response, "status_code", 000)
-  status != 200
-  msg := sprintf("got status %d, wanted %d", [status, 200])
-}
-
-error_wrong_routing [msg] {
-  not response.has_testid(Response)
-  msg := "response has missing body or test ID"
+  not response.status_is(Response, 200)
+  msg := sprintf("got status %d, wanted %d", [response.status_code(Response), 200])
 }
 
 error_wrong_routing[msg] {
   wanted := "echo-no-auth"
-  testid := response.testid(Response)
-  testid != wanted
-  msg := sprintf("got test ID %q, wanted %q", [testid, wanted])
+  not response.service(Response) == wanted
+  msg := sprintf("got service ID %q, wanted %q", [response.service(Response), wanted])
 }
 
 ---
@@ -422,26 +410,14 @@ Response := client.Get({
 })
 
 error_non_200_response [msg] {
-  not Response
-  msg := "no response"
-}
-
-error_non_200_response [msg] {
-  status := object.get(Response, "status_code", 000)
-  status != 200
-  msg := sprintf("got status %d, wanted %d", [status, 200])
-}
-
-error_wrong_routing [msg] {
-  not response.has_testid(Response)
-  msg := "response has missing body or test ID"
+  not response.status_is(Response, 200)
+  msg := sprintf("got status %d, wanted %d", [response.status_code(Response), 200])
 }
 
 error_wrong_routing[msg] {
   wanted := "echo-with-auth"
-  testid := response.testid(Response)
-  testid != wanted
-  msg := sprintf("got test ID %q, wanted %q", [testid, wanted])
+  not response.service(Response) == wanted
+  msg := sprintf("got service ID %q, wanted %q", [response.service(Response), wanted])
 }
 
 # TODO(jpeach): Need to test that requests without a client certificate

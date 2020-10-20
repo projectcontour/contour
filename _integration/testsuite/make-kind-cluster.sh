@@ -75,10 +75,7 @@ for t in $TAGS ; do
 done
 
 # Push test images into the cluster.
-for i in \
-    "agervais/ingress-conformance-echo:latest" \
-    "docker.io/kennethreitz/httpbin" \
-    "docker.io/projectcontour/contour-authserver:v2"
+for i in $(find "$HERE" -name "*.yaml" | xargs awk '$1=="image:"{print $2}')
 do
     docker pull "$i"
     kind::cluster::load "$i"
