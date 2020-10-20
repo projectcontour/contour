@@ -12,6 +12,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+# Conformance server source: https://github.com/kubernetes-sigs/ingress-controller-conformance/tree/master/images/echoserver
+# Per-commit conformance images: https://console.cloud.google.com/gcr/images/k8s-staging-ingressconformance/GLOBAL
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,10 +31,20 @@ spec:
     spec:
       containers:
       - name: conformance-echo
-        image: agervais/ingress-conformance-echo:latest
+        image: k8s.gcr.io/ingressconformance/echoserver:v0.0.1
         env:
-        - name: TEST_ID
+        - name: INGRESS_NAME
           value: *name
+        - name: SERVICE_NAME
+          value: *name
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         ports:
         - name: http-api
           containerPort: 3000

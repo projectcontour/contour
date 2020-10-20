@@ -20,8 +20,8 @@ import (
 	envoy_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	_struct "github.com/golang/protobuf/ptypes/struct"
-	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/pkg/config"
 )
 
 func TestFileAccessLog(t *testing.T) {
@@ -90,8 +90,8 @@ func TestJSONFileAccessLog(t *testing.T) {
 						AccessLogFormat: &accesslog_v2.FileAccessLog_JsonFormat{
 							JsonFormat: &_struct.Struct{
 								Fields: map[string]*_struct.Value{
-									"@timestamp": sv(envoy.JSONFields["@timestamp"]),
-									"method":     sv(envoy.JSONFields["method"]),
+									"@timestamp": sv(config.JSONFields["@timestamp"]),
+									"method":     sv(config.JSONFields["method"]),
 								},
 							},
 						},
