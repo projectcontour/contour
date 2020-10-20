@@ -16,6 +16,19 @@ JEKYLL_PORT := 4000
 JEKYLL_LIVERELOAD_PORT := 35729
 
 TAG_LATEST ?= false
+
+ifeq ($(TAG_LATEST), true)
+	IMAGE_TAGS = \
+		--tag $(IMAGE):$(VERSION) \
+		--tag $(IMAGE):latest
+else
+	IMAGE_TAGS = \
+		--tag $(IMAGE):$(VERSION)
+endif
+
+# Platforms to build the multi-arch image for.
+IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
+
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
 # LOCALIP as an env var before running 'make local' will solve that.
@@ -71,6 +84,9 @@ check: install check-test check-test-race ## Install and run tests
 .PHONY: checkall
 checkall: vendor check lint check-generate
 
+build: ## Build the contour binary
+	go build -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
+
 install: ## Build and install the contour binary
 	go install -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
 
@@ -83,6 +99,17 @@ download: ## Download Go modules
 ## Vendor Go modules
 vendor:
 	go mod vendor
+
+multiarch-build-push: ## Build and push a multi-arch Contour container image to the Docker registry
+	docker buildx build \
+		--platform $(IMAGE_PLATFORMS) \
+		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
+		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
+		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
+		$(DOCKER_BUILD_LABELS) \
+		$(IMAGE_TAGS) \
+		--push \
+		.
 
 container: ## Build the Contour container image
 	docker build \
