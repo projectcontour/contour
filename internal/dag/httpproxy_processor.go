@@ -25,6 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/projectcontour/contour/pkg/config"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -64,7 +65,7 @@ type HTTPProxyProcessor struct {
 	// for addresses in the IPv6 family and fallback to a lookup for addresses
 	// in the IPv4 family.
 	// Note: This only applies to externalName clusters.
-	DNSLookupFamily string
+	DNSLookupFamily config.ClusterDNSFamilyType
 
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
@@ -567,7 +568,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				ResponseHeadersPolicy: respHP,
 				Protocol:              protocol,
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
-				DNSLookupFamily:       p.DNSLookupFamily,
+				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
