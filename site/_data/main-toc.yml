@@ -43,10 +43,22 @@ toc:
         link: /guides/proxy-proto/
       - page: Resource Limits
         link: /guides/resource-limits/
-  - title: Troubleshoot
+  - title: Troubleshooting
     subfolderitems:
-      - page: Troubleshooting
-        url: /troubleshooting
+      - page: Envoy not Listening
+        url: /troubleshooting/envoy-not-listening
+      - page: Envoy Administration Access
+        url: /troubleshooting/envoy-admin-interface
+      - page: Contour Debug Logging
+        url: /troubleshooting/contour-debug-log
+      - page: Envoy Debug Logging
+        url: /troubleshooting/envoy-debug-log
+      - page: Visualize the Contour Graph
+        url: /troubleshooting/contour-graph
+      - page: Show Contour xDS Resources
+        url: /troubleshooting/contour-xds-resources
+      - page: Profiling Contour
+        url: /troubleshooting/profiling-contour
   - title: Resources
     subfolderitems:
       - page: Support Policy
