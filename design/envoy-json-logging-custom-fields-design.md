@@ -1,6 +1,6 @@
 # Allow Envoy to output arbitrary fields for JSON logs
 
-Status: Draft
+Status: Accepted
 
 ## Abstract
 Allow users to add arbitrary supported Envoy JSON fields to the access log.
