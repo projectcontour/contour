@@ -41,6 +41,22 @@ func (s ServerType) Validate() error {
 	}
 }
 
+// ServerVersion is the version of a xDS server.
+type ServerVersion string
+
+const XDSv2 ServerVersion = "v2"
+const XDSv3 ServerVersion = "v3"
+
+// Validate the xDS server version.
+func (s ServerVersion) Validate() error {
+	switch s {
+	case XDSv2, XDSv3:
+		return nil
+	default:
+		return fmt.Errorf("invalid xDS version %q", s)
+	}
+}
+
 // ClusterDNSFamilyType is the Ip family to use for resolving DNS
 // names in an Envoy cluster configuration.
 type ClusterDNSFamilyType string
@@ -132,6 +148,10 @@ type ServerParameters struct {
 	// Defines the XDSServer to use for `contour serve`.
 	// Defaults to "contour"
 	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
+
+	// Defines the XDS Server Version to use for `contour serve`
+	// Defaults to "v2"
+	XDSServerVersion ServerVersion `yaml:"xds-server-version"`
 }
 
 // LeaderElectionParameters holds the config bits for leader election
@@ -313,6 +333,10 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
+	if err := p.Server.XDSServerVersion.Validate(); err != nil {
+		return err
+	}
+
 	if err := p.AccessLogFormat.Validate(); err != nil {
 		return err
 	}
@@ -354,7 +378,8 @@ func Defaults() Parameters {
 		InCluster:  false,
 		Kubeconfig: filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		Server: ServerParameters{
-			XDSServerType: ContourServerType,
+			XDSServerType:    ContourServerType,
+			XDSServerVersion: XDSv2,
 		},
 		IngressStatusAddress:  "",
 		AccessLogFormat:       DEFAULT_ACCESS_LOG_TYPE,
