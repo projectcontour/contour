@@ -11,14 +11,14 @@ toc:
         url: /annotations
       - page: HTTPProxy Reference
         url: /httpproxy
-      - page: Contour Configuration Reference
-        url: /configuration
       - page: API Reference
         url: /api
-  - title: Deploy
+  - title: Deployment
     subfolderitems:
       - page: Deployment Options
         url: /deploy-options
+      - page: Contour Configuration
+        url: /configuration
       - page: Upgrading Contour
         link: /resources/upgrading
       - page: Enabling TLS between Envoy and Contour
