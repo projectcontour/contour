@@ -14,16 +14,25 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+# install-contour-release.sh: Install a specific release of Contour.
+
 set -o pipefail
 set -o errexit
 set -o nounset
 
-readonly KIND=${KIND:-kind}
-readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
+readonly KUBECTL=${KUBECTL:-kubectl}
+readonly WAITTIME=${WAITTIME:-5m}
 
-kind::cluster::delete() {
-    ${KIND} delete cluster --name "${CLUSTERNAME}"
-}
+readonly PROGNAME=$(basename "$0")
+readonly VERS=${1:-}
 
-# Delete existing kind cluster
-kind::cluster::delete
+if [ -z "$VERS" ] ; then
+        printf "Usage: %s VERSION\n" $PROGNAME
+        exit 1
+fi
+
+# Install the Contour version.
+${KUBECTL} apply -f "https://projectcontour.io/quickstart/$VERS/contour.yaml"
+
+${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour deployments --for=condition=Available
+${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=envoy pods --for=condition=Ready

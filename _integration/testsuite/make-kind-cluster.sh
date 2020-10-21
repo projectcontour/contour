@@ -14,6 +14,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+# make-kind-cluster.sh: build a kind cluster and install a working copy
+# of Contour into it.
+
 set -o pipefail
 set -o errexit
 set -o nounset
@@ -21,17 +24,11 @@ set -o nounset
 readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
-readonly CLUSTERNAME=${CLUSTER:-contour-integration}
+readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
 readonly WAITTIME=${WAITTIME:-5m}
 
-readonly HERE=$(cd $(dirname $0) && pwd)
-readonly REPO=$(cd ${HERE}/../.. && pwd)
-
-# List of tags to apply to the image built from the working directory.
-# The "working" tag is applied to unambigiously reference the working
-# image, since "main" and "latest" could also come from the Docker
-# registry.
-readonly TAGS="main latest working"
+readonly HERE=$(cd "$(dirname "$0")" && pwd)
+readonly REPO=$(cd "${HERE}/../.." && pwd)
 
 kind::cluster::exists() {
     ${KIND} get clusters | grep -q "$1"
@@ -52,48 +49,22 @@ kind::cluster::load() {
 
 if kind::cluster::exists "$CLUSTERNAME" ; then
     echo "cluster $CLUSTERNAME already exists"
-    exit 2
+    echo exit 2
 fi
-
-# Build the current version of Contour.
-make -C ${REPO} container IMAGE=docker.io/projectcontour/contour VERSION="v$$"
-
-for t in $TAGS ; do
-    docker tag \
-        docker.io/projectcontour/contour:"v$$" \
-        docker.io/projectcontour/contour:$t
-done
 
 # Create a fresh kind cluster.
 if ! kind::cluster::exists "$CLUSTERNAME" ; then
   kind::cluster::create
 fi
 
-# Push the Contour build image into the cluster.
-for t in $TAGS ; do
-    kind::cluster::load docker.io/projectcontour/contour:$t
-done
-
 # Push test images into the cluster.
-for i in $(find "$HERE" -name "*.yaml" | xargs awk '$1=="image:"{print $2}')
+for i in $(find "$HERE" -name "*.yaml" -print0 | xargs -0 awk '$1=="image:"{print $2}')
 do
     docker pull "$i"
     kind::cluster::load "$i"
 done
 
-# Install Contour.
-#
-# NOTE(jpeach): The certgen job uses the ":latest" tag with the
-# "Latest" pull policy, which forces the kubelet to re-fetch from
-# DockerHub, which is why we have to whack the image pull policy.
-for y in ${REPO}/examples/contour/*.yaml ; do
-  ${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < "$y")
-done
-
-${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour deployments --for=condition=Available
-${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=envoy pods --for=condition=Ready
-
 # Install cert-manager.
-${KUBECTL} apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.yaml
+${KUBECTL} apply -f https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.yaml
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=cert-manager deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deployments --for=condition=Available

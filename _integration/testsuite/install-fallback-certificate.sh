@@ -24,20 +24,10 @@ set -o nounset
 readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
-readonly CLUSTERNAME=${CLUSTER:-contour-integration}
 readonly WAITTIME=${WAITTIME:-5m}
 
 readonly HERE=$(cd $(dirname $0) && pwd)
 readonly REPO=$(cd ${HERE}/../.. && pwd)
-
-kind::cluster::exists() {
-    ${KIND} get clusters | grep -q "$1"
-}
-
-if ! kind::cluster::exists "$CLUSTERNAME" ; then
-    echo "cluster $CLUSTERNAME does not exist"
-    exit 2
-fi
 
 ${KUBECTL} apply -f - <<EOF
 apiVersion: cert-manager.io/v1alpha2
