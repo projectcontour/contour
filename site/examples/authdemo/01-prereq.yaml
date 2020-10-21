@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: projectcontour-auth
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: projectcontour-auth-htpasswd
+  namespace: projectcontour-auth
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: projectcontour:authserver:htpasswd
+  namespace: projectcontour-auth
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: projectcontour:authserver:htpasswd
+  namespace: projectcontour-auth
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: projectcontour:authserver:htpasswd
+subjects:
+  - kind: ServiceAccount
+    name: projectcontour-auth-htpasswd
+    namespace: projectcontour-auth

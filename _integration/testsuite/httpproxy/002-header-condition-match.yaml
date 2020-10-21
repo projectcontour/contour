@@ -194,31 +194,32 @@ error[msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.response
 
 random := sprintf("%d", [time.now_ns()])
 
 cases := {
-  { "header": "Target-Present", "value": random, "status": 200, "testid": "echo-header-present" },
+  { "header": "Target-Present", "value": random, "status": 200, "service": "echo-header-present" },
 
   { "header": "Target-Contains", "value": random, "status": 404 },
-  { "header": "Target-Contains", "value": "ContainsValue", "status": 200, "testid": "echo-header-contains" },
-  { "header": "Target-Contains", "value": "xxx ContainsValue xxx", "status": 200, "testid": "echo-header-contains" },
+  { "header": "Target-Contains", "value": "ContainsValue", "status": 200, "service": "echo-header-contains" },
+  { "header": "Target-Contains", "value": "xxx ContainsValue xxx", "status": 200, "service": "echo-header-contains" },
 
   { "header": "Target-NotContains", "value": "ContainsValue", "status": 404 },
   { "header": "Target-NotContains", "value": "xxx ContainsValue xxx", "status": 404 },
-  { "header": "Target-NotContains", "value": random , "status": 200, "testid": "echo-header-notcontains" },
+  { "header": "Target-NotContains", "value": random , "status": 200, "service": "echo-header-notcontains" },
 
   { "header": "Target-Exact", "value": random , "status": 404 },
   { "header": "Target-Exact", "value": "NotExactValue", "status": 404 },
-  { "header": "Target-Exact", "value": "ExactValue", "status": 200, "testid": "echo-header-exact" },
+  { "header": "Target-Exact", "value": "ExactValue", "status": 200, "service": "echo-header-exact" },
 
-  { "header": "Target-NotExact", "value": random , "status": 200, "testid": "echo-header-notexact" },
-  { "header": "Target-NotExact", "value": "NotExactValue" , "status": 200, "testid": "echo-header-notexact" },
+  { "header": "Target-NotExact", "value": random , "status": 200, "service": "echo-header-notexact" },
+  { "header": "Target-NotExact", "value": "NotExactValue" , "status": 200, "service": "echo-header-notexact" },
   { "header": "Target-NotExact", "value": "ExactValue" , "status": 404 },
 
 }
 
-requests[{ "req": req, "wanted_status": status, "wanted_testid": testid }] {
+requests[{ "req": req, "wanted_status": status, "wanted_service": service }] {
   case := cases[_]
 
   req := {
@@ -232,41 +233,28 @@ requests[{ "req": req, "wanted_status": status, "wanted_testid": testid }] {
   }
 
   status := case.status
-  testid := case.testid
+  service := case.service
 }
 
 error_if_wrong_status[msg] {
-  request := requests[_]
-  response := http.send(request.req)
+  req := requests[_]
+  resp := http.send(req.req)
 
-  response.status_code != request.wanted_status
+  not response.status_is(resp, req.wanted_status)
+
   msg := sprintf("got status %d, wanted %d", [
-    response.status_code,
-    request.wanted_status,
+    response.status_code(resp),
+    req.wanted_status,
   ])
 }
 
-error_if_missing_testid[msg] {
-  request := requests[_]
-  response := http.send(request.req)
+error_wrong_routing[msg] {
+  req := requests[_]
+  resp := http.send(req.req)
 
-  response.status_code == 200
-  not response.body.TestId
+  not req.wanted_service == response.service(resp)
 
-  msg := sprintf("got status %d, but no testid", [
-    response.status_code,
-  ])
-}
-
-error_if_wrong_testid[msg] {
-  request := requests[_]
-  response := http.send(request.req)
-
-  response.status_code == 200
-  response.body.TestId != request.wanted_testid
-
-  msg := sprintf("got testid %s, wanted %s", [
-    response.body.TestId,
-    request.wanted_testid,
+  msg := sprintf("got service %s, wanted %q", [
+    response.service(resp), req.wanted_service,
   ])
 }

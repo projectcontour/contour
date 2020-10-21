@@ -1,6 +1,10 @@
 ---
 name: Feature enhancement request
 about: Suggest an idea for this project
+title: ''
+labels: kind/feature, lifecycle/needs-triage
+assignees: ''
+
 ---
 
 **Please describe the problem you have**

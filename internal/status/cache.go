@@ -38,7 +38,13 @@ const (
 func NewCache() Cache {
 	return Cache{
 		proxyUpdates: make(map[types.NamespacedName]*ProxyUpdate),
+		entries:      make(map[string]map[types.NamespacedName]CacheEntry),
 	}
+}
+
+type CacheEntry interface {
+	AsStatusUpdate() k8s.StatusUpdate
+	ConditionFor(ConditionType) *contour_api_v1.DetailedCondition
 }
 
 // Cache holds status updates from the DAG back towards Kubernetes.
@@ -46,6 +52,33 @@ func NewCache() Cache {
 // KindAccessor.
 type Cache struct {
 	proxyUpdates map[types.NamespacedName]*ProxyUpdate
+
+	// Map of cache entry maps, keyed on Kind.
+	entries map[string]map[types.NamespacedName]CacheEntry
+}
+
+// Get returns a pointer to a the cache entry if it exists, nil
+// otherwise. The return value is shared between all callers, who
+// should take care to cooperate.
+func (c *Cache) Get(obj k8s.Object) CacheEntry {
+	kind := k8s.KindOf(obj)
+
+	if _, ok := c.entries[kind]; !ok {
+		c.entries[kind] = make(map[types.NamespacedName]CacheEntry)
+	}
+
+	return c.entries[kind][k8s.NamespacedNameOf(obj)]
+}
+
+// Put returns an entry to the cache.
+func (c *Cache) Put(obj k8s.Object, e CacheEntry) {
+	kind := k8s.KindOf(obj)
+
+	if _, ok := c.entries[kind]; !ok {
+		c.entries[kind] = make(map[types.NamespacedName]CacheEntry)
+	}
+
+	c.entries[kind][k8s.NamespacedNameOf(obj)] = e
 }
 
 // ProxyAccessor returns a ProxyUpdate that allows a client to build up a list of
@@ -53,7 +86,7 @@ type Cache struct {
 // back to the cache when everything is done.
 // The commit function pattern is used so that the ProxyUpdate does not need to know anything
 // the cache internals.
-func (c Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, func()) {
+func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, func()) {
 	pu := &ProxyUpdate{
 		Fullname:       k8s.NamespacedNameOf(proxy),
 		Generation:     proxy.Generation,
@@ -66,7 +99,7 @@ func (c Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, fun
 	}
 }
 
-func (c Cache) commitProxy(pu *ProxyUpdate) {
+func (c *Cache) commitProxy(pu *ProxyUpdate) {
 	if len(pu.Conditions) == 0 {
 		return
 	}
@@ -90,33 +123,33 @@ func (c Cache) commitProxy(pu *ProxyUpdate) {
 // GetStatusUpdates returns a slice of StatusUpdates, ready to be sent off
 // to the StatusUpdater by the event handler.
 // As more kinds are handled by Cache, we'll update this method.
-func (c Cache) GetStatusUpdates() []k8s.StatusUpdate {
-	return c.getProxyStatusUpdates()
-}
-
-func (c Cache) getProxyStatusUpdates() []k8s.StatusUpdate {
-	var psu []k8s.StatusUpdate
+func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
+	var flattened []k8s.StatusUpdate
 
 	for fullname, pu := range c.proxyUpdates {
-
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
 			Resource:       contour_api_v1.HTTPProxyGVR,
 			Mutator:        pu,
 		}
 
-		psu = append(psu, update)
+		flattened = append(flattened, update)
 	}
-	return psu
 
+	for _, byKind := range c.entries {
+		for _, e := range byKind {
+			flattened = append(flattened, e.AsStatusUpdate())
+		}
+	}
+
+	return flattened
 }
 
 // GetProxyUpdates gets the underlying ProxyUpdate objects
 // from the cache, used by various things (`internal/contour/metrics.go` and `internal/dag/status_test.go`)
 // to retrieve info they need.
 // TODO(youngnick)#2969: This could conceivably be replaced with a Walk pattern.
-func (c Cache) GetProxyUpdates() []*ProxyUpdate {
-
+func (c *Cache) GetProxyUpdates() []*ProxyUpdate {
 	var allUpdates []*ProxyUpdate
 	for _, pu := range c.proxyUpdates {
 		allUpdates = append(allUpdates, pu)

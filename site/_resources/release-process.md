@@ -122,36 +122,6 @@ $ git tag -a v1.2.1 -m 'contour 1.2.1'
 $ git push --tags
 ```
 
-## Updating the `:latest` tag
-
-If you've cut a new production-ready release, you'll need to update `:latest` on Docker Hub as well.
-
-Firstly, you'll need to be:
-
-- logged in to Docker Hub
-- A member of the projectcontour Docker Hub org with push rights.
-
-Once that's all true, do the following steps:
-
-```shell
-$ docker login
-Authenticating with existing credentials...
-Login Succeeded
-# The make target will do what you need
-# If you don't set the version, it will be a noop
-$ make tag-latest REGISTRY=docker.io/projectcontour LATEST_VERSION=v1.6.0
-docker pull docker.io/projectcontour/contour:v1.0.0
-v1.0.0: Pulling from docker.io/projectcontour/contour
-Digest: sha256:7af8d77b3fcdbebec31abd1059aedacc119b3561b933976402c87f31a309ec53
-Status: Image is up to date for projectcontour/contour:v1.0.0
-docker.io/projectcontour/contour:v1.0.0
-docker tag docker.io/projectcontour/contour:v1.0.0 docker.io/projectcontour/contour:latest
-docker push docker.io/projectcontour/contour:latest
-The push refers to repository [docker.io/projectcontour/contour]
-43ef43ac3a59: Layer already exists
-latest: digest: sha256:7af8d77b3fcdbebec31abd1059aedacc119b3561b933976402c87f31a309ec53 size: 527
-```
-
 ## Finishing up
 
 If you've made a production release (that is, a final release or a patch release), you have a couple of things left to do.

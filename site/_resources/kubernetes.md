@@ -9,7 +9,8 @@ Contour utilizes [client-go][1] to watch for resources in a Kubernetes cluster.
 Since Kubernetes is backwards compatible with clients, older client-go versions will work with many different Kubernetes cluster versions.
 The `client-go` package includes a [compatibility matrix][2] as to what Kubernetes API versions are supported with the version of client-go.  
 
-It's important to note that since Contour consumes a small number of quite stable Kubernetes APIs, most Kubernetes versions most likely will not have issues, however, the client-go package does not guarantee compatibility.
+It's important to note that since Contour utilizes v1 CRD API versions, the minimum Kubernetes version is v1.16.
+Contour also only consumes a small number of quite stable Kubernetes APIs, most Kubernetes versions most likely will not have issues, however, the client-go package does not guarantee compatibility.
 
 ---
 **NOTE**
@@ -22,7 +23,11 @@ If you are using a Kubernetes distribution offered by a public cloud provider, w
 
 | Contour Version | Kubernetes Version |
 | --------------- | :----------------- |
-| main          | 1.18, 1.17, 1.16   |
+| main            | 1.18, 1.17, 1.16   |
+| 1.9.0           | 1.18, 1.17, 1.16   |
+| 1.8.2           | 1.18, 1.17, 1.16   |
+| 1.8.1           | 1.18, 1.17, 1.16   |
+| 1.8.0           | 1.18, 1.17, 1.16   |
 | 1.7.0           | 1.18, 1.17, 1.16   |
 | 1.6.1           | 1.18, 1.17, 1.16   |
 | 1.6.0           | 1.18, 1.17, 1.16   |

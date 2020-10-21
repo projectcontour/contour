@@ -20,13 +20,13 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/xds"
+	contour_xds_v2 "github.com/projectcontour/contour/internal/xds/v2"
 	"github.com/projectcontour/contour/internal/xdscache"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -63,7 +63,7 @@ func TestGRPC(t *testing.T) {
 				},
 			})
 
-			sds := v2.NewClusterDiscoveryServiceClient(cc)
+			sds := envoy_api_v2.NewClusterDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := sds.StreamClusters(ctx)
@@ -90,7 +90,7 @@ func TestGRPC(t *testing.T) {
 				}},
 			})
 
-			eds := v2.NewEndpointDiscoveryServiceClient(cc)
+			eds := envoy_api_v2.NewEndpointDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := eds.StreamEndpoints(ctx)
@@ -123,7 +123,7 @@ func TestGRPC(t *testing.T) {
 				},
 			})
 
-			lds := v2.NewListenerDiscoveryServiceClient(cc)
+			lds := envoy_api_v2.NewListenerDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := lds.StreamListeners(ctx)
@@ -155,7 +155,7 @@ func TestGRPC(t *testing.T) {
 				},
 			})
 
-			rds := v2.NewRouteDiscoveryServiceClient(cc)
+			rds := envoy_api_v2.NewRouteDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := rds.StreamRoutes(ctx)
@@ -206,7 +206,7 @@ func TestGRPC(t *testing.T) {
 				FieldLogger: log,
 			}
 
-			srv := xds.RegisterServer(xds.NewContourServer(log, xdscache.ResourcesOf(resources)...), nil)
+			srv := contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), nil)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 			done := make(chan error, 1)
@@ -230,17 +230,17 @@ func TestGRPC(t *testing.T) {
 }
 
 func sendreq(t *testing.T, stream interface {
-	Send(*v2.DiscoveryRequest) error
+	Send(*envoy_api_v2.DiscoveryRequest) error
 }, typeurl string) {
 	t.Helper()
-	err := stream.Send(&v2.DiscoveryRequest{
+	err := stream.Send(&envoy_api_v2.DiscoveryRequest{
 		TypeUrl: typeurl,
 	})
 	require.NoError(t, err)
 }
 
 func checkrecv(t *testing.T, stream interface {
-	Recv() (*v2.DiscoveryResponse, error)
+	Recv() (*envoy_api_v2.DiscoveryResponse, error)
 }) {
 	t.Helper()
 	_, err := stream.Recv()
@@ -248,7 +248,7 @@ func checkrecv(t *testing.T, stream interface {
 }
 
 func checktimeout(t *testing.T, stream interface {
-	Recv() (*v2.DiscoveryResponse, error)
+	Recv() (*envoy_api_v2.DiscoveryResponse, error)
 }) {
 	t.Helper()
 	_, err := stream.Recv()

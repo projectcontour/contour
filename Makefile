@@ -7,7 +7,7 @@ SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.15.1
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.16.0
 
 # The version of Jekyll is pinned in site/Gemfile.lock.
 # https://docs.netlify.com/configure-builds/common-configurations/#jekyll
@@ -16,6 +16,19 @@ JEKYLL_PORT := 4000
 JEKYLL_LIVERELOAD_PORT := 35729
 
 TAG_LATEST ?= false
+
+ifeq ($(TAG_LATEST), true)
+	IMAGE_TAGS = \
+		--tag $(IMAGE):$(VERSION) \
+		--tag $(IMAGE):latest
+else
+	IMAGE_TAGS = \
+		--tag $(IMAGE):$(VERSION)
+endif
+
+# Platforms to build the multi-arch image for.
+IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
+
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
 # LOCALIP as an env var before running 'make local' will solve that.
@@ -24,10 +37,6 @@ LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | hea
 # Sets GIT_REF to a tag if it's present, otherwise the short git sha will be used.
 GIT_REF = $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --short=8 --verify HEAD)
 VERSION ?= $(GIT_REF)
-# Used for the tag-latest action.
-# The tag-latest action will be a noop unless this is explicitly
-# set outside this Makefile, as a safety valve.
-LATEST_VERSION ?= NOLATEST
 
 # Stash the ISO 8601 date. Note that the GMT offset is missing the :
 # separator, but there doesn't seem to be a way to do that without
@@ -75,6 +84,9 @@ check: install check-test check-test-race ## Install and run tests
 .PHONY: checkall
 checkall: vendor check lint check-generate
 
+build: ## Build the contour binary
+	go build -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
+
 install: ## Build and install the contour binary
 	go install -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
 
@@ -87,6 +99,17 @@ download: ## Download Go modules
 ## Vendor Go modules
 vendor:
 	go mod vendor
+
+multiarch-build-push: ## Build and push a multi-arch Contour container image to the Docker registry
+	docker buildx build \
+		--platform $(IMAGE_PLATFORMS) \
+		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
+		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
+		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
+		$(DOCKER_BUILD_LABELS) \
+		$(IMAGE_TAGS) \
+		--push \
+		.
 
 container: ## Build the Contour container image
 	docker build \
@@ -102,15 +125,6 @@ push: container
 	docker push $(IMAGE):$(VERSION)
 ifeq ($(TAG_LATEST), true)
 	docker tag $(IMAGE):$(VERSION) $(IMAGE):latest
-	docker push $(IMAGE):latest
-endif
-
-tag-latest: ## Tag the Docker registry container image at $LATEST_VERSION as :latest
-ifeq ($(LATEST_VERSION), NOLATEST)
-	@echo "LATEST_VERSION not set, not proceeding"
-else
-	docker pull $(IMAGE):$(LATEST_VERSION)
-	docker tag $(IMAGE):$(LATEST_VERSION) $(IMAGE):latest
 	docker push $(IMAGE):latest
 endif
 
@@ -298,7 +312,7 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 .PHONY: site-devel
 site-devel: ## Launch the website in a Docker container
 	docker run --rm -p $(JEKYLL_PORT):$(JEKYLL_PORT) -p $(JEKYLL_LIVERELOAD_PORT):$(JEKYLL_LIVERELOAD_PORT) -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
-		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll serve --host 0.0.0.0 --port $(JEKYLL_PORT) --livereload_port $(JEKYLL_LIVERELOAD_PORT) --livereload"
+		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll serve --host 0.0.0.0 --port $(JEKYLL_PORT) --livereload_port $(JEKYLL_LIVERELOAD_PORT) --livereload --force_polling --incremental"
 
 .PHONY: site-check
 site-check: ## Test the site's links

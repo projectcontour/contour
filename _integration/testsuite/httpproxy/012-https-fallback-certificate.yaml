@@ -110,9 +110,8 @@ error_non_200_response [msg] {
 
 error_wrong_routing [msg] {
   wanted := "echo"
-  testid := response.testid(Response)
-  testid != wanted
-  msg := sprintf("SNI request got test ID %q, wanted %q", [testid, wanted])
+  not response.service(Response) == wanted
+  msg := sprintf("SNI request got test ID %q, wanted %q", [response.service(Response), wanted])
 }
 
 ---
@@ -139,7 +138,6 @@ error_non_200_response [msg] {
 
 error_wrong_routing [msg] {
   wanted := "echo"
-  testid := response.testid(Response)
-  testid != wanted
-  msg := sprintf("fallback request got test ID %q, wanted %q", [testid, wanted])
+  not response.service(Response) == wanted
+  msg := sprintf("SNI request got test ID %q, wanted %q", [response.service(Response), wanted])
 }

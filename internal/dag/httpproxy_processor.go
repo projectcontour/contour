@@ -18,12 +18,14 @@ import (
 	"sort"
 	"strings"
 
+	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/projectcontour/contour/pkg/config"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -63,7 +65,7 @@ type HTTPProxyProcessor struct {
 	// for addresses in the IPv6 family and fallback to a lookup for addresses
 	// in the IPv4 family.
 	// Note: This only applies to externalName clusters.
-	DNSLookupFamily string
+	DNSLookupFamily config.ClusterDNSFamilyType
 
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
@@ -180,7 +182,8 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 			svhost := p.dag.EnsureSecureVirtualHost(host)
 			svhost.Secret = sec
-			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion)
+			// default to a minimum TLS version of 1.2 if it's not specified
+			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion, envoy_api_v2_auth.TlsParameters_TLSv1_2)
 
 			// Check if FallbackCertificate && ClientValidation are both enabled in the same vhost
 			if tls.EnableFallbackCertificate && tls.ClientValidation != nil {
@@ -263,11 +266,16 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 				timeout, err := timeout.Parse(auth.ResponseTimeout)
 				if err != nil {
-					validCond.AddErrorf("AuthError", "AuthReponseTimeoutInvalid",
+					validCond.AddErrorf("AuthError", "AuthResponseTimeoutInvalid",
 						"Spec.Virtualhost.Authorization.ResponseTimeout is invalid: %s", err)
 					return
 				}
-				svhost.AuthorizationResponseTimeout = timeout
+
+				if timeout.UseDefault() {
+					svhost.AuthorizationResponseTimeout = ext.TimeoutPolicy.ResponseTimeout
+				} else {
+					svhost.AuthorizationResponseTimeout = timeout
+				}
 			}
 		}
 	}
@@ -560,7 +568,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				ResponseHeadersPolicy: respHP,
 				Protocol:              protocol,
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
-				DNSLookupFamily:       p.DNSLookupFamily,
+				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {

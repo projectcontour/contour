@@ -20,13 +20,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -35,20 +34,12 @@ import (
 )
 
 type serveContext struct {
-	// Note about parameter behavior: if the parameter is going to be in the config file,
-	// it has to be exported. If not, the YAML decoder will not see the field.
+	Config config.Parameters
 
-	// Enable debug logging
-	Debug bool
+	ServerConfig
 
 	// Enable Kubernetes client-go debugging.
 	KubernetesDebug uint
-
-	// contour's kubernetes client parameters
-	InCluster  bool   `yaml:"incluster,omitempty"`
-	Kubeconfig string `yaml:"kubeconfig,omitempty"`
-
-	ServerConfig `yaml:"server,omitempty"`
 
 	// contour's debug handler parameters
 	debugAddr string
@@ -68,11 +59,6 @@ type serveContext struct {
 	// ingress class
 	ingressClass string
 
-	// Address to be placed in status.loadbalancer field of Ingress objects.
-	// May be either a literal IP address or a host name.
-	// The value will be placed directly into the relevant field inside the status.loadBalancer struct.
-	IngressStatusAddress string `yaml:"ingress-status-address,omitempty"`
-
 	// envoy's stats listener parameters
 	statsAddr string
 	statsPort int
@@ -90,40 +76,11 @@ type serveContext struct {
 	httpsPort      int
 	httpsAccessLog string
 
-	// Envoy's access logging format options
-
-	// AccessLogFormat sets the global access log format.
-	// Valid options are 'envoy' or 'json'
-	AccessLogFormat string `yaml:"accesslog-format,omitempty"`
-
-	// AccessLogFields sets the fields that JSON logging will
-	// output when AccessLogFormat is json.
-	AccessLogFields []string `yaml:"json-fields,omitempty"`
-
 	// PermitInsecureGRPC disables TLS on Contour's gRPC listener.
-	PermitInsecureGRPC bool `yaml:"-"`
-
-	TLSConfig `yaml:"tls,omitempty"`
-
-	// DisablePermitInsecure disables the use of the
-	// permitInsecure field in HTTPProxy.
-	DisablePermitInsecure bool `yaml:"disablePermitInsecure,omitempty"`
+	PermitInsecureGRPC bool
 
 	// DisableLeaderElection can only be set by command line flag.
-	DisableLeaderElection bool `yaml:"-"`
-
-	// LeaderElectionConfig can be set in the config file.
-	LeaderElectionConfig `yaml:"leaderelection,omitempty"`
-
-	// TimeoutConfig holds various configurable timeouts that can
-	// be set in the config file.
-	TimeoutConfig `yaml:"timeouts,omitempty"`
-
-	// RequestTimeoutDeprecated sets the client request timeout globally for Contour.
-	//
-	// Deprecated: this field has been replaced with TimeoutConfig.RequestTimeout,
-	// and will be removed in a future release.
-	RequestTimeoutDeprecated time.Duration `yaml:"request-timeout,omitempty"`
+	DisableLeaderElection bool
 
 	// Should Contour register to watch the new service-apis types?
 	// By default this value is false, meaning Contour will not do anything with any of the new
@@ -131,88 +88,35 @@ type serveContext struct {
 	// If the value is true, Contour will register for all the service-apis types
 	// (GatewayClass, Gateway, HTTPRoute, TCPRoute, and any more as they are added)
 	UseExperimentalServiceAPITypes bool `yaml:"-"`
-
-	// envoy service details
-
-	// Namespace of the envoy service to inspect for Ingress status details.
-	EnvoyServiceNamespace string `yaml:"envoy-service-namespace,omitempty"`
-
-	// Name of the envoy service to inspect for Ingress status details.
-	EnvoyServiceName string `yaml:"envoy-service-name,omitempty"`
-
-	// DefaultHTTPVersions defines the default set of HTTPS
-	// versions the proxy should accept. HTTP versions are
-	// strings of the form "HTTP/xx". Supported versions are
-	// "HTTP/1.1" and "HTTP/2".
-	//
-	// If this field not specified, all supported versions are accepted.
-	DefaultHTTPVersions []string `yaml:"default-http-versions"`
-
-	// ClusterConfig holds various configurable Envoy cluster values that can
-	// be set in the config file.
-	ClusterConfig `yaml:"cluster,omitempty"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
 func newServeContext() *serveContext {
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
 	return &serveContext{
-		Kubeconfig:            filepath.Join(os.Getenv("HOME"), ".kube", "config"),
-		statsAddr:             "0.0.0.0",
-		statsPort:             8002,
-		debugAddr:             "127.0.0.1",
-		debugPort:             6060,
-		healthAddr:            "0.0.0.0",
-		healthPort:            8000,
-		metricsAddr:           "0.0.0.0",
-		metricsPort:           8000,
-		httpAccessLog:         xdscache_v2.DEFAULT_HTTP_ACCESS_LOG,
-		httpsAccessLog:        xdscache_v2.DEFAULT_HTTPS_ACCESS_LOG,
-		httpAddr:              "0.0.0.0",
-		httpsAddr:             "0.0.0.0",
-		httpPort:              8080,
-		httpsPort:             8443,
-		PermitInsecureGRPC:    false,
-		DisablePermitInsecure: false,
-		DisableLeaderElection: false,
-		AccessLogFormat:       "envoy",
-		LeaderElectionConfig: LeaderElectionConfig{
-			LeaseDuration: time.Second * 15,
-			RenewDeadline: time.Second * 10,
-			RetryPeriod:   time.Second * 2,
-			Namespace:     getEnv("CONTOUR_NAMESPACE", "projectcontour"),
-			Name:          "leader-elect",
-		},
+		Config:                         config.Defaults(),
+		statsAddr:                      "0.0.0.0",
+		statsPort:                      8002,
+		debugAddr:                      "127.0.0.1",
+		debugPort:                      6060,
+		healthAddr:                     "0.0.0.0",
+		healthPort:                     8000,
+		metricsAddr:                    "0.0.0.0",
+		metricsPort:                    8000,
+		httpAccessLog:                  xdscache_v2.DEFAULT_HTTP_ACCESS_LOG,
+		httpsAccessLog:                 xdscache_v2.DEFAULT_HTTPS_ACCESS_LOG,
+		httpAddr:                       "0.0.0.0",
+		httpsAddr:                      "0.0.0.0",
+		httpPort:                       8080,
+		httpsPort:                      8443,
+		PermitInsecureGRPC:             false,
+		DisableLeaderElection:          false,
 		UseExperimentalServiceAPITypes: false,
-		EnvoyServiceName:               "envoy",
-		EnvoyServiceNamespace:          getEnv("CONTOUR_NAMESPACE", "projectcontour"),
-		TimeoutConfig: TimeoutConfig{
-			// This is chosen as a rough default to stop idle connections wasting resources,
-			// without stopping slow connections from being terminated too quickly.
-			ConnectionIdleTimeout: "60s",
-		},
 		ServerConfig: ServerConfig{
-			xdsAddr:       "127.0.0.1",
-			xdsPort:       8001,
-			XDSServerType: "contour",
-		},
-		ClusterConfig: ClusterConfig{
-			DNSLookupFamily: "auto",
+			xdsAddr: "127.0.0.1",
+			xdsPort: 8001,
 		},
 	}
-}
-
-// TLSConfig holds configuration file TLS configuration details.
-type TLSConfig struct {
-	MinimumProtocolVersion string `yaml:"minimum-protocol-version"`
-
-	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
-	// use as fallback when a non-SNI request is received.
-	FallbackCertificate NamespacedName `yaml:"fallback-certificate,omitempty"`
-
-	// ClientCertificate defines the namespace/name of Kubernetes secret containing client
-	// certificate andprivate key to be used when establishing TLS connection to upstream cluster.
-	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
 }
 
 type ServerConfig struct {
@@ -220,118 +124,6 @@ type ServerConfig struct {
 	xdsAddr                         string
 	xdsPort                         int
 	caFile, contourCert, contourKey string
-
-	// Defines the XDSServer to use for `contour serve`
-	// Defaults to "contour"
-	XDSServerType string `yaml:"xds-server-type,omitempty"`
-}
-
-// NamespacedName defines the namespace/name of the Kubernetes resource referred from the configuration file.
-// Used for Contour configuration YAML file parsing, otherwise we could use K8s types.NamespacedName.
-type NamespacedName struct {
-	Name      string `yaml:"name"`
-	Namespace string `yaml:"namespace"`
-}
-
-func namespacedName(name NamespacedName) (*types.NamespacedName, error) {
-	if len(strings.TrimSpace(name.Name)) == 0 && len(strings.TrimSpace(name.Namespace)) == 0 {
-		return nil, nil
-	}
-
-	// Validate namespace is defined
-	if len(strings.TrimSpace(name.Namespace)) == 0 {
-		return nil, errors.New("namespace must be defined")
-	}
-
-	// Validate name is defined
-	if len(strings.TrimSpace(name.Name)) == 0 {
-		return nil, errors.New("name must be defined")
-	}
-
-	return &types.NamespacedName{
-		Name:      name.Name,
-		Namespace: name.Namespace,
-	}, nil
-}
-
-func (ctx *serveContext) fallbackCertificate() (*types.NamespacedName, error) {
-	return namespacedName(ctx.TLSConfig.FallbackCertificate)
-}
-
-func (ctx *serveContext) envoyClientCertificate() (*types.NamespacedName, error) {
-	return namespacedName(ctx.TLSConfig.ClientCertificate)
-}
-
-// LeaderElectionConfig holds the config bits for leader election inside the
-// configuration file.
-type LeaderElectionConfig struct {
-	LeaseDuration time.Duration `yaml:"lease-duration,omitempty"`
-	RenewDeadline time.Duration `yaml:"renew-deadline,omitempty"`
-	RetryPeriod   time.Duration `yaml:"retry-period,omitempty"`
-	Namespace     string        `yaml:"configmap-namespace,omitempty"`
-	Name          string        `yaml:"configmap-name,omitempty"`
-}
-
-// TimeoutConfig holds various configurable proxy timeout values.
-type TimeoutConfig struct {
-	// RequestTimeout sets the client request timeout globally for Contour. Note that
-	// this is a timeout for the entire request, not an idle timeout. Omit or set to
-	// "infinity" to disable the timeout entirely.
-	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-request-timeout
-	// for more information.
-	RequestTimeout string `yaml:"request-timeout,omitempty"`
-
-	// ConnectionIdleTimeout defines how long the proxy should wait while there are
-	// no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating
-	// an HTTP connection. Set to "infinity" to disable the timeout entirely.
-	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/protocol.proto#envoy-api-field-core-httpprotocoloptions-idle-timeout
-	// for more information.
-	ConnectionIdleTimeout string `yaml:"connection-idle-timeout,omitempty"`
-
-	// StreamIdleTimeout defines how long the proxy should wait while there is no
-	// request activity (for HTTP/1.1) or stream activity (for HTTP/2) before
-	// terminating the HTTP request or stream. Set to "infinity" to disable the
-	// timeout entirely.
-	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-stream-idle-timeout
-	// for more information.
-	StreamIdleTimeout string `yaml:"stream-idle-timeout,omitempty"`
-
-	// MaxConnectionDuration defines the maximum period of time after an HTTP connection
-	// has been established from the client to the proxy before it is closed by the proxy,
-	// regardless of whether there has been activity or not. Omit or set to "infinity" for
-	// no max duration.
-	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/protocol.proto#envoy-api-field-core-httpprotocoloptions-max-connection-duration
-	// for more information.
-	MaxConnectionDuration string `yaml:"max-connection-duration,omitempty"`
-
-	// ConnectionShutdownGracePeriod defines how long the proxy will wait between sending an
-	// initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection.
-	// During this grace period, the proxy will continue to respond to new streams. After the final
-	// GOAWAY frame has been sent, the proxy will refuse new streams.
-	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-drain-timeout
-	// for more information.
-	ConnectionShutdownGracePeriod string `yaml:"connection-shutdown-grace-period,omitempty"`
-}
-
-// ClusterConfig holds various configurable cluster values.
-type ClusterConfig struct {
-	// DNSLookupFamily defines how external names are looked up
-	// When configured as V4, the DNS resolver will only perform a lookup
-	// for addresses in the IPv4 family. If V6 is configured, the DNS resolver
-	// will only perform a lookup for addresses in the IPv6 family.
-	// If AUTO is configured, the DNS resolver will first perform a lookup
-	// for addresses in the IPv6 family and fallback to a lookup for addresses
-	// in the IPv4 family.
-	// Note: This only applies to externalName clusters.
-	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster.proto#enum-cluster-dnslookupfamily
-	// for more information.
-	DNSLookupFamily string `yaml:"dns-lookup-family"`
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.
@@ -440,33 +232,17 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 	return ns
 }
 
-// ParseDNSLookupFamily parses the dnsLookupFamily returning the value
-// configured or the default of "auto" if invalid.
-func ParseDNSLookupFamily(value string) (string, error) {
-
-	dlf := strings.ToLower(value)
-	switch dlf {
-	case "auto", "v4", "v6":
-		return dlf, nil
-	case "":
-		return "auto", nil
-	}
-	return "auto", fmt.Errorf("invalid dns lookup family %q configured, defaulting to \"auto\"", dlf)
-}
-
 // parseDefaultHTTPVersions parses a list of supported HTTP versions
 //  (of the form "HTTP/xx") into a slice of unique version constants.
-func parseDefaultHTTPVersions(versions []string) ([]envoy_v2.HTTPVersionType, error) {
+func parseDefaultHTTPVersions(versions []config.HTTPVersionType) []envoy_v2.HTTPVersionType {
 	wanted := map[envoy_v2.HTTPVersionType]struct{}{}
 
 	for _, v := range versions {
-		switch strings.ToLower(v) {
-		case "http/1.1":
+		switch v {
+		case config.HTTPVersion1:
 			wanted[envoy_v2.HTTPVersion1] = struct{}{}
-		case "http/2":
+		case config.HTTPVersion2:
 			wanted[envoy_v2.HTTPVersion2] = struct{}{}
-		default:
-			return nil, fmt.Errorf("invalid HTTP protocol version %q", v)
 		}
 	}
 
@@ -476,13 +252,16 @@ func parseDefaultHTTPVersions(versions []string) ([]envoy_v2.HTTPVersionType, er
 
 	}
 
-	return parsed, nil
+	return parsed
 }
 
-// Simple helper function to read an environment or return a default value
-func getEnv(key string, defaultVal string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+func namespacedNameOf(n config.NamespacedName) *types.NamespacedName {
+	if len(strings.TrimSpace(n.Name)) == 0 && len(strings.TrimSpace(n.Namespace)) == 0 {
+		return nil
 	}
-	return defaultVal
+
+	return &types.NamespacedName{
+		Namespace: n.Namespace,
+		Name:      n.Name,
+	}
 }

@@ -132,18 +132,18 @@ import data.contour.http.client.url
 import data.contour.http.response
 
 cases := {
-  { "path": "/", "testid": "echo-app" },
-  { "path": "/app", "testid": "echo-app" },
-  { "path": "/admin", "testid": "echo-admin" },
-  { "path": "/admin/", "testid": "echo-admin" },
-  { "path": "/admin/app", "testid": "echo-admin" },
+  { "path": "/", "service": "echo-app" },
+  { "path": "/app", "service": "echo-app" },
+  { "path": "/admin", "service": "echo-admin" },
+  { "path": "/admin/", "service": "echo-admin" },
+  { "path": "/admin/app", "service": "echo-admin" },
 }
 
-responses[{"testid": testid, "response": response}] {
+responses[{"service": service, "response": response}] {
   case := cases[_]
 
   path:= case.path
-  testid := case.testid
+  service := case.service
   response := client.Get({
     "url": url.http(case.path),
     "headers": {
@@ -160,10 +160,9 @@ error_missing_response {
 error_misrouted_request[msg] {
   r := responses[_]
 
-  response.testid(r.response) != r.testid
+  not response.service(r.response) == r.service
 
-  msg := sprintf("got testid %s, wanted %s", [
-    response.testid(r.response),
-    r.testid
+  msg := sprintf("got service %q, wanted %q", [
+    response.service(r.response), r.service
   ])
 }
