@@ -42,6 +42,18 @@ The best workaround for this Safari issue is to avoid the use of wildcard certif
 If wildcard certificates cannot be avoided, the other workaround is to disable HTTP/2 support which will prevent inappropriate TLS session re-use.
 HTTP/2 support can be disabled by setting the `default-http-versions` field in the Contour [configuration file][3].
 
+## Q: Why is the Envoy container not accepting connections even though Contour is running?
+
+Contour does not configure Envoy to listen on a port unless there is traffic to be served.
+For example, if you have not configured any TLS Ingress objects then Contour does not command Envoy to open the secure listener (port 443 in the example deployment).
+Because the HTTP and HTTPS listeners both use the same code, if you have no Ingress objects deployed in your cluster, or if no Ingress objects are permitted to talk on HTTP, then Envoy does not listen on the insecure port (port 80 in the example deploymen).
+
+To test whether Contour is correctly deployed you can deploy the kuard example service:
+
+```sh
+$ kubectl apply -f https://projectcontour.io/examples/kuard.yaml
+```
+
 [1]: /docs/{{site.latest}}/httpproxy
 [2]: {% link _guides/cert-manager.md %}
 [3]: /docs/{{site.latest}}/configuration

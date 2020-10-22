@@ -45,8 +45,6 @@ toc:
         link: /guides/resource-limits/
   - title: Troubleshooting
     subfolderitems:
-      - page: Envoy not Listening
-        url: /troubleshooting/envoy-not-listening
       - page: Envoy Administration Access
         url: /troubleshooting/envoy-admin-interface
       - page: Contour Debug Logging
