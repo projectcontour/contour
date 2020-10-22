@@ -7,12 +7,36 @@ toc:
         link: /resources/philosophy
   - title: Configuration
     subfolderitems:
+      - page: HTTPProxy Fundamentals
+        url: /config/fundamentals
+      - page: Virtual Hosts
+        url: /config/virtual-hosts
+      - page: Inclusion and Delegation
+        url: /config/inclusion-delegation
+      - page: TLS Termination
+        url: /config/tls-termination
+      - page: Upstream TLS
+        url: /config/upstream-tls
+      - page: Request Routing
+        url: /config/request-routing
+      - page: External Service Routing
+        url: /config/external-service-routing
+      - page: Request Rewriting
+        url: /config/request-rewriting
+      - page: CORS
+        url: /config/cors
+      - page: Websockets
+        url: /config/websockets
+      - page: Upstream Health Checks
+        url: /config/health-checks
+      - page: Client Authorization
+        url: /config/client-authorization
+      - page: TLS Delegation
+        url: /config/tls-delegation
       - page: Annotations Reference
-        url: /annotations
-      - page: HTTPProxy Reference
-        url: /httpproxy
+        url: /config/annotations
       - page: API Reference
-        url: /api
+        url: /config/api
   - title: Deployment
     subfolderitems:
       - page: Deployment Options
