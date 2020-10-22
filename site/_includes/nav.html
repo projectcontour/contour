@@ -8,7 +8,7 @@
   {% assign toc = site.data[tocTemplateName].toc %}
 
   {% for item in toc %}
-  <h3>{{ item.title }}</h3>
+  <p class="h4">{{ item.title }}</p>
   <ul>
     {% for entry in item.subfolderitems %}
     <li>
