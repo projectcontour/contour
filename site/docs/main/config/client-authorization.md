@@ -28,7 +28,7 @@ document we are concerned only with how to use it as an authorization service.
 
 An authorization service is a gRPC service that implements the Envoy [`CheckRequest`][3] protocol.
 Note that Contour requires the extension to implement the "v2" version of the protocol.
-Contour is compatible with any authorization server that implement this protocol.
+Contour is compatible with any authorization server that implements this protocol.
 
 The primary field of interest in the `ExtensionService` CRD is the
 `.spec.services` field.
