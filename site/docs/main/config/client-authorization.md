@@ -78,7 +78,7 @@ termination enabled.
 ### Migrating from Application Authorization
 
 When applications perform their own authorization, migrating to centralized
-authorization in may need some planning.
+authorization may need some planning.
 The `.spec.virtualhost.authorization.failOpen` field controls how client
 requests should be handled when the authorization server fails.
 During a migration process, this can be set to `true`, so that if the
