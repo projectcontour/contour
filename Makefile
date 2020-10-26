@@ -190,7 +190,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-metrics-docs
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml
 
 .PHONY: generate-rbac
 generate-rbac:
@@ -308,6 +308,14 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 		-out certs/envoycert.pem \
 		-days 1825 -sha256 \
 		-extfile _integration/cert-envoy.ext
+
+generate-uml: $(patsubst %.uml,%.png,$(wildcard site/img/uml/*.uml))
+
+# Generate a PNG from a PlantUML specification. This rule should only
+# trigger when someone updates the UML and that person needs to have
+# PlantUML installed.
+%.png: %.uml
+	cd `dirname $@` && plantuml `basename "$^"`
 
 .PHONY: site-devel
 site-devel: ## Launch the website in a Docker container
