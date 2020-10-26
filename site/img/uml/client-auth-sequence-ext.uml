@@ -1,0 +1,33 @@
+@startuml
+
+actor Client
+participant Envoy
+participant "Authorization Server"
+participant "Authorization Provider"
+participant "Application Server"
+
+Client -> Envoy: HTTP request
+activate Envoy
+
+Envoy -> "Authorization Server": Check request
+activate "Authorization Server"
+
+"Authorization Server" -> "Authorization Provider": Authorization request
+activate "Authorization Provider"
+"Authorization Provider" -> "Authorization Provider": Authorize request
+"Authorization Provider" -> "Authorization Server": Authorization response (approved)
+deactivate "Authorization Provider"
+
+"Authorization Server" -> Envoy: Check response (approved)
+deactivate "Authorization Server"
+
+Envoy -> "Application Server": HTTP request
+activate "Application Server"
+"Application Server" -> "Application Server": Process request
+"Application Server" -> Envoy: HTTP response
+deactivate "Application Server"
+
+Envoy -> Client: HTTP response
+deactivate Envoy
+
+@enduml
