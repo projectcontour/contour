@@ -92,5 +92,5 @@ Envoy will send the certificate during TLS handshake when the backend applicatio
 Backend applications can validate the certificate to ensure that the connection is coming from Envoy.
 
 [1]: {% link docs/{{page.version}}/config/annotations.md %}
-[2]: /docs/{{page.version}}/api/#projectcontour.io/v1.Service
+[2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.Service
 [3]: /docs/{{page.version}}/configuration#fallback-certificate
