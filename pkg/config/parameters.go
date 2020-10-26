@@ -59,14 +59,14 @@ func ValidateServerTypes(p *Parameters) error {
 
 }
 
-// ServerVersion is a version of an xDS server.
-type ServerVersion string
+// ResourceVersion is a version of an xDS server.
+type ResourceVersion string
 
-const XDSv2 ServerVersion = "v2"
-const XDSv3 ServerVersion = "v3"
+const XDSv2 ResourceVersion = "v2"
+const XDSv3 ResourceVersion = "v3"
 
 // Validate the xDS server versions.
-func (s ServerVersion) Validate() error {
+func (s ResourceVersion) Validate() error {
 	switch s {
 	case XDSv2, XDSv3:
 		return nil
@@ -253,7 +253,7 @@ type ServerParameters struct {
 
 	// Defines the XDS Server Versions to use for `contour serve`
 	// Defaults to "v2"
-	XDSServerVersions []ServerVersion `yaml:"xds-server-versions"`
+	XDSServerVersions []ResourceVersion `yaml:"xds-server-versions"`
 }
 
 // LeaderElectionParameters holds the config bits for leader election
@@ -471,9 +471,9 @@ func (p *Parameters) Validate() error {
 	return nil
 }
 
-func uniqueServerVersions(input []ServerVersion) []ServerVersion {
-	keys := make(map[ServerVersion]bool)
-	var list []ServerVersion
+func uniqueServerVersions(input []ResourceVersion) []ResourceVersion {
+	keys := make(map[ResourceVersion]bool)
+	var list []ResourceVersion
 	for _, entry := range input {
 		if _, value := keys[entry]; !value {
 			keys[entry] = true
@@ -493,7 +493,7 @@ func Defaults() Parameters {
 		Kubeconfig: filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		Server: ServerParameters{
 			XDSServerType:     ContourServerType,
-			XDSServerVersions: []ServerVersion{XDSv2},
+			XDSServerVersions: []ResourceVersion{XDSv2},
 		},
 		IngressStatusAddress:  "",
 		AccessLogFormat:       DEFAULT_ACCESS_LOG_TYPE,

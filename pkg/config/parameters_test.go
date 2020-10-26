@@ -97,8 +97,8 @@ foo: bad
 
 func TestValidateXDSServerVersions(t *testing.T) {
 	type testcase struct {
-		versions      []ServerVersion
-		want          []ServerVersion
+		versions      []ResourceVersion
+		want          []ResourceVersion
 		expectedError error
 	}
 
@@ -120,26 +120,26 @@ func TestValidateXDSServerVersions(t *testing.T) {
 	}
 
 	run(t, "simple", testcase{
-		versions:      []ServerVersion{"v2"},
-		want:          []ServerVersion{"v2"},
+		versions:      []ResourceVersion{"v2"},
+		want:          []ResourceVersion{"v2"},
 		expectedError: nil,
 	})
 
 	run(t, "simple two versions", testcase{
-		versions:      []ServerVersion{"v2", "v3"},
-		want:          []ServerVersion{"v2", "v3"},
+		versions:      []ResourceVersion{"v2", "v3"},
+		want:          []ResourceVersion{"v2", "v3"},
 		expectedError: nil,
 	})
 
 	run(t, "case invalid", testcase{
-		versions:      []ServerVersion{"V2"},
-		want:          []ServerVersion{"V2"},
+		versions:      []ResourceVersion{"V2"},
+		want:          []ResourceVersion{"V2"},
 		expectedError: fmt.Errorf("invalid xDS version \"V2\""),
 	})
 
 	run(t, "duplicated versions", testcase{
-		versions:      []ServerVersion{"v2", "v2", "v2"},
-		want:          []ServerVersion{"v2"},
+		versions:      []ResourceVersion{"v2", "v2", "v2"},
+		want:          []ResourceVersion{"v2"},
 		expectedError: nil,
 	})
 }
