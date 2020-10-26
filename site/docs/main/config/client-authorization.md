@@ -87,7 +87,7 @@ the existing application authorization mechanism.
 
 ### Scoping Authorization Policy Settings
 
-It is common for services to contain some HTTP request paths that requires
+It is common for services to contain some HTTP request paths that require
 authorization and some that do not.
 The HTTPProxy [authorization policy][6] allows authorization to be
 disabled for both an entire virtual host and for specific routes.
