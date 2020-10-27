@@ -3057,7 +3057,14 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				i1,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert ingress w/ default backend": {
 			objs: []interface{}{
@@ -3077,7 +3084,14 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				i2,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert ingress w/ single unnamed backend": {
 			objs: []interface{}{
@@ -3103,7 +3117,14 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				i3,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert ingress w/ host name and single backend": {
 			objs: []interface{}{
@@ -3124,21 +3145,42 @@ func TestDAGInsert(t *testing.T) {
 				s2,
 				i1,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert ingress w/ default backend then matching service with wrong port": {
 			objs: []interface{}{
 				i1,
 				s3,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert unnamed ingress w/ single backend then matching service with wrong port": {
 			objs: []interface{}{
 				i2,
 				s3,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert ingress w/ default backend then matching service w/ named port": {
 			objs: []interface{}{
@@ -3207,7 +3249,14 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				i1,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert service, secret then ingress w/o tls": {
 			objs: []interface{}{
@@ -3229,7 +3278,20 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 				i3,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("kuard.example.com", sec1, prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert service, secret then ingress w/ tls": {
 			objs: []interface{}{
@@ -3278,7 +3340,14 @@ func TestDAGInsert(t *testing.T) {
 				sec2,
 				i1,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert service, invalid secret then ingress w/o tls": {
 			objs: []interface{}{
@@ -3300,7 +3369,14 @@ func TestDAGInsert(t *testing.T) {
 				sec2,
 				i3,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert service, invalid secret then ingress w/ tls": {
 			objs: []interface{}{
@@ -3321,7 +3397,15 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				i6,
 			},
-			want: nil, // no matching service
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("a.example.com", prefixroute("/", nil)), // 503 Service Unvailable
+						virtualhost("b.example.com", prefixroute("/", nil)), // 503 Service Unvailable
+					),
+				},
+			),
 		},
 		"insert ingress w/ two vhosts then matching service": {
 			objs: []interface{}{
@@ -3406,6 +3490,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
+							prefixroute("/kuarder", nil), // 503 Service Unvailable
 						),
 					),
 				},
@@ -3613,7 +3698,16 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				proxyMultipleBackends, s2,
 			},
-			want: listeners(),
+			// TODO(tsaarni) When *single route* has several backends, should whole route go down if one of them is missing?
+			// Now the proxy is marked as valid but if checking detailed status, there is warning for the missing backend.
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s2))),
+					),
+				},
+			),
 		},
 		"insert httpproxy referencing two backends": {
 			objs: []interface{}{
@@ -6615,7 +6709,10 @@ func routes(routes ...*Route) map[string]*Route {
 }
 
 func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
-	services := append([]*Service{first}, rest...)
+	var services []*Service
+	if first != nil {
+		services = append([]*Service{first}, rest...)
+	}
 	return &Route{
 		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
 		Clusters:           clusters(services...),

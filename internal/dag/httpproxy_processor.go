@@ -511,9 +511,11 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
 			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source)
 			if err != nil {
-				validCond.AddErrorf("ServiceError", "ServiceUnresolvedReference",
+				validCond.AddWarningf("ServiceError", "ServiceUnresolvedReference",
 					"Spec.Routes unresolved service reference: %s", err)
-				return nil
+				// Add a route without upstream clusters for getting 503 Service Unavailable response.
+				routes = append(routes, &Route{PathMatchCondition: mergePathMatchConditions(conds)})
+				continue
 			}
 
 			// Determine the protocol to use to speak to this Cluster.
@@ -585,6 +587,11 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 		}
 		routes = append(routes, r)
+	}
+
+	if !hasValidRoutes(routes) {
+		validCond.AddError("RouteError", "NoValidRoutes", "all routes are invalid")
+		return nil
 	}
 
 	routes = expandPrefixMatches(routes)
@@ -939,4 +946,13 @@ func isBlank(s string) bool {
 // routeEnforceTLS determines if the route should redirect the user to a secure TLS listener
 func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
 	return enforceTLS && !permitInsecure
+}
+
+func hasValidRoutes(routes []*Route) bool {
+	for _, r := range routes {
+		if r.Clusters != nil {
+			return true
+		}
+	}
+	return false
 }

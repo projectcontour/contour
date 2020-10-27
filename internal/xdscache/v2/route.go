@@ -128,7 +128,8 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 			return
 		}
 
-		if route.HTTPSUpgrade {
+		switch {
+		case route.HTTPSUpgrade:
 			// TODO(dfc) if we ensure the builder never returns a dag.Route connected
 			// to a SecureVirtualHost that requires upgrade, this logic can move to
 			// envoy.RouteRoute.
@@ -136,7 +137,17 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 				Match:  envoy_v2.RouteMatch(route),
 				Action: envoy_v2.UpgradeHTTPS(),
 			})
-		} else {
+		case route.Clusters == nil:
+			// Route with no upstream clusters should return 503 response.
+			routes = append(routes, &envoy_api_v2_route.Route{
+				Match: envoy_v2.RouteMatch(route),
+				Action: &envoy_api_v2_route.Route_DirectResponse{
+					DirectResponse: &envoy_api_v2_route.DirectResponseAction{
+						Status: 503,
+					},
+				},
+			})
+		default:
 			rt := &envoy_api_v2_route.Route{
 				Match:  envoy_v2.RouteMatch(route),
 				Action: envoy_v2.RouteRoute(route),

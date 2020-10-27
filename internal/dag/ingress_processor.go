@@ -137,7 +137,12 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 		m := types.NamespacedName{Name: be.ServiceName, Namespace: ing.Namespace}
 		s, err := p.dag.EnsureService(m, be.ServicePort, p.source)
 		if err != nil {
-			continue
+			p.WithError(err).
+				WithField("name", ing.GetName()).
+				WithField("namespace", ing.GetNamespace()).
+				WithField("service", be.ServiceName).
+				WithField("port", be.ServicePort.String()).
+				Error("Backend service not found")
 		}
 
 		r := route(ing, path, s, clientCertSecret, p.FieldLogger)
@@ -164,16 +169,22 @@ func route(ingress *v1beta1.Ingress, path string, service *Service, clientCertSe
 		"namespace": ingress.Namespace,
 	})
 
-	r := &Route{
-		HTTPSUpgrade:  annotation.TLSRequired(ingress),
-		Websocket:     annotation.WebsocketRoutes(ingress)[path],
-		TimeoutPolicy: ingressTimeoutPolicy(ingress, log),
-		RetryPolicy:   ingressRetryPolicy(ingress, log),
-		Clusters: []*Cluster{{
-			Upstream:          service,
-			Protocol:          service.Protocol,
-			ClientCertificate: clientCertSecret,
-		}},
+	var r *Route
+	if service != nil {
+		r = &Route{
+			HTTPSUpgrade:  annotation.TLSRequired(ingress),
+			Websocket:     annotation.WebsocketRoutes(ingress)[path],
+			TimeoutPolicy: ingressTimeoutPolicy(ingress, log),
+			RetryPolicy:   ingressRetryPolicy(ingress, log),
+			Clusters: []*Cluster{{
+				Upstream:          service,
+				Protocol:          service.Protocol,
+				ClientCertificate: clientCertSecret,
+			}},
+		}
+	} else {
+		// Add a route without upstream clusters for getting 503 Service Unavailable response.
+		r = &Route{}
 	}
 
 	if strings.ContainsAny(path, "^+*[]%") {

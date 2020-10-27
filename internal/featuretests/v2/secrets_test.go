@@ -84,9 +84,10 @@ func TestSDSVisibility(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// i1 has a default route to backend:80, but there is no matching service.
+	// Secret s1 will be served since there is still active route for generating 503 Service Unavailable response.
 	c.Request(secretType).Equals(&envoy_api_v2.DiscoveryResponse{
 		VersionInfo: "1",
-		Resources:   nil,
+		Resources:   resources(t, secret(s1)),
 		TypeUrl:     secretType,
 		Nonce:       "1",
 	})
