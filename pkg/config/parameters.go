@@ -19,6 +19,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -88,6 +89,90 @@ func (a AccessLogType) Validate() error {
 
 const EnvoyAccessLog AccessLogType = "envoy"
 const JSONAccessLog AccessLogType = "json"
+
+type AccessLogFields []string
+
+func (a AccessLogFields) Validate() error {
+	// Capture Groups:
+	// Given string "the start time is %START_TIME(%s):3% wow!"
+	//
+	//   0. Whole match "%START_TIME(%s):3%"
+	//   1. Full operator: "START_TIME(%s):3%"
+	//   2. Operator Name: "START_TIME"
+	//   3. Arguments: "(%s)"
+	//   4. Truncation length: ":3"
+	re := regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)?%)?`)
+
+	for key, val := range a.AsFieldMap() {
+		if val == "" {
+			return fmt.Errorf("invalid JSON log field name %s", key)
+		}
+
+		if jsonFields[key] == val {
+			continue
+		}
+
+		// FindAllStringSubmatch will always return a slice with matches where every slice is a slice
+		// of submatches with length of 5 (number of capture groups + 1).
+		tokens := re.FindAllStringSubmatch(val, -1)
+		if len(tokens) == 0 {
+			continue
+		}
+
+		for _, f := range tokens {
+			op := f[2]
+			if op == "" {
+				return fmt.Errorf("invalid JSON field: %s, invalid Envoy format: %s", val, f)
+			}
+
+			_, okSimple := envoySimpleOperators[op]
+			_, okComplex := envoyComplexOperators[op]
+			if !okSimple && !okComplex {
+				return fmt.Errorf("invalid JSON field: %s, invalid Envoy format: %s, invalid Envoy operator: %s", val, f, op)
+			}
+
+			if (op == "REQ" || op == "RESP" || op == "TRAILER") && f[3] == "" {
+				return fmt.Errorf("invalid JSON field: %s, invalid Envoy format: %s, arguments required for operator: %s", val, f, op)
+			}
+
+			// START_TIME cannot not have truncation length.
+			if op == "START_TIME" && f[4] != "" {
+				return fmt.Errorf("invalid JSON field: %s, invalid Envoy format: %s, operator %s cannot have truncation length", val, f, op)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (a AccessLogFields) AsFieldMap() map[string]string {
+	fieldMap := map[string]string{}
+
+	for _, val := range a {
+		parts := strings.SplitN(val, "=", 2)
+
+		if len(parts) == 1 {
+			operator, foundInFieldMapping := jsonFields[val]
+			_, isSimpleOperator := envoySimpleOperators[strings.ToUpper(val)]
+
+			if isSimpleOperator && !foundInFieldMapping {
+				// Operator name is known to be simple, upcase and wrap it in percents.
+				fieldMap[val] = fmt.Sprintf("%%%s%%", strings.ToUpper(val))
+			} else if foundInFieldMapping {
+				// Operator name has a known mapping, store the result of the mapping.
+				fieldMap[val] = operator
+			} else {
+				// Operator name not found, save as emptystring and let validation catch it later.
+				fieldMap[val] = ""
+			}
+		} else {
+			// Value is a full key:value pair, store it as is.
+			fieldMap[parts[0]] = parts[1]
+		}
+	}
+
+	return fieldMap
+}
 
 // HTTPVersionType is the name of a supported HTTP version.
 type HTTPVersionType string
@@ -288,7 +373,7 @@ type Parameters struct {
 
 	// AccessLogFields sets the fields that JSON logging will
 	// output when AccessLogFormat is json.
-	AccessLogFields []string `yaml:"json-fields,omitempty"`
+	AccessLogFields AccessLogFields `yaml:"json-fields,omitempty"`
 
 	// TLS contains TLS policy parameters.
 	TLS TLSParameters `yaml:"tls,omitempty"`
@@ -341,10 +426,8 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	for _, f := range p.AccessLogFields {
-		if _, ok := JSONFields[f]; !ok {
-			return fmt.Errorf("invalid JSON log field name %s", f)
-		}
+	if err := p.AccessLogFields.Validate(); err != nil {
+		return err
 	}
 
 	// Check TLS secret names.
