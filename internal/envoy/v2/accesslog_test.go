@@ -52,12 +52,12 @@ func TestFileAccessLog(t *testing.T) {
 func TestJSONFileAccessLog(t *testing.T) {
 	tests := map[string]struct {
 		path    string
-		headers []string
+		headers config.AccessLogFields
 		want    []*envoy_accesslog.AccessLog
 	}{
 		"only timestamp": {
 			path:    "/dev/stdout",
-			headers: []string{"@timestamp"},
+			headers: config.AccessLogFields([]string{"@timestamp"}),
 			want: []*envoy_accesslog.AccessLog{{
 				Name: wellknown.FileAccessLog,
 				ConfigType: &envoy_accesslog.AccessLog_TypedConfig{
@@ -75,13 +75,15 @@ func TestJSONFileAccessLog(t *testing.T) {
 			},
 			},
 		},
-		"invalid header should disappear": {
+		"custom fields should appear": {
 			path: "/dev/stdout",
-			headers: []string{
+			headers: config.AccessLogFields([]string{
 				"@timestamp",
-				"invalid",
 				"method",
-			},
+				"custom1=%REQ(X-CUSTOM-HEADER)%",
+				"custom2=%DURATION%.0",
+				"custom3=ST=%START_TIME(%s.%6f)%",
+			}),
 			want: []*envoy_accesslog.AccessLog{{
 				Name: wellknown.FileAccessLog,
 				ConfigType: &envoy_accesslog.AccessLog_TypedConfig{
@@ -90,8 +92,11 @@ func TestJSONFileAccessLog(t *testing.T) {
 						AccessLogFormat: &accesslog_v2.FileAccessLog_JsonFormat{
 							JsonFormat: &_struct.Struct{
 								Fields: map[string]*_struct.Value{
-									"@timestamp": sv(config.JSONFields["@timestamp"]),
-									"method":     sv(config.JSONFields["method"]),
+									"@timestamp": sv("%START_TIME%"),
+									"method":     sv("%REQ(:METHOD)%"),
+									"custom1":    sv("%REQ(X-CUSTOM-HEADER)%"),
+									"custom2":    sv("%DURATION%.0"),
+									"custom3":    sv("ST=%START_TIME(%s.%6f)%"),
 								},
 							},
 						},

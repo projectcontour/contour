@@ -96,7 +96,7 @@ type ListenerConfig struct {
 	// AccessLogFields sets the fields that should be shown in JSON logs.
 	// Valid entries are the keys from internal/envoy/accesslog.go:jsonheaders
 	// Defaults to a particular set of fields.
-	AccessLogFields []string
+	AccessLogFields config.AccessLogFields
 
 	// RequestTimeout configures the request_timeout for all Connection Managers.
 	RequestTimeout timeout.Setting
@@ -181,7 +181,7 @@ func (lvc *ListenerConfig) accesslogType() string {
 
 // accesslogFields returns the access log fields that should be configured
 // for Envoy, or a default set if not configured.
-func (lvc *ListenerConfig) accesslogFields() []string {
+func (lvc *ListenerConfig) accesslogFields() config.AccessLogFields {
 	if lvc.AccessLogFields != nil {
 		return lvc.AccessLogFields
 	}
