@@ -202,6 +202,6 @@ $ kubectl delete ns projectcontour
 [5]: https://github.com/kubernetes-up-and-running/kuard
 [7]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/02-service-envoy.yaml
 [8]: {% link getting-started.md %}
-[9]: httpproxy.md
+[9]: {% link docs/{{page.version}}/config/fundamentals.md %}
 [10]: {% link _guides/deploy-aws-nlb.md %}
 [11]: redeploy-envoy.md

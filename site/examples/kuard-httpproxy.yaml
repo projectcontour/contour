@@ -46,7 +46,7 @@ spec:
     fqdn: kuard.local
   routes: 
     - conditions:
-      - path: /
+      - prefix: /
       services:
         - name: kuard
           port: 80

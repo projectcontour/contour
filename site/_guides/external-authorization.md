@@ -41,45 +41,18 @@ For example, there is no requirement for the external authorization server to
 be a separate application from the authorization provider.
 
 
-```
-+---------+                  +-------+                    +---------+             +---------------+ +---------+
-| Client  |                  | Proxy |                    | ExtAuth |             | AuthProvider  | | Origin  |
-+---------+                  +-------+                    +---------+             +---------------+ +---------+
-     |                           |                             |                          |              |
-     | Send HTTP request         |                             |                          |              |
-     |-------------------------->|                             |                          |              |
-     |                           |                             |                          |              |
-     |                           | Authorize HTTP request      |                          |              |
-     |                           |---------------------------->|                          |              |
-     |                           |                             | -----------------\       |              |
-     |                           |                             |-| Verify request |       |              |
-     |                           |                             | |----------------|       |              |
-     |                           |                             |                          |              |
-     |                           |                      200 OK |                          |              |
-     |                           |<----------------------------|                          |              |
-     |         ----------------\ |                             |                          |              |
-     |         | Inject        |-|                             |                          |              |
-     |         | authorization | |                             |                          |              |
-     |         | metadata      | |                             |                          |              |
-     |         |---------------| | Forward HTTP request        |                          |              |
-     |                           |---------------------------------------------------------------------->|
-     |                           |                             |                          |              |
-     |                           |                             |                 Respond to HTTP request |
-     |                           |<----------------------------------------------------------------------|
-     |                           |                             |                          |              |
-     |     Forward HTTP response |                             |                          |              |
-     |<--------------------------|                             |                          |              |
-     |                           |                             |                          |              |
-```
+<p align="center">
+<img src="/img/uml/client-auth-sequence-ext.png" alt="client authorization sequence diagram"/>
+</p>
 
-A HTTP Client generates an HTTP request and sends it to the Proxy.
-The Proxy is an Envoy instance that Contour has programmed with an external
+A HTTP Client generates an HTTP request and sends it to
+an Envoy instance that Contour has programmed with an external
 authorization configuration.
-The Proxy holds the HTTP request and sends an authorization check request
-to the ExtAuth server that Contour has bound to the virtual host.
-The ExtAuth server may be able to verify the request locally, but in
-many cases it will need to make additional requests to the AuthProvider
-server to verify or obtain an authorization token.
+Envoy holds the HTTP request and sends an authorization check request
+to the Authorization server that Contour has bound to the virtual host.
+The Authorization server may be able to verify the request locally, but in
+many cases it will need to make additional requests to an Authorization
+Provider server to verify or obtain an authorization token.
 
 In this flow, the ExtAuth server is able to authorize the request, and sends an
 authorization response back to the Proxy.

@@ -190,7 +190,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-metrics-docs
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml
 
 .PHONY: generate-rbac
 generate-rbac:
@@ -309,6 +309,14 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 		-days 1825 -sha256 \
 		-extfile _integration/cert-envoy.ext
 
+generate-uml: $(patsubst %.uml,%.png,$(wildcard site/img/uml/*.uml))
+
+# Generate a PNG from a PlantUML specification. This rule should only
+# trigger when someone updates the UML and that person needs to have
+# PlantUML installed.
+%.png: %.uml
+	cd `dirname $@` && plantuml `basename "$^"`
+
 .PHONY: site-devel
 site-devel: ## Launch the website in a Docker container
 	docker run --rm -p $(JEKYLL_PORT):$(JEKYLL_PORT) -p $(JEKYLL_LIVERELOAD_PORT):$(JEKYLL_LIVERELOAD_PORT) -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
@@ -316,8 +324,7 @@ site-devel: ## Launch the website in a Docker container
 
 .PHONY: site-check
 site-check: ## Test the site's links
-	docker run --rm -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
-		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll build && htmlproofer --assume-extension /site/_site"
+	docker run --rm -v $$(pwd):/src -it $(JEKYLL_IMAGE) bash -c "cd /src && ./hack/site-proofing/cibuild"
 
 integration: ## Run integration tests against a real k8s cluster
 	./_integration/testsuite/make-kind-cluster.sh
