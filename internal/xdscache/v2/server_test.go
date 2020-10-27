@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/internal/xds"
+
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
@@ -206,7 +208,8 @@ func TestGRPC(t *testing.T) {
 				FieldLogger: log,
 			}
 
-			srv := contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), nil)
+			srv := xds.NewServer(nil)
+			contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 			done := make(chan error, 1)

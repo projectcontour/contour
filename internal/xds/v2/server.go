@@ -16,8 +16,6 @@ package v2
 import (
 	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 )
 
@@ -34,33 +32,12 @@ type Server interface {
 // RegisterServer registers the given xDS protocol Server with the gRPC
 // runtime. If registry is non-nil gRPC server metrics will be automatically
 // configured and enabled.
-func RegisterServer(srv Server, registry *prometheus.Registry, opts ...grpc.ServerOption) *grpc.Server {
-	var metrics *grpc_prometheus.ServerMetrics
-
-	// TODO: Decouple registry from this.
-	if registry != nil {
-		metrics = grpc_prometheus.NewServerMetrics()
-		registry.MustRegister(metrics)
-
-		opts = append(opts,
-			grpc.StreamInterceptor(metrics.StreamServerInterceptor()),
-			grpc.UnaryInterceptor(metrics.UnaryServerInterceptor()),
-		)
-
-	}
-
-	g := grpc.NewServer(opts...)
-
+func RegisterServer(srv Server, g *grpc.Server) {
+	// register services
 	discovery.RegisterAggregatedDiscoveryServiceServer(g, srv)
 	discovery.RegisterSecretDiscoveryServiceServer(g, srv)
 	api.RegisterClusterDiscoveryServiceServer(g, srv)
 	api.RegisterEndpointDiscoveryServiceServer(g, srv)
 	api.RegisterListenerDiscoveryServiceServer(g, srv)
 	api.RegisterRouteDiscoveryServiceServer(g, srv)
-
-	if metrics != nil {
-		metrics.InitializeMetrics(g)
-	}
-
-	return g
 }

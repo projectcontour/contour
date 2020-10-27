@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -36,7 +37,8 @@ debug: false
 kubeconfig: TestParseDefaults/.kube/config
 server:
   xds-server-type: contour
-  xds-server-version: v2
+  xds-server-versions:
+  - v2
 accesslog-format: envoy
 json-fields:
 - '@timestamp'
@@ -91,6 +93,55 @@ foo: bad
 `
 	_, err := Parse(strings.NewReader(badYAML))
 	require.Error(t, err)
+}
+
+func TestValidateXDSServerVersions(t *testing.T) {
+	type testcase struct {
+		versions      []ServerVersion
+		want          []ServerVersion
+		expectedError error
+	}
+
+	run := func(t *testing.T, name string, tc testcase) {
+		t.Helper()
+
+		t.Run(name, func(t *testing.T) {
+			t.Helper()
+
+			p := &Parameters{
+				Server: ServerParameters{
+					XDSServerVersions: tc.versions,
+				},
+			}
+			goterror := ValidateServerTypes(p)
+			assert.Equal(t, tc.want, p.Server.XDSServerVersions)
+			assert.Equal(t, tc.expectedError, goterror)
+		})
+	}
+
+	run(t, "simple", testcase{
+		versions:      []ServerVersion{"v2"},
+		want:          []ServerVersion{"v2"},
+		expectedError: nil,
+	})
+
+	run(t, "simple two versions", testcase{
+		versions:      []ServerVersion{"v2", "v3"},
+		want:          []ServerVersion{"v2", "v3"},
+		expectedError: nil,
+	})
+
+	run(t, "case invalid", testcase{
+		versions:      []ServerVersion{"V2"},
+		want:          []ServerVersion{"V2"},
+		expectedError: fmt.Errorf("invalid xDS version \"V2\""),
+	})
+
+	run(t, "duplicated versions", testcase{
+		versions:      []ServerVersion{"v2", "v2", "v2"},
+		want:          []ServerVersion{"v2"},
+		expectedError: nil,
+	})
 }
 
 func TestValidateClusterDNSFamilyType(t *testing.T) {

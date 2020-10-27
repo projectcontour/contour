@@ -111,7 +111,7 @@ The server configuration block can be used to configure various settings for the
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | xds-server-type | string | contour | This field specifies the xDS Server to use. Options are `contour` or `envoy`.  |
-| xds-server-version | string | v2 | This field specifies the xDS Server version to use. Options are `v2` or `v3`.  |
+| xds-server-versions | []string | [v2] | This field specifies the xDS Server versions to use. Options are `v2` & `v3`.  |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -130,6 +130,9 @@ data:
     # server:
     #   determine which XDS Server implementation to utilize in Contour.
     #   xds-server-type: contour
+    #   specify the xDS versions to use when serving resources to Envoy.
+    #   xds-server-versions:
+    #   - v2
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
