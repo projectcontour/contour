@@ -20,8 +20,6 @@ import (
 	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 )
 
@@ -36,35 +34,13 @@ type Server interface {
 }
 
 // RegisterServer registers the given xDS protocol Server with the gRPC
-// runtime. If registry is non-nil gRPC server metrics will be automatically
-// configured and enabled.
-func RegisterServer(srv Server, registry *prometheus.Registry, opts ...grpc.ServerOption) *grpc.Server {
-	var metrics *grpc_prometheus.ServerMetrics
-
-	// TODO: Decouple registry from this.
-	if registry != nil {
-		metrics = grpc_prometheus.NewServerMetrics()
-		registry.MustRegister(metrics)
-
-		opts = append(opts,
-			grpc.StreamInterceptor(metrics.StreamServerInterceptor()),
-			grpc.UnaryInterceptor(metrics.UnaryServerInterceptor()),
-		)
-
-	}
-
-	g := grpc.NewServer(opts...)
-
+// runtime.
+func RegisterServer(srv Server, g *grpc.Server) {
+	// register services
 	envoy_service_discovery_v3.RegisterAggregatedDiscoveryServiceServer(g, srv)
 	envoy_service_secret_v3.RegisterSecretDiscoveryServiceServer(g, srv)
 	envoy_service_cluster_v3.RegisterClusterDiscoveryServiceServer(g, srv)
 	envoy_service_endpoint_v3.RegisterEndpointDiscoveryServiceServer(g, srv)
 	envoy_service_listener_v3.RegisterListenerDiscoveryServiceServer(g, srv)
 	envoy_service_route_v3.RegisterRouteDiscoveryServiceServer(g, srv)
-
-	if metrics != nil {
-		metrics.InitializeMetrics(g)
-	}
-
-	return g
 }
