@@ -865,7 +865,7 @@ func TestBootstrap(t *testing.T) {
                     "tls_certificate_sds_secret_configs": [
                       {
                         "sds_config": {
-                          "path": "resources/sds/xds-tls-certicate.json"
+                          "path": "resources/sds/xds-tls-certificate.json"
                         }
                       }
                     ],

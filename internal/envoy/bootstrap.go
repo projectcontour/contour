@@ -28,7 +28,7 @@ const SDSResourcesSubdirectory = "sds"
 
 // SDSTLSCertificateFile stores the path to the SDS resource with Envoy's
 // client certificate and key for XDS gRPC connection.
-const SDSTLSCertificateFile = "xds-tls-certicate.json"
+const SDSTLSCertificateFile = "xds-tls-certificate.json"
 
 // SDSValidationContextFile stores the path to the SDS resource with
 // CA certificates for Envoy to use for the XDS gRPC connection.
