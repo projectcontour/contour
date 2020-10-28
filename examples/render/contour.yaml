@@ -1849,6 +1849,7 @@ spec:
         - /config/envoy.json
         - --xds-address=contour
         - --xds-port=8001
+        - --xds-resource-version=v3
         - --resources-dir=/config/resources
         - --envoy-cafile=/certs/ca.crt
         - --envoy-cert-file=/certs/tls.crt

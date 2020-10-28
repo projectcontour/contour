@@ -15,6 +15,7 @@ package v3
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -24,11 +25,26 @@ import (
 	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
+	resource_v2 "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
+	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/anypb"
+)
+
+var (
+	mapToVersion3 = map[string]string{
+		resource_v2.EndpointType: resource_v3.EndpointType,
+		resource_v2.ClusterType:  resource_v3.ClusterType,
+		resource_v2.RouteType:    resource_v3.RouteType,
+		resource_v2.ListenerType: resource_v3.ListenerType,
+		resource_v2.SecretType:   resource_v3.SecretType,
+	}
 )
 
 type grpcStream interface {
@@ -48,6 +64,11 @@ func NewContourServer(log logrus.FieldLogger, resources ...xds.Resource) Server 
 
 	for i, r := range resources {
 		c.resources[r.TypeURL()] = resources[i]
+
+		// Map the xDS resource to this provider.
+		if v3, ok := mapToVersion3[r.TypeURL()]; ok {
+			c.resources[v3] = resources[i]
+		}
 	}
 
 	return &c
@@ -67,6 +88,39 @@ type contourServer struct {
 	logrus.FieldLogger
 	resources   map[string]xds.Resource
 	connections xds.Counter
+}
+
+func stringOf(msg proto.Message) string {
+	s, _ := (&jsonpb.Marshaler{Indent: "    "}).MarshalToString(msg)
+	return s
+}
+
+func convertResources(log logrus.FieldLogger, in []proto.Message, typeURL string) ([]proto.Message, error) {
+	template, err := ptypes.Empty(&anypb.Any{TypeUrl: typeURL})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]proto.Message, 0, len(in))
+	for _, inMessage := range in {
+		outMessage := proto.Clone(template)
+
+		log.Debugf("original %s", stringOf(inMessage))
+
+		// Do a basic protobuf conversion.
+		if err := protobuf.ConvertTo(inMessage, outMessage); err != nil {
+			return nil, err
+		}
+
+		outMessage = xds.Fixup(outMessage)
+
+		// TODO(jpeach) convert well-known filter names, convert type URLs.
+
+		log.Debugf("converted %s", stringOf(outMessage))
+		out = append(out, outMessage)
+	}
+
+	return out, nil
 }
 
 // stream processes a stream of DiscoveryRequests.
@@ -114,14 +168,18 @@ func (s *contourServer) stream(st grpcStream) error {
 			log.WithField("code", status.Code).Error(status.Message)
 		}
 
+		typeURL := req.GetTypeUrl()
+
 		// from the request we derive the resource to stream which have
 		// been registered according to the typeURL.
-		r, ok := s.resources[req.TypeUrl]
+		r, ok := s.resources[typeURL]
 		if !ok {
-			return done(log, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl))
+			if !ok {
+				return done(log, fmt.Errorf("XXX no resource registered for typeURL %q", req.GetTypeUrl()))
+			}
 		}
 
-		log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl)
+		log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.GetTypeUrl())
 		log.Info("handling xDS resource request")
 
 		// now we wait for a notification, if this is the first request received on this
@@ -145,6 +203,16 @@ func (s *contourServer) stream(st grpcStream) error {
 			}
 
 			any := make([]*any.Any, 0, len(resources))
+
+			log.Printf("converting %d resources from query %q", len(resources), req.ResourceNames)
+
+			converted, err := convertResources(log, resources, req.GetTypeUrl())
+			if err != nil {
+				return done(log, errors.New("failed to convert resources"))
+			}
+
+			resources = converted
+
 			for _, r := range resources {
 				a, err := ptypes.MarshalAny(r)
 				if err != nil {
@@ -157,7 +225,7 @@ func (s *contourServer) stream(st grpcStream) error {
 			resp := &envoy_service_discovery_v3.DiscoveryResponse{
 				VersionInfo: strconv.Itoa(last),
 				Resources:   any,
-				TypeUrl:     r.TypeURL(),
+				TypeUrl:     req.GetTypeUrl(),
 				Nonce:       strconv.Itoa(last),
 			}
 

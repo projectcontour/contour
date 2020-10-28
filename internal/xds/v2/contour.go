@@ -114,7 +114,7 @@ func (s *contourServer) stream(st grpcStream) error {
 		// been registered according to the typeURL.
 		r, ok := s.resources[req.TypeUrl]
 		if !ok {
-			return done(log, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl))
+			return done(log, fmt.Errorf("(v2 %T %q) no resource registered for typeURL %q", req, req.ResourceNames, req.TypeUrl))
 		}
 
 		log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl)

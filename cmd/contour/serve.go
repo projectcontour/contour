@@ -656,6 +656,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		case config.ContourServerType:
 			contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
+		default:
+			// This can't happen due to config validation.
+			log.Fatalf("invalid xdsServerType %q configured", ctx.Config.Server.XDSServerType)
 		}
 
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
