@@ -654,8 +654,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		case config.EnvoyServerType:
 			contour_xds_v2.RegisterServer(envoy_server_v2.NewServer(context.Background(), snapshotCache, nil), grpcServer)
 		case config.ContourServerType:
-			contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
+
+			// Check an internal feature flag to disable xDS v2 endpoints. This is strictly for testing.
+			if config.GetenvOr("CONTOUR_INTERNAL_DISABLE_XDSV2", "N") != "N" {
+				contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
+			}
+		default:
+			// This can't happen due to config validation.
+			log.Fatalf("invalid xdsServerType %q configured", ctx.Config.Server.XDSServerType)
 		}
 
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
