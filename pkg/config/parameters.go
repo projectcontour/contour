@@ -42,13 +42,30 @@ func (s ServerType) Validate() error {
 	}
 }
 
-// ServerVersion is the version of a xDS server.
+func ValidateServerTypes(p *Parameters) error {
+	// Remove any duplicated values from the ServerVersions set.
+	p.Server.XDSServerVersions = uniqueServerVersions(p.Server.XDSServerVersions)
+
+	// Validate that at least one version was passed.
+	if len(p.Server.XDSServerVersions) == 0 {
+		return fmt.Errorf("at least one xDS server version must be specified")
+	}
+	for _, v := range p.Server.XDSServerVersions {
+		if err := v.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+
+}
+
+// ServerVersion is a version of an xDS server.
 type ServerVersion string
 
 const XDSv2 ServerVersion = "v2"
 const XDSv3 ServerVersion = "v3"
 
-// Validate the xDS server version.
+// Validate the xDS server versions.
 func (s ServerVersion) Validate() error {
 	switch s {
 	case XDSv2, XDSv3:
@@ -234,9 +251,9 @@ type ServerParameters struct {
 	// Defaults to "contour"
 	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
 
-	// Defines the XDS Server Version to use for `contour serve`
+	// Defines the XDS Server Versions to use for `contour serve`
 	// Defaults to "v2"
-	XDSServerVersion ServerVersion `yaml:"xds-server-version"`
+	XDSServerVersions []ServerVersion `yaml:"xds-server-versions"`
 }
 
 // LeaderElectionParameters holds the config bits for leader election
@@ -418,7 +435,9 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	if err := p.Server.XDSServerVersion.Validate(); err != nil {
+	// Validate Server Versions
+	err := ValidateServerTypes(p)
+	if err != nil {
 		return err
 	}
 
@@ -452,6 +471,18 @@ func (p *Parameters) Validate() error {
 	return nil
 }
 
+func uniqueServerVersions(input []ServerVersion) []ServerVersion {
+	keys := make(map[ServerVersion]bool)
+	var list []ServerVersion
+	for _, entry := range input {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
 // Defaults returns the default set of parameters.
 func Defaults() Parameters {
 	contourNamespace := GetenvOr("CONTOUR_NAMESPACE", "projectcontour")
@@ -461,8 +492,8 @@ func Defaults() Parameters {
 		InCluster:  false,
 		Kubeconfig: filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		Server: ServerParameters{
-			XDSServerType:    ContourServerType,
-			XDSServerVersion: XDSv2,
+			XDSServerType:     ContourServerType,
+			XDSServerVersions: []ServerVersion{XDSv2},
 		},
 		IngressStatusAddress:  "",
 		AccessLogFormat:       DEFAULT_ACCESS_LOG_TYPE,

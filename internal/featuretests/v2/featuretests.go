@@ -37,6 +37,7 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/workgroup"
+	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v2 "github.com/projectcontour/contour/internal/xds/v2"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
@@ -82,7 +83,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		et,
 	}
 
-	r := prometheus.NewRegistry()
+	registry := prometheus.NewRegistry()
 
 	rand.Seed(time.Now().Unix())
 
@@ -97,7 +98,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		//nolint:gosec
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
 		Observer: &contour.RebuildMetricsObserver{
-			Metrics:      metrics.NewMetrics(r),
+			Metrics:      metrics.NewMetrics(registry),
 			NextObserver: dag.ComposeObservers(xdscache.ObserversOf(resources)...),
 		},
 		Builder: dag.Builder{
@@ -130,9 +131,8 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
-	srv := contour_xds_v2.RegisterServer(
-		contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...),
-		r /* Prometheus registry */)
+	srv := xds.NewServer(registry)
+	contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
 
 	var g workgroup.Group
 
