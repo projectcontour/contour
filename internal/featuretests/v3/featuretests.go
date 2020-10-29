@@ -22,10 +22,21 @@ import (
 	"testing"
 	"time"
 
-	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
+	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
+
+	envoy_service_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
+
+	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
+
+	envoy_service_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
+
+	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
+
+	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
+
+	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -39,7 +50,6 @@ import (
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
-	contour_xds_v2 "github.com/projectcontour/contour/internal/xds/v2"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/prometheus/client_golang/prometheus"
@@ -133,7 +143,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	require.NoError(t, err)
 
 	srv := xds.NewServer(registry)
-	contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
+	contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
 
 	var g workgroup.Group
 
@@ -240,7 +250,7 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 
 // routeResources returns the given routes as a slice of any.Any
 // resources, appropriately sorted.
-func routeResources(t *testing.T, routes ...*envoy_api_v2.RouteConfiguration) []*any.Any {
+func routeResources(t *testing.T, routes ...*envoy_route_v3.RouteConfiguration) []*any.Any {
 	sort.Stable(sorter.For(routes))
 	return resources(t, protobuf.AsMessages(routes)...)
 }
@@ -255,8 +265,8 @@ func resources(t *testing.T, protos ...proto.Message) []*any.Any {
 }
 
 type grpcStream interface {
-	Send(*envoy_api_v2.DiscoveryRequest) error
-	Recv() (*envoy_api_v2.DiscoveryResponse, error)
+	Send(*envoy_service_discovery_v3.DiscoveryRequest) error
+	Recv() (*envoy_service_discovery_v3.DiscoveryResponse, error)
 }
 
 type statusResult struct {
@@ -362,34 +372,34 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 	defer cancel()
 	switch typeurl {
 	case secretType:
-		sds := discovery.NewSecretDiscoveryServiceClient(c.ClientConn)
+		sds := envoy_service_secret_v3.NewSecretDiscoveryServiceClient(c.ClientConn)
 		sts, err := sds.StreamSecrets(ctx)
 		require.NoError(c, err)
 		st = sts
 	case routeType:
-		rds := envoy_api_v2.NewRouteDiscoveryServiceClient(c.ClientConn)
+		rds := envoy_service_route_v3.NewRouteDiscoveryServiceClient(c.ClientConn)
 		str, err := rds.StreamRoutes(ctx)
 		require.NoError(c, err)
 		st = str
 	case clusterType:
-		cds := envoy_api_v2.NewClusterDiscoveryServiceClient(c.ClientConn)
+		cds := envoy_service_cluster_v3.NewClusterDiscoveryServiceClient(c.ClientConn)
 		stc, err := cds.StreamClusters(ctx)
 		require.NoError(c, err)
 		st = stc
 	case listenerType:
-		lds := envoy_api_v2.NewListenerDiscoveryServiceClient(c.ClientConn)
+		lds := envoy_service_listener_v3.NewListenerDiscoveryServiceClient(c.ClientConn)
 		stl, err := lds.StreamListeners(ctx)
 		require.NoError(c, err)
 		st = stl
 	case endpointType:
-		eds := envoy_api_v2.NewEndpointDiscoveryServiceClient(c.ClientConn)
+		eds := envoy_service_endpoint_v3.NewEndpointDiscoveryServiceClient(c.ClientConn)
 		ste, err := eds.StreamEndpoints(ctx)
 		require.NoError(c, err)
 		st = ste
 	default:
 		c.Fatal("unknown typeURL:", typeurl)
 	}
-	resp := c.sendRequest(st, &envoy_api_v2.DiscoveryRequest{
+	resp := c.sendRequest(st, &envoy_service_discovery_v3.DiscoveryRequest{
 		TypeUrl:       typeurl,
 		ResourceNames: names,
 	})
@@ -399,7 +409,7 @@ func (c *Contour) Request(typeurl string, names ...string) *Response {
 	}
 }
 
-func (c *Contour) sendRequest(stream grpcStream, req *envoy_api_v2.DiscoveryRequest) *envoy_api_v2.DiscoveryResponse {
+func (c *Contour) sendRequest(stream grpcStream, req *envoy_service_discovery_v3.DiscoveryRequest) *envoy_service_discovery_v3.DiscoveryResponse {
 	err := stream.Send(req)
 	require.NoError(c, err)
 	resp, err := stream.Recv()
@@ -409,7 +419,7 @@ func (c *Contour) sendRequest(stream grpcStream, req *envoy_api_v2.DiscoveryRequ
 
 type Response struct {
 	*Contour
-	*envoy_api_v2.DiscoveryResponse
+	*envoy_service_discovery_v3.DiscoveryResponse
 }
 
 // Equals tests that the response retrieved from Contour is equal to the supplied value.

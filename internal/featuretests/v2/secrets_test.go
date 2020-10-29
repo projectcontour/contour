@@ -16,11 +16,12 @@ package v2
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/internal/featuretests"
+
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
-	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
