@@ -16,6 +16,7 @@ package v3
 import (
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 )
 
 // ConfigSource returns a *envoy_core_v3.ConfigSource for cluster.
@@ -34,6 +35,15 @@ func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
 					},
 				}},
 			},
+		},
+	}
+}
+
+// ClusterCommonLBConfig creates a *v2.Cluster_CommonLbConfig with HealthyPanicThreshold disabled.
+func ClusterCommonLBConfig() *envoy_cluster_v3.Cluster_CommonLbConfig {
+	return &envoy_cluster_v3.Cluster_CommonLbConfig{
+		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+			Value: 0,
 		},
 	}
 }

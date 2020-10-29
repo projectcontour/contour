@@ -16,8 +16,6 @@ package v2
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/featuretests"
-
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -25,6 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoyv2 "github.com/projectcontour/contour/internal/envoy/v2"
+	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"

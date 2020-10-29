@@ -20,6 +20,9 @@ import (
 	"strconv"
 	"strings"
 
+	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+
 	"github.com/projectcontour/contour/internal/dag"
 )
 
@@ -121,4 +124,13 @@ func AnyPositive(first uint32, rest ...uint32) bool {
 		}
 	}
 	return false
+}
+
+// ClusterCommonLBConfig creates a *v2.Cluster_CommonLbConfig with HealthyPanicThreshold disabled.
+func ClusterCommonLBConfig() *envoy_cluster_v3.Cluster_CommonLbConfig {
+	return &envoy_cluster_v3.Cluster_CommonLbConfig{
+		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+			Value: 0,
+		},
+	}
 }
