@@ -435,7 +435,7 @@ func Filters(filters ...*envoy_api_v2_listener.Filter) []*envoy_api_v2_listener.
 	return filters
 }
 
-// FilterChain retuns a *envoy_api_v2_listener.FilterChain for the supplied filters.
+// FilterChain returns a *envoy_api_v2_listener.FilterChain for the supplied filters.
 func FilterChain(filters ...*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
 	return &envoy_api_v2_listener.FilterChain{
 		Filters: filters,
@@ -548,7 +548,7 @@ func FilterChainTLS(domain string, downstream *envoy_api_v2_auth.DownstreamTlsCo
 	return fc
 }
 
-// FilterChainTLSFallback returns a TLS enabled envoy_api_v2_listener.FilterChain conifgured for FallbackCertificate.
+// FilterChainTLSFallback returns a TLS enabled envoy_api_v2_listener.FilterChain configured for FallbackCertificate.
 func FilterChainTLSFallback(downstream *envoy_api_v2_auth.DownstreamTlsContext, filters []*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
 	fc := &envoy_api_v2_listener.FilterChain{
 		Name:    "fallback-certificate",

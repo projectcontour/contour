@@ -97,6 +97,17 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 	return envoyHeaders
 }
 
+// UpgradeHTTPS returns a route Action that redirects the request to HTTPS.
+func UpgradeHTTPS() *envoy_route_v3.Route_Redirect {
+	return &envoy_route_v3.Route_Redirect{
+		Redirect: &envoy_route_v3.RedirectAction{
+			SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
+				HttpsRedirect: true,
+			},
+		},
+	}
+}
+
 // containsMatch returns a HeaderMatchSpecifier which will match the
 // supplied substring
 func containsMatch(s string) *envoy_route_v3.HeaderMatcher_SafeRegexMatch {

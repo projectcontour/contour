@@ -39,7 +39,7 @@ func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
 	}
 }
 
-// ClusterCommonLBConfig creates a *v2.Cluster_CommonLbConfig with HealthyPanicThreshold disabled.
+// ClusterCommonLBConfig creates a *envoy_cluster_v3.Cluster_CommonLbConfig with HealthyPanicThreshold disabled.
 func ClusterCommonLBConfig() *envoy_cluster_v3.Cluster_CommonLbConfig {
 	return &envoy_cluster_v3.Cluster_CommonLbConfig{
 		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold

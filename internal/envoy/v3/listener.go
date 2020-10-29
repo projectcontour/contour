@@ -222,7 +222,7 @@ func (b *httpConnectionManagerBuilder) Validate() error {
 // Get returns a new http.HttpConnectionManager filter, constructed
 // from the builder settings.
 //
-// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto.html
+// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto.html
 func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 	// For now, failing validation is a programmer error that
 	// the caller can't reasonably recover from. A caller that can
@@ -311,7 +311,7 @@ func TLSInspector() *envoy_listener_v3.ListenerFilter {
 	}
 }
 
-// Filters returns a []*envoy_api_v2_listener.Filter for the supplied filters.
+// Filters returns a []*envoy_listener_v3.Filter for the supplied filters.
 func Filters(filters ...*envoy_listener_v3.Filter) []*envoy_listener_v3.Filter {
 	if len(filters) == 0 {
 		return nil
@@ -387,6 +387,23 @@ end
 	}
 }
 
+// FilterChain retuns a *envoy_listener_v3.FilterChain for the supplied filters.
+func FilterChain(filters ...*envoy_listener_v3.Filter) *envoy_listener_v3.FilterChain {
+	return &envoy_listener_v3.FilterChain{
+		Filters: filters,
+	}
+}
+
+// FilterChains returns a []*envoy_listener_v3.FilterChain for the supplied filters.
+func FilterChains(filters ...*envoy_listener_v3.Filter) []*envoy_listener_v3.FilterChain {
+	if len(filters) == 0 {
+		return nil
+	}
+	return []*envoy_listener_v3.FilterChain{
+		FilterChain(filters...),
+	}
+}
+
 // FilterChainTLS returns a TLS enabled envoy_listener_v3.FilterChain.
 func FilterChainTLS(domain string, downstream *envoy_tls_v3.DownstreamTlsContext, filters []*envoy_listener_v3.Filter) *envoy_listener_v3.FilterChain {
 	fc := &envoy_listener_v3.FilterChain{
@@ -399,6 +416,22 @@ func FilterChainTLS(domain string, downstream *envoy_tls_v3.DownstreamTlsContext
 	if downstream != nil {
 		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)
 
+	}
+	return fc
+}
+
+// FilterChainTLSFallback returns a TLS enabled envoy_listener_v3.FilterChain configured for FallbackCertificate.
+func FilterChainTLSFallback(downstream *envoy_tls_v3.DownstreamTlsContext, filters []*envoy_listener_v3.Filter) *envoy_listener_v3.FilterChain {
+	fc := &envoy_listener_v3.FilterChain{
+		Name:    "fallback-certificate",
+		Filters: filters,
+		FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+			TransportProtocol: "tls",
+		},
+	}
+	// Attach TLS data to this listener if provided.
+	if downstream != nil {
+		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)
 	}
 	return fc
 }

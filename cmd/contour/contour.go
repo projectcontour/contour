@@ -16,10 +16,11 @@ package main
 import (
 	"os"
 
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
 	"github.com/projectcontour/contour/internal/build"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
-	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/sirupsen/logrus"

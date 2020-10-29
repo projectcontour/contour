@@ -175,7 +175,7 @@ func (s *contourServer) stream(st grpcStream) error {
 		r, ok := s.resources[typeURL]
 		if !ok {
 			if !ok {
-				return done(log, fmt.Errorf("XXX no resource registered for typeURL %q", req.GetTypeUrl()))
+				return done(log, fmt.Errorf("no resource registered for typeURL %q", req.GetTypeUrl()))
 			}
 		}
 
