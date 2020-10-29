@@ -42,23 +42,6 @@ func (s ServerType) Validate() error {
 	}
 }
 
-func ValidateServerTypes(p *Parameters) error {
-	// Remove any duplicated values from the ServerVersions set.
-	p.Server.XDSServerVersions = uniqueServerVersions(p.Server.XDSServerVersions)
-
-	// Validate that at least one version was passed.
-	if len(p.Server.XDSServerVersions) == 0 {
-		return fmt.Errorf("at least one xDS server version must be specified")
-	}
-	for _, v := range p.Server.XDSServerVersions {
-		if err := v.Validate(); err != nil {
-			return err
-		}
-	}
-	return nil
-
-}
-
 // ResourceVersion is a version of an xDS server.
 type ResourceVersion string
 
@@ -250,10 +233,6 @@ type ServerParameters struct {
 	// Defines the XDSServer to use for `contour serve`.
 	// Defaults to "contour"
 	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
-
-	// Defines the XDS Server Versions to use for `contour serve`
-	// Defaults to "v2"
-	XDSServerVersions []ResourceVersion `yaml:"xds-server-versions"`
 }
 
 // LeaderElectionParameters holds the config bits for leader election
@@ -435,12 +414,6 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	// Validate Server Versions
-	err := ValidateServerTypes(p)
-	if err != nil {
-		return err
-	}
-
 	if err := p.AccessLogFormat.Validate(); err != nil {
 		return err
 	}
@@ -471,18 +444,6 @@ func (p *Parameters) Validate() error {
 	return nil
 }
 
-func uniqueServerVersions(input []ResourceVersion) []ResourceVersion {
-	keys := make(map[ResourceVersion]bool)
-	var list []ResourceVersion
-	for _, entry := range input {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-	return list
-}
-
 // Defaults returns the default set of parameters.
 func Defaults() Parameters {
 	contourNamespace := GetenvOr("CONTOUR_NAMESPACE", "projectcontour")
@@ -492,8 +453,7 @@ func Defaults() Parameters {
 		InCluster:  false,
 		Kubeconfig: filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		Server: ServerParameters{
-			XDSServerType:     ContourServerType,
-			XDSServerVersions: []ResourceVersion{XDSv2},
+			XDSServerType: ContourServerType,
 		},
 		IngressStatusAddress:  "",
 		AccessLogFormat:       DEFAULT_ACCESS_LOG_TYPE,

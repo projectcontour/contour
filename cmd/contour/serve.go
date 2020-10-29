@@ -652,32 +652,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		switch ctx.Config.Server.XDSServerType {
 		case config.EnvoyServerType:
-			for _, ver := range ctx.Config.Server.XDSServerVersions {
-				switch ver {
-				case config.XDSv2:
-					contour_xds_v2.RegisterServer(envoy_server_v2.NewServer(context.Background(), snapshotCache, nil), grpcServer)
-				case config.XDSv3:
-					log.Fatalf("xDS server type %q not yet implemented for server type %q!", ver, ctx.Config.Server.XDSServerType)
-				default:
-					log.Fatalf("xDS server version %q is not valid", ver)
-				}
-			}
+			contour_xds_v2.RegisterServer(envoy_server_v2.NewServer(context.Background(), snapshotCache, nil), grpcServer)
 		case config.ContourServerType:
-			for _, ver := range ctx.Config.Server.XDSServerVersions {
-				switch ver {
-				case config.XDSv2:
-					server := contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...)
-					contour_xds_v2.RegisterServer(server, grpcServer)
-				case config.XDSv3:
-					server := contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...)
-					contour_xds_v3.RegisterServer(server, grpcServer)
-				default:
-					log.Fatalf("xDS server version %q is not valid", ver)
-				}
-			}
-		default:
-			// XXX(jpeach) can't happen due to config validation.
-			log.Fatalf("invalid xdsServerType %q configured", ctx.Config.Server.XDSServerType)
+			contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
+			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 		}
 
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
@@ -691,7 +669,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			log = log.WithField("insecure", true)
 		}
 
-		log.Infof("started xDS server type: %q versions: %q", ctx.Config.Server.XDSServerType, ctx.Config.Server.XDSServerVersions)
+		log.Infof("started xDS server type: %q", ctx.Config.Server.XDSServerType)
 		defer log.Info("stopped xDS server")
 
 		go func() {

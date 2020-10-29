@@ -11,8 +11,6 @@ data:
     #   determine which XDS Server implementation to utilize in Contour.
     #   xds-server-type: contour
     #   specify the xDS versions to use when serving resources to Envoy.
-    #   xds-server-versions:
-    #   - v2
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
