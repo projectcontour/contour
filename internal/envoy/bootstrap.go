@@ -64,8 +64,8 @@ type BootstrapConfig struct {
 	// Namespace is the namespace where Contour is running
 	Namespace string
 
-	//GrpcCABundle is the filename that contains a CA certificate chain that can
-	//verify the client cert.
+	// GrpcCABundle is the filename that contains a CA certificate chain that can
+	// verify the client cert.
 	GrpcCABundle string
 
 	// GrpcClientCert is the filename that contains a client certificate. May contain a full bundle if you
