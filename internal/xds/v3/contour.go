@@ -48,6 +48,11 @@ func NewContourServer(log logrus.FieldLogger, resources ...xds.Resource) Server 
 
 	for i, r := range resources {
 		c.resources[r.TypeURL()] = resources[i]
+
+		// Map the xDS v3 resource to this provider.
+		if v3, ok := xds.TypeMapping[r.TypeURL()]; ok {
+			c.resources[v3] = resources[i]
+		}
 	}
 
 	return &c
@@ -114,15 +119,15 @@ func (s *contourServer) stream(st grpcStream) error {
 			log.WithField("code", status.Code).Error(status.Message)
 		}
 
-		// from the request we derive the resource to stream which have
+		// From the request we derive the resource to stream which have
 		// been registered according to the typeURL.
-		r, ok := s.resources[req.TypeUrl]
+		r, ok := s.resources[req.GetTypeUrl()]
 		if !ok {
-			return done(log, fmt.Errorf("no resource registered for typeURL %q", req.TypeUrl))
+			return done(log, fmt.Errorf("no resource registered for typeURL %q", req.GetTypeUrl()))
 		}
 
-		log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl)
-		log.Info("handling xDS resource request")
+		log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.GetTypeUrl())
+		log.Info("handling v3 xDS resource request")
 
 		// now we wait for a notification, if this is the first request received on this
 		// connection last will be less than zero and that will trigger a response immediately.
@@ -144,6 +149,11 @@ func (s *contourServer) stream(st grpcStream) error {
 				resources = r.Query(req.ResourceNames)
 			}
 
+			// Rewrite the embedded message types to v3.
+			for _, r := range resources {
+				xds.Rewrite(r)
+			}
+
 			any := make([]*any.Any, 0, len(resources))
 			for _, r := range resources {
 				a, err := ptypes.MarshalAny(r)
@@ -151,13 +161,14 @@ func (s *contourServer) stream(st grpcStream) error {
 					return done(log, err)
 				}
 
+				a.TypeUrl = req.GetTypeUrl()
 				any = append(any, a)
 			}
 
 			resp := &envoy_service_discovery_v3.DiscoveryResponse{
 				VersionInfo: strconv.Itoa(last),
 				Resources:   any,
-				TypeUrl:     r.TypeURL(),
+				TypeUrl:     req.GetTypeUrl(),
 				Nonce:       strconv.Itoa(last),
 			}
 

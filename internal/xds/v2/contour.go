@@ -118,7 +118,7 @@ func (s *contourServer) stream(st grpcStream) error {
 		}
 
 		log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.TypeUrl)
-		log.Info("handling xDS resource request")
+		log.Info("handling v2 xDS resource request")
 
 		// now we wait for a notification, if this is the first request received on this
 		// connection last will be less than zero and that will trigger a response immediately.

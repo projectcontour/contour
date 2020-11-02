@@ -95,3 +95,9 @@ func MustMarshalAny(pb proto.Message) *any.Any {
 
 	return a
 }
+
+// AnyMessageTypeOf returns the any.Any type of msg.
+func AnyMessageTypeOf(msg proto.Message) string {
+	a := MustMarshalAny(msg)
+	return a.TypeUrl
+}
