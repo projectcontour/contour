@@ -14,23 +14,32 @@
 package xds
 
 import (
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	cache "github.com/envoyproxy/go-control-plane/pkg/cache/v2"
+	envoy_api_core_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 )
 
-// ConstantHash is a specialized node ID hasher used to allow
+const CONSTANT_HASH_VALUE = "contour"
+
+// ConstantHashV2 is a specialized node ID hasher used to allow
 // any instance of Envoy to connect to Contour regardless of the
 // service-node flag configured on Envoy.
-type ConstantHash string
+type ConstantHashV2 struct{}
 
-func (c ConstantHash) ID(*envoy_api_v2_core.Node) string {
-	return string(c)
+func (c ConstantHashV2) ID(*envoy_api_core_v2.Node) string {
+	return CONSTANT_HASH_VALUE
 }
 
-func (c ConstantHash) String() string {
-	return string(c)
+func (c ConstantHashV2) String() string {
+	return CONSTANT_HASH_VALUE
 }
 
-var _ cache.NodeHash = ConstantHash("")
+// ConstantHashV3 is the same as ConstantHashV2 but for xDS v3.
+type ConstantHashV3 struct{}
 
-var DefaultHash = ConstantHash("contour")
+func (c ConstantHashV3) ID(*envoy_config_v3.Node) string {
+	return CONSTANT_HASH_VALUE
+}
+
+func (c ConstantHashV3) String() string {
+	return CONSTANT_HASH_VALUE
+}
