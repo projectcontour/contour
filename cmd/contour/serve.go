@@ -26,9 +26,9 @@ import (
 	"syscall"
 	"time"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_cache_v2 "github.com/envoyproxy/go-control-plane/pkg/cache/v2"
+	envoy_auth_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_server_v2 "github.com/envoyproxy/go-control-plane/pkg/server/v2"
+	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
@@ -353,7 +353,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// that are explicitly using 1.1 to continue working by default. However, the
 	// *default* minimum TLS version for proxies/ingresses that don't specify it
 	// is 1.2, set in the DAG processors.
-	globalMinTLSVersion := annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, envoy_api_v2_auth.TlsParameters_TLSv1_1)
+	globalMinTLSVersion := annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, envoy_auth_v2.TlsParameters_TLSv1_1)
 
 	listenerConfig := xdscache_v2.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
@@ -388,13 +388,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		endpointHandler,
 	}
 
-	// snapshotCache is used to store the state of what all xDS services should
-	// contain at any given point in time.
-	snapshotCache := envoy_cache_v2.NewSnapshotCache(false, xds.DefaultHash,
-		log.WithField("context", "xDS"))
-
 	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
-	snapshotHandler := xdscache.NewSnapshotHandler(snapshotCache, resources, log.WithField("context", "snapshotHandler"))
+	snapshotHandler := xdscache.NewSnapshotHandler(resources, log.WithField("context", "snapshotHandler"))
 
 	// register observer for endpoints updates.
 	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
@@ -652,17 +647,26 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		switch ctx.Config.Server.XDSServerType {
 		case config.EnvoyServerType:
-			contour_xds_v2.RegisterServer(envoy_server_v2.NewServer(context.Background(), snapshotCache, nil), grpcServer)
+			v3cache := contour_xds_v3.NewSnapshotCache(false, log)
+			snapshotHandler.AddSnapshotter(v3cache)
+			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(context.Background(), v3cache, nil), grpcServer)
+
+			// Check an internal feature flag to disable xDS v2 endpoints. This is strictly for testing.
+			if config.GetenvOr("CONTOUR_INTERNAL_DISABLE_XDSV2", "N") == "N" {
+				v2cache := contour_xds_v2.NewSnapshotCache(false, log)
+				snapshotHandler.AddSnapshotter(v2cache)
+				contour_xds_v2.RegisterServer(envoy_server_v2.NewServer(context.Background(), v2cache, nil), grpcServer)
+			}
 		case config.ContourServerType:
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 
 			// Check an internal feature flag to disable xDS v2 endpoints. This is strictly for testing.
-			if config.GetenvOr("CONTOUR_INTERNAL_DISABLE_XDSV2", "N") != "N" {
+			if config.GetenvOr("CONTOUR_INTERNAL_DISABLE_XDSV2", "N") == "N" {
 				contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 			}
 		default:
 			// This can't happen due to config validation.
-			log.Fatalf("invalid xdsServerType %q configured", ctx.Config.Server.XDSServerType)
+			log.Fatalf("invalid xDS server type %q", ctx.Config.Server.XDSServerType)
 		}
 
 		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
