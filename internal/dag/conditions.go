@@ -179,3 +179,10 @@ func headerMatchConditionsValid(conditions []contour_api_v1.MatchCondition) erro
 
 	return nil
 }
+
+// ValidateRegex returns an error if the supplied
+// RE2 regex syntax is invalid.
+func ValidateRegex(regex string) error {
+	_, err := regexp.Compile(regex)
+	return err
+}
