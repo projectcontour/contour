@@ -298,11 +298,38 @@ func (e *EndpointsTranslator) OnChange(d *dag.DAG) {
 	// set the entries rather than merging them.
 	entries := e.cache.Recalculate()
 
-	e.mu.Lock()
-	e.entries = entries
-	e.mu.Unlock()
+	// Only update and notify if entries has changed.
+	if !equal(e.entries, entries) {
+		e.Debug("cluster load assignments changed, notifying waiters")
 
-	e.Notify()
+		e.mu.Lock()
+		e.entries = entries
+		e.mu.Unlock()
+
+		e.Notify()
+	} else {
+		e.Debug("cluster load assignments did not change")
+	}
+}
+
+// equal returns true if a and b are the same length, have the same set
+// of keys, and have proto-equivalent values for each key, or false otherwise.
+func equal(a, b map[string]*envoy_api_v2.ClusterLoadAssignment) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for k := range a {
+		if _, ok := b[k]; !ok {
+			return false
+		}
+
+		if !proto.Equal(a[k], b[k]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (e *EndpointsTranslator) OnAdd(obj interface{}) {

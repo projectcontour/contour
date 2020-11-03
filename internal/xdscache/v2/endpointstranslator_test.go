@@ -23,6 +23,7 @@ import (
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 )
@@ -718,6 +719,98 @@ func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 	}
 
 	protobuf.ExpectEqual(t, want, et.Contents())
+}
+
+func TestEqual(t *testing.T) {
+	tests := map[string]struct {
+		a, b map[string]*envoy_api_v2.ClusterLoadAssignment
+		want bool
+	}{
+		"both nil": {
+			a:    nil,
+			b:    nil,
+			want: true,
+		},
+		"one nil, one empty": {
+			a:    map[string]*envoy_api_v2.ClusterLoadAssignment{},
+			b:    nil,
+			want: true,
+		},
+		"both empty": {
+			a:    map[string]*envoy_api_v2.ClusterLoadAssignment{},
+			b:    map[string]*envoy_api_v2.ClusterLoadAssignment{},
+			want: true,
+		},
+		"a is an incomplete subset of b": {
+			a: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+			},
+			b: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			want: false,
+		},
+		"b is an incomplete subset of a": {
+			a: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			b: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+			},
+			want: false,
+		},
+		"a and b have the same keys, different values": {
+			a: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			b: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "different"},
+			},
+			want: false,
+		},
+		"a and b have the same values, different keys": {
+			a: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			b: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"d": {ClusterName: "a"},
+				"e": {ClusterName: "b"},
+				"f": {ClusterName: "c"},
+			},
+			want: false,
+		},
+		"a and b have the same keys, same values": {
+			a: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			b: map[string]*envoy_api_v2.ClusterLoadAssignment{
+				"a": {ClusterName: "a"},
+				"b": {ClusterName: "b"},
+				"c": {ClusterName: "c"},
+			},
+			want: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, equal(tc.a, tc.b))
+		})
+	}
 }
 
 func ports(eps ...v1.EndpointPort) []v1.EndpointPort {
