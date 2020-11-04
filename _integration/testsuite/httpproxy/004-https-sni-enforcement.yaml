@@ -241,7 +241,7 @@ fatal_proxy_is_not_valid[msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 
 Service := "echo-two"
 
@@ -254,24 +254,12 @@ Response := client.Get({
   "tls_insecure_skip_verify": true,
 })
 
-error_no_response {
-  not Response
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
-error_non_200_response [msg] {
-  not response.status_is(Response, 200)
-
-  msg :=  sprintf("got status %d, wanted %d", [
-    response.status_code(Response), 200
-  ])
-}
-
-error_wrong_routing[msg] {
-  not response.service(Response) == Service
-
-  msg :=  sprintf("got wrong service %q, wanted %q", [
-    response.service(Response), Service,
-  ])
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, Service)
 }
 
 ---
@@ -317,7 +305,7 @@ Response := client.Get({
   "tls_server_name": "echo-one.projectcontour.io",
 })
 
-error_non_404_response [msg] {
+check_for_status_code [msg] {
   not response.is_4xx(Response)
   msg :=  sprintf("got status %d, wanted 4xx", [ Response.status_code ])
 }

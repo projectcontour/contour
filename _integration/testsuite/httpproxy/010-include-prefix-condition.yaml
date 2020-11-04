@@ -129,7 +129,7 @@ fatal_proxy_is_not_valid[msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 
 cases := {
   { "path": "/", "service": "echo-app" },
@@ -157,12 +157,8 @@ error_missing_response {
   count(responses) != count(cases)
 }
 
-error_misrouted_request[msg] {
+check_for_service_routing [msg] {
   r := responses[_]
 
-  not response.service(r.response) == r.service
-
-  msg := sprintf("got service %q, wanted %q", [
-    response.service(r.response), r.service
-  ])
+  msg := expect.response_service_is(r.response, r.service)
 }

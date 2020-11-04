@@ -194,7 +194,7 @@ error[msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 
 random := sprintf("%d", [time.now_ns()])
 
@@ -236,25 +236,14 @@ requests[{ "req": req, "wanted_status": status, "wanted_service": service }] {
   service := case.service
 }
 
-error_if_wrong_status[msg] {
+check_for_status_code [msg] {
   req := requests[_]
   resp := http.send(req.req)
-
-  not response.status_is(resp, req.wanted_status)
-
-  msg := sprintf("got status %d, wanted %d", [
-    response.status_code(resp),
-    req.wanted_status,
-  ])
+  msg := expect.response_status_is(resp, req.wanted_status)
 }
 
-error_wrong_routing[msg] {
+check_for_service_routing [msg] {
   req := requests[_]
   resp := http.send(req.req)
-
-  not req.wanted_service == response.service(resp)
-
-  msg := sprintf("got service %s, wanted %q", [
-    response.service(resp), req.wanted_service,
-  ])
+  msg := expect.response_service_is(resp, req.wanted_service)
 }

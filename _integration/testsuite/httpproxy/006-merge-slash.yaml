@@ -60,9 +60,10 @@ fatal_proxy_is_not_valid[msg] {
 
 ---
 
-import data.contour.http.response
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.expect
+import data.contour.http.response
 
 Path := "this//has//lots////of/slashes"
 
@@ -74,9 +75,8 @@ Response := client.Get({
   },
 })
 
-error_non_200_response [msg] {
-  Response.status_code != 200
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
 error_unexpected_path [msg] {
