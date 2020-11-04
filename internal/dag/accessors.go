@@ -49,9 +49,8 @@ func (dag *DAG) GetService(meta types.NamespacedName, port int32) *Service {
 }
 
 // EnsureService looks for a Kubernetes service in the cache matching the provided
-// namespace, name and port, adds it to the DAG if it does not already exist, and
-/// returns it. If a matching service cannot be found in the cache, an error is
-// returned.
+// namespace, name and port, and returns a DAG service for it. If a matching service
+// cannot be found in the cache, an error is returned.
 func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, cache *KubernetesCache) (*Service, error) {
 	svc, svcPort, err := cache.LookupService(meta, port)
 	if err != nil {
@@ -76,7 +75,6 @@ func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString
 		MaxRetries:         annotation.MaxRetries(svc),
 		ExternalName:       externalName(svc),
 	}
-	dag.AddRoot(dagSvc)
 	return dagSvc, nil
 }
 
