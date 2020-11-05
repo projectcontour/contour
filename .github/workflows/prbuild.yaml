@@ -13,7 +13,7 @@ jobs:
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
-          echo "::add-path::$GITHUB_WORKSPACE/bin"
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
       - name: integration tests
         run: |
           make integration

@@ -780,6 +780,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	i15InvalidRegex := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "regex",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "^\\/(?!\\/)(.*?)",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromString("http"),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	i16 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "wildcards",
@@ -4022,6 +4044,13 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 			),
+		},
+		"insert ingress with invalid regex route": {
+			objs: []interface{}{
+				i15InvalidRegex,
+				s1,
+			},
+			want: listeners(),
 		},
 		// issue 1234
 		"insert ingress with wildcard hostnames": {

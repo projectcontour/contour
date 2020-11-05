@@ -63,7 +63,7 @@ func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
 	case *dag.RegexMatchCondition:
 		return &envoy_api_v2_route.RouteMatch{
 			PathSpecifier: &envoy_api_v2_route.RouteMatch_SafeRegex{
-				SafeRegex: envoy.SafeRegexMatch(c.Regex),
+				SafeRegex: SafeRegexMatch(c.Regex),
 			},
 			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
@@ -350,6 +350,6 @@ func containsMatch(s string) *envoy_api_v2_route.HeaderMatcher_SafeRegexMatch {
 	regex := fmt.Sprintf(".*%s.*", regexp.QuoteMeta(s))
 
 	return &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
-		SafeRegexMatch: envoy.SafeRegexMatch(regex),
+		SafeRegexMatch: SafeRegexMatch(regex),
 	}
 }

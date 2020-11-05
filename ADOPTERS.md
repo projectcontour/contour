@@ -1,24 +1,23 @@
 # Contour Adopters
 
-If you're using Contour and want to add your organization to this list, feel free to
+If you're using Contour and want to add your organization to this list, please
 [submit a pull request][1]!
 
-<a href="https://www.example.com" border="0" target="_blank"><img alt="example.com" src="site/img/adopters/example.png" height="50"></a>&nbsp; &nbsp; &nbsp;
+<a href="https://www.vmware.com" border="0" target="_blank"><img alt="vmware.com" src="site/img/adopters/VMware-logo-grey.jpg" height="50"></a>&nbsp; &nbsp; &nbsp;
 
 ## Success Stories
 
 Below is a list of adopters of Contour in **production environments** that have
 publicly shared the details of how they use it.
 
-**Example.com**  
-Use case number 1, fantastic stuff.
+_Add yours here!_
 
 ## Solutions built with Contour
 
-Below is a list of solutions where Velero is being used as a component.
+Below is a list of solutions where Contour is being used as a component.
 
-**Example.com**  
-Promotes Contour as their number one DR solution.
+**[VMware](https://tanzu.vmware.com/tanzu)**  
+All four [VMware Tanzu](https://tanzu.vmware.com/content/blog/simplify-your-approach-to-application-modernization-with-4-simple-editions-for-the-tanzu-portfolio) editions make the best possible use of various open source projects, starting with putting Kubernetes at their core. We’ve included leading projects to provide our customers with flexibility and a range of necessary capabilities, including Harbor (for image registry), Antrea (for container networking), Contour (for ingress control), and Cluster API (for lifecycle management).
 
 ## Adding a logo to projectcontour.io
 

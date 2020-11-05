@@ -11,14 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"path"
 	"testing"
 
-	api "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_bootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
+	envoy_bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
+	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -122,6 +122,7 @@ func TestBootstrap(t *testing.T) {
     "lds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -129,11 +130,13 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+	  "resource_api_version": "V3"
     },
     "cds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+	 	"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -141,7 +144,8 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+ 	  "resource_api_version": "V3"
     }
   },
   "admin": {
@@ -246,6 +250,7 @@ func TestBootstrap(t *testing.T) {
     "lds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -253,11 +258,13 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+      "resource_api_version": "V3"
     },
     "cds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -265,7 +272,8 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+      "resource_api_version": "V3"
     }
   },
   "admin": {
@@ -369,6 +377,7 @@ func TestBootstrap(t *testing.T) {
     "lds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -376,11 +385,13 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+      "resource_api_version": "V3"
     },
     "cds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -388,7 +399,8 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+      "resource_api_version": "V3"
     }
   },
   "admin": {
@@ -493,6 +505,7 @@ func TestBootstrap(t *testing.T) {
     "lds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+ 		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -500,11 +513,13 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+	  "resource_api_version": "V3"
     },
     "cds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+ 		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -512,7 +527,8 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+	  "resource_api_version": "V3"
     }
   },
   "admin": {
@@ -611,10 +627,11 @@ func TestBootstrap(t *testing.T) {
       }
     ]
   },
-  "dynamic_resources": {
+ "dynamic_resources": {
     "lds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+ 		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -622,11 +639,13 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+	  "resource_api_version": "V3"
     },
     "cds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+ 		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -634,7 +653,8 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+	  "resource_api_version": "V3"
     }
   },
   "admin": {
@@ -712,7 +732,7 @@ func TestBootstrap(t *testing.T) {
         "transport_socket": {
           "name": "envoy.transport_sockets.tls",
           "typed_config": {
-            "@type":"type.googleapis.com/envoy.api.v2.auth.UpstreamTlsContext",
+            "@type":"type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
             "common_tls_context": {
               "tls_certificates": [
                 {
@@ -769,6 +789,7 @@ func TestBootstrap(t *testing.T) {
     "lds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+ 		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -776,11 +797,13 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+	  "resource_api_version": "V3"
     },
     "cds_config": {
       "api_config_source": {
         "api_type": "GRPC",
+ 		"transport_api_version": "V3",
         "grpc_services": [
           {
             "envoy_grpc": {
@@ -788,7 +811,8 @@ func TestBootstrap(t *testing.T) {
             }
           }
         ]
-      }
+      },
+	  "resource_api_version": "V3"
     }
   },
   "admin": {
@@ -860,7 +884,7 @@ func TestBootstrap(t *testing.T) {
               "transport_socket": {
                 "name": "envoy.transport_sockets.tls",
                 "typed_config": {
-                  "@type": "type.googleapis.com/envoy.api.v2.auth.UpstreamTlsContext",
+                  "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
                   "common_tls_context": {
                     "tls_certificate_sds_secret_configs": [
                       {
@@ -916,6 +940,7 @@ func TestBootstrap(t *testing.T) {
           "lds_config": {
             "api_config_source": {
               "api_type": "GRPC",
+              "transport_api_version": "V3",
               "grpc_services": [
                 {
                   "envoy_grpc": {
@@ -923,11 +948,13 @@ func TestBootstrap(t *testing.T) {
                   }
                 }
               ]
-            }
+            },
+            "resource_api_version": "V3"
           },
           "cds_config": {
             "api_config_source": {
               "api_type": "GRPC",
+              "transport_api_version": "V3",
               "grpc_services": [
                 {
                   "envoy_grpc": {
@@ -935,7 +962,8 @@ func TestBootstrap(t *testing.T) {
                   }
                 }
               ]
-            }
+            },
+            "resource_api_version": "V3"
           }
         },
         "admin": {
@@ -951,7 +979,7 @@ func TestBootstrap(t *testing.T) {
 			wantedTLSCertificateConfig: `{
       "resources": [
         {
-          "@type": "type.googleapis.com/envoy.api.v2.auth.Secret",
+          "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret",
           "tls_certificate": {
             "certificate_chain": {
               "filename": "client.cert"
@@ -966,7 +994,7 @@ func TestBootstrap(t *testing.T) {
 			wantedValidationContextConfig: `{
       "resources": [
         {
-          "@type": "type.googleapis.com/envoy.api.v2.auth.Secret",
+          "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret",
           "validation_context": {
             "trusted_ca": {
               "filename": "CA.cert"
@@ -1007,21 +1035,21 @@ func TestBootstrap(t *testing.T) {
 			sdsValidationContextPath := path.Join(tc.config.ResourcesDir, envoy.SDSResourcesSubdirectory, envoy.SDSValidationContextFile)
 
 			if tc.wantedBootstrapConfig != "" {
-				want := new(envoy_api_bootstrap.Bootstrap)
+				want := new(envoy_bootstrap_v3.Bootstrap)
 				unmarshal(t, tc.wantedBootstrapConfig, want)
 				protobuf.ExpectEqual(t, want, gotConfigs[tc.config.Path])
 				delete(gotConfigs, tc.config.Path)
 			}
 
 			if tc.wantedTLSCertificateConfig != "" {
-				want := new(api.DiscoveryResponse)
+				want := new(envoy_service_discovery_v3.DiscoveryResponse)
 				unmarshal(t, tc.wantedTLSCertificateConfig, want)
 				protobuf.ExpectEqual(t, want, gotConfigs[sdsTLSCertificatePath])
 				delete(gotConfigs, sdsTLSCertificatePath)
 			}
 
 			if tc.wantedValidationContextConfig != "" {
-				want := new(api.DiscoveryResponse)
+				want := new(envoy_service_discovery_v3.DiscoveryResponse)
 				unmarshal(t, tc.wantedValidationContextConfig, want)
 				protobuf.ExpectEqual(t, want, gotConfigs[sdsValidationContextPath])
 				delete(gotConfigs, sdsValidationContextPath)

@@ -36,7 +36,6 @@ debug: false
 kubeconfig: TestParseDefaults/.kube/config
 server:
   xds-server-type: contour
-  xds-server-version: v2
 accesslog-format: envoy
 json-fields:
 - '@timestamp'
@@ -124,6 +123,48 @@ func TestValidateAccessLogType(t *testing.T) {
 
 	assert.NoError(t, EnvoyAccessLog.Validate())
 	assert.NoError(t, JSONAccessLog.Validate())
+}
+
+func TestValidateAccessLogFields(t *testing.T) {
+	errorCases := [][]string{
+		{"dog", "cat"},
+		{"req"},
+		{"resp"},
+		{"trailer"},
+		{"@timestamp", "dog"},
+		{"@timestamp", "content-id=%REQ=dog%"},
+		{"@timestamp", "content-id=%dog(%"},
+		{"@timestamp", "content-id=%REQ()%"},
+		{"@timestamp", "content-id=%DOG%"},
+		{"@timestamp", "duration=my durations % are %DURATION%.0 and %REQ(:METHOD)%"},
+		{"invalid=%REQ%"},
+		{"invalid=%TRAILER%"},
+		{"invalid=%RESP%"},
+		{"@timestamp", "invalid=%START_TIME(%s.%6f):10%"},
+	}
+
+	for _, c := range errorCases {
+		assert.Error(t, AccessLogFields(c).Validate(), c)
+	}
+
+	successCases := [][]string{
+		{"@timestamp", "method"},
+		{"start_time"},
+		{"@timestamp", "response_duration"},
+		{"@timestamp", "duration=%DURATION%.0"},
+		{"@timestamp", "duration=My duration=%DURATION%.0"},
+		{"@timestamp", "duratin=%START_TIME(%s.%6f)%"},
+		{"@timestamp", "content-id=%REQ(X-CONTENT-ID)%"},
+		{"@timestamp", "content-id=%REQ(X-CONTENT-ID):10%"},
+		{"@timestamp", "length=%RESP(CONTENT-LENGTH):10%"},
+		{"@timestamp", "trailer=%TRAILER(CONTENT-LENGTH):10%"},
+		{"@timestamp", "duration=my durations are %DURATION%.0 and method is %REQ(:METHOD)%"},
+		{"dog=pug", "cat=black"},
+	}
+
+	for _, c := range successCases {
+		assert.NoError(t, AccessLogFields(c).Validate(), c)
+	}
 }
 
 func TestValidateHTTPVersionType(t *testing.T) {

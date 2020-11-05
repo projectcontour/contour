@@ -1509,6 +1509,47 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 		TypeUrl: routeType,
 		Nonce:   "1",
 	})
+
+	invalid := &v1beta1.Ingress{
+		ObjectMeta: meta,
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(80),
+			},
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{{
+							Path: "^\\/(?!\\/)(.*?)",
+							Backend: v1beta1.IngressBackend{
+								ServiceName: "kuard",
+								ServicePort: intstr.FromInt(80),
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(invalid)
+
+	// check that it's been translated correctly.
+	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
+		VersionInfo: "1",
+		Resources: routeResources(t,
+			envoy_v2.RouteConfiguration("ingress_http",
+				envoy_v2.VirtualHost("*",
+					&envoy_api_v2_route.Route{
+						Match:  routePrefix("/"),
+						Action: routecluster("default/kuard/80/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+		Nonce:   "1",
+	})
 }
 
 func assertRDS(t *testing.T, c *Contour, versioninfo string, ingressHTTP, ingressHTTPS []*envoy_api_v2_route.VirtualHost) {

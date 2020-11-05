@@ -1,7 +1,7 @@
 # HTTPProxy Fundamentals
 
 The [Ingress][1] object was added to Kubernetes in version 1.1 to describe properties of a cluster-wide reverse HTTP proxy.
-Since that time, the Ingress API has remained relatively unchanged, and the need to express implentation-specific capabilities has inspired an [explosion of annotations][2].
+Since that time, the Ingress API has remained relatively unchanged, and the need to express implementation-specific capabilities has inspired an [explosion of annotations][2].
 
 The goal of the HTTPProxy Custom Resource Definition (CRD) is to expand upon the functionality of the Ingress API to allow for a richer user experience as well addressing the limitations of the latter's use in multi tenant environments.
 

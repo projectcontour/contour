@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/projectcontour/contour/pkg/config"
 )
 
 // SDSResourcesSubdirectory stores the subdirectory name where SDS path resources are stored to.
@@ -28,13 +29,13 @@ const SDSResourcesSubdirectory = "sds"
 
 // SDSTLSCertificateFile stores the path to the SDS resource with Envoy's
 // client certificate and key for XDS gRPC connection.
-const SDSTLSCertificateFile = "xds-tls-certicate.json"
+const SDSTLSCertificateFile = "xds-tls-certificate.json"
 
 // SDSValidationContextFile stores the path to the SDS resource with
 // CA certificates for Envoy to use for the XDS gRPC connection.
 const SDSValidationContextFile = "xds-validation-context.json"
 
-// BootstrapConfig holds configuration values for a v2.Bootstrap.
+// BootstrapConfig holds configuration values for a Bootstrap configuration.
 type BootstrapConfig struct {
 	// AdminAccessLogPath is the path to write the access log for the administration server.
 	// Defaults to /dev/null.
@@ -56,11 +57,15 @@ type BootstrapConfig struct {
 	// Defaults to 8001.
 	XDSGRPCPort int
 
+	// XDSResourceVersion defines the XDS Server Version to use.
+	// Defaults to "v2"
+	XDSResourceVersion config.ResourceVersion
+
 	// Namespace is the namespace where Contour is running
 	Namespace string
 
-	//GrpcCABundle is the filename that contains a CA certificate chain that can
-	//verify the client cert.
+	// GrpcCABundle is the filename that contains a CA certificate chain that can
+	// verify the client cert.
 	GrpcCABundle string
 
 	// GrpcClientCert is the filename that contains a client certificate. May contain a full bundle if you

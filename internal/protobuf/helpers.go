@@ -15,9 +15,11 @@
 package protobuf
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -94,4 +96,22 @@ func MustMarshalAny(pb proto.Message) *any.Any {
 	}
 
 	return a
+}
+
+// AnyMessageTypeOf returns the any.Any type of msg.
+func AnyMessageTypeOf(msg proto.Message) string {
+	a := MustMarshalAny(msg)
+	return a.TypeUrl
+}
+
+/// MustMarshalJSON marshals msg to indented JSON.
+func MustMarshalJSON(msg proto.Message) string {
+	m := jsonpb.Marshaler{Indent: "  "}
+
+	str, err := m.MarshalToString(msg)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal %T: %s", msg, err))
+	}
+
+	return str
 }

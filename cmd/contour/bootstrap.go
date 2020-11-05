@@ -30,9 +30,10 @@ func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *envoy.Boo
 	bootstrap.Flag("admin-port", "Envoy admin interface port.").IntVar(&config.AdminPort)
 	bootstrap.Flag("xds-address", "xDS gRPC API address.").StringVar(&config.XDSAddress)
 	bootstrap.Flag("xds-port", "xDS gRPC API port.").IntVar(&config.XDSGRPCPort)
-	bootstrap.Flag("envoy-cafile", "gRPC CA Filename for Envoy to load.").Envar("ENVOY_CAFILE").StringVar(&config.GrpcCABundle)
-	bootstrap.Flag("envoy-cert-file", "gRPC Client cert filename for Envoy to load.").Envar("ENVOY_CERT_FILE").StringVar(&config.GrpcClientCert)
-	bootstrap.Flag("envoy-key-file", "gRPC Client key filename for Envoy to load.").Envar("ENVOY_KEY_FILE").StringVar(&config.GrpcClientKey)
+	bootstrap.Flag("envoy-cafile", "CA Filename for Envoy secure xDS gRPC communication.").Envar("ENVOY_CAFILE").StringVar(&config.GrpcCABundle)
+	bootstrap.Flag("envoy-cert-file", "Client certificate filename for Envoy secure xDS gRPC communication.").Envar("ENVOY_CERT_FILE").StringVar(&config.GrpcClientCert)
+	bootstrap.Flag("envoy-key-file", "Client key filename for Envoy secure xDS gRPC communication.").Envar("ENVOY_KEY_FILE").StringVar(&config.GrpcClientKey)
 	bootstrap.Flag("namespace", "The namespace the Envoy container will run in.").Envar("CONTOUR_NAMESPACE").Default("projectcontour").StringVar(&config.Namespace)
+	bootstrap.Flag("xds-resource-version", "The versions of the xDS resources to request from Contour.").Default("v2").StringVar((*string)(&config.XDSResourceVersion))
 	return bootstrap, &config
 }

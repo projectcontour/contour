@@ -31,9 +31,9 @@ readonly REPO=$(cd ${HERE}/../.. && pwd)
 
 # List of tags to apply to the image built from the working directory.
 # The "working" tag is applied to unambigiously reference the working
-# image, since "master" and "latest" could also come from the Docker
+# image, since "main" and "latest" could also come from the Docker
 # registry.
-readonly TAGS="master latest working"
+readonly TAGS="main latest working"
 
 kind::cluster::exists() {
     ${KIND} get clusters | grep -q "$1"
@@ -64,11 +64,10 @@ for t in $TAGS ; do
     kind::cluster::load docker.io/projectcontour/contour:$t
 done
 
-# Install Contour.
+# Install Contour
 #
-# NOTE(jpeach): The certgen job uses the ":latest" tag with the
-# "Latest" pull policy, which forces the kubelet to re-fetch from
-# DockerHub, which is why we have to whack the image pull policy.
+# Manifests use the "Always" image pull policy, which forces the kubelet to re-fetch from
+# DockerHub, which is why we have to update policy to `IfNotPresent`.
 for y in ${REPO}/examples/contour/*.yaml ; do
   ${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < "$y")
 done
