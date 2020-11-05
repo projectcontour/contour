@@ -151,7 +151,10 @@ func (s *contourServer) stream(st grpcStream) error {
 
 			// Rewrite the embedded message types to v3.
 			for _, r := range resources {
-				xds.Rewrite(r)
+				// Note that the resource cache
+				// gave us a pointer to its internal
+				// object, so we should rewrite a copy.
+				xds.Rewrite(proto.Clone(r))
 			}
 
 			any := make([]*any.Any, 0, len(resources))
