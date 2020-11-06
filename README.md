@@ -24,7 +24,7 @@ See the [Getting Started](https://projectcontour.io/getting-started) document.
 
 ## Troubleshooting
 
-If you encounter issues, review the [troubleshooting docs](/site/docs/main/troubleshooting.md), [file an issue](https://github.com/projectcontour/contour/issue), or talk to us on the [#contour channel](https://kubernetes.slack.com/messages/contour) on the Kubernetes Slack server.
+If you encounter issues, review the Troubleshooting section of [the docs](https://projectcontour.io/docs), [file an issue](https://github.com/projectcontour/contour/issue), or talk to us on the [#contour channel](https://kubernetes.slack.com/messages/contour) on the Kubernetes Slack server.
 
 ## Contributing
 
