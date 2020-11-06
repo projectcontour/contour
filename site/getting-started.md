@@ -88,7 +88,7 @@ If you encounter issues, review the [troubleshooting docs][5], [file an issue][6
 
 [0]: https://aws.amazon.com/quickstart/architecture/vmware-kubernetes
 [1]: /docs/{{site.latest}}/deploy-options
-[2]: /docs/{{site.latest}}/httpproxy
+[2]: /docs/{{site.latest}}/config/fundamentals
 [3]: /docs/{{site.latest}}
 [4]: {% link _resources/faq.md %}
 [5]: /docs/{{site.latest}}/troubleshooting

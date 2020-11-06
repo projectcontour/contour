@@ -964,8 +964,8 @@ $ kubectl get configmap -n heptio-contour -o yaml contour
 
 [1]: {{site.github.repository_url}}/blob/{{site.latest}}/examples
 [2]: {{site.github.repository_url}}/blob/v1.0.0/examples
-[3]: /docs/{{site.latest}}/httpproxy
-[4]: /docs/{{site.latest}}/annotations
+[3]: /docs/{{site.latest}}/config/fundamentals
+[4]: /docs/{{site.latest}}/config/annotations
 [5]: {{site.github.repository_url}}/issues/899
 [6]: /docs/{{site.latest}}/configuration
 [7]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/README.md
