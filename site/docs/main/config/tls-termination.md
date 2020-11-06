@@ -137,7 +137,7 @@ spec:
 ## Client Certificate Validation
 
 It is possible to protect the backend service from unauthorized external clients by requiring the client to present a valid TLS certificate.
-Envoy will validate the client certificate by verifying that it is not expired and that a a chain of trust can be established to the configured trusted root CA certificate.
+Envoy will validate the client certificate by verifying that it is not expired and that a chain of trust can be established to the configured trusted root CA certificate.
 Only those requests with a valid client certificate will be accepted and forwarded to the backend service.
 
 ```yaml
