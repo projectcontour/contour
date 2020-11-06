@@ -10,13 +10,6 @@ This document describes the changes needed to upgrade your Contour installation.
 <br>
 
 <div class="alert-deprecation">
-<b>Removal Notice</b><br>
-The <code>IngressRoute</code> CRD has been removed in Contour 1.6.
-Please see the documentation for <a href="{% link docs/{{site.latest}}/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
-You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
-</div>
-
-<div class="alert-deprecation">
 <b>Deprecation Notices</b><br>
 - In Contour 1.10, we will be deprecating TLS 1.1 and lower.
 TLS 1.2 will become the default minimum TLS version.
@@ -31,9 +24,63 @@ Use of these annotations will be logged as warnings.<br>
 
 <br>
 
-## Upgrading Contour 1.8.2 to 1.9.0
+## Upgrading Contour 1.9.0 to 1.10.0
 
-Contour 1.9.0 is the current stable release.
+Contour 1.10.0 is the current stable release.
+
+### Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.16.0`.
+
+Please see the [Envoy Release Notes][25] for information about issues fixed in Envoy 1.16.0.
+
+### The easy way to upgrade
+
+If the following are true for you:
+
+ * Your installation is in the `projectcontour` namespace.
+ * You are using our [quickstart example][18] deployments.
+ * Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade to 1.10.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.10.0/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+### The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.9.0 to 1.10.0 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.10.0` tag.
+
+The Contour CRD definition must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
+
+```bash
+$ kubectl apply -f examples/contour/01-crds.yaml
+```
+
+Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+This will rotate the TLS certificates used for gRPC security.
+
+```bash
+$ kubectl apply -f examples/contour/02-job-certgen.yaml
+```
+
+If your cluster cannot take downtime, it's important to first upgrade Contour to v1.10.0 then upgrade your Envoy pods.
+This is due to an Envoy xDS Resource API upgrade to `v3`.
+See the [xDS Migration Guide][26] for more information.
+
+```bash
+$ kubectl apply -f examples/contour/03-contour.yaml
+$ kubectl apply -f examples/contour/03-envoy.yaml
+```
+
+## Upgrading Contour 1.8.2 to 1.9.0
 
 ### Required Envoy version
 
@@ -90,8 +137,6 @@ $ kubectl delete crd tlscertificatedelegations.contour.heptio.com
 ```
 
 ## Upgrading Contour 1.7.0 to 1.8.0
-
-Contour 1.8.0 is the current stable release.
 
 ### Required Envoy version
 
@@ -213,8 +258,6 @@ $ kubectl delete crd tlscertificatedelegations.contour.heptio.com
 ```
 
 ## Upgrading Contour 1.5.1 to 1.6.1
-
-Contour 1.6.1 is the current stable release.
 
 ### Required Envoy version
 
@@ -397,8 +440,6 @@ Otherwise, you should add the new `envoy` `serviceAccount` to your Envoy deploym
 This will be used in the future to add further container-level security via PodSecurityPolicies.
 
 ## Upgrading Contour 1.2.1 to 1.3.0
-
-Contour 1.3.0 is the current stable release.
 
 ### Required Envoy version
 
@@ -583,8 +624,6 @@ Change the Contour image version to `docker.io/projectcontour/contour:v1.1.0`.
 Contour 1.1.0 requires Envoy 1.12.2. Change the Envoy image version to `docker.io/envoyproxy/envoy:v1.12.2`.
 
 ## Upgrading Contour 1.0.0 to 1.0.1
-
-Contour 1.0.1 is the current stable release.
 
 ### The easy way to upgrade
 
@@ -947,3 +986,5 @@ $ kubectl get configmap -n heptio-contour -o yaml contour
 [22]: https://www.envoyproxy.io/docs/envoy/v1.14.3/intro/version_history
 [23]: https://www.envoyproxy.io/docs/envoy/v1.15.0/version_history/current
 [24]: {% link _guides/ingressroute-to-httpproxy.md %}
+[25]: https://www.envoyproxy.io/docs/envoy/v1.16.0/version_history/current
+[26]: {% link _guides/xds-migration.md %}
