@@ -1700,6 +1700,9 @@ spec:
           name: xds
           protocol: TCP
         - containerPort: 8000
+          name: metrics
+          protocol: TCP
+        - containerPort: 6060
           name: debug
           protocol: TCP
         livenessProbe:

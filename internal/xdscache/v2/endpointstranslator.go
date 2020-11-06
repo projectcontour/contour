@@ -272,11 +272,11 @@ func (e *EndpointsTranslator) OnChange(d *dag.DAG) {
 			if err := svc.Validate(); err != nil {
 				e.WithError(err).Errorf("dropping invalid service cluster %q", svc.ClusterName)
 			} else if _, ok := names[svc.ClusterName]; ok {
-				e.Errorf("dropping service cluster with duplicate name %q", svc.ClusterName)
+				e.Debugf("dropping service cluster with duplicate name %q", svc.ClusterName)
 			} else {
-
 				e.Debugf("added ServiceCluster %q from DAG", svc.ClusterName)
 				clusters = append(clusters, svc.DeepCopy())
+				names[svc.ClusterName] = true
 			}
 		}
 
