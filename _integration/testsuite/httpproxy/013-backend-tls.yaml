@@ -243,6 +243,7 @@ error_secret_not_updated [msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.expect
 import data.contour.http.response
 import data.contour.resources
 
@@ -258,14 +259,8 @@ Response := client.Get({
 EnvoySecret := resources.get("secrets", "013-backend-tls/envoy-client-cert")
 EnvoyCert := base64.decode(EnvoySecret.data["tls.crt"])
 
-error_non_200_response [msg] {
-  not Response
-  msg := "no response"
-}
-
-error_non_200_response [msg] {
-  Response.status_code != 200
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
 error_no_upstream_tls [msg] {
@@ -307,6 +302,7 @@ spec:
 
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.expect
 import data.contour.http.response
 import data.contour.resources
 
@@ -322,14 +318,8 @@ Response := client.Get({
 EnvoySecret := resources.get("secrets", "013-backend-tls/envoy-client-cert")
 EnvoyCert := base64.decode(EnvoySecret.data["tls.crt"])
 
-error_non_200_response [msg] {
-  not Response
-  msg := "no response"
-}
-
-error_non_200_response [msg] {
-  Response.status_code != 200
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
 error_no_upstream_tls [msg] {

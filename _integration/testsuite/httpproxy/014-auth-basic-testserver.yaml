@@ -235,7 +235,7 @@ spec:
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 
 Response := client.Get({
   "url": url.https(sprintf("/second/route/%d", [time.now_ns()])),
@@ -246,16 +246,15 @@ Response := client.Get({
   "tls_insecure_skip_verify": true,
 })
 
-error_non_200_response [msg] {
-  not response.status_is(Response, 200)
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
 ---
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 
 Response := client.Get({
   "url": url.https(sprintf("/first/route/%d", [time.now_ns()])),
@@ -266,16 +265,15 @@ Response := client.Get({
   "tls_insecure_skip_verify": true,
 })
 
-error_non_401_response [msg] {
-  not response.status_is(Response, 401)
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 401])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 401)
 }
 
 ---
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 
 # The `testserver` authorization server will accept any request with
 # "allow" in the path, so this request should succeed. We can tell that
@@ -291,26 +289,16 @@ Response := client.Get({
   "tls_insecure_skip_verify": true,
 })
 
-error_non_200_response [msg] {
-  not response.status_is(Response, 200)
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
 # Check route context key.
-error_missing_context [msg] {
-  not response.body_has_header_value(Response, "Auth-Context-Target", "first")
-  msg := sprintf("invalid global response context:\n%s", [
-    yaml.marshal(object.get(response.body(Response), "Headers", {}))
-  ])
+check_for_authorization_header [msg] {
+  msg := expect.response_header_is(Response, "Auth-Context-Target", "first")
 }
 
 # Check global context key.
-error_missing_context [msg] {
-  not response.body_has_header_value(Response, "Auth-Context-Hostname", "echo.projectcontour.io")
-  msg := sprintf("invalid global response context:\n%s", [
-    yaml.marshal(object.get(response.body(Response), "Headers", {}))
-  ])
+check_for_authorzation_header [msg] {
+  msg := expect.response_header_is(Response, "Auth-Context-Hostname", "echo.projectcontour.io")
 }
-
-
-

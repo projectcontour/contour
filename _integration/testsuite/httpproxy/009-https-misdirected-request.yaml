@@ -135,7 +135,7 @@ fatal_proxy_is_not_valid[msg] {
 import data.contour.http.client
 import data.contour.http.client.url
 import data.contour.http.request
-import data.contour.http.response
+import data.contour.http.expect
 
 Response := client.Get({
   "url": url.https(sprintf("/misdirected/%d", [time.now_ns()])),
@@ -146,22 +146,19 @@ Response := client.Get({
   "tls_insecure_skip_verify": true,
 })
 
-error_non_200_response [msg] {
-  not response.status_is(Response, 200)
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
-error_wrong_routing[msg] {
-  wanted := "echo"
-  not response.service(Response) == wanted
-  msg := sprintf("got service ID %q, wanted %q", [response.service(Response), wanted])
+check_for_service_routing [msg] {
+  msg:= expect.response_service_is(Response, "echo")
 }
 
 ---
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 
 # Send a request with a Host header that doesn't match the SNI name that
 # we have for the proxy document. We expect the mismatch will generate a
@@ -177,16 +174,15 @@ Response := client.Get({
   "tls_insecure_skip_verify": true,
 })
 
-error_non_421_response [msg] {
-  not response.status_is(Response, 421)
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 421])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 421)
 }
 
 ---
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 
 # The virtual host name is port-insensitive, so verify that we can
 # stuff any old port number is and still succeed.
@@ -201,16 +197,15 @@ Response := client.Get({
   "tls_insecure_skip_verify": true,
 })
 
-error_non_200_response [msg] {
-  not response.status_is(Response, 200)
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
 ---
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 
 # Verify that the hostname match is case-insensitive.
 # The SNI server name match is still case sensitive,
@@ -226,7 +221,6 @@ Response := client.Get({
   "tls_insecure_skip_verify": true,
 })
 
-error_non_200_response [msg] {
-  not response.status_is(Response, 200)
-  msg := sprintf("got status %d, wanted %d", [Response.status_code, 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }

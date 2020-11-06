@@ -44,7 +44,7 @@ spec:
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 import data.builtin.result
 
 Response := client.Get({
@@ -55,14 +55,8 @@ Response := client.Get({
   },
 })
 
-check [r] {
-  response.status_is(Response, 200)
-  r := result.Pass("got status 200")
-}
-
-check [r] {
-  not response.status_is(Response, 200)
-  r := result.Errorf("got status %d, wanted %d", [response.status_code(Response), 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
 ---
@@ -86,7 +80,7 @@ spec:
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 import data.builtin.result
 
 Response := client.Get({
@@ -97,14 +91,8 @@ Response := client.Get({
   },
 })
 
-check [r] {
-  response.status_is(Response, 503)
-  r := result.Pass("got status 503")
-}
-
-check [r] {
-  not response.status_is(Response, 503)
-  r := result.Errorf("got status %d, wanted %d", [response.status_code(Response), 503])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 503)
 }
 
 ---
@@ -127,7 +115,7 @@ spec:
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
+import data.contour.http.expect
 import data.builtin.result
 
 Response := client.Get({
@@ -138,12 +126,6 @@ Response := client.Get({
   },
 })
 
-check [r] {
-  response.status_is(Response, 200)
-  r := result.Pass("got status 200")
-}
-
-check [r] {
-  not response.status_is(Response, 200)
-  r := result.Errorf("got status %d, wanted %d", [response.status_code(Response), 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }

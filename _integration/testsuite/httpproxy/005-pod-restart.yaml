@@ -64,9 +64,7 @@ error_pod_unready [msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
-import data.contour.http.response
-
-Service := "ingress-conformance-echo"
+import data.contour.http.expect
 
 Response := client.Get({
   "url": url.http(sprintf("/pre-delete/%d", [time.now_ns()])),
@@ -76,20 +74,13 @@ Response := client.Get({
   },
 })
 
-error_non_200_response [msg] {
-  not response.status_is(Response, 200)
-
-  msg := sprintf("got status %d, wanted %d", [
-    response.status_code(Response), 200,
-   ])
+check_for_response_status [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
-error_wrong_routing[msg] {
-  not response.service(Response) == Service
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, "ingress-conformance-echo")
 
-  msg := sprintf("got service %q, wanted %q", [
-    response.service(Response), Service,
-  ])
 }
 
 ---
@@ -117,9 +108,9 @@ error_pod_exists [msg] {
 
 import data.contour.http.client
 import data.contour.http.client.url
+import data.contour.http.expect
 import data.contour.http.response
 
-Service := "ingress-conformance-echo"
 
 Response := client.Get({
   "url": url.http(sprintf("/post-delete/%d", [time.now_ns()])),
@@ -129,17 +120,12 @@ Response := client.Get({
   },
 })
 
-error_non_200_response [msg] {
-  Response.status_code != 200
-  msg :=  sprintf("got status %d, wanted %d", [Response.status_code, 200])
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
 }
 
-error_wrong_routing[msg] {
-  not response.service(Response) == Service
-
-  msg := sprintf("got service %q, wanted %q", [
-    response.service(Response), Service,
-  ])
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, "ingress-conformance-echo")
 }
 
 error[msg] {
