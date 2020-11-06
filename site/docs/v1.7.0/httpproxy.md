@@ -1414,7 +1414,7 @@ Some examples of invalid configurations that Contour provides statuses for:
  [7]: https://www.envoyproxy.io/docs/envoy/v1.14.2/intro/arch_overview/upstream/load_balancing/overview
  [8]: #conditions
  [9]: {% link docs/{{page.version}}/annotations.md %}
- [10]: /docs/{{site.latest}}/api/#projectcontour.io/v1.Service
+ [10]: /docs/{{page.version}}/api/#projectcontour.io/v1.Service
  [11]: configuration.md#fallback-certificate
  [12]: {{site.github.repository_url}}/tree/{{page.version}}/examples/root-rbac
 
