@@ -28,10 +28,10 @@ Setting this flag to `v3` will configure Envoy to request the `v3` xDS Resource 
 
 ## In-Place Upgrade
 
-When users have an existing Contour installation and wish to upgrade without dropping connections, they need only to change the Envoy Daemonset or deployment to include `--xds-resource-version=v3`.
-The usual rollout process will handle draining connections for you.
-Contour v1.10.0 will serve both v2 and v3 xDS versions from the same gRPC endpoint.
-This allows a fleet of Envoy instances to move from the `v2` xDS Resource API version gradually to the `v3` version. 
+When users have an existing Contour installation and wish to upgrade without dropping connections, users should first upgrade Contour to v1.10.0 which will serve both v2 and v3 xDS versions from the same gRPC endpoint.
+Next, change the Envoy Daemonset or deployment to include `--xds-resource-version=v3` on the `initContainer` which runs the `contour bootstrap` command. 
+Setting this new flag to `v3` tells Envoy to upgrade to the v3 resource version.
+The usual rollout process will handle draining connections allowing a fleet of Envoy instances to move from the v2 xDS Resource API version gradually to the v3 version.
 
 ## Redeploy Upgrade
 
