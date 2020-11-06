@@ -63,7 +63,7 @@ type TLSCertificateDelegationStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// TLSCertificateDelegation is an TLS Certificate Delegation CRD specificiation.
+// TLSCertificateDelegation is an TLS Certificate Delegation CRD specification.
 // See design/tls-certificate-delegation.md for details.
 // +k8s:openapi-gen=true
 // +kubebuilder:resource:scope=Namespaced,path=tlscertificatedelegations,shortName=tlscerts,singular=tlscertificatedelegation

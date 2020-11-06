@@ -134,7 +134,7 @@ cases := [
   [ "/path/prefix/foo", "echo-slash-prefix" ],
 ]
 
-# NOTE(jpeach): the path formatting matters in the request contruction
+# NOTE(jpeach): the path formatting matters in the request construction
 # below, since we are testing for specific matches.
 request_for_path[path] = request {
   path := cases[_][0]

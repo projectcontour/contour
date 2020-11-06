@@ -135,7 +135,7 @@ func basic(t *testing.T) {
 	)
 
 	// But having duplicate prefixes in the replacements makes
-	// it ambigious again.
+	// it ambiguous again.
 	vhost = update(rh, vhost,
 		func(vhost *contour_api_v1.HTTPProxy) {
 			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =

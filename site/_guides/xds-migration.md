@@ -18,10 +18,10 @@ it's important to upgrade to this new version immediately since newer versions o
 
 ## Background
 
-Envoy gets configured with a boostrap configuration file which Contour provides via an `initContainer` on the Envoy daemonset.
+Envoy gets configured with a bootstrap configuration file which Contour provides via an `initContainer` on the Envoy daemonset.
 This file configures the dynamic xDS resources, Listener Discovery Service (LDS) and Cluster Discovery Service (CDS), to point to Contour's xDS gRPC server endpoint.
 
-The boostrap configuration file has two settings in the LDS/CDS entries which tell Contour what Resource & Transport version they would like to use. 
+The bootstrap configuration file has two settings in the LDS/CDS entries which tell Contour what Resource & Transport version they would like to use. 
 In Contour v1.10.0, there's a new flag, `--xds-resource-version`, on the `contour boostrap` command which is used in the `initContainer` that allows users to specify the xDS resource version.
 
 Setting this flag to `v3` will configure Envoy to request the `v3` xDS Resource API version and will become the default in Contour v1.11.0.    

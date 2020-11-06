@@ -3,7 +3,7 @@
 # make-release-tag.sh: This script assumes that you are on a branch and have
 # otherwise prepared the release. It rewrites the Docker image version in
 # the deployment YAML, then created a tag with a message containing the
-# shortlog from the previous versio.
+# shortlog from the previous version.
 
 readonly PROGNAME=$(basename "$0")
 readonly OLDVERS="$1"

@@ -244,7 +244,7 @@ func MinTLSVersion(version string, defaultVal envoy_api_v2_auth.TlsParameters_Tl
 // 1. projectcontour.io/max-connections
 // 2. contour.heptio.com/max-connections
 //
-// '0' is returned if the annotation is absent or unparseable.
+// '0' is returned if the annotation is absent or unparsable.
 func MaxConnections(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(CompatAnnotation(o, "max-connections"))
 }
@@ -254,7 +254,7 @@ func MaxConnections(o metav1.ObjectMetaAccessor) uint32 {
 // 1. projectcontour.io/max-pending-requests
 // 2. contour.heptio.com/max-pending-requests
 //
-// '0' is returned if the annotation is absent or unparseable.
+// '0' is returned if the annotation is absent or unparsable.
 func MaxPendingRequests(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(CompatAnnotation(o, "max-pending-requests"))
 }
@@ -264,7 +264,7 @@ func MaxPendingRequests(o metav1.ObjectMetaAccessor) uint32 {
 // 1. projectcontour.io/max-requests
 // 2. contour.heptio.com/max-requests
 //
-// '0' is returned if the annotation is absent or unparseable.
+// '0' is returned if the annotation is absent or unparsable.
 func MaxRequests(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(CompatAnnotation(o, "max-requests"))
 }
@@ -274,7 +274,7 @@ func MaxRequests(o metav1.ObjectMetaAccessor) uint32 {
 // 1. projectcontour.io/max-retries
 // 2. contour.heptio.com/max-retries
 //
-// '0' is returned if the annotation is absent or unparseable.
+// '0' is returned if the annotation is absent or unparsable.
 func MaxRetries(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(CompatAnnotation(o, "max-retries"))
 }

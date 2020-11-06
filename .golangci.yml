@@ -29,7 +29,7 @@ linters-settings:
 
 issues:
   exclude:
-  # TODO(jpeach): exclude unparam warnings about functions that always recieve
+  # TODO(jpeach): exclude unparam warnings about functions that always receive
   # the same arguments. We should clean those up some time.
   - always receives
   exclude-rules:

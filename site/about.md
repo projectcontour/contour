@@ -42,7 +42,7 @@ CDS is most like a Kubernetes Service resource in that a Service is an abstract 
 
 SDS is most like a Kubernetes Endpoint resource, and is probably the simplest to implement. It presents itself to Contour with an identifier we control, which maps to an Endpoint resource. Contour then transforms the Endpoint response objects into a `{ hosts: [] }` json fragment.
 
-The identifier presented to SDS is the CDS clusters `service_name`, which we set as Service.ObjectMeta.Namespace + "/" + Sevice.ObjectMeta.Name.
+The identifier presented to SDS is the CDS clusters `service_name`, which we set as Service.ObjectMeta.Namespace + "/" + Service.ObjectMeta.Name.
 
 ### RDS
 

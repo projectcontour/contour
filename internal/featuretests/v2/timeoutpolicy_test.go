@@ -79,7 +79,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	}
 	rh.OnUpdate(i1, i2)
 
-	// check annotation with infinite timeout is propogated
+	// check annotation with infinite timeout is propagated
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoyv2.RouteConfiguration("ingress_http",
@@ -171,7 +171,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	}
 	rh.OnAdd(p1)
 
-	// check timeout policy with malformed response timeout is not propogated
+	// check timeout policy with malformed response timeout is not propagated
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoyv2.RouteConfiguration("ingress_http"),
@@ -197,7 +197,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	}
 	rh.OnUpdate(p1, p2)
 
-	// check timeout policy with response timeout is propogated correctly
+	// check timeout policy with response timeout is propagated correctly
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoyv2.RouteConfiguration("ingress_http",
@@ -230,7 +230,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	}
 	rh.OnUpdate(p2, p3)
 
-	// check timeout policy with explicit infine response timeout is propogated as infinity
+	// check timeout policy with explicit infine response timeout is propagated as infinity
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoyv2.RouteConfiguration("ingress_http",
@@ -275,7 +275,7 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	}
 	rh.OnAdd(p1)
 
-	// check timeout policy with malformed response timeout is not propogated
+	// check timeout policy with malformed response timeout is not propagated
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoyv2.RouteConfiguration("ingress_http"),
@@ -301,7 +301,7 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	}
 	rh.OnUpdate(p1, p2)
 
-	// check timeout policy with response timeout is propogated correctly
+	// check timeout policy with response timeout is propagated correctly
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoyv2.RouteConfiguration("ingress_http",
@@ -334,7 +334,7 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	}
 	rh.OnUpdate(p2, p3)
 
-	// check timeout policy with explicit infine response timeout is propogated as infinity
+	// check timeout policy with explicit infine response timeout is propagated as infinity
 	c.Request(routeType).Equals(&envoy_api_v2.DiscoveryResponse{
 		Resources: resources(t,
 			envoyv2.RouteConfiguration("ingress_http",

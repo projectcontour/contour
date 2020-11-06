@@ -87,7 +87,7 @@ func AsMessages(messages interface{}) []proto.Message {
 	return protos
 }
 
-// MustMarshalAny marshals a protobug into an any.Any type, panicing
+// MustMarshalAny marshals a protobug into an any.Any type, panicking
 // if that operation fails.
 func MustMarshalAny(pb proto.Message) *any.Any {
 	a, err := ptypes.MarshalAny(pb)

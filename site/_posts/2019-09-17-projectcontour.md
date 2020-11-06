@@ -12,4 +12,4 @@ Times change. Summer turns to autumn, leaves fall from their branches, brands di
 
 Yes, it's time to wish the Heptio brand a fond farewell. As we gather on the shores to watch the pyre burn it is a time for happiness because Contour isn't dead, we've just moved house.
 
-You might have noticed the cheery 301 redirect that GitHub sent your browswer to inform it that Contour's new home is https://github.com/projectcontour/contour.
+You might have noticed the cheery 301 redirect that GitHub sent your browser to inform it that Contour's new home is https://github.com/projectcontour/contour.

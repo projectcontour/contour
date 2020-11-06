@@ -650,7 +650,7 @@ Adding support for the HTTP mechanism would increase configuration complexity, b
 There are few existing authorization servers that support the Envoy GRPC mechanism (most support HTTP).
 
 ***Decision:*** Maintainer consensus was that this trade-off is OK.
-We can help contribute Envoy GRPC support to existsing authorization servers.
+We can help contribute Envoy GRPC support to existing authorization servers.
 
 ## No Authorization Intermediaries
 

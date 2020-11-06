@@ -3053,7 +3053,7 @@ func TestSortLongestRouteFirst(t *testing.T) {
 
 		// Verify that we always order the headers, even if
 		// we don't need to compare the header conditions to
-		// order multple routes with the same prefix.
+		// order multiple routes with the same prefix.
 		"headers order in single route": {
 			routes: []*envoy_api_v2_route.Route{{
 				Match: routePrefix("/",

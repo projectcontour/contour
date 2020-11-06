@@ -102,7 +102,7 @@ type EndpointsCache struct {
 // cached Endpoints and stale ServiceClusters. A ClusterLoadAssignment
 // will be generated for every stale ServerCluster, however, if there
 // are no endpoints for the Services in the ServiceCluster, the
-// ClusterLoadAssignment wil be empty.
+// ClusterLoadAssignment will be empty.
 func (c *EndpointsCache) Recalculate() map[string]*envoy_api_v2.ClusterLoadAssignment {
 	c.mu.Lock()
 	defer c.mu.Unlock()

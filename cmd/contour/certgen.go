@@ -49,7 +49,7 @@ func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgenConf
 	return certgenApp, &certgenConfig
 }
 
-// certgenConfig holds the configuration for the certifcate generation process.
+// certgenConfig holds the configuration for the certificate generation process.
 type certgenConfig struct {
 
 	// KubeConfig is the path to the Kubeconfig file if we're not running in a cluster
