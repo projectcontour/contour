@@ -16,6 +16,8 @@ package v2
 import (
 	"testing"
 
+	v3 "github.com/projectcontour/contour/internal/envoy/v3"
+
 	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -202,7 +204,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	rh.OnAdd(ext)
 
 	tlsSocket := envoyv2.UpstreamTLSTransportSocket(
-		envoyv2.UpstreamTLSContext(
+		v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
 				CACertificate: &dag.Secret{Object: &v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{

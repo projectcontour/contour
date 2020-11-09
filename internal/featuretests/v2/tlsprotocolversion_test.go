@@ -16,6 +16,8 @@ package v2
 import (
 	"testing"
 
+	v3 "github.com/projectcontour/contour/internal/envoy/v3"
+
 	"github.com/projectcontour/contour/internal/featuretests"
 
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -127,7 +129,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 		FilterChains: []*envoy_api_v2_listener.FilterChain{
 			envoy_v2.FilterChainTLS(
 				"kuard.example.com",
-				envoy_v2.DownstreamTLSContext(
+				v3.DownstreamTLSContext(
 					&dag.Secret{Object: sec1},
 					envoy_api_v2_auth.TlsParameters_TLSv1_3,
 					nil,

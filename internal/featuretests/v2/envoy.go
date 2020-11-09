@@ -19,6 +19,8 @@ import (
 	"path"
 	"time"
 
+	v3 "github.com/projectcontour/contour/internal/envoy/v3"
+
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -142,7 +144,7 @@ func tlsCluster(c *envoy_api_v2.Cluster, ca []byte, subjectName string, sni stri
 	}
 
 	c.TransportSocket = envoy_v2.UpstreamTLSTransportSocket(
-		envoy_v2.UpstreamTLSContext(
+		v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
 				CACertificate: &dag.Secret{Object: &v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -168,7 +170,7 @@ func tlsClusterWithoutValidation(c *envoy_api_v2.Cluster, sni string, clientSecr
 	}
 
 	c.TransportSocket = envoy_v2.UpstreamTLSTransportSocket(
-		envoy_v2.UpstreamTLSContext(
+		v3.UpstreamTLSContext(
 			nil,
 			sni,
 			secret,
@@ -294,7 +296,7 @@ func appendFilterChains(chains ...*envoy_api_v2_listener.FilterChain) []*envoy_a
 func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_listener.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_api_v2_listener.FilterChain {
 	return envoy_v2.FilterChainTLS(
 		domain,
-		envoy_v2.DownstreamTLSContext(
+		v3.DownstreamTLSContext(
 			&dag.Secret{Object: secret},
 			envoy_api_v2_auth.TlsParameters_TLSv1_2,
 			peerValidationContext,
@@ -306,7 +308,7 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_api_v2_liste
 // filterchaintlsfallback returns a FilterChain for the given TLS fallback certificate.
 func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_api_v2_listener.FilterChain {
 	return envoy_v2.FilterChainTLSFallback(
-		envoy_v2.DownstreamTLSContext(
+		v3.DownstreamTLSContext(
 			&dag.Secret{Object: fallbackSecret},
 			envoy_api_v2_auth.TlsParameters_TLSv1_2,
 			peerValidationContext,

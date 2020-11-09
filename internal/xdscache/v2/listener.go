@@ -436,7 +436,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// Choose the higher of the configured or requested TLS version.
 			vers := max(v.ListenerConfig.minTLSVersion(), vh.MinTLSVersion)
 
-			downstreamTLS = envoy_v2.DownstreamTLSContext(
+			downstreamTLS = DownstreamTLSContext(
 				vh.Secret,
 				vers,
 				vh.DownstreamValidation,
@@ -454,7 +454,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		if vh.FallbackCertificate != nil && !envoy_v2.ContainsFallbackFilterChain(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains) {
 			// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
 			// the value defined in the Contour Configuration file if defined.
-			downstreamTLS = envoy_v2.DownstreamTLSContext(
+			downstreamTLS = DownstreamTLSContext(
 				vh.FallbackCertificate,
 				v.ListenerConfig.minTLSVersion(),
 				vh.DownstreamValidation,

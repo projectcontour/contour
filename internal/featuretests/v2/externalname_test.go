@@ -16,6 +16,8 @@ package v2
 import (
 	"testing"
 
+	v3 "github.com/projectcontour/contour/internal/envoy/v3"
+
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
@@ -206,7 +208,7 @@ func TestExternalNameService(t *testing.T) {
 				},
 				&envoy_api_v2.Cluster{
 					TransportSocket: envoy_v2.UpstreamTLSTransportSocket(
-						envoy_v2.UpstreamTLSContext(nil, "external.address", nil, "h2"),
+						v3.UpstreamTLSContext(nil, "external.address", nil, "h2"),
 					),
 				},
 			),
@@ -258,7 +260,7 @@ func TestExternalNameService(t *testing.T) {
 				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&envoy_api_v2.Cluster{
 					TransportSocket: envoy_v2.UpstreamTLSTransportSocket(
-						envoy_v2.UpstreamTLSContext(nil, "external.address", nil),
+						v3.UpstreamTLSContext(nil, "external.address", nil),
 					),
 				},
 			),

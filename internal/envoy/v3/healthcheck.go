@@ -11,20 +11,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"time"
 
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
-// httpHealthCheck returns a *envoy_api_v2_core.HealthCheck value for HTTP Routes
-func httpHealthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
+// httpHealthCheck returns a *envoy_core_v3.HealthCheck value for HTTP Routes
+func httpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
 	hc := cluster.HTTPHealthCheckPolicy
 	host := envoy.HCHost
 	if hc.Host != "" {
@@ -33,13 +33,13 @@ func httpHealthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
 
 	// TODO(dfc) why do we need to specify our own default, what is the default
 	// that envoy applies if these fields are left nil?
-	return &envoy_api_v2_core.HealthCheck{
+	return &envoy_core_v3.HealthCheck{
 		Timeout:            durationOrDefault(hc.Timeout, envoy.HCTimeout),
 		Interval:           durationOrDefault(hc.Interval, envoy.HCInterval),
 		UnhealthyThreshold: protobuf.UInt32OrDefault(hc.UnhealthyThreshold, envoy.HCUnhealthyThreshold),
 		HealthyThreshold:   protobuf.UInt32OrDefault(hc.HealthyThreshold, envoy.HCHealthyThreshold),
-		HealthChecker: &envoy_api_v2_core.HealthCheck_HttpHealthCheck_{
-			HttpHealthCheck: &envoy_api_v2_core.HealthCheck_HttpHealthCheck{
+		HealthChecker: &envoy_core_v3.HealthCheck_HttpHealthCheck_{
+			HttpHealthCheck: &envoy_core_v3.HealthCheck_HttpHealthCheck{
 				Path: hc.Path,
 				Host: host,
 			},
@@ -47,17 +47,17 @@ func httpHealthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
 	}
 }
 
-// tcpHealthCheck returns a *envoy_api_v2_core.HealthCheck value for TCPProxies
-func tcpHealthCheck(cluster *dag.Cluster) *envoy_api_v2_core.HealthCheck {
+// tcpHealthCheck returns a *envoy_core_v3.HealthCheck value for TCPProxies
+func tcpHealthCheck(cluster *dag.Cluster) *envoy_core_v3.HealthCheck {
 	hc := cluster.TCPHealthCheckPolicy
 
-	return &envoy_api_v2_core.HealthCheck{
+	return &envoy_core_v3.HealthCheck{
 		Timeout:            durationOrDefault(hc.Timeout, envoy.HCTimeout),
 		Interval:           durationOrDefault(hc.Interval, envoy.HCInterval),
 		UnhealthyThreshold: protobuf.UInt32OrDefault(hc.UnhealthyThreshold, envoy.HCUnhealthyThreshold),
 		HealthyThreshold:   protobuf.UInt32OrDefault(hc.HealthyThreshold, envoy.HCHealthyThreshold),
-		HealthChecker: &envoy_api_v2_core.HealthCheck_TcpHealthCheck_{
-			TcpHealthCheck: &envoy_api_v2_core.HealthCheck_TcpHealthCheck{},
+		HealthChecker: &envoy_core_v3.HealthCheck_TcpHealthCheck_{
+			TcpHealthCheck: &envoy_core_v3.HealthCheck_TcpHealthCheck{},
 		},
 	}
 }

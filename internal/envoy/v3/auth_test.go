@@ -11,14 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"testing"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -41,17 +41,17 @@ func TestUpstreamTLSContext(t *testing.T) {
 		validation    *dag.PeerValidationContext
 		alpnProtocols []string
 		externalName  string
-		want          *envoy_api_v2_auth.UpstreamTlsContext
+		want          *envoy_tls_v3.UpstreamTlsContext
 	}{
 		"no alpn, no validation": {
-			want: &envoy_api_v2_auth.UpstreamTlsContext{
-				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
+			want: &envoy_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
 			},
 		},
 		"h2, no validation": {
 			alpnProtocols: []string{"h2c"},
-			want: &envoy_api_v2_auth.UpstreamTlsContext{
-				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+			want: &envoy_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					AlpnProtocols: []string{"h2c"},
 				},
 			},
@@ -60,16 +60,16 @@ func TestUpstreamTLSContext(t *testing.T) {
 			validation: &dag.PeerValidationContext{
 				CACertificate: secret,
 			},
-			want: &envoy_api_v2_auth.UpstreamTlsContext{
-				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
+			want: &envoy_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
 			},
 		},
 		"no alpn, missing ca": {
 			validation: &dag.PeerValidationContext{
 				SubjectName: "www.example.com",
 			},
-			want: &envoy_api_v2_auth.UpstreamTlsContext{
-				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
+			want: &envoy_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
 			},
 		},
 		"no alpn, ca and altname": {
@@ -77,12 +77,12 @@ func TestUpstreamTLSContext(t *testing.T) {
 				CACertificate: secret,
 				SubjectName:   "www.example.com",
 			},
-			want: &envoy_api_v2_auth.UpstreamTlsContext{
-				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
-					ValidationContextType: &envoy_api_v2_auth.CommonTlsContext_ValidationContext{
-						ValidationContext: &envoy_api_v2_auth.CertificateValidationContext{
-							TrustedCa: &envoy_api_v2_core.DataSource{
-								Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+			want: &envoy_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+					ValidationContextType: &envoy_tls_v3.CommonTlsContext_ValidationContext{
+						ValidationContext: &envoy_tls_v3.CertificateValidationContext{
+							TrustedCa: &envoy_core_v3.DataSource{
+								Specifier: &envoy_core_v3.DataSource_InlineBytes{
 									InlineBytes: []byte("ca"),
 								},
 							},
@@ -98,8 +98,8 @@ func TestUpstreamTLSContext(t *testing.T) {
 		},
 		"external name sni": {
 			externalName: "projectcontour.local",
-			want: &envoy_api_v2_auth.UpstreamTlsContext{
-				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{},
+			want: &envoy_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{},
 				Sni:              "projectcontour.local",
 			},
 		},
