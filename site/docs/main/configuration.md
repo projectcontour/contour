@@ -210,7 +210,7 @@ connects to Contour:
 | <nobr>--envoy-cert-file</nobr> | "" | Client certificate filename for Envoy secure xDS gRPC communication.  |
 | <nobr>--envoy-key-file</nobr> | "" | Client key filename for Envoy secure xDS gRPC communication.  |
 | <nobr>--namespace</nobr> | projectcontour | Namespace the Envoy container will run, also configured via ENV variable "CONTOUR_NAMESPACE". Namespace is used as part of the metric names on static resources defined in the bootstrap configuration file.    |
-| <nobr>--xds-resource-version</nobr> | v2 | Specify the xDS API resource version to use. Options are `v2` or `v3`.  |
+| <nobr>--xds-resource-version</nobr> | v3 | Currently, the only valid xDS API resource version is `v3`.  |
 {: class="table thead-dark table-bordered"}
 <br>
 

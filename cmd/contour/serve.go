@@ -26,7 +26,6 @@ import (
 	"time"
 
 	envoy_auth_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_server_v2 "github.com/envoyproxy/go-control-plane/pkg/server/v2"
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
@@ -40,7 +39,6 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
-	contour_xds_v2 "github.com/projectcontour/contour/internal/xds/v2"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
@@ -563,20 +561,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			v3cache := contour_xds_v3.NewSnapshotCache(false, log)
 			snapshotHandler.AddSnapshotter(v3cache)
 			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(context.Background(), v3cache, nil), grpcServer)
-
-			// Check an internal feature flag to disable xDS v2 endpoints. This is strictly for testing.
-			if config.GetenvOr("CONTOUR_INTERNAL_DISABLE_XDSV2", "N") == "N" {
-				v2cache := contour_xds_v2.NewSnapshotCache(false, log)
-				snapshotHandler.AddSnapshotter(v2cache)
-				contour_xds_v2.RegisterServer(envoy_server_v2.NewServer(context.Background(), v2cache, nil), grpcServer)
-			}
 		case config.ContourServerType:
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
-
-			// Check an internal feature flag to disable xDS v2 endpoints. This is strictly for testing.
-			if config.GetenvOr("CONTOUR_INTERNAL_DISABLE_XDSV2", "N") == "N" {
-				contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
-			}
 		default:
 			// This can't happen due to config validation.
 			log.Fatalf("invalid xDS server type %q", ctx.Config.Server.XDSServerType)

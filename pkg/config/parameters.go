@@ -45,13 +45,12 @@ func (s ServerType) Validate() error {
 // ResourceVersion is a version of an xDS server.
 type ResourceVersion string
 
-const XDSv2 ResourceVersion = "v2"
 const XDSv3 ResourceVersion = "v3"
 
 // Validate the xDS server versions.
 func (s ResourceVersion) Validate() error {
 	switch s {
-	case XDSv2, XDSv3:
+	case XDSv3:
 		return nil
 	default:
 		return fmt.Errorf("invalid xDS version %q", s)

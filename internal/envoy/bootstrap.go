@@ -53,12 +53,12 @@ type BootstrapConfig struct {
 	// Defaults to 127.0.0.1.
 	XDSAddress string
 
-	// XDSGRPCPort is the management server port that provides the v2 gRPC API.
+	// XDSGRPCPort is the management server port that provides the v3 gRPC API.
 	// Defaults to 8001.
 	XDSGRPCPort int
 
 	// XDSResourceVersion defines the XDS Server Version to use.
-	// Defaults to "v2"
+	// Defaults to "v3"
 	XDSResourceVersion config.ResourceVersion
 
 	// Namespace is the namespace where Contour is running
