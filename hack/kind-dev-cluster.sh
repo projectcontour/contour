@@ -101,7 +101,7 @@ Host IP address(es): $(host::addresses | tr '\n' ' ')
 Next steps:
 
 * Edit the envoy daemonset to remove the contourcert and cacert secrets volume, and
-  update the boostrap container to point the xDS server to the host IP:
+  update the bootstrap container to point the xDS server to the host IP:
 
     ${KUBECTL} --context kind-${CLUSTER} --namespace projectcontour edit daemonset envoy
 

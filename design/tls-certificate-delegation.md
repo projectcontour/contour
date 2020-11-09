@@ -25,7 +25,7 @@ This proposal introduces a specification, in the form of a simple CRD, whereby t
 ## High-Level Design
 
 - The definition of a Secret's name is extended to recognize a namespace prefix, ie. `secretName: kube-system/wildcard-tls` means the secret `wildcard-tls` in the `kube-system` namespace.
-- A `TLSCertificateDelegation` CRD grants the permission to reference the contents of a Secret in the owner's namespace to an Ingress controller operating in the context of an Ingress or IngressRoute object from a different namespace for the purpose of retrieving the TLS certicate.
+- A `TLSCertificateDelegation` CRD grants the permission to reference the contents of a Secret in the owner's namespace to an Ingress controller operating in the context of an Ingress or IngressRoute object from a different namespace for the purpose of retrieving the TLS certificate.
 
 ## Detailed Design
 

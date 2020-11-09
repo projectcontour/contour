@@ -5,7 +5,7 @@ Applying the `projectcontour.io/upstream-protocol.tls` annotation to a Service o
 The same configuration can be specified by setting the protocol name in the `spec.routes.services[].protocol` field on the HTTPProxy object.
 If both the annotation and the protocol field are specified, the protocol field takes precedence.
 By default, the upstream TLS server certificate will not be validated, but validation can be requested by setting the `spec.routes.services[].validation` field.
-This field has mandatory `caSecret` and `subjectName` fields, which specfy the trusted root certificates with which to validate the server certificate and the expected server name.
+This field has mandatory `caSecret` and `subjectName` fields, which specify the trusted root certificates with which to validate the server certificate and the expected server name.
 
 _**Note:**
 If `spec.routes.services[].validation` is present, `spec.routes.services[].{name,port}` must point to a Service with a matching `projectcontour.io/upstream-protocol.tls` Service annotation._

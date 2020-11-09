@@ -56,4 +56,4 @@ A counter-example of this is SQL injection, the text being included can contain 
 This is not possible in the DNS delegation model due to the implicit scope that surrounds the delegate.
 
 When considering how delegation works in Contour we must consider a blend of both the DNS delegation and file inclusion models.
-From the DNS delegation model we must take an idea of an enclosing scope; implicit restrictions which are overlayed on any configuration provided by the delegate.
+From the DNS delegation model we must take an idea of an enclosing scope; implicit restrictions which are overlaid on any configuration provided by the delegate.

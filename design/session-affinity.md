@@ -45,7 +45,7 @@ spec:
       strategy: Cookie
 ```
 As a route can specific multiple weighted backends, providing they choose `strategy: Cookie`, they will all be eligible for cookie based session affinity.
-Once a request has been served from service-a (or service-b) subsequent requests carrying Contour's session affinity cookie will always return to their nominated server reguardless of weightings.
+Once a request has been served from service-a (or service-b) subsequent requests carrying Contour's session affinity cookie will always return to their nominated server regardless of weightings.
 ```yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
@@ -160,7 +160,7 @@ For example consider two routes, `/cart` and `/checkout` are served by the same 
       port: 8080
       strategy: Cookie
 ```
-Given that both routes represent the same service with `static-content` overlayed to fill in the gaps, a session started on a backend of `ecommerce-pro` via `/cart` should land on the same `ecommerce-pro` backend when the request flow reaches `/checkout`.
+Given that both routes represent the same service with `static-content` overlaid to fill in the gaps, a session started on a backend of `ecommerce-pro` via `/cart` should land on the same `ecommerce-pro` backend when the request flow reaches `/checkout`.
 Placing the cookie at the `/` path permits this with few negative side effects.
 
  The session affinity cookie is _not_ a login cookie.
@@ -183,7 +183,7 @@ If the IngressRoute author wants to route _via_ a header, we are working on that
 #### Bootstrapping issues
 
 A related problem to Header based affinity is reusing a session cookie provided by the end user application.
-This is attractive as the application would normally be supplying its own cookie which we could treat as a input in the ring hash algorythm, however this suffers from two significant issues:
+This is attractive as the application would normally be supplying its own cookie which we could treat as a input in the ring hash algorithm, however this suffers from two significant issues:
 
 - Envoy consumes the whole cookie value, not part of it.
 If the application supplied session cookie contains unrelated date like previously selected page, shopping cart information, etc, then the hash of that cookie will change resulting in the request being directed to the incorrect server.

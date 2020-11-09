@@ -19,7 +19,7 @@ Fast forward to July of this year where plans to move Contour out of the _0.what
 We knew that stamping a 1.0 release on Contour required us to do the same for IngressRoute, which had at that point been in beta for a period of time that would make a Google product blush.
 Bringing IngressRoute, as it was known at the time, to 1.0 status would involve three things.
 
-The first was addressing, which in retrospect seemed like an inspired piece of guerilla marketing, the fact that I had plastered not just the name of the product but the name of the sponsoring company throughout annotation names, CRD groups, repository image hosting, and namespace objects.
+The first was addressing, which in retrospect seemed like an inspired piece of guerrilla marketing, the fact that I had plastered not just the name of the product but the name of the sponsoring company throughout annotation names, CRD groups, repository image hosting, and namespace objects.
 Taking the necessary hit to _rename all the things_ is the focus of the beta.1 and upcoming rc.1 releases.
 
 Once these procedural issues were in hand the second issue was to consider the name _IngressRoute_ itself.
@@ -27,7 +27,7 @@ The name, to the best of my recollection chosen without any particular deliberat
 
 With a year's experience developing and supporting IngressRoute, a few problems with the name had become evident.
 As a name, IngressRoute was lengthy.
-Abreviating it introduced confusion with another Kubernetes object--also in beta--which we didn't want to be confused with.
+Abbreviating it introduced confusion with another Kubernetes object--also in beta--which we didn't want to be confused with.
 If you wanted to be precise, you had to type, and _say aloud_, the entire thing.
 But there are more problems than verbosity.
 

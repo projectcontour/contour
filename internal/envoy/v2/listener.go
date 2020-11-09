@@ -435,7 +435,7 @@ func Filters(filters ...*envoy_api_v2_listener.Filter) []*envoy_api_v2_listener.
 	return filters
 }
 
-// FilterChain retruns a *envoy_api_v2_listener.FilterChain for the supplied filters.
+// FilterChain returns a *envoy_api_v2_listener.FilterChain for the supplied filters.
 func FilterChain(filters ...*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
 	return &envoy_api_v2_listener.FilterChain{
 		Filters: filters,

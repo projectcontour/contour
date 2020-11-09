@@ -84,7 +84,7 @@ module Jekyll
     end
 
     def render(context)
-      ouptut = super
+      output = super
 
       if !@video_id
         @video_id = "#{context[@content.strip]}"

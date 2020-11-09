@@ -24,7 +24,7 @@ Currently, the default deployment of Contour colocates the Envoy and Contour con
 
 In order to be able to split the deployment of Contour and Envoy, we must be able to provide an acceptable level of both transport security and authentication between the different pods.
 
-Currently, if you do split the deployment, Contour will assume that anything that talks to the xDS endpoints is authorized for all information in them. Notably, this includes any certificates used in any endpoint. Antyhing that can speak SDS can connect to contour and ask for all the certificates it knows about via SDS. This design is intended to mitigate this problem.
+Currently, if you do split the deployment, Contour will assume that anything that talks to the xDS endpoints is authorized for all information in them. Notably, this includes any certificates used in any endpoint. Anything that can speak SDS can connect to contour and ask for all the certificates it knows about via SDS. This design is intended to mitigate this problem.
 
 It's also important to note that the certificates talked about in this document are **only** the certificates used to secure the gRPC channel between Contour and Envoy, not any certificates used to serve TLS out of Envoy. As such, this design is wholly separate to any certificate functionality on either Ingress or IngressRoute.
 
