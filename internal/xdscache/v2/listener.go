@@ -207,12 +207,12 @@ func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_api_v2_accesslog.Access
 }
 
 // minTLSVersion returns the requested minimum TLS protocol
-// version or envoy_api_v2_auth.TlsParameters_TLSv1_1 if not configured.
+// version or envoy_api_v2_auth.TlsParameters_TLSv1_2 if not configured.
 func (lvc *ListenerConfig) minTLSVersion() envoy_api_v2_auth.TlsParameters_TlsProtocol {
-	if lvc.MinimumTLSVersion > envoy_api_v2_auth.TlsParameters_TLSv1_1 {
+	if lvc.MinimumTLSVersion > envoy_api_v2_auth.TlsParameters_TLSv1_2 {
 		return lvc.MinimumTLSVersion
 	}
-	return envoy_api_v2_auth.TlsParameters_TLSv1_1
+	return envoy_api_v2_auth.TlsParameters_TLSv1_2
 }
 
 // ListenerCache manages the contents of the gRPC LDS cache.

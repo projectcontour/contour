@@ -1186,7 +1186,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 						TransportProtocol: "tls",
 					},
-					TransportSocket: transportSocket("fallbacksecret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+					TransportSocket: transportSocket("fallbacksecret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters:         envoy_v2.Filters(fallbackCertFilter),
 					Name:            "fallback-certificate",
 				}},
@@ -1309,7 +1309,7 @@ func TestListenerVisit(t *testing.T) {
 						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							TransportProtocol: "tls",
 						},
-						TransportSocket: transportSocket("fallbacksecret", envoy_api_v2_auth.TlsParameters_TLSv1_1, "h2", "http/1.1"),
+						TransportSocket: transportSocket("fallbacksecret", envoy_api_v2_auth.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 						Filters:         envoy_v2.Filters(fallbackCertFilter),
 						Name:            "fallback-certificate",
 					}},
