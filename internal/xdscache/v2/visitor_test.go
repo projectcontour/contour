@@ -123,7 +123,7 @@ func TestVisitListeners(t *testing.T) {
 								Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 							},
 						},
-						MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
+						MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_2,
 					},
 				),
 			},
@@ -135,7 +135,7 @@ func TestVisitListeners(t *testing.T) {
 						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
 							ServerNames: []string{"tcpproxy.example.com"},
 						},
-						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_1),
+						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2),
 						Filters:         envoy_v2.Filters(envoy_v2.TCPProxy(ENVOY_HTTPS_LISTENER, p1, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTPS_ACCESS_LOG))),
 					}},
 					ListenerFilters: envoy_v2.ListenerFilters(

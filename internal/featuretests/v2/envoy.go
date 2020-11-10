@@ -308,7 +308,7 @@ func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *da
 	return envoy_v2.FilterChainTLSFallback(
 		envoy_v2.DownstreamTLSContext(
 			&dag.Secret{Object: fallbackSecret},
-			envoy_api_v2_auth.TlsParameters_TLSv1_1,
+			envoy_api_v2_auth.TlsParameters_TLSv1_2,
 			peerValidationContext,
 			alpn...),
 		envoy_v2.Filters(
