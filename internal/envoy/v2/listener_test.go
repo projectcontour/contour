@@ -17,8 +17,6 @@ import (
 	"testing"
 	"time"
 
-	v3 "github.com/projectcontour/contour/internal/envoy/v3"
-
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -276,7 +274,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 		want *envoy_api_v2_auth.DownstreamTlsContext
 	}{
 		"TLS context without client authentication": {
-			v3.DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, nil, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, nil, "h2", "http/1.1"),
 			&envoy_api_v2_auth.DownstreamTlsContext{
 				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -286,7 +284,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"TLS context with client authentication": {
-			v3.DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, peerValidationContext, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, peerValidationContext, "h2", "http/1.1"),
 			&envoy_api_v2_auth.DownstreamTlsContext{
 				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -298,7 +296,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation shall not support subjectName validation": {
-			v3.DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, peerValidationContextWithSubjectName, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, peerValidationContextWithSubjectName, "h2", "http/1.1"),
 			&envoy_api_v2_auth.DownstreamTlsContext{
 				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
 					TlsParams:                      tlsParams,

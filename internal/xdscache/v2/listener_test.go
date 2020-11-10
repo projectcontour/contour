@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	v3 "github.com/projectcontour/contour/internal/envoy/v3"
-
 	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -2017,7 +2015,7 @@ func transportSocket(secretname string, tlsMinProtoVersion envoy_api_v2_auth.Tls
 		},
 	}
 	return envoy_v2.DownstreamTLSTransportSocket(
-		v3.DownstreamTLSContext(secret, tlsMinProtoVersion, nil, alpnprotos...),
+		DownstreamTLSContext(secret, tlsMinProtoVersion, nil, alpnprotos...),
 	)
 }
 
