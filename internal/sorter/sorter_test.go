@@ -18,6 +18,8 @@ import (
 	"sort"
 	"testing"
 
+	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+
 	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
@@ -223,12 +225,12 @@ func TestSortHeaderMatchers(t *testing.T) {
 }
 
 func TestSortClusters(t *testing.T) {
-	want := []*v2.Cluster{
+	want := []*envoy_cluster_v3.Cluster{
 		{Name: "first"},
 		{Name: "second"},
 	}
 
-	have := []*v2.Cluster{
+	have := []*envoy_cluster_v3.Cluster{
 		want[1],
 		want[0],
 	}
