@@ -21,6 +21,7 @@ import (
 	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
 	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
+	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
 	"github.com/golang/protobuf/proto"
 )
@@ -124,7 +125,7 @@ func (s routeSorter) Less(i, j int) bool {
 }
 
 // Sorts clusters by name.
-type clusterSorter []*v2.Cluster
+type clusterSorter []*envoy_cluster_v3.Cluster
 
 func (s clusterSorter) Len() int           { return len(s) }
 func (s clusterSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
@@ -215,7 +216,7 @@ func For(v interface{}) sort.Interface {
 		return routeSorter(v)
 	case []*envoy_api_v2_route.HeaderMatcher:
 		return headerMatcherSorter(v)
-	case []*v2.Cluster:
+	case []*envoy_cluster_v3.Cluster:
 		return clusterSorter(v)
 	case []*v2.ClusterLoadAssignment:
 		return clusterLoadAssignmentSorter(v)
