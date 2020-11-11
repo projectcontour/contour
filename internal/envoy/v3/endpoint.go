@@ -14,8 +14,12 @@
 package v3
 
 import (
+	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 // LBEndpoint creates a new LbEndpoint.
@@ -40,4 +44,22 @@ func Endpoints(addrs ...*envoy_core_v3.Address) []*envoy_endpoint_v3.LocalityLbE
 	return []*envoy_endpoint_v3.LocalityLbEndpoints{{
 		LbEndpoints: lbendpoints,
 	}}
+}
+
+func WeightedEndpoints(weight uint32, addrs ...*envoy_api_v2_core.Address) []*envoy_api_v2_endpoint.LocalityLbEndpoints {
+	lbendpoints := Endpoints(addrs...)
+	lbendpoints[0].LoadBalancingWeight = protobuf.UInt32(weight)
+	return lbendpoints
+}
+
+// ClusterLoadAssignment returns a *v2.ClusterLoadAssignment with a single
+// LocalityLbEndpoints of the supplied addresses.
+func ClusterLoadAssignment(name string, addrs ...*envoy_api_v2_core.Address) *v2.ClusterLoadAssignment {
+	if len(addrs) == 0 {
+		return &v2.ClusterLoadAssignment{ClusterName: name}
+	}
+	return &v2.ClusterLoadAssignment{
+		ClusterName: name,
+		Endpoints:   Endpoints(addrs...),
+	}
 }

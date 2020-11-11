@@ -16,7 +16,9 @@ package v3
 import (
 	"testing"
 
+	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
@@ -30,4 +32,58 @@ func TestLBEndpoint(t *testing.T) {
 		},
 	}
 	protobuf.ExpectEqual(t, want, got)
+}
+
+func TestEndpoints(t *testing.T) {
+	got := Endpoints(
+		SocketAddress("github.com", 443),
+		SocketAddress("microsoft.com", 80),
+	)
+	want := []*envoy_api_v2_endpoint.LocalityLbEndpoints{{
+		LbEndpoints: []*envoy_api_v2_endpoint.LbEndpoint{{
+			HostIdentifier: &envoy_api_v2_endpoint.LbEndpoint_Endpoint{
+				Endpoint: &envoy_api_v2_endpoint.Endpoint{
+					Address: SocketAddress("github.com", 443),
+				},
+			},
+		}, {
+			HostIdentifier: &envoy_api_v2_endpoint.LbEndpoint_Endpoint{
+				Endpoint: &envoy_api_v2_endpoint.Endpoint{
+					Address: SocketAddress("microsoft.com", 80),
+				},
+			},
+		}},
+	}}
+	protobuf.ExpectEqual(t, want, got)
+}
+
+func TestClusterLoadAssignment(t *testing.T) {
+	got := ClusterLoadAssignment("empty")
+	want := &v2.ClusterLoadAssignment{
+		ClusterName: "empty",
+	}
+
+	protobuf.RequireEqual(t, want, got)
+
+	got = ClusterLoadAssignment("one addr", SocketAddress("microsoft.com", 81))
+	want = &v2.ClusterLoadAssignment{
+		ClusterName: "one addr",
+		Endpoints:   Endpoints(SocketAddress("microsoft.com", 81)),
+	}
+
+	protobuf.RequireEqual(t, want, got)
+
+	got = ClusterLoadAssignment("two addrs",
+		SocketAddress("microsoft.com", 81),
+		SocketAddress("github.com", 443),
+	)
+	want = &v2.ClusterLoadAssignment{
+		ClusterName: "two addrs",
+		Endpoints: Endpoints(
+			SocketAddress("microsoft.com", 81),
+			SocketAddress("github.com", 443),
+		),
+	}
+
+	protobuf.RequireEqual(t, want, got)
 }
