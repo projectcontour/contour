@@ -27,6 +27,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
@@ -86,7 +87,7 @@ type ListenerConfig struct {
 	// supported versions are accepted. This is applied to both
 	// HTTP and HTTPS listeners but has practical effect only for
 	// HTTPS, because we don't support h2c.
-	DefaultHTTPVersions []envoy_v2.HTTPVersionType
+	DefaultHTTPVersions []envoy.HTTPVersionType
 
 	// AccessLogType defines if Envoy logs should be output as Envoy's default or JSON.
 	// Valid values: 'envoy', 'json'
@@ -317,7 +318,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_api_
 	if lv.http {
 		// Add a listener if there are vhosts bound to http.
 		cm := envoy_v2.HTTPConnectionManagerBuilder().
-			Codec(envoy_v2.CodecForVersions(lv.DefaultHTTPVersions...)).
+			Codec(envoy.CodecForVersions(lv.DefaultHTTPVersions...)).
 			DefaultFilters().
 			RouteConfigName(ENVOY_HTTP_LISTENER).
 			MetricsPrefix(ENVOY_HTTP_LISTENER).
@@ -401,7 +402,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// coded into monitoring dashboards.
 			filters = envoy_v2.Filters(
 				envoy_v2.HTTPConnectionManagerBuilder().
-					Codec(envoy_v2.CodecForVersions(v.DefaultHTTPVersions...)).
+					Codec(envoy.CodecForVersions(v.DefaultHTTPVersions...)).
 					AddFilter(envoy_v2.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 					DefaultFilters().
 					AddFilter(authFilter).
@@ -416,7 +417,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					Get(),
 			)
 
-			alpnProtos = envoy_v2.ProtoNamesForVersions(v.DefaultHTTPVersions...)
+			alpnProtos = envoy.ProtoNamesForVersions(v.DefaultHTTPVersions...)
 		} else {
 			filters = envoy_v2.Filters(
 				envoy_v2.TCPProxy(ENVOY_HTTPS_LISTENER,

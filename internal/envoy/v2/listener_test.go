@@ -36,22 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestCodecForVersions(t *testing.T) {
-	assert.Equal(t, CodecForVersions(HTTPVersionAuto), HTTPVersionAuto)
-	assert.Equal(t, CodecForVersions(HTTPVersion1, HTTPVersion2), HTTPVersionAuto)
-	assert.Equal(t, CodecForVersions(HTTPVersion1), HTTPVersion1)
-	assert.Equal(t, CodecForVersions(HTTPVersion2), HTTPVersion2)
-}
-
-func TestProtoNamesForVersions(t *testing.T) {
-	assert.Equal(t, ProtoNamesForVersions(), []string{"h2", "http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersionAuto), []string{"h2", "http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1), []string{"http/1.1"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion2), []string{"h2"})
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion3), []string(nil))
-	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2), []string{"h2", "http/1.1"})
-}
-
 func TestListener(t *testing.T) {
 	tests := map[string]struct {
 		name, address string

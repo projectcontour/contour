@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	"github.com/projectcontour/contour/internal/envoy"
 	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/sirupsen/logrus"
@@ -234,19 +234,19 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 
 // parseDefaultHTTPVersions parses a list of supported HTTP versions
 //  (of the form "HTTP/xx") into a slice of unique version constants.
-func parseDefaultHTTPVersions(versions []config.HTTPVersionType) []envoy_v2.HTTPVersionType {
-	wanted := map[envoy_v2.HTTPVersionType]struct{}{}
+func parseDefaultHTTPVersions(versions []config.HTTPVersionType) []envoy.HTTPVersionType {
+	wanted := map[envoy.HTTPVersionType]struct{}{}
 
 	for _, v := range versions {
 		switch v {
 		case config.HTTPVersion1:
-			wanted[envoy_v2.HTTPVersion1] = struct{}{}
+			wanted[envoy.HTTPVersion1] = struct{}{}
 		case config.HTTPVersion2:
-			wanted[envoy_v2.HTTPVersion2] = struct{}{}
+			wanted[envoy.HTTPVersion2] = struct{}{}
 		}
 	}
 
-	var parsed []envoy_v2.HTTPVersionType
+	var parsed []envoy.HTTPVersionType
 	for k := range wanted {
 		parsed = append(parsed, k)
 
