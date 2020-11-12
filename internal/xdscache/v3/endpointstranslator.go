@@ -11,20 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"fmt"
 	"sort"
 	"sync"
 
-	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_endpoint "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	resource2 "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	envoy_config_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
-	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
@@ -34,8 +33,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-type LocalityEndpoints = envoy_api_v2_endpoint.LocalityLbEndpoints
-type LoadBalancingEndpoint = envoy_api_v2_endpoint.LbEndpoint
+type LocalityEndpoints = envoy_config_endpoint_v3.LocalityLbEndpoints
+type LoadBalancingEndpoint = envoy_config_endpoint_v3.LbEndpoint
 
 // RecalculateEndpoints generates a slice of LoadBalancingEndpoint
 // resources by matching the given service port to the given v1.Endpoints.
@@ -71,8 +70,8 @@ func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancin
 			sort.Slice(addresses, func(i, j int) bool { return addresses[i].IP < addresses[j].IP })
 
 			for _, a := range addresses {
-				addr := envoy_v2.SocketAddress(a.IP, int(p.Port))
-				lb = append(lb, envoy_v2.LBEndpoint(addr))
+				addr := envoy_v3.SocketAddress(a.IP, int(p.Port))
+				lb = append(lb, envoy_v3.LBEndpoint(addr))
 			}
 		}
 	}
@@ -103,11 +102,11 @@ type EndpointsCache struct {
 // will be generated for every stale ServerCluster, however, if there
 // are no endpoints for the Services in the ServiceCluster, the
 // ClusterLoadAssignment will be empty.
-func (c *EndpointsCache) Recalculate() map[string]*envoy_api_v2.ClusterLoadAssignment {
+func (c *EndpointsCache) Recalculate() map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	assignments := map[string]*envoy_api_v2.ClusterLoadAssignment{}
+	assignments := map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{}
 	for _, cluster := range c.stale {
 		// Clusters can be in the stale list multiple times;
 		// skip to avoid duplicate recalculations.
@@ -115,7 +114,7 @@ func (c *EndpointsCache) Recalculate() map[string]*envoy_api_v2.ClusterLoadAssig
 			continue
 		}
 
-		cla := envoy_api_v2.ClusterLoadAssignment{
+		cla := envoy_config_endpoint_v3.ClusterLoadAssignment{
 			ClusterName: cluster.ClusterName,
 			Endpoints:   nil,
 			Policy:      nil,
@@ -225,7 +224,7 @@ func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
 	return &EndpointsTranslator{
 		Cond:        contour.Cond{},
 		FieldLogger: log,
-		entries:     map[string]*envoy_api_v2.ClusterLoadAssignment{},
+		entries:     map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment{},
 		cache: EndpointsCache{
 			stale:     nil,
 			services:  map[types.NamespacedName][]*dag.ServiceCluster{},
@@ -246,13 +245,13 @@ type EndpointsTranslator struct {
 	cache EndpointsCache
 
 	mu      sync.Mutex // Protects entries.
-	entries map[string]*envoy_api_v2.ClusterLoadAssignment
+	entries map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment
 }
 
 // Merge combines the given entries with the existing entries in the
 // EndpointsTranslator. If the same key exists in both maps, an existing entry
 // is replaced.
-func (e *EndpointsTranslator) Merge(entries map[string]*envoy_api_v2.ClusterLoadAssignment) {
+func (e *EndpointsTranslator) Merge(entries map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -314,7 +313,7 @@ func (e *EndpointsTranslator) OnChange(d *dag.DAG) {
 
 // equal returns true if a and b are the same length, have the same set
 // of keys, and have proto-equivalent values for each key, or false otherwise.
-func equal(a, b map[string]*envoy_api_v2.ClusterLoadAssignment) bool {
+func equal(a, b map[string]*envoy_config_endpoint_v3.ClusterLoadAssignment) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -400,7 +399,7 @@ func (e *EndpointsTranslator) Contents() []proto.Message {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	values := make([]*envoy_api_v2.ClusterLoadAssignment, 0, len(e.entries))
+	values := make([]*envoy_config_endpoint_v3.ClusterLoadAssignment, 0, len(e.entries))
 	for _, v := range e.entries {
 		values = append(values, v)
 	}
@@ -413,12 +412,12 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	values := make([]*envoy_api_v2.ClusterLoadAssignment, 0, len(names))
+	values := make([]*envoy_config_endpoint_v3.ClusterLoadAssignment, 0, len(names))
 	for _, n := range names {
 		v, ok := e.entries[n]
 		if !ok {
 			e.Debugf("no cache entry for %q", n)
-			v = &envoy_api_v2.ClusterLoadAssignment{
+			v = &envoy_config_endpoint_v3.ClusterLoadAssignment{
 				ClusterName: n,
 			}
 		}
@@ -429,4 +428,4 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*EndpointsTranslator) TypeURL() string { return resource2.EndpointType }
+func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }

@@ -11,13 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"testing"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/golang/protobuf/proto"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
@@ -32,7 +32,7 @@ import (
 
 func TestSecretCacheContents(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*envoy_api_v2_auth.Secret
+		contents map[string]*envoy_tls_v3.Secret
 		want     []proto.Message
 	}{
 		"empty": {
@@ -61,7 +61,7 @@ func TestSecretCacheContents(t *testing.T) {
 
 func TestSecretCacheQuery(t *testing.T) {
 	tests := map[string]struct {
-		contents map[string]*envoy_api_v2_auth.Secret
+		contents map[string]*envoy_tls_v3.Secret
 		query    []string
 		want     []proto.Message
 	}{
@@ -106,18 +106,18 @@ func TestSecretCacheQuery(t *testing.T) {
 func TestSecretVisit(t *testing.T) {
 	tests := map[string]struct {
 		objs []interface{}
-		want map[string]*envoy_api_v2_auth.Secret
+		want map[string]*envoy_tls_v3.Secret
 	}{
 		"nothing": {
 			objs: nil,
-			want: map[string]*envoy_api_v2_auth.Secret{},
+			want: map[string]*envoy_tls_v3.Secret{},
 		},
 		"unassociated secrets": {
 			objs: []interface{}{
 				tlssecret("default", "secret-a", secretdata(CERTIFICATE, RSA_PRIVATE_KEY)),
 				tlssecret("default", "secret-b", secretdata(CERTIFICATE_2, RSA_PRIVATE_KEY_2)),
 			},
-			want: map[string]*envoy_api_v2_auth.Secret{},
+			want: map[string]*envoy_tls_v3.Secret{},
 		},
 		"simple ingress with secret": {
 			objs: []interface{}{
@@ -519,26 +519,26 @@ func buildDAGFallback(t *testing.T, fallbackCertificate *types.NamespacedName, o
 	return builder.Build()
 }
 
-func secretmap(secrets ...*envoy_api_v2_auth.Secret) map[string]*envoy_api_v2_auth.Secret {
-	m := make(map[string]*envoy_api_v2_auth.Secret)
+func secretmap(secrets ...*envoy_tls_v3.Secret) map[string]*envoy_tls_v3.Secret {
+	m := make(map[string]*envoy_tls_v3.Secret)
 	for _, s := range secrets {
 		m[s.Name] = s
 	}
 	return m
 }
 
-func secret(name string, data map[string][]byte) *envoy_api_v2_auth.Secret {
-	return &envoy_api_v2_auth.Secret{
+func secret(name string, data map[string][]byte) *envoy_tls_v3.Secret {
+	return &envoy_tls_v3.Secret{
 		Name: name,
-		Type: &envoy_api_v2_auth.Secret_TlsCertificate{
-			TlsCertificate: &envoy_api_v2_auth.TlsCertificate{
-				CertificateChain: &envoy_api_v2_core.DataSource{
-					Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+		Type: &envoy_tls_v3.Secret_TlsCertificate{
+			TlsCertificate: &envoy_tls_v3.TlsCertificate{
+				CertificateChain: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
 						InlineBytes: data[v1.TLSCertKey],
 					},
 				},
-				PrivateKey: &envoy_api_v2_core.DataSource{
-					Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+				PrivateKey: &envoy_config_core_v3.DataSource{
+					Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
 						InlineBytes: data[v1.TLSPrivateKeyKey],
 					},
 				},

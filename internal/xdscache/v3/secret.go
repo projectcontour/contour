@@ -11,19 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"sort"
 	"sync"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 )
@@ -31,12 +31,12 @@ import (
 // SecretCache manages the contents of the gRPC SDS cache.
 type SecretCache struct {
 	mu     sync.Mutex
-	values map[string]*envoy_api_v2_auth.Secret
+	values map[string]*envoy_tls_v3.Secret
 	contour.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *SecretCache) Update(v map[string]*envoy_api_v2_auth.Secret) {
+func (c *SecretCache) Update(v map[string]*envoy_tls_v3.Secret) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -48,7 +48,7 @@ func (c *SecretCache) Update(v map[string]*envoy_api_v2_auth.Secret) {
 func (c *SecretCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_api_v2_auth.Secret
+	var values []*envoy_tls_v3.Secret
 	for _, v := range c.values {
 		values = append(values, v)
 	}
@@ -59,7 +59,7 @@ func (c *SecretCache) Contents() []proto.Message {
 func (c *SecretCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_api_v2_auth.Secret
+	var values []*envoy_tls_v3.Secret
 	for _, n := range names {
 		// we can only return secrets where their value is
 		// known. if the secret is not registered in the cache
@@ -80,13 +80,13 @@ func (c *SecretCache) OnChange(root *dag.DAG) {
 }
 
 type secretVisitor struct {
-	secrets map[string]*envoy_api_v2_auth.Secret
+	secrets map[string]*envoy_tls_v3.Secret
 }
 
-// visitSecrets produces a map of *envoy_api_v2_auth.Secret
-func visitSecrets(root dag.Vertex) map[string]*envoy_api_v2_auth.Secret {
+// visitSecrets produces a map of *envoy_tls_v3.Secret
+func visitSecrets(root dag.Vertex) map[string]*envoy_tls_v3.Secret {
 	sv := secretVisitor{
-		secrets: make(map[string]*envoy_api_v2_auth.Secret),
+		secrets: make(map[string]*envoy_tls_v3.Secret),
 	}
 	sv.visit(root)
 	return sv.secrets
@@ -95,7 +95,7 @@ func visitSecrets(root dag.Vertex) map[string]*envoy_api_v2_auth.Secret {
 func (v *secretVisitor) addSecret(s *dag.Secret) {
 	name := envoy.Secretname(s)
 	if _, ok := v.secrets[name]; !ok {
-		envoySecret := envoy_v2.Secret(s)
+		envoySecret := envoy_v3.Secret(s)
 		v.secrets[envoySecret.Name] = envoySecret
 	}
 }

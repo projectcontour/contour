@@ -11,19 +11,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"sort"
 	"sync"
 
-	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
-	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 )
@@ -31,12 +31,12 @@ import (
 // ClusterCache manages the contents of the gRPC CDS cache.
 type ClusterCache struct {
 	mu     sync.Mutex
-	values map[string]*envoy_api_v2.Cluster
+	values map[string]*envoy_config_cluster_v3.Cluster
 	contour.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *ClusterCache) Update(v map[string]*envoy_api_v2.Cluster) {
+func (c *ClusterCache) Update(v map[string]*envoy_config_cluster_v3.Cluster) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -48,7 +48,7 @@ func (c *ClusterCache) Update(v map[string]*envoy_api_v2.Cluster) {
 func (c *ClusterCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_api_v2.Cluster
+	var values []*envoy_config_cluster_v3.Cluster
 	for _, v := range c.values {
 		values = append(values, v)
 	}
@@ -59,7 +59,7 @@ func (c *ClusterCache) Contents() []proto.Message {
 func (c *ClusterCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_api_v2.Cluster
+	var values []*envoy_config_cluster_v3.Cluster
 	for _, n := range names {
 		// if the cluster is not registered we cannot return
 		// a blank cluster because each cluster has a required
@@ -82,13 +82,13 @@ func (c *ClusterCache) OnChange(root *dag.DAG) {
 }
 
 type clusterVisitor struct {
-	clusters map[string]*envoy_api_v2.Cluster
+	clusters map[string]*envoy_config_cluster_v3.Cluster
 }
 
-// visitCluster produces a map of *envoy_api_v2.Clusters.
-func visitClusters(root dag.Vertex) map[string]*envoy_api_v2.Cluster {
+// visitCluster produces a map of *envoy_config_cluster_v3.Clusters.
+func visitClusters(root dag.Vertex) map[string]*envoy_config_cluster_v3.Cluster {
 	cv := clusterVisitor{
-		clusters: make(map[string]*envoy_api_v2.Cluster),
+		clusters: make(map[string]*envoy_config_cluster_v3.Cluster),
 	}
 	cv.visit(root)
 	return cv.clusters
@@ -99,12 +99,12 @@ func (v *clusterVisitor) visit(vertex dag.Vertex) {
 	case *dag.Cluster:
 		name := envoy.Clustername(cluster)
 		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoy_v2.Cluster(cluster)
+			v.clusters[name] = envoy_v3.Cluster(cluster)
 		}
 	case *dag.ExtensionCluster:
 		name := cluster.Name
 		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoy_v2.ExtensionCluster(cluster)
+			v.clusters[name] = envoy_v3.ExtensionCluster(cluster)
 		}
 	}
 

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"context"
@@ -20,15 +20,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/internal/xds"
-
-	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	envoy_service_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
+	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_service_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
+	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
+	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
+	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
-	contour_xds_v2 "github.com/projectcontour/contour/internal/xds/v2"
+	"github.com/projectcontour/contour/internal/xds"
+	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -65,7 +68,7 @@ func TestGRPC(t *testing.T) {
 				},
 			})
 
-			sds := envoy_api_v2.NewClusterDiscoveryServiceClient(cc)
+			sds := envoy_service_cluster_v3.NewClusterDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := sds.StreamClusters(ctx)
@@ -92,7 +95,7 @@ func TestGRPC(t *testing.T) {
 				}},
 			})
 
-			eds := envoy_api_v2.NewEndpointDiscoveryServiceClient(cc)
+			eds := envoy_service_endpoint_v3.NewEndpointDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := eds.StreamEndpoints(ctx)
@@ -125,7 +128,7 @@ func TestGRPC(t *testing.T) {
 				},
 			})
 
-			lds := envoy_api_v2.NewListenerDiscoveryServiceClient(cc)
+			lds := envoy_service_listener_v3.NewListenerDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := lds.StreamListeners(ctx)
@@ -157,7 +160,7 @@ func TestGRPC(t *testing.T) {
 				},
 			})
 
-			rds := envoy_api_v2.NewRouteDiscoveryServiceClient(cc)
+			rds := envoy_service_route_v3.NewRouteDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := rds.StreamRoutes(ctx)
@@ -178,7 +181,7 @@ func TestGRPC(t *testing.T) {
 				},
 			})
 
-			sds := discovery.NewSecretDiscoveryServiceClient(cc)
+			sds := envoy_service_secret_v3.NewSecretDiscoveryServiceClient(cc)
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			stream, err := sds.StreamSecrets(ctx)
@@ -209,7 +212,7 @@ func TestGRPC(t *testing.T) {
 			}
 
 			srv := xds.NewServer(nil)
-			contour_xds_v2.RegisterServer(contour_xds_v2.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
+			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 			done := make(chan error, 1)
@@ -233,17 +236,17 @@ func TestGRPC(t *testing.T) {
 }
 
 func sendreq(t *testing.T, stream interface {
-	Send(*envoy_api_v2.DiscoveryRequest) error
+	Send(*discovery.DiscoveryRequest) error
 }, typeurl string) {
 	t.Helper()
-	err := stream.Send(&envoy_api_v2.DiscoveryRequest{
+	err := stream.Send(&discovery.DiscoveryRequest{
 		TypeUrl: typeurl,
 	})
 	require.NoError(t, err)
 }
 
 func checkrecv(t *testing.T, stream interface {
-	Recv() (*envoy_api_v2.DiscoveryResponse, error)
+	Recv() (*discovery.DiscoveryResponse, error)
 }) {
 	t.Helper()
 	_, err := stream.Recv()
@@ -251,7 +254,7 @@ func checkrecv(t *testing.T, stream interface {
 }
 
 func checktimeout(t *testing.T, stream interface {
-	Recv() (*envoy_api_v2.DiscoveryResponse, error)
+	Recv() (*discovery.DiscoveryResponse, error)
 }) {
 	t.Helper()
 	_, err := stream.Recv()

@@ -11,17 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v3
 
 import (
 	"testing"
 
-	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_api_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/projectcontour/contour/internal/dag"
-	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +31,7 @@ import (
 func TestVisitClusters(t *testing.T) {
 	tests := map[string]struct {
 		root dag.Vertex
-		want map[string]*envoy_api_v2.Cluster
+		want map[string]*envoy_config_cluster_v3.Cluster
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{
@@ -62,12 +62,12 @@ func TestVisitClusters(t *testing.T) {
 				),
 			},
 			want: clustermap(
-				&envoy_api_v2.Cluster{
+				&envoy_config_cluster_v3.Cluster{
 					Name:                 "default/example/443/da39a3ee5e",
 					AltStatName:          "default_example_443",
-					ClusterDiscoveryType: envoy_v2.ClusterDiscoveryType(envoy_api_v2.Cluster_EDS),
-					EdsClusterConfig: &envoy_api_v2.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy_v2.ConfigSource("contour"),
+					ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_config_cluster_v3.Cluster_EDS),
+					EdsClusterConfig: &envoy_config_cluster_v3.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy_v3.ConfigSource("contour"),
 						ServiceName: "default/example",
 					},
 				},
@@ -103,7 +103,7 @@ func TestVisitListeners(t *testing.T) {
 
 	tests := map[string]struct {
 		root dag.Vertex
-		want map[string]*envoy_api_v2.Listener
+		want map[string]*envoy_config_listener_v3.Listener
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{
@@ -123,25 +123,25 @@ func TestVisitListeners(t *testing.T) {
 								Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 							},
 						},
-						MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_2,
+						MinTLSVersion: "1.2",
 					},
 				),
 			},
 			want: listenermap(
-				&envoy_api_v2.Listener{
+				&envoy_config_listener_v3.Listener{
 					Name:    ENVOY_HTTPS_LISTENER,
-					Address: envoy_v2.SocketAddress("0.0.0.0", 8443),
-					FilterChains: []*envoy_api_v2_listener.FilterChain{{
-						FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+					Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+					FilterChains: []*envoy_config_listener_v3.FilterChain{{
+						FilterChainMatch: &envoy_config_listener_v3.FilterChainMatch{
 							ServerNames: []string{"tcpproxy.example.com"},
 						},
-						TransportSocket: transportSocket("secret", envoy_api_v2_auth.TlsParameters_TLSv1_2),
-						Filters:         envoy_v2.Filters(envoy_v2.TCPProxy(ENVOY_HTTPS_LISTENER, p1, envoy_v2.FileAccessLogEnvoy(DEFAULT_HTTPS_ACCESS_LOG))),
+						TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2),
+						Filters:         envoy_v3.Filters(envoy_v3.TCPProxy(ENVOY_HTTPS_LISTENER, p1, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTPS_ACCESS_LOG))),
 					}},
-					ListenerFilters: envoy_v2.ListenerFilters(
-						envoy_v2.TLSInspector(),
+					ListenerFilters: envoy_v3.ListenerFilters(
+						envoy_v3.TLSInspector(),
 					),
-					SocketOptions: envoy_v2.TCPKeepaliveSocketOptions(),
+					SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 				},
 			),
 		},
@@ -158,7 +158,7 @@ func TestVisitListeners(t *testing.T) {
 func TestVisitSecrets(t *testing.T) {
 	tests := map[string]struct {
 		root dag.Vertex
-		want map[string]*envoy_api_v2_auth.Secret
+		want map[string]*envoy_tls_v3.Secret
 	}{
 		"TCPService forward": {
 			root: &dag.Listener{
@@ -196,17 +196,17 @@ func TestVisitSecrets(t *testing.T) {
 					},
 				),
 			},
-			want: secretmap(&envoy_api_v2_auth.Secret{
+			want: secretmap(&envoy_tls_v3.Secret{
 				Name: "default/secret/735ad571c1",
-				Type: &envoy_api_v2_auth.Secret_TlsCertificate{
-					TlsCertificate: &envoy_api_v2_auth.TlsCertificate{
-						PrivateKey: &envoy_api_v2_core.DataSource{
-							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+				Type: &envoy_tls_v3.Secret_TlsCertificate{
+					TlsCertificate: &envoy_tls_v3.TlsCertificate{
+						PrivateKey: &envoy_api_core_v3.DataSource{
+							Specifier: &envoy_api_core_v3.DataSource_InlineBytes{
 								InlineBytes: []byte("key"),
 							},
 						},
-						CertificateChain: &envoy_api_v2_core.DataSource{
-							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+						CertificateChain: &envoy_api_core_v3.DataSource{
+							Specifier: &envoy_api_core_v3.DataSource_InlineBytes{
 								InlineBytes: []byte("certificate"),
 							},
 						},
