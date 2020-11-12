@@ -259,12 +259,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return fmt.Errorf("error parsing request timeout: %w", err)
 	}
 
-	// Set the global minimum allowed TLS version to 1.1, which allows proxies/ingresses
-	// that are explicitly using 1.1 to continue working by default. However, the
-	// *default* minimum TLS version for proxies/ingresses that don't specify it
-	// is 1.2, set in the DAG processors.
-	globalMinTLSVersion := annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, "1.1")
-
 	listenerConfig := xdscache_v3.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
@@ -275,7 +269,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HTTPSAccessLog:                ctx.httpsAccessLog,
 		AccessLogType:                 ctx.Config.AccessLogFormat,
 		AccessLogFields:               ctx.Config.AccessLogFields,
-		MinimumTLSVersion:             globalMinTLSVersion,
+		MinimumTLSVersion:             annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, "1.2"),
 		RequestTimeout:                requestTimeout,
 		ConnectionIdleTimeout:         connectionIdleTimeout,
 		StreamIdleTimeout:             streamIdleTimeout,
