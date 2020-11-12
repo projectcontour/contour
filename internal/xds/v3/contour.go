@@ -48,11 +48,6 @@ func NewContourServer(log logrus.FieldLogger, resources ...xds.Resource) Server 
 
 	for i, r := range resources {
 		c.resources[r.TypeURL()] = resources[i]
-
-		// Map the xDS v3 resource to this provider.
-		if v3, ok := xds.TypeMapping[r.TypeURL()]; ok {
-			c.resources[v3] = resources[i]
-		}
 	}
 
 	return &c

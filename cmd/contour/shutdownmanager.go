@@ -21,7 +21,7 @@ import (
 	"os"
 	"time"
 
-	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
+	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/prometheus/common/expfmt"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -40,7 +40,7 @@ const shutdownReadyFile = "/ok"
 const shutdownReadyCheckInterval = time.Second * 1
 
 func prometheusLabels() []string {
-	return []string{xdscache_v2.ENVOY_HTTP_LISTENER, xdscache_v2.ENVOY_HTTPS_LISTENER}
+	return []string{xdscache_v3.ENVOY_HTTP_LISTENER, xdscache_v3.ENVOY_HTTPS_LISTENER}
 }
 
 type shutdownmanagerContext struct {
