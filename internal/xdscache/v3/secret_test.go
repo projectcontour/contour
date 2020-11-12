@@ -16,7 +16,7 @@ package v3
 import (
 	"testing"
 
-	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/golang/protobuf/proto"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -532,13 +532,13 @@ func secret(name string, data map[string][]byte) *envoy_tls_v3.Secret {
 		Name: name,
 		Type: &envoy_tls_v3.Secret_TlsCertificate{
 			TlsCertificate: &envoy_tls_v3.TlsCertificate{
-				CertificateChain: &envoy_config_core_v3.DataSource{
-					Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
+				CertificateChain: &envoy_core_v3.DataSource{
+					Specifier: &envoy_core_v3.DataSource_InlineBytes{
 						InlineBytes: data[v1.TLSCertKey],
 					},
 				},
-				PrivateKey: &envoy_config_core_v3.DataSource{
-					Specifier: &envoy_config_core_v3.DataSource_InlineBytes{
+				PrivateKey: &envoy_core_v3.DataSource{
+					Specifier: &envoy_core_v3.DataSource_InlineBytes{
 						InlineBytes: data[v1.TLSPrivateKeyKey],
 					},
 				},

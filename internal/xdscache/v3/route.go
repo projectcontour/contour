@@ -18,7 +18,7 @@ import (
 	"sort"
 	"sync"
 
-	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
@@ -32,12 +32,12 @@ import (
 // RouteCache manages the contents of the gRPC RDS cache.
 type RouteCache struct {
 	mu     sync.Mutex
-	values map[string]*envoy_config_route_v3.RouteConfiguration
+	values map[string]*envoy_route_v3.RouteConfiguration
 	contour.Cond
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *RouteCache) Update(v map[string]*envoy_config_route_v3.RouteConfiguration) {
+func (c *RouteCache) Update(v map[string]*envoy_route_v3.RouteConfiguration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -50,7 +50,7 @@ func (c *RouteCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	var values []*envoy_config_route_v3.RouteConfiguration
+	var values []*envoy_route_v3.RouteConfiguration
 	for _, v := range c.values {
 		values = append(values, v)
 	}
@@ -64,7 +64,7 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	var values []*envoy_config_route_v3.RouteConfiguration
+	var values []*envoy_route_v3.RouteConfiguration
 	for _, n := range names {
 		v, ok := c.values[n]
 		if !ok {
@@ -73,7 +73,7 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 			// not the same as returning nil, we're choosing to
 			// say "the configuration you asked for _does exists_,
 			// but it contains no useful information.
-			v = &envoy_config_route_v3.RouteConfiguration{
+			v = &envoy_route_v3.RouteConfiguration{
 				Name: n,
 			}
 		}
@@ -94,17 +94,17 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 }
 
 type routeVisitor struct {
-	routes map[string]*envoy_config_route_v3.RouteConfiguration
+	routes map[string]*envoy_route_v3.RouteConfiguration
 }
 
-func visitRoutes(root dag.Vertex) map[string]*envoy_config_route_v3.RouteConfiguration {
+func visitRoutes(root dag.Vertex) map[string]*envoy_route_v3.RouteConfiguration {
 	// Collect the route configurations for all the routes we can
 	// find. For HTTP hosts, the routes will all be collected on the
 	// well-known ENVOY_HTTP_LISTENER, but for HTTPS hosts, we will
 	// generate a per-vhost collection. This lets us keep different
 	// SNI names disjoint when we later configure the listener.
 	rv := routeVisitor{
-		routes: map[string]*envoy_config_route_v3.RouteConfiguration{
+		routes: map[string]*envoy_route_v3.RouteConfiguration{
 			ENVOY_HTTP_LISTENER: envoy_v3.RouteConfiguration(ENVOY_HTTP_LISTENER),
 		},
 	}
@@ -119,7 +119,7 @@ func visitRoutes(root dag.Vertex) map[string]*envoy_config_route_v3.RouteConfigu
 }
 
 func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
-	var routes []*envoy_config_route_v3.Route
+	var routes []*envoy_route_v3.Route
 
 	vh.Visit(func(v dag.Vertex) {
 		route, ok := v.(*dag.Route)
@@ -131,12 +131,12 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 			// TODO(dfc) if we ensure the builder never returns a dag.Route connected
 			// to a SecureVirtualHost that requires upgrade, this logic can move to
 			// envoy.RouteRoute.
-			routes = append(routes, &envoy_config_route_v3.Route{
+			routes = append(routes, &envoy_route_v3.Route{
 				Match:  envoy_v3.RouteMatch(route),
 				Action: envoy_v3.UpgradeHTTPS(),
 			})
 		} else {
-			rt := &envoy_config_route_v3.Route{
+			rt := &envoy_route_v3.Route{
 				Match:  envoy_v3.RouteMatch(route),
 				Action: envoy_v3.RouteRoute(route),
 			}
@@ -155,7 +155,7 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 	if len(routes) > 0 {
 		sortRoutes(routes)
 
-		var evh *envoy_config_route_v3.VirtualHost
+		var evh *envoy_route_v3.VirtualHost
 		if cp := envoy_v3.CORSPolicy(vh.CORSPolicy); cp != nil {
 			evh = envoy_v3.CORSVirtualHost(vh.Name, cp, routes...)
 		} else {
@@ -167,7 +167,7 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 }
 
 func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
-	var routes []*envoy_config_route_v3.Route
+	var routes []*envoy_route_v3.Route
 
 	svh.Visit(func(v dag.Vertex) {
 		route, ok := v.(*dag.Route)
@@ -175,7 +175,7 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			return
 		}
 
-		rt := &envoy_config_route_v3.Route{
+		rt := &envoy_route_v3.Route{
 			Match:  envoy_v3.RouteMatch(route),
 			Action: envoy_v3.RouteRoute(route),
 		}
@@ -216,7 +216,7 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			v.routes[name] = envoy_v3.RouteConfiguration(name)
 		}
 
-		var evh *envoy_config_route_v3.VirtualHost
+		var evh *envoy_route_v3.VirtualHost
 		if cp := envoy_v3.CORSPolicy(svh.CORSPolicy); cp != nil {
 			evh = envoy_v3.CORSVirtualHost(svh.VirtualHost.Name, cp, routes...)
 		} else {
@@ -234,7 +234,7 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 				v.routes[ENVOY_FALLBACK_ROUTECONFIG] = envoy_v3.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG)
 			}
 
-			var fvh *envoy_config_route_v3.VirtualHost
+			var fvh *envoy_route_v3.VirtualHost
 			if cp := envoy_v3.CORSPolicy(svh.CORSPolicy); cp != nil {
 				fvh = envoy_v3.CORSVirtualHost(svh.Name, cp, routes...)
 			} else {
@@ -270,7 +270,7 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 // first by longest prefix (or regex), then by the length of the
 // HeaderMatch slice (if any). The HeaderMatch slice is also ordered
 // by the matching header name.
-func sortRoutes(routes []*envoy_config_route_v3.Route) {
+func sortRoutes(routes []*envoy_route_v3.Route) {
 	for _, r := range routes {
 		sort.Stable(sorter.For(r.Match.Headers))
 	}

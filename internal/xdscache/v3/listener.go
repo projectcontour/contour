@@ -18,8 +18,8 @@ import (
 	"sort"
 	"sync"
 
-	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
-	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
@@ -187,7 +187,7 @@ func (lvc *ListenerConfig) accesslogFields() config.AccessLogFields {
 	return config.DefaultFields
 }
 
-func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_config_accesslog_v3.AccessLog {
+func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_accesslog_v3.AccessLog {
 	switch lvc.accesslogType() {
 	case string(config.JSONAccessLog):
 		return envoy_v3.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields())
@@ -196,7 +196,7 @@ func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_config_accesslog_v3.A
 	}
 }
 
-func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_config_accesslog_v3.AccessLog {
+func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_accesslog_v3.AccessLog {
 	switch lvc.accesslogType() {
 	case "json":
 		return envoy_v3.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields())
@@ -217,8 +217,8 @@ func (lvc *ListenerConfig) minTLSVersion() envoy_tls_v3.TlsParameters_TlsProtoco
 // ListenerCache manages the contents of the gRPC LDS cache.
 type ListenerCache struct {
 	mu           sync.Mutex
-	values       map[string]*envoy_config_listener_v3.Listener
-	staticValues map[string]*envoy_config_listener_v3.Listener
+	values       map[string]*envoy_listener_v3.Listener
+	staticValues map[string]*envoy_listener_v3.Listener
 
 	Config ListenerConfig
 	contour.Cond
@@ -229,14 +229,14 @@ func NewListenerCache(config ListenerConfig, address string, port int) *Listener
 	stats := envoy_v3.StatsListener(address, port)
 	return &ListenerCache{
 		Config: config,
-		staticValues: map[string]*envoy_config_listener_v3.Listener{
+		staticValues: map[string]*envoy_listener_v3.Listener{
 			stats.Name: stats,
 		},
 	}
 }
 
 // Update replaces the contents of the cache with the supplied map.
-func (c *ListenerCache) Update(v map[string]*envoy_config_listener_v3.Listener) {
+func (c *ListenerCache) Update(v map[string]*envoy_listener_v3.Listener) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -248,7 +248,7 @@ func (c *ListenerCache) Update(v map[string]*envoy_config_listener_v3.Listener) 
 func (c *ListenerCache) Contents() []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_config_listener_v3.Listener
+	var values []*envoy_listener_v3.Listener
 	for _, v := range c.values {
 		values = append(values, v)
 	}
@@ -264,7 +264,7 @@ func (c *ListenerCache) Contents() []proto.Message {
 func (c *ListenerCache) Query(names []string) []proto.Message {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	var values []*envoy_config_listener_v3.Listener
+	var values []*envoy_listener_v3.Listener
 	for _, n := range names {
 		v, ok := c.values[n]
 		if !ok {
@@ -294,14 +294,14 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 type listenerVisitor struct {
 	*ListenerConfig
 
-	listeners map[string]*envoy_config_listener_v3.Listener
+	listeners map[string]*envoy_listener_v3.Listener
 	http      bool // at least one dag.VirtualHost encountered
 }
 
-func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_config_listener_v3.Listener {
+func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_listener_v3.Listener {
 	lv := listenerVisitor{
 		ListenerConfig: lvc,
-		listeners: map[string]*envoy_config_listener_v3.Listener{
+		listeners: map[string]*envoy_listener_v3.Listener{
 			ENVOY_HTTPS_LISTENER: envoy_v3.Listener(
 				ENVOY_HTTPS_LISTENER,
 				lvc.httpsAddress(),
@@ -349,7 +349,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_conf
 	return lv.listeners
 }
 
-func proxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
+func proxyProtocol(useProxy bool) []*envoy_listener_v3.ListenerFilter {
 	if useProxy {
 		return envoy_v3.ListenerFilters(
 			envoy_v3.ProxyProtocol(),
@@ -358,7 +358,7 @@ func proxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
 	return nil
 }
 
-func secureProxyProtocol(useProxy bool) []*envoy_config_listener_v3.ListenerFilter {
+func secureProxyProtocol(useProxy bool) []*envoy_listener_v3.ListenerFilter {
 	return append(proxyProtocol(useProxy), envoy_v3.TLSInspector())
 }
 
@@ -378,7 +378,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		v.http = true
 	case *dag.SecureVirtualHost:
 		var alpnProtos []string
-		var filters []*envoy_config_listener_v3.Filter
+		var filters []*envoy_listener_v3.Filter
 
 		if vh.TCPProxy == nil {
 			var authFilter *http.HttpFilter
