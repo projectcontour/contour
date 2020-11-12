@@ -16,11 +16,10 @@ package v3
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/envoy"
-
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -30,7 +29,7 @@ import (
 func TestSecret(t *testing.T) {
 	tests := map[string]struct {
 		secret *dag.Secret
-		want   *envoy_api_v2_auth.Secret
+		want   *envoy_tls_v3.Secret
 	}{
 		"simple secret": {
 			secret: &dag.Secret{
@@ -45,17 +44,17 @@ func TestSecret(t *testing.T) {
 					},
 				},
 			},
-			want: &envoy_api_v2_auth.Secret{
+			want: &envoy_tls_v3.Secret{
 				Name: "default/simple/cd1b506996",
-				Type: &envoy_api_v2_auth.Secret_TlsCertificate{
-					TlsCertificate: &envoy_api_v2_auth.TlsCertificate{
-						PrivateKey: &envoy_api_v2_core.DataSource{
-							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+				Type: &envoy_tls_v3.Secret_TlsCertificate{
+					TlsCertificate: &envoy_tls_v3.TlsCertificate{
+						PrivateKey: &envoy_core_v3.DataSource{
+							Specifier: &envoy_core_v3.DataSource_InlineBytes{
 								InlineBytes: []byte("key"),
 							},
 						},
-						CertificateChain: &envoy_api_v2_core.DataSource{
-							Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+						CertificateChain: &envoy_core_v3.DataSource{
+							Specifier: &envoy_core_v3.DataSource_InlineBytes{
 								InlineBytes: []byte("cert"),
 							},
 						},

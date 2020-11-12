@@ -16,8 +16,8 @@ package v3
 import (
 	"testing"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
@@ -26,14 +26,14 @@ import (
 
 func TestUpstreamTLSTransportSocket(t *testing.T) {
 	tests := map[string]struct {
-		ctxt *envoy_api_v2_auth.UpstreamTlsContext
-		want *envoy_api_v2_core.TransportSocket
+		ctxt *envoy_tls_v3.UpstreamTlsContext
+		want *envoy_core_v3.TransportSocket
 	}{
 		"h2": {
 			ctxt: UpstreamTLSContext(nil, "", nil, "h2"),
-			want: &envoy_api_v2_core.TransportSocket{
+			want: &envoy_core_v3.TransportSocket{
 				Name: "envoy.transport_sockets.tls",
-				ConfigType: &envoy_api_v2_core.TransportSocket_TypedConfig{
+				ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(UpstreamTLSContext(nil, "", nil, "h2")),
 				},
 			},
@@ -62,15 +62,15 @@ func TestDownstreamTLSTransportSocket(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		ctxt *envoy_api_v2_auth.DownstreamTlsContext
-		want *envoy_api_v2_core.TransportSocket
+		ctxt *envoy_tls_v3.DownstreamTlsContext
+		want *envoy_core_v3.TransportSocket
 	}{
 		"default/tls": {
-			ctxt: DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, nil, "client-subject-name", "h2", "http/1.1"),
-			want: &envoy_api_v2_core.TransportSocket{
+			ctxt: DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_1, nil, "client-subject-name", "h2", "http/1.1"),
+			want: &envoy_core_v3.TransportSocket{
 				Name: "envoy.transport_sockets.tls",
-				ConfigType: &envoy_api_v2_core.TransportSocket_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, nil, "client-subject-name", "h2", "http/1.1")),
+				ConfigType: &envoy_core_v3.TransportSocket_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_1, nil, "client-subject-name", "h2", "http/1.1")),
 				},
 			},
 		},

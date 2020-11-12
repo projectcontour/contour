@@ -16,7 +16,7 @@ package v3
 import (
 	"testing"
 
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 

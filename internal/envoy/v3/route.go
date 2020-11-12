@@ -19,11 +19,10 @@ import (
 	"sort"
 	"strings"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	envoy_config_filter_http_ext_authz_v2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/ext_authz/v2"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/ptypes/any"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
@@ -35,8 +34,8 @@ import (
 // RouteAuthzDisabled returns a per-route config to disable authorization.
 func RouteAuthzDisabled() *any.Any {
 	return protobuf.MustMarshalAny(
-		&envoy_config_filter_http_ext_authz_v2.ExtAuthzPerRoute{
-			Override: &envoy_config_filter_http_ext_authz_v2.ExtAuthzPerRoute_Disabled{
+		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
 				Disabled: true,
 			},
 		},
@@ -47,9 +46,9 @@ func RouteAuthzDisabled() *any.Any {
 // context entries in the check request.
 func RouteAuthzContext(settings map[string]string) *any.Any {
 	return protobuf.MustMarshalAny(
-		&envoy_config_filter_http_ext_authz_v2.ExtAuthzPerRoute{
-			Override: &envoy_config_filter_http_ext_authz_v2.ExtAuthzPerRoute_CheckSettings{
-				CheckSettings: &envoy_config_filter_http_ext_authz_v2.CheckSettings{
+		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
+			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+				CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
 					ContextExtensions: settings,
 				},
 			},
@@ -57,35 +56,35 @@ func RouteAuthzContext(settings map[string]string) *any.Any {
 	)
 }
 
-// RouteMatch creates a *envoy_api_v2_route.RouteMatch for the supplied *dag.Route.
-func RouteMatch(route *dag.Route) *envoy_api_v2_route.RouteMatch {
+// RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
+func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	switch c := route.PathMatchCondition.(type) {
 	case *dag.RegexMatchCondition:
-		return &envoy_api_v2_route.RouteMatch{
-			PathSpecifier: &envoy_api_v2_route.RouteMatch_SafeRegex{
+		return &envoy_route_v3.RouteMatch{
+			PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
 				SafeRegex: SafeRegexMatch(c.Regex),
 			},
 			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
 	case *dag.PrefixMatchCondition:
-		return &envoy_api_v2_route.RouteMatch{
-			PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+		return &envoy_route_v3.RouteMatch{
+			PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
 				Prefix: c.Prefix,
 			},
 			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
 	default:
-		return &envoy_api_v2_route.RouteMatch{
+		return &envoy_route_v3.RouteMatch{
 			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
 	}
 }
 
-// RouteRoute creates a *envoy_api_v2_route.Route_Route for the services supplied.
+// RouteRoute creates a *envoy_route_v3.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
-func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
-	ra := envoy_api_v2_route.RouteAction{
+func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
+	ra := envoy_route_v3.RouteAction{
 		RetryPolicy:           retryPolicy(r),
 		Timeout:               envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
 		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleTimeout),
@@ -96,41 +95,42 @@ func RouteRoute(r *dag.Route) *envoy_api_v2_route.Route_Route {
 
 	// Check for host header policy and set if found
 	if val := envoy.HostReplaceHeader(r.RequestHeadersPolicy); val != "" {
-		ra.HostRewriteSpecifier = &envoy_api_v2_route.RouteAction_HostRewrite{
-			HostRewrite: val,
+		// (SAS) This changed from RouteAction_HostRewrite
+		ra.HostRewriteSpecifier = &envoy_route_v3.RouteAction_HostRewriteHeader{
+			HostRewriteHeader: val,
 		}
 	}
 
 	if r.Websocket {
 		ra.UpgradeConfigs = append(ra.UpgradeConfigs,
-			&envoy_api_v2_route.RouteAction_UpgradeConfig{
+			&envoy_route_v3.RouteAction_UpgradeConfig{
 				UpgradeType: "websocket",
 			},
 		)
 	}
 
 	if envoy.SingleSimpleCluster(r.Clusters) {
-		ra.ClusterSpecifier = &envoy_api_v2_route.RouteAction_Cluster{
+		ra.ClusterSpecifier = &envoy_route_v3.RouteAction_Cluster{
 			Cluster: envoy.Clustername(r.Clusters[0]),
 		}
 	} else {
-		ra.ClusterSpecifier = &envoy_api_v2_route.RouteAction_WeightedClusters{
+		ra.ClusterSpecifier = &envoy_route_v3.RouteAction_WeightedClusters{
 			WeightedClusters: weightedClusters(r.Clusters),
 		}
 	}
-	return &envoy_api_v2_route.Route_Route{
+	return &envoy_route_v3.Route_Route{
 		Route: &ra,
 	}
 }
 
 // hashPolicy returns a slice of hash policies iff at least one of the route's
 // clusters supplied uses the `Cookie` load balancing strategy.
-func hashPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_HashPolicy {
+func hashPolicy(r *dag.Route) []*envoy_route_v3.RouteAction_HashPolicy {
 	for _, c := range r.Clusters {
 		if c.LoadBalancerPolicy == "Cookie" {
-			return []*envoy_api_v2_route.RouteAction_HashPolicy{{
-				PolicySpecifier: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie_{
-					Cookie: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie{
+			return []*envoy_route_v3.RouteAction_HashPolicy{{
+				PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
+					Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
 						Name: "X-Contour-Session-Affinity",
 						Ttl:  protobuf.Duration(0),
 						Path: "/",
@@ -142,17 +142,17 @@ func hashPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_HashPolicy {
 	return nil
 }
 
-func mirrorPolicy(r *dag.Route) []*envoy_api_v2_route.RouteAction_RequestMirrorPolicy {
+func mirrorPolicy(r *dag.Route) []*envoy_route_v3.RouteAction_RequestMirrorPolicy {
 	if r.MirrorPolicy == nil {
 		return nil
 	}
 
-	return []*envoy_api_v2_route.RouteAction_RequestMirrorPolicy{{
+	return []*envoy_route_v3.RouteAction_RequestMirrorPolicy{{
 		Cluster: envoy.Clustername(r.MirrorPolicy.Cluster),
 	}}
 }
 
-func retryPolicy(r *dag.Route) *envoy_api_v2_route.RetryPolicy {
+func retryPolicy(r *dag.Route) *envoy_route_v3.RetryPolicy {
 	if r.RetryPolicy == nil {
 		return nil
 	}
@@ -160,7 +160,7 @@ func retryPolicy(r *dag.Route) *envoy_api_v2_route.RetryPolicy {
 		return nil
 	}
 
-	rp := &envoy_api_v2_route.RetryPolicy{
+	rp := &envoy_route_v3.RetryPolicy{
 		RetryOn:              r.RetryPolicy.RetryOn,
 		RetriableStatusCodes: r.RetryPolicy.RetriableStatusCodes,
 	}
@@ -173,10 +173,10 @@ func retryPolicy(r *dag.Route) *envoy_api_v2_route.RetryPolicy {
 }
 
 // UpgradeHTTPS returns a route Action that redirects the request to HTTPS.
-func UpgradeHTTPS() *envoy_api_v2_route.Route_Redirect {
-	return &envoy_api_v2_route.Route_Redirect{
-		Redirect: &envoy_api_v2_route.RedirectAction{
-			SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+func UpgradeHTTPS() *envoy_route_v3.Route_Redirect {
+	return &envoy_route_v3.Route_Redirect{
+		Redirect: &envoy_route_v3.RedirectAction{
+			SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
 				HttpsRedirect: true,
 			},
 		},
@@ -184,12 +184,12 @@ func UpgradeHTTPS() *envoy_api_v2_route.Route_Redirect {
 }
 
 // HeaderValueList creates a list of Envoy HeaderValueOptions from the provided map.
-func HeaderValueList(hvm map[string]string, app bool) []*envoy_api_v2_core.HeaderValueOption {
-	var hvs []*envoy_api_v2_core.HeaderValueOption
+func HeaderValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderValueOption {
+	var hvs []*envoy_core_v3.HeaderValueOption
 
 	for key, value := range hvm {
-		hvs = append(hvs, &envoy_api_v2_core.HeaderValueOption{
-			Header: &envoy_api_v2_core.HeaderValue{
+		hvs = append(hvs, &envoy_core_v3.HeaderValueOption{
+			Header: &envoy_core_v3.HeaderValue{
 				Key:   key,
 				Value: value,
 			},
@@ -207,13 +207,13 @@ func HeaderValueList(hvm map[string]string, app bool) []*envoy_api_v2_core.Heade
 }
 
 // weightedClusters returns a route.WeightedCluster for multiple services.
-func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedCluster {
-	var wc envoy_api_v2_route.WeightedCluster
+func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
+	var wc envoy_route_v3.WeightedCluster
 	var total uint32
 	for _, cluster := range clusters {
 		total += cluster.Weight
 
-		c := &envoy_api_v2_route.WeightedCluster_ClusterWeight{
+		c := &envoy_route_v3.WeightedCluster_ClusterWeight{
 			Name:   envoy.Clustername(cluster),
 			Weight: protobuf.UInt32(cluster.Weight),
 		}
@@ -241,14 +241,14 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_api_v2_route.WeightedClust
 }
 
 // VirtualHost creates a new route.VirtualHost.
-func VirtualHost(hostname string, routes ...*envoy_api_v2_route.Route) *envoy_api_v2_route.VirtualHost {
+func VirtualHost(hostname string, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
 	domains := []string{hostname}
 	if hostname != "*" {
 		// NOTE(jpeach) see also envoy.FilterMisdirectedRequests().
 		domains = append(domains, hostname+":*")
 	}
 
-	return &envoy_api_v2_route.VirtualHost{
+	return &envoy_route_v3.VirtualHost{
 		Name:    envoy.Hashname(60, hostname),
 		Domains: domains,
 		Routes:  routes,
@@ -256,15 +256,15 @@ func VirtualHost(hostname string, routes ...*envoy_api_v2_route.Route) *envoy_ap
 }
 
 // CORSVirtualHost creates a new route.VirtualHost with a CORS policy.
-func CORSVirtualHost(hostname string, corspolicy *envoy_api_v2_route.CorsPolicy, routes ...*envoy_api_v2_route.Route) *envoy_api_v2_route.VirtualHost {
+func CORSVirtualHost(hostname string, corspolicy *envoy_route_v3.CorsPolicy, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
 	vh := VirtualHost(hostname, routes...)
 	vh.Cors = corspolicy
 	return vh
 }
 
-// RouteConfiguration returns a *v2.RouteConfiguration.
-func RouteConfiguration(name string, virtualhosts ...*envoy_api_v2_route.VirtualHost) *v2.RouteConfiguration {
-	return &v2.RouteConfiguration{
+// RouteConfiguration returns a *envoy_route_v3.RouteConfiguration.
+func RouteConfiguration(name string, virtualhosts ...*envoy_route_v3.VirtualHost) *envoy_route_v3.RouteConfiguration {
+	return &envoy_route_v3.RouteConfiguration{
 		Name:         name,
 		VirtualHosts: virtualhosts,
 		RequestHeadersToAdd: Headers(
@@ -273,12 +273,12 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_api_v2_route.Virtual
 	}
 }
 
-// CORSPolicy returns a *v2.CORSPolicy
-func CORSPolicy(cp *dag.CORSPolicy) *envoy_api_v2_route.CorsPolicy {
+// CORSPolicy returns a *envoy_route_v3.CORSPolicy
+func CORSPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 	if cp == nil {
 		return nil
 	}
-	rcp := &envoy_api_v2_route.CorsPolicy{
+	rcp := &envoy_route_v3.CorsPolicy{
 		AllowCredentials: protobuf.Bool(cp.AllowCredentials),
 		AllowHeaders:     strings.Join(cp.AllowHeaders, ","),
 		AllowMethods:     strings.Join(cp.AllowMethods, ","),
@@ -305,13 +305,13 @@ func CORSPolicy(cp *dag.CORSPolicy) *envoy_api_v2_route.CorsPolicy {
 	return rcp
 }
 
-func Headers(first *envoy_api_v2_core.HeaderValueOption, rest ...*envoy_api_v2_core.HeaderValueOption) []*envoy_api_v2_core.HeaderValueOption {
-	return append([]*envoy_api_v2_core.HeaderValueOption{first}, rest...)
+func Headers(first *envoy_core_v3.HeaderValueOption, rest ...*envoy_core_v3.HeaderValueOption) []*envoy_core_v3.HeaderValueOption {
+	return append([]*envoy_core_v3.HeaderValueOption{first}, rest...)
 }
 
-func AppendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
-	return &envoy_api_v2_core.HeaderValueOption{
-		Header: &envoy_api_v2_core.HeaderValue{
+func AppendHeader(key, value string) *envoy_core_v3.HeaderValueOption {
+	return &envoy_core_v3.HeaderValueOption{
+		Header: &envoy_core_v3.HeaderValue{
 			Key:   key,
 			Value: value,
 		},
@@ -319,22 +319,22 @@ func AppendHeader(key, value string) *envoy_api_v2_core.HeaderValueOption {
 	}
 }
 
-func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_api_v2_route.HeaderMatcher {
-	var envoyHeaders []*envoy_api_v2_route.HeaderMatcher
+func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderMatcher {
+	var envoyHeaders []*envoy_route_v3.HeaderMatcher
 
 	for _, h := range headers {
-		header := &envoy_api_v2_route.HeaderMatcher{
+		header := &envoy_route_v3.HeaderMatcher{
 			Name:        h.Name,
 			InvertMatch: h.Invert,
 		}
 
 		switch h.MatchType {
 		case "exact":
-			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_ExactMatch{ExactMatch: h.Value}
+			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_ExactMatch{ExactMatch: h.Value}
 		case "contains":
 			header.HeaderMatchSpecifier = containsMatch(h.Value)
 		case "present":
-			header.HeaderMatchSpecifier = &envoy_api_v2_route.HeaderMatcher_PresentMatch{PresentMatch: true}
+			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_PresentMatch{PresentMatch: true}
 		}
 		envoyHeaders = append(envoyHeaders, header)
 	}
@@ -343,13 +343,13 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_api_v2_route.Hea
 
 // containsMatch returns a HeaderMatchSpecifier which will match the
 // supplied substring
-func containsMatch(s string) *envoy_api_v2_route.HeaderMatcher_SafeRegexMatch {
+func containsMatch(s string) *envoy_route_v3.HeaderMatcher_SafeRegexMatch {
 	// convert the substring s into a regular expression that matches s.
 	// note that Envoy expects the expression to match the entire string, not just the substring
 	// formed from s. see [projectcontour/contour/#1751 & envoyproxy/envoy#8283]
 	regex := fmt.Sprintf(".*%s.*", regexp.QuoteMeta(s))
 
-	return &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
+	return &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
 		SafeRegexMatch: SafeRegexMatch(regex),
 	}
 }

@@ -17,13 +17,12 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	envoy_api_v2_accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
-	http "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
-	envoy_config_v2_tcpproxy "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
+	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -56,18 +55,18 @@ func TestListener(t *testing.T) {
 	tests := map[string]struct {
 		name, address string
 		port          int
-		lf            []*envoy_api_v2_listener.ListenerFilter
-		f             []*envoy_api_v2_listener.Filter
-		want          *v2.Listener
+		lf            []*envoy_listener_v3.ListenerFilter
+		f             []*envoy_listener_v3.Filter
+		want          *envoy_listener_v3.Listener
 	}{
 		"insecure listener": {
 			name:    "http",
 			address: "0.0.0.0",
 			port:    9000,
-			f: []*envoy_api_v2_listener.Filter{
+			f: []*envoy_listener_v3.Filter{
 				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null"), 0),
 			},
-			want: &v2.Listener{
+			want: &envoy_listener_v3.Listener{
 				Name:    "http",
 				Address: SocketAddress("0.0.0.0", 9000),
 				FilterChains: FilterChains(
@@ -80,13 +79,13 @@ func TestListener(t *testing.T) {
 			name:    "http-proxy",
 			address: "0.0.0.0",
 			port:    9000,
-			lf: []*envoy_api_v2_listener.ListenerFilter{
+			lf: []*envoy_listener_v3.ListenerFilter{
 				ProxyProtocol(),
 			},
-			f: []*envoy_api_v2_listener.Filter{
+			f: []*envoy_listener_v3.Filter{
 				HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null"), 0),
 			},
-			want: &v2.Listener{
+			want: &envoy_listener_v3.Listener{
 				Name:    "http-proxy",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
@@ -105,7 +104,7 @@ func TestListener(t *testing.T) {
 			lf: ListenerFilters(
 				TLSInspector(),
 			),
-			want: &v2.Listener{
+			want: &envoy_listener_v3.Listener{
 				Name:    "https",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
@@ -122,7 +121,7 @@ func TestListener(t *testing.T) {
 				ProxyProtocol(),
 				TLSInspector(),
 			),
-			want: &v2.Listener{
+			want: &envoy_listener_v3.Listener{
 				Name:    "https-proxy",
 				Address: SocketAddress("0.0.0.0", 9000),
 				ListenerFilters: ListenerFilters(
@@ -149,12 +148,12 @@ func TestSocketAddress(t *testing.T) {
 	)
 
 	got := SocketAddress(addr, port)
-	want := &envoy_api_v2_core.Address{
-		Address: &envoy_api_v2_core.Address_SocketAddress{
-			SocketAddress: &envoy_api_v2_core.SocketAddress{
-				Protocol: envoy_api_v2_core.SocketAddress_TCP,
+	want := &envoy_core_v3.Address{
+		Address: &envoy_core_v3.Address_SocketAddress{
+			SocketAddress: &envoy_core_v3.SocketAddress{
+				Protocol: envoy_core_v3.SocketAddress_TCP,
 				Address:  addr,
-				PortSpecifier: &envoy_api_v2_core.SocketAddress_PortValue{
+				PortSpecifier: &envoy_core_v3.SocketAddress_PortValue{
 					PortValue: port,
 				},
 			},
@@ -163,13 +162,13 @@ func TestSocketAddress(t *testing.T) {
 	require.Equal(t, want, got)
 
 	got = SocketAddress("::", port)
-	want = &envoy_api_v2_core.Address{
-		Address: &envoy_api_v2_core.Address_SocketAddress{
-			SocketAddress: &envoy_api_v2_core.SocketAddress{
-				Protocol:   envoy_api_v2_core.SocketAddress_TCP,
+	want = &envoy_core_v3.Address{
+		Address: &envoy_core_v3.Address_SocketAddress{
+			SocketAddress: &envoy_core_v3.SocketAddress{
+				Protocol:   envoy_core_v3.SocketAddress_TCP,
 				Address:    "::",
 				Ipv4Compat: true, // Set only for ipv6-any "::"
-				PortSpecifier: &envoy_api_v2_core.SocketAddress_PortValue{
+				PortSpecifier: &envoy_core_v3.SocketAddress_PortValue{
 					PortValue: port,
 				},
 			},
@@ -195,9 +194,9 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 
-	tlsParams := &envoy_api_v2_auth.TlsParameters{
-		TlsMinimumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_1,
-		TlsMaximumProtocolVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+	tlsParams := &envoy_tls_v3.TlsParameters{
+		TlsMinimumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_1,
+		TlsMaximumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_3,
 		CipherSuites: []string{
 			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
 			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
@@ -210,15 +209,17 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 
-	tlsCertificateSdsSecretConfigs := []*envoy_api_v2_auth.SdsSecretConfig{{
+	tlsCertificateSdsSecretConfigs := []*envoy_tls_v3.SdsSecretConfig{{
 		Name: envoy.Secretname(serverSecret),
-		SdsConfig: &envoy_api_v2_core.ConfigSource{
-			ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-				ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-					ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-					GrpcServices: []*envoy_api_v2_core.GrpcService{{
-						TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-							EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+		SdsConfig: &envoy_core_v3.ConfigSource{
+			ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+			ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+				ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+					ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+					GrpcServices: []*envoy_core_v3.GrpcService{{
+						TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+							EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 								ClusterName: "contour",
 							},
 						},
@@ -229,10 +230,10 @@ func TestDownstreamTLSContext(t *testing.T) {
 	}}
 
 	alpnProtocols := []string{"h2", "http/1.1"}
-	validationContext := &envoy_api_v2_auth.CommonTlsContext_ValidationContext{
-		ValidationContext: &envoy_api_v2_auth.CertificateValidationContext{
-			TrustedCa: &envoy_api_v2_core.DataSource{
-				Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+	validationContext := &envoy_tls_v3.CommonTlsContext_ValidationContext{
+		ValidationContext: &envoy_tls_v3.CertificateValidationContext{
+			TrustedCa: &envoy_core_v3.DataSource{
+				Specifier: &envoy_core_v3.DataSource_InlineBytes{
 					InlineBytes: ca,
 				},
 			},
@@ -270,13 +271,13 @@ func TestDownstreamTLSContext(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		got  *envoy_api_v2_auth.DownstreamTlsContext
-		want *envoy_api_v2_auth.DownstreamTlsContext
+		got  *envoy_tls_v3.DownstreamTlsContext
+		want *envoy_tls_v3.DownstreamTlsContext
 	}{
 		"TLS context without client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, nil, "h2", "http/1.1"),
-			&envoy_api_v2_auth.DownstreamTlsContext{
-				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_1, nil, "h2", "http/1.1"),
+			&envoy_tls_v3.DownstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
 					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
 					AlpnProtocols:                  alpnProtocols,
@@ -284,9 +285,9 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"TLS context with client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, peerValidationContext, "h2", "http/1.1"),
-			&envoy_api_v2_auth.DownstreamTlsContext{
-				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_1, peerValidationContext, "h2", "http/1.1"),
+			&envoy_tls_v3.DownstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
 					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
 					AlpnProtocols:                  alpnProtocols,
@@ -296,9 +297,9 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation shall not support subjectName validation": {
-			DownstreamTLSContext(serverSecret, envoy_api_v2_auth.TlsParameters_TLSv1_1, peerValidationContextWithSubjectName, "h2", "http/1.1"),
-			&envoy_api_v2_auth.DownstreamTlsContext{
-				CommonTlsContext: &envoy_api_v2_auth.CommonTlsContext{
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_1, peerValidationContextWithSubjectName, "h2", "http/1.1"),
+			&envoy_tls_v3.DownstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
 					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
 					AlpnProtocols:                  alpnProtocols,
@@ -319,32 +320,34 @@ func TestDownstreamTLSContext(t *testing.T) {
 func TestHTTPConnectionManager(t *testing.T) {
 	tests := map[string]struct {
 		routename                     string
-		accesslogger                  []*envoy_api_v2_accesslog.AccessLog
+		accesslogger                  []*envoy_accesslog_v3.AccessLog
 		requestTimeout                timeout.Setting
 		connectionIdleTimeout         timeout.Setting
 		streamIdleTimeout             timeout.Setting
 		maxConnectionDuration         timeout.Setting
 		connectionShutdownGracePeriod timeout.Setting
-		want                          *envoy_api_v2_listener.Filter
+		want                          *envoy_listener_v3.Filter
 	}{
 		"default": {
 			routename:    "default/kuard",
 			accesslogger: FileAccessLogEnvoy("/dev/stdout"),
-			want: &envoy_api_v2_listener.Filter{
+			want: &envoy_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "default/kuard",
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
 								RouteConfigName: "default/kuard",
-								ConfigSource: &envoy_api_v2_core.ConfigSource{
-									ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-											ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-											GrpcServices: []*envoy_api_v2_core.GrpcService{{
-												TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
 													},
 												},
@@ -363,12 +366,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: wellknown.Router,
 						}},
-						HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
@@ -382,21 +385,23 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:      "default/kuard",
 			accesslogger:   FileAccessLogEnvoy("/dev/stdout"),
 			requestTimeout: timeout.DurationSetting(10 * time.Second),
-			want: &envoy_api_v2_listener.Filter{
+			want: &envoy_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "default/kuard",
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
 								RouteConfigName: "default/kuard",
-								ConfigSource: &envoy_api_v2_core.ConfigSource{
-									ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-											ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-											GrpcServices: []*envoy_api_v2_core.GrpcService{{
-												TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
 													},
 												},
@@ -415,12 +420,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: wellknown.Router,
 						}},
-						HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
@@ -435,21 +440,23 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:             "default/kuard",
 			accesslogger:          FileAccessLogEnvoy("/dev/stdout"),
 			connectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
-			want: &envoy_api_v2_listener.Filter{
+			want: &envoy_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "default/kuard",
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
 								RouteConfigName: "default/kuard",
-								ConfigSource: &envoy_api_v2_core.ConfigSource{
-									ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-											ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-											GrpcServices: []*envoy_api_v2_core.GrpcService{{
-												TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
 													},
 												},
@@ -468,12 +475,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: wellknown.Router,
 						}},
-						HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
 							IdleTimeout: protobuf.Duration(90 * time.Second),
 						},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
@@ -489,21 +496,23 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:         "default/kuard",
 			accesslogger:      FileAccessLogEnvoy("/dev/stdout"),
 			streamIdleTimeout: timeout.DurationSetting(90 * time.Second),
-			want: &envoy_api_v2_listener.Filter{
+			want: &envoy_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "default/kuard",
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
 								RouteConfigName: "default/kuard",
-								ConfigSource: &envoy_api_v2_core.ConfigSource{
-									ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-											ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-											GrpcServices: []*envoy_api_v2_core.GrpcService{{
-												TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
 													},
 												},
@@ -522,12 +531,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: wellknown.Router,
 						}},
-						HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
@@ -542,21 +551,23 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:             "default/kuard",
 			accesslogger:          FileAccessLogEnvoy("/dev/stdout"),
 			maxConnectionDuration: timeout.DurationSetting(90 * time.Second),
-			want: &envoy_api_v2_listener.Filter{
+			want: &envoy_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "default/kuard",
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
 								RouteConfigName: "default/kuard",
-								ConfigSource: &envoy_api_v2_core.ConfigSource{
-									ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-											ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-											GrpcServices: []*envoy_api_v2_core.GrpcService{{
-												TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
 													},
 												},
@@ -575,12 +586,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: wellknown.Router,
 						}},
-						HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
 							MaxConnectionDuration: protobuf.Duration(90 * time.Second),
 						},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
@@ -596,21 +607,23 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:             "default/kuard",
 			accesslogger:          FileAccessLogEnvoy("/dev/stdout"),
 			maxConnectionDuration: timeout.DisabledSetting(),
-			want: &envoy_api_v2_listener.Filter{
+			want: &envoy_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "default/kuard",
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
 								RouteConfigName: "default/kuard",
-								ConfigSource: &envoy_api_v2_core.ConfigSource{
-									ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-											ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-											GrpcServices: []*envoy_api_v2_core.GrpcService{{
-												TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
 													},
 												},
@@ -629,12 +642,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: wellknown.Router,
 						}},
-						HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
@@ -648,21 +661,23 @@ func TestHTTPConnectionManager(t *testing.T) {
 			routename:                     "default/kuard",
 			accesslogger:                  FileAccessLogEnvoy("/dev/stdout"),
 			connectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
-			want: &envoy_api_v2_listener.Filter{
+			want: &envoy_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
-				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
 						StatPrefix: "default/kuard",
 						RouteSpecifier: &http.HttpConnectionManager_Rds{
 							Rds: &http.Rds{
 								RouteConfigName: "default/kuard",
-								ConfigSource: &envoy_api_v2_core.ConfigSource{
-									ConfigSourceSpecifier: &envoy_api_v2_core.ConfigSource_ApiConfigSource{
-										ApiConfigSource: &envoy_api_v2_core.ApiConfigSource{
-											ApiType: envoy_api_v2_core.ApiConfigSource_GRPC,
-											GrpcServices: []*envoy_api_v2_core.GrpcService{{
-												TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-													EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 														ClusterName: "contour",
 													},
 												},
@@ -681,12 +696,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						}, {
 							Name: wellknown.Router,
 						}},
-						HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
 							AcceptHttp_10: true,
 						},
-						CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
@@ -754,18 +769,18 @@ func TestTCPProxy(t *testing.T) {
 
 	tests := map[string]struct {
 		proxy *dag.TCPProxy
-		want  *envoy_api_v2_listener.Filter
+		want  *envoy_listener_v3.Filter
 	}{
 		"single cluster": {
 			proxy: &dag.TCPProxy{
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_listener.Filter{
+			want: &envoy_listener_v3.Filter{
 				Name: wellknown.TCPProxy,
-				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&envoy_config_v2_tcpproxy.TcpProxy{
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
 						StatPrefix: statPrefix,
-						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_Cluster{
+						ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_Cluster{
 							Cluster: envoy.Clustername(c1),
 						},
 						AccessLog:   FileAccessLogEnvoy(accessLogPath),
@@ -778,14 +793,14 @@ func TestTCPProxy(t *testing.T) {
 			proxy: &dag.TCPProxy{
 				Clusters: []*dag.Cluster{c2, c1},
 			},
-			want: &envoy_api_v2_listener.Filter{
+			want: &envoy_listener_v3.Filter{
 				Name: wellknown.TCPProxy,
-				ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&envoy_config_v2_tcpproxy.TcpProxy{
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
 						StatPrefix: statPrefix,
-						ClusterSpecifier: &envoy_config_v2_tcpproxy.TcpProxy_WeightedClusters{
-							WeightedClusters: &envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster{
-								Clusters: []*envoy_config_v2_tcpproxy.TcpProxy_WeightedCluster_ClusterWeight{{
+						ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_WeightedClusters{
+							WeightedClusters: &envoy_tcp_proxy_v3.TcpProxy_WeightedCluster{
+								Clusters: []*envoy_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{{
 									Name:   envoy.Clustername(c1),
 									Weight: 1,
 								}, {

@@ -20,15 +20,15 @@ import (
 	"strings"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
-	envoy_config_filter_http_ext_authz_v2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/ext_authz/v2"
-	tcp "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type"
+	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -97,22 +97,22 @@ func CodecForVersions(versions ...HTTPVersionType) HTTPVersionType {
 }
 
 // TLSInspector returns a new TLS inspector listener filter.
-func TLSInspector() *envoy_api_v2_listener.ListenerFilter {
-	return &envoy_api_v2_listener.ListenerFilter{
+func TLSInspector() *envoy_listener_v3.ListenerFilter {
+	return &envoy_listener_v3.ListenerFilter{
 		Name: wellknown.TlsInspector,
 	}
 }
 
 // ProxyProtocol returns a new Proxy Protocol listener filter.
-func ProxyProtocol() *envoy_api_v2_listener.ListenerFilter {
-	return &envoy_api_v2_listener.ListenerFilter{
+func ProxyProtocol() *envoy_listener_v3.ListenerFilter {
+	return &envoy_listener_v3.ListenerFilter{
 		Name: wellknown.ProxyProtocol,
 	}
 }
 
-// Listener returns a new v2.Listener for the supplied address, port, and filters.
-func Listener(name, address string, port int, lf []*envoy_api_v2_listener.ListenerFilter, filters ...*envoy_api_v2_listener.Filter) *v2.Listener {
-	l := &v2.Listener{
+// Listener returns a new envoy_listener_v3.Listener for the supplied address, port, and filters.
+func Listener(name, address string, port int, lf []*envoy_listener_v3.ListenerFilter, filters ...*envoy_listener_v3.Filter) *envoy_listener_v3.Listener {
+	l := &envoy_listener_v3.Listener{
 		Name:            name,
 		Address:         SocketAddress(address, port),
 		ListenerFilters: lf,
@@ -121,7 +121,7 @@ func Listener(name, address string, port int, lf []*envoy_api_v2_listener.Listen
 	if len(filters) > 0 {
 		l.FilterChains = append(
 			l.FilterChains,
-			&envoy_api_v2_listener.FilterChain{
+			&envoy_listener_v3.FilterChain{
 				Filters: filters,
 			},
 		)
@@ -262,7 +262,7 @@ func (b *httpConnectionManagerBuilder) Validate() error {
 // from the builder settings.
 //
 // See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto.html
-func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
+func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 	// For now, failing validation is a programmer error that
 	// the caller can't reasonably recover from. A caller that can
 	// handle this should validate manually.
@@ -279,10 +279,10 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 			},
 		},
 		HttpFilters: b.filters,
-		CommonHttpProtocolOptions: &envoy_api_v2_core.HttpProtocolOptions{
+		CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
 			IdleTimeout: envoy.Timeout(b.connectionIdleTimeout),
 		},
-		HttpProtocolOptions: &envoy_api_v2_core.Http1ProtocolOptions{
+		HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 			// Enable support for HTTP/1.0 requests that carry
 			// a Host: header. See #537.
 			AcceptHttp_10: true,
@@ -319,9 +319,9 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 		cm.StatPrefix = b.routeConfigName
 	}
 
-	return &envoy_api_v2_listener.Filter{
+	return &envoy_listener_v3.Filter{
 		Name: wellknown.HTTPConnectionManager,
-		ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+		ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(cm),
 		},
 	}
@@ -329,7 +329,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_api_v2_listener.Filter {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route, access log, and client request timeout.
-func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration) *envoy_api_v2_listener.Filter {
+func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration) *envoy_listener_v3.Filter {
 	return HTTPConnectionManagerBuilder().
 		RouteConfigName(routename).
 		MetricsPrefix(routename).
@@ -344,7 +344,7 @@ func HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
 }
 
 // TCPProxy creates a new TCPProxy filter.
-func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.AccessLog) *envoy_api_v2_listener.Filter {
+func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.AccessLog) *envoy_listener_v3.Filter {
 	// Set the idle timeout in seconds for connections through a TCP Proxy type filter.
 	// The value of two and a half hours for reasons documented at
 	// https://github.com/projectcontour/contour/issues/1074
@@ -353,9 +353,9 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 
 	switch len(proxy.Clusters) {
 	case 1:
-		return &envoy_api_v2_listener.Filter{
+		return &envoy_listener_v3.Filter{
 			Name: wellknown.TCPProxy,
-			ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+			ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&tcp.TcpProxy{
 					StatPrefix: statPrefix,
 					ClusterSpecifier: &tcp.TcpProxy_Cluster{
@@ -379,9 +379,9 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 			})
 		}
 		sort.Stable(sorter.For(clusters))
-		return &envoy_api_v2_listener.Filter{
+		return &envoy_listener_v3.Filter{
 			Name: wellknown.TCPProxy,
-			ConfigType: &envoy_api_v2_listener.Filter_TypedConfig{
+			ConfigType: &envoy_listener_v3.Filter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&tcp.TcpProxy{
 					StatPrefix: statPrefix,
 					ClusterSpecifier: &tcp.TcpProxy_WeightedClusters{
@@ -426,27 +426,27 @@ func SocketAddress(address string, port int) *envoy_core_v3.Address {
 	}
 }
 
-// Filters returns a []*envoy_api_v2_listener.Filter for the supplied filters.
-func Filters(filters ...*envoy_api_v2_listener.Filter) []*envoy_api_v2_listener.Filter {
+// Filters returns a []*envoy_listener_v3.Filter for the supplied filters.
+func Filters(filters ...*envoy_listener_v3.Filter) []*envoy_listener_v3.Filter {
 	if len(filters) == 0 {
 		return nil
 	}
 	return filters
 }
 
-// FilterChain returns a *envoy_api_v2_listener.FilterChain for the supplied filters.
-func FilterChain(filters ...*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
-	return &envoy_api_v2_listener.FilterChain{
+// FilterChain returns a *envoy_listener_v3.FilterChain for the supplied filters.
+func FilterChain(filters ...*envoy_listener_v3.Filter) *envoy_listener_v3.FilterChain {
+	return &envoy_listener_v3.FilterChain{
 		Filters: filters,
 	}
 }
 
-// FilterChains returns a []*envoy_api_v2_listener.FilterChain for the supplied filters.
-func FilterChains(filters ...*envoy_api_v2_listener.Filter) []*envoy_api_v2_listener.FilterChain {
+// FilterChains returns a []*envoy_listener_v3.FilterChain for the supplied filters.
+func FilterChains(filters ...*envoy_listener_v3.Filter) []*envoy_listener_v3.FilterChain {
 	if len(filters) == 0 {
 		return nil
 	}
-	return []*envoy_api_v2_listener.FilterChain{
+	return []*envoy_listener_v3.FilterChain{
 		FilterChain(filters...),
 	}
 }
@@ -493,11 +493,11 @@ end
 // FilterExternalAuthz returns an `ext_authz` filter configured with the
 // requested parameters.
 func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting) *http.HttpFilter {
-	authConfig := envoy_config_filter_http_ext_authz_v2.ExtAuthz{
-		Services: &envoy_config_filter_http_ext_authz_v2.ExtAuthz_GrpcService{
-			GrpcService: &envoy_api_v2_core.GrpcService{
-				TargetSpecifier: &envoy_api_v2_core.GrpcService_EnvoyGrpc_{
-					EnvoyGrpc: &envoy_api_v2_core.GrpcService_EnvoyGrpc{
+	authConfig := envoy_config_filter_http_ext_authz_v3.ExtAuthz{
+		Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
+			GrpcService: &envoy_core_v3.GrpcService{
+				TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+					EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
 						ClusterName: authzClusterName,
 					},
 				},
@@ -505,7 +505,7 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 				// We don't need to configure metadata here, since we allow
 				// operators to specify authorization context parameters at
 				// the virtual host and route.
-				InitialMetadata: []*envoy_api_v2_core.HeaderValue{},
+				InitialMetadata: []*envoy_core_v3.HeaderValue{},
 			},
 		},
 		// Pretty sure we always want this. Why have an
@@ -531,11 +531,11 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 	}
 }
 
-// FilterChainTLS returns a TLS enabled envoy_api_v2_listener.FilterChain.
-func FilterChainTLS(domain string, downstream *envoy_api_v2_auth.DownstreamTlsContext, filters []*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
-	fc := &envoy_api_v2_listener.FilterChain{
+// FilterChainTLS returns a TLS enabled envoy_listener_v3.FilterChain.
+func FilterChainTLS(domain string, downstream *envoy_tls_v3.DownstreamTlsContext, filters []*envoy_listener_v3.Filter) *envoy_listener_v3.FilterChain {
+	fc := &envoy_listener_v3.FilterChain{
 		Filters: filters,
-		FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+		FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 			ServerNames: []string{domain},
 		},
 	}
@@ -547,12 +547,12 @@ func FilterChainTLS(domain string, downstream *envoy_api_v2_auth.DownstreamTlsCo
 	return fc
 }
 
-// FilterChainTLSFallback returns a TLS enabled envoy_api_v2_listener.FilterChain conifgured for FallbackCertificate.
-func FilterChainTLSFallback(downstream *envoy_api_v2_auth.DownstreamTlsContext, filters []*envoy_api_v2_listener.Filter) *envoy_api_v2_listener.FilterChain {
-	fc := &envoy_api_v2_listener.FilterChain{
+// FilterChainTLSFallback returns a TLS enabled envoy_listener_v3.FilterChain conifgured for FallbackCertificate.
+func FilterChainTLSFallback(downstream *envoy_tls_v3.DownstreamTlsContext, filters []*envoy_listener_v3.Filter) *envoy_listener_v3.FilterChain {
+	fc := &envoy_listener_v3.FilterChain{
 		Name:    "fallback-certificate",
 		Filters: filters,
-		FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{
+		FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 			TransportProtocol: "tls",
 		},
 	}
@@ -563,12 +563,12 @@ func FilterChainTLSFallback(downstream *envoy_api_v2_auth.DownstreamTlsContext, 
 	return fc
 }
 
-// ListenerFilters returns a []*envoy_api_v2_listener.ListenerFilter for the supplied listener filters.
-func ListenerFilters(filters ...*envoy_api_v2_listener.ListenerFilter) []*envoy_api_v2_listener.ListenerFilter {
+// ListenerFilters returns a []*envoy_listener_v3.ListenerFilter for the supplied listener filters.
+func ListenerFilters(filters ...*envoy_listener_v3.ListenerFilter) []*envoy_listener_v3.ListenerFilter {
 	return filters
 }
 
-func ContainsFallbackFilterChain(filterchains []*envoy_api_v2_listener.FilterChain) bool {
+func ContainsFallbackFilterChain(filterchains []*envoy_listener_v3.FilterChain) bool {
 	for _, fc := range filterchains {
 		if fc.Name == "fallback-certificate" {
 			return true

@@ -17,10 +17,9 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -58,15 +57,15 @@ func TestRouteRoute(t *testing.T) {
 
 	tests := map[string]struct {
 		route *dag.Route
-		want  *envoy_api_v2_route.Route_Route
+		want  *envoy_route_v3.Route_Route
 	}{
 		"single service": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 				},
@@ -77,12 +76,12 @@ func TestRouteRoute(t *testing.T) {
 				Websocket: true,
 				Clusters:  []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					UpgradeConfigs: []*envoy_api_v2_route.RouteAction_UpgradeConfig{{
+					UpgradeConfigs: []*envoy_route_v3.RouteAction_UpgradeConfig{{
 						UpgradeType: "websocket",
 					}},
 				},
@@ -111,11 +110,11 @@ func TestRouteRoute(t *testing.T) {
 					},
 				}},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
-						WeightedClusters: &envoy_api_v2_route.WeightedCluster{
-							Clusters: []*envoy_api_v2_route.WeightedCluster_ClusterWeight{{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: protobuf.UInt32(0),
 							}, {
@@ -154,11 +153,11 @@ func TestRouteRoute(t *testing.T) {
 					},
 				}},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
-						WeightedClusters: &envoy_api_v2_route.WeightedCluster{
-							Clusters: []*envoy_api_v2_route.WeightedCluster_ClusterWeight{{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: protobuf.UInt32(0),
 							}, {
@@ -168,7 +167,7 @@ func TestRouteRoute(t *testing.T) {
 							TotalWeight: protobuf.UInt32(90),
 						},
 					},
-					UpgradeConfigs: []*envoy_api_v2_route.RouteAction_UpgradeConfig{{
+					UpgradeConfigs: []*envoy_route_v3.RouteAction_UpgradeConfig{{
 						UpgradeType: "websocket",
 					}},
 				},
@@ -202,15 +201,15 @@ func TestRouteRoute(t *testing.T) {
 					},
 				}},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
-						WeightedClusters: &envoy_api_v2_route.WeightedCluster{
-							Clusters: []*envoy_api_v2_route.WeightedCluster_ClusterWeight{{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: protobuf.UInt32(1),
-								RequestHeadersToAdd: []*envoy_api_v2_core.HeaderValueOption{{
-									Header: &envoy_api_v2_core.HeaderValue{
+								RequestHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
+									Header: &envoy_core_v3.HeaderValue{
 										Key:   "K-Foo",
 										Value: "bar",
 									},
@@ -218,7 +217,7 @@ func TestRouteRoute(t *testing.T) {
 										Value: false,
 									},
 								}, {
-									Header: &envoy_api_v2_core.HeaderValue{
+									Header: &envoy_core_v3.HeaderValue{
 										Key:   "K-Sauce",
 										Value: "spicy",
 									},
@@ -227,8 +226,8 @@ func TestRouteRoute(t *testing.T) {
 									},
 								}},
 								RequestHeadersToRemove: []string{"K-Bar"},
-								ResponseHeadersToAdd: []*envoy_api_v2_core.HeaderValueOption{{
-									Header: &envoy_api_v2_core.HeaderValue{
+								ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
+									Header: &envoy_core_v3.HeaderValue{
 										Key:   "K-Blah",
 										Value: "boo",
 									},
@@ -241,7 +240,7 @@ func TestRouteRoute(t *testing.T) {
 							TotalWeight: protobuf.UInt32(1),
 						},
 					},
-					UpgradeConfigs: []*envoy_api_v2_route.RouteAction_UpgradeConfig{{
+					UpgradeConfigs: []*envoy_route_v3.RouteAction_UpgradeConfig{{
 						UpgradeType: "websocket",
 					}},
 				},
@@ -255,9 +254,9 @@ func TestRouteRoute(t *testing.T) {
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 				},
@@ -272,12 +271,12 @@ func TestRouteRoute(t *testing.T) {
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					RetryPolicy: &envoy_api_v2_route.RetryPolicy{
+					RetryPolicy: &envoy_route_v3.RetryPolicy{
 						RetryOn:       "503",
 						NumRetries:    protobuf.UInt32(6),
 						PerTryTimeout: protobuf.Duration(100 * time.Millisecond),
@@ -295,12 +294,12 @@ func TestRouteRoute(t *testing.T) {
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					RetryPolicy: &envoy_api_v2_route.RetryPolicy{
+					RetryPolicy: &envoy_route_v3.RetryPolicy{
 						RetryOn:              "retriable-status-codes",
 						RetriableStatusCodes: []uint32{503, 503, 504},
 						NumRetries:           protobuf.UInt32(6),
@@ -316,9 +315,9 @@ func TestRouteRoute(t *testing.T) {
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					Timeout: protobuf.Duration(90 * time.Second),
@@ -332,9 +331,9 @@ func TestRouteRoute(t *testing.T) {
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					Timeout: protobuf.Duration(0),
@@ -348,9 +347,9 @@ func TestRouteRoute(t *testing.T) {
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					IdleTimeout: protobuf.Duration(600 * time.Second),
@@ -364,9 +363,9 @@ func TestRouteRoute(t *testing.T) {
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
 					IdleTimeout: protobuf.Duration(0),
@@ -377,14 +376,14 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c2},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/e4f81994fe",
 					},
-					HashPolicy: []*envoy_api_v2_route.RouteAction_HashPolicy{{
-						PolicySpecifier: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie_{
-							Cookie: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie{
+					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{{
+						PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
+							Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
 								Name: "X-Contour-Session-Affinity",
 								Ttl:  protobuf.Duration(0),
 								Path: "/",
@@ -398,11 +397,11 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c2, c2},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
-						WeightedClusters: &envoy_api_v2_route.WeightedCluster{
-							Clusters: []*envoy_api_v2_route.WeightedCluster_ClusterWeight{{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 								Name:   "default/kuard/8080/e4f81994fe",
 								Weight: protobuf.UInt32(1),
 							}, {
@@ -412,9 +411,9 @@ func TestRouteRoute(t *testing.T) {
 							TotalWeight: protobuf.UInt32(2),
 						},
 					},
-					HashPolicy: []*envoy_api_v2_route.RouteAction_HashPolicy{{
-						PolicySpecifier: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie_{
-							Cookie: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie{
+					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{{
+						PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
+							Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
 								Name: "X-Contour-Session-Affinity",
 								Ttl:  protobuf.Duration(0),
 								Path: "/",
@@ -428,11 +427,11 @@ func TestRouteRoute(t *testing.T) {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c2, c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_WeightedClusters{
-						WeightedClusters: &envoy_api_v2_route.WeightedCluster{
-							Clusters: []*envoy_api_v2_route.WeightedCluster_ClusterWeight{{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
+						WeightedClusters: &envoy_route_v3.WeightedCluster{
+							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 								Name:   "default/kuard/8080/da39a3ee5e",
 								Weight: protobuf.UInt32(1),
 							}, {
@@ -442,9 +441,9 @@ func TestRouteRoute(t *testing.T) {
 							TotalWeight: protobuf.UInt32(2),
 						},
 					},
-					HashPolicy: []*envoy_api_v2_route.RouteAction_HashPolicy{{
-						PolicySpecifier: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie_{
-							Cookie: &envoy_api_v2_route.RouteAction_HashPolicy_Cookie{
+					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{{
+						PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
+							Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
 								Name: "X-Contour-Session-Affinity",
 								Ttl:  protobuf.Duration(0),
 								Path: "/",
@@ -461,12 +460,12 @@ func TestRouteRoute(t *testing.T) {
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					HostRewriteSpecifier: &envoy_api_v2_route.RouteAction_HostRewrite{HostRewrite: "bar.com"},
+					HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteHeader{HostRewriteHeader: "bar.com"},
 				},
 			},
 		},
@@ -496,12 +495,12 @@ func TestRouteRoute(t *testing.T) {
 					},
 				},
 			},
-			want: &envoy_api_v2_route.Route_Route{
-				Route: &envoy_api_v2_route.RouteAction{
-					ClusterSpecifier: &envoy_api_v2_route.RouteAction_Cluster{
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					RequestMirrorPolicies: []*envoy_api_v2_route.RouteAction_RequestMirrorPolicy{{
+					RequestMirrorPolicies: []*envoy_route_v3.RouteAction_RequestMirrorPolicy{{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					}},
 				},
@@ -520,7 +519,7 @@ func TestRouteRoute(t *testing.T) {
 func TestWeightedClusters(t *testing.T) {
 	tests := map[string]struct {
 		clusters []*dag.Cluster
-		want     *envoy_api_v2_route.WeightedCluster
+		want     *envoy_route_v3.WeightedCluster
 	}{
 		"multiple services w/o weights": {
 			clusters: []*dag.Cluster{{
@@ -546,8 +545,8 @@ func TestWeightedClusters(t *testing.T) {
 					},
 				},
 			}},
-			want: &envoy_api_v2_route.WeightedCluster{
-				Clusters: []*envoy_api_v2_route.WeightedCluster_ClusterWeight{{
+			want: &envoy_route_v3.WeightedCluster{
+				Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 					Name:   "default/kuard/8080/da39a3ee5e",
 					Weight: protobuf.UInt32(1),
 				}, {
@@ -583,8 +582,8 @@ func TestWeightedClusters(t *testing.T) {
 				},
 				Weight: 20,
 			}},
-			want: &envoy_api_v2_route.WeightedCluster{
-				Clusters: []*envoy_api_v2_route.WeightedCluster_ClusterWeight{{
+			want: &envoy_route_v3.WeightedCluster{
+				Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 					Name:   "default/kuard/8080/da39a3ee5e",
 					Weight: protobuf.UInt32(80),
 				}, {
@@ -631,8 +630,8 @@ func TestWeightedClusters(t *testing.T) {
 					},
 				},
 			}},
-			want: &envoy_api_v2_route.WeightedCluster{
-				Clusters: []*envoy_api_v2_route.WeightedCluster_ClusterWeight{{
+			want: &envoy_route_v3.WeightedCluster{
+				Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 					Name:   "default/kuard/8080/da39a3ee5e",
 					Weight: protobuf.UInt32(80),
 				}, {
@@ -658,16 +657,16 @@ func TestWeightedClusters(t *testing.T) {
 func TestRouteConfiguration(t *testing.T) {
 	tests := map[string]struct {
 		name         string
-		virtualhosts []*envoy_api_v2_route.VirtualHost
-		want         *v2.RouteConfiguration
+		virtualhosts []*envoy_route_v3.VirtualHost
+		want         *envoy_route_v3.RouteConfiguration
 	}{
 
 		"empty": {
 			name: "ingress_http",
-			want: &v2.RouteConfiguration{
+			want: &envoy_route_v3.RouteConfiguration{
 				Name: "ingress_http",
-				RequestHeadersToAdd: []*envoy_api_v2_core.HeaderValueOption{{
-					Header: &envoy_api_v2_core.HeaderValue{
+				RequestHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
+					Header: &envoy_core_v3.HeaderValue{
 						Key:   "x-request-start",
 						Value: "t=%START_TIME(%s.%3f)%",
 					},
@@ -680,13 +679,13 @@ func TestRouteConfiguration(t *testing.T) {
 			virtualhosts: virtualhosts(
 				VirtualHost("www.example.com"),
 			),
-			want: &v2.RouteConfiguration{
+			want: &envoy_route_v3.RouteConfiguration{
 				Name: "ingress_https",
 				VirtualHosts: virtualhosts(
 					VirtualHost("www.example.com"),
 				),
-				RequestHeadersToAdd: []*envoy_api_v2_core.HeaderValueOption{{
-					Header: &envoy_api_v2_core.HeaderValue{
+				RequestHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
+					Header: &envoy_core_v3.HeaderValue{
 						Key:   "x-request-start",
 						Value: "t=%START_TIME(%s.%3f)%",
 					},
@@ -708,12 +707,12 @@ func TestVirtualHost(t *testing.T) {
 	tests := map[string]struct {
 		hostname string
 		port     int
-		want     *envoy_api_v2_route.VirtualHost
+		want     *envoy_route_v3.VirtualHost
 	}{
 		"default hostname": {
 			hostname: "*",
 			port:     9999,
-			want: &envoy_api_v2_route.VirtualHost{
+			want: &envoy_route_v3.VirtualHost{
 				Name:    "*",
 				Domains: []string{"*"},
 			},
@@ -721,7 +720,7 @@ func TestVirtualHost(t *testing.T) {
 		"www.example.com": {
 			hostname: "www.example.com",
 			port:     9999,
-			want: &envoy_api_v2_route.VirtualHost{
+			want: &envoy_route_v3.VirtualHost{
 				Name:    "www.example.com",
 				Domains: []string{"www.example.com", "www.example.com:*"},
 			},
@@ -738,20 +737,20 @@ func TestVirtualHost(t *testing.T) {
 func TestCORSVirtualHost(t *testing.T) {
 	tests := map[string]struct {
 		hostname string
-		cp       *envoy_api_v2_route.CorsPolicy
-		want     *envoy_api_v2_route.VirtualHost
+		cp       *envoy_route_v3.CorsPolicy
+		want     *envoy_route_v3.VirtualHost
 	}{
 		"nil cors policy": {
 			hostname: "www.example.com",
 			cp:       nil,
-			want: &envoy_api_v2_route.VirtualHost{
+			want: &envoy_route_v3.VirtualHost{
 				Name:    "www.example.com",
 				Domains: []string{"www.example.com", "www.example.com:*"},
 			},
 		},
 		"cors policy": {
 			hostname: "www.example.com",
-			cp: &envoy_api_v2_route.CorsPolicy{
+			cp: &envoy_route_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -761,10 +760,10 @@ func TestCORSVirtualHost(t *testing.T) {
 					}},
 				AllowMethods: "GET,POST,PUT",
 			},
-			want: &envoy_api_v2_route.VirtualHost{
+			want: &envoy_route_v3.VirtualHost{
 				Name:    "www.example.com",
 				Domains: []string{"www.example.com", "www.example.com:*"},
-				Cors: &envoy_api_v2_route.CorsPolicy{
+				Cors: &envoy_route_v3.CorsPolicy{
 					AllowOriginStringMatch: []*matcher.StringMatcher{
 						{
 							MatchPattern: &matcher.StringMatcher_Exact{
@@ -788,14 +787,14 @@ func TestCORSVirtualHost(t *testing.T) {
 func TestCORSPolicy(t *testing.T) {
 	tests := map[string]struct {
 		cp   *dag.CORSPolicy
-		want *envoy_api_v2_route.CorsPolicy
+		want *envoy_route_v3.CorsPolicy
 	}{
 		"only required properties set": {
 			cp: &dag.CORSPolicy{
 				AllowOrigin:  []string{"*"},
 				AllowMethods: []string{"GET", "POST", "PUT"},
 			},
-			want: &envoy_api_v2_route.CorsPolicy{
+			want: &envoy_route_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -813,7 +812,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods:     []string{"GET", "POST", "PUT"},
 				AllowCredentials: true,
 			},
-			want: &envoy_api_v2_route.CorsPolicy{
+			want: &envoy_route_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -831,7 +830,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				AllowHeaders: []string{"header-1", "header-2"},
 			},
-			want: &envoy_api_v2_route.CorsPolicy{
+			want: &envoy_route_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -850,7 +849,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods:  []string{"GET", "POST", "PUT"},
 				ExposeHeaders: []string{"header-1", "header-2"},
 			},
-			want: &envoy_api_v2_route.CorsPolicy{
+			want: &envoy_route_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -869,7 +868,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DurationSetting(10 * time.Minute),
 			},
-			want: &envoy_api_v2_route.CorsPolicy{
+			want: &envoy_route_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -888,7 +887,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DefaultSetting(),
 			},
-			want: &envoy_api_v2_route.CorsPolicy{
+			want: &envoy_route_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -906,7 +905,7 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 				MaxAge:       timeout.DisabledSetting(),
 			},
-			want: &envoy_api_v2_route.CorsPolicy{
+			want: &envoy_route_v3.CorsPolicy{
 				AllowOriginStringMatch: []*matcher.StringMatcher{
 					{
 						MatchPattern: &matcher.StringMatcher_Exact{
@@ -930,9 +929,9 @@ func TestCORSPolicy(t *testing.T) {
 
 func TestUpgradeHTTPS(t *testing.T) {
 	got := UpgradeHTTPS()
-	want := &envoy_api_v2_route.Route_Redirect{
-		Redirect: &envoy_api_v2_route.RedirectAction{
-			SchemeRewriteSpecifier: &envoy_api_v2_route.RedirectAction_HttpsRedirect{
+	want := &envoy_route_v3.Route_Redirect{
+		Redirect: &envoy_route_v3.RedirectAction{
+			SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_HttpsRedirect{
 				HttpsRedirect: true,
 			},
 		},
@@ -944,7 +943,7 @@ func TestUpgradeHTTPS(t *testing.T) {
 func TestRouteMatch(t *testing.T) {
 	tests := map[string]struct {
 		route *dag.Route
-		want  *envoy_api_v2_route.RouteMatch
+		want  *envoy_route_v3.RouteMatch
 	}{
 		"contains match with dashes": {
 			route: &dag.Route{
@@ -955,11 +954,11 @@ func TestRouteMatch(t *testing.T) {
 					Invert:    false,
 				}},
 			},
-			want: &envoy_api_v2_route.RouteMatch{
-				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
 						SafeRegexMatch: SafeRegexMatch(".*11-22-33-44.*"),
 					},
 				}},
@@ -974,11 +973,11 @@ func TestRouteMatch(t *testing.T) {
 					Invert:    false,
 				}},
 			},
-			want: &envoy_api_v2_route.RouteMatch{
-				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
 						SafeRegexMatch: SafeRegexMatch(".*11\\.22\\.33\\.44.*"),
 					},
 				}},
@@ -993,11 +992,11 @@ func TestRouteMatch(t *testing.T) {
 					Invert:    false,
 				}},
 			},
-			want: &envoy_api_v2_route.RouteMatch{
-				Headers: []*envoy_api_v2_route.HeaderMatcher{{
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_SafeRegexMatch{
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
 						SafeRegexMatch: SafeRegexMatch(".*11\\.\\[22\\]\\.\\*33\\.44.*"),
 					},
 				}},
@@ -1009,8 +1008,8 @@ func TestRouteMatch(t *testing.T) {
 					Prefix: "/foo",
 				},
 			},
-			want: &envoy_api_v2_route.RouteMatch{
-				PathSpecifier: &envoy_api_v2_route.RouteMatch_Prefix{
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
 					Prefix: "/foo",
 				},
 			},
@@ -1021,8 +1020,8 @@ func TestRouteMatch(t *testing.T) {
 					Regex: "/v.1/*",
 				},
 			},
-			want: &envoy_api_v2_route.RouteMatch{
-				PathSpecifier: &envoy_api_v2_route.RouteMatch_SafeRegex{
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
 					// note, unlike header conditions this is not a quoted regex because
 					// the value comes directly from the Ingress.Paths.Path value which
 					// is permitted to be a bare regex.
@@ -1040,4 +1039,4 @@ func TestRouteMatch(t *testing.T) {
 	}
 }
 
-func virtualhosts(v ...*envoy_api_v2_route.VirtualHost) []*envoy_api_v2_route.VirtualHost { return v }
+func virtualhosts(v ...*envoy_route_v3.VirtualHost) []*envoy_route_v3.VirtualHost { return v }

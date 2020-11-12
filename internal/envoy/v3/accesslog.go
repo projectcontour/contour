@@ -14,8 +14,8 @@
 package v3
 
 import (
-	accesslogv2 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v2"
-	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/filter/accesslog/v2"
+	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	_struct "github.com/golang/protobuf/ptypes/struct"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -24,11 +24,11 @@ import (
 
 // FileAccessLogEnvoy returns a new file based access log filter
 // that will output Envoy's default access logs.
-func FileAccessLogEnvoy(path string) []*accesslog.AccessLog {
-	return []*accesslog.AccessLog{{
+func FileAccessLogEnvoy(path string) []*envoy_accesslog_v3.AccessLog {
+	return []*envoy_accesslog_v3.AccessLog{{
 		Name: wellknown.FileAccessLog,
-		ConfigType: &accesslog.AccessLog_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&accesslogv2.FileAccessLog{
+		ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
 				Path: path,
 				// AccessLogFormat left blank to defer to Envoy's default log format.
 			}),
@@ -38,7 +38,7 @@ func FileAccessLogEnvoy(path string) []*accesslog.AccessLog {
 
 // FileAccessLogJSON returns a new file based access log filter
 // that will log in JSON format
-func FileAccessLogJSON(path string, fields config.AccessLogFields) []*accesslog.AccessLog {
+func FileAccessLogJSON(path string, fields config.AccessLogFields) []*envoy_accesslog_v3.AccessLog {
 
 	jsonformat := &_struct.Struct{
 		Fields: make(map[string]*_struct.Value),
@@ -48,12 +48,12 @@ func FileAccessLogJSON(path string, fields config.AccessLogFields) []*accesslog.
 		jsonformat.Fields[k] = sv(v)
 	}
 
-	return []*accesslog.AccessLog{{
+	return []*envoy_accesslog_v3.AccessLog{{
 		Name: wellknown.FileAccessLog,
-		ConfigType: &accesslog.AccessLog_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&accesslogv2.FileAccessLog{
+		ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
 				Path: path,
-				AccessLogFormat: &accesslogv2.FileAccessLog_JsonFormat{
+				AccessLogFormat: &envoy_file_v3.FileAccessLog_JsonFormat{
 					JsonFormat: jsonformat,
 				},
 			}),

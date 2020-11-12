@@ -13,23 +13,23 @@
 package v3
 
 import (
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	"github.com/projectcontour/contour/internal/envoy"
 )
 
-func TCPKeepaliveSocketOptions() []*envoy_api_v2_core.SocketOption {
+func TCPKeepaliveSocketOptions() []*envoy_core_v3.SocketOption {
 
 	// Note: TCP_KEEPIDLE + (TCP_KEEPINTVL * TCP_KEEPCNT) must be greater than
 	// the grpc.KeepaliveParams time + timeout (currently 60 + 20 = 80 seconds)
 	// otherwise TestGRPC/StreamClusters fails.
-	return []*envoy_api_v2_core.SocketOption{
+	return []*envoy_core_v3.SocketOption{
 		// Enable TCP keep-alive.
 		{
 			Description: "Enable TCP keep-alive",
 			Level:       envoy.SOL_SOCKET,
 			Name:        envoy.SO_KEEPALIVE,
-			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 1},
-			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
+			Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 1},
+			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
 		},
 		// The time (in seconds) the connection needs to remain idle
 		// before TCP starts sending keepalive probes.
@@ -37,16 +37,16 @@ func TCPKeepaliveSocketOptions() []*envoy_api_v2_core.SocketOption {
 			Description: "TCP keep-alive initial idle time",
 			Level:       envoy.IPPROTO_TCP,
 			Name:        envoy.TCP_KEEPIDLE,
-			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 45},
-			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
+			Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 45},
+			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
 		},
 		// The time (in seconds) between individual keepalive probes.
 		{
 			Description: "TCP keep-alive time between probes",
 			Level:       envoy.IPPROTO_TCP,
 			Name:        envoy.TCP_KEEPINTVL,
-			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 5},
-			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
+			Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 5},
+			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
 		},
 		// The maximum number of TCP keep-alive probes to send before
 		// giving up and killing the connection if no response is
@@ -55,8 +55,8 @@ func TCPKeepaliveSocketOptions() []*envoy_api_v2_core.SocketOption {
 			Description: "TCP keep-alive probe count",
 			Level:       envoy.IPPROTO_TCP,
 			Name:        envoy.TCP_KEEPCNT,
-			Value:       &envoy_api_v2_core.SocketOption_IntValue{IntValue: 9},
-			State:       envoy_api_v2_core.SocketOption_STATE_LISTENING,
+			Value:       &envoy_core_v3.SocketOption_IntValue{IntValue: 9},
+			State:       envoy_core_v3.SocketOption_STATE_LISTENING,
 		},
 	}
 }

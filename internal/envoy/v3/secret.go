@@ -14,25 +14,25 @@
 package v3
 
 import (
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_core "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 )
 
-// Secret creates new envoy_api_v2_auth.Secret from secret.
-func Secret(s *dag.Secret) *envoy_api_v2_auth.Secret {
-	return &envoy_api_v2_auth.Secret{
+// Secret creates new envoy_tls_v3.Secret from secret.
+func Secret(s *dag.Secret) *envoy_tls_v3.Secret {
+	return &envoy_tls_v3.Secret{
 		Name: envoy.Secretname(s),
-		Type: &envoy_api_v2_auth.Secret_TlsCertificate{
-			TlsCertificate: &envoy_api_v2_auth.TlsCertificate{
-				PrivateKey: &envoy_api_v2_core.DataSource{
-					Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+		Type: &envoy_tls_v3.Secret_TlsCertificate{
+			TlsCertificate: &envoy_tls_v3.TlsCertificate{
+				PrivateKey: &envoy_core_v3.DataSource{
+					Specifier: &envoy_core_v3.DataSource_InlineBytes{
 						InlineBytes: s.PrivateKey(),
 					},
 				},
-				CertificateChain: &envoy_api_v2_core.DataSource{
-					Specifier: &envoy_api_v2_core.DataSource_InlineBytes{
+				CertificateChain: &envoy_core_v3.DataSource{
+					Specifier: &envoy_core_v3.DataSource_InlineBytes{
 						InlineBytes: s.Cert(),
 					},
 				},
