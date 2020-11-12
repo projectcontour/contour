@@ -18,18 +18,19 @@ import (
 	"sort"
 	"testing"
 
-	v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
-	envoy_api_v2_listener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	envoy_api_v2_route "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	tcp "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
+	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 )
 
-func shuffleRoutes(routes []*envoy_api_v2_route.Route) []*envoy_api_v2_route.Route {
-	shuffled := make([]*envoy_api_v2_route.Route, len(routes))
+func shuffleRoutes(routes []*envoy_route_v3.Route) []*envoy_route_v3.Route {
+	shuffled := make([]*envoy_route_v3.Route, len(routes))
 
 	copy(shuffled, routes)
 
@@ -45,7 +46,7 @@ func TestInvalidSorter(t *testing.T) {
 }
 
 func TestSortRouteConfiguration(t *testing.T) {
-	want := []*v2.RouteConfiguration{
+	want := []*envoy_route_v3.RouteConfiguration{
 		{Name: "bar"},
 		{Name: "baz"},
 		{Name: "foo"},
@@ -53,7 +54,7 @@ func TestSortRouteConfiguration(t *testing.T) {
 		{Name: "same", InternalOnlyHeaders: []string{"a", "b"}},
 	}
 
-	have := []*v2.RouteConfiguration{
+	have := []*envoy_route_v3.RouteConfiguration{
 		want[3], // Ensure the "same" element stays stable.
 		want[4],
 		want[2],
@@ -66,7 +67,7 @@ func TestSortRouteConfiguration(t *testing.T) {
 }
 
 func TestSortVirtualHosts(t *testing.T) {
-	want := []*envoy_api_v2_route.VirtualHost{
+	want := []*envoy_route_v3.VirtualHost{
 		{Name: "bar"},
 		{Name: "baz"},
 		{Name: "foo"},
@@ -74,7 +75,7 @@ func TestSortVirtualHosts(t *testing.T) {
 		{Name: "same", Domains: []string{"a", "b"}},
 	}
 
-	have := []*envoy_api_v2_route.VirtualHost{
+	have := []*envoy_route_v3.VirtualHost{
 		want[3], // Ensure the "same" element stays stable.
 		want[4],
 		want[2],
@@ -86,58 +87,58 @@ func TestSortVirtualHosts(t *testing.T) {
 	assert.Equal(t, have, want)
 }
 
-func matchPrefix(str string) *envoy_api_v2_route.RouteMatch_Prefix {
-	return &envoy_api_v2_route.RouteMatch_Prefix{
+func matchPrefix(str string) *envoy_route_v3.RouteMatch_Prefix {
+	return &envoy_route_v3.RouteMatch_Prefix{
 		Prefix: str,
 	}
 }
 
-func matchRegex(str string) *envoy_api_v2_route.RouteMatch_SafeRegex {
-	return &envoy_api_v2_route.RouteMatch_SafeRegex{
+func matchRegex(str string) *envoy_route_v3.RouteMatch_SafeRegex {
+	return &envoy_route_v3.RouteMatch_SafeRegex{
 		SafeRegex: &matcher.RegexMatcher{
 			Regex: str,
 		},
 	}
 }
 
-func exactHeader(name string, value string) *envoy_api_v2_route.HeaderMatcher {
-	return &envoy_api_v2_route.HeaderMatcher{
+func exactHeader(name string, value string) *envoy_route_v3.HeaderMatcher {
+	return &envoy_route_v3.HeaderMatcher{
 		Name: name,
-		HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_ExactMatch{
+		HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_ExactMatch{
 			ExactMatch: value,
 		},
 	}
 }
 
-func presentHeader(name string) *envoy_api_v2_route.HeaderMatcher {
-	return &envoy_api_v2_route.HeaderMatcher{
+func presentHeader(name string) *envoy_route_v3.HeaderMatcher {
+	return &envoy_route_v3.HeaderMatcher{
 		Name: name,
-		HeaderMatchSpecifier: &envoy_api_v2_route.HeaderMatcher_PresentMatch{
+		HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_PresentMatch{
 			PresentMatch: true,
 		},
 	}
 }
 
 func TestSortRoutesLongestPath(t *testing.T) {
-	want := []*envoy_api_v2_route.Route{
+	want := []*envoy_route_v3.Route{
 		{
-			Match: &envoy_api_v2_route.RouteMatch{
+			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchRegex("/this/is/the/longest"),
 			}},
 
 		// Note that regex matches sort before prefix matches.
 		{
-			Match: &envoy_api_v2_route.RouteMatch{
+			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchRegex("."),
 			}},
 
 		{
-			Match: &envoy_api_v2_route.RouteMatch{
+			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchPrefix("/path/prefix2"),
 			}},
 
 		{
-			Match: &envoy_api_v2_route.RouteMatch{
+			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchPrefix("/path/prefix"),
 			}},
 	}
@@ -149,33 +150,33 @@ func TestSortRoutesLongestPath(t *testing.T) {
 }
 
 func TestSortRoutesLongestHeaders(t *testing.T) {
-	want := []*envoy_api_v2_route.Route{
+	want := []*envoy_route_v3.Route{
 		{
 			// Although the header names are the same, this value
 			// should sort before the next one because it is
 			// textually longer.
-			Match: &envoy_api_v2_route.RouteMatch{
+			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
-				Headers: []*envoy_api_v2_route.HeaderMatcher{
+				Headers: []*envoy_route_v3.HeaderMatcher{
 					exactHeader("header-name", "header-value"),
 				},
 			},
 		}, {
-			Match: &envoy_api_v2_route.RouteMatch{
+			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
-				Headers: []*envoy_api_v2_route.HeaderMatcher{
+				Headers: []*envoy_route_v3.HeaderMatcher{
 					presentHeader("header-name"),
 				},
 			},
 		}, {
-			Match: &envoy_api_v2_route.RouteMatch{
+			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
-				Headers: []*envoy_api_v2_route.HeaderMatcher{
+				Headers: []*envoy_route_v3.HeaderMatcher{
 					exactHeader("long-header-name", "long-header-value"),
 				},
 			},
 		}, {
-			Match: &envoy_api_v2_route.RouteMatch{
+			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchPrefix("/path"),
 			},
 		},
@@ -188,12 +189,12 @@ func TestSortRoutesLongestHeaders(t *testing.T) {
 }
 
 func TestSortSecrets(t *testing.T) {
-	want := []*envoy_api_v2_auth.Secret{
+	want := []*envoy_tls_v3.Secret{
 		{Name: "first"},
 		{Name: "second"},
 	}
 
-	have := []*envoy_api_v2_auth.Secret{
+	have := []*envoy_tls_v3.Secret{
 		want[1],
 		want[0],
 	}
@@ -203,7 +204,7 @@ func TestSortSecrets(t *testing.T) {
 }
 
 func TestSortHeaderMatchers(t *testing.T) {
-	want := []*envoy_api_v2_route.HeaderMatcher{
+	want := []*envoy_route_v3.HeaderMatcher{
 		// Note that if the header names are the same, we
 		// order by the protobuf string, in which case "exact"
 		// is less than "present".
@@ -212,7 +213,7 @@ func TestSortHeaderMatchers(t *testing.T) {
 		exactHeader("long-header-name", "long-header-value"),
 	}
 
-	have := []*envoy_api_v2_route.HeaderMatcher{
+	have := []*envoy_route_v3.HeaderMatcher{
 		want[2],
 		want[1],
 		want[0],
@@ -223,12 +224,12 @@ func TestSortHeaderMatchers(t *testing.T) {
 }
 
 func TestSortClusters(t *testing.T) {
-	want := []*v2.Cluster{
+	want := []*envoy_cluster_v3.Cluster{
 		{Name: "first"},
 		{Name: "second"},
 	}
 
-	have := []*v2.Cluster{
+	have := []*envoy_cluster_v3.Cluster{
 		want[1],
 		want[0],
 	}
@@ -238,12 +239,12 @@ func TestSortClusters(t *testing.T) {
 }
 
 func TestSortClusterLoadAssignments(t *testing.T) {
-	want := []*v2.ClusterLoadAssignment{
+	want := []*envoy_endpoint_v3.ClusterLoadAssignment{
 		{ClusterName: "first"},
 		{ClusterName: "second"},
 	}
 
-	have := []*v2.ClusterLoadAssignment{
+	have := []*envoy_endpoint_v3.ClusterLoadAssignment{
 		want[1],
 		want[0],
 	}
@@ -253,7 +254,7 @@ func TestSortClusterLoadAssignments(t *testing.T) {
 }
 
 func TestSortHTTPWeightedClusters(t *testing.T) {
-	want := []*envoy_api_v2_route.WeightedCluster_ClusterWeight{
+	want := []*envoy_route_v3.WeightedCluster_ClusterWeight{
 		{
 			Name:   "first",
 			Weight: protobuf.UInt32(10),
@@ -268,7 +269,7 @@ func TestSortHTTPWeightedClusters(t *testing.T) {
 		},
 	}
 
-	have := []*envoy_api_v2_route.WeightedCluster_ClusterWeight{
+	have := []*envoy_route_v3.WeightedCluster_ClusterWeight{
 		want[2],
 		want[1],
 		want[0],
@@ -305,12 +306,12 @@ func TestSortTCPWeightedClusters(t *testing.T) {
 }
 
 func TestSortListeners(t *testing.T) {
-	want := []*v2.Listener{
+	want := []*envoy_listener_v3.Listener{
 		{Name: "first"},
 		{Name: "second"},
 	}
 
-	have := []*v2.Listener{
+	have := []*envoy_listener_v3.Listener{
 		want[1],
 		want[0],
 	}
@@ -320,13 +321,13 @@ func TestSortListeners(t *testing.T) {
 }
 
 func TestSortFilterChains(t *testing.T) {
-	names := func(n ...string) *envoy_api_v2_listener.FilterChainMatch {
-		return &envoy_api_v2_listener.FilterChainMatch{
+	names := func(n ...string) *envoy_listener_v3.FilterChainMatch {
+		return &envoy_listener_v3.FilterChainMatch{
 			ServerNames: n,
 		}
 	}
 
-	want := []*envoy_api_v2_listener.FilterChain{
+	want := []*envoy_listener_v3.FilterChain{
 		{
 			FilterChainMatch: names("first"),
 		},
@@ -342,11 +343,11 @@ func TestSortFilterChains(t *testing.T) {
 			FilterChainMatch: names("second", "aaaaa"),
 		},
 		{
-			FilterChainMatch: &envoy_api_v2_listener.FilterChainMatch{},
+			FilterChainMatch: &envoy_listener_v3.FilterChainMatch{},
 		},
 	}
 
-	have := []*envoy_api_v2_listener.FilterChain{
+	have := []*envoy_listener_v3.FilterChain{
 		want[1], // zzzzz
 		want[3], // blank
 		want[2], // aaaaa
