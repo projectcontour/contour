@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -361,7 +360,7 @@ type SecureVirtualHost struct {
 	VirtualHost
 
 	// TLS minimum protocol version. Defaults to envoy_api_v2_auth.TlsParameters_TLS_AUTO
-	MinTLSVersion envoy_api_v2_auth.TlsParameters_TlsProtocol
+	MinTLSVersion string
 
 	// The cert and key for this host.
 	Secret *Secret

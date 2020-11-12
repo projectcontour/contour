@@ -16,7 +16,6 @@ package dag
 import (
 	"strings"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
@@ -88,7 +87,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 				svhost := p.dag.EnsureSecureVirtualHost(host)
 				svhost.Secret = sec
 				// default to a minimum TLS version of 1.2 if it's not specified
-				svhost.MinTLSVersion = annotation.MinTLSVersion(annotation.CompatAnnotation(ing, "tls-minimum-protocol-version"), envoy_api_v2_auth.TlsParameters_TLSv1_2)
+				svhost.MinTLSVersion = annotation.MinTLSVersion(annotation.CompatAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
 			}
 		}
 	}
