@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/assert"
@@ -327,7 +327,7 @@ func peekError(conn net.Conn) error {
 func TestParseHTTPVersions(t *testing.T) {
 	cases := map[string]struct {
 		versions      []config.HTTPVersionType
-		parseVersions []envoy_v2.HTTPVersionType
+		parseVersions []envoy_v3.HTTPVersionType
 	}{
 		"empty": {
 			versions:      []config.HTTPVersionType{},
@@ -335,17 +335,17 @@ func TestParseHTTPVersions(t *testing.T) {
 		},
 		"http/1.1": {
 			versions:      []config.HTTPVersionType{config.HTTPVersion1},
-			parseVersions: []envoy_v2.HTTPVersionType{envoy_v2.HTTPVersion1},
+			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1},
 		},
 		"http/1.1+http/2": {
 			versions:      []config.HTTPVersionType{config.HTTPVersion1, config.HTTPVersion2},
-			parseVersions: []envoy_v2.HTTPVersionType{envoy_v2.HTTPVersion1, envoy_v2.HTTPVersion2},
+			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
 		"http/1.1+http/2 duplicated": {
 			versions: []config.HTTPVersionType{
 				config.HTTPVersion1, config.HTTPVersion2,
 				config.HTTPVersion1, config.HTTPVersion2},
-			parseVersions: []envoy_v2.HTTPVersionType{envoy_v2.HTTPVersion1, envoy_v2.HTTPVersion2},
+			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
 	}
 

@@ -149,23 +149,12 @@ func (s *contourServer) stream(st grpcStream) error {
 				resources = r.Query(req.ResourceNames)
 			}
 
-			// Rewrite the embedded message types to v3.
-			var rewritten []proto.Message
+			any := make([]*any.Any, 0, len(resources))
 			for _, r := range resources {
-				// Note that the resource cache
-				// gave us a pointer to its internal
-				// object, so we should rewrite a copy.
-				rewritten = append(rewritten, xds.Rewrite(proto.Clone(r)))
-			}
-
-			any := make([]*any.Any, 0, len(rewritten))
-			for _, r := range rewritten {
 				a, err := ptypes.MarshalAny(r)
 				if err != nil {
 					return done(log, err)
 				}
-
-				a.TypeUrl = req.GetTypeUrl()
 				any = append(any, a)
 			}
 

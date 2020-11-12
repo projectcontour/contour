@@ -40,7 +40,7 @@ import (
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
-	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
+	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -265,7 +265,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// is 1.2, set in the DAG processors.
 	globalMinTLSVersion := annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, "1.1")
 
-	listenerConfig := xdscache_v2.ListenerConfig{
+	listenerConfig := xdscache_v3.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
 		HTTPPort:                      ctx.httpPort,
@@ -288,13 +288,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
-	endpointHandler := xdscache_v2.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
+	endpointHandler := xdscache_v3.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
 
 	resources := []xdscache.ResourceCache{
-		xdscache_v2.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort),
-		&xdscache_v2.SecretCache{},
-		&xdscache_v2.RouteCache{},
-		&xdscache_v2.ClusterCache{},
+		xdscache_v3.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort),
+		&xdscache_v3.SecretCache{},
+		&xdscache_v3.RouteCache{},
+		&xdscache_v3.ClusterCache{},
 		endpointHandler,
 	}
 

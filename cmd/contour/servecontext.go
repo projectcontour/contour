@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
-	envoy_v2 "github.com/projectcontour/contour/internal/envoy/v2"
-	xdscache_v2 "github.com/projectcontour/contour/internal/xdscache/v2"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -103,8 +103,8 @@ func newServeContext() *serveContext {
 		healthPort:                     8000,
 		metricsAddr:                    "0.0.0.0",
 		metricsPort:                    8000,
-		httpAccessLog:                  xdscache_v2.DEFAULT_HTTP_ACCESS_LOG,
-		httpsAccessLog:                 xdscache_v2.DEFAULT_HTTPS_ACCESS_LOG,
+		httpAccessLog:                  xdscache_v3.DEFAULT_HTTP_ACCESS_LOG,
+		httpsAccessLog:                 xdscache_v3.DEFAULT_HTTPS_ACCESS_LOG,
 		httpAddr:                       "0.0.0.0",
 		httpsAddr:                      "0.0.0.0",
 		httpPort:                       8080,
@@ -234,19 +234,19 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 
 // parseDefaultHTTPVersions parses a list of supported HTTP versions
 //  (of the form "HTTP/xx") into a slice of unique version constants.
-func parseDefaultHTTPVersions(versions []config.HTTPVersionType) []envoy_v2.HTTPVersionType {
-	wanted := map[envoy_v2.HTTPVersionType]struct{}{}
+func parseDefaultHTTPVersions(versions []config.HTTPVersionType) []envoy_v3.HTTPVersionType {
+	wanted := map[envoy_v3.HTTPVersionType]struct{}{}
 
 	for _, v := range versions {
 		switch v {
 		case config.HTTPVersion1:
-			wanted[envoy_v2.HTTPVersion1] = struct{}{}
+			wanted[envoy_v3.HTTPVersion1] = struct{}{}
 		case config.HTTPVersion2:
-			wanted[envoy_v2.HTTPVersion2] = struct{}{}
+			wanted[envoy_v3.HTTPVersion2] = struct{}{}
 		}
 	}
 
-	var parsed []envoy_v2.HTTPVersionType
+	var parsed []envoy_v3.HTTPVersionType
 	for k := range wanted {
 		parsed = append(parsed, k)
 
