@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -3579,7 +3578,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1)),
 								),
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 						},
 					),
@@ -3606,7 +3605,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1)),
 								),
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+							MinTLSVersion: "1.3",
 							Secret:        secret(sec1),
 						},
 					),
@@ -3672,7 +3671,7 @@ func TestDAGInsert(t *testing.T) {
 									prefixroute("/", service(s1)),
 								),
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+							MinTLSVersion: "1.3",
 							Secret:        secret(sec1),
 						},
 					),
@@ -3701,7 +3700,7 @@ func TestDAGInsert(t *testing.T) {
 									prefixroute("/", service(s1)),
 								),
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+							MinTLSVersion: "1.3",
 							Secret:        secret(sec1),
 						},
 					),
@@ -4685,7 +4684,7 @@ func TestDAGInsert(t *testing.T) {
 								routes: routes(
 									routeUpgrade("/", service(s1))),
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate: &Secret{Object: cert1},
@@ -4712,7 +4711,7 @@ func TestDAGInsert(t *testing.T) {
 									service(s1),
 								),
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate: &Secret{Object: cert1},
@@ -5264,7 +5263,7 @@ func TestDAGInsert(t *testing.T) {
 									service(s10),
 								),
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLS_AUTO, // tls passthrough does not specify a TLS version; that's the domain of the backend
+							MinTLSVersion: "", // tls passthrough does not specify a TLS version; that's the domain of the backend
 						},
 					),
 				},
@@ -5346,7 +5345,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s9)),
@@ -5404,7 +5403,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s9)),
@@ -5461,7 +5460,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name: "example.com",
 							},
-							MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLS_AUTO,
+							MinTLSVersion: "",
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s9)),
 							},
@@ -5711,7 +5710,7 @@ func TestDAGInsert(t *testing.T) {
 								Name:   "example.com",
 								routes: routes(routeUpgrade("/", service(s9))),
 							},
-							MinTLSVersion:       envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
 							FallbackCertificate: secret(fallbackCertificateSecret),
 						},
@@ -5806,7 +5805,7 @@ func TestDAGInsert(t *testing.T) {
 								Name:   "example.com",
 								routes: routes(routeUpgrade("/", service(s9))),
 							},
-							MinTLSVersion:       envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
 							FallbackCertificate: secret(fallbackCertificateSecretRootNamespace),
 						},
@@ -5870,7 +5869,7 @@ func TestDAGInsert(t *testing.T) {
 								Name:   "example.com",
 								routes: routes(routeUpgrade("/", service(s9))),
 							},
-							MinTLSVersion:       envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
 							FallbackCertificate: secret(fallbackCertificateSecretRootNamespace),
 						},
@@ -6007,7 +6006,7 @@ func TestDAGInsert(t *testing.T) {
 								Name:   "example.com",
 								routes: routes(routeUpgrade("/", service(s9))),
 							},
-							MinTLSVersion:       envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
 							FallbackCertificate: secret(fallbackCertificateSecret),
 						},
@@ -6016,7 +6015,7 @@ func TestDAGInsert(t *testing.T) {
 								Name:   "projectcontour.io",
 								routes: routes(routeUpgrade("/", service(s9))),
 							},
-							MinTLSVersion:       envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
 							FallbackCertificate: nil,
 						},
@@ -6067,7 +6066,7 @@ func TestDAGInsert(t *testing.T) {
 								Name:   "example.com",
 								routes: routes(routeUpgrade("/", service(s9))),
 							},
-							MinTLSVersion:       envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
 							FallbackCertificate: nil,
 						},
@@ -6119,7 +6118,7 @@ func TestDAGInsert(t *testing.T) {
 								Name:   "example.com",
 								routes: routes(routeUpgrade("/", service(s9))),
 							},
-							MinTLSVersion:       envoy_api_v2_auth.TlsParameters_TLSv1_2,
+							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
 							FallbackCertificate: nil,
 						},
@@ -6750,7 +6749,7 @@ func securevirtualhost(name string, sec *v1.Secret, first *Route, rest ...*Route
 			Name:   name,
 			routes: routes(append([]*Route{first}, rest...)...),
 		},
-		MinTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_2,
+		MinTLSVersion: "1.2",
 		Secret:        secret(sec),
 	}
 }

@@ -25,7 +25,6 @@ import (
 	"syscall"
 	"time"
 
-	envoy_auth_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
@@ -264,7 +263,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// that are explicitly using 1.1 to continue working by default. However, the
 	// *default* minimum TLS version for proxies/ingresses that don't specify it
 	// is 1.2, set in the DAG processors.
-	globalMinTLSVersion := annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, envoy_auth_v2.TlsParameters_TLSv1_1)
+	globalMinTLSVersion := annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, "1.1")
 
 	listenerConfig := xdscache_v2.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,

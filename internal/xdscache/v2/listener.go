@@ -79,7 +79,7 @@ type ListenerConfig struct {
 	UseProxyProto bool
 
 	// MinimumTLSVersion defines the minimum TLS protocol version the proxy should accept.
-	MinimumTLSVersion envoy_api_v2_auth.TlsParameters_TlsProtocol
+	MinimumTLSVersion string
 
 	// DefaultHTTPVersions defines the default set of HTTP
 	// versions the proxy should accept. If not specified, all
@@ -209,8 +209,9 @@ func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_api_v2_accesslog.Access
 // minTLSVersion returns the requested minimum TLS protocol
 // version or envoy_api_v2_auth.TlsParameters_TLSv1_2 if not configured.
 func (lvc *ListenerConfig) minTLSVersion() envoy_api_v2_auth.TlsParameters_TlsProtocol {
-	if lvc.MinimumTLSVersion > envoy_api_v2_auth.TlsParameters_TLSv1_2 {
-		return lvc.MinimumTLSVersion
+	minTLSVersion := envoy_v2.ParseTLSVersion(lvc.MinimumTLSVersion)
+	if minTLSVersion > envoy_api_v2_auth.TlsParameters_TLSv1_2 {
+		return minTLSVersion
 	}
 	return envoy_api_v2_auth.TlsParameters_TLSv1_2
 }
@@ -434,7 +435,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		// Secret is provided when TLS is terminated and nil when TLS passthrough is used.
 		if vh.Secret != nil {
 			// Choose the higher of the configured or requested TLS version.
-			vers := max(v.ListenerConfig.minTLSVersion(), vh.MinTLSVersion)
+			vers := max(v.ListenerConfig.minTLSVersion(), envoy_v2.ParseTLSVersion(vh.MinTLSVersion))
 
 			downstreamTLS = envoy_v2.DownstreamTLSContext(
 				vh.Secret,

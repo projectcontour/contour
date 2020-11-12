@@ -824,7 +824,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"tls-min-protocol-version from config": {
 			ListenerConfig: ListenerConfig{
-				MinimumTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+				MinimumTLSVersion: "1.3",
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
@@ -894,7 +894,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"tls-min-protocol-version from config overridden by annotation": {
 			ListenerConfig: ListenerConfig{
-				MinimumTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+				MinimumTLSVersion: "1.3",
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
@@ -967,7 +967,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"tls-min-protocol-version from config overridden by legacy annotation": {
 			ListenerConfig: ListenerConfig{
-				MinimumTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+				MinimumTLSVersion: "1.3",
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
@@ -1040,7 +1040,7 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"tls-min-protocol-version from config overridden by httpproxy": {
 			ListenerConfig: ListenerConfig{
-				MinimumTLSVersion: envoy_api_v2_auth.TlsParameters_TLSv1_3,
+				MinimumTLSVersion: "1.3",
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{

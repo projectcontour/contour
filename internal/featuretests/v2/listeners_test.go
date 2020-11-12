@@ -997,7 +997,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 
 func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	rh, c, done := setup(t, func(conf *xdscache_v2.ListenerConfig) {
-		conf.MinimumTLSVersion = envoy_api_v2_auth.TlsParameters_TLSv1_2
+		conf.MinimumTLSVersion = "1.2"
 	})
 
 	defer done()

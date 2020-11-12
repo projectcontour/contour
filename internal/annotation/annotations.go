@@ -18,7 +18,6 @@ import (
 	"strconv"
 	"strings"
 
-	envoy_api_v2_auth "github.com/envoyproxy/go-control-plane/envoy/api/v2/auth"
 	"github.com/projectcontour/contour/internal/timeout"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -226,14 +225,10 @@ func MatchesIngressClass(o metav1.ObjectMetaAccessor, ic string) bool {
 
 // MinTLSVersion returns the TLS protocol version specified by an ingress annotation
 // or default if non present.
-func MinTLSVersion(version string, defaultVal envoy_api_v2_auth.TlsParameters_TlsProtocol) envoy_api_v2_auth.TlsParameters_TlsProtocol {
+func MinTLSVersion(version string, defaultVal string) string {
 	switch version {
-	case "1.3":
-		return envoy_api_v2_auth.TlsParameters_TLSv1_3
-	case "1.2":
-		return envoy_api_v2_auth.TlsParameters_TLSv1_2
-	case "1.1":
-		return envoy_api_v2_auth.TlsParameters_TLSv1_1
+	case "1.1", "1.2", "1.3":
+		return version
 	default:
 		return defaultVal
 	}
