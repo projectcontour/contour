@@ -78,7 +78,7 @@ type ListenerConfig struct {
 	UseProxyProto bool
 
 	// MinimumTLSVersion defines the minimum TLS protocol version the proxy should accept.
-	MinimumTLSVersion envoy_tls_v3.TlsParameters_TlsProtocol
+	MinimumTLSVersion string
 
 	// DefaultHTTPVersions defines the default set of HTTP
 	// versions the proxy should accept. If not specified, all
@@ -208,8 +208,9 @@ func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_accesslog_v3.AccessLog 
 // minTLSVersion returns the requested minimum TLS protocol
 // version or envoy_tls_v3.TlsParameters_TLSv1_2 if not configured.
 func (lvc *ListenerConfig) minTLSVersion() envoy_tls_v3.TlsParameters_TlsProtocol {
-	if lvc.MinimumTLSVersion > envoy_tls_v3.TlsParameters_TLSv1_2 {
-		return lvc.MinimumTLSVersion
+	minTLSVersion := envoy_v3.ParseTLSVersion(lvc.MinimumTLSVersion)
+	if minTLSVersion > envoy_tls_v3.TlsParameters_TLSv1_2 {
+		return minTLSVersion
 	}
 	return envoy_tls_v3.TlsParameters_TLSv1_2
 }
