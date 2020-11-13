@@ -54,6 +54,19 @@ jobs:
         with:
           version: v1.31
           only-new-issues: true
+  codespell:
+    name: Codespell
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v2
+      - name: Codespell
+        uses: codespell-project/actions-codespell@master
+        with:
+          skip: .git,*.png,*.woff,*.ttf,*.jpg,*.ico,./site/Gemfile.lock,./site/_config.yml
+          ignore_words_file: './.codespell.ignorewords'
+          check_filenames: true
+          check_hidden: true
   codegen:
     runs-on: ubuntu-latest
     steps:

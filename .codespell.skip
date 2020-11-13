@@ -1,0 +1,8 @@
+.git
+*.png
+*.woff
+*.ttf
+*.jpg
+*.ico
+./site/Gemfile.lock
+./site/_config.yml

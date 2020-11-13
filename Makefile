@@ -150,17 +150,14 @@ check-coverage: ## Run tests to generate code coverage
 
 .PHONY: lint
 lint: ## Run lint checks
-lint: lint-golint lint-yamllint lint-flags lint-misspell
+lint: lint-golint lint-yamllint lint-flags lint-codespell
 
-.PHONY: check-misspell
-lint-misspell:
-	@echo Running spell checker ...
-	@go run github.com/client9/misspell/cmd/misspell \
-		-locale US \
-		-error \
-		-i mitre,Mitre,cancelled \
-		-source=text \
-		$$(git ls-files | grep -E '(md|html)$$')
+.PHONY: lint-codespell
+lint-codespell: CODESPELL_SKIP := $(shell cat .codespell.skip | tr \\n ',')
+lint-codespell: CODESPELL_BIN := codespell
+lint-codespell:
+	which $(CODESPELL_BIN) >/dev/null 2>&1 || (echo "$(CODESPELL_BIN) binary not found, skipping spell checking"; exit 0)
+	$(CODESPELL_BIN) --skip $(CODESPELL_SKIP) --ignore-words .codespell.ignorewords --check-filenames --check-hidden
 
 .PHONY: check-golint
 lint-golint:
