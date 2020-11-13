@@ -23,6 +23,7 @@ import (
 	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
@@ -30,6 +31,7 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -44,6 +46,11 @@ const (
 	HTTPVersion1    HTTPVersionType = http.HttpConnectionManager_HTTP1
 	HTTPVersion2    HTTPVersionType = http.HttpConnectionManager_HTTP2
 	HTTPVersion3    HTTPVersionType = http.HttpConnectionManager_HTTP3
+
+	HTTPFilterRouter  = "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router"
+	HTTPFilterCORS    = "type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors"
+	HTTPFilterGrpcWeb = "type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb"
+	HTTPFilterGzip    = "type.googleapis.com/envoy.extensions.compression.gzip.compressor.v3.Gzip"
 )
 
 // ProtoNamesForVersions returns the slice of ALPN protocol names for the give HTTP versions.
@@ -202,18 +209,47 @@ func (b *httpConnectionManagerBuilder) ConnectionShutdownGracePeriod(timeout tim
 }
 
 func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBuilder {
+
+	// Add a default set of ordered http filters.
+	// The names are not required to match anything and are
+	// identified by the TypeURL of each filter.
 	b.filters = append(b.filters,
 		&http.HttpFilter{
-			Name: wellknown.Gzip,
+			Name: "compressor",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+					CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+						Name: "gzip",
+						TypedConfig: &any.Any{
+							TypeUrl: HTTPFilterGzip,
+						},
+					},
+				}),
+			},
 		},
 		&http.HttpFilter{
-			Name: wellknown.GRPCWeb,
+			Name: "grpcweb",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: &any.Any{
+					TypeUrl: HTTPFilterGrpcWeb,
+				},
+			},
 		},
 		&http.HttpFilter{
-			Name: wellknown.CORS,
+			Name: "cors",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: &any.Any{
+					TypeUrl: HTTPFilterCORS,
+				},
+			},
 		},
 		&http.HttpFilter{
-			Name: wellknown.Router,
+			Name: "router",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: &any.Any{
+					TypeUrl: HTTPFilterRouter,
+				},
+			},
 		},
 	)
 
@@ -247,12 +283,17 @@ func (b *httpConnectionManagerBuilder) Validate() error {
 	filterNames := map[string]struct{}{}
 
 	for _, f := range b.filters {
-		filterNames[f.Name] = struct{}{}
+		// Extract the TypeURL to compare against to identify
+		// the http filter.
+		switch config := f.ConfigType.(type) {
+		case *http.HttpFilter_TypedConfig:
+			filterNames[config.TypedConfig.TypeUrl] = struct{}{}
+		}
 	}
 
 	// If there's no router filter, requests won't be forwarded.
-	if _, ok := filterNames[wellknown.Router]; !ok {
-		return fmt.Errorf("missing required filter %q", wellknown.Router)
+	if _, ok := filterNames[HTTPFilterRouter]; !ok {
+		return fmt.Errorf("missing required filter %q", HTTPFilterRouter)
 	}
 
 	return nil
