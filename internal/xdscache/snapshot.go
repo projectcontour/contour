@@ -20,7 +20,7 @@ import (
 	"sync"
 
 	envoy_types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/sirupsen/logrus"
 )
