@@ -20,10 +20,12 @@ import (
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -358,13 +360,38 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: "compressor",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+										Name: "gzip",
+										TypedConfig: &any.Any{
+											TypeUrl: HTTPFilterGzip,
+										},
+									},
+								}),
+							},
 						}, {
-							Name: wellknown.GRPCWeb,
+							Name: "grpcweb",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterGrpcWeb,
+								},
+							},
 						}, {
-							Name: wellknown.CORS,
+							Name: "cors",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterCORS,
+								},
+							},
 						}, {
-							Name: wellknown.Router,
+							Name: "router",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterRouter,
+								},
+							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
@@ -412,13 +439,38 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: "compressor",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+										Name: "gzip",
+										TypedConfig: &any.Any{
+											TypeUrl: HTTPFilterGzip,
+										},
+									},
+								}),
+							},
 						}, {
-							Name: wellknown.GRPCWeb,
+							Name: "grpcweb",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterGrpcWeb,
+								},
+							},
 						}, {
-							Name: wellknown.CORS,
+							Name: "cors",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterCORS,
+								},
+							},
 						}, {
-							Name: wellknown.Router,
+							Name: "router",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterRouter,
+								},
+							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
@@ -467,13 +519,38 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: "compressor",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+										Name: "gzip",
+										TypedConfig: &any.Any{
+											TypeUrl: HTTPFilterGzip,
+										},
+									},
+								}),
+							},
 						}, {
-							Name: wellknown.GRPCWeb,
+							Name: "grpcweb",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterGrpcWeb,
+								},
+							},
 						}, {
-							Name: wellknown.CORS,
+							Name: "cors",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterCORS,
+								},
+							},
 						}, {
-							Name: wellknown.Router,
+							Name: "router",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterRouter,
+								},
+							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
@@ -523,13 +600,38 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: "compressor",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+										Name: "gzip",
+										TypedConfig: &any.Any{
+											TypeUrl: HTTPFilterGzip,
+										},
+									},
+								}),
+							},
 						}, {
-							Name: wellknown.GRPCWeb,
+							Name: "grpcweb",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterGrpcWeb,
+								},
+							},
 						}, {
-							Name: wellknown.CORS,
+							Name: "cors",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterCORS,
+								},
+							},
 						}, {
-							Name: wellknown.Router,
+							Name: "router",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterRouter,
+								},
+							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
@@ -578,13 +680,38 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: "compressor",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+										Name: "gzip",
+										TypedConfig: &any.Any{
+											TypeUrl: HTTPFilterGzip,
+										},
+									},
+								}),
+							},
 						}, {
-							Name: wellknown.GRPCWeb,
+							Name: "grpcweb",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterGrpcWeb,
+								},
+							},
 						}, {
-							Name: wellknown.CORS,
+							Name: "cors",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterCORS,
+								},
+							},
 						}, {
-							Name: wellknown.Router,
+							Name: "router",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterRouter,
+								},
+							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
@@ -634,13 +761,38 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: "compressor",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+										Name: "gzip",
+										TypedConfig: &any.Any{
+											TypeUrl: HTTPFilterGzip,
+										},
+									},
+								}),
+							},
 						}, {
-							Name: wellknown.GRPCWeb,
+							Name: "grpcweb",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterGrpcWeb,
+								},
+							},
 						}, {
-							Name: wellknown.CORS,
+							Name: "cors",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterCORS,
+								},
+							},
 						}, {
-							Name: wellknown.Router,
+							Name: "router",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterRouter,
+								},
+							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
@@ -688,13 +840,38 @@ func TestHTTPConnectionManager(t *testing.T) {
 							},
 						},
 						HttpFilters: []*http.HttpFilter{{
-							Name: wellknown.Gzip,
+							Name: "compressor",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+										Name: "gzip",
+										TypedConfig: &any.Any{
+											TypeUrl: HTTPFilterGzip,
+										},
+									},
+								}),
+							},
 						}, {
-							Name: wellknown.GRPCWeb,
+							Name: "grpcweb",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterGrpcWeb,
+								},
+							},
 						}, {
-							Name: wellknown.CORS,
+							Name: "cors",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterCORS,
+								},
+							},
 						}, {
-							Name: wellknown.Router,
+							Name: "router",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterRouter,
+								},
+							},
 						}},
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
