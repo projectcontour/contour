@@ -156,8 +156,7 @@ lint: lint-golint lint-yamllint lint-flags lint-codespell
 lint-codespell: CODESPELL_SKIP := $(shell cat .codespell.skip | tr \\n ',')
 lint-codespell: CODESPELL_BIN := codespell
 lint-codespell:
-	which $(CODESPELL_BIN) >/dev/null 2>&1 || (echo "$(CODESPELL_BIN) binary not found, skipping spell checking"; exit 0)
-	$(CODESPELL_BIN) --skip $(CODESPELL_SKIP) --ignore-words .codespell.ignorewords --check-filenames --check-hidden
+	@./hack/codespell.sh --skip $(CODESPELL_SKIP) --ignore-words .codespell.ignorewords --check-filenames --check-hidden -q2
 
 .PHONY: check-golint
 lint-golint:
