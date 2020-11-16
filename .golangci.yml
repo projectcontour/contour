@@ -11,6 +11,7 @@ linters:
   - misspell
   - unconvert
   - unparam
+  - goheader
 
 # TODO(jpeach): enable these later:
 #  - gocyclo
@@ -26,6 +27,8 @@ linters-settings:
     simplify: true
   unparam:
     check-exported: false
+  goheader:
+    template-path: ./hack/license-template.txt
 
 issues:
   exclude:
