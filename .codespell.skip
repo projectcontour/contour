@@ -6,3 +6,7 @@
 *.ico
 ./site/Gemfile.lock
 ./site/_config.yml
+./site/bundler
+./site/.jekyll-cache
+./site/_site
+./vendor
