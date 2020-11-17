@@ -25,6 +25,8 @@ import (
 	"github.com/prometheus/common/expfmt"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -139,8 +141,26 @@ func (s *shutdownContext) shutdownHandler() {
 
 	// Send shutdown signal to Envoy to start draining connections
 	s.Infof("failing envoy healthchecks")
-	if err := shutdownEnvoy(); err != nil {
-		s.WithField("context", "shutdownHandler").Errorf("error sending envoy healthcheck fail: %v", err)
+
+	// Retry any failures to shutdownEnvoy() in a Backoff time window
+	// doing 4 total attempts, multiplying the Duration by the Factor
+	// for each iteration.
+	err := retry.OnError(wait.Backoff{
+		Steps:    4,
+		Duration: 200 * time.Millisecond,
+		Factor:   5.0,
+		Jitter:   0.1,
+	}, func(err error) bool {
+		// Always retry any error.
+		return true
+	}, func() error {
+		s.Infof("attempting to shutdown")
+		return shutdownEnvoy()
+	})
+	if err != nil {
+		// May be conflict if max retries were hit, or may be something unrelated
+		// like permissions or a network error
+		s.WithField("context", "shutdownHandler").Errorf("error sending envoy healthcheck fail after 4 attempts: %v", err)
 	}
 
 	s.WithField("context", "shutdownHandler").Infof("waiting %s before polling for draining connections", s.checkDelay)
