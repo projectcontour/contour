@@ -111,6 +111,11 @@ type DetailedCondition struct {
 	// An empty slice here indicates no warnings.
 	// +optional
 	Warnings []SubCondition `json:"warnings,omitempty"`
+	// Details contains a slice of relevant detail subconditions for this object.
+	//
+	// Subconditions expose detailed information about the object.
+	// +optional
+	Details []SubCondition `json:"infos,omitempty"`
 }
 
 const ValidConditionType string = "Valid"

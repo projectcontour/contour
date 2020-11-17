@@ -147,6 +147,40 @@ spec:
                         - type
                         type: object
                       type: array
+                    infos:
+                      description: "Details contains a slice of relevant detail subconditions for this object. \n Subconditions expose detailed information about the object."
+                      items:
+                        description: "SubCondition is a Condition-like type intended for use as a subcondition inside a DetailedCondition. \n It contains a subset of the Condition fields. \n It is intended for warnings and errors, so `type` names should use abnormal-true polarity, that is, they should be of the form \"ErrorPresent: true\". \n The expected lifecycle for these errors is that they should only be present when the error or warning is, and should be removed when they are not relevant."
+                        properties:
+                          message:
+                            description: "Message is a human readable message indicating details about the transition. \n This may be an empty string."
+                            maxLength: 32768
+                            type: string
+                          reason:
+                            description: "Reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. \n The value should be a CamelCase string. \n This field may not be empty."
+                            maxLength: 1024
+                            minLength: 1
+                            pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                            type: string
+                          status:
+                            description: Status of the condition, one of True, False, Unknown.
+                            enum:
+                            - "True"
+                            - "False"
+                            - Unknown
+                            type: string
+                          type:
+                            description: "Type of condition in `CamelCase` or in `foo.example.com/CamelCase`. \n This must be in abnormal-true polarity, that is, `ErrorFound` or `controller.io/ErrorFound`. \n The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)"
+                            maxLength: 316
+                            pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                            type: string
+                        required:
+                        - message
+                        - reason
+                        - status
+                        - type
+                        type: object
+                      type: array
                     lastTransitionTime:
                       description: "lastTransitionTime is the last time the condition transitioned from one status to another. \n This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable."
                       format: date-time
@@ -978,6 +1012,40 @@ spec:
                         - type
                         type: object
                       type: array
+                    infos:
+                      description: "Details contains a slice of relevant detail subconditions for this object. \n Subconditions expose detailed information about the object."
+                      items:
+                        description: "SubCondition is a Condition-like type intended for use as a subcondition inside a DetailedCondition. \n It contains a subset of the Condition fields. \n It is intended for warnings and errors, so `type` names should use abnormal-true polarity, that is, they should be of the form \"ErrorPresent: true\". \n The expected lifecycle for these errors is that they should only be present when the error or warning is, and should be removed when they are not relevant."
+                        properties:
+                          message:
+                            description: "Message is a human readable message indicating details about the transition. \n This may be an empty string."
+                            maxLength: 32768
+                            type: string
+                          reason:
+                            description: "Reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. \n The value should be a CamelCase string. \n This field may not be empty."
+                            maxLength: 1024
+                            minLength: 1
+                            pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                            type: string
+                          status:
+                            description: Status of the condition, one of True, False, Unknown.
+                            enum:
+                            - "True"
+                            - "False"
+                            - Unknown
+                            type: string
+                          type:
+                            description: "Type of condition in `CamelCase` or in `foo.example.com/CamelCase`. \n This must be in abnormal-true polarity, that is, `ErrorFound` or `controller.io/ErrorFound`. \n The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)"
+                            maxLength: 316
+                            pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                            type: string
+                        required:
+                        - message
+                        - reason
+                        - status
+                        - type
+                        type: object
+                      type: array
                     lastTransitionTime:
                       description: "lastTransitionTime is the last time the condition transitioned from one status to another. \n This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable."
                       format: date-time
@@ -1156,6 +1224,40 @@ spec:
                   properties:
                     errors:
                       description: "Errors contains a slice of relevant error subconditions for this object. \n Subconditions are expected to appear when relevant (when there is a error), and disappear when not relevant. An empty slice here indicates no errors."
+                      items:
+                        description: "SubCondition is a Condition-like type intended for use as a subcondition inside a DetailedCondition. \n It contains a subset of the Condition fields. \n It is intended for warnings and errors, so `type` names should use abnormal-true polarity, that is, they should be of the form \"ErrorPresent: true\". \n The expected lifecycle for these errors is that they should only be present when the error or warning is, and should be removed when they are not relevant."
+                        properties:
+                          message:
+                            description: "Message is a human readable message indicating details about the transition. \n This may be an empty string."
+                            maxLength: 32768
+                            type: string
+                          reason:
+                            description: "Reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. \n The value should be a CamelCase string. \n This field may not be empty."
+                            maxLength: 1024
+                            minLength: 1
+                            pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                            type: string
+                          status:
+                            description: Status of the condition, one of True, False, Unknown.
+                            enum:
+                            - "True"
+                            - "False"
+                            - Unknown
+                            type: string
+                          type:
+                            description: "Type of condition in `CamelCase` or in `foo.example.com/CamelCase`. \n This must be in abnormal-true polarity, that is, `ErrorFound` or `controller.io/ErrorFound`. \n The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)"
+                            maxLength: 316
+                            pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                            type: string
+                        required:
+                        - message
+                        - reason
+                        - status
+                        - type
+                        type: object
+                      type: array
+                    infos:
+                      description: "Details contains a slice of relevant detail subconditions for this object. \n Subconditions expose detailed information about the object."
                       items:
                         description: "SubCondition is a Condition-like type intended for use as a subcondition inside a DetailedCondition. \n It contains a subset of the Condition fields. \n It is intended for warnings and errors, so `type` names should use abnormal-true polarity, that is, they should be of the form \"ErrorPresent: true\". \n The expected lifecycle for these errors is that they should only be present when the error or warning is, and should be removed when they are not relevant."
                         properties:

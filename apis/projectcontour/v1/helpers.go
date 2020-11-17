@@ -110,6 +110,19 @@ func (dc *DetailedCondition) AddError(errorType, reason, message string) {
 	})
 }
 
+// AddDetail adds an info-level Subcondition to the DetailedCondition.
+// If a SubCondition with the given detailType exists, will overwrite the details.
+func (dc *DetailedCondition) AddDetail(detailType, reason, message string) {
+	message = truncateLongMessage(message)
+
+	dc.Details = append(dc.Details, SubCondition{
+		Type:    detailType,
+		Status:  ConditionTrue,
+		Message: message,
+		Reason:  reason,
+	})
+}
+
 // AddErrorf adds an error-level Subcondition to the DetailedCondition, using
 // fmt.Sprintf on the formatmsg and args params.
 // If a SubCondition with the given errorType exists, will overwrite the details.
@@ -128,6 +141,19 @@ func (dc *DetailedCondition) GetError(errorType string) (SubCondition, bool) {
 	}
 
 	return dc.Errors[i], true
+}
+
+// GetDetail gets a detail of the given detailType.
+// Similar to a hash lookup, will return true in the second value if a match is
+// found, and false otherwise.
+func (dc *DetailedCondition) GetDetail(detailType string) (SubCondition, bool) {
+	i := getIndex(detailType, dc.Details)
+
+	if i == -1 {
+		return SubCondition{}, false
+	}
+
+	return dc.Details[i], true
 }
 
 // AddWarning adds an warning-level Subcondition to the DetailedCondition.

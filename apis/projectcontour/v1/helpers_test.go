@@ -436,6 +436,169 @@ func TestAddWarningConditions(t *testing.T) {
 	}
 }
 
+func TestAddDetailConditions(t *testing.T) {
+
+	tests := map[string]struct {
+		dc            *DetailedCondition
+		subconditions []subConditionDetails
+		want          *DetailedCondition
+	}{
+		"basic detail add": {
+			dc: &DetailedCondition{},
+			subconditions: []subConditionDetails{
+				{
+					condType: "SimpleTest",
+					reason:   "TestReason",
+					message:  "We had a straightforward warning",
+				},
+			},
+			want: &DetailedCondition{
+				Details: []SubCondition{
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason",
+						Message: "We had a straightforward warning",
+						Status:  ConditionTrue,
+					},
+				},
+			},
+		},
+		"multiple reason, multiple type": {
+			dc: &DetailedCondition{},
+			subconditions: []subConditionDetails{
+				{
+					condType: "SimpleTest",
+					reason:   "TestReason",
+					message:  "We had a straightforward warning",
+				},
+				{
+					condType: "SecondTest",
+					reason:   "TestReason2",
+					message:  "We had an extra straightforward warning",
+				},
+			},
+			want: &DetailedCondition{
+				Details: []SubCondition{
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason",
+						Message: "We had a straightforward warning",
+						Status:  ConditionTrue,
+					},
+					{
+						Type:    "SecondTest",
+						Reason:  "TestReason2",
+						Message: "We had an extra straightforward warning",
+						Status:  ConditionTrue,
+					},
+				},
+			},
+		},
+		"same reason, multiple type": {
+			dc: &DetailedCondition{},
+			subconditions: []subConditionDetails{
+				{
+					condType: "SimpleTest",
+					reason:   "TestReason",
+					message:  "We had a straightforward warning",
+				},
+				{
+					condType: "SecondTest",
+					reason:   "TestReason",
+					message:  "We had an extra straightforward warning",
+				},
+			},
+			want: &DetailedCondition{
+				Details: []SubCondition{
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason",
+						Message: "We had a straightforward warning",
+						Status:  ConditionTrue,
+					},
+					{
+						Type:    "SecondTest",
+						Reason:  "TestReason",
+						Message: "We had an extra straightforward warning",
+						Status:  ConditionTrue,
+					},
+				},
+			},
+		},
+		"same reason, same type": {
+			dc: &DetailedCondition{},
+			subconditions: []subConditionDetails{
+				{
+					condType: "SimpleTest",
+					reason:   "TestReason",
+					message:  "We had a straightforward warning",
+				},
+				{
+					condType: "SimpleTest",
+					reason:   "TestReason",
+					message:  "We had an extra straightforward warning",
+				},
+			},
+			want: &DetailedCondition{
+				Details: []SubCondition{
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason",
+						Message: "We had a straightforward warning",
+						Status:  ConditionTrue,
+					},
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason",
+						Message: "We had an extra straightforward warning",
+						Status:  ConditionTrue,
+					},
+				},
+			},
+		},
+		"multiple different reason, same type": {
+			dc: &DetailedCondition{},
+			subconditions: []subConditionDetails{
+				{
+					condType: "SimpleTest",
+					reason:   "TestReason",
+					message:  "We had a straightforward warning",
+				},
+				{
+					condType: "SimpleTest",
+					reason:   "TestReason2",
+					message:  "We had an extra straightforward warning",
+				},
+			},
+			want: &DetailedCondition{
+				Details: []SubCondition{
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason",
+						Message: "We had a straightforward warning",
+						Status:  ConditionTrue,
+					},
+					{
+						Type:    "SimpleTest",
+						Reason:  "TestReason2",
+						Message: "We had an extra straightforward warning",
+						Status:  ConditionTrue,
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+
+		for _, cond := range tc.subconditions {
+			tc.dc.AddDetail(cond.condType, cond.reason, cond.message)
+		}
+
+		assert.Equalf(t, tc.want, tc.dc, "Add error condition failed in test %s", name)
+	}
+}
+
 func TestGetConditionFor(t *testing.T) {
 	tests := map[string]struct {
 		status   HTTPProxyStatus
@@ -624,6 +787,47 @@ func TestGetWarning(t *testing.T) {
 	assert.Equal(t, SubCondition{}, emptySubCond)
 
 }
+
+func TestGetDetail(t *testing.T) {
+
+	dcWithErrors := &DetailedCondition{
+		Details: []SubCondition{
+			{
+				Type:    "SimpleTest1",
+				Reason:  "SimpleReason",
+				Message: "We had a simple warning 1",
+				Status:  ConditionTrue,
+			},
+			{
+				Type:    "SimpleTest2",
+				Reason:  "SimpleReason",
+				Message: "We had a simple warning 2",
+				Status:  ConditionTrue,
+			},
+		},
+	}
+
+	firstSubCond := SubCondition{
+		Type:    "SimpleTest1",
+		Reason:  "SimpleReason",
+		Message: "We had a simple warning 1",
+		Status:  ConditionTrue,
+	}
+
+	gotSubCond, ok := dcWithErrors.GetDetail("SimpleTest1")
+	assert.True(t, ok)
+	assert.Equal(t, firstSubCond, gotSubCond)
+
+	nonExistentCond, ok := dcWithErrors.GetDetail("nonexistent")
+	assert.False(t, ok)
+	assert.Equal(t, SubCondition{}, nonExistentCond)
+
+	dcEmpty := &DetailedCondition{}
+	emptySubCond, ok := dcEmpty.GetDetail("SimpleTest1")
+	assert.False(t, ok)
+	assert.Equal(t, SubCondition{}, emptySubCond)
+}
+
 func TestTruncateLongMessage(t *testing.T) {
 
 	shortmessage := "This is a message shorter than the max length"
