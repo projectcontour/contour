@@ -154,7 +154,6 @@ lint: lint-golint lint-yamllint lint-flags lint-codespell
 
 .PHONY: lint-codespell
 lint-codespell: CODESPELL_SKIP := $(shell cat .codespell.skip | tr \\n ',')
-lint-codespell: CODESPELL_BIN := codespell
 lint-codespell:
 	@./hack/codespell.sh --skip $(CODESPELL_SKIP) --ignore-words .codespell.ignorewords --check-filenames --check-hidden -q2
 
