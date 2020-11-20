@@ -81,7 +81,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 ) *ExtensionCluster {
 	tp, err := timeoutPolicy(ext.Spec.TimeoutPolicy)
 	if err != nil {
-		validCondition.AddErrorf("SpecError", "TimeoutPolicyNotValid",
+		validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "TimeoutPolicyNotValid",
 			"spec.timeoutPolicy failed to parse: %s", err)
 	}
 
@@ -89,7 +89,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	if p.ClientCertificate != nil {
 		clientCertSecret, err = cache.LookupSecret(*p.ClientCertificate, validSecret)
 		if err != nil {
-			validCondition.AddErrorf("TLSError", "SecretNotValid",
+			validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 				"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
 		}
 	}
@@ -127,7 +127,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 
 	if v := ext.Spec.UpstreamValidation; v != nil {
 		if uv, err := cache.LookupUpstreamValidation(v, ext.GetNamespace()); err != nil {
-			validCondition.AddErrorf("SpecError", "TLSUpstreamValidation",
+			validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "TLSUpstreamValidation",
 				"TLS upstream validation policy error: %s", err.Error())
 		} else {
 			extension.UpstreamValidation = uv
@@ -143,7 +143,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		}
 
 		if extension.Protocol != "h2" {
-			validCondition.AddErrorf("SpecError", "InconsistentProtocol",
+			validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "InconsistentProtocol",
 				"upstream TLS validation not supported for %q protocol", extension.Protocol)
 		}
 	}
@@ -160,14 +160,14 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 
 		svc, port, err := cache.LookupService(svcName, intstr.FromInt(target.Port))
 		if err != nil {
-			validCondition.AddErrorf("ServiceError", "ServiceUnresolvedReference",
+			validCondition.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference",
 				"unresolved service %q: %s", svcName, err)
 			continue
 		}
 
 		// TODO(jpeach): Add ExternalName support in https://github.com/projectcontour/contour/issues/2875.
 		if svc.Spec.ExternalName != "" {
-			validCondition.AddErrorf("ServiceError", "UnsupportedServiceType",
+			validCondition.AddErrorf(contour_api_v1.ConditionTypeServiceError, "UnsupportedServiceType",
 				"Service %q is of unsupported type %q.", svcName, corev1.ServiceTypeExternalName)
 			continue
 		}
