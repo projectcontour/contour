@@ -18,7 +18,7 @@ This document outlines a specification to allow an Ingress Controller to referen
 
 Currently the Secret containing the TLS certificate must be co-located in the same namespace as the Ingress or root IngressRoute object referencing that secret.
 This requirement complicates deployment patterns where wildcard TLS certificates are used, specifically the use of a wildcard certificate to secure a number of subdomains where the Ingress/IngressRoute records for those subdomains do not share the same namespace as the wildcard TLS certificate.
-For example, presenting foo.example.com using the certifiate for \*.example.com when the Ingress/IngressRoute object for foo.example.com does not share the same namespace as the Secret containing \*.example.com.
+For example, presenting foo.example.com using the certificate for \*.example.com when the Ingress/IngressRoute object for foo.example.com does not share the same namespace as the Secret containing \*.example.com.
 
 This proposal introduces a specification, in the form of a simple CRD, whereby the permission to access the contents of a secret containing a TLS certificate is delegated from the owning namespace to one or more other namespaces.
 
