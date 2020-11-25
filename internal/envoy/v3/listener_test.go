@@ -52,7 +52,6 @@ func TestProtoNamesForVersions(t *testing.T) {
 	assert.Equal(t, ProtoNamesForVersions(HTTPVersion3), []string(nil))
 	assert.Equal(t, ProtoNamesForVersions(HTTPVersion1, HTTPVersion2), []string{"h2", "http/1.1"})
 }
-
 func TestListener(t *testing.T) {
 	tests := map[string]struct {
 		name, address string
@@ -1005,15 +1004,186 @@ func TestTCPProxy(t *testing.T) {
 // TestBuilderValidation tests that validation checks that
 // DefaultFilters adds the required HTTP connection manager filters.
 func TestBuilderValidation(t *testing.T) {
-	if err := HTTPConnectionManagerBuilder().Validate(); err == nil {
-		t.Errorf("ConnectionManager with no filters passed validation")
+
+	assert.Error(t, HTTPConnectionManagerBuilder().Validate(),
+		"ConnectionManager with no filters should not pass validation")
+
+	assert.Error(t, HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
+		Name: "foo",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: &any.Any{
+				TypeUrl: "foo",
+			},
+		},
+	}).Validate(),
+		"ConnectionManager with only non-router filter should not pass validation")
+
+	assert.NoError(t, HTTPConnectionManagerBuilder().DefaultFilters().Validate(),
+		"ConnectionManager with default filters failed validation")
+
+	badBuilder := HTTPConnectionManagerBuilder().DefaultFilters()
+	badBuilder.filters = append(badBuilder.filters, &http.HttpFilter{
+		Name: "foo",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: &any.Any{
+				TypeUrl: "foo",
+			},
+		},
+	})
+	assert.Errorf(t, badBuilder.Validate(), "Adding a filter after the Router filter should fail")
+}
+
+func TestAddFilter(t *testing.T) {
+
+	tests := map[string]struct {
+		builder *httpConnectionManagerBuilder
+		add     *http.HttpFilter
+		want    []*http.HttpFilter
+	}{
+		"Nil add to empty builder": {
+			builder: HTTPConnectionManagerBuilder(),
+			add:     nil,
+			want:    nil,
+		},
+		"Add a single router filter to empty builder": {
+			builder: HTTPConnectionManagerBuilder(),
+			add: &http.HttpFilter{
+				Name: "router",
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: &any.Any{
+						TypeUrl: HTTPFilterRouter,
+					},
+				},
+			},
+			want: []*http.HttpFilter{
+				{
+					Name: "router",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: &any.Any{
+							TypeUrl: HTTPFilterRouter,
+						},
+					},
+				},
+			},
+		},
+		"Add a single non-router filter to empty builder": {
+			builder: HTTPConnectionManagerBuilder(),
+			add: &http.HttpFilter{
+				Name: "grpcweb",
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: &any.Any{
+						TypeUrl: HTTPFilterGrpcWeb,
+					},
+				},
+			},
+			want: []*http.HttpFilter{
+				{
+					Name: "grpcweb",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: &any.Any{
+							TypeUrl: HTTPFilterGrpcWeb,
+						},
+					},
+				},
+			},
+		},
+		"Add a filter to a builder with a router": {
+			builder: HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{
+				Name: "router",
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: &any.Any{
+						TypeUrl: HTTPFilterRouter,
+					},
+				},
+			}),
+			add: &http.HttpFilter{
+				Name: "grpcweb",
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: &any.Any{
+						TypeUrl: HTTPFilterGrpcWeb,
+					},
+				},
+			},
+			want: []*http.HttpFilter{
+				{
+					Name: "grpcweb",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: &any.Any{
+							TypeUrl: HTTPFilterGrpcWeb,
+						},
+					},
+				},
+				{
+					Name: "router",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: &any.Any{
+							TypeUrl: HTTPFilterRouter,
+						},
+					},
+				},
+			},
+		},
+		"Add to the default filters": {
+			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
+			add:     FilterExternalAuthz("test", false, timeout.Setting{}),
+			want: []*http.HttpFilter{
+				{
+					Name: "compressor",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+							CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+								Name: "gzip",
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterGzip,
+								},
+							},
+						}),
+					},
+				},
+				{
+					Name: "grpcweb",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: &any.Any{
+							TypeUrl: HTTPFilterGrpcWeb,
+						},
+					},
+				},
+				{
+					Name: "cors",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: &any.Any{
+							TypeUrl: HTTPFilterCORS,
+						},
+					},
+				},
+				FilterExternalAuthz("test", false, timeout.Setting{}),
+				{
+					Name: "router",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: &any.Any{
+							TypeUrl: HTTPFilterRouter,
+						},
+					},
+				},
+			},
+		},
 	}
 
-	if err := HTTPConnectionManagerBuilder().AddFilter(&http.HttpFilter{Name: "foo"}).Validate(); err == nil {
-		t.Errorf("ConnectionManager with no filters passed validation")
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tc.builder.AddFilter(tc.add)
+			assert.Equal(t, tc.want, got.filters)
+		})
 	}
 
-	if err := HTTPConnectionManagerBuilder().DefaultFilters().Validate(); err != nil {
-		t.Errorf("ConnectionManager with default filters failed validation: %s", err)
-	}
+	assert.Panics(t, func() {
+		HTTPConnectionManagerBuilder().DefaultFilters().AddFilter(&http.HttpFilter{
+			Name: "router",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: &any.Any{
+					TypeUrl: HTTPFilterRouter,
+				},
+			},
+		})
+	})
 }
