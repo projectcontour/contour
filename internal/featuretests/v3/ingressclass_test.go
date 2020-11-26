@@ -152,7 +152,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 	{
 		// --- ingress class matches explicitly
 		proxyValid := fixture.NewProxy(HTTPProxyName).
-			Annotate("contour.heptio.com/ingress.class", "linkerd").
+			Annotate("projectcontour.io/ingress.class", "linkerd").
 			WithSpec(contour_api_v1.HTTPProxySpec{
 				VirtualHost: &contour_api_v1.VirtualHost{
 					Fqdn: "www.example.com",

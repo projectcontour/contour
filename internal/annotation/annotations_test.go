@@ -101,20 +101,6 @@ func TestParseUpstreamProtocols(t *testing.T) {
 				"https": "h2",
 			},
 		},
-		"deprecated multiple values": {
-			a: map[string]string{
-				"contour.heptio.com/upstream-protocol.h2": "80,http,443,https",
-				"projectcontour.io/upstream-protocol.h2c": "8080,http",
-				"projectcontour.io/upstream-protocol.tls": "443,https",
-			},
-			want: map[string]string{
-				"80":    "h2",
-				"8080":  "h2c",
-				"http":  "h2c",
-				"443":   "tls",
-				"https": "tls",
-			},
-		},
 	}
 
 	for name, tc := range tests {
@@ -180,78 +166,6 @@ func TestWebsocketRoutes(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": " /ws1, , /ws2 ",
-					},
-				},
-			},
-			want: map[string]bool{
-				"/ws1": true,
-				"/ws2": true,
-			},
-		},
-		"legacy empty": {
-			a: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"contour.heptio.com/websocket-routes": "",
-					},
-				},
-			},
-			want: map[string]bool{},
-		},
-		"legacy empty with spaces": {
-			a: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"contour.heptio.com/websocket-routes": ", ,",
-					},
-				},
-			},
-			want: map[string]bool{},
-		},
-		"legacy single value": {
-			a: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"contour.heptio.com/websocket-routes": "/ws1",
-					},
-				},
-			},
-			want: map[string]bool{
-				"/ws1": true,
-			},
-		},
-		"legacy multiple values": {
-			a: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"contour.heptio.com/websocket-routes": "/ws1,/ws2",
-					},
-				},
-			},
-			want: map[string]bool{
-				"/ws1": true,
-				"/ws2": true,
-			},
-		},
-		"legacy multiple values with spaces and invalid entries": {
-			a: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"contour.heptio.com/websocket-routes": " /ws1, , /ws2 ",
-					},
-				},
-			},
-			want: map[string]bool{
-				"/ws1": true,
-				"/ws2": true,
-			},
-		},
-		"mixed": {
-			a: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"contour.heptio.com/websocket-routes": " /ws1,  ",
-						"projectcontour.io/websocket-routes":  " , /ws2 ",
 					},
 				},
 			},
@@ -336,16 +250,6 @@ func TestAnnotationCompat(t *testing.T) {
 				},
 			},
 		},
-		"contour.heptio.com/annotation": {
-			value: "100",
-			svc: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"contour.heptio.com/annotation": "100",
-					},
-				},
-			},
-		},
 		"projectcontour.io/annotation": {
 			value: "200",
 			svc: &v1.Service{
@@ -356,22 +260,11 @@ func TestAnnotationCompat(t *testing.T) {
 				},
 			},
 		},
-		"projectcontour.io takes precedence": {
-			value: "200",
-			svc: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"contour.heptio.com/annotation": "100",
-						"projectcontour.io/annotation":  "200",
-					},
-				},
-			},
-		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := CompatAnnotation(tc.svc, "annotation")
+			got := ContourAnnotation(tc.svc, "annotation")
 			want := tc.value
 			if got != want {
 				t.Fatalf("got: %v, want: %v", got, want)
@@ -392,11 +285,8 @@ func TestAnnotationKindValidation(t *testing.T) {
 		"service": {
 			obj: &v1.Service{},
 			annotations: map[string]status{
-				"foo.heptio.com/annotation": {
+				"foo.invalid.com/annotation": {
 					known: false, valid: false,
-				},
-				"contour.heptio.com/annotation": {
-					known: true, valid: false,
 				},
 				"projectcontour.io/annotation": {
 					known: true, valid: false,
@@ -482,18 +372,6 @@ func TestMatchIngressClass(t *testing.T) {
 			},
 			want: []bool{false, false},
 		},
-		"ingress nginx contour.heptio.com/ingress.class": {
-			fixture: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": "nginx",
-					},
-				},
-			},
-			want: []bool{false, false},
-		},
 		"ingress nginx projectcontour.io/ingress.class": {
 			fixture: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -513,18 +391,6 @@ func TestMatchIngressClass(t *testing.T) {
 					Namespace: "default",
 					Annotations: map[string]string{
 						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
-					},
-				},
-			},
-			want: []bool{true, true},
-		},
-		"ingress contour contour.heptio.com/ingress.class": {
-			fixture: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},

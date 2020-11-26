@@ -245,7 +245,7 @@ func TestClusterVisit(t *testing.T) {
 					"default",
 					"kuard",
 					map[string]string{
-						"contour.heptio.com/upstream-protocol.h2c": "80,http",
+						"projectcontour.io/upstream-protocol.h2c": "80,http",
 					},
 					v1.ServicePort{
 						Protocol: "TCP",
@@ -714,45 +714,6 @@ func TestClusterVisit(t *testing.T) {
 						Annotations: map[string]string{
 							"projectcontour.io/num-retries": "7",
 							"projectcontour.io/retry-on":    "gateway-error",
-						},
-					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromString("https"),
-						},
-					},
-				},
-				service("default", "kuard",
-					v1.ServicePort{
-						Name:       "https",
-						Protocol:   "TCP",
-						Port:       443,
-						TargetPort: intstr.FromInt(8443),
-					},
-				),
-			},
-			want: clustermap(
-				&envoy_cluster_v3.Cluster{
-					Name:                 "default/kuard/443/da39a3ee5e",
-					AltStatName:          "default_kuard_443",
-					ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
-					EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
-						EdsConfig:   envoy_v3.ConfigSource("contour"),
-						ServiceName: "default/kuard/https",
-					},
-				}),
-		},
-
-		"contour.heptio.com/num-retries annotation": {
-			objs: []interface{}{
-				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"contour.heptio.com/num-retries": "7",
-							"projectcontour.io/retry-on":     "gateway-error",
 						},
 					},
 					Spec: v1beta1.IngressSpec{

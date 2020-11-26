@@ -130,7 +130,7 @@ func escapeHeaderValue(value string) string {
 
 // ingressRetryPolicy builds a RetryPolicy from ingress annotations.
 func ingressRetryPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) *RetryPolicy {
-	retryOn := annotation.CompatAnnotation(ingress, "retry-on")
+	retryOn := annotation.ContourAnnotation(ingress, "retry-on")
 	if len(retryOn) < 1 {
 		return nil
 	}
@@ -155,12 +155,12 @@ func ingressRetryPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) *Retry
 }
 
 func ingressTimeoutPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) TimeoutPolicy {
-	response := annotation.CompatAnnotation(ingress, "response-timeout")
+	response := annotation.ContourAnnotation(ingress, "response-timeout")
 	if len(response) == 0 {
 		// Note: due to a misunderstanding the name of the annotation is
 		// request timeout, but it is actually applied as a timeout on
 		// the response body.
-		response = annotation.CompatAnnotation(ingress, "request-timeout")
+		response = annotation.ContourAnnotation(ingress, "request-timeout")
 		if len(response) == 0 {
 			return TimeoutPolicy{
 				ResponseTimeout: timeout.DefaultSetting(),
