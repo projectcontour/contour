@@ -26,10 +26,46 @@
   status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
-# operators or for upgrade testing.
+# users or for upgrade testing.
 #
 # kubectl apply https://projectcontour.io/quickstart/v1.4.0/contour.yaml
 [[redirects]]
   from = "/quickstart/*/contour.yaml"
   to = "https://raw.githubusercontent.com/projectcontour/contour/:splat/examples/render/contour.yaml"
   status = 302
+
+# Redirect /quickstart/operator.yaml to the deployment that matches :latest.
+#
+# kubectl apply https://projectcontour.io/quickstart/operator.yaml
+[[redirects]]
+from = "/quickstart/operator.yaml"
+# TODO [danehans]: Update main -> v1.11.0 when operator v1alpha1 is tagged.
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/main/examples/operator/operator.yaml"
+status = 302
+
+# Redirect versioned quickstarts so that they can easily be referenced by
+# users or for upgrade testing.
+#
+# kubectl apply https://projectcontour.io/quickstart/v1.11.0/operator.yaml
+[[redirects]]
+from = "/quickstart/*/operator.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/operator/operator.yaml"
+status = 302
+
+# Redirect /quickstart/contour-custom-resource.yaml to the Contour custom resource that matches :latest.
+#
+# kubectl apply https://projectcontour.io/quickstart/contour-custom-resource.yaml
+[[redirects]]
+from = "/quickstart/contour-custom-resource.yaml"
+# TODO [danehans]: Update main -> v1.11.0 when operator v1alpha1 is tagged.
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/main/examples/contour/contour.yaml"
+status = 302
+
+# Redirect versioned quickstarts so that they can easily be referenced by
+# users or for upgrade testing.
+#
+# kubectl apply https://projectcontour.io/quickstart/v1.11.0/contour-custom-resource.yaml
+[[redirects]]
+from = "/quickstart/*/contour-custom-resource.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/contour/contour.yaml"
+status = 302
