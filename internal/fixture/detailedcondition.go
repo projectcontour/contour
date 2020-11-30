@@ -15,6 +15,7 @@ package fixture
 
 import (
 	v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DetailedConditionBuilder is a builder object to make creating HTTPProxy fixtures more succinct.
@@ -23,7 +24,7 @@ type DetailedConditionBuilder v1.DetailedCondition
 // NewValidCondition creates a new DetailedConditionBuilder.
 func NewValidCondition() *DetailedConditionBuilder {
 	b := &DetailedConditionBuilder{
-		Condition: v1.Condition{
+		Condition: metav1.Condition{
 			Type: v1.ValidConditionType,
 		},
 	}
@@ -39,7 +40,7 @@ func (dcb *DetailedConditionBuilder) WithGeneration(gen int64) *DetailedConditio
 func (dcb *DetailedConditionBuilder) Valid() v1.DetailedCondition {
 
 	dc := (*v1.DetailedCondition)(dcb)
-	dc.Status = v1.ConditionTrue
+	dc.Status = metav1.ConditionTrue
 	dc.Reason = "Valid"
 	dc.Message = "Valid HTTPProxy"
 

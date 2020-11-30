@@ -19,12 +19,12 @@ package contour
 import (
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/prometheus/client_golang/prometheus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -113,9 +113,9 @@ func calculateRouteMetric(updates []*status.ProxyUpdate) metrics.RouteMetric {
 func calcMetrics(u *status.ProxyUpdate, metricValid map[metrics.Meta]int, metricInvalid map[metrics.Meta]int, metricOrphaned map[metrics.Meta]int, metricTotal map[metrics.Meta]int) {
 	validCond := u.ConditionFor(status.ValidCondition)
 	switch validCond.Status {
-	case contour_api_v1.ConditionTrue:
+	case metav1.ConditionTrue:
 		metricValid[metrics.Meta{VHost: u.Vhost, Namespace: u.Fullname.Namespace}]++
-	case contour_api_v1.ConditionFalse:
+	case metav1.ConditionFalse:
 		if _, ok := validCond.GetError(string(status.OrphanedConditionType)); ok {
 			metricOrphaned[metrics.Meta{Namespace: u.Fullname.Namespace}]++
 		} else {

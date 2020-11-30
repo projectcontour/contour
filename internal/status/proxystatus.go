@@ -16,7 +16,7 @@ import (
 	"fmt"
 
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -32,7 +32,7 @@ const ValidCondition ConditionType = "Valid"
 type ProxyUpdate struct {
 	Fullname       types.NamespacedName
 	Generation     int64
-	TransitionTime v1.Time
+	TransitionTime metav1.Time
 	Vhost          string
 
 	// Conditions holds all the DetailedConditions to add to the object
@@ -50,11 +50,11 @@ func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projectcontour.Detailed
 		newDc.Type = string(cond)
 		newDc.ObservedGeneration = pu.Generation
 		if cond == ValidCondition {
-			newDc.Status = projectcontour.ConditionTrue
+			newDc.Status = metav1.ConditionTrue
 			newDc.Reason = "Valid"
 			newDc.Message = "Valid HTTPProxy"
 		} else {
-			newDc.Status = projectcontour.ConditionFalse
+			newDc.Status = metav1.ConditionFalse
 		}
 		pu.Conditions[cond] = newDc
 		return newDc
@@ -97,11 +97,11 @@ func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
 	validCond := proxy.Status.GetConditionFor(projectcontour.ValidConditionType)
 
 	switch validCond.Status {
-	case projectcontour.ConditionTrue:
+	case metav1.ConditionTrue:
 		// TODO(youngnick): bring the string(ProxyStatusValid) constants in here?
 		proxy.Status.CurrentStatus = string(ProxyStatusValid)
 		proxy.Status.Description = validCond.Message
-	case projectcontour.ConditionFalse:
+	case metav1.ConditionFalse:
 		if orphanCond, ok := validCond.GetError(string(OrphanedConditionType)); ok {
 			proxy.Status.CurrentStatus = string(ProxyStatusOrphaned)
 			proxy.Status.Description = orphanCond.Message

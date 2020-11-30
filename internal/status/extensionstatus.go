@@ -20,7 +20,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/k8s"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -42,9 +42,9 @@ func (c *ConditionCache) ConditionFor(condType ConditionType) *contour_api_v1.De
 	}
 
 	cond := &contour_api_v1.DetailedCondition{
-		Condition: contour_api_v1.Condition{
+		Condition: metav1.Condition{
 			Type:   string(condType),
-			Status: contour_api_v1.ConditionUnknown,
+			Status: metav1.ConditionUnknown,
 		},
 	}
 
@@ -58,7 +58,7 @@ type ExtensionCacheEntry struct {
 
 	Name           types.NamespacedName
 	Generation     int64
-	TransitionTime v1.Time
+	TransitionTime metav1.Time
 }
 
 var _ CacheEntry = &ExtensionCacheEntry{}
@@ -111,7 +111,7 @@ func ExtensionAccessor(c *Cache, ext *contour_api_v1alpha1.ExtensionService) (*E
 		entry = &ExtensionCacheEntry{
 			Name:           k8s.NamespacedNameOf(ext),
 			Generation:     ext.GetGeneration(),
-			TransitionTime: v1.NewTime(time.Now()),
+			TransitionTime: metav1.NewTime(time.Now()),
 		}
 
 		// Populate the cache with the new entry
