@@ -17,10 +17,6 @@
 // +groupName=projectcontour.io
 package v1
 
-import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
 // SubCondition is a Condition-like type intended for use as a subcondition inside a DetailedCondition.
 //
 // It contains a subset of the Condition fields.
@@ -45,7 +41,7 @@ type SubCondition struct {
 	// +required
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=True;False;Unknown
-	Status metav1.ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status"`
+	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status"`
 	// Reason contains a programmatic identifier indicating the reason for the condition's last transition.
 	// Producers of specific condition types may define expected values and meanings for this field,
 	// and whether the values are considered a guaranteed API.
@@ -102,7 +98,7 @@ type SubCondition struct {
 // (if there is one and only one entry in total across both the `errors` and `warnings` slices), or
 // `MultipleReasons` if there is more than one entry.
 type DetailedCondition struct {
-	metav1.Condition `json:",inline"`
+	Condition `json:",inline"`
 	// Errors contains a slice of relevant error subconditions for this object.
 	//
 	// Subconditions are expected to appear when relevant (when there is a error), and disappear when not relevant.
