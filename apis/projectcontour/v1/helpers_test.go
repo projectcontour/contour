@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type subConditionDetails struct {
@@ -39,7 +38,7 @@ func TestAddErrorConditions(t *testing.T) {
 	}{
 		"basic error add, negative polarity": {
 			dc: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type: "AnError",
 				},
 			},
@@ -51,9 +50,9 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type:    "AnError",
-					Status:  metav1.ConditionTrue,
+					Status:  ConditionTrue,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
@@ -62,14 +61,14 @@ func TestAddErrorConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
 		},
 		"basic error add, Positive polarity": {
 			dc: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type: "Valid",
 				},
 			},
@@ -81,9 +80,9 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type:    "Valid",
-					Status:  metav1.ConditionFalse,
+					Status:  ConditionFalse,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
@@ -92,7 +91,7 @@ func TestAddErrorConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
@@ -100,7 +99,7 @@ func TestAddErrorConditions(t *testing.T) {
 
 		"multiple reason, multiple type": {
 			dc: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type: "Valid",
 				},
 			},
@@ -117,9 +116,9 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type:    "Valid",
-					Status:  metav1.ConditionFalse,
+					Status:  ConditionFalse,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
@@ -128,20 +127,20 @@ func TestAddErrorConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 					{
 						Type:    "SecondTest",
 						Reason:  "TestReason2",
 						Message: "We had an extra straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
 		},
 		"same reason, multiple type": {
 			dc: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type: "Valid",
 				},
 			},
@@ -158,9 +157,9 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type:    "Valid",
-					Status:  metav1.ConditionFalse,
+					Status:  ConditionFalse,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
@@ -169,20 +168,20 @@ func TestAddErrorConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 					{
 						Type:    "SecondTest",
 						Reason:  "TestReason",
 						Message: "We had an extra straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
 		},
 		"same reason, same type": {
 			dc: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type: "Valid",
 				},
 			},
@@ -199,9 +198,9 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type:    "Valid",
-					Status:  metav1.ConditionFalse,
+					Status:  ConditionFalse,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
@@ -210,20 +209,20 @@ func TestAddErrorConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 					{
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had an extra straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
 		},
 		"multiple different reason, same type": {
 			dc: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type: "Valid",
 				},
 			},
@@ -240,9 +239,9 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 			},
 			want: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type:    "Valid",
-					Status:  metav1.ConditionFalse,
+					Status:  ConditionFalse,
 					Reason:  "ErrorPresent",
 					Message: "At least one error present, see Errors for details",
 				},
@@ -251,13 +250,13 @@ func TestAddErrorConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 					{
 						Type:    "SimpleTest",
 						Reason:  "TestReason2",
 						Message: "We had an extra straightforward error",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
@@ -296,7 +295,7 @@ func TestAddWarningConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward warning",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
@@ -321,13 +320,13 @@ func TestAddWarningConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward warning",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 					{
 						Type:    "SecondTest",
 						Reason:  "TestReason2",
 						Message: "We had an extra straightforward warning",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
@@ -352,13 +351,13 @@ func TestAddWarningConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward warning",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 					{
 						Type:    "SecondTest",
 						Reason:  "TestReason",
 						Message: "We had an extra straightforward warning",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
@@ -383,13 +382,13 @@ func TestAddWarningConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward warning",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 					{
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had an extra straightforward warning",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
@@ -414,13 +413,13 @@ func TestAddWarningConditions(t *testing.T) {
 						Type:    "SimpleTest",
 						Reason:  "TestReason",
 						Message: "We had a straightforward warning",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 					{
 						Type:    "SimpleTest",
 						Reason:  "TestReason2",
 						Message: "We had an extra straightforward warning",
-						Status:  metav1.ConditionTrue,
+						Status:  ConditionTrue,
 					},
 				},
 			},
@@ -447,30 +446,30 @@ func TestGetConditionFor(t *testing.T) {
 			status: HTTPProxyStatus{
 				Conditions: []DetailedCondition{
 					{
-						Condition: metav1.Condition{
+						Condition: Condition{
 							Type:    "Valid",
 							Reason:  "valid",
 							Message: "valid HTTPProxy",
-							Status:  metav1.ConditionTrue,
+							Status:  ConditionTrue,
 						},
 					},
 					{
-						Condition: metav1.Condition{
+						Condition: Condition{
 							Type:    "SomeError",
 							Reason:  "ErrorOccurred",
 							Message: "Some error occurred.",
-							Status:  metav1.ConditionTrue,
+							Status:  ConditionTrue,
 						},
 					},
 				},
 			},
 			condType: "Valid",
 			want: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type:    "Valid",
 					Reason:  "valid",
 					Message: "valid HTTPProxy",
-					Status:  metav1.ConditionTrue,
+					Status:  ConditionTrue,
 				},
 			},
 		},
@@ -478,30 +477,30 @@ func TestGetConditionFor(t *testing.T) {
 			status: HTTPProxyStatus{
 				Conditions: []DetailedCondition{
 					{
-						Condition: metav1.Condition{
+						Condition: Condition{
 							Type:    "Valid",
 							Reason:  "valid",
 							Message: "valid HTTPProxy",
-							Status:  metav1.ConditionTrue,
+							Status:  ConditionTrue,
 						},
 					},
 					{
-						Condition: metav1.Condition{
+						Condition: Condition{
 							Type:    "SomeError",
 							Reason:  "ErrorOccurred",
 							Message: "Some error occurred.",
-							Status:  metav1.ConditionTrue,
+							Status:  ConditionTrue,
 						},
 					},
 				},
 			},
 			condType: "SomeError",
 			want: &DetailedCondition{
-				Condition: metav1.Condition{
+				Condition: Condition{
 					Type:    "SomeError",
 					Reason:  "ErrorOccurred",
 					Message: "Some error occurred.",
-					Status:  metav1.ConditionTrue,
+					Status:  ConditionTrue,
 				},
 			},
 		},
@@ -509,19 +508,19 @@ func TestGetConditionFor(t *testing.T) {
 			status: HTTPProxyStatus{
 				Conditions: []DetailedCondition{
 					{
-						Condition: metav1.Condition{
+						Condition: Condition{
 							Type:    "Valid",
 							Reason:  "valid",
 							Message: "valid HTTPProxy",
-							Status:  metav1.ConditionTrue,
+							Status:  ConditionTrue,
 						},
 					},
 					{
-						Condition: metav1.Condition{
+						Condition: Condition{
 							Type:    "SomeError",
 							Reason:  "ErrorOccurred",
 							Message: "Some error occurred.",
-							Status:  metav1.ConditionTrue,
+							Status:  ConditionTrue,
 						},
 					},
 				},
@@ -552,13 +551,13 @@ func TestGetError(t *testing.T) {
 				Type:    "SimpleTest1",
 				Reason:  "SimpleReason",
 				Message: "We had a simple error 1",
-				Status:  metav1.ConditionTrue,
+				Status:  ConditionTrue,
 			},
 			{
 				Type:    "SimpleTest2",
 				Reason:  "SimpleReason",
 				Message: "We had a simple error 2",
-				Status:  metav1.ConditionTrue,
+				Status:  ConditionTrue,
 			},
 		},
 	}
@@ -567,7 +566,7 @@ func TestGetError(t *testing.T) {
 		Type:    "SimpleTest1",
 		Reason:  "SimpleReason",
 		Message: "We had a simple error 1",
-		Status:  metav1.ConditionTrue,
+		Status:  ConditionTrue,
 	}
 
 	gotSubCond, ok := dcWithErrors.GetError("SimpleTest1")
@@ -593,13 +592,13 @@ func TestGetWarning(t *testing.T) {
 				Type:    "SimpleTest1",
 				Reason:  "SimpleReason",
 				Message: "We had a simple warning 1",
-				Status:  metav1.ConditionTrue,
+				Status:  ConditionTrue,
 			},
 			{
 				Type:    "SimpleTest2",
 				Reason:  "SimpleReason",
 				Message: "We had a simple warning 2",
-				Status:  metav1.ConditionTrue,
+				Status:  ConditionTrue,
 			},
 		},
 	}
@@ -608,7 +607,7 @@ func TestGetWarning(t *testing.T) {
 		Type:    "SimpleTest1",
 		Reason:  "SimpleReason",
 		Message: "We had a simple warning 1",
-		Status:  metav1.ConditionTrue,
+		Status:  ConditionTrue,
 	}
 
 	gotSubCond, ok := dcWithErrors.GetWarning("SimpleTest1")
