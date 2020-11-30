@@ -415,34 +415,6 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
-	i10b := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "two-rules",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"contour.heptio.com/tls-minimum-protocol-version": "1.3",
-			},
-		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
-				Hosts:      []string{"b.example.com"},
-				SecretName: sec1.Name,
-			}},
-			Rules: []v1beta1.IngressRule{{
-				Host: "b.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromString("http"),
-							},
-						}},
-					},
-				},
-			}},
-		},
-	}
 
 	// i11 has a websocket route
 	i11 := &v1beta1.Ingress{
@@ -450,7 +422,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "websocket",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/websocket-routes": "/ws1 , /ws2",
+				"projectcontour.io/websocket-routes": "/ws1 , /ws2",
 			},
 		},
 		Spec: v1beta1.IngressSpec{
@@ -481,7 +453,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/request-timeout": "peanut",
+				"projectcontour.io/request-timeout": "peanut",
 			},
 		},
 		Spec: v1beta1.IngressSpec{
@@ -507,7 +479,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/request-timeout": "1m30s", // 90 seconds y'all
+				"projectcontour.io/request-timeout": "1m30s", // 90 seconds y'all
 			},
 		},
 		Spec: v1beta1.IngressSpec{
@@ -533,7 +505,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "timeout",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/request-timeout": "infinite",
+				"projectcontour.io/request-timeout": "infinite",
 			},
 		},
 		Spec: v1beta1.IngressSpec{
@@ -678,59 +650,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	i14a := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "timeout",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/retry-on":         "gateway-error",
-				"projectcontour.io/num-retries":      "6",
-				"contour.heptio.com/per-try-timeout": "10s",
-			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromString("http"),
-							},
-						}},
-					},
-				},
-			}},
-		},
-	}
-	i14b := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "timeout",
-			Namespace: "default",
-			Annotations: map[string]string{
-				"projectcontour.io/retry-on":         "gateway-error",
-				"contour.heptio.com/num-retries":     "6",
-				"contour.heptio.com/per-try-timeout": "10s",
-			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromString("http"),
-							},
-						}},
-					},
-				},
-			}},
-		},
-	}
-	i14c := &v1beta1.Ingress{
+	i14 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "timeout",
 			Namespace: "default",
@@ -864,7 +784,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "kuard",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.h2c": "80,http",
+				"projectcontour.io/upstream-protocol.h2c": "80,http",
 			},
 		},
 		Spec: v1.ServiceSpec{
@@ -882,46 +802,13 @@ func TestDAGInsert(t *testing.T) {
 			Name:      s3a.Name,
 			Namespace: s3a.Namespace,
 			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.h2": "80,http",
+				"projectcontour.io/upstream-protocol.h2": "80,http",
 			},
 		},
 		Spec: s3a.Spec,
 	}
 
 	s3c := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      s3b.Name,
-			Namespace: s3b.Namespace,
-			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.tls": "80,http",
-			},
-		},
-		Spec: s3b.Spec,
-	}
-
-	s3d := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      s3b.Name,
-			Namespace: s3b.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/upstream-protocol.h2c": "80,http",
-			},
-		},
-		Spec: s3b.Spec,
-	}
-
-	s3e := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      s3b.Name,
-			Namespace: s3b.Namespace,
-			Annotations: map[string]string{
-				"projectcontour.io/upstream-protocol.h2": "80,http",
-			},
-		},
-		Spec: s3b.Spec,
-	}
-
-	s3f := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      s3b.Name,
 			Namespace: s3b.Namespace,
@@ -1295,7 +1182,7 @@ func TestDAGInsert(t *testing.T) {
 			Name:      "kuard",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/upstream-protocol.tls": "8080",
+				"projectcontour.io/upstream-protocol.tls": "8080",
 			},
 		},
 		Spec: v1.ServiceSpec{
@@ -3678,35 +3565,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert ingress w/ legacy tls min proto annotation": {
-			objs: []interface{}{
-				i10b,
-				sec1,
-				s1,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("b.example.com", prefixroute("/", service(s1))),
-					),
-				}, &Listener{
-					Port: 443,
-					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "b.example.com",
-								routes: routes(
-									prefixroute("/", service(s1)),
-								),
-							},
-							MinTLSVersion: "1.3",
-							Secret:        secret(sec1),
-						},
-					),
-				},
-			),
-		},
 		"insert ingress w/ websocket route annotation": {
 			objs: []interface{}{
 				i11,
@@ -3960,53 +3818,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert ingress with retrypolicy": {
-			objs: []interface{}{
-				i14a,
-				s1,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
-							Clusters:           clustermap(s1),
-							RetryPolicy: &RetryPolicy{
-								RetryOn:       "gateway-error",
-								NumRetries:    6,
-								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
-							},
-						}),
-					),
-				},
-			),
-		},
-		"insert ingress with legacy retrypolicy": {
-			objs: []interface{}{
-				i14b,
-				s1,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
-							Clusters:           clustermap(s1),
-							RetryPolicy: &RetryPolicy{
-								RetryOn:       "gateway-error",
-								NumRetries:    6,
-								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
-							},
-						}),
-					),
-				},
-			),
-		},
 		"insert ingress with timeout policy": {
 			objs: []interface{}{
-				i14c,
+				i14,
 				s1,
 			},
 			want: listeners(
@@ -4090,79 +3904,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"deprecated h2c service annotation": {
-			objs: []interface{}{
-				i3a, s3a,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("*",
-							prefixroute("/", &Service{
-								Protocol: "h2c",
-								Weighted: WeightedService{
-									Weight:           1,
-									ServiceName:      s3d.Name,
-									ServiceNamespace: s3d.Namespace,
-									ServicePort:      s3d.Spec.Ports[0],
-								},
-							}),
-						),
-					),
-				},
-			),
-		},
-		"deprecated h2 service annotation": {
-			objs: []interface{}{
-				i3a, s3b,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("*",
-							prefixroute("/", &Service{
-								Protocol: "h2",
-								Weighted: WeightedService{
-									Weight:           1,
-									ServiceName:      s3e.Name,
-									ServiceNamespace: s3e.Namespace,
-									ServicePort:      s3e.Spec.Ports[0],
-								},
-							}),
-						),
-					),
-				},
-			),
-		},
-		"deprecated tls service annotation": {
-			objs: []interface{}{
-				i3a, s3c,
-			},
-			want: listeners(
-				&Listener{
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("*",
-							prefixroute("/", &Service{
-								Protocol: "tls",
-								Weighted: WeightedService{
-									Weight:           1,
-									ServiceName:      s3f.Name,
-									ServiceNamespace: s3f.Namespace,
-									ServicePort:      s3f.Spec.Ports[0],
-								},
-							}),
-						),
-					),
-				},
-			),
-		},
-
 		"h2c service annotation": {
 			objs: []interface{}{
-				i3a, s3d,
+				i3a, s3a,
 			},
 			want: listeners(
 				&Listener{
@@ -4185,7 +3929,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"h2 service annotation": {
 			objs: []interface{}{
-				i3a, s3e,
+				i3a, s3b,
 			},
 			want: listeners(
 				&Listener{
@@ -4208,7 +3952,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"tls service annotation": {
 			objs: []interface{}{
-				i3a, s3f,
+				i3a, s3c,
 			},
 			want: listeners(
 				&Listener{

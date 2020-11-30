@@ -9,9 +9,12 @@ If you don't have a cluster with that capability see the [Running without a Kube
 
 ### Recommended installation details
 
-The recommended installation of Contour is Contour running in a Deployment and Envoy in a Daemonset with TLS securing the gRPC communication between them.
-The [`contour` example][2] will install this for you.
-A Service of `type: LoadBalancer` is also set up to forward traffic to the Envoy instances.
+The recommended installation is for Contour to run as a Deployment and Envoy to run as a Daemonset. A secret containing
+TLS certificates should be used to secure the gRPC communication between them. A Service of `type: LoadBalancer` should
+also be created to forward traffic to the Envoy instances. The [example manifest][2] or [Contour Operator][12] will
+create an installation based on these recommendations.
+
+__Note:__ Contour Operator is alpha and therefore follows the Contour [deprecation policy][13].
 
 If you wish to use Host Networking, please see the [appropriate section][3] for the details.
 
@@ -194,6 +197,16 @@ To remove Contour from your cluster, delete the namespace:
 ```bash
 $ kubectl delete ns projectcontour
 ```
+**Note**: The namespace may differ from above if [Contour Operator][12] was used to
+deploy Contour.
+
+## Uninstall Contour Operator
+
+To remove Contour Operator from your cluster, delete the operator's namespace:
+
+```bash
+$ kubectl delete ns contour-operator
+```
 
 [1]: #running-without-a-kubernetes-loadbalancer
 [2]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/README.md
@@ -205,3 +218,5 @@ $ kubectl delete ns projectcontour
 [9]: {% link docs/{{page.version}}/config/fundamentals.md %}
 [10]: {% link _guides/deploy-aws-nlb.md %}
 [11]: redeploy-envoy.md
+[12]: https://github.com/projectcontour/contour-operator
+[13]: https://projectcontour.io/resources/deprecation-policy/

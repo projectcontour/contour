@@ -430,18 +430,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
-		"insert ingress incorrect contour.heptio.com/ingress.class": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": "nginx",
-					},
-				},
-			},
-			want: false,
-		},
 		"insert ingress incorrect projectcontour.io/ingress.class": {
 			obj: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -461,18 +449,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 					Annotations: map[string]string{
 						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
-					},
-				},
-			},
-			want: true,
-		},
-		"insert ingress explicit contour.heptio.com/ingress.class": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
 					},
 				},
 			},
@@ -499,18 +475,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert httpproxy incorrect contour.heptio.com/ingress.class": {
-			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "simple",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": "nginx",
-					},
-				},
-			},
-			want: false,
-		},
 		"insert httpproxy incorrect kubernetes.io/ingress.class": {
 			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
@@ -534,18 +498,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 			},
 			want: false,
-		},
-		"insert httpproxy: explicit contour.heptio.com/ingress.class": {
-			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kuard",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"contour.heptio.com/ingress.class": annotation.DEFAULT_INGRESS_CLASS,
-					},
-				},
-			},
-			want: true,
 		},
 		"insert httpproxy explicit kubernetes.io/ingress.class": {
 			obj: &contour_api_v1.HTTPProxy{

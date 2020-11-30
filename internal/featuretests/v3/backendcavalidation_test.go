@@ -44,7 +44,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	}
 
 	svc := fixture.NewService("default/kuard").
-		Annotate("contour.heptio.com/upstream-protocol.tls", "securebackend,443").
+		Annotate("projectcontour.io/upstream-protocol.tls", "securebackend,443").
 		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8080)})
 
 	p1 := &contour_api_v1.HTTPProxy{

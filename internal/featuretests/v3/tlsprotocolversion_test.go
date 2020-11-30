@@ -95,7 +95,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 			Name:      "simple",
 			Namespace: sec1.Namespace,
 			Annotations: map[string]string{
-				"contour.heptio.com/tls-minimum-protocol-version": "1.3",
+				"projectcontour.io/tls-minimum-protocol-version": "1.3",
 			},
 		},
 		Spec: v1beta1.IngressSpec{

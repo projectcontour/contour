@@ -40,48 +40,6 @@ func TestWebsocketsIngress(t *testing.T) {
 			Name:      "ws",
 			Namespace: s1.Namespace,
 			Annotations: map[string]string{
-				"contour.heptio.com/websocket-routes": "/",
-			},
-		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
-				Host: "websocket.hello.world",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: s1.Name,
-								ServicePort: intstr.FromInt(80),
-							},
-						}},
-					},
-				},
-			}},
-		},
-	}
-	rh.OnAdd(i1)
-
-	// check legacy websocket annotation
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http",
-				envoy_v3.VirtualHost("websocket.hello.world",
-					&envoy_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
-					},
-				),
-			),
-		),
-		TypeUrl: routeType,
-	})
-
-	i2 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ws",
-			Namespace: s1.Namespace,
-			Annotations: map[string]string{
 				"projectcontour.io/websocket-routes": "/ws2",
 			},
 		},
@@ -102,7 +60,7 @@ func TestWebsocketsIngress(t *testing.T) {
 			}},
 		},
 	}
-	rh.OnUpdate(i1, i2)
+	rh.OnAdd(i1)
 
 	// check websocket annotation
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{

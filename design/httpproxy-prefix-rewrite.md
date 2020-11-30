@@ -45,7 +45,7 @@ In other words, it doesn't make sense to want to rewrite a path prefix unless yo
 This implies that even if the owner of a leaf HTTPProxy doesn't control the root or intermediate documents, they still have fairly concrete expectations around the full URL path to expect.
 
 Although there are a number of ways to conceptualize path prefix rewriting, path regex rewriting requires knowledge of the full request path at the time of writing the regex.
-This is because a regex rewrite can be used to re-order arbitratry portions of the URL path, and this can't be done unless the regex is defined as being applied to the complete path.
+This is because a regex rewrite can be used to re-order arbitrary portions of the URL path, and this can't be done unless the regex is defined as being applied to the complete path.
 
 ## High Level Design
 

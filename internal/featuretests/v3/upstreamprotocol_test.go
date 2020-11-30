@@ -31,7 +31,7 @@ func TestUpstreamProtocolTLS(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("kuard").
-		Annotate("contour.heptio.com/upstream-protocol.tls", "securebackend").
+		Annotate("projectcontour.io/upstream-protocol.tls", "securebackend").
 		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnAdd(s1)
 
@@ -76,7 +76,7 @@ func TestUpstreamProtocolH2C(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("kuard").
-		Annotate("contour.heptio.com/upstream-protocol.h2c", "securebackend").
+		Annotate("projectcontour.io/upstream-protocol.h2c", "securebackend").
 		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnAdd(s1)
 
@@ -121,7 +121,7 @@ func TestUpstreamProtocolH2(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("kuard").
-		Annotate("contour.heptio.com/upstream-protocol.h2", "securebackend").
+		Annotate("projectcontour.io/upstream-protocol.h2", "securebackend").
 		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8888)})
 	rh.OnAdd(s1)
 

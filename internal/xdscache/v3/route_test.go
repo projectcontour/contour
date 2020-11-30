@@ -612,7 +612,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/websocket-routes": "/ws1 , /ws2",
+							"projectcontour.io/websocket-routes": "/ws1 , /ws2",
 						},
 					},
 					Spec: v1beta1.IngressSpec{
@@ -675,7 +675,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/request-timeout": "heptio",
+							"projectcontour/request-timeout": "contour",
 						},
 					},
 					Spec: v1beta1.IngressSpec{
@@ -714,7 +714,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/request-timeout": "infinity",
+							"projectcontour.io/request-timeout": "infinity",
 						},
 					},
 					Spec: v1beta1.IngressSpec{
@@ -753,7 +753,7 @@ func TestRouteVisit(t *testing.T) {
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
-							"contour.heptio.com/request-timeout": "1m30s",
+							"projectcontour.io/request-timeout": "1m30s",
 						},
 					},
 					Spec: v1beta1.IngressSpec{
@@ -785,7 +785,7 @@ func TestRouteVisit(t *testing.T) {
 				),
 			),
 		},
-		"vhost name exceeds 60 chars": { // heptio/contour#25
+		"vhost name exceeds 60 chars": { // projectcontour/contour#25
 			objs: []interface{}{
 				&v1beta1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
@@ -915,46 +915,6 @@ func TestRouteVisit(t *testing.T) {
 			),
 		},
 
-		"ingress retry-on, legacy num-retries": {
-			objs: []interface{}{
-				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"projectcontour.io/retry-on":     "5xx,gateway-error",
-							"contour.heptio.com/num-retries": "7", // not five or six or eight, but seven.
-						},
-					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 8080),
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: routeConfigurations(
-				envoy_v3.RouteConfiguration("ingress_http",
-					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
-							Match:  routePrefix("/"),
-							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0),
-						},
-					),
-				),
-			),
-		},
 		"ingress retry-on, per-try-timeout": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
@@ -964,46 +924,6 @@ func TestRouteVisit(t *testing.T) {
 						Annotations: map[string]string{
 							"projectcontour.io/retry-on":        "5xx,gateway-error",
 							"projectcontour.io/per-try-timeout": "150ms",
-						},
-					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 8080),
-					},
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Protocol:   "TCP",
-							Port:       8080,
-							TargetPort: intstr.FromInt(8080),
-						}},
-					},
-				},
-			},
-			want: routeConfigurations(
-				envoy_v3.RouteConfiguration("ingress_http",
-					envoy_v3.VirtualHost("*",
-						&envoy_route_v3.Route{
-							Match:  routePrefix("/"),
-							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 150*time.Millisecond),
-						},
-					),
-				),
-			),
-		},
-		"ingress retry-on, legacy per-try-timeout": {
-			objs: []interface{}{
-				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kuard",
-						Namespace: "default",
-						Annotations: map[string]string{
-							"projectcontour.io/retry-on":         "5xx,gateway-error",
-							"contour.heptio.com/per-try-timeout": "150ms",
 						},
 					},
 					Spec: v1beta1.IngressSpec{
