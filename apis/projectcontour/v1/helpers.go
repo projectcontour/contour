@@ -15,8 +15,6 @@ package v1
 
 import (
 	"fmt"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // AuthorizationConfigured returns whether authorization  is
@@ -97,16 +95,16 @@ func (dc *DetailedCondition) AddError(errorType, reason, message string) {
 	// polarity (like `Valid`), or abnormal-true (negative) polarity
 	// (like `ErrorPresent`)
 	if dc.IsPositivePolarity() {
-		dc.Status = metav1.ConditionFalse
+		dc.Status = ConditionFalse
 	} else {
-		dc.Status = metav1.ConditionTrue
+		dc.Status = ConditionTrue
 	}
 	dc.Reason = "ErrorPresent"
 	dc.Message = "At least one error present, see Errors for details"
 
 	dc.Errors = append(dc.Errors, SubCondition{
 		Type:    errorType,
-		Status:  metav1.ConditionTrue,
+		Status:  ConditionTrue,
 		Message: message,
 		Reason:  reason,
 	})
@@ -140,7 +138,7 @@ func (dc *DetailedCondition) AddWarning(warnType, reason, message string) {
 
 	dc.Warnings = append(dc.Warnings, SubCondition{
 		Type:    warnType,
-		Status:  metav1.ConditionTrue,
+		Status:  ConditionTrue,
 		Reason:  reason,
 		Message: message,
 	})

@@ -18,7 +18,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // IsStatusEqual checks that two objects of supported Kubernetes types
@@ -45,7 +44,7 @@ func IsStatusEqual(objA, objB interface{}) bool {
 			// Not ignoring this causes each status to be updated each time since the objects
 			// are always different for each DAG rebuild (Issue #2979).
 			if cmp.Equal(a.Status, b.Status,
-				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")) {
+				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
