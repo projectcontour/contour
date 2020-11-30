@@ -34,7 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// heptio/contour#172. Updating an object from
+// projectcontour/contour#172. Updating an object from
 //
 // apiVersion: networking/v1beta1
 // kind: Ingress
@@ -134,7 +134,7 @@ func TestEditIngress(t *testing.T) {
 	})
 }
 
-// heptio/contour#101
+// projectcontour/contour#101
 // The path /hello should point to default/hello/80 on "*"
 //
 // apiVersion: networking/v1beta1
@@ -909,7 +909,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 			Name:      "kuard-ing",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "linkerd",
+				"projectcontour.io/ingress.class": "linkerd",
 			},
 		},
 		Spec: v1beta1.IngressSpec{
@@ -952,7 +952,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 			Name:      "kuard-ing",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "contour",
+				"projectcontour.io/ingress.class": "contour",
 			},
 		},
 		Spec: v1beta1.IngressSpec{
@@ -995,7 +995,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 			Name:      "kuard-ing",
 			Namespace: "default",
 			Annotations: map[string]string{
-				"contour.heptio.com/ingress.class": "linkerd",
+				"projectcontour.io/ingress.class": "linkerd",
 			},
 		},
 		Spec: v1beta1.IngressSpec{

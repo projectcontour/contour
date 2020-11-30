@@ -126,7 +126,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
 			Annotations: map[string]string{
-				"contour.heptio.com/request-timeout": "90s",
+				"projectcontour.io/request-timeout":  "90s",
 				"projectcontour.io/response-timeout": "99s",
 			},
 		},

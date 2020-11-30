@@ -61,40 +61,12 @@ func TestRetryPolicyIngress(t *testing.T) {
 				NumRetries: 0,
 			},
 		},
-		"legacy explicitly zero retries": {
-			i: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"projectcontour.io/retry-on":     "5xx",
-						"contour.heptio.com/num-retries": "0",
-					},
-				},
-			},
-			want: &RetryPolicy{
-				RetryOn:    "5xx",
-				NumRetries: 0,
-			},
-		},
 		"num-retries": {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":    "5xx",
 						"projectcontour.io/num-retries": "7",
-					},
-				},
-			},
-			want: &RetryPolicy{
-				RetryOn:    "5xx",
-				NumRetries: 7,
-			},
-		},
-		"legacy num-retries": {
-			i: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"projectcontour.io/retry-on":     "5xx",
-						"contour.heptio.com/num-retries": "7",
 					},
 				},
 			},
@@ -118,42 +90,12 @@ func TestRetryPolicyIngress(t *testing.T) {
 				PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 			},
 		},
-		"no retry count, legacy per try timeout": {
-			i: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"projectcontour.io/retry-on":         "5xx",
-						"contour.heptio.com/per-try-timeout": "10s",
-					},
-				},
-			},
-			want: &RetryPolicy{
-				RetryOn:       "5xx",
-				NumRetries:    0,
-				PerTryTimeout: timeout.DurationSetting(10 * time.Second),
-			},
-		},
 		"explicit 0s timeout": {
 			i: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":        "5xx",
 						"projectcontour.io/per-try-timeout": "0s",
-					},
-				},
-			},
-			want: &RetryPolicy{
-				RetryOn:       "5xx",
-				NumRetries:    0,
-				PerTryTimeout: timeout.DefaultSetting(),
-			},
-		},
-		"legacy explicit 0s timeout": {
-			i: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"projectcontour.io/retry-on":         "5xx",
-						"contour.heptio.com/per-try-timeout": "0s",
 					},
 				},
 			},
