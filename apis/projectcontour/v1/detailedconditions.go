@@ -21,6 +21,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Condition is a type alias for the k8s.io/apimachinery/pkg/apis/meta/v1
+// Condition type to maintain API compatibility.
+// +k8s:deepcopy-gen=false
+type Condition = metav1.Condition
+
+// ConditionStatus is a type alias for the k8s.io/apimachinery/pkg/apis/meta/v1
+// ConditionStatus type to maintain API compatibility.
+// +k8s:deepcopy-gen=false
+type ConditionStatus = metav1.ConditionStatus
+
+// These are valid condition statuses. "ConditionTrue" means a resource is in the condition.
+// "ConditionFalse" means a resource is not in the condition. "ConditionUnknown" means kubernetes
+// can't decide if a resource is in the condition or not. In the future, we could add other
+// intermediate conditions, e.g. ConditionDegraded. These are retained as aliases to the
+// k8s.io/apimachinery/pkg/apis/meta/v1 constants to maintain API compatibility.
+const (
+	ConditionTrue    ConditionStatus = metav1.ConditionTrue
+	ConditionFalse   ConditionStatus = metav1.ConditionFalse
+	ConditionUnknown ConditionStatus = metav1.ConditionUnknown
+)
+
 // SubCondition is a Condition-like type intended for use as a subcondition inside a DetailedCondition.
 //
 // It contains a subset of the Condition fields.
@@ -45,7 +66,7 @@ type SubCondition struct {
 	// +required
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=True;False;Unknown
-	Status metav1.ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status"`
+	Status ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status"`
 	// Reason contains a programmatic identifier indicating the reason for the condition's last transition.
 	// Producers of specific condition types may define expected values and meanings for this field,
 	// and whether the values are considered a guaranteed API.
@@ -68,9 +89,6 @@ type SubCondition struct {
 	// +kubebuilder:validation:MaxLength=32768
 	Message string `json:"message" protobuf:"bytes,4,opt,name=message"`
 }
-
-// TODO(youngnick): Replace the inlined Condition with metav1.Condition once we have moved to a client-go
-// version that includes it. Also includes deleting kubeconditions.go.
 
 // DetailedCondition is an extension of the normal Kubernetes conditions, with two extra
 // fields to hold sub-conditions, which provide more detailed reasons for the state (True or False)
@@ -102,7 +120,7 @@ type SubCondition struct {
 // (if there is one and only one entry in total across both the `errors` and `warnings` slices), or
 // `MultipleReasons` if there is more than one entry.
 type DetailedCondition struct {
-	metav1.Condition `json:",inline"`
+	Condition `json:",inline"`
 	// Errors contains a slice of relevant error subconditions for this object.
 	//
 	// Subconditions are expected to appear when relevant (when there is a error), and disappear when not relevant.
