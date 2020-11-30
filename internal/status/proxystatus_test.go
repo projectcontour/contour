@@ -19,12 +19,12 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestConditionFor(t *testing.T) {
 	simpleValidCondition := contour_api_v1.DetailedCondition{
-		Condition: contour_api_v1.Condition{
+		Condition: metav1.Condition{
 			Type: "Valid",
 		},
 	}
@@ -46,9 +46,9 @@ func TestConditionFor(t *testing.T) {
 	}
 
 	newDc := contour_api_v1.DetailedCondition{
-		Condition: contour_api_v1.Condition{
+		Condition: metav1.Condition{
 			Type:    string(ValidCondition),
-			Status:  contour_api_v1.ConditionTrue,
+			Status:  metav1.ConditionTrue,
 			Reason:  "Valid",
 			Message: "Valid HTTPProxy",
 		},
@@ -67,7 +67,7 @@ func TestStatusMutator(t *testing.T) {
 		wantDescription   string
 	}
 
-	testTransitionTime := v1.NewTime(time.Now())
+	testTransitionTime := metav1.NewTime(time.Now())
 	var testGeneration int64 = 7
 
 	run := func(desc string, tc testcase) {
@@ -85,7 +85,7 @@ func TestStatusMutator(t *testing.T) {
 
 	validConditionWarning := testcase{
 		testProxy: contour_api_v1.HTTPProxy{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:       "test",
 				Namespace:  "test",
 				Generation: testGeneration,
@@ -97,9 +97,9 @@ func TestStatusMutator(t *testing.T) {
 			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*contour_api_v1.DetailedCondition{
 				ValidCondition: {
-					Condition: contour_api_v1.Condition{
+					Condition: metav1.Condition{
 						Type:    string(ValidCondition),
-						Status:  contour_api_v1.ConditionTrue,
+						Status:  metav1.ConditionTrue,
 						Reason:  "Valid",
 						Message: "Valid HTTPProxy",
 					},
@@ -115,9 +115,9 @@ func TestStatusMutator(t *testing.T) {
 		},
 		wantConditions: []contour_api_v1.DetailedCondition{
 			{
-				Condition: contour_api_v1.Condition{
+				Condition: metav1.Condition{
 					Type:               string(ValidCondition),
-					Status:             contour_api_v1.ConditionTrue,
+					Status:             metav1.ConditionTrue,
 					ObservedGeneration: testGeneration,
 					LastTransitionTime: testTransitionTime,
 					Reason:             "Valid",
@@ -139,7 +139,7 @@ func TestStatusMutator(t *testing.T) {
 
 	inValidConditionError := testcase{
 		testProxy: contour_api_v1.HTTPProxy{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:       "test",
 				Namespace:  "test",
 				Generation: 6,
@@ -151,9 +151,9 @@ func TestStatusMutator(t *testing.T) {
 			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*contour_api_v1.DetailedCondition{
 				ValidCondition: {
-					Condition: contour_api_v1.Condition{
+					Condition: metav1.Condition{
 						Type:    string(ValidCondition),
-						Status:  contour_api_v1.ConditionFalse,
+						Status:  metav1.ConditionFalse,
 						Reason:  "ErrorPresent",
 						Message: "At least one error present, see Errors for details",
 					},
@@ -169,9 +169,9 @@ func TestStatusMutator(t *testing.T) {
 		},
 		wantConditions: []contour_api_v1.DetailedCondition{
 			{
-				Condition: contour_api_v1.Condition{
+				Condition: metav1.Condition{
 					Type:               string(ValidCondition),
-					Status:             contour_api_v1.ConditionFalse,
+					Status:             metav1.ConditionFalse,
 					ObservedGeneration: testGeneration,
 					LastTransitionTime: testTransitionTime,
 					Reason:             "ErrorPresent",
@@ -193,7 +193,7 @@ func TestStatusMutator(t *testing.T) {
 
 	orphanedCondition := testcase{
 		testProxy: contour_api_v1.HTTPProxy{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:       "test",
 				Namespace:  "test",
 				Generation: testGeneration,
@@ -205,9 +205,9 @@ func TestStatusMutator(t *testing.T) {
 			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*contour_api_v1.DetailedCondition{
 				ValidCondition: {
-					Condition: contour_api_v1.Condition{
+					Condition: metav1.Condition{
 						Type:    string(ValidCondition),
-						Status:  contour_api_v1.ConditionFalse,
+						Status:  metav1.ConditionFalse,
 						Reason:  "Orphaned",
 						Message: "this HTTPProxy is not part of a delegation chain from a root HTTPProxy",
 					},
@@ -223,9 +223,9 @@ func TestStatusMutator(t *testing.T) {
 		},
 		wantConditions: []contour_api_v1.DetailedCondition{
 			{
-				Condition: contour_api_v1.Condition{
+				Condition: metav1.Condition{
 					Type:               string(ValidCondition),
-					Status:             contour_api_v1.ConditionFalse,
+					Status:             metav1.ConditionFalse,
 					ObservedGeneration: testGeneration,
 					LastTransitionTime: testTransitionTime,
 					Reason:             "Orphaned",
@@ -248,7 +248,7 @@ func TestStatusMutator(t *testing.T) {
 
 	updateExistingValidCond := testcase{
 		testProxy: contour_api_v1.HTTPProxy{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:       "test",
 				Namespace:  "test",
 				Generation: testGeneration,
@@ -256,9 +256,9 @@ func TestStatusMutator(t *testing.T) {
 			Status: contour_api_v1.HTTPProxyStatus{
 				Conditions: []contour_api_v1.DetailedCondition{
 					{
-						Condition: contour_api_v1.Condition{
+						Condition: metav1.Condition{
 							Type:   string(ValidCondition),
-							Status: contour_api_v1.ConditionTrue,
+							Status: metav1.ConditionTrue,
 						},
 					},
 				},
@@ -270,9 +270,9 @@ func TestStatusMutator(t *testing.T) {
 			TransitionTime: testTransitionTime,
 			Conditions: map[ConditionType]*contour_api_v1.DetailedCondition{
 				ValidCondition: {
-					Condition: contour_api_v1.Condition{
+					Condition: metav1.Condition{
 						Type:    string(ValidCondition),
-						Status:  contour_api_v1.ConditionTrue,
+						Status:  metav1.ConditionTrue,
 						Reason:  "Valid",
 						Message: "Valid HTTPProxy",
 					},
@@ -288,9 +288,9 @@ func TestStatusMutator(t *testing.T) {
 		},
 		wantConditions: []contour_api_v1.DetailedCondition{
 			{
-				Condition: contour_api_v1.Condition{
+				Condition: metav1.Condition{
 					Type:               string(ValidCondition),
-					Status:             contour_api_v1.ConditionTrue,
+					Status:             metav1.ConditionTrue,
 					ObservedGeneration: testGeneration,
 					LastTransitionTime: testTransitionTime,
 					Reason:             "Valid",
