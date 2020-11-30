@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -26,11 +27,13 @@ import (
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	envoy_extensions_filters_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -257,43 +260,65 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 }
 
 // AddFilter appends f to the list of filters for this HTTPConnectionManager. f
-// may by nil, in which case it is ignored.
+// may be nil, in which case it is ignored. Note that Router filters
+// (filters with TypeUrl `type.googleapis.com/envoy.extensions.filters.http.router.v3.Router`)
+// are specially treated. There may only be one of these filters, and it must be the last.
+// AddFilter will ensure that the router filter, if present, is last, and will panic
+// if a second Router is added when one is already present.
 func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnectionManagerBuilder {
 	if f == nil {
 		return b
 	}
 
-	if len(b.filters) > 0 {
-		lastIndex := len(b.filters) - 1
-		// If the router filter is last, keep it at the end
-		// of the filter chain when we add the new filter.
-		if b.filters[lastIndex].Name == wellknown.Router {
-			b.filters = append(b.filters[:lastIndex], f, b.filters[lastIndex])
-			return b
+	b.filters = append(b.filters, f)
+
+	if len(b.filters) == 1 {
+		return b
+	}
+
+	lastIndex := len(b.filters) - 1
+	routerIndex := -1
+	for i, filter := range b.filters {
+		if ptypes.Is(filter.GetTypedConfig(), &envoy_extensions_filters_http_router_v3.Router{}) {
+			routerIndex = i
+			break
 		}
 	}
 
-	b.filters = append(b.filters, f)
+	// We can't add more than one router entry, and there should be no way to do it.
+	// If this happens, it has to be programmer error, so we panic to tell them
+	// it needs to be fixed. Note that in hitting this case, it doesn't matter we added
+	// the second one earlier, because we're panicking anyway.
+	if routerIndex != -1 && ptypes.Is(f.GetTypedConfig(), &envoy_extensions_filters_http_router_v3.Router{}) {
+		panic("Can't add more than one router to a filter chain")
+	}
+
+	if routerIndex != lastIndex {
+		// Move the router to the end of the filters array.
+		routerFilter := b.filters[routerIndex]
+		b.filters = append(b.filters[:routerIndex], b.filters[routerIndex+1])
+		b.filters = append(b.filters, routerFilter)
+	}
 
 	return b
 }
 
 // Validate runs builtin validation rules against the current builder state.
 func (b *httpConnectionManagerBuilder) Validate() error {
-	filterNames := map[string]struct{}{}
 
-	for _, f := range b.filters {
-		// Extract the TypeURL to compare against to identify
-		// the http filter.
-		switch config := f.ConfigType.(type) {
-		case *http.HttpFilter_TypedConfig:
-			filterNames[config.TypedConfig.TypeUrl] = struct{}{}
-		}
+	// It's not OK for the filters to be empty.
+	if len(b.filters) == 0 {
+		return errors.New("filter list is empty")
 	}
 
-	// If there's no router filter, requests won't be forwarded.
-	if _, ok := filterNames[HTTPFilterRouter]; !ok {
-		return fmt.Errorf("missing required filter %q", HTTPFilterRouter)
+	// If the router filter is not the last, the listener will be rejected by Envoy.
+	// More specifically, the last filter must be a terminating filter. The only one
+	// of these used by Contour is the router filter, which is set as the one
+	// with typeUrl `type.googleapis.com/envoy.extensions.filters.http.router.v3.Router`,
+	// which in this case is the one of type Router.
+	lastIndex := len(b.filters) - 1
+	if !ptypes.Is(b.filters[lastIndex].GetTypedConfig(), &envoy_extensions_filters_http_router_v3.Router{}) {
+		return errors.New("last filter is not a Router filter")
 	}
 
 	return nil

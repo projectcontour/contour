@@ -17,15 +17,41 @@ Before you start you will need:
 
 ## Add Contour to your cluster
 
-Run:
+### Option 1
+
+Deploy Contour using the rendered manifest:
 
 ```bash
 $ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
 ```
 
+### Option 2
+
+__FEATURE STATE:__ Contour v1.11.0 [alpha][13]
+
+Deploy Contour using the [operator][14]. First deploy the operator:
+
+```bash
+$ kubectl apply -f {{ site.url }}/quickstart/operator.yaml
+```
+
 This command creates:
 
-- A new namespace `projectcontour` 
+- Namespace `contour-operator` to run the operator.
+- Operator and Contour CRDs
+- Operator RBAC resources
+- A Deployment to manage the operator
+- A Service to front-end the operator's metrics endpoint.
+
+Then create an instance of the Contour custom resource:
+
+```bash
+$ kubectl apply -f {{ site.url }}/quickstart/contour-custom-resource.yaml
+```
+
+Deploying Contour using either option creates:
+
+- Namespace `projectcontour`
 - Two instances of Contour in the namespace
 - A Kubernetes Daemonset running Envoy on each node in the cluster listening on host ports 80/443
 - A Service of `type: LoadBalancer` that points to the Contour's Envoy instances
@@ -96,3 +122,5 @@ If you encounter issues, review the Troubleshooting section of [the docs][3], [f
 [10]: https://kubernetes.io/docs/concepts/services-networking/service
 [11]: https://kubernetes.io/docs/concepts/services-networking/ingress
 [12]: {{site.footer_social_links.Slack.url}}
+[13]: https://projectcontour.io/resources/deprecation-policy/
+[14]: https://github.com/projectcontour/contour-operator/blob/main/README.md
