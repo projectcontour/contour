@@ -20,7 +20,7 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -90,7 +90,7 @@ func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, fu
 	pu := &ProxyUpdate{
 		Fullname:       k8s.NamespacedNameOf(proxy),
 		Generation:     proxy.Generation,
-		TransitionTime: v1.NewTime(time.Now()),
+		TransitionTime: metav1.NewTime(time.Now()),
 		Conditions:     make(map[ConditionType]*contour_api_v1.DetailedCondition),
 	}
 
@@ -111,8 +111,8 @@ func (c *Cache) commitProxy(pu *ProxyUpdate) {
 		// If this is removed, the status reporting for when a parent delegates to a child that delegates to itself
 		// will not work. Yes, I know, problems everywhere. I'm sorry.
 		// TODO(youngnick)#2968: This issue has more details.
-		if c.proxyUpdates[pu.Fullname].Conditions[ValidCondition].Status == contour_api_v1.ConditionFalse {
-			if pu.Conditions[ValidCondition].Status == contour_api_v1.ConditionTrue {
+		if c.proxyUpdates[pu.Fullname].Conditions[ValidCondition].Status == metav1.ConditionFalse {
+			if pu.Conditions[ValidCondition].Status == metav1.ConditionTrue {
 				return
 			}
 		}

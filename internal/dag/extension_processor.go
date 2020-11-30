@@ -24,6 +24,7 @@ import (
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -51,7 +52,7 @@ func (p *ExtensionServiceProcessor) Run(dag *DAG, cache *KubernetesCache) {
 		}
 
 		if len(validCondition.Errors) == 0 {
-			validCondition.Status = contour_api_v1.ConditionTrue
+			validCondition.Status = metav1.ConditionTrue
 			validCondition.Reason = "Valid"
 			validCondition.Message = "Valid ExtensionService"
 		}
