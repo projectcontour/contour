@@ -3,7 +3,7 @@ title: Contour Release Process
 layout: page
 ---
 
-This page documents the process for releasing a new version of Contour.
+This page documents the process for releasing a new version of Contour or [Contour Operator][1].
 
 The release types are as follows. All are tagged from the same release branch.
 
@@ -143,3 +143,5 @@ _Note: Filter on the Github label "release note" and Github milestone which shou
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
 - Send an update to the [cncf-contour-users mailing list](https://lists.cncf.io/g/cncf-contour-users/)
+
+[1]: https://github.com/projectcontour/contour-operator
