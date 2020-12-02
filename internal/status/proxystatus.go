@@ -102,7 +102,7 @@ func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
 		proxy.Status.CurrentStatus = string(ProxyStatusValid)
 		proxy.Status.Description = validCond.Message
 	case projectcontour.ConditionFalse:
-		if orphanCond, ok := validCond.GetError(string(OrphanedConditionType)); ok {
+		if orphanCond, ok := validCond.GetError(projectcontour.ConditionTypeOrphanedError); ok {
 			proxy.Status.CurrentStatus = string(ProxyStatusOrphaned)
 			proxy.Status.Description = orphanCond.Message
 			break

@@ -113,4 +113,57 @@ type DetailedCondition struct {
 	Warnings []SubCondition `json:"warnings,omitempty"`
 }
 
-const ValidConditionType string = "Valid"
+const (
+	// ValidConditionType describes an valid condition.
+	ValidConditionType = "Valid"
+
+	// ConditionTypeAuthError describes an error condition related to Auth.
+	ConditionTypeAuthError = "AuthError"
+
+	// ConditionTypeCORSError describes an error condition related to CORS.
+	ConditionTypeCORSError = "CORSError"
+
+	// ConditionTypeIncludeError describes an error condition with
+	// inclusion of another HTTPProxy resource.
+	ConditionTypeIncludeError = "IncludeError"
+
+	// ConditionTypeOrphanedError describes an error condition
+	// with an HTTPProxy resource which is not part of a delegation chain.
+	ConditionTypeOrphanedError = "Orphaned"
+
+	// ConditionTypePrefixReplaceError describes an error condition with
+	// an HTTPProxy path prefix replacement issue.
+	ConditionTypePrefixReplaceError = "PrefixReplaceError"
+
+	// ConditionTypeRootNamespaceError describes an error condition
+	// with an HTTPProxy resource created in non-root namespace.
+	ConditionTypeRootNamespaceError = "RootNamespaceError"
+
+	// ConditionTypeRouteError describes an error condition that
+	// relates to Routes within an HTTPProxy.
+	ConditionTypeRouteError = "RouteError"
+
+	// ConditionTypeServiceError describes an error condition that
+	// relates to a Service error within an HTTPProxy.
+	ConditionTypeServiceError = "ServiceError"
+
+	// ConditionTypeSpecError describes an error condition that
+	// relates to the Spec of an HTTPProxy resource.
+	ConditionTypeSpecError = "SpecError"
+
+	// ConditionTypeTCPProxyIncludeError describes an error condition
+	// with inclusion of another HTTPProxy TCP Proxy resource.
+	ConditionTypeTCPProxyIncludeError = "TCPProxyIncludeError"
+
+	// ConditionTypeTCPProxyError describes an error condition relating
+	// to a TCP Proxy HTTPProxy resource.
+	ConditionTypeTCPProxyError = "TCPProxyError"
+
+	// ConditionTypeTLSError describes an error condition relating
+	// to TLS configuration.
+	ConditionTypeTLSError = "TLSError"
+
+	// ConditionTypeVirtualHostError describes an error condition relating
+	// to the VirtualHost configuration section of an HTTPProxy resource.
+	ConditionTypeVirtualHostError = "VirtualHostError"
+)

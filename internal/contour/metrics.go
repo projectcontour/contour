@@ -116,7 +116,7 @@ func calcMetrics(u *status.ProxyUpdate, metricValid map[metrics.Meta]int, metric
 	case contour_api_v1.ConditionTrue:
 		metricValid[metrics.Meta{VHost: u.Vhost, Namespace: u.Fullname.Namespace}]++
 	case contour_api_v1.ConditionFalse:
-		if _, ok := validCond.GetError(string(status.OrphanedConditionType)); ok {
+		if _, ok := validCond.GetError(contour_api_v1.ConditionTypeOrphanedError); ok {
 			metricOrphaned[metrics.Meta{Namespace: u.Fullname.Namespace}]++
 		} else {
 			metricInvalid[metrics.Meta{VHost: u.Vhost, Namespace: u.Fullname.Namespace}]++
