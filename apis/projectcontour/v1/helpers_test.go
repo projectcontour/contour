@@ -44,7 +44,7 @@ func TestAddErrorConditions(t *testing.T) {
 			},
 			subconditions: []subConditionDetails{
 				{
-					condType: "SimpleTest",
+					condType: ConditionTypeServiceError,
 					reason:   "TestReason",
 					message:  "We had a straightforward error",
 				},
@@ -58,7 +58,7 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 				Errors: []SubCondition{
 					{
-						Type:    "SimpleTest",
+						Type:    "ServiceError",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
 						Status:  ConditionTrue,
@@ -74,7 +74,7 @@ func TestAddErrorConditions(t *testing.T) {
 			},
 			subconditions: []subConditionDetails{
 				{
-					condType: "SimpleTest",
+					condType: ConditionTypeServiceError,
 					reason:   "TestReason",
 					message:  "We had a straightforward error",
 				},
@@ -88,7 +88,7 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 				Errors: []SubCondition{
 					{
-						Type:    "SimpleTest",
+						Type:    "ServiceError",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
 						Status:  ConditionTrue,
@@ -105,12 +105,12 @@ func TestAddErrorConditions(t *testing.T) {
 			},
 			subconditions: []subConditionDetails{
 				{
-					condType: "SimpleTest",
+					condType: ConditionTypeServiceError,
 					reason:   "TestReason",
 					message:  "We had a straightforward error",
 				},
 				{
-					condType: "SecondTest",
+					condType: ConditionTypeSpecError,
 					reason:   "TestReason2",
 					message:  "We had an extra straightforward error",
 				},
@@ -124,13 +124,13 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 				Errors: []SubCondition{
 					{
-						Type:    "SimpleTest",
+						Type:    "ServiceError",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
 						Status:  ConditionTrue,
 					},
 					{
-						Type:    "SecondTest",
+						Type:    "SpecError",
 						Reason:  "TestReason2",
 						Message: "We had an extra straightforward error",
 						Status:  ConditionTrue,
@@ -146,12 +146,12 @@ func TestAddErrorConditions(t *testing.T) {
 			},
 			subconditions: []subConditionDetails{
 				{
-					condType: "SimpleTest",
+					condType: ConditionTypeServiceError,
 					reason:   "TestReason",
 					message:  "We had a straightforward error",
 				},
 				{
-					condType: "SecondTest",
+					condType: ConditionTypeSpecError,
 					reason:   "TestReason",
 					message:  "We had an extra straightforward error",
 				},
@@ -165,13 +165,13 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 				Errors: []SubCondition{
 					{
-						Type:    "SimpleTest",
+						Type:    "ServiceError",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
 						Status:  ConditionTrue,
 					},
 					{
-						Type:    "SecondTest",
+						Type:    "SpecError",
 						Reason:  "TestReason",
 						Message: "We had an extra straightforward error",
 						Status:  ConditionTrue,
@@ -187,12 +187,12 @@ func TestAddErrorConditions(t *testing.T) {
 			},
 			subconditions: []subConditionDetails{
 				{
-					condType: "SimpleTest",
+					condType: ConditionTypeServiceError,
 					reason:   "TestReason",
 					message:  "We had a straightforward error",
 				},
 				{
-					condType: "SimpleTest",
+					condType: ConditionTypeSpecError,
 					reason:   "TestReason",
 					message:  "We had an extra straightforward error",
 				},
@@ -206,13 +206,13 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 				Errors: []SubCondition{
 					{
-						Type:    "SimpleTest",
+						Type:    "ServiceError",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
 						Status:  ConditionTrue,
 					},
 					{
-						Type:    "SimpleTest",
+						Type:    "SpecError",
 						Reason:  "TestReason",
 						Message: "We had an extra straightforward error",
 						Status:  ConditionTrue,
@@ -228,12 +228,12 @@ func TestAddErrorConditions(t *testing.T) {
 			},
 			subconditions: []subConditionDetails{
 				{
-					condType: "SimpleTest",
+					condType: ConditionTypeServiceError,
 					reason:   "TestReason",
 					message:  "We had a straightforward error",
 				},
 				{
-					condType: "SimpleTest",
+					condType: ConditionTypeServiceError,
 					reason:   "TestReason2",
 					message:  "We had an extra straightforward error",
 				},
@@ -247,13 +247,13 @@ func TestAddErrorConditions(t *testing.T) {
 				},
 				Errors: []SubCondition{
 					{
-						Type:    "SimpleTest",
+						Type:    "ServiceError",
 						Reason:  "TestReason",
 						Message: "We had a straightforward error",
 						Status:  ConditionTrue,
 					},
 					{
-						Type:    "SimpleTest",
+						Type:    "ServiceError",
 						Reason:  "TestReason2",
 						Message: "We had an extra straightforward error",
 						Status:  ConditionTrue,
@@ -548,37 +548,27 @@ func TestGetError(t *testing.T) {
 	dcWithErrors := &DetailedCondition{
 		Errors: []SubCondition{
 			{
-				Type:    "SimpleTest1",
+				Type:    "ServiceError",
 				Reason:  "SimpleReason",
 				Message: "We had a simple error 1",
-				Status:  ConditionTrue,
-			},
-			{
-				Type:    "SimpleTest2",
-				Reason:  "SimpleReason",
-				Message: "We had a simple error 2",
 				Status:  ConditionTrue,
 			},
 		},
 	}
 
 	firstSubCond := SubCondition{
-		Type:    "SimpleTest1",
+		Type:    "ServiceError",
 		Reason:  "SimpleReason",
 		Message: "We had a simple error 1",
 		Status:  ConditionTrue,
 	}
 
-	gotSubCond, ok := dcWithErrors.GetError("SimpleTest1")
+	gotSubCond, ok := dcWithErrors.GetError(ConditionTypeServiceError)
 	assert.True(t, ok)
 	assert.Equal(t, firstSubCond, gotSubCond)
 
-	nonExistentCond, ok := dcWithErrors.GetError("nonexistent")
-	assert.False(t, ok)
-	assert.Equal(t, SubCondition{}, nonExistentCond)
-
 	dcEmpty := &DetailedCondition{}
-	emptySubCond, ok := dcEmpty.GetError("SimpleTest1")
+	emptySubCond, ok := dcEmpty.GetError(ConditionTypeServiceError)
 	assert.False(t, ok)
 	assert.Equal(t, SubCondition{}, emptySubCond)
 

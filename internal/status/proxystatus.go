@@ -94,7 +94,7 @@ func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
 
 	// Set the old status fields using the Valid DetailedCondition's details.
 	// Other conditions are not relevant for these two fields.
-	validCond := proxy.Status.GetConditionFor(projectcontour.ValidConditionType)
+	validCond := proxy.Status.GetConditionFor(projectcontour.ConditionTypeValid)
 
 	switch validCond.Status {
 	case projectcontour.ConditionTrue:
@@ -102,7 +102,7 @@ func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
 		proxy.Status.CurrentStatus = string(ProxyStatusValid)
 		proxy.Status.Description = validCond.Message
 	case projectcontour.ConditionFalse:
-		if orphanCond, ok := validCond.GetError(string(OrphanedConditionType)); ok {
+		if orphanCond, ok := validCond.GetError(projectcontour.ConditionTypeOrphanedError); ok {
 			proxy.Status.CurrentStatus = string(ProxyStatusOrphaned)
 			proxy.Status.Description = orphanCond.Message
 			break

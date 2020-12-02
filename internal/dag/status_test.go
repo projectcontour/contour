@@ -89,7 +89,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyNoFQDN},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: fixture.NewValidCondition().WithGeneration(proxyNoFQDN.Generation).
-				WithError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
 		},
 	})
 
@@ -207,7 +207,7 @@ func TestDAGStatus(t *testing.T) {
 				Valid(),
 			{Name: proxyChildInvalidBadPort.Name, Namespace: proxyChildInvalidBadPort.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyChildInvalidBadPort.Generation).
-				WithError("ServiceError", "ServicePortInvalid", `service "foo3": port must be in the range 1-65535`),
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServicePortInvalid", `service "foo3": port must be in the range 1-65535`),
 			{Name: proxyMultiIncludeOneInvalid.Name, Namespace: proxyMultiIncludeOneInvalid.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyMultiIncludeOneInvalid.Generation).
 				Valid(),
@@ -219,7 +219,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyNoFQDN.Name, Namespace: proxyNoFQDN.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyNoFQDN.Generation).
-				WithError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
 			{Name: proxyChildValidFoo2.Name, Namespace: proxyChildValidFoo2.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyChildValidFoo2.Generation).
 				Valid(),
@@ -309,7 +309,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyDelegatedTCPTLS.Name, Namespace: proxyDelegatedTCPTLS.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyDelegatedTCPTLS.Generation).
-				WithError("TLSError", "DelegationNotPermitted", `Spec.VirtualHost.TLS Secret "projectcontour/default-ssl-cert" certificate delegation not permitted`),
+				WithError(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS Secret "projectcontour/default-ssl-cert" certificate delegation not permitted`),
 		},
 	})
 
@@ -343,7 +343,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyDelegatedTLS.Name, Namespace: proxyDelegatedTLS.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyDelegatedTCPTLS.Generation).
-				WithError("TLSError", "DelegationNotPermitted", `Spec.VirtualHost.TLS Secret "projectcontour/default-ssl-cert" certificate delegation not permitted`),
+				WithError(contour_api_v1.ConditionTypeTLSError, "DelegationNotPermitted", `Spec.VirtualHost.TLS Secret "projectcontour/default-ssl-cert" certificate delegation not permitted`),
 		},
 	})
 
@@ -501,7 +501,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidNegativePortHomeService.Name, Namespace: proxyInvalidNegativePortHomeService.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidNegativePortHomeService.Generation).
-				WithError("ServiceError", "ServicePortInvalid", `service "home": port must be in the range 1-65535`),
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServicePortInvalid", `service "home": port must be in the range 1-65535`),
 		},
 	})
 
@@ -532,7 +532,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidOutsideRootNamespace.Name, Namespace: proxyInvalidOutsideRootNamespace.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidNegativePortHomeService.Generation).
-				WithError("RootNamespaceError", "RootProxyNotAllowedInNamespace", "root HTTPProxy cannot be defined in this namespace"),
+				WithError(contour_api_v1.ConditionTypeRootNamespaceError, "RootProxyNotAllowedInNamespace", "root HTTPProxy cannot be defined in this namespace"),
 		},
 	})
 
@@ -567,7 +567,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidIncludeCycle.Name, Namespace: proxyInvalidIncludeCycle.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidIncludeCycle.Generation).
-				WithError("IncludeError", "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
 		},
 	})
 
@@ -614,7 +614,7 @@ func TestDAGStatus(t *testing.T) {
 				WithGeneration(proxyIncludesProxyWithIncludeCycle.Generation).Valid(),
 			{Name: proxyIncludedChildInvalidIncludeCycle.Name, Namespace: proxyIncludedChildInvalidIncludeCycle.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyIncludedChildInvalidIncludeCycle.Generation).
-				WithError("IncludeError", "IncludeCreatesCycle", "include creates an include cycle: roots/parent -> roots/child -> roots/child"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "IncludeCreatesCycle", "include creates an include cycle: roots/parent -> roots/child -> roots/child"),
 		},
 	})
 
@@ -665,7 +665,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyNotRootIncludeRootProxy.Name, Namespace: proxyNotRootIncludeRootProxy.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyNotRootIncludeRootProxy.Generation).
-				WithError("VirtualHostError", "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "FQDNNotSpecified", "Spec.VirtualHost.Fqdn must be specified"),
 			{Name: proxyIncludedChildValid.Name, Namespace: proxyIncludedChildValid.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyIncludedChildValid.Generation).
 				Orphaned(),
@@ -699,7 +699,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyWildCardFQDN.Name, Namespace: proxyWildCardFQDN.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyWildCardFQDN.Generation).
-				WithError("VirtualHostError", "WildCardNotAllowed", `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`),
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "WildCardNotAllowed", `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`),
 		},
 	})
 
@@ -730,7 +730,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidServiceInvalid.Name, Namespace: proxyInvalidServiceInvalid.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidServiceInvalid.Generation).
-				WithError("ServiceError", "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "roots/invalid" not found`),
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "roots/invalid" not found`),
 		},
 	})
 
@@ -761,7 +761,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidServicePortInvalid.Name, Namespace: proxyInvalidServicePortInvalid.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidServiceInvalid.Generation).
-				WithError("ServiceError", "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: port "9999" on service "roots/home" not matched`),
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: port "9999" on service "roots/home" not matched`),
 		},
 	})
 
@@ -809,10 +809,10 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyValidExampleCom.Name, Namespace: proxyValidExampleCom.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidExampleCom.Generation).
-				WithError("VirtualHostError", "DuplicateVhost", `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`),
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "DuplicateVhost", `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`),
 			{Name: proxyValidReuseExampleCom.Name, Namespace: proxyValidReuseExampleCom.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidReuseExampleCom.Generation).
-				WithError("VirtualHostError", "DuplicateVhost", `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`),
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "DuplicateVhost", `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`),
 		},
 	})
 
@@ -864,10 +864,10 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyRootIncludesRoot.Name, Namespace: proxyRootIncludesRoot.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyRootIncludesRoot.Generation).
-				WithError("VirtualHostError", "DuplicateVhost", `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`),
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "DuplicateVhost", `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`),
 			{Name: proxyRootIncludedByRoot.Name, Namespace: proxyRootIncludedByRoot.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyRootIncludedByRoot.Generation).
-				WithError("VirtualHostError", "DuplicateVhost", `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`),
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "DuplicateVhost", `fqdn "blog.containersteve.com" is used in multiple HTTPProxies: marketing/blog, roots/root-blog`),
 		},
 	})
 
@@ -913,7 +913,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyIncludesRootDifferentFQDN.Name, Namespace: proxyIncludesRootDifferentFQDN.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyIncludesRootDifferentFQDN.Generation).
-				WithError("IncludeError", "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
 			{Name: proxyRootIncludedByRootDiffFQDN.Name, Namespace: proxyRootIncludedByRootDiffFQDN.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyRootIncludedByRootDiffFQDN.Generation).
 				Valid(),
@@ -1031,7 +1031,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidTwoMirrors.Name, Namespace: proxyInvalidTwoMirrors.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidTwoMirrors.Generation).
-				WithError("ServiceError", "OnlyOneMirror", "only one service per route may be nominated as mirror"),
+				WithError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror", "only one service per route may be nominated as mirror"),
 		},
 	})
 
@@ -1071,7 +1071,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidDuplicateMatchConditionHeaders.Name, Namespace: proxyInvalidDuplicateMatchConditionHeaders.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidDuplicateMatchConditionHeaders.Generation).
-				WithError("RouteError", "HeaderMatchConditionsNotValid", "cannot specify duplicate header 'exact match' conditions in the same route"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid", "cannot specify duplicate header 'exact match' conditions in the same route"),
 		},
 	})
 
@@ -1133,7 +1133,7 @@ func TestDAGStatus(t *testing.T) {
 			{Name: proxyValidDelegatedRoots.Name,
 				Namespace: proxyValidDelegatedRoots.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidDelegatedRoots.Generation).
-				WithError("RouteError", "HeaderMatchConditionsNotValid", "cannot specify duplicate header 'exact match' conditions in the same route"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid", "cannot specify duplicate header 'exact match' conditions in the same route"),
 		},
 	})
 
@@ -1206,7 +1206,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidMultiplePrefixes.Name, Namespace: proxyInvalidMultiplePrefixes.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidMultiplePrefixes.Generation).
-				WithError("RouteError", "PathMatchConditionsNotValid", "route: more than one prefix is not allowed in a condition block"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid", "route: more than one prefix is not allowed in a condition block"),
 		},
 	})
 
@@ -1259,7 +1259,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidTwoPrefixesWithInclude.Name, Namespace: proxyInvalidTwoPrefixesWithInclude.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidTwoPrefixesWithInclude.Generation).
-				WithError("IncludeError", "PathMatchConditionsNotValid", "include: more than one prefix is not allowed in a condition block"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", "include: more than one prefix is not allowed in a condition block"),
 			{Name: proxyValidChildTeamA.Name, Namespace: proxyValidChildTeamA.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidChildTeamA.Generation).
 				Orphaned(),
@@ -1294,7 +1294,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidPrefixNoSlash.Name, Namespace: proxyInvalidPrefixNoSlash.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyInvalidPrefixNoSlash.Generation).
-				WithError("RouteError", "PathMatchConditionsNotValid", "route: prefix conditions must start with /, api was supplied"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid", "route: prefix conditions must start with /, api was supplied"),
 		},
 	})
 
@@ -1329,7 +1329,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyInvalidIncludePrefixNoSlash, proxyValidChildTeamA, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidIncludePrefixNoSlash.Name, Namespace: proxyInvalidIncludePrefixNoSlash.Namespace}: fixture.NewValidCondition().
-				WithError("IncludeError", "PathMatchConditionsNotValid", "include: prefix conditions must start with /, api was supplied"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "PathMatchConditionsNotValid", "include: prefix conditions must start with /, api was supplied"),
 			{Name: proxyValidChildTeamA.Name, Namespace: proxyValidChildTeamA.Namespace}: fixture.NewValidCondition().
 				Orphaned(),
 		},
@@ -1364,7 +1364,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyInvalidTCPProxyIncludeAndService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidTCPProxyIncludeAndService.Name, Namespace: proxyInvalidTCPProxyIncludeAndService.Namespace}: fixture.NewValidCondition().
-				WithError("TCPProxyError", "NoServicesAndInclude", "cannot specify services and include in the same httpproxy"),
+				WithError(contour_api_v1.ConditionTypeTCPProxyError, "NoServicesAndInclude", "cannot specify services and include in the same httpproxy"),
 		},
 	})
 
@@ -1388,7 +1388,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyTCPNoServiceOrInclusion, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPNoServiceOrInclusion.Name, Namespace: proxyTCPNoServiceOrInclusion.Namespace}: fixture.NewValidCondition().
-				WithError("TCPProxyError", "NothingDefined", "either services or inclusion must be specified"),
+				WithError(contour_api_v1.ConditionTypeTCPProxyError, "NothingDefined", "either services or inclusion must be specified"),
 		},
 	})
 
@@ -1417,7 +1417,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyTCPIncludesFoo, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPIncludesFoo.Name, Namespace: proxyTCPIncludesFoo.Namespace}: fixture.NewValidCondition().
-				WithError("TCPProxyIncludeError", "IncludeNotFound", "include roots/foo not found"),
+				WithError(contour_api_v1.ConditionTypeTCPProxyIncludeError, "IncludeNotFound", "include roots/foo not found"),
 		},
 	})
 
@@ -1446,7 +1446,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyTCPIncludesFoo, proxyValidTCPRoot, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPIncludesFoo.Name, Namespace: proxyTCPIncludesFoo.Namespace}: fixture.NewValidCondition().
-				WithError("TCPProxyIncludeError", "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
+				WithError(contour_api_v1.ConditionTypeTCPProxyIncludeError, "RootIncludesRoot", "root httpproxy cannot include another root httpproxy"),
 			{Name: proxyValidTCPRoot.Name, Namespace: proxyValidTCPRoot.Namespace}: fixture.NewValidCondition().Valid(),
 		},
 	})
@@ -1549,7 +1549,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidConflictingIncludeConditions.Name,
 				Namespace: proxyInvalidConflictingIncludeConditions.Namespace}: fixture.NewValidCondition().
-				WithError("IncludeError", "DuplicateMatchConditions", "duplicate conditions defined on an include"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name, Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
 				Orphaned(),
 			{Name: proxyValidBlogTeamB.Name, Namespace: proxyValidBlogTeamB.Namespace}: fixture.NewValidCondition().
@@ -1602,7 +1602,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidConflictHeaderConditions.Name,
 				Namespace: proxyInvalidConflictHeaderConditions.Namespace}: fixture.NewValidCondition().
-				WithError("IncludeError", "DuplicateMatchConditions", "duplicate conditions defined on an include"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().Orphaned(),
 			{Name: proxyValidBlogTeamB.Name,
@@ -1657,7 +1657,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidDuplicateHeaderAndPathConditions.Name,
 				Namespace: proxyInvalidDuplicateHeaderAndPathConditions.Namespace}: fixture.NewValidCondition().
-				WithError("IncludeError", "DuplicateMatchConditions", "duplicate conditions defined on an include"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "DuplicateMatchConditions", "duplicate conditions defined on an include"),
 			{Name: proxyValidBlogTeamA.Name,
 				Namespace: proxyValidBlogTeamA.Namespace}: fixture.NewValidCondition().
 				Orphaned(),
@@ -1686,7 +1686,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyInvalidMissingInclude, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidMissingInclude.Name, Namespace: proxyInvalidMissingInclude.Namespace}: fixture.NewValidCondition().
-				WithError("IncludeError", "IncludeNotFound", "include roots/child not found"),
+				WithError(contour_api_v1.ConditionTypeIncludeError, "IncludeNotFound", "include roots/child not found"),
 		},
 	})
 
@@ -1715,7 +1715,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyTCPInvalidMissingService},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPInvalidMissingService.Name, Namespace: proxyTCPInvalidMissingService.Namespace}: fixture.NewValidCondition().
-				WithError("TCPProxyError", "UnresolvedServiceRef", `Spec.TCPProxy unresolved service reference: service "roots/not-found" not found`),
+				WithError(contour_api_v1.ConditionTypeTCPProxyError, "UnresolvedServiceRef", `Spec.TCPProxy unresolved service reference: service "roots/not-found" not found`),
 		},
 	})
 
@@ -1744,7 +1744,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyTCPInvalidPortNotMatched, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPInvalidPortNotMatched.Name, Namespace: proxyTCPInvalidPortNotMatched.Namespace}: fixture.NewValidCondition().
-				WithError("TCPProxyError", "UnresolvedServiceRef", `Spec.TCPProxy unresolved service reference: port "9999" on service "roots/kuard" not matched`),
+				WithError(contour_api_v1.ConditionTypeTCPProxyError, "UnresolvedServiceRef", `Spec.TCPProxy unresolved service reference: port "9999" on service "roots/kuard" not matched`),
 		},
 	})
 
@@ -1770,7 +1770,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyTCPInvalidMissingTLS},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPInvalidMissingTLS.Name, Namespace: proxyTCPInvalidMissingTLS.Namespace}: fixture.NewValidCondition().
-				WithError("TCPProxyError", "TLSMustBeConfigured", "Spec.TCPProxy requires that either Spec.TLS.Passthrough or Spec.TLS.SecretName be set"),
+				WithError(contour_api_v1.ConditionTypeTCPProxyError, "TLSMustBeConfigured", "Spec.TCPProxy requires that either Spec.TLS.Passthrough or Spec.TLS.SecretName be set"),
 		},
 	})
 
@@ -1804,7 +1804,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{fixture.SecretRootsCert, fixture.ServiceRootsKuard, proxyInvalidMissingServiceWithTCPProxy},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidMissingServiceWithTCPProxy.Name, Namespace: proxyInvalidMissingServiceWithTCPProxy.Namespace}: fixture.NewValidCondition().
-				WithError("ServiceError", "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "roots/missing" not found`),
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "roots/missing" not found`),
 		},
 	})
 
@@ -1838,7 +1838,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{fixture.SecretRootsCert, fixture.ServiceRootsKuard, proxyRoutePortNotMatchedWithTCP},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyRoutePortNotMatchedWithTCP.Name, Namespace: proxyRoutePortNotMatchedWithTCP.Namespace}: fixture.NewValidCondition().
-				WithError("ServiceError", "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: port "9999" on service "roots/kuard" not matched`),
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: port "9999" on service "roots/kuard" not matched`),
 		},
 	})
 
@@ -1942,7 +1942,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyInvalidNoServices, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyInvalidNoServices.Name, Namespace: proxyInvalidNoServices.Namespace}: fixture.NewValidCondition().
-				WithError("RouteError", "NoServicesPresent", "route.services must have at least one entry"),
+				WithError(contour_api_v1.ConditionTypeRouteError, "NoServicesPresent", "route.services must have at least one entry"),
 		},
 	})
 
@@ -1980,7 +1980,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: fallbackCertificate.Name,
 				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
-				WithError("TLSError", "FallbackNotValid", `Spec.Virtualhost.TLS Secret "invalid/invalid" fallback certificate is invalid: Secret not found`),
+				WithError(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid", `Spec.Virtualhost.TLS Secret "invalid/invalid" fallback certificate is invalid: Secret not found`),
 		},
 	})
 
@@ -1989,7 +1989,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: fallbackCertificate.Name,
 				Namespace: fallbackCertificate.Namespace}: fixture.NewValidCondition().
-				WithError("TLSError", "FallbackNotPresent", "Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file"),
+				WithError(contour_api_v1.ConditionTypeTLSError, "FallbackNotPresent", "Spec.Virtualhost.TLS enabled fallback but the fallback Certificate Secret is not configured in Contour configuration file"),
 		},
 	})
 
@@ -2026,7 +2026,7 @@ func TestDAGStatus(t *testing.T) {
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: fallbackCertificateWithClientValidation.Name,
 				Namespace: fallbackCertificateWithClientValidation.Namespace}: fixture.NewValidCondition().
-				WithError("TLSError", "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client validation are incompatible"),
+				WithError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client validation are incompatible"),
 		},
 	})
 
@@ -2053,7 +2053,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{fixture.SecretRootsCert, tlsPassthroughAndValidation},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: tlsPassthroughAndValidation.Name, Namespace: tlsPassthroughAndValidation.Namespace}: fixture.NewValidCondition().
-				WithError("TLSError", "TLSIncompatibleFeatures", "Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation"),
+				WithError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.VirtualHost.TLS passthrough cannot be combined with tls.clientValidation"),
 		},
 	})
 
@@ -2081,7 +2081,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: "invalid", Namespace: fixture.ServiceRootsKuard.Namespace}: fixture.NewValidCondition().
-				WithError("TLSError", "TLSConfigNotValid", "Spec.VirtualHost.TLS: both Passthrough and SecretName were specified"),
+				WithError(contour_api_v1.ConditionTypeTLSError, "TLSConfigNotValid", "Spec.VirtualHost.TLS: both Passthrough and SecretName were specified"),
 		},
 	})
 
@@ -2109,7 +2109,7 @@ func TestDAGStatus(t *testing.T) {
 		},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: "invalid", Namespace: fixture.ServiceRootsKuard.Namespace}: fixture.NewValidCondition().
-				WithError("TLSError", "TLSConfigNotValid", "Spec.VirtualHost.TLS: neither Passthrough nor SecretName were specified"),
+				WithError(contour_api_v1.ConditionTypeTLSError, "TLSConfigNotValid", "Spec.VirtualHost.TLS: neither Passthrough nor SecretName were specified"),
 		},
 	})
 
@@ -2129,7 +2129,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{emptyProxy},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: emptyProxy.Name, Namespace: emptyProxy.Namespace}: fixture.NewValidCondition().
-				WithError("SpecError", "NothingDefined", "HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy"),
+				WithError(contour_api_v1.ConditionTypeSpecError, "NothingDefined", "HTTPProxy.Spec must have at least one Route, Include, or a TCPProxy"),
 		},
 	})
 
@@ -2163,7 +2163,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{invalidRequestHeadersPolicyService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: invalidRequestHeadersPolicyService.Name, Namespace: invalidRequestHeadersPolicyService.Namespace}: fixture.NewValidCondition().
-				WithError("ServiceError", "RequestHeadersPolicyInvalid", `rewriting "Host" header is not supported on request headers`),
+				WithError(contour_api_v1.ConditionTypeServiceError, "RequestHeadersPolicyInvalid", `rewriting "Host" header is not supported on request headers`),
 		},
 	})
 
@@ -2197,7 +2197,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{invalidResponseHeadersPolicyService, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: invalidResponseHeadersPolicyService.Name, Namespace: invalidResponseHeadersPolicyService.Namespace}: fixture.NewValidCondition().
-				WithError("ServiceError", "ResponseHeadersPolicyInvalid", `rewriting "Host" header is not supported on response headers`),
+				WithError(contour_api_v1.ConditionTypeServiceError, "ResponseHeadersPolicyInvalid", `rewriting "Host" header is not supported on response headers`),
 		},
 	})
 
@@ -2231,7 +2231,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{invalidResponseHeadersPolicyRoute, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: invalidResponseHeadersPolicyRoute.Name, Namespace: invalidResponseHeadersPolicyRoute.Namespace}: fixture.NewValidCondition().
-				WithError("RouteError", "ResponseHeaderPolicyInvalid", `rewriting "Host" header is not supported on response headers`),
+				WithError(contour_api_v1.ConditionTypeRouteError, "ResponseHeaderPolicyInvalid", `rewriting "Host" header is not supported on response headers`),
 		},
 	})
 
@@ -2259,7 +2259,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{fixture.SecretRootsCert, proxyAuthFallback},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyAuthFallback.Name, Namespace: proxyAuthFallback.Namespace}: fixture.NewValidCondition().
-				WithError("TLSError", "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible"),
+				WithError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible"),
 		},
 	})
 
@@ -2293,7 +2293,7 @@ func TestDAGStatus(t *testing.T) {
 			{
 				Name:      invalidResponseTimeout.Name,
 				Namespace: invalidResponseTimeout.Namespace,
-			}: fixture.NewValidCondition().WithError("RouteError", "TimeoutPolicyNotValid",
+			}: fixture.NewValidCondition().WithError(contour_api_v1.ConditionTypeRouteError, "TimeoutPolicyNotValid",
 				`route.timeoutPolicy failed to parse: error parsing response timeout: unable to parse timeout string "invalid-val": time: invalid duration "invalid-val"`),
 		},
 	})
@@ -2328,7 +2328,7 @@ func TestDAGStatus(t *testing.T) {
 			{
 				Name:      invalidIdleTimeout.Name,
 				Namespace: invalidIdleTimeout.Namespace,
-			}: fixture.NewValidCondition().WithError("RouteError", "TimeoutPolicyNotValid",
+			}: fixture.NewValidCondition().WithError(contour_api_v1.ConditionTypeRouteError, "TimeoutPolicyNotValid",
 				`route.timeoutPolicy failed to parse: error parsing idle timeout: unable to parse timeout string "invalid-val": time: invalid duration "invalid-val"`),
 		},
 	})
