@@ -30,8 +30,6 @@ const (
 	ProxyStatusValid    ProxyStatus = "valid"
 	ProxyStatusInvalid  ProxyStatus = "invalid"
 	ProxyStatusOrphaned ProxyStatus = "orphaned"
-
-	OrphanedConditionType ConditionType = "Orphaned"
 )
 
 // NewCache creates a new Cache for holding status updates.
