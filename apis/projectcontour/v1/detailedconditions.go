@@ -114,6 +114,9 @@ type DetailedCondition struct {
 }
 
 const (
+	// ValidConditionType describes an valid condition.
+	ValidConditionType = "Valid"
+
 	// ConditionTypeAuthError describes an error condition related to Auth.
 	ConditionTypeAuthError = "AuthError"
 
@@ -159,9 +162,6 @@ const (
 	// ConditionTypeTLSError describes an error condition relating
 	// to TLS configuration.
 	ConditionTypeTLSError = "TLSError"
-
-	// ConditionTypeValid describes an valid condition.
-	ConditionTypeValid = "Valid"
 
 	// ConditionTypeVirtualHostError describes an error condition relating
 	// to the VirtualHost configuration section of an HTTPProxy resource.

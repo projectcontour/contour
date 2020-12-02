@@ -169,7 +169,7 @@ func (dc *DetailedCondition) GetWarning(warnType string) (SubCondition, bool) {
 // condition like `Valid` or `Ready`, and false otherwise.
 func (dc *DetailedCondition) IsPositivePolarity() bool {
 	switch dc.Type {
-	case ConditionTypeValid:
+	case ValidConditionType:
 		return true
 	default:
 		return false
