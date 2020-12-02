@@ -24,7 +24,7 @@ type DetailedConditionBuilder v1.DetailedCondition
 func NewValidCondition() *DetailedConditionBuilder {
 	b := &DetailedConditionBuilder{
 		Condition: v1.Condition{
-			Type: v1.ConditionTypeValid,
+			Type: v1.ValidConditionType,
 		},
 	}
 
