@@ -31,5 +31,5 @@ and "why does Contour do this thing this way?"
 [3]: {{site.footer_social_links.Twitter.url}}
 [4]: {{site.footer_social_links.Slack.url}}
 [5]: https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw
-[6]: https://www.youtube.com/playlist?list=PL7bmigfV0EqTBsPrnCkzhu0R4SAWnBjLj
+[6]: https://www.youtube.com/playlist?list=PLk2K7YhXu5KtYU1UGEYNC8ApH5gsWihDJ
 [7]: https://lists.cncf.io/g/cncf-contour-users/
