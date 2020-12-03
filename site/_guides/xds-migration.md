@@ -10,7 +10,7 @@ This guide shows you how to migrate in-place instances of Envoy running xDS v2 t
 Envoy communicates with Contour over gRPC which allows for dynamic communication for Envoy configuration updates.
 Until Contour v1.10, this gRPC xDS communication utilized the v2 xDS for transport as well as resource version.
 
-In the beginning of Q1 20201, the Envoy community is [deprecating][0] the v2 xDS API in favor of the v3 which has been stable since Q1 2020.
+In the beginning of Q1 2021, the Envoy community is [deprecating][0] the v2 xDS API in favor of the v3 which has been stable since Q1 2020.
 Contour offers support for the v3 xDS API in Contour v1.10.0. 
 
 Practically for users, this change has no effect on how Contour configures Envoy to route ingress traffic inside a Kubernetes cluster, however
