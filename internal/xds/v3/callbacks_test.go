@@ -115,11 +115,12 @@ func TestLogDiscoveryRequestDetails(t *testing.T) {
 func TestOnStreamRequestCallbackLogs(t *testing.T) {
 	log, logHook := test.NewNullLogger()
 	callbacks := NewCallbacks(log)
-	callbacks.OnStreamRequest(999, &envoy_service_discovery_v3.DiscoveryRequest{
+	err := callbacks.OnStreamRequest(999, &envoy_service_discovery_v3.DiscoveryRequest{
 		VersionInfo:   "req-version",
 		ResponseNonce: "resp-nonce",
 		ResourceNames: []string{"some", "resources"},
 		TypeUrl:       "some-type-url",
 	})
+	assert.NoError(t, err)
 	assert.NotEmpty(t, logHook.AllEntries())
 }
