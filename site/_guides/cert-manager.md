@@ -521,9 +521,9 @@ There are two ways to interact with cert-manager which will allow certificates t
 
 ### Certificate Resource
 
-cert-manager watched for its own `Certificate` objects inside your Kubernetes cluster.
+cert-manager watches for its own `Certificate` objects inside your Kubernetes cluster.
 When cert-manager finds a `Certificate` object, it will implement the HTTP01 challenge by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
-These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates.
+These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates for.
 
 The Ingress resource as well as the solver pods are short lived and will only be available during the certificate request or renewal process.
 
