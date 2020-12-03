@@ -517,11 +517,7 @@ $ curl https://httpbin.davecheney.com/get
 cert-manager currently does not have a way to interact with HTTPProxy objects in order to respond to the HTTP01 challenge correctly.
 (See [#950][10] and [#951][11] for details.)
 
-There are two ways to interact with cert-manager which will allow certificates to be requested automatically with an HTTP01 challenge, using an `ingress shim` or using a cert-manager `Certificate` object.
-
-### Certificate Resource
-
-cert-manager watches for its own `Certificate` objects inside your Kubernetes cluster.
+cert-manager can be configured to request certificates automatically using an `Certificate` object.
 When cert-manager finds a `Certificate` object, it will implement the HTTP01 challenge by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
 These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates for.
 
@@ -588,91 +584,6 @@ $ curl https://httpbinproxy.davecheney.com/get
   "url": "https://httpbinproxy.davecheney.com/get"
 }
 ```
-
-### Ingress Shim
-
-cert-manager can implement the HTTP01 challenge by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
-These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates.
-This means that cert-manager can't be *directly* used for generating certificates for HTTPProxy configuration.
-
-However, we can create a dummy Ingress object that will have cert-manager provision the certificate Secret, so that we can consume it in a HTTPProxy.
-This works because Contour expects the Secrets to look the same anyway.
-
-To do this, we need to create our HTTPProxy and Ingress objects.
-
-This example uses the hostname `httpbinproxy.davecheney.com`, remember to create that name before starting.
-
-Firstly, the HTTPProxy:
-
-```yaml
-apiVersion: projectcontour.io/v1
-kind: HTTPProxy
-metadata:
-  name: httpbinproxy
-spec:
-  virtualhost:
-    fqdn: httpbinproxy.davecheney.com
-    tls:
-      secretName: httpbinproxy
-  routes:
-  - services:
-    - name: httpbin
-      port: 8080
-```
-
-This object will be marked as Invalid by Contour, since the TLS secret doesn't exist yet.
-Once that's done, create the dummy Ingress object:
-
-```yaml
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    ingress.kubernetes.io/force-ssl-redirect: "true"
-    kubernetes.io/tls-acme: "true"
-  name: httpbinproxy
-spec:
-  rules:
-  - host: httpbinproxy.davecheney.com
-    http:
-      paths:
-      - backend:
-          serviceName: httpbin
-          servicePort: 8080
-  tls:
-  - hosts:
-    - httpbinproxy.davecheney.com
-    secretName: httpbinproxy
-```
-
-Once cert-manager has fulfilled the HTTP01 challenge, you will have a `httpbinproxy` secret, that will contain the keypair.
-Contour will detect that the Secret exists and generate the HTTPProxy config.
-
-After that, you should be able to curl the new site:
-
-```sh
-$ curl https://httpbinproxy.davecheney.com/get
-{
-  "args": {},
-  "headers": {
-    "Accept": "*/*",
-    "Content-Length": "0",
-    "Host": "httpbinproxy.davecheney.com",
-    "User-Agent": "curl/7.54.0",
-    "X-Envoy-Expected-Rq-Timeout-Ms": "15000",
-    "X-Envoy-External-Address": "122.106.57.183"
-  },
-  "origin": "122.106.57.183",
-  "url": "https://httpbinproxy.davecheney.com/get"
-}
-```
-
-#### Caveats
-
-This method is a workaround until we can deliver the changes in [#950][10] and [#951][11].
-
-The dummy Ingress record exists only to hold the annotations that cert-manager requires in order to kick off the certification creation process and subsequent renewals of the certificate before it expires.
 
 ## Wrapping up
 
