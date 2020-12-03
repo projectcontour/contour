@@ -517,8 +517,82 @@ $ curl https://httpbin.davecheney.com/get
 cert-manager currently does not have a way to interact with HTTPProxy objects in order to respond to the HTTP01 challenge correctly.
 (See [#950][10] and [#951][11] for details.)
 
-cert-manager does this by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
-These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates for.
+There are two ways to interact with cert-manager which will allow certificates to be requested automatically with an HTTP01 challenge, using an `ingress shim` or using a cert-manager `Certificate` object.
+
+### Certificate Resource
+
+cert-manager watched for its own `Certificate` objects inside your Kubernetes cluster.
+When cert-manager finds a `Certificate` object, it will implement the HTTP01 challenge by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
+These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates.
+
+The Ingress resource as well as the solver pods are short lived and will only be available during the certificate request or renewal process.
+
+To do this, we first need to create our HTTPProxy and Certificate objects.
+
+This example uses the hostname `httpbinproxy.davecheney.com`, remember to create that name before starting.
+
+Firstly, the HTTPProxy:
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: httpbinproxy
+spec:
+  virtualhost:
+    fqdn: httpbinproxy.davecheney.com
+    tls:
+      secretName: httpbinproxy
+  routes:
+  - services:
+    - name: httpbin
+      port: 8080
+```
+
+This object will be marked as Invalid by Contour, since the TLS secret doesn't exist yet.
+Once that's done, create the Certificate object:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: httpbinproxy
+spec:
+  commonName: httpbinproxy.davecheney.com
+  dnsNames:
+  - httpbinproxy.davecheney.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  secretName: httpbinproxy
+```
+
+Once cert-manager has fulfilled the HTTP01 challenge, you will have a `httpbinproxy` secret, that will contain the keypair.
+Contour will detect that the Secret exists and generate the HTTPProxy config.
+
+After that, you should be able to curl the new site:
+
+```sh
+$ curl https://httpbinproxy.davecheney.com/get
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "0",
+    "Host": "httpbinproxy.davecheney.com",
+    "User-Agent": "curl/7.54.0",
+    "X-Envoy-Expected-Rq-Timeout-Ms": "15000",
+    "X-Envoy-External-Address": "122.106.57.183"
+  },
+  "origin": "122.106.57.183",
+  "url": "https://httpbinproxy.davecheney.com/get"
+}
+```
+
+### Ingress Shim
+
+cert-manager can implement the HTTP01 challenge by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
+These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates.
 This means that cert-manager can't be *directly* used for generating certificates for HTTPProxy configuration.
 
 However, we can create a dummy Ingress object that will have cert-manager provision the certificate Secret, so that we can consume it in a HTTPProxy.
@@ -572,7 +646,7 @@ spec:
     secretName: httpbinproxy
 ```
 
-Once cert-manager has done its thing, you will have a `httpbinproxy` secret, that will contain the keypair.
+Once cert-manager has fulfilled the HTTP01 challenge, you will have a `httpbinproxy` secret, that will contain the keypair.
 Contour will detect that the Secret exists and generate the HTTPProxy config.
 
 After that, you should be able to curl the new site:
@@ -594,24 +668,23 @@ $ curl https://httpbinproxy.davecheney.com/get
 }
 ```
 
-### Caveats
+#### Caveats
 
 This method is a workaround until we can deliver the changes in [#950][10] and [#951][11].
 
-The dummy Ingress record exists only to hold the annotations that cert-manager requires in order to kick off the certification creation process.
-Because it does not include the `ingress-class: contour` annotation, Contour will not see it and so the configuration of the Ingress does not matter, except that it is valid enough for cert-manager to use.
-See the [cert-manager docs][12] for more information.
+The dummy Ingress record exists only to hold the annotations that cert-manager requires in order to kick off the certification creation process and subsequent renewals of the certificate before it expires.
 
 ## Wrapping up
 
 Now that you've deployed your first HTTPS site using Contour and Let's Encrypt, deploying additional TLS enabled services is much simpler.
-Remember that for each HTTPS website you deploy, cert-manager will  create a Certificate CRD that provides the domain name and the name of the target Secret.
+Remember that for each HTTPS website you deploy, cert-manager will create a Certificate CRD that provides the domain name and the name of the target Secret.
 The TLS functionality will be enabled when the HTTPProxy contains the `tls:` stanza, and the referenced secret contains a valid keypair.
+
+See the [cert-manager docs][12] for more information.
 
 ## Bonus points
 
-For bonus points, it's 2020 and you probably shouldn't be serving traffic over insecure HTTP any more.
-Now that TLS is configured for your web service, you can use a feature of Contour to automatically upgrade any HTTP request to the corresponding HTTPS site.
+For bonus points, it's 2020 and you probably shouldn't be serving traffic over insecure HTTP any more, you can use a feature of Contour to automatically upgrade any HTTP request to the corresponding HTTPS site.
 
 To enable the automatic redirect from HTTP to HTTPS, add this annotation to your Ingress object.
 
@@ -640,6 +713,8 @@ $ curl -v http://httpbin.davecheney.com/get
 <
 * Connection #0 to host httpbin.davecheney.com left intact
 ```
+
+__Note:__ For HTTPProxy resources this happens automatically without the need for an annotation.
 
 [0]: {{site.github.repository_url}}
 [1]: https://github.com/jetstack/cert-manager
