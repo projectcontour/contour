@@ -553,7 +553,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		case config.EnvoyServerType:
 			v3cache := contour_xds_v3.NewSnapshotCache(false, log)
 			snapshotHandler.AddSnapshotter(v3cache)
-			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(context.Background(), v3cache, nil), grpcServer)
+			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(context.Background(), v3cache, contour_xds_v3.NewCallbacks(log.Logger)), grpcServer)
 		case config.ContourServerType:
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 		default:
