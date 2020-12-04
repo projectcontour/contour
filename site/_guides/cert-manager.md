@@ -11,7 +11,7 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 
 ## Prerequisites
 
-- A Kubernetes cluster deployed in either a data center or a cloud provider with a Kubernetes as a service offering. This tutorial was developed on a GKE cluster running Kubernetes 1.14
+- A Kubernetes cluster deployed in either a data center or a cloud provider with a Kubernetes as a service offering. This tutorial was developed on a GKE cluster running Kubernetes 1.17
 - RBAC enabled on your cluster
 - Your cluster must be able to request a public IP address from your cloud provider, using a load balancer. If you're on AWS or GKE this is automatic if you deploy a Kubernetes service object of type: LoadBalancer. If you're on your own datacenter you must set it up yourself
 - A DNS domain that you control, where you host your web application
@@ -45,11 +45,14 @@ Check the progress of the deployment with this command:
 
 ```
 $ kubectl -n projectcontour get po
-NAME                      READY     STATUS    RESTARTS   AGE
-contour-f9f68994f-kzjdz   2/2       Running   0          6d
-contour-f9f68994f-t7h8n   2/2       Running   0          6d
+NAME                            READY   STATUS      RESTARTS   AGE
+contour-5475898957-jh9fm        1/1     Running     0          39s
+contour-5475898957-qlbs2        1/1     Running     0          39s
+contour-certgen-v1.10.0-5xthf   0/1     Completed   0          39s
+envoy-hqbkm                     2/2     Running     0          39s
 ```
-After all the `contour` pods reach `Running` status, move on to the next step.
+
+After all the `contour` & `envoy` pods reach `Running` status and fully `Ready`, move on to the next step.
 
 ### Access your cluster
 
@@ -97,7 +100,7 @@ Check that the pod is running:
 
 ```
 $ kubectl get po -l app=httpbin
-NAME                       READY     STATUS    RESTARTS   AGE
+NAME                         READY     STATUS    RESTARTS   AGE
 httpbin-67ff6dd458-sfxkb     1/1       Running   0          19d
 ```
 
@@ -118,14 +121,10 @@ There are plenty of [other ways to deploy cert-manager][4], but they are out of 
 
 ### Fetch the source manager deployment manifest
 
-To keep things simple, we skip cert-manager's Helm installation, and use the [supplied YAML manifests][5]. Note that the deployment YAMLs don't create the namespace for you, so you must do that first.
-
-Also, the apply command can have `--validate=false` removed for Kubernetes versions > 1.15.
-Without this flag, on those versions, the apply command will receive a validation error relating to the CustomResourceDefinition resources. See the [cert-manager deployment guide][4] for more information.
+To keep things simple, we skip cert-manager's Helm installation, and use the [supplied YAML manifests][5].
 
 ```sh
-$ kubectl create namespace cert-manager
-$ kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml
+$ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
 ```
 
 When cert-manager is up and running you should see something like:
@@ -161,7 +160,7 @@ For Contour to be able to serve HTTPS traffic for an Ingress in any namespace, u
 Create a file called `letsencrypt-staging.yaml` with the following contents:
 
 ```yaml
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-staging
@@ -197,9 +196,10 @@ logs -l app=cert-manager -c cert-manager` informing you that the
 `ClusterIssuer` is properly registered:
 
 ```
-I0220 02:32:50.614141 1 controller.go:138] clusterissuers controller: syncing item 'letsencrypt-staging'
-I0220 02:32:52.552107 1 helpers.go:122] Setting lastTransitionTime for ClusterIssuer "letsencrypt-staging" condition "Ready" to 2018–02–20 02:32:52.552092474 +0000 UTC m=+10215.147984505
-I0220 02:32:52.560665 1 controller.go:152] clusterissuers controller: Finished processing work item "letsencrypt-staging"
+I1202 20:54:20.535886       1 setup.go:90] cert-manager/controller/clusterissuers "msg"="generating acme account private key" "related_resource_kind"="Secret" "related_resource_name"="letsencrypt-staging" "related_resource_namespace"="cert-manager" "resource_kind"="ClusterIssuer" "resource_name"="letsencrypt-staging" "resource_namespace"="" "resource_version"="v1" 
+I1202 20:54:20.812603       1 setup.go:178] cert-manager/controller/clusterissuers "msg"="ACME server URL host and ACME private key registration host differ. Re-checking ACME account registration" "related_resource_kind"="Secret" "related_resource_name"="letsencrypt-staging" "related_resource_namespace"="cert-manager" "resource_kind"="ClusterIssuer" "resource_name"="letsencrypt-staging" "resource_namespace"="" "resource_version"="v1" 
+I1202 20:54:21.210748       1 setup.go:270] cert-manager/controller/clusterissuers "msg"="verified existing registration with ACME server" "related_resource_kind"="Secret" "related_resource_name"="letsencrypt-staging" "related_resource_namespace"="cert-manager" "resource_kind"="ClusterIssuer" "resource_name"="letsencrypt-staging" "resource_namespace"="" "resource_version"="v1" 
+I1202 20:54:21.210780       1 conditions.go:92] Setting lastTransitionTime for Issuer "letsencrypt-staging" condition "Ready" to 2020-12-02 20:54:21.21077351 +0000 UTC m=+155.665053010
 ```
 
 ## 3. Deploy your first HTTPS site using Ingress
@@ -239,10 +239,6 @@ spec:
         command: ["gunicorn"]
         args: ["-b", "0.0.0.0:8080", "httpbin:app"]
       dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      terminationGracePeriodSeconds: 30
 ```
 
 Deploy to your cluster:
@@ -419,7 +415,7 @@ A `kubernetes.io/tls` secret is created with the `secretName` specified in the `
 ```
 $ kubectl get secret httpbin
 NAME      TYPE                DATA      AGE
-httpbin   kubernetes.io/tls   3         3m
+httpbin   kubernetes.io/tls   2         3m
 ```
 
 cert-manager manages the contents of the secret as long as the Ingress is present in your cluster.
@@ -445,7 +441,7 @@ To request a properly signed certificate from the Let's Encrypt production serve
 Create a file called `letsencrypt-prod.yaml` with the following contents:
 
 ```yaml
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-prod
@@ -520,6 +516,7 @@ $ curl https://httpbin.davecheney.com/get
 
 cert-manager currently does not have a way to interact with HTTPProxy objects in order to respond to the HTTP01 challenge correctly.
 (See [#950][10] and [#951][11] for details.)
+
 cert-manager does this by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
 These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates for.
 This means that cert-manager can't be *directly* used for generating certificates for HTTPProxy configuration.
@@ -613,7 +610,7 @@ The TLS functionality will be enabled when the HTTPProxy contains the `tls:` sta
 
 ## Bonus points
 
-For bonus points, it's 2019 and you probably shouldn't be serving traffic over insecure HTTP any more.
+For bonus points, it's 2020 and you probably shouldn't be serving traffic over insecure HTTP any more.
 Now that TLS is configured for your web service, you can use a feature of Contour to automatically upgrade any HTTP request to the corresponding HTTPS site.
 
 To enable the automatic redirect from HTTP to HTTPS, add this annotation to your Ingress object.
@@ -649,7 +646,7 @@ $ curl -v http://httpbin.davecheney.com/get
 [2]: https://letsencrypt.org/docs/rate-limits/
 [3]: http://httpbin.org/
 [4]: https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html
-[5]: https://github.com/jetstack/cert-manager/releases/download/v0.11.0/cert-manager.yaml
+[5]: https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
 [6]: https://letsencrypt.org/getting-started/
 [7]: /docs/{{site.latest}}/deploy-options/#get-your-hostname-or-ip-address
 [8]: {% link /img/cert-manager/httpbinhomepage.png %}
