@@ -114,7 +114,7 @@ func TestLogDiscoveryRequestDetails(t *testing.T) {
 
 func TestOnStreamRequestCallbackLogs(t *testing.T) {
 	log, logHook := test.NewNullLogger()
-	callbacks := NewCallbacks(log)
+	callbacks := NewRequestLoggingCallbacks(log)
 	err := callbacks.OnStreamRequest(999, &envoy_service_discovery_v3.DiscoveryRequest{
 		VersionInfo:   "req-version",
 		ResponseNonce: "resp-nonce",

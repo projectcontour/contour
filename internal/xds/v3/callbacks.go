@@ -21,7 +21,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func NewCallbacks(log *logrus.Logger) envoy_server_v3.Callbacks {
+// NewRequestLoggingCallbacks returns an implementation of the Envoy xDS server
+// callbacks for use when Contour is run in Envoy xDS server mode to provide
+// request detail logging. Currently only the xDS State of the World callback
+// OnStreamRequest is implemented.
+func NewRequestLoggingCallbacks(log *logrus.Logger) envoy_server_v3.Callbacks {
 	return &envoy_server_v3.CallbackFuncs{
 		StreamRequestFunc: func(streamID int64, req *envoy_service_discovery_v3.DiscoveryRequest) error {
 			logDiscoveryRequestDetails(log, req)
@@ -30,6 +34,8 @@ func NewCallbacks(log *logrus.Logger) envoy_server_v3.Callbacks {
 	}
 }
 
+// Helper function for use in the Envoy xDS server callbacks and the Contour
+// xDS server to log request details.
 func logDiscoveryRequestDetails(l *logrus.Logger, req *envoy_service_discovery_v3.DiscoveryRequest) {
 	log := l.WithField("version_info", req.VersionInfo).WithField("response_nonce", req.ResponseNonce)
 	if req.Node != nil {
