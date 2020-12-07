@@ -124,7 +124,7 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 			p.WithError(err).
 				WithField("name", ing.GetName()).
 				WithField("namespace", ing.GetNamespace()).
-				WithField("secret", clientCertSecret).
+				WithField("secret", p.ClientCertificate).
 				Error("tls.envoy-client-certificate contains unresolved secret reference")
 			return
 		}
