@@ -183,7 +183,7 @@ Now that `contour-authserver` is deployed, the next step is to create a
 `ExtensionService` resource.
 
 ```yaml
-apiVersion: projectcontour.io/v1
+apiVersion: projectcontour.io/v1alpha1
 kind: ExtensionService
 metadata:
   name: htpasswd
