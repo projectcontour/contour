@@ -75,7 +75,7 @@ func (s *contourServer) stream(st grpcStream) error {
 	log := s.WithField("connection", s.connections.Next())
 
 	// Notify whether the stream terminated on error.
-	done := func(log *logrus.Entry, err error) error {
+	done := func(log logrus.FieldLogger, err error) error {
 		if err != nil {
 			log.WithError(err).Error("stream terminated")
 		} else {
@@ -102,7 +102,8 @@ func (s *contourServer) stream(st grpcStream) error {
 			return done(log, err)
 		}
 
-		logDiscoveryRequestDetails(log.Logger, req)
+		// Note: redeclare log in this scope so the next time around the loop all is forgotten.
+		log := logDiscoveryRequestDetails(log, req)
 
 		// From the request we derive the resource to stream which have
 		// been registered according to the typeURL.

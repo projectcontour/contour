@@ -99,16 +99,17 @@ func TestLogDiscoveryRequestDetails(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			logDiscoveryRequestDetails(log, tc.discoveryReq)
-			var expectedLogEntry *logrus.Entry
+			var logEntry *logrus.Entry
 			for _, le := range logHook.AllEntries() {
 				if le.Message == tc.expectedLogMsg {
-					expectedLogEntry = le
+					logEntry = le
+					break
 				}
 			}
-			assert.NotNil(t, expectedLogEntry, fmt.Sprintf("no log line with expected message %q", tc.expectedLogMsg))
-			assert.Equal(t, expectedLogEntry.Data, tc.expectedLogData)
+			assert.NotNil(t, logEntry, fmt.Sprintf("no log line with expected message %q", tc.expectedLogMsg))
+			assert.Equal(t, logEntry.Data, tc.expectedLogData)
+			logHook.Reset()
 		})
-		logHook.Reset()
 	}
 }
 
