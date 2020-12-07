@@ -28,7 +28,7 @@ Run:
 $ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
 ```
 
-### Option 2
+### Option 2: Install using Operator
 
 __FEATURE STATE:__ Contour v1.11.0 [alpha][13]
 
@@ -60,7 +60,7 @@ Deploying Contour using either option creates:
 - A Service of `type: LoadBalancer` that points to the Contour's Envoy instances
 - Depending on your deployment environment, new cloud resources -- for example, a cloud load balancer
 
-### Option 2: Install using Helm
+### Option 3: Install using Helm
 
 The [Contour Helm chart][15] contains a large set of configuration options for customizing
 your Contour deployment.
