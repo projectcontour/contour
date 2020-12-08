@@ -30,7 +30,7 @@ readonly HERE=$(cd $(dirname $0) && pwd)
 readonly REPO=$(cd ${HERE}/../.. && pwd)
 
 ${KUBECTL} apply -f - <<EOF
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: selfsigned
@@ -39,7 +39,7 @@ spec:
 EOF
 
 ${KUBECTL} apply -f - <<EOF
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: fallback-cert
