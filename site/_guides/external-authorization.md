@@ -79,7 +79,7 @@ issuer, just to make it easier to provision TLS certificates later:
 
 ```bash
 $ kubectl apply -f - <<EOF
-apiVersion: cert-manager.io/v1alpha3
+apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: selfsigned
@@ -109,7 +109,7 @@ resources:
 patchesJson6902:
 - target:
     group: cert-manager.io
-    version: v1alpha3
+    version: v1
     kind: Certificate
     name: htpasswd
     namespace: projectcontour-auth
@@ -262,7 +262,7 @@ Once the application is running, we can expose it to Contour with a `HTTPProxy`
 resource.
 
 ```yaml
-apiVersion: cert-manager.io/v1alpha3
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: ingress-conformance-echo

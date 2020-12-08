@@ -18,7 +18,7 @@ import data.contour.resources
 # Version check the certificates resource.
 
 Group := "cert-manager.io"
-Version := "v1alpha2"
+Version := "v1"
 
 have_certmanager_version {
   v := resources.versions["certificates"]
@@ -45,7 +45,7 @@ skip[msg] {
 
 ---
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: selfsigned
@@ -58,7 +58,7 @@ spec:
 # Using the selfsigned issuer, create a CA signing certificate for the
 # test issuer.
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: ca-projectcontour-io
@@ -83,7 +83,7 @@ spec:
 # Create a local CA issuer with the CA certificate that the selfsigned
 # issuer gave us.
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: ca-projectcontour-io
@@ -116,7 +116,7 @@ $apply:
 
 # Get a server certificate for echo-no-auth.
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: echo-no-auth-cert
@@ -170,7 +170,7 @@ $apply:
 
 # Get a server certificate for echo-with-auth.
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: echo-with-auth-cert
@@ -204,7 +204,7 @@ fatal [msg] {
 
 # Get a client certificate.
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: echo-client-cert
@@ -240,7 +240,7 @@ fatal [msg] {
 # Get a self-signed client certificate. We will use this to ensure that
 # the server is validating the signing CA correctly.
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: echo-client-cert-selfsigned

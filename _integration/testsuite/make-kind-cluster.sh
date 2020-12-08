@@ -65,6 +65,6 @@ do
 done
 
 # Install cert-manager.
-${KUBECTL} apply -f https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.yaml
+${KUBECTL} apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=cert-manager deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deployments --for=condition=Available
