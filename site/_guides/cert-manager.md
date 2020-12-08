@@ -514,14 +514,16 @@ $ curl https://httpbin.davecheney.com/get
 
 ## Making cert-manager work with HTTPProxy
 
-cert-manager currently does not have a way to interact with HTTPProxy objects in order to respond to the HTTP01 challenge correctly.
-(See [#950][10] and [#951][11] for details.)
+cert-manager currently does not have a way to interact directly with HTTPProxy objects in order to respond to the HTTP01 challenge (See [#950][10] and [#951][11] for details).
+cert-manager, however, can be configured to request certificates automatically using a `Certificate` object.
 
-cert-manager can be configured to request certificates automatically using an `Certificate` object.
 When cert-manager finds a `Certificate` object, it will implement the HTTP01 challenge by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
 These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates for.
-
 The Ingress resource as well as the solver pods are short lived and will only be available during the certificate request or renewal process.
+
+The result of the work steps described previously is a TLS secret, which can be referenced by a HTTPProxy.
+
+## Details
 
 To do this, we first need to create our HTTPProxy and Certificate objects.
 
