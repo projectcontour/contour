@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -79,6 +80,10 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	klog.Info("some log")
 	klog.Flush()
 
+	// Should be a recorded logrus log with the correct fields.
+	// Wait for up to 5s (klog flush interval)
+	assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, time.Second*5, time.Millisecond*10)
+
 	// Close write end of pipes.
 	seWriter.Close()
 	soWriter.Close()
@@ -86,8 +91,6 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	// Stderr/out should be empty.
 	assert.Empty(t, <-outC)
 
-	// Should be a recorded logrus log with the correct fields.
-	assert.Len(t, logHook.AllEntries(), 1)
 	entry := logHook.AllEntries()[0]
 	assert.Equal(t, "some log\n", entry.Message)
 	assert.Len(t, entry.Data, 2)
