@@ -22,7 +22,7 @@ skip[msg] {
 # Version check the certificates resource.
 
 Group := "cert-manager.io"
-Version := "v1alpha2"
+Version := "v1"
 
 have_certmanager_version {
   v := resources.versions["certificates"]
@@ -51,7 +51,7 @@ skip[msg] {
 
 # Create a self-signed issuer to give us secrets.
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: selfsigned
@@ -80,7 +80,7 @@ $apply:
 
 ---
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: echo-one-cert
@@ -190,7 +190,7 @@ $apply:
 
 ---
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: echo-two-cert
