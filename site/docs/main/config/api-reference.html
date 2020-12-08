@@ -562,134 +562,6 @@ the secret will be delegated to all namespaces.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1.Condition">Condition
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.DetailedCondition">DetailedCondition</a>)
-</p>
-<p>
-<p>Condition contains details for one aspect of the current state of this API Resource.</p>
-<p>This struct is intended for direct use as an array at the field path .status.conditions.  For example,</p>
-<pre><code class="language-go">type FooStatus struct{
-// Represents the observations of a foo's current state.
-// Known .status.conditions.type are: &quot;Available&quot;, &quot;Progressing&quot;, and &quot;Degraded&quot;
-// +patchMergeKey=type
-// +patchStrategy=merge
-// +listType=map
-// +listMapKey=type
-Conditions []metav1.Condition `json:&quot;conditions,omitempty&quot; patchStrategy:&quot;merge&quot; patchMergeKey:&quot;type&quot; protobuf:&quot;bytes,1,rep,name=conditions&quot;`
-// other fields
-}
-</code></pre>
-</p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody class="border-top">
-<tr>
-<td style="white-space:nowrap">
-<code>type</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Type of condition in CamelCase or in foo.example.com/CamelCase.</p>
-<p>Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
-useful (see .node.status.conditions), the ability to deconflict is important.</p>
-<p>The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>status</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1.ConditionStatus">
-ConditionStatus
-</a>
-</em>
-</td>
-<td>
-<p>status of the condition, one of True, False, Unknown.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>observedGeneration</code>
-<br>
-<em>
-int64
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>observedGeneration represents the .metadata.generation that the condition was set based upon.</p>
-<p>For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
-with respect to the current state of the instance.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>lastTransitionTime</code>
-<br>
-<em>
-<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#time-v1-meta">
-Kubernetes meta/v1.Time
-</a>
-</em>
-</td>
-<td>
-<p>lastTransitionTime is the last time the condition transitioned from one status to another.</p>
-<p>This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>reason</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>Reason contains a programmatic identifier indicating the reason for the condition&rsquo;s last transition.</p>
-<p>Producers of specific condition types may define expected values and meanings for this field,
-and whether the values are considered a guaranteed API.</p>
-<p>The value should be a CamelCase string.</p>
-<p>This field may not be empty.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>message</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>message is a human readable message indicating details about the transition.</p>
-<p>This may be an empty string.</p>
-</td>
-</tr>
-</tbody>
-</table>
-<h3 id="projectcontour.io/v1.ConditionStatus">ConditionStatus
-(<code>string</code> alias)</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1.Condition">Condition</a>, 
-<a href="#projectcontour.io/v1.SubCondition">SubCondition</a>)
-</p>
-<p>
-</p>
 <h3 id="projectcontour.io/v1.DetailedCondition">DetailedCondition
 </h3>
 <p>
@@ -734,8 +606,8 @@ In either case, there may be entries in the <code>warnings</code> slice.</p>
 <code>Condition</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.Condition">
-Condition
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#condition-v1-meta">
+Kubernetes meta/v1.Condition
 </a>
 </em>
 </td>
@@ -2055,8 +1927,8 @@ string
 <code>status</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1.ConditionStatus">
-ConditionStatus
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#conditionstatus-v1-meta">
+Kubernetes meta/v1.ConditionStatus
 </a>
 </em>
 </td>
