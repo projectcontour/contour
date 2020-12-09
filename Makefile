@@ -57,7 +57,19 @@ GO_BUILD_VARS = \
 	github.com/projectcontour/contour/internal/build.Branch=${BUILD_BRANCH}
 
 GO_TAGS := -tags "oidc gcp"
-GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
+GO_LDFLAGS := -linkmode=external -extldflags "-fno-PIC -static" -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
+
+GO_LDFLAGS_Linux := -linkmode=external -extldflags "-fno-PIC -static" -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
+GO_LDFLAGS_Darwin := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
+
+GO_BUILDMODE_Linux := pie
+GO_BUILDMODE_Darwin := exe
+
+# GO_BUILDFLAGS are the common flags used for all "build", "install", and "test" commands.
+GO_BUILDFLAGS := -v -buildmode=$(GO_BUILDMODE_$(shell uname -s)) -mod=readonly -ldflags='$(GO_LDFLAGS_$(shell uname -s))' $(GO_TAGS)
+
+# GO_RACEFLAGS enables race detection, which conflicts with PIE build mode.
+GO_RACEFLAGS := -race -buildmode=default
 
 # Docker labels to be applied to the Contour image. We don't transform
 # this with make because it's not worth pulling the tricks needed to handle
@@ -85,13 +97,13 @@ check: install check-test check-test-race ## Install and run tests
 checkall: vendor check lint check-generate
 
 build: ## Build the contour binary
-	go build -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
+	go build $(GO_BUILDFLAGS) $(MODULE)/cmd/contour
 
 install: ## Build and install the contour binary
-	go install -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
+	go install $(GO_BUILDFLAGS) $(MODULE)/cmd/contour
 
 race:
-	go install -mod=readonly -v -race $(GO_TAGS) $(MODULE)/cmd/contour
+	go install $(GO_BUILDFLAGS) $(GO_RACEFLAGS) $(MODULE)/cmd/contour
 
 download: ## Download Go modules
 	go mod download
@@ -130,18 +142,18 @@ endif
 
 .PHONY: check-test
 check-test:
-	go test $(GO_TAGS) -cover -mod=readonly $(MODULE)/...
+	go test -cover $(GO_BUILDFLAGS) $(MODULE)/...
 
 .PHONY: check-test-race
 check-test-race: | check-test
-	go test $(GO_TAGS) -race -mod=readonly $(MODULE)/...
+	go test $(GO_BUILDFLAGS) $(GO_RACEFLAGS) $(MODULE)/...
 
 .PHONY: check-coverage
 check-coverage: ## Run tests to generate code coverage
 	@go test \
-		$(GO_TAGS) \
-		-race \
-		-mod=readonly \
+		$(GO_BUILDFLAGS) \
+		$(GO_RACEFLAGS) \
+		-buildmode=default \
 		-covermode=atomic \
 		-coverprofile=coverage.out \
 		-coverpkg=./cmd/...,./internal/... \
