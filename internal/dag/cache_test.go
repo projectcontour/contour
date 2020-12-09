@@ -688,11 +688,24 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert secret that is referred by configuration file": {
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secretReferredByConfigFile",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+			},
+			want: true,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			cache := KubernetesCache{
+				ConfiguredSecretRefs: []*types.NamespacedName{
+					{Name: "secretReferredByConfigFile", Namespace: "default"}},
 				FieldLogger: fixture.NewTestLogger(t),
 			}
 			for _, p := range tc.pre {
