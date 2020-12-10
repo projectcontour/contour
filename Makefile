@@ -328,8 +328,14 @@ integration: ## Run integration tests against a real k8s cluster
 	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/httpproxy/*.yaml
 	./_integration/testsuite/cleanup.sh
 
+check-ingress-conformance: ## Run Ingress controller conformance
+	./_integration/testsuite/make-kind-cluster.sh
+	./_integration/testsuite/install-contour-working.sh
+	./_integration/testsuite/run-ingress-conformance.sh
+	./_integration/testsuite/cleanup.sh
+
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes
 	@echo
 	@echo Targets:
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9._-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9._-]+:.*?## / {printf "  %-25s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort

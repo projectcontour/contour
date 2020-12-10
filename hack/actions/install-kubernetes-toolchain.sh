@@ -8,6 +8,7 @@ readonly KUSTOMIZE_VERS="v3.8.6"
 readonly KUBECTL_VERS="v1.19.2"
 readonly KIND_VERS="v0.9.0"
 readonly INTEGRATION_TESTER_VERS="6.0.0"
+readonly SONOBUOY_VERS="0.19.0"
 
 readonly PROGNAME=$(basename $0)
 readonly CURL=${CURL:-curl}
@@ -64,3 +65,10 @@ download \
 
 tar -C "${DESTDIR}" -xf "${DESTDIR}/integration-tester.tgz"
 rm "${DESTDIR}/integration-tester.tgz"
+
+download \
+    "https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERS}/sonobuoy_${SONOBUOY_VERS}_linux_amd64.tar.gz" \
+    "${DESTDIR}/sonobuoy.tgz"
+
+tar -C "${DESTDIR}" -xf "${DESTDIR}/sonobuoy.tgz" sonobuoy
+rm "${DESTDIR}/sonobuoy.tgz"

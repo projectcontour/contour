@@ -40,6 +40,7 @@ spec:
         - --incluster
         - --xds-address=0.0.0.0
         - --xds-port=8001
+        - --ingress-status-address=envoy.projectcontour # TODO: inject this only when running ingress conformance
         - --envoy-service-http-port=80
         - --envoy-service-https-port=443
         - --contour-cafile=/certs/ca.crt
