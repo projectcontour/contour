@@ -49,6 +49,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 )
@@ -221,6 +222,14 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	}
 
+	var configuredSecretRefs []*types.NamespacedName
+	if fallbackCert != nil {
+		configuredSecretRefs = append(configuredSecretRefs, fallbackCert)
+	}
+	if clientCert != nil {
+		configuredSecretRefs = append(configuredSecretRefs, clientCert)
+	}
+
 	// Set up Prometheus registry and register base metrics.
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
@@ -305,9 +314,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
-				RootNamespaces: ctx.proxyRootNamespaces(),
-				IngressClass:   ctx.ingressClass,
-				FieldLogger:    log.WithField("context", "KubernetesCache"),
+				RootNamespaces:       ctx.proxyRootNamespaces(),
+				IngressClass:         ctx.ingressClass,
+				ConfiguredSecretRefs: configuredSecretRefs,
+				FieldLogger:          log.WithField("context", "KubernetesCache"),
 			},
 			Processors: []dag.Processor{
 				&dag.IngressProcessor{
