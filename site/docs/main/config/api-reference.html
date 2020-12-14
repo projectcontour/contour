@@ -320,12 +320,8 @@ outer scope.</p>
 </p>
 <p>
 <p>AuthorizationServer configures an external server to authenticate
-client requests. The external server must implement the Envoy
-external authorization GRPC protocol. Currently, the
-<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/service/auth/v2/external_auth.proto">v2</a>
-protocol is always used, but authorization server authors should implement
-the v3 protocol as well in the expectation that it will be supported
-in future.</p>
+client requests. The external server must implement the v3 Envoy
+external authorization GRPC protocol (<a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto">https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto</a>).</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -2703,7 +2699,7 @@ ExtensionProtocolVersion
 <em>(Optional)</em>
 <p>This field sets the version of the GRPC protocol that Envoy uses to
 send requests to the extension service. Since Contour always uses the
-v2 Envoy API, this is currently fixed at &ldquo;v2&rdquo;. However, other
+v3 Envoy API, this is currently fixed at &ldquo;v3&rdquo;. However, other
 protocol options will be available in future.</p>
 </td>
 </tr>
@@ -2734,7 +2730,7 @@ ExtensionServiceStatus
 <p>
 <p>ExtensionProtocolVersion is the version of the GRPC protocol used
 to access extension services. The only version currently supported
-is &ldquo;v2&rdquo;.</p>
+is &ldquo;v3&rdquo;.</p>
 </p>
 <h3 id="projectcontour.io/v1alpha1.ExtensionServiceSpec">ExtensionServiceSpec
 </h3>
@@ -2847,7 +2843,7 @@ ExtensionProtocolVersion
 <em>(Optional)</em>
 <p>This field sets the version of the GRPC protocol that Envoy uses to
 send requests to the extension service. Since Contour always uses the
-v2 Envoy API, this is currently fixed at &ldquo;v2&rdquo;. However, other
+v3 Envoy API, this is currently fixed at &ldquo;v3&rdquo;. However, other
 protocol options will be available in future.</p>
 </td>
 </tr>

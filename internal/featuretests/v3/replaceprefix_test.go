@@ -93,7 +93,7 @@ func basic(t *testing.T) {
 			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
 				[]contour_api_v1.ReplacePrefix{
 					{Replacement: "/api/v1"},
-					{Replacement: "/api/envoy_api_v2"},
+					{Replacement: "/api/v2"},
 				}
 		})
 
@@ -110,7 +110,7 @@ func basic(t *testing.T) {
 			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
 				[]contour_api_v1.ReplacePrefix{
 					{Prefix: "/foo", Replacement: "/api/v1"},
-					{Prefix: "/api", Replacement: "/api/envoy_api_v2"},
+					{Prefix: "/api", Replacement: "/api/v2"},
 				}
 		})
 
@@ -120,11 +120,11 @@ func basic(t *testing.T) {
 				envoy_v3.VirtualHost("kuard.projectcontour.io",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/api/"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/envoy_api_v2/"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2/"),
 					},
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/api"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/envoy_api_v2"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2"),
 					},
 				),
 			),
@@ -141,7 +141,7 @@ func basic(t *testing.T) {
 			vhost.Spec.Routes[0].PathRewritePolicy.ReplacePrefix =
 				[]contour_api_v1.ReplacePrefix{
 					{Prefix: "/foo", Replacement: "/api/v1"},
-					{Prefix: "/foo", Replacement: "/api/envoy_api_v2"},
+					{Prefix: "/foo", Replacement: "/api/v2"},
 				}
 		})
 
@@ -234,7 +234,7 @@ func multiInclude(t *testing.T) {
 			Includes: []contour_api_v1.Include{{
 				Name:       "app",
 				Namespace:  "default",
-				Conditions: matchconditions(prefixMatchCondition("/envoy_api_v2")),
+				Conditions: matchconditions(prefixMatchCondition("/v2")),
 			}},
 		})
 
@@ -247,7 +247,7 @@ func multiInclude(t *testing.T) {
 				}},
 				PathRewritePolicy: &contour_api_v1.PathRewritePolicy{
 					ReplacePrefix: []contour_api_v1.ReplacePrefix{
-						{Prefix: "/envoy_api_v2", Replacement: "/api/envoy_api_v2"},
+						{Prefix: "/v2", Replacement: "/api/v2"},
 						{Prefix: "/v1", Replacement: "/api/v1"},
 					},
 				},
@@ -273,12 +273,12 @@ func multiInclude(t *testing.T) {
 				),
 				envoy_v3.VirtualHost("host2.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/envoy_api_v2/"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/envoy_api_v2/"),
+						Match:  routePrefix("/v2/"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2/"),
 					},
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/envoy_api_v2"),
-						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/envoy_api_v2"),
+						Match:  routePrefix("/v2"),
+						Action: withPrefixRewrite(routeCluster("default/kuard/8080/da39a3ee5e"), "/api/v2"),
 					},
 				),
 			),
@@ -314,7 +314,7 @@ func multiInclude(t *testing.T) {
 				),
 				envoy_v3.VirtualHost("host2.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/envoy_api_v2"),
+						Match:  routePrefix("/v2"),
 						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
 					},
 				),
@@ -475,10 +475,10 @@ func artifactoryDocker(t *testing.T) {
 				}},
 				PathRewritePolicy: &contour_api_v1.PathRewritePolicy{
 					ReplacePrefix: []contour_api_v1.ReplacePrefix{
-						{Prefix: "/envoy_api_v2/container-sandbox", Replacement: "/artifactory/api/docker/container-sandbox/envoy_api_v2"},
-						{Prefix: "/envoy_api_v2/container-release", Replacement: "/artifactory/api/docker/container-release/envoy_api_v2"},
-						{Prefix: "/envoy_api_v2/container-external", Replacement: "/artifactory/api/docker/container-external/envoy_api_v2"},
-						{Prefix: "/envoy_api_v2/container-public", Replacement: "/artifactory/api/docker/container-public/envoy_api_v2"},
+						{Prefix: "/v2/container-sandbox", Replacement: "/artifactory/api/docker/container-sandbox/v2"},
+						{Prefix: "/v2/container-release", Replacement: "/artifactory/api/docker/container-release/v2"},
+						{Prefix: "/v2/container-external", Replacement: "/artifactory/api/docker/container-external/v2"},
+						{Prefix: "/v2/container-public", Replacement: "/artifactory/api/docker/container-public/v2"},
 					},
 				},
 			}},
@@ -491,10 +491,10 @@ func artifactoryDocker(t *testing.T) {
 				Fqdn: "artifactory.projectcontour.io",
 			},
 			Includes: []contour_api_v1.Include{
-				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/envoy_api_v2/container-sandbox"))},
-				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/envoy_api_v2/container-release"))},
-				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/envoy_api_v2/container-external"))},
-				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/envoy_api_v2/container-public"))},
+				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/v2/container-sandbox"))},
+				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/v2/container-release"))},
+				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/v2/container-external"))},
+				{Name: "routes", Conditions: matchconditions(prefixMatchCondition("/v2/container-public"))},
 			},
 		}),
 	)
@@ -505,44 +505,44 @@ func artifactoryDocker(t *testing.T) {
 				envoy_v3.VirtualHost("artifactory.projectcontour.io",
 
 					&envoy_route_v3.Route{
-						Match: routePrefix("/envoy_api_v2/container-sandbox/"),
+						Match: routePrefix("/v2/container-sandbox/"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-sandbox/envoy_api_v2/"),
+							"/artifactory/api/docker/container-sandbox/v2/"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefix("/envoy_api_v2/container-sandbox"),
+						Match: routePrefix("/v2/container-sandbox"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-sandbox/envoy_api_v2"),
+							"/artifactory/api/docker/container-sandbox/v2"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefix("/envoy_api_v2/container-release/"),
+						Match: routePrefix("/v2/container-release/"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-release/envoy_api_v2/"),
+							"/artifactory/api/docker/container-release/v2/"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefix("/envoy_api_v2/container-release"),
+						Match: routePrefix("/v2/container-release"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-release/envoy_api_v2"),
+							"/artifactory/api/docker/container-release/v2"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefix("/envoy_api_v2/container-public/"),
+						Match: routePrefix("/v2/container-public/"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-public/envoy_api_v2/"),
+							"/artifactory/api/docker/container-public/v2/"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefix("/envoy_api_v2/container-public"),
+						Match: routePrefix("/v2/container-public"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-public/envoy_api_v2"),
+							"/artifactory/api/docker/container-public/v2"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefix("/envoy_api_v2/container-external/"),
+						Match: routePrefix("/v2/container-external/"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-external/envoy_api_v2/"),
+							"/artifactory/api/docker/container-external/v2/"),
 					},
 					&envoy_route_v3.Route{
-						Match: routePrefix("/envoy_api_v2/container-external"),
+						Match: routePrefix("/v2/container-external"),
 						Action: withPrefixRewrite(routeCluster("artifactory/service/8080/da39a3ee5e"),
-							"/artifactory/api/docker/container-external/envoy_api_v2"),
+							"/artifactory/api/docker/container-external/v2"),
 					},
 				),
 			),

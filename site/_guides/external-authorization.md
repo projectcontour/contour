@@ -372,7 +372,7 @@ authorization:
 
 [1]: https://github.com/projectcontour/contour-authserver
 [2]: https://httpd.apache.org/docs/current/misc/password_encryptions.html
-[3]: https://www.envoyproxy.io/docs/envoy/latest/api-v2/service/auth/v2/external_auth.proto
+[3]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto
 [4]: /docs/{{site.latest}}/config/api/#projectcontour.io/v1alpha1.ExtensionService
 [5]: /docs/{{site.latest}}/config/api/#projectcontour.io/v1.HTTPProxy
 [6]: https://cert-manager.io/
