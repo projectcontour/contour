@@ -40,7 +40,11 @@ func NewRequestLoggingCallbacks(log logrus.FieldLogger) envoy_server_v3.Callback
 func logDiscoveryRequestDetails(l logrus.FieldLogger, req *envoy_service_discovery_v3.DiscoveryRequest) *logrus.Entry {
 	log := l.WithField("version_info", req.VersionInfo).WithField("response_nonce", req.ResponseNonce)
 	if req.Node != nil {
-		log = log.WithField("node_id", req.Node.Id).WithField("node_version", fmt.Sprintf("v%d.%d.%d", req.Node.GetUserAgentBuildVersion().Version.MajorNumber, req.Node.GetUserAgentBuildVersion().Version.MinorNumber, req.Node.GetUserAgentBuildVersion().Version.Patch))
+		log = log.WithField("node_id", req.Node.Id)
+
+		if bv := req.Node.GetUserAgentBuildVersion(); bv != nil && bv.Version != nil {
+			log = log.WithField("node_version", fmt.Sprintf("v%d.%d.%d", bv.Version.MajorNumber, bv.Version.MinorNumber, bv.Version.Patch))
+		}
 	}
 
 	if status := req.ErrorDetail; status != nil {

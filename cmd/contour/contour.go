@@ -16,7 +16,7 @@ package main
 import (
 	"os"
 
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v2"
+	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/build"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -80,19 +80,19 @@ func main() {
 		doCertgen(certgenConfig, log)
 	case cds.FullCommand():
 		stream := client.ClusterStream()
-		watchstream(stream, resource.ClusterType, resources)
+		watchstream(stream, resource_v3.ClusterType, resources)
 	case eds.FullCommand():
 		stream := client.EndpointStream()
-		watchstream(stream, resource.EndpointType, resources)
+		watchstream(stream, resource_v3.EndpointType, resources)
 	case lds.FullCommand():
 		stream := client.ListenerStream()
-		watchstream(stream, resource.ListenerType, resources)
+		watchstream(stream, resource_v3.ListenerType, resources)
 	case rds.FullCommand():
 		stream := client.RouteStream()
-		watchstream(stream, resource.RouteType, resources)
+		watchstream(stream, resource_v3.RouteType, resources)
 	case sds.FullCommand():
 		stream := client.RouteStream()
-		watchstream(stream, resource.SecretType, resources)
+		watchstream(stream, resource_v3.SecretType, resources)
 	case serve.FullCommand():
 		// Parse args a second time so cli flags are applied
 		// on top of any values sourced from -c's config file.
