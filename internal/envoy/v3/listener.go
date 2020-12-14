@@ -584,10 +584,10 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 		},
 		MetadataContextNamespaces: []string{},
 		IncludePeerCertificate:    true,
+		// TODO(jpeach): When we move to the Envoy v4 API, propagate the
+		// `transport_api_version` from ExtensionServiceSpec ProtocolVersion.
+		TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 	}
-
-	// TODO(jpeach): When we move to the Envoy v3 API, propagate the
-	// `transport_api_version` from ExtensionServiceSpec ProtocolVersion.
 
 	return &http.HttpFilter{
 		Name: "envoy.filters.http.ext_authz",
