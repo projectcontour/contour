@@ -34,7 +34,7 @@ func TestLogDiscoveryRequestDetails(t *testing.T) {
 		expectedLogMsg  string
 		expectedLogData logrus.Fields
 	}{
-		"request with node info": {
+		"request with node info and node version": {
 			discoveryReq: &envoy_service_discovery_v3.DiscoveryRequest{
 				VersionInfo:   "req-version",
 				ResponseNonce: "resp-nonce",
@@ -61,6 +61,26 @@ func TestLogDiscoveryRequestDetails(t *testing.T) {
 				"type_url":       "some-type-url",
 				"node_id":        "node-id",
 				"node_version":   "v9.8.7",
+			},
+		},
+		"request with node info, without node version": {
+			discoveryReq: &envoy_service_discovery_v3.DiscoveryRequest{
+				VersionInfo:   "req-version",
+				ResponseNonce: "resp-nonce",
+				ResourceNames: []string{"some", "resources"},
+				TypeUrl:       "some-type-url",
+				Node: &envoy_config_core_v3.Node{
+					Id:                   "node-id",
+					UserAgentVersionType: nil,
+				},
+			},
+			expectedLogMsg: "handling v3 xDS resource request",
+			expectedLogData: logrus.Fields{
+				"version_info":   "req-version",
+				"response_nonce": "resp-nonce",
+				"resource_names": []string{"some", "resources"},
+				"type_url":       "some-type-url",
+				"node_id":        "node-id",
 			},
 		},
 		"request without node info": {
