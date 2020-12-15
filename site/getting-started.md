@@ -20,7 +20,7 @@ Before you start you will need:
 ### Option 1: Quickstart
 
 As the name suggests, use this option for a quick start with reasonable defaults. If
-you have specific requirements to customize Contour for environment, see Option 2.
+you have specific requirements to customize Contour for environment, see Options 2 and 3.
 
 Run:
 
