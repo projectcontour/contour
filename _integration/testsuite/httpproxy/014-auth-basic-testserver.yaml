@@ -18,7 +18,7 @@ import data.contour.resources
 # Version check the certificates resource.
 
 Group := "cert-manager.io"
-Version := "v1alpha3"
+Version := "v1"
 
 have_certmanager_version {
   v := resources.versions["certificates"]
@@ -47,7 +47,7 @@ skip[msg] {
 
 # Create a self-signed issuer to give us secrets.
 
-apiVersion: cert-manager.io/v1alpha3
+apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: selfsigned
@@ -76,7 +76,7 @@ $apply:
 
 ---
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: echo
@@ -101,7 +101,7 @@ metadata:
 
 # Issue a self-signed certificate for testserver.
 
-apiVersion: cert-manager.io/v1alpha3
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: testserver

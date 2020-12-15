@@ -18,7 +18,7 @@ import data.contour.resources
 # Version check the certificates resource.
 
 Group := "cert-manager.io"
-Version := "v1alpha2"
+Version := "v1"
 
 have_certmanager_version {
   v := resources.versions["certificates"]
@@ -45,7 +45,7 @@ skip[msg] {
 
 ---
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: selfsigned
@@ -54,7 +54,7 @@ spec:
 
 ---
 
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: echo-cert

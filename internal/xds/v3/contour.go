@@ -75,7 +75,7 @@ func (s *contourServer) stream(st grpcStream) error {
 	log := s.WithField("connection", s.connections.Next())
 
 	// Notify whether the stream terminated on error.
-	done := func(log *logrus.Entry, err error) error {
+	done := func(log logrus.FieldLogger, err error) error {
 		if err != nil {
 			log.WithError(err).Error("stream terminated")
 		} else {
@@ -102,17 +102,8 @@ func (s *contourServer) stream(st grpcStream) error {
 			return done(log, err)
 		}
 
-		// note: redeclare log in this scope so the next time around the loop all is forgotten.
-		log := log.WithField("version_info", req.VersionInfo).WithField("response_nonce", req.ResponseNonce)
-		if req.Node != nil {
-			log = log.WithField("node_id", req.Node.Id).WithField("node_version", fmt.Sprintf("v%d.%d.%d", req.Node.GetUserAgentBuildVersion().Version.MajorNumber, req.Node.GetUserAgentBuildVersion().Version.MinorNumber, req.Node.GetUserAgentBuildVersion().Version.Patch))
-		}
-
-		if status := req.ErrorDetail; status != nil {
-			// if Envoy rejected the last update log the details here.
-			// TODO(dfc) issue 1176: handle xDS ACK/NACK
-			log.WithField("code", status.Code).Error(status.Message)
-		}
+		// Note: redeclare log in this scope so the next time around the loop all is forgotten.
+		log := logDiscoveryRequestDetails(log, req)
 
 		// From the request we derive the resource to stream which have
 		// been registered according to the typeURL.
@@ -120,9 +111,6 @@ func (s *contourServer) stream(st grpcStream) error {
 		if !ok {
 			return done(log, fmt.Errorf("no resource registered for typeURL %q", req.GetTypeUrl()))
 		}
-
-		log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.GetTypeUrl())
-		log.Info("handling v3 xDS resource request")
 
 		// now we wait for a notification, if this is the first request received on this
 		// connection last will be less than zero and that will trigger a response immediately.

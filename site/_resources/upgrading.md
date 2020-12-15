@@ -7,8 +7,6 @@ layout: page
 
 This document describes the changes needed to upgrade your Contour installation.
 
-<br>
-
 <div class="alert-deprecation">
 <b>Deprecation Notices</b><br>
 - In Contour 1.10, we will be deprecating TLS 1.1 and lower.
@@ -23,6 +21,8 @@ Use of these annotations will be logged as warnings.<br>
 </div>
 
 <br>
+
+<div id="toc" class="navigation"></div>
 
 ## Upgrading Contour 1.9.0 to 1.10.0
 

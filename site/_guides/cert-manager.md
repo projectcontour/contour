@@ -514,17 +514,18 @@ $ curl https://httpbin.davecheney.com/get
 
 ## Making cert-manager work with HTTPProxy
 
-cert-manager currently does not have a way to interact with HTTPProxy objects in order to respond to the HTTP01 challenge correctly.
-(See [#950][10] and [#951][11] for details.)
+cert-manager currently does not have a way to interact directly with HTTPProxy objects in order to respond to the HTTP01 challenge (See [#950][10] and [#951][11] for details).
+cert-manager, however, can be configured to request certificates automatically using a `Certificate` object.
 
-cert-manager does this by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
+When cert-manager finds a `Certificate` object, it will implement the HTTP01 challenge by creating a new, temporary Ingress object that will direct requests from Let's Encrypt to temporary pods called 'solver pods'.
 These pods know how to respond to Let's Encrypt's challenge process for verifying you control the domain you're issuing certificates for.
-This means that cert-manager can't be *directly* used for generating certificates for HTTPProxy configuration.
+The Ingress resource as well as the solver pods are short lived and will only be available during the certificate request or renewal process.
 
-However, we can create a dummy Ingress object that will have cert-manager provision the certificate Secret, so that we can consume it in a HTTPProxy.
-This works because Contour expects the Secrets to look the same anyway.
+The result of the work steps described previously is a TLS secret, which can be referenced by a HTTPProxy.
 
-To do this, we need to create our HTTPProxy and Ingress objects.
+## Details
+
+To do this, we first need to create our HTTPProxy and Certificate objects.
 
 This example uses the hostname `httpbinproxy.davecheney.com`, remember to create that name before starting.
 
@@ -547,32 +548,24 @@ spec:
 ```
 
 This object will be marked as Invalid by Contour, since the TLS secret doesn't exist yet.
-Once that's done, create the dummy Ingress object:
+Once that's done, create the Certificate object:
 
 ```yaml
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
+apiVersion: cert-manager.io/v1
+kind: Certificate
 metadata:
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    ingress.kubernetes.io/force-ssl-redirect: "true"
-    kubernetes.io/tls-acme: "true"
   name: httpbinproxy
 spec:
-  rules:
-  - host: httpbinproxy.davecheney.com
-    http:
-      paths:
-      - backend:
-          serviceName: httpbin
-          servicePort: 8080
-  tls:
-  - hosts:
-    - httpbinproxy.davecheney.com
-    secretName: httpbinproxy
+  commonName: httpbinproxy.davecheney.com
+  dnsNames:
+  - httpbinproxy.davecheney.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  secretName: httpbinproxy
 ```
 
-Once cert-manager has done its thing, you will have a `httpbinproxy` secret, that will contain the keypair.
+Once cert-manager has fulfilled the HTTP01 challenge, you will have a `httpbinproxy` secret, that will contain the keypair.
 Contour will detect that the Secret exists and generate the HTTPProxy config.
 
 After that, you should be able to curl the new site:
@@ -594,24 +587,17 @@ $ curl https://httpbinproxy.davecheney.com/get
 }
 ```
 
-### Caveats
-
-This method is a workaround until we can deliver the changes in [#950][10] and [#951][11].
-
-The dummy Ingress record exists only to hold the annotations that cert-manager requires in order to kick off the certification creation process.
-Because it does not include the `ingress-class: contour` annotation, Contour will not see it and so the configuration of the Ingress does not matter, except that it is valid enough for cert-manager to use.
-See the [cert-manager docs][12] for more information.
-
 ## Wrapping up
 
 Now that you've deployed your first HTTPS site using Contour and Let's Encrypt, deploying additional TLS enabled services is much simpler.
-Remember that for each HTTPS website you deploy, cert-manager will  create a Certificate CRD that provides the domain name and the name of the target Secret.
+Remember that for each HTTPS website you deploy, cert-manager will create a Certificate CRD that provides the domain name and the name of the target Secret.
 The TLS functionality will be enabled when the HTTPProxy contains the `tls:` stanza, and the referenced secret contains a valid keypair.
+
+See the [cert-manager docs][12] for more information.
 
 ## Bonus points
 
-For bonus points, it's 2020 and you probably shouldn't be serving traffic over insecure HTTP any more.
-Now that TLS is configured for your web service, you can use a feature of Contour to automatically upgrade any HTTP request to the corresponding HTTPS site.
+For bonus points, it's 2020 and you probably shouldn't be serving traffic over insecure HTTP any more, you can use a feature of Contour to automatically upgrade any HTTP request to the corresponding HTTPS site.
 
 To enable the automatic redirect from HTTP to HTTPS, add this annotation to your Ingress object.
 
@@ -640,6 +626,8 @@ $ curl -v http://httpbin.davecheney.com/get
 <
 * Connection #0 to host httpbin.davecheney.com left intact
 ```
+
+__Note:__ For HTTPProxy resources this happens automatically without the need for an annotation.
 
 [0]: {{site.github.repository_url}}
 [1]: https://github.com/jetstack/cert-manager
