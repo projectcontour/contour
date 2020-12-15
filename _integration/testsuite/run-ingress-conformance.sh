@@ -18,10 +18,21 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
+readonly HERE=$(cd $(dirname $0) && pwd)
+readonly REPO=$(cd ${HERE}/../.. && pwd)
+
+readonly KUBECTL=${KUBECTL:-kubectl}
 readonly SONOBUOY=${SONOBUOY:-sonobuoy}
+
 readonly INGRESS_CLASS=${INGRESS_CLASS:-contour}
 # Latest images can be found here: https://console.cloud.google.com/gcr/images/k8s-staging-ingressconformance/GLOBAL/ingress-controller-conformance
 readonly INGRESS_CONFORMANCE_IMAGE=${INGRESS_CONFORMANCE_IMAGE:-gcr.io/k8s-staging-ingressconformance/ingress-controller-conformance@sha256:148a649b7d009e8544e2631950b0c05a41cf9a50ede39e20b76bdaaf2ffb873b}
+
+# Set the Ingress Status Address so conformance test pods are reachable in tests
+# This multiline sed command is for compatibility across MacOS and GNU sed
+${KUBECTL} apply -f <(sed 's/\s*- serve/&\
+        - --ingress-status-address=envoy.projectcontour/' ${REPO}/examples/contour/03-contour.yaml)
+${KUBECTL} rollout status -n projectcontour deployment contour
 
 ${SONOBUOY} run \
     --skip-preflight \
