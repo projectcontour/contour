@@ -280,7 +280,7 @@ None of these properties are guaranteed by a Kubernetes cluster and will be visi
 
 Any perturbation in the set of pods backing a service risks redistributing backends around the hash ring.
 
-[4]: https://www.envoyproxy.io/docs/envoy/v1.14.2/api-v2/api/v2/route/route_components.proto#envoy-api-field-route-routeaction-timeout
+[4]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-timeout
 [5]: https://godoc.org/time#ParseDuration
-[6]: https://www.envoyproxy.io/docs/envoy/v1.14.2/api-v2/api/v2/route/route_components.proto#envoy-api-field-route-routeaction-idle-timeout
-[7]: https://www.envoyproxy.io/docs/envoy/v1.14.2/intro/arch_overview/upstream/load_balancing/overview
+[6]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-idle-timeout
+[7]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/overview

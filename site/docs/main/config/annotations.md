@@ -70,20 +70,20 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
 ## Contour specific HTTPProxy annotations
 - `projectcontour.io/ingress.class`: The Ingress class that should interpret and serve the HTTPProxy. See the [main Ingress class annotation section](#ingress-class) for more details.
 
-[1]: https://www.envoyproxy.io/docs/envoy/v1.11.2/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-max-retries
-[2]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on
-[3]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout
+[1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#config-http-filters-router-x-envoy-max-retries
+[2]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-retrypolicy-retry-on
+[3]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-timeout
 [4]: https://golang.org/pkg/time/#ParseDuration
-[5]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-retrypolicy-retry-on
-[6]: https://www.envoyproxy.io/docs/envoy/v1.11.2/configuration/http_filters/router_filter.html#config-http-filters-router-x-envoy-retry-on
-[7]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/auth/cert.proto#envoy-api-msg-auth-tlsparameters
-[8]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto#envoy-api-field-route-routeaction-use-websocket
+[5]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-retrypolicy-retry-on
+[6]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/router_filter#config-http-filters-router-x-envoy-retry-on
+[7]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto.html#extensions-transport-sockets-tls-v3-tlsparameters
+[8]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-upgrade-configs
 [9]: https://kubernetes.io/docs/concepts/services-networking/service/
-[10]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/intro/terminology.html
-[11]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/cluster/circuit_breaker.proto#envoy-api-field-cluster-circuitbreakers-thresholds-max-connections
-[12]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/cluster/circuit_breaker.proto#envoy-api-field-cluster-circuitbreakers-thresholds-max-pending-requests
-[13]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/cluster/circuit_breaker.proto#envoy-api-field-cluster-circuitbreakers-thresholds-max-requests
-[14]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/cluster/circuit_breaker.proto#envoy-api-field-cluster-circuitbreakers-thresholds-max-retries
+[10]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/intro/terminology
+[11]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto#envoy-v3-api-field-config-cluster-v3-circuitbreakers-thresholds-max-connections
+[12]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto#envoy-v3-api-field-config-cluster-v3-circuitbreakers-thresholds-max-pending-requests
+[13]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto#envoy-v3-api-field-config-cluster-v3-circuitbreakers-thresholds-max-requests
+[14]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto#envoy-v3-api-field-config-cluster-v3-circuitbreakers-thresholds-max-retries
 [15]: {% link docs/{{page.version}}/config/fundamentals.md %}
-[16]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-virtualhost-require-tls
+[16]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-virtualhost-require-tls
 [17]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.UpstreamValidation

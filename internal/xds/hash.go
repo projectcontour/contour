@@ -19,7 +19,9 @@ import (
 
 const CONSTANT_HASH_VALUE = "contour"
 
-// ConstantHashV3 is the same as ConstantHashV2 but for xDS v3.
+// ConstantHashV3 is a specialized node ID hasher used to allow
+// any instance of Envoy to connect to Contour regardless of the
+// service-node flag configured on Envoy.
 type ConstantHashV3 struct{}
 
 func (c ConstantHashV3) ID(*envoy_config_v3.Node) string {

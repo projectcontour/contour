@@ -129,12 +129,8 @@ type ExtensionServiceReference struct {
 }
 
 // AuthorizationServer configures an external server to authenticate
-// client requests. The external server must implement the Envoy
-// external authorization GRPC protocol. Currently, the
-// [v2](https://www.envoyproxy.io/docs/envoy/latest/api-v2/service/auth/v2/external_auth.proto)
-// protocol is always used, but authorization server authors should implement
-// the v3 protocol as well in the expectation that it will be supported
-// in future.
+// client requests. The external server must implement the v3 Envoy
+// external authorization GRPC protocol (https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto).
 type AuthorizationServer struct {
 	// ExtensionServiceRef specifies the extension resource that will authorize client requests.
 	//
