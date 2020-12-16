@@ -17,6 +17,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"sort"
 	"testing"
 
@@ -94,5 +97,68 @@ func TestGeneratedSecretsValid(t *testing.T) {
 		sort.Strings(wantedNames[s.Name])
 		assert.Equal(t, cert.DNSNames, wantedNames[s.Name])
 
+	}
+}
+
+func TestOutputFileMode(t *testing.T) {
+	testCases := []struct {
+		insecureFile string
+		cc           *certgenConfig
+	}{
+		{
+			cc: &certgenConfig{
+				OutputPEM: true,
+				Overwrite: false,
+			},
+		},
+		{
+			insecureFile: "contourcert.pem",
+			cc: &certgenConfig{
+				OutputPEM: true,
+				Overwrite: true,
+			},
+		},
+		{
+			cc: &certgenConfig{
+				OutputYAML: true,
+				Overwrite:  false,
+				Format:     "legacy",
+			},
+		},
+		{
+			insecureFile: "contourcert.yaml",
+			cc: &certgenConfig{
+				OutputYAML: true,
+				Overwrite:  true,
+				Format:     "legacy",
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("overwrite %t pem %t yaml %t", tc.cc.Overwrite, tc.cc.OutputPEM, tc.cc.OutputYAML), func(t *testing.T) {
+			outputDir, err := ioutil.TempDir("", "")
+			assert.NoError(t, err)
+			defer os.RemoveAll(outputDir)
+			tc.cc.OutputDir = outputDir
+
+			// Write a file with insecure mode to ensure overwrite works as expected.
+			if tc.cc.Overwrite {
+				_, err = os.Create(filepath.Join(outputDir, tc.insecureFile))
+				assert.NoError(t, err)
+			}
+
+			generatedCerts, err := GenerateCerts(tc.cc)
+			assert.NoError(t, err)
+
+			assert.NoError(t, OutputCerts(tc.cc, nil, generatedCerts))
+
+			err = filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
+				if !info.IsDir() {
+					assert.Equal(t, os.FileMode(0600), info.Mode(), "incorrect file mode for file "+path)
+				}
+				return nil
+			})
+			assert.NoError(t, err)
+		})
 	}
 }
