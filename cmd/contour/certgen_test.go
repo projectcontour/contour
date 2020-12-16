@@ -102,16 +102,19 @@ func TestGeneratedSecretsValid(t *testing.T) {
 
 func TestOutputFileMode(t *testing.T) {
 	testCases := []struct {
+		name         string
 		insecureFile string
 		cc           *certgenConfig
 	}{
 		{
+			name: "pem format no overwrite",
 			cc: &certgenConfig{
 				OutputPEM: true,
 				Overwrite: false,
 			},
 		},
 		{
+			name:         "pem format with overwrite",
 			insecureFile: "contourcert.pem",
 			cc: &certgenConfig{
 				OutputPEM: true,
@@ -119,6 +122,7 @@ func TestOutputFileMode(t *testing.T) {
 			},
 		},
 		{
+			name: "yaml format no overwrite",
 			cc: &certgenConfig{
 				OutputYAML: true,
 				Overwrite:  false,
@@ -126,6 +130,7 @@ func TestOutputFileMode(t *testing.T) {
 			},
 		},
 		{
+			name:         "yaml format with overwrite",
 			insecureFile: "contourcert.yaml",
 			cc: &certgenConfig{
 				OutputYAML: true,
@@ -135,7 +140,7 @@ func TestOutputFileMode(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("overwrite %t pem %t yaml %t", tc.cc.Overwrite, tc.cc.OutputPEM, tc.cc.OutputYAML), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			outputDir, err := ioutil.TempDir("", "")
 			assert.NoError(t, err)
 			defer os.RemoveAll(outputDir)
@@ -154,7 +159,7 @@ func TestOutputFileMode(t *testing.T) {
 
 			err = filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
 				if !info.IsDir() {
-					assert.Equal(t, os.FileMode(0600), info.Mode(), "incorrect file mode for file "+path)
+					assert.Equal(t, os.FileMode(0600), info.Mode(), "incorrect mode for file "+path)
 				}
 				return nil
 			})
