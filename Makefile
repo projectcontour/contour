@@ -7,7 +7,7 @@ SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.16.0
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.16.2
 
 # The version of Jekyll is pinned in site/Gemfile.lock.
 # https://docs.netlify.com/configure-builds/common-configurations/#jekyll
