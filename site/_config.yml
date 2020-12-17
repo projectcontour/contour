@@ -141,6 +141,11 @@ defaults:
   values:
     version: v1.10.1
     layout: "docs"
+- scope:
+    path: docs/v1.11.0
+  values:
+    version: v1.11.0
+    layout: "docs"
 repository: projectcontour/contour
 collections:
   guides:
@@ -157,9 +162,10 @@ collections:
   metrics:
     output: false
 versioning: true
-latest: v1.10.1
+latest: v1.11.0
 versions:
 - main
+- v1.11.0
 - v1.10.1
 - v1.10.0
 - v1.9.0
