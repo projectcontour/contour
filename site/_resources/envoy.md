@@ -11,6 +11,7 @@ This page describes the compatibility matrix of Contour and Envoy versions.
 
 | Contour Version | Envoy Version        |
 | --------------- | :------------------- |
+| 1.11.0          | 1.16.2               |
 | 1.10.1          | 1.16.2               |
 | 1.10.0          | 1.16.0               |
 | 1.9.0           | 1.15.1<sup>7</sup>   |
