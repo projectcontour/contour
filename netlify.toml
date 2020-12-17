@@ -22,7 +22,7 @@
 # kubectl apply https://projectcontour.io/quickstart/contour.yaml
 [[redirects]]
   from = "/quickstart/contour.yaml"
-  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.10/examples/render/contour.yaml"
+  to = "https://raw.githubusercontent.com/projectcontour/contour/release-1.11/examples/render/contour.yaml"
   status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
@@ -39,8 +39,7 @@
 # kubectl apply https://projectcontour.io/quickstart/operator.yaml
 [[redirects]]
 from = "/quickstart/operator.yaml"
-# TODO [danehans]: Update main -> v1.11.0 when operator v1alpha1 is tagged.
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/main/examples/operator/operator.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.11/examples/operator/operator.yaml"
 status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
@@ -58,7 +57,7 @@ status = 302
 [[redirects]]
 from = "/quickstart/contour-custom-resource.yaml"
 # TODO [danehans]: Update main -> v1.11.0 when operator v1alpha1 is tagged.
-to = "https://raw.githubusercontent.com/projectcontour/contour-operator/main/examples/contour/contour.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.11/examples/contour/contour.yaml"
 status = 302
 
 # Redirect versioned quickstarts so that they can easily be referenced by
