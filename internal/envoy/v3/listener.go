@@ -327,7 +327,7 @@ func (b *httpConnectionManagerBuilder) Validate() error {
 // Get returns a new http.HttpConnectionManager filter, constructed
 // from the builder settings.
 //
-// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto.html
+// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
 func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 	// For now, failing validation is a programmer error that
 	// the caller can't reasonably recover from. A caller that can
@@ -584,10 +584,10 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 		},
 		MetadataContextNamespaces: []string{},
 		IncludePeerCertificate:    true,
+		// TODO(jpeach): When we move to the Envoy v4 API, propagate the
+		// `transport_api_version` from ExtensionServiceSpec ProtocolVersion.
+		TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 	}
-
-	// TODO(jpeach): When we move to the Envoy v3 API, propagate the
-	// `transport_api_version` from ExtensionServiceSpec ProtocolVersion.
 
 	return &http.HttpFilter{
 		Name: "envoy.filters.http.ext_authz",

@@ -27,7 +27,7 @@ In principle, the Envoy cluster can be used for any purpose, but in this
 document we are concerned only with how to use it as an authorization service.
 
 An authorization service is a gRPC service that implements the Envoy [`CheckRequest`][3] protocol.
-Note that Contour requires the extension to implement the "v2" version of the protocol.
+Note that Contour requires the extension to implement the "v3" version of the protocol.
 Contour is compatible with any authorization server that implements this protocol.
 
 The primary field of interest in the `ExtensionService` CRD is the
@@ -116,7 +116,7 @@ context field of authorization policy for the route.
 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/ext_authz_filter
 [2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1alpha1.ExtensionService
-[3]: https://www.envoyproxy.io/docs/envoy/latest/api-v2/service/auth/v2/external_auth.proto
+[3]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto
 [4]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.UpstreamValidation
 [5]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.AuthorizationServer
 [6]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.AuthorizationPolicy

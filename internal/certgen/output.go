@@ -37,11 +37,16 @@ func createFile(filepath string, force bool) (*os.File, error) {
 	}
 
 	flags := os.O_RDWR | os.O_CREATE | os.O_TRUNC
-	if !force {
+	if force {
+		// Remove existing file, otherwise mode is not reset when overwriting.
+		if err := os.Remove(filepath); err != nil && !os.IsNotExist(err) {
+			return nil, fmt.Errorf("unable to remove %s: %s", filepath, err)
+		}
+	} else {
 		flags = flags | os.O_EXCL
 	}
 
-	f, err := os.OpenFile(filepath, flags, 0666)
+	f, err := os.OpenFile(filepath, flags, 0600)
 	if err != nil {
 		// File exists, and we don't want to create it.
 		return nil, fmt.Errorf("can't create file %s: %s", filepath, err)

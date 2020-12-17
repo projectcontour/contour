@@ -298,13 +298,17 @@ func (e *EndpointsTranslator) OnChange(d *dag.DAG) {
 	entries := e.cache.Recalculate()
 
 	// Only update and notify if entries has changed.
+	changed := false
+
+	e.mu.Lock()
 	if !equal(e.entries, entries) {
-		e.Debug("cluster load assignments changed, notifying waiters")
-
-		e.mu.Lock()
 		e.entries = entries
-		e.mu.Unlock()
+		changed = true
+	}
+	e.mu.Unlock()
 
+	if changed {
+		e.Debug("cluster load assignments changed, notifying waiters")
 		e.Notify()
 	} else {
 		e.Debug("cluster load assignments did not change")

@@ -47,12 +47,45 @@ Contour requires the following extensions.
 If you are using the image recommended in our [example deployment][3] no action is required.
 If you are providing your own Envoy it must be compiled with the following extensions:
 
-- `access_loggers`: `envoy.access_loggers.file`,`envoy.access_loggers.http_grpc`,`envoy.access_loggers.tcp_grpc`
-- `filters.http`: `envoy.buffer`, `envoy.cors`, `envoy.csrf`, `envoy.fault`, `envoy.filters.http.adaptive_concurrency`, `envoy.filters.http.dynamic_forward_proxy`, `envoy.filters.http.grpc_http1_reverse_bridge`, `envoy.filters.http.grpc_stats`, `envoy.filters.http.header_to_metadata`, `envoy.filters.http.lua`, `envoy.filters.http.original_src`, `envoy.grpc_http1_bridge`, `envoy.grpc_json_transcoder`, `envoy.grpc_web`, `envoy.gzip`, `envoy.health_check`, `envoy.ip_tagging`, `envoy.router`
-- `filters.listener`: `envoy.listener.http_inspector`,`envoy.listener.original_dst`,`envoy.listener.original_src`,`envoy.listener.proxy_protocol`,`envoy.listener.tls_inspector`
-- `filters.network`: `envoy.echo`,`envoy.filters.network.sni_cluster`,`envoy.http_connection_manager`,`envoy.tcp_proxy`
-- `stat_sinks`: `envoy.metrics_service`
-- `transport_sockets`: `envoy.transport_sockets.alts`, `envoy.transport_sockets.raw_buffer`
+- Access Loggers: 
+  - envoy.access_loggers.file
+  - envoy.access_loggers.http_grpc
+  - envoy.access_loggers.tcp_grpc
+  
+- Compression:
+  - envoy.compression.gzip.compressor
+    
+- HTTP Filters:
+  - envoy.filters.http.compressor
+  - envoy.filters.http.cors
+  - envoy.filters.http.ext_authz
+  - envoy.filters.http.grpc_stats
+  - envoy.filters.http.grpc_web
+  - envoy.filters.http.health_check
+  - envoy.filters.http.lua
+  - envoy.filters.http.router
+   
+- Listener filters
+  - envoy.filters.listener.http_inspector
+  - envoy.filters.listener.original_dst
+  - envoy.filters.listener.proxy_protocol
+  - envoy.filters.listener.tls_inspector
+
+- Network filters
+  - envoy.filters.network.client_ssl_auth
+  - envoy.filters.network.ext_authz
+  - envoy.filters.network.http_connection_manager
+  - envoy.filters.network.tcp_proxy
+  
+- Transport sockets
+  - envoy.transport_sockets.upstream_proxy_protocol
+  - envoy.transport_sockets.raw_buffer
+  
+- Http Upstreams
+  - envoy.upstreams.http.http
+  - envoy.upstreams.http.tcp
+
+__Note:__ These extensions are tested against Envoy v1.16.1.
 
 [1]: https://groups.google.com/forum/#!topic/envoy-announce/Zo3ZEFuPWec
 [2]: https://groups.google.com/d/msg/envoy-announce/3-8S992PUV4/t-egdelVDwAJ

@@ -250,7 +250,7 @@ type TimeoutParameters struct {
 	// this is a timeout for the entire request, not an idle timeout. Omit or set to
 	// "infinity" to disable the timeout entirely.
 	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-request-timeout
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-request-timeout
 	// for more information.
 	RequestTimeout string `yaml:"request-timeout,omitempty"`
 
@@ -258,7 +258,7 @@ type TimeoutParameters struct {
 	// no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating
 	// an HTTP connection. Set to "infinity" to disable the timeout entirely.
 	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/protocol.proto#envoy-api-field-core-httpprotocoloptions-idle-timeout
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-idle-timeout
 	// for more information.
 	ConnectionIdleTimeout string `yaml:"connection-idle-timeout,omitempty"`
 
@@ -267,7 +267,7 @@ type TimeoutParameters struct {
 	// terminating the HTTP request or stream. Set to "infinity" to disable the
 	// timeout entirely.
 	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-stream-idle-timeout
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-stream-idle-timeout
 	// for more information.
 	StreamIdleTimeout string `yaml:"stream-idle-timeout,omitempty"`
 
@@ -276,7 +276,7 @@ type TimeoutParameters struct {
 	// regardless of whether there has been activity or not. Omit or set to "infinity" for
 	// no max duration.
 	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/core/protocol.proto#envoy-api-field-core-httpprotocoloptions-max-connection-duration
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration
 	// for more information.
 	MaxConnectionDuration string `yaml:"max-connection-duration,omitempty"`
 
@@ -285,7 +285,7 @@ type TimeoutParameters struct {
 	// During this grace period, the proxy will continue to respond to new streams. After the final
 	// GOAWAY frame has been sent, the proxy will refuse new streams.
 	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/config/filter/network/http_connection_manager/v2/http_connection_manager.proto#envoy-api-field-config-filter-network-http-connection-manager-v2-httpconnectionmanager-drain-timeout
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-drain-timeout
 	// for more information.
 	ConnectionShutdownGracePeriod string `yaml:"connection-shutdown-grace-period,omitempty"`
 }
@@ -339,7 +339,7 @@ type ClusterParameters struct {
 	// in the IPv4 family.
 	// Note: This only applies to externalName clusters.
 	//
-	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/cluster.proto#enum-cluster-dnslookupfamily
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
 	// for more information.
 	DNSLookupFamily ClusterDNSFamilyType `yaml:"dns-lookup-family"`
 }

@@ -194,7 +194,7 @@ func (ctx *serveContext) tlsconfig(log logrus.FieldLogger) *tls.Config {
 
 	// Attempt to load certificates and key to catch configuration errors early.
 	if _, lerr := loadConfig(); lerr != nil {
-		log.WithError(err).Fatal("failed to load certificate and key")
+		log.WithError(lerr).Fatal("failed to load certificate and key")
 	}
 
 	return &tls.Config{
