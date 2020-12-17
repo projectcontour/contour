@@ -24,6 +24,7 @@ If you are using a Kubernetes distribution offered by a public cloud provider, w
 | Contour Version | Kubernetes Version |
 | --------------- | :----------------- |
 | main            | 1.19, 1.18, 1.17   |
+| 1.10.1          | 1.19, 1.18, 1.17   |
 | 1.10.0          | 1.19, 1.18, 1.17   |
 | 1.9.0           | 1.18, 1.17, 1.16   |
 | 1.8.2           | 1.18, 1.17, 1.16   |
