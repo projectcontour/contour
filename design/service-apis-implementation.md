@@ -184,10 +184,12 @@ This behavior is similar to the HTTPProxy processor's `validHTTPProxies()` metho
 
 #### Listener merging rules
 
+TODO: The basic principle is to allow for people to specify lots of names across a set of Gateways, or within one Gateway.
 
+Listeners that match on ProtocolType and PortNumber can be merged, using Hostname as a discriminator.
 
-
-
+TODO: There are some edge cases to check into here because TLS config can be specified both here and in the Route.
+Also need to check for if you can mix-and-match between Routes and here, using here as a fallback?
 
 ### HTTPRoute
 
@@ -213,13 +215,12 @@ The same applies to changes in CRDs, YAML examples, and so on.
 Ideally the changes should be made in sequence so that the work required to implement this design can be done incrementally, possibly in parallel.
 
 ## Alternatives Considered
-If there are alternative high level or detailed designs that were not pursued they should be called out here with a brief explanation of why they were not pursued.
+TODO: This will need further explanation of what the solution would look like if we didn't make one GatewayClass == One Contour.
+
+TODO: Some discussion of why layer 7 only.
 
 ## Security Considerations
-If this proposal has an impact to the security of the product, its users, or data stored or transmitted via the product, they must be addressed here.
-
-## Compatibility
-A discussion of any compatibility issues that need to be considered
+TODO: I can't think of any yet.
 
 ## Implementation
 A description of the implementation, timelines, and any resources that have agreed to contribute.
