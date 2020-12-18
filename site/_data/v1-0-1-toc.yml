@@ -47,8 +47,8 @@ toc:
         url: /troubleshooting
   - title: Resources
     subfolderitems:
-      - page: Envoy Support Matrix
-        link: /resources/envoy
+      - page: Compatibility Matrix
+        link: /resources/compatibility-matrix
       - page: How We Work
         link: /resources/how-we-work
       - page: Release Process

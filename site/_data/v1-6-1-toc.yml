@@ -51,10 +51,8 @@ toc:
     subfolderitems:
       - page: Support Policy
         link: /resources/support
-      - page: Envoy Support Matrix
-        link: /resources/envoy
-      - page: Kubernetes Support Matrix
-        link: /resources/kubernetes
+      - page: Compatibility Matrix
+        link: /resources/compatibility-matrix
       - page: Release Process
         link: /resources/release-process
       - page: Frequently Asked Questions

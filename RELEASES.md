@@ -11,9 +11,8 @@ Major and minor releases of Contour will be branched from main when the release 
 Patch releases are based on the major/minor release branch. There is no specific release cadence for patch releases as we already release monthly. However, we will create patch releases to address critical community and security issues (for example to address high severity security issues in Contour or in Envoy). We will patch release only the latest release of Contour. The Contour team only maintains a single release branch.
 
 ### Release Support Matrix
-We support only the latest Contour [release](https://github.com/projectcontour/contour/releases). The can find the Contour Support Policy [here](https://projectcontour.io/resources/support/) 
-* [Envoy Support Matrix](https://projectcontour.io/resources/envoy/)
-* [Kubernetes Support Matrix](https://projectcontour.io/resources/kubernetes/)
+Per the [Contour support policy](https://projectcontour.io/resources/support/), we support only the latest Contour [release](https://github.com/projectcontour/contour/releases).
+* [Contour Compatibility Matrix](https://projectcontour.io/resources/compatibility-matrix/)
 
 ### Upgrade path 
 The upgrade path for Contour, including upgrade instructions, is documented [here](https://projectcontour.io/resources/upgrading/). Each Contour version also requires a specific release of Envoy, documented in the upgrading portion of our website.
