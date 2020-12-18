@@ -56,7 +56,6 @@ status = 302
 # kubectl apply https://projectcontour.io/quickstart/contour-custom-resource.yaml
 [[redirects]]
 from = "/quickstart/contour-custom-resource.yaml"
-# TODO [danehans]: Update main -> v1.11.0 when operator v1alpha1 is tagged.
 to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.11/examples/contour/contour.yaml"
 status = 302
 
