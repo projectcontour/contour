@@ -168,9 +168,9 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				},
 				UpstreamConnectionOptions: &envoy_cluster_v3.UpstreamConnectionOptions{
 					TcpKeepalive: &envoy_core_v3.TcpKeepalive{
-						KeepaliveProbes:   protobuf.UInt32(3),
-						KeepaliveTime:     protobuf.UInt32(30),
-						KeepaliveInterval: protobuf.UInt32(5),
+						KeepaliveProbes:   protobuf.UInt32(c.GetKeepaliveProbe()),
+						KeepaliveTime:     protobuf.UInt32(c.GetKeepaliveTime()),
+						KeepaliveInterval: protobuf.UInt32(c.GetKeepaliveInterval()),
 					},
 				},
 				Http2ProtocolOptions: new(envoy_core_v3.Http2ProtocolOptions), // enables http2

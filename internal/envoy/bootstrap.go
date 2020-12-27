@@ -84,6 +84,15 @@ type BootstrapConfig struct {
 	// referenced in the configuration actually exist. This option is for
 	// testing only.
 	SkipFilePathCheck bool
+
+	// KeepaliveProbe is the maximum number of keepalive probes to send without response.
+	KeepaliveProbe uint32
+
+	// KeepaliveTime is the number of seconds a connection needs to be idle before keep-alive probes start being sent.
+	KeepaliveTime uint32
+
+	// KeepaliveInterval is the number of seconds between keep-alive probes.
+	KeepaliveInterval uint32
 }
 
 func (c *BootstrapConfig) GetXdsAddress() string { return stringOrDefault(c.XDSAddress, "127.0.0.1") }
@@ -95,6 +104,15 @@ func (c *BootstrapConfig) GetAdminPort() int { return intOrDefault(c.AdminPort, 
 func (c *BootstrapConfig) GetAdminAccessLogPath() string {
 	return stringOrDefault(c.AdminAccessLogPath, "/dev/null")
 }
+func (c *BootstrapConfig) GetKeepaliveProbe() uint32 {
+	return uint32OrDefault(c.KeepaliveProbe, 3)
+}
+func (c *BootstrapConfig) GetKeepaliveTime() uint32 {
+	return uint32OrDefault(c.KeepaliveTime, 30)
+}
+func (c *BootstrapConfig) GetKeepaliveInterval() uint32 {
+	return uint32OrDefault(c.KeepaliveInterval, 5)
+}
 
 func stringOrDefault(s, def string) string {
 	if s == "" {
@@ -104,6 +122,13 @@ func stringOrDefault(s, def string) string {
 }
 
 func intOrDefault(i, def int) int {
+	if i == 0 {
+		return def
+	}
+	return i
+}
+
+func uint32OrDefault(i, def uint32) uint32 {
 	if i == 0 {
 		return def
 	}

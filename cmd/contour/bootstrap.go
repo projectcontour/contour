@@ -35,5 +35,8 @@ func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *envoy.Boo
 	bootstrap.Flag("envoy-key-file", "Client key filename for Envoy secure xDS gRPC communication.").Envar("ENVOY_KEY_FILE").StringVar(&config.GrpcClientKey)
 	bootstrap.Flag("namespace", "The namespace the Envoy container will run in.").Envar("CONTOUR_NAMESPACE").Default("projectcontour").StringVar(&config.Namespace)
 	bootstrap.Flag("xds-resource-version", "The versions of the xDS resources to request from Contour.").Default("v3").StringVar((*string)(&config.XDSResourceVersion))
+	bootstrap.Flag("tcp-keepalive-probe", "Maximum number of keepalive probes to send without response.").Uint32Var(&config.KeepaliveProbe)
+	bootstrap.Flag("tcp-keepalive-time", "The number of seconds a connection needs to be idle before keep-alive probes start being sent.").Uint32Var(&config.KeepaliveTime)
+	bootstrap.Flag("tcp-keepalive-interval", "The number of seconds between keep-alive probes.").Uint32Var(&config.KeepaliveInterval)
 	return bootstrap, &config
 }
