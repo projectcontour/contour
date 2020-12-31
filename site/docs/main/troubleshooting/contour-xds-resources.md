@@ -10,7 +10,7 @@ Do this is via `kubectl exec`:
 # Get one of the pods that matches the examples/daemonset
 $ CONTOUR_POD=$(kubectl -n projectcontour get pod -l app=contour -o jsonpath='{.items[0].metadata.name}')
 # Do the port forward to that pod
-$ kubectl -n projectcontour exec $CONTOUR_POD -c contour -- contour cli lds --cafile=/ca/cacert.pem --cert-file=/certs/tls.crt --key-file=/certs/tls.key
+$ kubectl -n projectcontour exec $CONTOUR_POD -c contour -- contour cli lds --cafile=/certs/ca.crt --cert-file=/certs/tls.crt --key-file=/certs/tls.key
 ```
 
 Which will stream changes to the LDS api endpoint to your terminal.
