@@ -20,9 +20,8 @@ import (
 	"io/ioutil"
 	"testing"
 
+	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-
-	envoy_api_v2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
@@ -93,7 +92,7 @@ func TestXDSHandlerStream(t *testing.T) {
 							ch <- i + 1
 						},
 						contents: func() []proto.Message {
-							return []proto.Message{new(envoy_api_v2.ClusterLoadAssignment)}
+							return []proto.Message{new(envoy_endpoint_v3.ClusterLoadAssignment)}
 						},
 						typeurl: func() string { return "io.projectcontour.potato" },
 					},
