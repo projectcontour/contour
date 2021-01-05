@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package certgen
+package certs
 
 import (
 	"crypto/rand"
@@ -26,15 +26,108 @@ import (
 	"time"
 )
 
-// keySize sets the RSA key size to 2048 bits. This is minimum recommended size
-// for RSA keys.
-const keySize = 2048
+const (
+	// DefaultContourServiceName holds the default service name
+	// used for the Contour Kubernetes service. This value is added
+	// to the Contour certificate's Subject Alt Names.
+	DefaultContourServiceName = "contour"
 
-// NewCert generates a new keypair given the CA keypair, the expiry time, the service name
+	// DefaultEnvoyServiceName holds the default service name
+	// used for the Envoy Kubernetes service. This value is added
+	// to the Envoy certificate's Subject Alt Names.
+	DefaultEnvoyServiceName = "envoy"
+
+	// DefaultCertificateLifetime holds the default certificate lifetime
+	// (in days).
+	DefaultCertificateLifetime = 365
+
+	// DefaultNamespace where Contour is deployed. This value is added
+	// to the certificates Subject Alt Names.
+	DefaultNamespace = "projectcontour"
+
+	// keySize sets the RSA key size to 2048 bits. This is minimum recommended size
+	// for RSA keys.
+	keySize = 2048
+)
+
+// Configuration holds config parameters used for
+// generating certificates
+type Configuration struct {
+
+	// Lifetime is the number of days for which certificates will be valid.
+	Lifetime uint
+
+	// Namespace is the Kubernetes namespace name to add to the generated
+	// certificates Subject Alternate Name values.
+	Namespace string
+
+	// ContourServiceName holds the name of the Contour service name.
+	ContourServiceName string
+
+	// EnvoyServiceName holds the name of the Envoy service name.
+	EnvoyServiceName string
+}
+
+// Certificates contains a set of Certificates as []byte each holding
+// the CA Cert along with with Contour & Envoy Certs.
+type Certificates struct {
+	CACertificateKey      []byte
+	ContourCertificateKey []byte
+	ContourPrivateKey     []byte
+	EnvoyCertificateKey   []byte
+	EnvoyPrivateKey       []byte
+}
+
+// GenerateCerts generates a CA Certificate along with certificates for
+// Contour & Envoy returning them as a *Certificates struct or error if encountered.
+func GenerateCerts(config *Configuration) (*Certificates, error) {
+
+	// Check if the config is not passed, then default.
+	if config == nil {
+		config = &Configuration{}
+	}
+
+	now := time.Now()
+	expiry := now.Add(24 * time.Duration(uint32OrDefault(config.Lifetime, DefaultCertificateLifetime)) * time.Hour)
+	caCertPEM, caKeyPEM, err := newCA("Project Contour", expiry)
+	if err != nil {
+		return nil, err
+	}
+
+	contourCert, contourKey, err := newCert(caCertPEM,
+		caKeyPEM,
+		expiry,
+		stringOrDefault(config.ContourServiceName, DefaultContourServiceName),
+		stringOrDefault(config.Namespace, DefaultNamespace),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	envoyCert, envoyKey, err := newCert(caCertPEM,
+		caKeyPEM,
+		expiry,
+		stringOrDefault(config.EnvoyServiceName, DefaultEnvoyServiceName),
+		stringOrDefault(config.Namespace, DefaultNamespace),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Certificates{
+		CACertificateKey:      caCertPEM,
+		ContourCertificateKey: contourCert,
+		ContourPrivateKey:     contourKey,
+		EnvoyCertificateKey:   envoyCert,
+		EnvoyPrivateKey:       envoyKey,
+	}, nil
+}
+
+// newCert generates a new keypair given the CA keypair, the expiry time, the service name
 // ("contour" or "envoy"), and the Kubernetes namespace the service will run in (because
 // of the Kubernetes DNS schema.)
 // The return values are cert, key, err.
-func NewCert(caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace string) ([]byte, []byte, error) {
+func newCert(caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace string) ([]byte, []byte, error) {
 
 	caKeyPair, err := tls.X509KeyPair(caCertPEM, caKeyPEM)
 	if err != nil {
@@ -86,9 +179,9 @@ func NewCert(caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace st
 
 }
 
-// NewCA generates a new CA, given the CA's CN and an expiry time.
+// newCA generates a new CA, given the CA's CN and an expiry time.
 // The return order is cacert, cakey, error.
-func NewCA(cn string, expiry time.Time) ([]byte, []byte, error) {
+func newCA(cn string, expiry time.Time) ([]byte, []byte, error) {
 
 	key, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
@@ -150,4 +243,18 @@ func serviceNames(service, namespace string) []string {
 		fmt.Sprintf("%s.%s.svc", service, namespace),
 		fmt.Sprintf("%s.%s.svc.cluster.local", service, namespace),
 	}
+}
+
+func stringOrDefault(val string, defaultval string) string {
+	if len(val) > 0 {
+		return val
+	}
+	return defaultval
+}
+
+func uint32OrDefault(val uint, defaultval uint) uint {
+	if val != 0 {
+		return val
+	}
+	return defaultval
 }
