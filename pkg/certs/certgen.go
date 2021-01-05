@@ -45,6 +45,11 @@ const (
 	// to the certificates Subject Alt Names.
 	DefaultNamespace = "projectcontour"
 
+	// DefaultDNSName holds the Kubernetes local dns suffix name
+	// specific to the cluster where Contour is deployed and is used when
+	// configuring Subject Alt Names on the certificates.
+	DefaultDNSName = "cluster.local"
+
 	// keySize sets the RSA key size to 2048 bits. This is minimum recommended size
 	// for RSA keys.
 	keySize = 2048
@@ -60,6 +65,11 @@ type Configuration struct {
 	// Namespace is the Kubernetes namespace name to add to the generated
 	// certificates Subject Alternate Name values.
 	Namespace string
+
+	// DNSName holds the Kubernetes local dns suffix name
+	// specific to the cluster where Contour is deployed and is used when
+	// configuring Subject Alt Names on the certificates.
+	DNSName string
 
 	// ContourServiceName holds the name of the Contour service name.
 	ContourServiceName string
@@ -99,6 +109,7 @@ func GenerateCerts(config *Configuration) (*Certificates, error) {
 		expiry,
 		stringOrDefault(config.ContourServiceName, DefaultContourServiceName),
 		stringOrDefault(config.Namespace, DefaultNamespace),
+		stringOrDefault(config.DNSName, DefaultDNSName),
 	)
 	if err != nil {
 		return nil, err
@@ -109,6 +120,7 @@ func GenerateCerts(config *Configuration) (*Certificates, error) {
 		expiry,
 		stringOrDefault(config.EnvoyServiceName, DefaultEnvoyServiceName),
 		stringOrDefault(config.Namespace, DefaultNamespace),
+		stringOrDefault(config.DNSName, DefaultDNSName),
 	)
 	if err != nil {
 		return nil, err
@@ -127,7 +139,7 @@ func GenerateCerts(config *Configuration) (*Certificates, error) {
 // ("contour" or "envoy"), and the Kubernetes namespace the service will run in (because
 // of the Kubernetes DNS schema.)
 // The return values are cert, key, err.
-func newCert(caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace string) ([]byte, []byte, error) {
+func newCert(caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace, dnsname string) ([]byte, []byte, error) {
 
 	caKeyPair, err := tls.X509KeyPair(caCertPEM, caKeyPEM)
 	if err != nil {
@@ -160,7 +172,7 @@ func newCert(caCertPEM, caKeyPEM []byte, expiry time.Time, service, namespace st
 			x509.KeyUsageDataEncipherment |
 			x509.KeyUsageKeyEncipherment |
 			x509.KeyUsageContentCommitment,
-		DNSNames: serviceNames(service, namespace),
+		DNSNames: serviceNames(service, namespace, dnsname),
 	}
 	newCert, err := x509.CreateCertificate(rand.Reader, template, caCert, &newKey.PublicKey, caKey)
 	if err != nil {
@@ -236,12 +248,12 @@ func bigIntHash(n *big.Int) []byte {
 	return h.Sum(nil)
 }
 
-func serviceNames(service, namespace string) []string {
+func serviceNames(service, namespace, dnsname string) []string {
 	return []string{
 		service,
 		fmt.Sprintf("%s.%s", service, namespace),
 		fmt.Sprintf("%s.%s.svc", service, namespace),
-		fmt.Sprintf("%s.%s.svc.cluster.local", service, namespace),
+		fmt.Sprintf("%s.%s.svc.%s", service, namespace, dnsname),
 	}
 }
 
