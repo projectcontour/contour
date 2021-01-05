@@ -55,8 +55,7 @@ const (
 	keySize = 2048
 )
 
-// Configuration holds config parameters used for
-// generating certificates
+// Configuration holds config parameters used for generating certificates.
 type Configuration struct {
 
 	// Lifetime is the number of days for which certificates will be valid.
