@@ -81,11 +81,11 @@ type Configuration struct {
 // Certificates contains a set of Certificates as []byte each holding
 // the CA Cert along with with Contour & Envoy Certs.
 type Certificates struct {
-	CACertificateKey      []byte
-	ContourCertificateKey []byte
-	ContourPrivateKey     []byte
-	EnvoyCertificateKey   []byte
-	EnvoyPrivateKey       []byte
+	CACertificate      []byte
+	ContourCertificate []byte
+	ContourPrivateKey  []byte
+	EnvoyCertificate   []byte
+	EnvoyPrivateKey    []byte
 }
 
 // GenerateCerts generates a CA Certificate along with certificates for
@@ -127,11 +127,11 @@ func GenerateCerts(config *Configuration) (*Certificates, error) {
 	}
 
 	return &Certificates{
-		CACertificateKey:      caCertPEM,
-		ContourCertificateKey: contourCert,
-		ContourPrivateKey:     contourKey,
-		EnvoyCertificateKey:   envoyCert,
-		EnvoyPrivateKey:       envoyKey,
+		CACertificate:      caCertPEM,
+		ContourCertificate: contourCert,
+		ContourPrivateKey:  contourKey,
+		EnvoyCertificate:   envoyCert,
+		EnvoyPrivateKey:    envoyKey,
 	}, nil
 }
 

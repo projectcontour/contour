@@ -83,12 +83,12 @@ func writePEM(outputDir, filename string, data []byte, force OverwritePolicy) er
 // WriteCertsPEM writes out all the certs in certdata to
 // individual PEM files in outputDir
 func WriteCertsPEM(outputDir string, certdata *certs.Certificates, force OverwritePolicy) error {
-	err := writePEM(outputDir, "cacert.pem", certdata.CACertificateKey, force)
+	err := writePEM(outputDir, "cacert.pem", certdata.CACertificate, force)
 	if err != nil {
 		return err
 	}
 
-	err = writePEM(outputDir, "contourcert.pem", certdata.ContourCertificateKey, force)
+	err = writePEM(outputDir, "contourcert.pem", certdata.ContourCertificate, force)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func WriteCertsPEM(outputDir string, certdata *certs.Certificates, force Overwri
 		return err
 	}
 
-	err = writePEM(outputDir, "envoycert.pem", certdata.EnvoyCertificateKey, force)
+	err = writePEM(outputDir, "envoycert.pem", certdata.EnvoyCertificate, force)
 	if err != nil {
 		return err
 	}
@@ -152,15 +152,15 @@ func AsSecrets(namespace string, certdata *certs.Certificates) []*corev1.Secret 
 		newSecret(corev1.SecretTypeTLS,
 			"contourcert", namespace,
 			map[string][]byte{
-				dag.CACertificateKey:    certdata.CACertificateKey,
-				corev1.TLSCertKey:       certdata.ContourCertificateKey,
+				dag.CACertificateKey:    certdata.CACertificate,
+				corev1.TLSCertKey:       certdata.ContourCertificate,
 				corev1.TLSPrivateKeyKey: certdata.ContourPrivateKey,
 			}),
 		newSecret(corev1.SecretTypeTLS,
 			"envoycert", namespace,
 			map[string][]byte{
-				dag.CACertificateKey:    certdata.CACertificateKey,
-				corev1.TLSCertKey:       certdata.EnvoyCertificateKey,
+				dag.CACertificateKey:    certdata.CACertificate,
+				corev1.TLSCertKey:       certdata.EnvoyCertificate,
 				corev1.TLSPrivateKeyKey: certdata.EnvoyPrivateKey,
 			}),
 	}
@@ -175,19 +175,19 @@ func AsLegacySecrets(namespace string, certdata *certs.Certificates) []*corev1.S
 		newSecret(corev1.SecretTypeTLS,
 			"contourcert", namespace,
 			map[string][]byte{
-				corev1.TLSCertKey:       certdata.ContourCertificateKey,
+				corev1.TLSCertKey:       certdata.ContourCertificate,
 				corev1.TLSPrivateKeyKey: certdata.ContourPrivateKey,
 			}),
 		newSecret(corev1.SecretTypeTLS,
 			"envoycert", namespace,
 			map[string][]byte{
-				corev1.TLSCertKey:       certdata.EnvoyCertificateKey,
+				corev1.TLSCertKey:       certdata.EnvoyCertificate,
 				corev1.TLSPrivateKeyKey: certdata.EnvoyPrivateKey,
 			}),
 		newSecret(corev1.SecretTypeOpaque,
 			"cacert", namespace,
 			map[string][]byte{
-				"cacert.pem": certdata.CACertificateKey,
+				"cacert.pem": certdata.CACertificate,
 			}),
 	}
 }

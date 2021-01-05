@@ -53,13 +53,13 @@ func TestGenerateCerts(t *testing.T) {
 			}
 
 			roots := x509.NewCertPool()
-			ok := roots.AppendCertsFromPEM(got.CACertificateKey)
+			ok := roots.AppendCertsFromPEM(got.CACertificate)
 			require.Truef(t, ok, "Failed to set up CA cert for testing, maybe it's an invalid PEM")
 
-			err = verifyCert(got.ContourCertificateKey, roots, tc.wantContourDNSName, currentTime)
+			err = verifyCert(got.ContourCertificate, roots, tc.wantContourDNSName, currentTime)
 			assert.NoErrorf(t, err, "Validating %s failed", name)
 
-			err = verifyCert(got.EnvoyCertificateKey, roots, tc.wantEnvoyDNSName, currentTime)
+			err = verifyCert(got.EnvoyCertificate, roots, tc.wantEnvoyDNSName, currentTime)
 			assert.NoErrorf(t, err, "Validating %s failed", name)
 		})
 	}
