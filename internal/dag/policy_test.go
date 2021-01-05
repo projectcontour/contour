@@ -295,3 +295,116 @@ func TestLoadBalancerPolicy(t *testing.T) {
 		})
 	}
 }
+
+func TestHeadersPolicy(t *testing.T) {
+	tests := map[string]struct {
+		hp      *contour_api_v1.HeadersPolicy
+		want    HeadersPolicy
+		wantErr bool
+	}{
+		"no percentage unchanged": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-App-Weight",
+					Value: "100",
+				}},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-App-Weight": "100",
+				},
+			},
+		},
+		"simple percentage escape": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-App-Weight",
+					Value: "100%",
+				}},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-App-Weight": "100%%",
+				},
+			},
+		},
+		"known good Envoy dynamic header unescaped": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Envoy-Hostname",
+					Value: "%HOSTNAME%",
+				}},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Envoy-Hostname": "%HOSTNAME%",
+				},
+			},
+		},
+		"unknown Envoy dynamic header is escaped": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Envoy-Unknown",
+					Value: "%UNKNOWN%",
+				}},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Envoy-Unknown": "%%UNKNOWN%%",
+				},
+			},
+		},
+		"valid Envoy REQ header unescaped": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Host",
+					Value: "%REQ(Host)%",
+				}},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Host": "%REQ(Host)%",
+				},
+			},
+		},
+		"invalid Envoy REQ header is escaped": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Request-Host",
+					Value: "%REQ(inv@lid-header)%",
+				}},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Request-Host": "%%REQ(inv@lid-header)%%",
+				},
+			},
+		},
+		"header value with dynamic and non-dynamic content and multiple dynamic fields": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Host-Protocol",
+					Value: "%HOSTNAME% - %PROTOCOL%",
+				}},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Host-Protocol": "%HOSTNAME% - %PROTOCOL%",
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, gotErr := headersPolicyService(tc.hp)
+			if tc.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.Equal(t, tc.want, *got)
+				assert.NoError(t, gotErr)
+			}
+
+		})
+	}
+}
