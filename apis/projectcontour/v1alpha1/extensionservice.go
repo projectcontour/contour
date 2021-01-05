@@ -20,11 +20,19 @@ import (
 
 // ExtensionProtocolVersion is the version of the GRPC protocol used
 // to access extension services. The only version currently supported
-// is "v2".
+// is "v3".
 type ExtensionProtocolVersion string
 
-// SupportProtocolVersion2 requests the "v2" support protocol version.
-const SupportProtocolVersion2 ExtensionProtocolVersion = "v2"
+const (
+	// SupportProtocolVersion2 requests the "v2" support protocol version.
+	//
+	// Deprecated: this protocol version is no longer supported and the
+	// constant is retained for backwards compatibility only.
+	SupportProtocolVersion2 ExtensionProtocolVersion = "v2"
+
+	// SupportProtocolVersion3 requests the "v3" support protocol version.
+	SupportProtocolVersion3 ExtensionProtocolVersion = "v3"
+)
 
 // ExtensionServiceTarget defines an Kubernetes Service to target with
 // extension service traffic.
@@ -88,11 +96,11 @@ type ExtensionServiceSpec struct {
 
 	// This field sets the version of the GRPC protocol that Envoy uses to
 	// send requests to the extension service. Since Contour always uses the
-	// v2 Envoy API, this is currently fixed at "v2". However, other
+	// v3 Envoy API, this is currently fixed at "v3". However, other
 	// protocol options will be available in future.
 	//
 	// +optional
-	// +kubebuilder:validation:Enum=v2
+	// +kubebuilder:validation:Enum=v3
 	ProtocolVersion ExtensionProtocolVersion `json:"protocolVersion,omitempty"`
 }
 

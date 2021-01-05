@@ -17,4 +17,4 @@ See the [Getting Started][3] document.
 [1]: https://www.envoyproxy.io/
 [2]: httpproxy.md
 [3]: {% link getting-started.md %}
-[4]: {% link _resources/kubernetes.md %}
+[4]: {% link _resources/compatibility-matrix.md %}

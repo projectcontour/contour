@@ -56,9 +56,7 @@ The tool performs the following steps, which can also be followed to update the 
 
 ## Update compatibility matrices
 
-If there has been an Envoy version upgrade, check that the [Envoy Support Matrix](https://projectcontour.io/resources/envoy/) has been updated.
-
-If there has been a Kubernetes client-go upgrade, check that the [Kubernetes Support Matrix](https://projectcontour.io/resources/kubernetes/) has been updated.
+Add an entry to the [Contour Compatibility Matrix](https://projectcontour.io/resources/compatibility-matrix/).
 
 ## Upgrade instructions
 

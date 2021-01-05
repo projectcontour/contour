@@ -101,6 +101,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 								StatusOnError: &envoy_type.HttpStatus{
 									Code: envoy_type.StatusCode_Forbidden,
 								},
+								TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 							},
 						),
 						nil, "h2", "http/1.1"),
@@ -189,6 +190,7 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 								StatusOnError: &envoy_type.HttpStatus{
 									Code: envoy_type.StatusCode_Forbidden,
 								},
+								TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 							},
 						),
 						nil, "h2", "http/1.1"),
@@ -505,6 +507,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 								StatusOnError: &envoy_type.HttpStatus{
 									Code: envoy_type.StatusCode_Forbidden,
 								},
+								TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 							},
 						),
 						nil, "h2", "http/1.1"),
