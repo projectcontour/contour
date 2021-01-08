@@ -18,6 +18,7 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -58,7 +59,12 @@ func TestDAGStatus(t *testing.T) {
 			}
 			dag := builder.Build()
 			t.Logf("%#v\n", dag.StatusCache)
-			got := dag.GetProxyStatusesTesting()
+
+			got := make(map[types.NamespacedName]contour_api_v1.DetailedCondition)
+			for _, pu := range dag.StatusCache.GetProxyUpdates() {
+				got[pu.Fullname] = *pu.Conditions[status.ValidCondition]
+			}
+
 			assert.Equal(t, tc.want, got)
 		})
 	}

@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
@@ -77,19 +76,6 @@ func (d *DAG) Visit(fn func(Vertex)) {
 	for _, r := range d.roots {
 		fn(r)
 	}
-}
-
-// GetProxyStatusesTesting returns a slice of Status objects associated with
-// the computation of this DAG, for testing status output.
-// TODO(youngnick)#2967: This should be removed, see the linked issue for details.
-func (d *DAG) GetProxyStatusesTesting() map[types.NamespacedName]contour_api_v1.DetailedCondition {
-	validConds := make(map[types.NamespacedName]contour_api_v1.DetailedCondition)
-
-	for _, pu := range d.StatusCache.GetProxyUpdates() {
-		validConds[pu.Fullname] = *pu.Conditions[status.ValidCondition]
-	}
-
-	return validConds
 }
 
 // AddRoot appends the given root to the DAG's roots.
