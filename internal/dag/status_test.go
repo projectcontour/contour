@@ -810,6 +810,24 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
+	proxyValidReuseCaseExampleCom := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "case-example",
+			Namespace: "roots",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "EXAMPLE.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	run(t, "conflicting proxies due to fqdn reuse", testcase{
 		objs: []interface{}{proxyValidExampleCom, proxyValidReuseExampleCom},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
@@ -819,6 +837,18 @@ func TestDAGStatus(t *testing.T) {
 			{Name: proxyValidReuseExampleCom.Name, Namespace: proxyValidReuseExampleCom.Namespace}: fixture.NewValidCondition().
 				WithGeneration(proxyValidReuseExampleCom.Generation).
 				WithError(contour_api_v1.ConditionTypeVirtualHostError, "DuplicateVhost", `fqdn "example.com" is used in multiple HTTPProxies: roots/example-com, roots/other-example`),
+		},
+	})
+
+	run(t, "conflicting proxies due to fqdn reuse with uppercase/lowercase", testcase{
+		objs: []interface{}{proxyValidExampleCom, proxyValidReuseCaseExampleCom},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: proxyValidExampleCom.Name, Namespace: proxyValidExampleCom.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyValidExampleCom.Generation).
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "DuplicateVhost", `fqdn "example.com" is used in multiple HTTPProxies: roots/case-example, roots/example-com`),
+			{Name: proxyValidReuseCaseExampleCom.Name, Namespace: proxyValidReuseCaseExampleCom.Namespace}: fixture.NewValidCondition().
+				WithGeneration(proxyValidReuseCaseExampleCom.Generation).
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "DuplicateVhost", `fqdn "example.com" is used in multiple HTTPProxies: roots/case-example, roots/example-com`),
 		},
 	})
 
