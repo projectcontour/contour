@@ -377,6 +377,14 @@ type Parameters struct {
 	// permitInsecure field in HTTPProxy.
 	DisablePermitInsecure bool `yaml:"disablePermitInsecure,omitempty"`
 
+	// DisableAllowChunkedLength disables the RFC-complient Envoy behavior to
+	// strip the "Content-Length" header if "Transfer-Encoding: chunked" is
+	// also set. This is an emergency off-switch to revert back to Envoy's
+	// default behavior in case of failures. Please file an issue if failures
+	// are encountered.
+	// See: https://github.com/projectcontour/contour/issues/3221
+	DisableAllowChunkedLength bool `yaml:"disableAllowChunkedLength,omitempty"`
+
 	// LeaderElection contains leader election parameters.
 	LeaderElection LeaderElectionParameters `yaml:"leaderelection,omitempty"`
 
@@ -454,11 +462,12 @@ func Defaults() Parameters {
 		Server: ServerParameters{
 			XDSServerType: ContourServerType,
 		},
-		IngressStatusAddress:  "",
-		AccessLogFormat:       DEFAULT_ACCESS_LOG_TYPE,
-		AccessLogFields:       DefaultFields,
-		TLS:                   TLSParameters{},
-		DisablePermitInsecure: false,
+		IngressStatusAddress:      "",
+		AccessLogFormat:           DEFAULT_ACCESS_LOG_TYPE,
+		AccessLogFields:           DefaultFields,
+		TLS:                       TLSParameters{},
+		DisablePermitInsecure:     false,
+		DisableAllowChunkedLength: false,
 		LeaderElection: LeaderElectionParameters{
 			LeaseDuration: time.Second * 15,
 			RenewDeadline: time.Second * 10,

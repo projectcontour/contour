@@ -285,6 +285,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		MaxConnectionDuration:         maxConnectionDuration,
 		ConnectionShutdownGracePeriod: connectionShutdownGracePeriod,
 		DefaultHTTPVersions:           parseDefaultHTTPVersions(ctx.Config.DefaultHTTPVersions),
+		DisableAllowChunkedLength:     ctx.Config.DisableAllowChunkedLength,
 	}
 
 	contourMetrics := metrics.NewMetrics(registry)

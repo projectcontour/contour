@@ -113,6 +113,10 @@ type ListenerConfig struct {
 
 	// ConnectionShutdownGracePeriod configures the drain_timeout for all Connection Managers.
 	ConnectionShutdownGracePeriod timeout.Setting
+
+	// DisableAllowChunkedLength disables setting allow_chunked_length on the HTTP1 options for all
+	// listeners.
+	DisableAllowChunkedLength bool
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -327,6 +331,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 			StreamIdleTimeout(lvc.StreamIdleTimeout).
 			MaxConnectionDuration(lvc.MaxConnectionDuration).
 			ConnectionShutdownGracePeriod(lvc.ConnectionShutdownGracePeriod).
+			AllowChunkedLength(!lvc.DisableAllowChunkedLength).
 			Get()
 
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy_v3.Listener(
@@ -413,6 +418,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
 					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
+					AllowChunkedLength(!v.ListenerConfig.DisableAllowChunkedLength).
 					Get(),
 			)
 
@@ -472,6 +478,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
 					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
+					AllowChunkedLength(!v.ListenerConfig.DisableAllowChunkedLength).
 					Get(),
 			)
 
