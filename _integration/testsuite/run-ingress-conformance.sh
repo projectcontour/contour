@@ -45,7 +45,6 @@ ${SONOBUOY} run \
 
 ${SONOBUOY} retrieve
 
-# TODO: publish/display results properly
 readonly RESULTS_DIR=$(mktemp -d)
 tar xzvf *_sonobuoy_*.tar.gz -C ${RESULTS_DIR}
 cat ${RESULTS_DIR}/plugins/e2e/results/global/*

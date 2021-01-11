@@ -17,17 +17,18 @@ jobs:
       - name: integration tests
         run: |
           make integration
-  ingress-conformance:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: add deps to path
-        run: |
-          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
-          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-      - name: ingress conformance tests
-        run: |
-          make check-ingress-conformance
+  # TODO: reenable once Ingress v1 support is complete
+  # ingress-conformance:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: add deps to path
+  #       run: |
+  #         ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+  #         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+  #     - name: ingress conformance tests
+  #       run: |
+  #         make check-ingress-conformance
   test-linux:
     runs-on: ubuntu-latest
     steps:
