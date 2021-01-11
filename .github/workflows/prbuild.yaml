@@ -17,7 +17,7 @@ jobs:
       - name: integration tests
         run: |
           make integration
-  # TODO: reenable once Ingress v1 support is complete
+  # TODO: re-enable once Ingress v1 support is complete
   # ingress-conformance:
   #   runs-on: ubuntu-latest
   #   steps:
