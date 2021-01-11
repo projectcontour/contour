@@ -3,136 +3,268 @@ title: Contour Release Process
 layout: page
 ---
 
-This page documents the process for releasing a new version of Contour or [Contour Operator][1].
+- [Minor release process](#minor-release-process)
+- [Patch release process](#patch-release-process)
 
-The release types are as follows. All are tagged from the same release branch.
+# Minor Release Process
 
-- Alpha releases.
-- Beta releases.
-- RC (Release Candidate) releases.
-- Final releases.
-- Patch releases.
+## Overview
 
-For minor releases, generally we will not do an Alpha/Beta/RC/Final flow, we will jump straight to cutting the final from main.
+A minor release is e.g. `v1.11.0`.
 
-## Alpha and beta releases
+A minor release requires:
+- website updates
+- a release branch to be created
+- YAML to be customized
+- a release tag to be created
+- an Operator release
+- a GitHub release with release notes
+- public communication
+- cleanup
 
-The steps for an alpha or beta release are
 
-- Tag the head of main with the relevant release tag (in this case `alpha.1`), and push
+## Process
 
-```sh
-$ git tag -a v0.15.0-alpha.1 -m 'contour 1.2.0 alpha 1'
-$ git push --tags
+### Set environment variables
+
+Set environment variables for use in subsequent steps:
+
+```bash
+export CONTOUR_RELEASE_VERSION=v1.11.0
+export CONTOUR_RELEASE_VERSION_MAJOR=1
+export CONTOUR_RELEASE_VERSION_MINOR=11
+
+export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
+export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 ```
 
-Once the tag is present on main, Github Actions will build the tag and push it to Docker Hub for you.
-Then, you are done until we are ready to branch for an rc or final release.
+### Update the website with release-specific information
 
-## Update Docs Site
+1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
+1. Create a new local feature branch from `main`.
+1. Generate a new set of versioned docs:
+    
+    ```bash
+    go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION
+    ```
 
-The documentation site (projectcontour.io) has versioned documentation.
+1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
+1. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
+1. Commit all changes, push the branch, and PR it into `main`.
 
-The required changes can be automatically performed by the `hack/release/prepare-release.go` tool.
-For example:
+_Note: the PR will probably fail the siteproof check due to [#2032](https://github.com/projectcontour/contour/issues/2032). It's a good idea to scan the CI log for any true issues._
 
-```sh
-$ go run ./hack/release/prepare-release.go v9.9.9
-```
+### Branch and tag release
 
-This can be pushed straight back to main.
+1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
+1. Create a local release branch:
 
-The tool performs the following steps, which can also be followed to update the site to create the new release:
+    ```bash
+    git checkout -b release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+    ```
 
-- In: `site/_data`
-  - Make new yml file for version (e.g. v1-1-0-toc.yaml)
-  - Add yml file to site/_data/toc-mapping.yml
-- Copy `main` directory to the new version (e.g. v1.1.0)
-- In: `site/_config.yml`
-  - Update `defaults` and add new version
-  - Update `collections` to add new version
-  - Update `versions` to add new version
-  - Update `latest` to change previous version to new version
+1. Push the branch to `github.com/projectcontour/contour`:
 
-## Update compatibility matrices
+    ```bash
+    git push --set-upstream ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+    ```
 
-Add an entry to the [Contour Compatibility Matrix](https://projectcontour.io/resources/compatibility-matrix/).
+1. Update the deployment YAML and create a local tag:
 
-## Upgrade instructions
+    ```bash
+    ./hack/release/make-release-tag.sh main $CONTOUR_RELEASE_VERSION
+    ```
 
-Add upgrade instructions to the [Upgrading](https://projectcontour.io/resources/upgrading/) page.
+1. Push the branch to `github.com/projectcontour/contour`:
 
-## Branch for release
+    ```bash
+    git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+    ```
 
-As contours main branch is under active development, rc and final releases are made from a branch.
-Create a release branch locally, like so
+1. Push the tag to `github.com/projectcontour/contour`:
 
-```sh
-$ git checkout -b release-1.7
-```
+    ```bash
+    git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
+    ```
 
-Push the release branch to the upstream repository:
+### Release the operator
 
-```sh
-$ git push --set-upstream <YOUR UPSTREAM REMOTE NAME> release-1.7
-```
+1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
+1. Create a local release branch:
 
-If you are doing a patch release on an existing branch, skip this step and just checkout the branch instead.
+    ```bash
+    git checkout -b release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+    ```
 
-This branch is used for all the almost-done release types, rc and final.
-Each one of these release types is just a different tag on the release branch.
+1. Push the branch to `github.com/projectcontour/contour-operator`:
 
-## Final release
+    ```bash
+    git push --set-upstream ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+    ```
 
-These two steps can be automatically performed by the `hack/release/make-release-tag.sh` tool.
-For example:
+1. Update the deployment YAML and create a local tag:
 
-```sh
-$ ./hack/release/make-release-tag.sh v1.2.1 v1.3.1
-```
+    ```bash
+    ./hack/release/make-release-tag.sh main $CONTOUR_RELEASE_VERSION
+    ```
 
-### Updating the example YAMLs
+1. Push the branch to `github.com/projectcontour/contour-operator`:
 
-Your final job before doing the last release is to ensure that all the YAMLs in `examples/contour/` are updated.
-The Docker tag should be updated from the previous stable release to this new one.
+    ```bash
+    git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+    ```
 
-### Tag release from release branch
+1. Push the tag to `github.com/projectcontour/contour-operator`:
 
-Tag the head of your release branch with the release tag, and push
+    ```bash
+    git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
+    ```
 
-```sh
-$ git tag -a v1.2.0 -m 'contour 1.2.0'
-$ git push --tags
-```
+### Update quickstart YAML redirects
 
-## Patch release
-
-### Cherry-pick required commits into the release branch
-
-Get any required changes into the release branch by whatever means you choose.
-
-### Tag patch release from release branch
-
-Tag the head of your release branch with the release tag, and push
-
-```sh
-$ git tag -a v1.2.1 -m 'contour 1.2.1'
-$ git push --tags
-```
-
-## Finishing up
-
-If you've made a production release (that is, a final release or a patch release), you have a couple of things left to do.
-
-### Updating site details
-
-The quickstart url, https://projectcontour.io/quickstart/contour.yaml redirects to the current stable release.
-This is controlled by the `[[redirects]]` section in `netlify.toml`. If the definition of `:latest` has changed, update the quickstart redirector to match.
+1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
+1. Create a new local feature branch from `main`.
+1. Update `netlify.toml` to redirect quickstart links to the new release branch.
+1. Commit all changes, push the branch, and PR it into `main`.
 
 ### Do the Github release and write release notes
 
 Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
-For patch releases, include the previous release notes below the new ones.
+
+_Note: Filter on the Github label "release note" and Github milestone which should include any PRs which should be called out in the release notes._ 
+
+### Toot your horn
+
+- Post a blog entry to projectcontour.io
+- Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
+- Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
+- Send an update to the [cncf-contour-users mailing list](https://lists.cncf.io/g/cncf-contour-users/)
+
+### File issues
+
+If you encountered any problems or areas for improvement while executing the release, file issues before you forget.
+
+
+
+# Patch Release Process
+
+## Overview
+
+A patch release is e.g. `v1.11.1`.
+
+A patch release requires:
+- patches to be cherry-picked onto the existing release branch
+- website updates
+- YAML to be customized
+- a release tag to be created
+- an Operator release
+- a GitHub release with release notes
+- public communication
+- cleanup
+
+## Process
+
+### Set environment variables
+
+Set environment variables for use in subsequent steps:
+
+```bash
+export CONTOUR_RELEASE_VERSION=v1.11.1
+export CONTOUR_RELEASE_VERSION_MAJOR=1
+export CONTOUR_RELEASE_VERSION_MINOR=11
+export CONTOUR_PREVIOUS_VERSION=v1.11.0
+
+export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
+export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
+```
+
+### Cherry-pick relevant commits into release branch
+
+1. Get a list of commit SHAs from `main` to backport.
+1. Check out the release branch for the minor version you're patching (i.e. `release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}`), ensure it's up to date, and ensure you have a clean working directory.
+1. Create a new local feature branch from the release branch.
+1. Cherry-pick each commit from Step 1, fixing any conflicts as needed:
+
+    ```bash
+    # repeat for each SHA
+    git cherry-pick <SHA>
+    ```
+
+1. Commit all changes, push the branch, and PR it into the release branch.
+
+### Update the website with release-specific information
+
+1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
+1. Create a new local feature branch from `main`.
+1. Generate a new set of versioned docs:
+    
+    ```bash
+    go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
+    ```
+
+1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
+1. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
+1. Commit all changes, push the branch, and PR it into `main`.
+
+### Update YAML and tag release
+
+1. Check out the release branch, ensure it's up to date, and ensure you have a clean working directory.
+
+1. Update the deployment YAML and create a local tag:
+
+    ```bash
+    ./hack/release/make-release-tag.sh $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
+    ```
+
+1. Push the branch to `github.com/projectcontour/contour`:
+
+    ```bash
+    git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+    ```
+
+1. Push the tag to `github.com/projectcontour/contour`:
+
+    ```bash
+    git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
+    ```
+
+### Release the operator
+
+1. Get a list of commit SHAs from `main` to backport.
+1. Check out the release branch for the minor version you're patching (i.e. `release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}`), ensure it's up to date, and ensure you have a clean working directory.
+1. Create a new local feature branch from the release branch.
+1. Cherry-pick each commit from Step 1, fixing any conflicts as needed:
+
+    ```bash
+    # repeat for each SHA
+    git cherry-pick <SHA>
+    ```
+
+1. Commit all changes, push the branch, and PR it into the release branch.
+
+1. Check out the release branch, ensure it's up to date, and ensure you have a clean working directory.
+
+1. Update the deployment YAML and create a local tag:
+
+    ```bash
+    ./hack/release/make-release-tag.sh $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
+    ```
+
+1. Push the branch to `github.com/projectcontour/contour-operator`:
+
+    ```bash
+    git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+    ```
+
+1. Push the tag to `github.com/projectcontour/contour-operator`:
+
+    ```bash
+    git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
+    ```
+
+### Do the Github release and write release notes
+
+Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
 
 _Note: Filter on the Github label "release note" and Github milestone which should include any PRs which should be called out in the release notes._ 
 
@@ -142,4 +274,6 @@ _Note: Filter on the Github label "release note" and Github milestone which shou
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
 - Send an update to the [cncf-contour-users mailing list](https://lists.cncf.io/g/cncf-contour-users/)
 
-[1]: https://github.com/projectcontour/contour-operator
+### File issues
+
+If you encountered any problems or areas for improvement while executing the release, file issues before you forget.
