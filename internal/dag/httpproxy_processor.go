@@ -299,6 +299,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		return
 	}
 	insecure.CORSPolicy = cp
+	insecure.RateLimitPolicy = rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
@@ -306,6 +307,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
 		secure := p.dag.EnsureSecureVirtualHost(host)
 		secure.CORSPolicy = cp
+		secure.RateLimitPolicy = rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
 		addRoutes(secure, routes)
 	}
 }
@@ -439,6 +441,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			RetryPolicy:           retryPolicy(route.RetryPolicy),
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
+			RateLimitPolicy:       rateLimitPolicy(route.RateLimitPolicy),
 		}
 
 		// If the enclosing root proxy enabled authorization,

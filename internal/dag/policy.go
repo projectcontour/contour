@@ -311,3 +311,41 @@ func prefixReplacementsAreValid(replacements []contour_api_v1.ReplacePrefix) (st
 
 	return "", nil
 }
+
+func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) *RateLimitPolicy {
+	if in == nil || in.Local == nil {
+		return nil
+	}
+
+	var rp RateLimitPolicy
+
+	var fillInterval time.Duration
+	switch in.Local.Unit {
+	case "second":
+		fillInterval = time.Second
+	case "minute":
+		fillInterval = time.Minute
+	case "hour":
+		fillInterval = time.Hour
+	default:
+		// TODO should not be possible due to kubebuilder validation
+	}
+
+	rp.Local = &LocalRateLimitPolicy{
+		MaxTokens:          in.Local.Requests + in.Local.Burst,
+		TokensPerFill:      in.Local.Requests,
+		FillInterval:       fillInterval,
+		ResponseStatusCode: in.Local.ResponseStatusCode,
+	}
+
+	for _, header := range in.Local.ResponseHeadersToAdd {
+		// initialize map if we haven't yet
+		if rp.Local.ResponseHeadersToAdd == nil {
+			rp.Local.ResponseHeadersToAdd = map[string]string{}
+		}
+
+		rp.Local.ResponseHeadersToAdd[header.Name] = header.Value
+	}
+
+	return &rp
+}

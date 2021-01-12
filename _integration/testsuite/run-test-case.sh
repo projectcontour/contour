@@ -33,5 +33,5 @@ exec "$TESTER" run \
     --param proxy.address="$ADDRESS" \
     --param proxy.http_port="$HTTP_PORT" \
     --param proxy.https_port="$HTTPS_PORT" \
-    --watch pods,secrets,configmaps \
+    --watch pods,secrets,configmaps,endpoints \
     "$@"

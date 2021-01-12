@@ -206,6 +206,9 @@ type VirtualHost struct {
 	// Specifies the cross-origin policy to apply to the VirtualHost.
 	// +optional
 	CORSPolicy *CORSPolicy `json:"corsPolicy,omitempty"`
+	// The policy for rate limiting on the virtual host.
+	// +optional
+	RateLimitPolicy *RateLimitPolicy `json:"rateLimitPolicy,omitempty"`
 }
 
 // TLS describes tls properties. The SNI names that will be matched on
@@ -322,6 +325,48 @@ type Route struct {
 	// Rewriting the 'Host' header is not supported.
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
+	// The policy for rate limiting on the route.
+	// +optional
+	RateLimitPolicy *RateLimitPolicy `json:"rateLimitPolicy,omitempty"`
+}
+
+// RateLimitPolicy defines rate limiting parameters.
+type RateLimitPolicy struct {
+	// Local defines local rate limiting parameters, i.e. parameters
+	// for rate limiting that occurs within each Envoy pod as requests
+	// are handled.
+	Local *LocalRateLimitPolicy `json:"local,omitempty"`
+}
+
+// LocalRateLimitPolicy defines local rate limiting parameters.
+type LocalRateLimitPolicy struct {
+	// Requests defines how many requests per unit of time should
+	// be allowed before rate limiting occurs.
+	// +required
+	// +kubebuilder:validation:Minimum=1
+	Requests uint32 `json:"requests"`
+
+	// Unit defines the period of time within which requests
+	// over the limit will be rate limited.
+	// +kubebuilder:validation:Enum=second;minute;hour
+	// +required
+	Unit string `json:"unit"`
+
+	// Burst defines the number of requests above the requests per
+	// unit that should be allowed within a short period of time.
+	// +optional
+	Burst uint32 `json:"burst,omitempty"`
+
+	// ResponseStatusCode is the HTTP status code to use for responses
+	// to rate-limited requests. If not specified, the Envoy default of
+	// 429 (Too Many Requests) is used.
+	// +optional
+	ResponseStatusCode uint32 `json:"responseStatusCode,omitempty"`
+
+	// ResponseHeadersToAdd is an optional list of response headers to
+	// set when a request is rate-limited.
+	// +optional
+	ResponseHeadersToAdd []HeaderValue `json:"responseHeadersToAdd,omitempty"`
 }
 
 // TCPProxy contains the set of services to proxy TCP connections.
