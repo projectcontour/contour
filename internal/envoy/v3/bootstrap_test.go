@@ -984,6 +984,7 @@ func TestBootstrap(t *testing.T) {
       "resources": [
         {
           "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret",
+          "name": "contour_xds_tls_certificate",
           "tls_certificate": {
             "certificate_chain": {
               "filename": "client.cert"
@@ -999,6 +1000,7 @@ func TestBootstrap(t *testing.T) {
       "resources": [
         {
           "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret",
+          "name": "contour_xds_tls_validation_context",
           "validation_context": {
             "trusted_ca": {
               "filename": "CA.cert"
