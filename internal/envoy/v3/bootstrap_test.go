@@ -889,12 +889,14 @@ func TestBootstrap(t *testing.T) {
                     "tls_certificate_sds_secret_configs": [
                       {
                         "sds_config": {
+                          "resource_api_version": "V3",
                           "path": "resources/sds/xds-tls-certificate.json"
                         }
                       }
                     ],
                     "validation_context_sds_secret_config": {
                       "sds_config": {
+                        "resource_api_version": "V3",
                         "path": "resources/sds/xds-validation-context.json"
                       }
                     }
