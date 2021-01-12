@@ -249,6 +249,7 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 	context := &envoy_tls_v3.UpstreamTlsContext{
 		CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 			TlsCertificateSdsSecretConfigs: []*envoy_tls_v3.SdsSecretConfig{{
+				Name: "contour_xds_tls_certificate",
 				SdsConfig: &envoy_core_v3.ConfigSource{
 					ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
 					ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_Path{
@@ -258,6 +259,7 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 			}},
 			ValidationContextType: &envoy_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
 				ValidationContextSdsSecretConfig: &envoy_tls_v3.SdsSecretConfig{
+					Name: "contour_xds_tls_validation_context",
 					SdsConfig: &envoy_core_v3.ConfigSource{
 						ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
 						ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_Path{
