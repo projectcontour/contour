@@ -95,9 +95,8 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 
 	// Check for host header policy and set if found
 	if val := envoy.HostReplaceHeader(r.RequestHeadersPolicy); val != "" {
-		// (SAS) This changed from RouteAction_HostRewrite
-		ra.HostRewriteSpecifier = &envoy_route_v3.RouteAction_HostRewriteHeader{
-			HostRewriteHeader: val,
+		ra.HostRewriteSpecifier = &envoy_route_v3.RouteAction_HostRewriteLiteral{
+			HostRewriteLiteral: val,
 		}
 	}
 
