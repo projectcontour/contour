@@ -1,6 +1,6 @@
 ARG BUILDPLATFORM=linux/amd64
 
-FROM --platform=$BUILDPLATFORM golang:1.15.2 AS build
+FROM --platform=$BUILDPLATFORM golang:1.15.6 AS build
 WORKDIR /contour
 
 ENV GOPROXY=https://proxy.golang.org
