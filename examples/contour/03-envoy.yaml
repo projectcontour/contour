@@ -85,8 +85,10 @@ spec:
         volumeMounts:
           - name: envoy-config
             mountPath: /config
+            readOnly: true
           - name: envoycert
             mountPath: /certs
+            readOnly: true
         lifecycle:
           preStop:
             httpGet:
