@@ -705,7 +705,8 @@ func (p *HTTPProxyProcessor) validHTTPProxies() []*contour_api_v1.HTTPProxy {
 			valid = append(valid, proxy)
 			continue
 		}
-		fqdnHTTPProxies[proxy.Spec.VirtualHost.Fqdn] = append(fqdnHTTPProxies[proxy.Spec.VirtualHost.Fqdn], proxy)
+		fqdn := strings.ToLower(proxy.Spec.VirtualHost.Fqdn)
+		fqdnHTTPProxies[fqdn] = append(fqdnHTTPProxies[fqdn], proxy)
 	}
 
 	for fqdn, proxies := range fqdnHTTPProxies {
