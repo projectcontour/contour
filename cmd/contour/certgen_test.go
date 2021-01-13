@@ -25,6 +25,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/certgen"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/pkg/certs"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -42,12 +43,16 @@ func TestGeneratedSecretsValid(t *testing.T) {
 		Overwrite:  false,
 	}
 
-	certmap, err := GenerateCerts(&conf)
+	certificates, err := certs.GenerateCerts(
+		&certs.Configuration{
+			Lifetime:  conf.Lifetime,
+			Namespace: conf.Namespace,
+		})
 	if err != nil {
 		t.Fatalf("failed to generate certificates: %s", err)
 	}
 
-	secrets := certgen.AsSecrets(conf.Namespace, certmap)
+	secrets := certgen.AsSecrets(conf.Namespace, certificates)
 	if len(secrets) != 2 {
 		t.Errorf("expected 2 secrets, got %d", len(secrets))
 	}
@@ -152,7 +157,11 @@ func TestOutputFileMode(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			generatedCerts, err := GenerateCerts(tc.cc)
+			generatedCerts, err := certs.GenerateCerts(
+				&certs.Configuration{
+					Lifetime:  tc.cc.Lifetime,
+					Namespace: tc.cc.Namespace,
+				})
 			assert.NoError(t, err)
 
 			assert.NoError(t, OutputCerts(tc.cc, nil, generatedCerts))
