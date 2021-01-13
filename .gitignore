@@ -6,7 +6,7 @@ vendor/
 # TODO(youngnick): Move these out of the repo root.
 localenvoyconfig.yaml
 securelocalenvoyconfig.yaml
-certs/
+./certs/
 
 # Netlify stuff
 .vagrant
