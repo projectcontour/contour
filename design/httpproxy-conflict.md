@@ -1,21 +1,28 @@
 # HTTPProxy Conflict Resolution Design
 
-Status: Draft
+Status: Approved
 
 ## Abstract
 
 Configuration errors in HTTPProxy resources can result in objects being marked as invalid and consequently will not serve traffic.
-These errors can come from invalid route configuration, missing service references, or invalid includes to other resources. 
+These errors can come from invalid route configuration, missing service references, or invalid includes to other resources.
+To fix this, Contour will treat errors and warning differently and where possible, make a best effort to serve partially valid configurations.
+Configurations that are in an Error or Warning status, will serve HTTP error codes or not be added to configuration passed down to Envoy.
 
 ## Background
 HTTPProxy is designed as a multi-team aware Ingress that reduces annotation sprawl by providing a sensible home for configuration items.
-Additionally, HTTPProxy offers a feedback loop to users via a `Status` field on the object.
+Additionally, HTTPProxy offers a feedback loop to ResourceOwners (See #Personas section below) via a `Status` field on the object.
 Contour has further extended this to add `Conditions` which allows for a set of `Errors` and `Warnings` which inform users of errors in the HTTPProxy resource.
+
+It's difficult to find errors and block them from breaking valid configurations since Contour currently processes objects after they are committed to the API server.
+Due to this, Contour cannot block changes to resources before they are committed like an `Admission Controller` would be able to do (See alternatives: `HTTPProxyInstance`).
+When processing HTTPProxy objects, some problems should not stop the rest of the object from being processed.
+To distinguish between fatal-for-processing and not, we propose calling the former `Errors`, and the latter `Warnings`.
 
 When the first error or warning is detected, these fields are updated and in the status of the HTTPProxy object, however if there are more errors, only the first is shown to the user.
 There are ongoing efforts to change this logic to inform of all the errors or warnings dealing with a specific object.
 
-Contour currently invalidates the entire resource if a configuration error is encountered which can cause downtime for specific routes or even the entire virtual host. 
+Contour currently invalidates the entire resource if a configuration error is encountered which can cause downtime for specific routes or even the entire virtual host.
 
 ### Personas
 
@@ -26,20 +33,17 @@ There are two main personas that interact with this conflict design document:
 
 ## Goals
 - Serve valid traffic configurations if portions of the spec are invalid
+- Define and distinguish between fatal and non-fatal errors
 
 ## Non Goals
 - Change how Contour processes objects today from informers set against the Kubernetes API
 
 ## High-Level Design
-Contour will set the error or warning condition for the when an error is encountered, but do its best to still serve valid configurations.
-
-It's difficult to find errors and block them from breaking valid configurations since Contour currently processes objects after they are committed to the API server.
-Due to this, Contour cannot block changes to resources before they are committed like an `Admission Controller` would be able to do (See alternatives: `HTTPProxyInstance`)
-If Contour handles a configuration error by programming Envoy to return an error response instead of proxying the request through the route, the error will be published as an `Error` status.
+Contour will set the error or warning condition when a problem is encountered, but do its best to still serve valid configurations.
 
 In general, Contour will set an object to be status `Error` if the request response to the `User` is changed from what is configured.
 Contour will set a `Warning` when the object has an issue, but the response is not modified.
-The `ResourceOwner` will understand there is an issue by looking at the object's `Status.Conditions.Errors` or `Status.Conditoins.Warnings`. 
+The `ResourceOwner` will understand there is an issue by looking at the object's `Status.Conditions.Errors` or `Status.Conditions.Warnings`. 
 
 Details on how Conditions are implemented can be found in the [HTTPProxy Status Conditions Design Doc](https://github.com/projectcontour/contour/blob/main/design/httpproxy-status-conditions.md#high-level-design).
 
