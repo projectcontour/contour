@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -125,7 +126,43 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 func escapeHeaderValue(value string) string {
 	// Envoy supports %-encoded variables, so literal %'s in the header's value must be escaped.  See:
 	// https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers#custom-request-response-headers
-	return strings.Replace(value, "%", "%%", -1)
+	// Only allow a specific set of known good Envoy dynamic headers to pass through unescaped
+	if !strings.Contains(value, "%") {
+		return value
+	}
+	escapedValue := strings.Replace(value, "%", "%%", -1)
+	for _, envoyVar := range []string{
+		"DOWNSTREAM_REMOTE_ADDRESS",
+		"DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT",
+		"DOWNSTREAM_LOCAL_ADDRESS",
+		"DOWNSTREAM_LOCAL_ADDRESS_WITHOUT_PORT",
+		"DOWNSTREAM_LOCAL_PORT",
+		"DOWNSTREAM_LOCAL_URI_SAN",
+		"DOWNSTREAM_PEER_URI_SAN",
+		"DOWNSTREAM_LOCAL_SUBJECT",
+		"DOWNSTREAM_PEER_SUBJECT",
+		"DOWNSTREAM_PEER_ISSUER",
+		"DOWNSTREAM_TLS_SESSION_ID",
+		"DOWNSTREAM_TLS_CIPHER",
+		"DOWNSTREAM_TLS_VERSION",
+		"DOWNSTREAM_PEER_FINGERPRINT_256",
+		"DOWNSTREAM_PEER_FINGERPRINT_1",
+		"DOWNSTREAM_PEER_SERIAL",
+		"DOWNSTREAM_PEER_CERT",
+		"DOWNSTREAM_PEER_CERT_V_START",
+		"DOWNSTREAM_PEER_CERT_V_END",
+		"HOSTNAME",
+		"PROTOCOL",
+		"UPSTREAM_REMOTE_ADDRESS",
+		"RESPONSE_FLAGS",
+		"RESPONSE_CODE_DETAILS",
+	} {
+		escapedValue = strings.ReplaceAll(escapedValue, "%%"+envoyVar+"%%", "%"+envoyVar+"%")
+	}
+	// REQ(header-name)
+	var validReqEnvoyVar = regexp.MustCompile(`%(%REQ\([\w-]+\)%)%`)
+	escapedValue = validReqEnvoyVar.ReplaceAllString(escapedValue, "$1")
+	return escapedValue
 }
 
 // ingressRetryPolicy builds a RetryPolicy from ingress annotations.
