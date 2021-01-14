@@ -41,6 +41,8 @@ In general, Contour will set an object to be status `Error` if the request respo
 Contour will set a `Warning` when the object has an issue, but the response is not modified.
 The `ResourceOwner` will understand there is an issue by looking at the object's `Status.Conditions.Errors` or `Status.Conditoins.Warnings`. 
 
+Details on how Conditions are implemented can be found in the [HTTPProxy Status Conditions Design Doc](https://github.com/projectcontour/contour/blob/main/design/httpproxy-status-conditions.md#high-level-design).
+
 ## Detailed Design
 
 ### Invalid Include
