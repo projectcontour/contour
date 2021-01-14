@@ -6335,14 +6335,14 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Name:  "Lot-Of-Percents",
 				Value: "%%%%%",
 			}, {
-				Name:  "k-baz", // This gets canonicalized
-				Value: "%DOWNSTREAM_LOCAL_ADDRESS%",
+				Name:  "k-baz",                      // This gets canonicalized
+				Value: "%DOWNSTREAM_LOCAL_ADDRESS%", // This is a known Envoy dynamic header
 			}},
 		},
 		want: &HeadersPolicy{
 			Set: map[string]string{
 				"K-Foo":           "100%%",
-				"K-Baz":           "%%DOWNSTREAM_LOCAL_ADDRESS%%",
+				"K-Baz":           "%DOWNSTREAM_LOCAL_ADDRESS%",
 				"Lot-Of-Percents": "%%%%%%%%%%",
 			},
 		},

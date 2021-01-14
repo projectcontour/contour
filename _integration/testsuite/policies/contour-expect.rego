@@ -79,3 +79,35 @@ response_header_is(response_object, header_name, header_value) = r {
     header_name, yaml.marshal(object.get(response.body(response_object), "Headers", {}))
   ])
 }
+#
+# response_header_has_prefix(response_object, header_name, header_prefix)
+#
+# Checks whether the response body contains the matching header value.
+response_header_has_prefix(response_object, header_name, header_prefix) = r {
+  # Pass if the header is there and contains the wanted value.
+  response_body := response.body(response_object)
+  response_headers := object.get(response_body, "headers", {})
+  values := response_headers[header_name]
+
+  # Assert that there is some key v, which yields the value we want.
+  some v
+  startswith(values[v], header_prefix)
+
+  r := result.Passf("value of response header %q has prefix %q", [header_name, header_prefix])
+} else  = r {
+  # Error on any other values.
+  response_body := response.body(response_object)
+  response_headers := object.get(response_body, "headers", {})
+  values := response_headers[header_name]
+  r := result.Errorf("value of response header %q is %q, wanted prefix %q", [header_name, values, header_prefix])
+} else  = r {
+  # Error if the header isn't present.
+  response_body := response.body(response_object)
+  response_headers := response_body["headers"]
+  r := result.Errorf("header %q is not present in the response body", [header_name])
+} else = r {
+  # Failsafe error.
+  r := result.Errorf("response header %q unmatched:\n%s", [
+    header_name, yaml.marshal(object.get(response.body(response_object), "Headers", {}))
+  ])
+}

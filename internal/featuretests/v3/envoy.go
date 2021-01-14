@@ -112,7 +112,7 @@ func routeHostRewrite(cluster, newHostName string) *envoy_route_v3.Route_Route {
 	return &envoy_route_v3.Route_Route{
 		Route: &envoy_route_v3.RouteAction{
 			ClusterSpecifier:     &envoy_route_v3.RouteAction_Cluster{Cluster: cluster},
-			HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteHeader{HostRewriteHeader: newHostName},
+			HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: newHostName},
 		},
 	}
 }
