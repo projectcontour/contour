@@ -6,7 +6,7 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.1.5
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 // indirect
-	github.com/envoyproxy/go-control-plane v0.9.7
+	github.com/envoyproxy/go-control-plane v0.9.8
 	github.com/go-logr/logr v0.2.1 // indirect
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.5.0
