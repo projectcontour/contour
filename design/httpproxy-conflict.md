@@ -17,21 +17,29 @@ There are ongoing efforts to change this logic to inform of all the errors or wa
 
 Contour currently invalidates the entire resource if a configuration error is encountered which can cause downtime for specific routes or even the entire virtual host. 
 
+### Personas
+
+There are two main personas that interact with this conflict design document:
+
+- User: A request to an application, routing through Envoy looking to access whatever resource an application running in Kubernetes should serve. This user is not aware of how the application is deployed or that it uses Kubernetes or Contour.
+- ResourceOwner: Someone to manages an HTTPProxy resource inside the Kubernetes cluster configuring the Route/Service combination to allow users of the application to access.  
+
 ## Goals
 - Serve valid traffic configurations if portions of the spec are invalid
 
 ## Non Goals
-- Surface a complete set errors or warnings for a resource (this is a different issue)
+- Change how Contour processes objects today from informers set against the Kubernetes API
 
 ## High-Level Design
-Contour will set the error or warning condition when an error is encountered, but do its best to still serve valid configurations.
+Contour will set the error or warning condition for the when an error is encountered, but do its best to still serve valid configurations.
 
 It's difficult to find errors and block them from breaking valid configurations since Contour currently processes objects after they are committed to the API server.
 Due to this, Contour cannot block changes to resources before they are committed like an `Admission Controller` would be able to do (See alternatives: `HTTPProxyInstance`)
 If Contour handles a configuration error by programming Envoy to return an error response instead of proxying the request through the route, the error will be published as an `Error` status.
 
-In general, Contour will set an object to be status `Error` if the request response to the user is changed from what is configured.
-Contour will set a `Warning` when the object has an issue, but the response is not modified. 
+In general, Contour will set an object to be status `Error` if the request response to the `User` is changed from what is configured.
+Contour will set a `Warning` when the object has an issue, but the response is not modified.
+The `ResourceOwner` will understand there is an issue by looking at the object's `Status.Conditions.Errors` or `Status.Conditoins.Warnings`. 
 
 ## Detailed Design
 
@@ -43,11 +51,9 @@ Any requests matching the `Conditions` on the `Spec.Include` will return a `502`
 If the include was valid previously and is now no longer valid, the routes which the include previously enabled will no longer be valid.
 All requests to the path specified in the `spec.conditions.prefix` will return a `502` HTTP status code. 
 
-_Note: This is a use-case of an alternative model of implementing an `HTTPProxyInstance` resource which gives users a "last known good configuration" that can be reverted back to or an `Admission Controller`._
-
 #### Include Summary
 
-| Category           | Issue               | Request Response                               | Conditions |
+| Category           | Issue               | Response                               | Conditions |
 | ------------------ | ------------------- | ---------------------------------------------- | ---------- |
 | Parent Delegation  | Create Orphaned     | HTTP 502 For requests to `conditions.Prefix`   | Error      |
 | Child Delegated    | Orphaned            | No response since requests can't route         | Warning    |
@@ -57,7 +63,7 @@ If a route contains configuration errors or warnings, the following table outlin
 
 #### Route Summary
 
-| Category           | Issue               | Request Response                               | Conditions |
+| Category           | Issue               | Response                               | Conditions |
 | ------------------ | ------------------- | ---------------------------------------------- | ---------- |
 | Spec.Route.Conditions | Invalid `prefix` | HTTP 502                                       | Error      |
 | Spec.Route.Conditions | Invalid `header` | HTTP 502                                       | Error      |
@@ -80,7 +86,7 @@ For the case where multiple services are referenced from a `Spec.Route` of an HT
 
 #### Service Summary
 
-| Category           | Issue            | Request Response       | Conditions |
+| Category           | Issue            | Response       | Conditions |
 | ------------------ | ---------------- | ---------------------- | ---------- |
 | Spec.Route.Service | Missing Service  | HTTP 503               | Error      |
 | Spec.Route.Service | Invalid Protocol | HTTP 503               | Error      |
