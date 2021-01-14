@@ -410,8 +410,9 @@ func TestHeadersPolicy(t *testing.T) {
 
 func TestRateLimitPolicy(t *testing.T) {
 	tests := map[string]struct {
-		in   *contour_api_v1.RateLimitPolicy
-		want *RateLimitPolicy
+		in      *contour_api_v1.RateLimitPolicy
+		want    *RateLimitPolicy
+		wantErr string
 	}{
 		"nil input": {
 			in:   nil,
@@ -498,11 +499,35 @@ func TestRateLimitPolicy(t *testing.T) {
 				},
 			},
 		},
+		"invalid unit": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 10,
+					Unit:     "invalid-unit",
+				},
+			},
+			wantErr: "invalid unit \"invalid-unit\" in local rate limit policy",
+		},
+		"invalid requests": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 0,
+					Unit:     "second",
+				},
+			},
+			wantErr: "invalid requests value 0 in local rate limit policy",
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, rateLimitPolicy(tc.in))
+			rlp, err := rateLimitPolicy(tc.in)
+
+			if tc.wantErr != "" {
+				assert.EqualError(t, err, tc.wantErr)
+			} else {
+				assert.Equal(t, tc.want, rlp)
+			}
 		})
 	}
 }

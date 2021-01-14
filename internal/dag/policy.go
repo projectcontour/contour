@@ -312,12 +312,14 @@ func prefixReplacementsAreValid(replacements []contour_api_v1.ReplacePrefix) (st
 	return "", nil
 }
 
-func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) *RateLimitPolicy {
+func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, error) {
 	if in == nil || in.Local == nil {
-		return nil
+		return nil, nil
 	}
 
-	var rp RateLimitPolicy
+	if in.Local.Requests <= 0 {
+		return nil, fmt.Errorf("invalid requests value %d in local rate limit policy", in.Local.Requests)
+	}
 
 	var fillInterval time.Duration
 	switch in.Local.Unit {
@@ -328,14 +330,16 @@ func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) *RateLimitPolicy {
 	case "hour":
 		fillInterval = time.Hour
 	default:
-		// TODO should not be possible due to kubebuilder validation
+		return nil, fmt.Errorf("invalid unit %q in local rate limit policy", in.Local.Unit)
 	}
 
-	rp.Local = &LocalRateLimitPolicy{
-		MaxTokens:          in.Local.Requests + in.Local.Burst,
-		TokensPerFill:      in.Local.Requests,
-		FillInterval:       fillInterval,
-		ResponseStatusCode: in.Local.ResponseStatusCode,
+	rp := &RateLimitPolicy{
+		Local: &LocalRateLimitPolicy{
+			MaxTokens:          in.Local.Requests + in.Local.Burst,
+			TokensPerFill:      in.Local.Requests,
+			FillInterval:       fillInterval,
+			ResponseStatusCode: in.Local.ResponseStatusCode,
+		},
 	}
 
 	for _, header := range in.Local.ResponseHeadersToAdd {
@@ -347,5 +351,5 @@ func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) *RateLimitPolicy {
 		rp.Local.ResponseHeadersToAdd[header.Name] = header.Value
 	}
 
-	return &rp
+	return rp, nil
 }
