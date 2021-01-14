@@ -17,10 +17,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
+	"strconv"
 
 	"github.com/projectcontour/contour/internal/certgen"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/pkg/certs"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -38,9 +39,9 @@ func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgenConf
 	certgenApp.Flag("pem", "Render the generated certs as individual PEM files to the current directory.").BoolVar(&certgenConfig.OutputPEM)
 	certgenApp.Flag("incluster", "Use in cluster configuration.").BoolVar(&certgenConfig.InCluster)
 	certgenApp.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").Default(filepath.Join(os.Getenv("HOME"), ".kube", "config")).StringVar(&certgenConfig.KubeConfig)
-	certgenApp.Flag("namespace", "Kubernetes namespace, used for Kube objects.").Default("projectcontour").Envar("CONTOUR_NAMESPACE").StringVar(&certgenConfig.Namespace)
+	certgenApp.Flag("namespace", "Kubernetes namespace, used for Kube objects.").Default(certs.DefaultNamespace).Envar("CONTOUR_NAMESPACE").StringVar(&certgenConfig.Namespace)
 	// NOTE: --certificate-lifetime can be used to accept Duration string once certificate rotation is supported.
-	certgenApp.Flag("certificate-lifetime", "Generated certificate lifetime (in days).").Default("365").UintVar(&certgenConfig.Lifetime)
+	certgenApp.Flag("certificate-lifetime", "Generated certificate lifetime (in days).").Default(strconv.Itoa(certs.DefaultCertificateLifetime)).UintVar(&certgenConfig.Lifetime)
 	certgenApp.Flag("overwrite", "Overwrite existing files or Secrets.").BoolVar(&certgenConfig.Overwrite)
 	certgenApp.Flag("secrets-format", "Specify how to format the generated Kubernetes Secrets.").Default("legacy").StringVar(&certgenConfig.Format)
 
@@ -83,48 +84,8 @@ type certgenConfig struct {
 	Format string
 }
 
-// GenerateCerts performs the actual cert generation steps and then returns the certs for the output function.
-func GenerateCerts(certConfig *certgenConfig) (map[string][]byte, error) {
-	now := time.Now()
-	expiry := now.Add(24 * time.Duration(certConfig.Lifetime) * time.Hour)
-	caCertPEM, caKeyPEM, err := certgen.NewCA("Project Contour", expiry)
-	if err != nil {
-		return nil, err
-	}
-
-	contourCert, contourKey, err := certgen.NewCert(caCertPEM,
-		caKeyPEM,
-		expiry,
-		"contour",
-		certConfig.Namespace,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	envoyCert, envoyKey, err := certgen.NewCert(caCertPEM,
-		caKeyPEM,
-		expiry,
-		"envoy",
-		certConfig.Namespace,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	newCerts := make(map[string][]byte)
-	newCerts[certgen.CACertificateKey] = caCertPEM
-	newCerts[certgen.ContourCertificateKey] = contourCert
-	newCerts[certgen.ContourPrivateKeyKey] = contourKey
-	newCerts[certgen.EnvoyCertificateKey] = envoyCert
-	newCerts[certgen.EnvoyPrivateKeyKey] = envoyKey
-
-	return newCerts, nil
-
-}
-
 // OutputCerts outputs the certs in certs as directed by config.
-func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs map[string][]byte) error {
+func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs *certs.Certificates) error {
 	secrets := []*corev1.Secret{}
 	force := certgen.NoOverwrite
 	if config.Overwrite {
@@ -166,7 +127,11 @@ func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs 
 }
 
 func doCertgen(config *certgenConfig, log logrus.FieldLogger) {
-	generatedCerts, err := GenerateCerts(config)
+	generatedCerts, err := certs.GenerateCerts(
+		&certs.Configuration{
+			Lifetime:  config.Lifetime,
+			Namespace: config.Namespace,
+		})
 	if err != nil {
 		log.WithError(err).Fatal("failed to generate certificates")
 	}

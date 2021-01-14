@@ -249,7 +249,9 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 	context := &envoy_tls_v3.UpstreamTlsContext{
 		CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 			TlsCertificateSdsSecretConfigs: []*envoy_tls_v3.SdsSecretConfig{{
+				Name: "contour_xds_tls_certificate",
 				SdsConfig: &envoy_core_v3.ConfigSource{
+					ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
 					ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_Path{
 						Path: certificateSdsFile,
 					},
@@ -257,7 +259,9 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 			}},
 			ValidationContextType: &envoy_tls_v3.CommonTlsContext_ValidationContextSdsSecretConfig{
 				ValidationContextSdsSecretConfig: &envoy_tls_v3.SdsSecretConfig{
+					Name: "contour_xds_tls_validation_context",
 					SdsConfig: &envoy_core_v3.ConfigSource{
+						ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
 						ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_Path{
 							Path: validationSdsFile,
 						},
@@ -273,6 +277,7 @@ func upstreamSdsTLSContext(certificateSdsFile, validationSdsFile string) *envoy_
 // including paths to TLS certificates and key
 func tlsCertificateSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_discovery_v3.DiscoveryResponse {
 	secret := &envoy_tls_v3.Secret{
+		Name: "contour_xds_tls_certificate",
 		Type: &envoy_tls_v3.Secret_TlsCertificate{
 			TlsCertificate: &envoy_tls_v3.TlsCertificate{
 				CertificateChain: &envoy_core_v3.DataSource{
@@ -298,6 +303,7 @@ func tlsCertificateSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_disc
 // including path to CA certificate bundle
 func validationContextSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_discovery_v3.DiscoveryResponse {
 	secret := &envoy_tls_v3.Secret{
+		Name: "contour_xds_tls_validation_context",
 		Type: &envoy_tls_v3.Secret_ValidationContext{
 			ValidationContext: &envoy_tls_v3.CertificateValidationContext{
 				TrustedCa: &envoy_core_v3.DataSource{

@@ -40,6 +40,18 @@ Thanks for taking the time to join our community and start contributing!
 
 See [Contour's roadmap](https://github.com/projectcontour/community/blob/main/ROADMAP.md) to learn more about where we are headed.
 
+## Security
+
+### Security Audit
+
+A third party security audit was performed by Cure53 in December of 2020. You can see the full report [here](Contour_Security_Audit_Dec2020.pdf).
+
+### Reporting security vulnerabilities
+
+If you've found a security related issue, a vulnerability, or a potential vulnerability in Contour please let the [Contour Security Team](mailto:cncf-contour-maintainers@lists.cncf.io) know with the details of the vulnerability. We'll send a confirmation email to acknowledge your report, and we'll send an additional email when we've identified the issue positively or negatively.
+
+For further details please see our [security policy](SECURITY.md).
+
 ## Changelog
 
 See [the list of releases](https://github.com/projectcontour/contour/releases) to find out about feature changes.

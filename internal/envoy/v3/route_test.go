@@ -465,7 +465,7 @@ func TestRouteRoute(t *testing.T) {
 					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 						Cluster: "default/kuard/8080/da39a3ee5e",
 					},
-					HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteHeader{HostRewriteHeader: "bar.com"},
+					HostRewriteSpecifier: &envoy_route_v3.RouteAction_HostRewriteLiteral{HostRewriteLiteral: "bar.com"},
 				},
 			},
 		},
