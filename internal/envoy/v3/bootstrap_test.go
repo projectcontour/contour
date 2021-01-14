@@ -82,7 +82,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -210,7 +217,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -337,7 +351,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -465,7 +486,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -591,7 +619,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -721,7 +756,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -880,7 +922,14 @@ func TestBootstrap(t *testing.T) {
                   }
                 ]
               },
-              "http2_protocol_options": {},
+              "typed_extension_protocol_options": {
+                "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+                  "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+                  "explicit_http_config": {
+                    "http2_protocol_options": {}
+                  }
+                }
+              },
               "transport_socket": {
                 "name": "envoy.transport_sockets.tls",
                 "typed_config": {
