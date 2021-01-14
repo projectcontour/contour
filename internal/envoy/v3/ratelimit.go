@@ -24,14 +24,13 @@ import (
 
 // LocalRateLimitConfig returns a config for the HTTP local rate
 // limit filter.
-func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy) *any.Any {
+func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *any.Any {
 	if config == nil {
 		return nil
 	}
 
 	c := &envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-		// TODO it'd be nice for this to be unique per vhost/route
-		StatPrefix: "http_local_rate_limiter",
+		StatPrefix: statPrefix,
 		TokenBucket: &envoy_type_v3.TokenBucket{
 			MaxTokens:     config.MaxTokens,
 			TokensPerFill: protobuf.UInt32(config.TokensPerFill),

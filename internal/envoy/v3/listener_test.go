@@ -387,7 +387,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
 									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http_local_rate_limiter",
+										StatPrefix: "http",
 									},
 								),
 							},
@@ -475,7 +475,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
 									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http_local_rate_limiter",
+										StatPrefix: "http",
 									},
 								),
 							},
@@ -564,7 +564,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
 									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http_local_rate_limiter",
+										StatPrefix: "http",
 									},
 								),
 							},
@@ -654,7 +654,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
 									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http_local_rate_limiter",
+										StatPrefix: "http",
 									},
 								),
 							},
@@ -743,7 +743,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
 									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http_local_rate_limiter",
+										StatPrefix: "http",
 									},
 								),
 							},
@@ -833,7 +833,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
 									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http_local_rate_limiter",
+										StatPrefix: "http",
 									},
 								),
 							},
@@ -921,7 +921,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: protobuf.MustMarshalAny(
 									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-										StatPrefix: "http_local_rate_limiter",
+										StatPrefix: "http",
 									},
 								),
 							},
@@ -1305,7 +1305,7 @@ func TestAddFilter(t *testing.T) {
 					ConfigType: &http.HttpFilter_TypedConfig{
 						TypedConfig: protobuf.MustMarshalAny(
 							&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-								StatPrefix: "http_local_rate_limiter",
+								StatPrefix: "http",
 							},
 						),
 					},

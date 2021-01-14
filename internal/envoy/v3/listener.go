@@ -258,7 +258,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(
 					&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-						StatPrefix: "http_local_rate_limiter",
+						StatPrefix: "http",
 						// since no token bucket is defined here, the filter is disabled
 						// globally but can be enabled on a per-vhost/route basis.
 					},

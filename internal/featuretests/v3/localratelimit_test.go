@@ -149,7 +149,7 @@ func vhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 		})
 	vhost.TypedPerFilterConfig = withFilterConfig("envoy.filters.http.local_ratelimit",
 		&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-			StatPrefix: "http_local_rate_limiter",
+			StatPrefix: "vhost.foo.com",
 			TokenBucket: &envoy_type_v3.TokenBucket{
 				MaxTokens:     150,
 				TokensPerFill: protobuf.UInt32(100),
@@ -240,7 +240,7 @@ func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 			Action: routeCluster("default/s2/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-					StatPrefix: "http_local_rate_limiter",
+					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     6,
 						TokensPerFill: protobuf.UInt32(5),
@@ -265,7 +265,7 @@ func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-					StatPrefix: "http_local_rate_limiter",
+					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
 						TokensPerFill: protobuf.UInt32(100),
@@ -365,7 +365,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 			Action: routeCluster("default/s2/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-					StatPrefix: "http_local_rate_limiter",
+					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     6,
 						TokensPerFill: protobuf.UInt32(5),
@@ -390,7 +390,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-					StatPrefix: "http_local_rate_limiter",
+					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
 						TokensPerFill: protobuf.UInt32(100),
@@ -414,7 +414,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 
 	vhost.TypedPerFilterConfig = withFilterConfig("envoy.filters.http.local_ratelimit",
 		&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-			StatPrefix: "http_local_rate_limiter",
+			StatPrefix: "vhost.foo.com",
 			TokenBucket: &envoy_type_v3.TokenBucket{
 				MaxTokens:     150,
 				TokensPerFill: protobuf.UInt32(100),
@@ -484,7 +484,7 @@ func customResponseCode(t *testing.T, rh cache.ResourceEventHandler, c *Contour)
 			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-					StatPrefix: "http_local_rate_limiter",
+					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
 						TokensPerFill: protobuf.UInt32(100),
@@ -566,7 +566,7 @@ func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
 				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
-					StatPrefix: "http_local_rate_limiter",
+					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
 						TokensPerFill: protobuf.UInt32(100),

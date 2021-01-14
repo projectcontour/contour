@@ -152,7 +152,7 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 				if rt.TypedPerFilterConfig == nil {
 					rt.TypedPerFilterConfig = map[string]*any.Any{}
 				}
-				rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local)
+				rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local, "vhost."+vh.Name)
 			}
 			routes = append(routes, rt)
 		}
@@ -169,7 +169,7 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 			if evh.TypedPerFilterConfig == nil {
 				evh.TypedPerFilterConfig = map[string]*any.Any{}
 			}
-			evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(vh.RateLimitPolicy.Local)
+			evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
 		}
 
 		v.routes[ENVOY_HTTP_LISTENER].VirtualHosts = append(v.routes[ENVOY_HTTP_LISTENER].VirtualHosts, evh)
@@ -201,7 +201,7 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			if rt.TypedPerFilterConfig == nil {
 				rt.TypedPerFilterConfig = map[string]*any.Any{}
 			}
-			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local)
+			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local, "vhost."+svh.Name)
 		}
 
 		// If authorization is enabled on this host, we may need to set per-route filter overrides.
@@ -242,7 +242,7 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			if evh.TypedPerFilterConfig == nil {
 				evh.TypedPerFilterConfig = map[string]*any.Any{}
 			}
-			evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(svh.RateLimitPolicy.Local)
+			evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(svh.RateLimitPolicy.Local, "vhost."+svh.Name)
 		}
 
 		v.routes[name].VirtualHosts = append(v.routes[name].VirtualHosts, evh)
@@ -264,7 +264,7 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 				if fvh.TypedPerFilterConfig == nil {
 					fvh.TypedPerFilterConfig = map[string]*any.Any{}
 				}
-				fvh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(svh.RateLimitPolicy.Local)
+				fvh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(svh.RateLimitPolicy.Local, "vhost."+svh.Name)
 			}
 
 			v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts = append(v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts, fvh)
