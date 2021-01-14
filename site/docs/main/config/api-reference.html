@@ -1373,8 +1373,9 @@ uint32
 <td>
 <em>(Optional)</em>
 <p>ResponseStatusCode is the HTTP status code to use for responses
-to rate-limited requests. If not specified, the Envoy default of
-429 (Too Many Requests) is used.</p>
+to rate-limited requests. Codes must be in the 400-599 range
+(inclusive). If not specified, the Envoy default of 429 (Too
+Many Requests) is used.</p>
 </td>
 </tr>
 <tr>

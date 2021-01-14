@@ -358,9 +358,12 @@ type LocalRateLimitPolicy struct {
 	Burst uint32 `json:"burst,omitempty"`
 
 	// ResponseStatusCode is the HTTP status code to use for responses
-	// to rate-limited requests. If not specified, the Envoy default of
-	// 429 (Too Many Requests) is used.
+	// to rate-limited requests. Codes must be in the 400-599 range
+	// (inclusive). If not specified, the Envoy default of 429 (Too
+	// Many Requests) is used.
 	// +optional
+	// +kubebuilder:validation:Minimum=400
+	// +kubebuilder:validation:Maximum=599
 	ResponseStatusCode uint32 `json:"responseStatusCode,omitempty"`
 
 	// ResponseHeadersToAdd is an optional list of response headers to

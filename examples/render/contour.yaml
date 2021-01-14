@@ -611,8 +611,10 @@ spec:
                                 type: object
                               type: array
                             responseStatusCode:
-                              description: ResponseStatusCode is the HTTP status code to use for responses to rate-limited requests. If not specified, the Envoy default of 429 (Too Many Requests) is used.
+                              description: ResponseStatusCode is the HTTP status code to use for responses to rate-limited requests. Codes must be in the 400-599 range (inclusive). If not specified, the Envoy default of 429 (Too Many Requests) is used.
                               format: int32
+                              maximum: 599
+                              minimum: 400
                               type: integer
                             unit:
                               description: Unit defines the period of time within which requests over the limit will be rate limited.
@@ -1113,8 +1115,10 @@ spec:
                               type: object
                             type: array
                           responseStatusCode:
-                            description: ResponseStatusCode is the HTTP status code to use for responses to rate-limited requests. If not specified, the Envoy default of 429 (Too Many Requests) is used.
+                            description: ResponseStatusCode is the HTTP status code to use for responses to rate-limited requests. Codes must be in the 400-599 range (inclusive). If not specified, the Envoy default of 429 (Too Many Requests) is used.
                             format: int32
+                            maximum: 599
+                            minimum: 400
                             type: integer
                           unit:
                             description: Unit defines the period of time within which requests over the limit will be rate limited.
