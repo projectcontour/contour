@@ -58,8 +58,9 @@ download \
 tar -C "${DESTDIR}" -xf "${DESTDIR}/kustomize.tgz" kustomize
 rm "${DESTDIR}/kustomize.tgz"
 
+readonly INTEGRATION_TESTER_PATH="$(curl -s -L https://github.com/projectcontour/integration-tester/releases/latest | grep href | grep -i "integration-tester_.*${OS}_x86_64\.tar\.gz" | cut -d '"' -f2)"
 download \
-    "https://github.com/projectcontour/integration-tester/releases/download/v${INTEGRATION_TESTER_VERS}/integration-tester_${INTEGRATION_TESTER_VERS}_${OS}_x86_64.tar.gz" \
+    "https://github.com${INTEGRATION_TESTER_PATH}" \
     "${DESTDIR}/integration-tester.tgz"
 
 tar -C "${DESTDIR}" -xf "${DESTDIR}/integration-tester.tgz"
