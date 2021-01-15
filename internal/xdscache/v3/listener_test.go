@@ -1672,9 +1672,9 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with disable allow_chunked_length set in visitor config": {
+		"httpproxy with allow_chunked_length set in visitor config": {
 			ListenerConfig: ListenerConfig{
-				DisableAllowChunkedLength: true,
+				AllowChunkedLength: true,
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -1720,7 +1720,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
-						AllowChunkedLength(false).
+						AllowChunkedLength(true).
 						Get(),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),

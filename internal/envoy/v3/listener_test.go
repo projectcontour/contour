@@ -323,7 +323,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 		streamIdleTimeout             timeout.Setting
 		maxConnectionDuration         timeout.Setting
 		connectionShutdownGracePeriod timeout.Setting
-		disableAllowChunkedLength     bool
+		allowChunkedLength            bool
 		want                          *envoy_listener_v3.Filter
 	}{
 		"default": {
@@ -392,8 +392,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
-							AcceptHttp_10:      true,
-							AllowChunkedLength: true,
+							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
@@ -472,8 +471,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
-							AcceptHttp_10:      true,
-							AllowChunkedLength: true,
+							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
@@ -553,8 +551,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
-							AcceptHttp_10:      true,
-							AllowChunkedLength: true,
+							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
 							IdleTimeout: protobuf.Duration(90 * time.Second),
@@ -635,8 +632,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
-							AcceptHttp_10:      true,
-							AllowChunkedLength: true,
+							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
@@ -716,8 +712,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
-							AcceptHttp_10:      true,
-							AllowChunkedLength: true,
+							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
 							MaxConnectionDuration: protobuf.Duration(90 * time.Second),
@@ -798,8 +793,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
-							AcceptHttp_10:      true,
-							AllowChunkedLength: true,
+							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
@@ -878,8 +872,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
-							AcceptHttp_10:      true,
-							AllowChunkedLength: true,
+							AcceptHttp_10: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
@@ -892,11 +885,11 @@ func TestHTTPConnectionManager(t *testing.T) {
 				},
 			},
 		},
-		"disable allow_chunked_length": {
+		"enable allow_chunked_length": {
 			routename:                     "default/kuard",
 			accesslogger:                  FileAccessLogEnvoy("/dev/stdout"),
 			connectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
-			disableAllowChunkedLength:     true,
+			allowChunkedLength:            true,
 			want: &envoy_listener_v3.Filter{
 				Name: wellknown.HTTPConnectionManager,
 				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
@@ -961,7 +954,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 							// Enable support for HTTP/1.0 requests that carry
 							// a Host: header. See #537.
 							AcceptHttp_10:      true,
-							AllowChunkedLength: false,
+							AllowChunkedLength: true,
 						},
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
@@ -986,7 +979,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				StreamIdleTimeout(tc.streamIdleTimeout).
 				MaxConnectionDuration(tc.maxConnectionDuration).
 				ConnectionShutdownGracePeriod(tc.connectionShutdownGracePeriod).
-				AllowChunkedLength(!tc.disableAllowChunkedLength).
+				AllowChunkedLength(tc.allowChunkedLength).
 				DefaultFilters().
 				Get()
 

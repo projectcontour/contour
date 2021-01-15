@@ -51,7 +51,10 @@ data:
     # path to kubeconfig (if not running inside a k8s cluster)
     # kubeconfig: /path/to/.kube/config
     #
-    # disable HTTPProxy permitInsecure field
+    # Disable RFC-compliant behavior to strip "Content-Length" header if
+    # "Tranfer-Encoding: chunked" is also set.
+    # disableAllowChunkedLength: false
+    # Disable HTTPProxy permitInsecure field
     disablePermitInsecure: false
     tls:
     # minimum TLS version that Contour will negotiate

@@ -414,9 +414,7 @@ func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog
 
 // HTTPConnectionManagerBuilder creates a new HTTP connection manager builder.
 func HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
-	return &httpConnectionManagerBuilder{
-		allowChunkedLength: true,
-	}
+	return &httpConnectionManagerBuilder{}
 }
 
 // TCPProxy creates a new TCPProxy filter.

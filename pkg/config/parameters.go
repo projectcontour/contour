@@ -377,7 +377,7 @@ type Parameters struct {
 	// permitInsecure field in HTTPProxy.
 	DisablePermitInsecure bool `yaml:"disablePermitInsecure,omitempty"`
 
-	// DisableAllowChunkedLength disables the RFC-complient Envoy behavior to
+	// DisableAllowChunkedLength disables the RFC-compliant Envoy behavior to
 	// strip the "Content-Length" header if "Transfer-Encoding: chunked" is
 	// also set. This is an emergency off-switch to revert back to Envoy's
 	// default behavior in case of failures. Please file an issue if failures
