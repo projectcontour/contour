@@ -202,7 +202,7 @@ func MatchesIngressClass(o metav1.ObjectMetaAccessor, ic string) bool {
 // or default if non present.
 func MinTLSVersion(version string, defaultVal string) string {
 	switch version {
-	case "1.1", "1.2", "1.3":
+	case "1.2", "1.3":
 		return version
 	default:
 		return defaultVal

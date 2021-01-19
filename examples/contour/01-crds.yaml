@@ -923,7 +923,7 @@ spec:
                         description: EnableFallbackCertificate defines if the vhost should allow a default certificate to be applied which handles all requests which don't match the SNI defined in this vhost.
                         type: boolean
                       minimumProtocolVersion:
-                        description: Minimum TLS version this vhost should negotiate
+                        description: MinimumProtocolVersion is the minimum TLS version this vhost should negotiate. Valid options are `1.2` (default) and `1.3`. Any other value defaults to TLS 1.2.
                         type: string
                       passthrough:
                         description: Passthrough defines whether the encrypted TLS handshake will be passed through to the backing cluster. Either Passthrough or SecretName must be specified, but not both.
