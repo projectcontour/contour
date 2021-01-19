@@ -82,7 +82,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -210,7 +217,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -337,7 +351,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -465,7 +486,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -591,7 +619,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -721,7 +756,14 @@ func TestBootstrap(t *testing.T) {
             }
           ]
         },
-        "http2_protocol_options": {},
+        "typed_extension_protocol_options": {
+          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+            "explicit_http_config": {
+              "http2_protocol_options": {}
+            }
+          }
+        },
         "upstream_connection_options": {
           "tcp_keepalive": {
             "keepalive_probes": 3,
@@ -880,7 +922,14 @@ func TestBootstrap(t *testing.T) {
                   }
                 ]
               },
-              "http2_protocol_options": {},
+              "typed_extension_protocol_options": {
+                "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
+                  "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
+                  "explicit_http_config": {
+                    "http2_protocol_options": {}
+                  }
+                }
+              },
               "transport_socket": {
                 "name": "envoy.transport_sockets.tls",
                 "typed_config": {
@@ -888,13 +937,17 @@ func TestBootstrap(t *testing.T) {
                   "common_tls_context": {
                     "tls_certificate_sds_secret_configs": [
                       {
+                        "name": "contour_xds_tls_certificate",
                         "sds_config": {
+                          "resource_api_version": "V3",
                           "path": "resources/sds/xds-tls-certificate.json"
                         }
                       }
                     ],
                     "validation_context_sds_secret_config": {
+                      "name": "contour_xds_tls_validation_context",
                       "sds_config": {
+                        "resource_api_version": "V3",
                         "path": "resources/sds/xds-validation-context.json"
                       }
                     }
@@ -980,6 +1033,7 @@ func TestBootstrap(t *testing.T) {
       "resources": [
         {
           "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret",
+          "name": "contour_xds_tls_certificate",
           "tls_certificate": {
             "certificate_chain": {
               "filename": "client.cert"
@@ -995,6 +1049,7 @@ func TestBootstrap(t *testing.T) {
       "resources": [
         {
           "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.Secret",
+          "name": "contour_xds_tls_validation_context",
           "validation_context": {
             "trusted_ca": {
               "filename": "CA.cert"
