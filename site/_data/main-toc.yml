@@ -33,6 +33,8 @@ toc:
         url: /config/client-authorization
       - page: TLS Delegation
         url: /config/tls-delegation
+      - page: Rate Limiting
+        url: /config/rate-limiting
       - page: Annotations Reference
         url: /config/annotations
       - page: API Reference
