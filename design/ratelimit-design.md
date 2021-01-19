@@ -91,9 +91,10 @@ rateLimitPolicy:
     burst: 20
   # global defines global rate limiting properties for the virtual host or route.
   global:
-    # rateLimitDescriptors defines the descriptors to be generated and sent to the
-    # external Rate Limiting Service (RLS) for a rate limit decision.
-    rateLimitDescriptors:
+    # descriptors defines the lists of key-value pairs to be generated
+    # and sent to the external Rate Limiting Service (RLS) for a rate
+    # limit decision.
+    descriptors:
     # This descriptor is generated only if the x-steve-ratelimit header
     # is present on the request.
     - items:
@@ -120,7 +121,7 @@ rateLimitPolicy:
 
 This API maps closely to Envoy's rate limiting API.
 
-For local rate limiting, the rate limit itself is defined inline in the `RateLimitPolicy`, as token bucket properties.
+For local rate limiting, the rate limit itself is defined inline in the `RateLimitPolicy`.
 Since local rate limits apply *per Envoy*, each pod in the Envoy daemon set will have a token bucket with these properties.
 
 For global rate limiting, per Envoy's API, the `RateLimitPolicy` only defines a list of descriptors to send to an external RLS for a given request.
