@@ -24,6 +24,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,7 +48,8 @@ type KubernetesCache struct {
 	// Secrets that are referred from the configuration file.
 	ConfiguredSecretRefs []*types.NamespacedName
 
-	ingresses            map[types.NamespacedName]*v1beta1.Ingress
+	ingresses            map[types.NamespacedName]*networking_v1.Ingress
+	ingressclasses       map[string]*networking_v1.IngressClass
 	httpproxies          map[types.NamespacedName]*contour_api_v1.HTTPProxy
 	secrets              map[types.NamespacedName]*v1.Secret
 	httpproxydelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
@@ -65,7 +67,8 @@ type KubernetesCache struct {
 
 // init creates the internal cache storage. It is called implicitly from the public API.
 func (kc *KubernetesCache) init() {
-	kc.ingresses = make(map[types.NamespacedName]*v1beta1.Ingress)
+	kc.ingresses = make(map[types.NamespacedName]*networking_v1.Ingress)
+	kc.ingressclasses = make(map[string]*networking_v1.IngressClass)
 	kc.httpproxies = make(map[types.NamespacedName]*contour_api_v1.HTTPProxy)
 	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
 	kc.httpproxydelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
@@ -146,9 +149,19 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		return kc.serviceTriggersRebuild(obj)
 	case *v1beta1.Ingress:
 		if kc.matchesIngressClass(obj) {
+			// Convert the v1beta1 object to v1 before adding to the
+			// local ingress cache for easier processing later on.
+			kc.ingresses[k8s.NamespacedNameOf(obj)] = toV1Ingress(obj)
+			return true
+		}
+	case *networking_v1.Ingress:
+		if kc.matchesIngressClass(obj) {
 			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		}
+	case *networking_v1.IngressClass:
+		kc.ingressclasses[obj.Name] = obj
+		return true
 	case *contour_api_v1.HTTPProxy:
 		if kc.matchesIngressClass(obj) {
 			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
@@ -198,6 +211,99 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	return false
 }
 
+func toV1Ingress(obj *v1beta1.Ingress) *networking_v1.Ingress {
+
+	if obj == nil {
+		return nil
+	}
+
+	var convertedTLS []networking_v1.IngressTLS
+	var convertedIngressRules []networking_v1.IngressRule
+	var paths []networking_v1.HTTPIngressPath
+	var convertedDefaultBackend *networking_v1.IngressBackend
+
+	for _, tls := range obj.Spec.TLS {
+		convertedTLS = append(convertedTLS, networking_v1.IngressTLS{
+			Hosts:      tls.Hosts,
+			SecretName: tls.SecretName,
+		})
+	}
+
+	for _, r := range obj.Spec.Rules {
+
+		rule := networking_v1.IngressRule{}
+
+		if r.Host != "" {
+			rule.Host = r.Host
+		}
+
+		if r.HTTP != nil {
+
+			for _, p := range r.HTTP.Paths {
+				var pathType networking_v1.PathType
+				if p.PathType != nil {
+					switch *p.PathType {
+					case v1beta1.PathTypePrefix:
+						pathType = networking_v1.PathTypePrefix
+					case v1beta1.PathTypeExact:
+						pathType = networking_v1.PathTypeExact
+					case v1beta1.PathTypeImplementationSpecific:
+						pathType = networking_v1.PathTypeImplementationSpecific
+					}
+				}
+
+				paths = append(paths, networking_v1.HTTPIngressPath{
+					Path:     p.Path,
+					PathType: &pathType,
+					Backend: networking_v1.IngressBackend{
+						Service: &networking_v1.IngressServiceBackend{
+							Name: p.Backend.ServiceName,
+							Port: serviceBackendPort(p.Backend.ServicePort),
+						},
+					},
+				})
+			}
+
+			rule.IngressRuleValue = networking_v1.IngressRuleValue{
+				HTTP: &networking_v1.HTTPIngressRuleValue{
+					Paths: paths,
+				},
+			}
+		}
+
+		convertedIngressRules = append(convertedIngressRules, rule)
+	}
+
+	if obj.Spec.Backend != nil {
+		convertedDefaultBackend = &networking_v1.IngressBackend{
+			Service: &networking_v1.IngressServiceBackend{
+				Name: obj.Spec.Backend.ServiceName,
+				Port: serviceBackendPort(obj.Spec.Backend.ServicePort),
+			},
+		}
+	}
+
+	return &networking_v1.Ingress{
+		ObjectMeta: obj.ObjectMeta,
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: convertedDefaultBackend,
+			TLS:            convertedTLS,
+			Rules:          convertedIngressRules,
+		},
+	}
+}
+
+func serviceBackendPort(port intstr.IntOrString) networking_v1.ServiceBackendPort {
+	if port.Type == intstr.String {
+		return networking_v1.ServiceBackendPort{
+			Name: port.StrVal,
+		}
+	}
+	return networking_v1.ServiceBackendPort{
+		Number: port.IntVal,
+	}
+}
+
 // Remove removes obj from the KubernetesCache.
 // Remove returns a boolean indicating if the cache changed after the remove operation.
 func (kc *KubernetesCache) Remove(obj interface{}) bool {
@@ -227,6 +333,15 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.ingresses[m]
 		delete(kc.ingresses, m)
+		return ok
+	case *networking_v1.Ingress:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.ingresses[m]
+		delete(kc.ingresses, m)
+		return ok
+	case *networking_v1.IngressClass:
+		_, ok := kc.ingressclasses[obj.Name]
+		delete(kc.ingressclasses, obj.Name)
 		return ok
 	case *contour_api_v1.HTTPProxy:
 		m := k8s.NamespacedNameOf(obj)
@@ -290,8 +405,8 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 		if ingress.Namespace != service.Namespace {
 			continue
 		}
-		if backend := ingress.Spec.Backend; backend != nil {
-			if backend.ServiceName == service.Name {
+		if backend := ingress.Spec.DefaultBackend; backend != nil {
+			if backend.Service.Name == service.Name {
 				return true
 			}
 		}
@@ -302,7 +417,7 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 				continue
 			}
 			for _, path := range http.Paths {
-				if path.Backend.ServiceName == service.Name {
+				if path.Backend.Service.Name == service.Name {
 					return true
 				}
 			}
