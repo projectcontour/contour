@@ -1007,6 +1007,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
+							},
+						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: &any.Any{
