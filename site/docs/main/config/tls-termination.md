@@ -55,7 +55,6 @@ The TLS **Minimum Protocol Version** a virtual host should negotiate can be spec
 
 - 1.3
 - 1.2  (Default)
-- 1.1
 
 ## Fallback Certificate
 
