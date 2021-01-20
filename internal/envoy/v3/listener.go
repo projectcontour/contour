@@ -150,6 +150,7 @@ type httpConnectionManagerBuilder struct {
 	connectionShutdownGracePeriod timeout.Setting
 	filters                       []*http.HttpFilter
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
+	allowChunkedLength            bool
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -208,6 +209,11 @@ func (b *httpConnectionManagerBuilder) MaxConnectionDuration(timeout timeout.Set
 // ConnectionShutdownGracePeriod sets the drain timeout on the connection manager.
 func (b *httpConnectionManagerBuilder) ConnectionShutdownGracePeriod(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.connectionShutdownGracePeriod = timeout
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) AllowChunkedLength(enabled bool) *httpConnectionManagerBuilder {
+	b.allowChunkedLength = enabled
 	return b
 }
 
@@ -351,7 +357,8 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 			// Enable support for HTTP/1.0 requests that carry
 			// a Host: header. See #537.
-			AcceptHttp_10: true,
+			AcceptHttp_10:      true,
+			AllowChunkedLength: b.allowChunkedLength,
 		},
 		UseRemoteAddress: protobuf.Bool(true),
 		NormalizePath:    protobuf.Bool(true),
@@ -405,6 +412,7 @@ func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog
 		Get()
 }
 
+// HTTPConnectionManagerBuilder creates a new HTTP connection manager builder.
 func HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
 	return &httpConnectionManagerBuilder{}
 }
