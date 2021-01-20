@@ -493,11 +493,45 @@ func TestRateLimitPolicy(t *testing.T) {
 					TokensPerFill: 10,
 					FillInterval:  time.Hour,
 					ResponseHeadersToAdd: map[string]string{
-						"header-1": "header-value-1",
-						"header-2": "header-value-2",
+						"Header-1": "header-value-1",
+						"Header-2": "header-value-2",
 					},
 				},
 			},
+		},
+		"duplicate response header": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 10,
+					Unit:     "hour",
+					ResponseHeadersToAdd: []contour_api_v1.HeaderValue{
+						{
+							Name:  "duplicate-header",
+							Value: "header-value-1",
+						},
+						{
+							Name:  "duplicate-header",
+							Value: "header-value-2",
+						},
+					},
+				},
+			},
+			wantErr: "duplicate header addition: \"Duplicate-Header\"",
+		},
+		"invalid response header name": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 10,
+					Unit:     "hour",
+					ResponseHeadersToAdd: []contour_api_v1.HeaderValue{
+						{
+							Name:  "invalid-header!",
+							Value: "header-value-1",
+						},
+					},
+				},
+			},
+			wantErr: `invalid header name "Invalid-Header!": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`,
 		},
 		"invalid unit": {
 			in: &contour_api_v1.RateLimitPolicy{

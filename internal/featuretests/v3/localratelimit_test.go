@@ -549,7 +549,11 @@ func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 								},
 								{
 									Name:  "header-name-2",
-									Value: "header-value-2",
+									Value: "%HOSTNAME%",
+								},
+								{
+									Name:  "header-name-3",
+									Value: "%NON-ENVOY-VAR%",
 								},
 							},
 						},
@@ -587,15 +591,26 @@ func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 					ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{
 						{
 							Header: &envoy_core_v3.HeaderValue{
-								Key:   "header-name-1",
+								Key:   "Header-Name-1",
 								Value: "header-value-1",
 							},
 							Append: wrapperspb.Bool(false),
 						},
+						// a valid Envoy var (%VARNAME%) should
+						// pass through as-is
 						{
 							Header: &envoy_core_v3.HeaderValue{
-								Key:   "header-name-2",
-								Value: "header-value-2",
+								Key:   "Header-Name-2",
+								Value: "%HOSTNAME%",
+							},
+							Append: wrapperspb.Bool(false),
+						},
+						// a non-valid Envoy var should have its '%'
+						// symbols escaped
+						{
+							Header: &envoy_core_v3.HeaderValue{
+								Key:   "Header-Name-3",
+								Value: "%%NON-ENVOY-VAR%%",
 							},
 							Append: wrapperspb.Bool(false),
 						},

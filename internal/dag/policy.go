@@ -348,7 +348,14 @@ func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, erro
 			rp.Local.ResponseHeadersToAdd = map[string]string{}
 		}
 
-		rp.Local.ResponseHeadersToAdd[header.Name] = header.Value
+		key := http.CanonicalHeaderKey(header.Name)
+		if _, ok := rp.Local.ResponseHeadersToAdd[key]; ok {
+			return nil, fmt.Errorf("duplicate header addition: %q", key)
+		}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid header name %q: %v", key, msgs)
+		}
+		rp.Local.ResponseHeadersToAdd[key] = escapeHeaderValue(header.Value)
 	}
 
 	return rp, nil
