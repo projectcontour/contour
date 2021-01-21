@@ -1,16 +1,36 @@
 # Rate Limiting
 
+- [Overview](#overview)
+- [Local Rate Limiting](#local-rate-limiting)
+- [Global Rate Limiting](#global-rate-limiting)
+
+## Overview
+
+Rate limiting is a means of protecting backend services against unwanted traffic.
+This can be useful for a variety of different scenarios:
+
+- Protecting against denial-of-service (DoS) attacks by malicious actors
+- Protecting against DoS incidents due to bugs in client applications/services
+- Enforcing usage quotas for different classes of clients, e.g. free vs. paid tiers
+- Controlling resource consumption/cost
+
+Envoy supports two forms of HTTP rate limiting: **local** and **global**.
+
+In local rate limiting, rate limits are enforced by each Envoy instance, without any communication with other Envoys or any external service.
+
+In global rate limiting, an external rate limit service (RLS) is queried by each Envoy via gRPC for rate limit decisions.
+
+Contour supports both forms of Envoy's rate limiting.
+
 ## Local Rate Limiting
 
 The `HTTPProxy` API supports defining local rate limit policies that can be applied to either individual routes or entire virtual hosts.
 Local rate limit policies define a maximum number of requests per unit of time that an Envoy should proxy to the upstream service.
 Requests beyond the defined limit will receive a `429 (Too Many Requests)` response by default.
-Local rate limit policies program Envoy's [HTTP local rate limit filter](https://www.envoyproxy.io/docs/envoy/v1.17.0/configuration/http/http_filters/local_rate_limit_filter#config-http-filters-local-rate-limit).
+Local rate limit policies program Envoy's [HTTP local rate limit filter][1].
 
 It's important to note that local rate limit policies apply *per Envoy pod*.
 For example, a local rate limit policy of 100 requests per second for a given route will result in *each Envoy pod* allowing up to 100 requests per second for that route.
-
-By contrast, **global** rate limiting (which will be added in a future Contour release), uses a shared external rate limit service, allowing rate limits to apply across *all* Envoy pods.
 
 ### Defining a local rate limit
 
@@ -27,10 +47,10 @@ spec:
   virtualhost:
     fqdn: local.projectcontour.io
     rateLimitPolicy:
-    local:
-      requests: 100
-      unit: hour
-      burst: 20
+      local:
+        requests: 100
+        unit: hour
+        burst: 20
   routes:
   - conditions:
     - prefix: /s1
@@ -128,3 +148,118 @@ spec:
         - name: x-contour-ratelimited
           value: "true"
 ```
+
+## Global Rate Limiting
+
+The `HTTPProxy` API also supports defining global rate limit policies on routes and virtual hosts.
+
+In order to use global rate limiting, you must first select and deploy an external rate limit service (RLS).
+There is an [Envoy rate limit service implementation][2], but any service that implements the [RateLimitService gRPC interface][3] is supported.
+
+### Configuring an exernal RLS with Contour
+
+Once you have deployed your RLS, you must configure it with Contour.
+
+Define an extension service for it (substituting values as appropriate):
+```yaml
+apiVersion: projectcontour.io/v1alpha1
+kind: ExtensionService
+metadata:
+  namespace: projectcontour
+  name: ratelimit
+spec:
+  protocol: h2
+  services:
+    - name: ratelimit
+      port: 8081
+```
+
+Now add a reference to it in the Contour config file:
+```yaml
+rateLimitService:
+  extensionService: projectcontour/ratelimit
+  domain: contour
+  failOpen: true
+```
+
+### Defining a global rate limit policy
+
+Global rate limit policies can be defined for either routes or virtual hosts. Unlike local rate limit policies, global rate limit policies do not directly define a rate limit. Instead, they define a set of request descriptors that will be generated and sent to the external RLS for each request. The external RLS then makes the rate limit decision based on the descriptors and returns a response to Envoy.
+
+A global rate limit policy for the virtual host:
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  namespace: default
+  name: ratelimited-vhost
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+    rateLimitPolicy:
+      global:
+        descriptors:
+          # the first descriptor has a single key-value pair:
+          # [ remote_address=<client IP> ].
+          - entries:
+              - remoteAddress: {}
+          # the second descriptor has two key-value pairs:
+          # [ remote_address=<client IP>, vhost=local.projectcontour.io ].
+          - entries:
+              - remoteAddress: {}
+              - genericKey:
+                  key: vhost
+                  value: local.projectcontour.io
+  routes:
+  - conditions:
+    - prefix: /s1
+    services:
+    - name: s1
+      port: 80
+  - conditions:
+    - prefix: /s2
+    services:
+    - name: s2
+      port: 80
+```
+
+A global rate limit policy for the route:
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  namespace: default
+  name: ratelimited-route
+spec:
+  virtualhost:
+    fqdn: local.projectcontour.io
+  routes:
+  - conditions:
+    - prefix: /s1
+    services:
+    - name: s1
+      port: 80
+    rateLimitPolicy:
+      global:
+        descriptors:
+          # the first descriptor has a single key-value pair:
+          # [ remote_address=<client IP> ].
+          - entries:
+              - remoteAddress: {}
+          # the second descriptor has two key-value pairs:
+          # [ remote_address=<client IP>, prefix=/s1 ].
+          - entries:
+              - remoteAddress: {}
+              - genericKey:
+                  key: prefix
+                  value: /s1
+  - conditions:
+    - prefix: /s2
+    services:
+    - name: s2
+      port: 80
+```
+
+[1]: https://www.envoyproxy.io/docs/envoy/v1.17.0/configuration/http/http_filters/local_rate_limit_filter#config-http-filters-local-rate-limit
+[2]: https://github.com/envoyproxy/ratelimit
+[3]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/ratelimit/v3/rls.proto

@@ -250,7 +250,8 @@ type HeadersPolicy struct {
 
 // RateLimitPolicy holds rate limiting parameters.
 type RateLimitPolicy struct {
-	Local *LocalRateLimitPolicy
+	Local  *LocalRateLimitPolicy
+	Global *GlobalRateLimitPolicy
 }
 
 // LocalRateLimitPolicy holds local rate limiting parameters.
@@ -292,6 +293,25 @@ type RequestHashPolicy struct {
 
 	// CookieHashOptions is set when a cookie hash is desired.
 	CookieHashOptions *CookieHashOptions
+}
+
+// GlobalRateLimitPolicy holds global rate limiting parameters.
+type GlobalRateLimitPolicy struct {
+	Descriptors []*RateLimitDescriptor
+}
+
+type RateLimitDescriptor struct {
+	Entries []RateLimitDescriptorEntry
+}
+
+type RateLimitDescriptorEntry struct {
+	GenericKeyKey   string
+	GenericKeyValue string
+
+	HeaderMatchHeaderName    string
+	HeaderMatchDescriptorKey string
+
+	RemoteAddress bool
 }
 
 // CORSPolicy allows setting the CORS policy

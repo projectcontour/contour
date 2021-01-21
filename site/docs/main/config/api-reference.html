@@ -742,6 +742,87 @@ string
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.GenericKeyDescriptor">GenericKeyDescriptor
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RateLimitDescriptorEntry">RateLimitDescriptorEntry</a>)
+</p>
+<p>
+<p>GenericKeyDescriptor defines a descriptor entry with a static key and
+value.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>key</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Key defines the key of the descriptor entry. If not set, the
+key is set to &ldquo;generic_key&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>value</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Value defines the value of the descriptor entry.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.GlobalRateLimitPolicy">GlobalRateLimitPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy</a>)
+</p>
+<p>
+<p>GlobalRateLimitPolicy defines global rate limiting parameters.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>descriptors</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RateLimitDescriptor">
+[]RateLimitDescriptor
+</a>
+</em>
+</td>
+<td>
+<p>Descriptors defines the list of descriptors that will
+be generated and sent to the rate limit service. Each
+descriptor contains 1+ key-value pair entries.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.HTTPHealthCheckPolicy">HTTPHealthCheckPolicy
 </h3>
 <p>
@@ -1536,6 +1617,107 @@ No HTTP headers or body content is rewritten.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.RateLimitDescriptor">RateLimitDescriptor
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.GlobalRateLimitPolicy">GlobalRateLimitPolicy</a>)
+</p>
+<p>
+<p>RateLimitDescriptor defines a list of key-value pair generators.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>entries</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RateLimitDescriptorEntry">
+[]RateLimitDescriptorEntry
+</a>
+</em>
+</td>
+<td>
+<p>Entries is the list of key-value pair generators.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.RateLimitDescriptorEntry">RateLimitDescriptorEntry
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RateLimitDescriptor">RateLimitDescriptor</a>)
+</p>
+<p>
+<p>RateLimitDescriptorEntry is a key-value pair generator. Exactly
+one field on this struct must be non-nil.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>genericKey</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.GenericKeyDescriptor">
+GenericKeyDescriptor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GenericKey defines a descriptor entry with a static key and value.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>requestHeader</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RequestHeaderDescriptor">
+RequestHeaderDescriptor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RequestHeader defines a descriptor entry that&rsquo;s populated only if
+a given header is present on the request. The descriptor key is static,
+and the descriptor value is equal to the value of the header.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>remoteAddress</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RemoteAddressDescriptor">
+RemoteAddressDescriptor
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>RemoteAddress defines a descriptor entry with a key of &ldquo;remote_address&rdquo;
+and a value equal to the client&rsquo;s IP address (from x-forwarded-for).</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy
 </h3>
 <p>
@@ -1565,13 +1747,42 @@ LocalRateLimitPolicy
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Local defines local rate limiting parameters, i.e. parameters
 for rate limiting that occurs within each Envoy pod as requests
 are handled.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>global</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.GlobalRateLimitPolicy">
+GlobalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Global defines global rate limiting parameters, i.e. parameters
+defining descriptors that are sent to an external rate limit
+service (RLS) for a rate limit decision on each request.</p>
+</td>
+</tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.RemoteAddressDescriptor">RemoteAddressDescriptor
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RateLimitDescriptorEntry">RateLimitDescriptorEntry</a>)
+</p>
+<p>
+<p>RemoteAddressDescriptor defines a descriptor entry with a key of
+&ldquo;remote_address&rdquo; and a value equal to the client&rsquo;s IP address
+(from x-forwarded-for).</p>
+</p>
 <h3 id="projectcontour.io/v1.ReplacePrefix">ReplacePrefix
 </h3>
 <p>
@@ -1672,6 +1883,51 @@ HeaderHashOptions
 <p>HeaderHashOptions should be set when request header hash based load
 balancing is desired. It must be the only hash option field set,
 otherwise this request hash policy object will be ignored.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.RequestHeaderDescriptor">RequestHeaderDescriptor
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RateLimitDescriptorEntry">RateLimitDescriptorEntry</a>)
+</p>
+<p>
+<p>RequestHeaderDescriptor defines a descriptor entry that&rsquo;s populated only
+if a given header is present on the request. The value of the descriptor
+entry is equal to the value of the header (if present).</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>headerName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>HeaderName defines the name of the header to look for on the request.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>descriptorKey</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>DescriptorKey defines the key to use on the descriptor entry.</p>
 </td>
 </tr>
 </tbody>

@@ -15,11 +15,19 @@ package v3
 
 import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	ratelimit_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
+	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
+	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
+	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
+	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/timeout"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // LocalRateLimitConfig returns a config for the HTTP local rate
@@ -57,4 +65,68 @@ func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *
 	}
 
 	return protobuf.MustMarshalAny(c)
+}
+
+// GlobalRateLimits converts DAG RateLimitDescriptors to Envoy RateLimits.
+func GlobalRateLimits(descriptors []*dag.RateLimitDescriptor) []*envoy_route_v3.RateLimit {
+	var rateLimits []*envoy_route_v3.RateLimit
+	for _, descriptor := range descriptors {
+		var rl envoy_route_v3.RateLimit
+
+		for _, entry := range descriptor.Entries {
+			switch {
+			case entry.GenericKeyValue != "":
+				rl.Actions = append(rl.Actions, &envoy_route_v3.RateLimit_Action{
+					ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
+						GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+							DescriptorValue: entry.GenericKeyValue,
+						},
+					},
+				})
+			case entry.HeaderMatchHeaderName != "":
+				rl.Actions = append(rl.Actions, &envoy_route_v3.RateLimit_Action{
+					ActionSpecifier: &envoy_route_v3.RateLimit_Action_RequestHeaders_{
+						RequestHeaders: &envoy_route_v3.RateLimit_Action_RequestHeaders{
+							HeaderName:    entry.HeaderMatchHeaderName,
+							DescriptorKey: entry.HeaderMatchDescriptorKey,
+						},
+					},
+				})
+			case entry.RemoteAddress:
+				rl.Actions = append(rl.Actions, &envoy_route_v3.RateLimit_Action{
+					ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
+						RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+					},
+				})
+			}
+		}
+
+		rateLimits = append(rateLimits, &rl)
+	}
+
+	return rateLimits
+}
+
+// GlobalRateLimitFilter returns a configured HTTP global rate limit filter.
+func GlobalRateLimitFilter(domain string, timeout timeout.Setting, failOpen bool, extensionService types.NamespacedName) *http.HttpFilter {
+	return &http.HttpFilter{
+		Name: wellknown.HTTPRateLimit,
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+				Domain:          domain,
+				Timeout:         envoy.Timeout(timeout),
+				FailureModeDeny: !failOpen,
+				RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+					GrpcService: &envoy_core_v3.GrpcService{
+						TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+							EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+								ClusterName: dag.ExtensionClusterName(extensionService),
+							},
+						},
+					},
+					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+				},
+			}),
+		},
+	}
 }

@@ -31,6 +31,7 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // nolint:golint
@@ -128,6 +129,17 @@ type ListenerConfig struct {
 	// XffNumTrustedHops sets the number of additional ingress proxy hops from the
 	// right side of the x-forwarded-for HTTP header to trust.
 	XffNumTrustedHops uint32
+
+	// RateLimitConfig optionally configures the global Rate Limit Service to be
+	// used.
+	RateLimitConfig *RateLimitConfig
+}
+
+type RateLimitConfig struct {
+	ExtensionService types.NamespacedName
+	Domain           string
+	Timeout          timeout.Setting
+	FailOpen         bool
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -331,7 +343,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 
 	if lv.http {
 		// Add a listener if there are vhosts bound to http.
-		cm := envoy_v3.HTTPConnectionManagerBuilder().
+		builder := envoy_v3.HTTPConnectionManagerBuilder().
 			Codec(envoy_v3.CodecForVersions(lv.DefaultHTTPVersions...)).
 			DefaultFilters().
 			RouteConfigName(ENVOY_HTTP_LISTENER).
@@ -344,8 +356,13 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 			MaxConnectionDuration(lvc.MaxConnectionDuration).
 			ConnectionShutdownGracePeriod(lvc.ConnectionShutdownGracePeriod).
 			AllowChunkedLength(lvc.AllowChunkedLength).
-			NumTrustedHops(lvc.XffNumTrustedHops).
-			Get()
+			NumTrustedHops(lvc.XffNumTrustedHops)
+
+		if rlc := lv.RateLimitConfig; rlc != nil {
+			builder.AddFilter(envoy_v3.GlobalRateLimitFilter(rlc.Domain, rlc.Timeout, rlc.FailOpen, rlc.ExtensionService))
+		}
+
+		cm := builder.Get()
 
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy_v3.Listener(
 			ENVOY_HTTP_LISTENER,
@@ -417,25 +434,28 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// metrics prefix to keep compatibility with previous
 			// Contour versions since the metrics prefix will be
 			// coded into monitoring dashboards.
-			filters = envoy_v3.Filters(
-				envoy_v3.HTTPConnectionManagerBuilder().
-					Codec(envoy_v3.CodecForVersions(v.DefaultHTTPVersions...)).
-					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
-					DefaultFilters().
-					AddFilter(authFilter).
-					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
-					MetricsPrefix(ENVOY_HTTPS_LISTENER).
-					AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
-					RequestTimeout(v.ListenerConfig.RequestTimeout).
-					ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
-					StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
-					DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
-					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
-					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
-					AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
-					NumTrustedHops(v.ListenerConfig.XffNumTrustedHops).
-					Get(),
-			)
+			builder := envoy_v3.HTTPConnectionManagerBuilder().
+				Codec(envoy_v3.CodecForVersions(v.DefaultHTTPVersions...)).
+				AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
+				DefaultFilters().
+				AddFilter(authFilter).
+				RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
+				MetricsPrefix(ENVOY_HTTPS_LISTENER).
+				AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
+				RequestTimeout(v.ListenerConfig.RequestTimeout).
+				ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
+				StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
+				DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
+				MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
+				ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
+				AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
+				NumTrustedHops(v.ListenerConfig.XffNumTrustedHops)
+
+			if rlc := v.RateLimitConfig; rlc != nil {
+				builder.AddFilter(envoy_v3.GlobalRateLimitFilter(rlc.Domain, rlc.Timeout, rlc.FailOpen, rlc.ExtensionService))
+			}
+
+			filters = envoy_v3.Filters(builder.Get())
 
 			alpnProtos = envoy_v3.ProtoNamesForVersions(v.DefaultHTTPVersions...)
 		} else {
@@ -483,23 +503,26 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				vh.DownstreamValidation,
 				alpnProtos...)
 
+			builder := envoy_v3.HTTPConnectionManagerBuilder().
+				DefaultFilters().
+				RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
+				MetricsPrefix(ENVOY_HTTPS_LISTENER).
+				AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
+				RequestTimeout(v.ListenerConfig.RequestTimeout).
+				ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
+				StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
+				DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
+				MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
+				ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
+				AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
+				NumTrustedHops(v.ListenerConfig.XffNumTrustedHops)
+
+			if rlc := v.RateLimitConfig; rlc != nil {
+				builder.AddFilter(envoy_v3.GlobalRateLimitFilter(rlc.Domain, rlc.Timeout, rlc.FailOpen, rlc.ExtensionService))
+			}
+
 			// Default filter chain
-			filters = envoy_v3.Filters(
-				envoy_v3.HTTPConnectionManagerBuilder().
-					DefaultFilters().
-					RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-					MetricsPrefix(ENVOY_HTTPS_LISTENER).
-					AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
-					RequestTimeout(v.ListenerConfig.RequestTimeout).
-					ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
-					StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
-					DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
-					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
-					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
-					AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
-					NumTrustedHops(v.ListenerConfig.XffNumTrustedHops).
-					Get(),
-			)
+			filters = envoy_v3.Filters(builder.Get())
 
 			v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
 				envoy_v3.FilterChainTLSFallback(downstreamTLS, filters))
