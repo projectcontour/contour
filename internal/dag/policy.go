@@ -311,3 +311,52 @@ func prefixReplacementsAreValid(replacements []contour_api_v1.ReplacePrefix) (st
 
 	return "", nil
 }
+
+func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, error) {
+	if in == nil || in.Local == nil {
+		return nil, nil
+	}
+
+	if in.Local.Requests <= 0 {
+		return nil, fmt.Errorf("invalid requests value %d in local rate limit policy", in.Local.Requests)
+	}
+
+	var fillInterval time.Duration
+	switch in.Local.Unit {
+	case "second":
+		fillInterval = time.Second
+	case "minute":
+		fillInterval = time.Minute
+	case "hour":
+		fillInterval = time.Hour
+	default:
+		return nil, fmt.Errorf("invalid unit %q in local rate limit policy", in.Local.Unit)
+	}
+
+	rp := &RateLimitPolicy{
+		Local: &LocalRateLimitPolicy{
+			MaxTokens:          in.Local.Requests + in.Local.Burst,
+			TokensPerFill:      in.Local.Requests,
+			FillInterval:       fillInterval,
+			ResponseStatusCode: in.Local.ResponseStatusCode,
+		},
+	}
+
+	for _, header := range in.Local.ResponseHeadersToAdd {
+		// initialize map if we haven't yet
+		if rp.Local.ResponseHeadersToAdd == nil {
+			rp.Local.ResponseHeadersToAdd = map[string]string{}
+		}
+
+		key := http.CanonicalHeaderKey(header.Name)
+		if _, ok := rp.Local.ResponseHeadersToAdd[key]; ok {
+			return nil, fmt.Errorf("duplicate header addition: %q", key)
+		}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid header name %q: %v", key, msgs)
+		}
+		rp.Local.ResponseHeadersToAdd[key] = escapeHeaderValue(header.Value)
+	}
+
+	return rp, nil
+}

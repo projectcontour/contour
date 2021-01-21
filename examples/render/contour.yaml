@@ -577,6 +577,57 @@ spec:
                     permitInsecure:
                       description: Allow this path to respond to insecure requests over HTTP which are normally not permitted when a `virtualhost.tls` block is present.
                       type: boolean
+                    rateLimitPolicy:
+                      description: The policy for rate limiting on the route.
+                      properties:
+                        local:
+                          description: Local defines local rate limiting parameters, i.e. parameters for rate limiting that occurs within each Envoy pod as requests are handled.
+                          properties:
+                            burst:
+                              description: Burst defines the number of requests above the requests per unit that should be allowed within a short period of time.
+                              format: int32
+                              type: integer
+                            requests:
+                              description: Requests defines how many requests per unit of time should be allowed before rate limiting occurs.
+                              format: int32
+                              minimum: 1
+                              type: integer
+                            responseHeadersToAdd:
+                              description: ResponseHeadersToAdd is an optional list of response headers to set when a request is rate-limited.
+                              items:
+                                description: HeaderValue represents a header name/value pair
+                                properties:
+                                  name:
+                                    description: Name represents a key of a header
+                                    minLength: 1
+                                    type: string
+                                  value:
+                                    description: Value represents the value of a header specified by a key
+                                    minLength: 1
+                                    type: string
+                                required:
+                                - name
+                                - value
+                                type: object
+                              type: array
+                            responseStatusCode:
+                              description: ResponseStatusCode is the HTTP status code to use for responses to rate-limited requests. Codes must be in the 400-599 range (inclusive). If not specified, the Envoy default of 429 (Too Many Requests) is used.
+                              format: int32
+                              maximum: 599
+                              minimum: 400
+                              type: integer
+                            unit:
+                              description: Unit defines the period of time within which requests over the limit will be rate limited.
+                              enum:
+                              - second
+                              - minute
+                              - hour
+                              type: string
+                          required:
+                          - requests
+                          - unit
+                          type: object
+                      type: object
                     requestHeadersPolicy:
                       description: The policy for managing request headers during proxying.
                       properties:
@@ -1030,6 +1081,57 @@ spec:
                   fqdn:
                     description: The fully qualified domain name of the root of the ingress tree all leaves of the DAG rooted at this object relate to the fqdn.
                     type: string
+                  rateLimitPolicy:
+                    description: The policy for rate limiting on the virtual host.
+                    properties:
+                      local:
+                        description: Local defines local rate limiting parameters, i.e. parameters for rate limiting that occurs within each Envoy pod as requests are handled.
+                        properties:
+                          burst:
+                            description: Burst defines the number of requests above the requests per unit that should be allowed within a short period of time.
+                            format: int32
+                            type: integer
+                          requests:
+                            description: Requests defines how many requests per unit of time should be allowed before rate limiting occurs.
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          responseHeadersToAdd:
+                            description: ResponseHeadersToAdd is an optional list of response headers to set when a request is rate-limited.
+                            items:
+                              description: HeaderValue represents a header name/value pair
+                              properties:
+                                name:
+                                  description: Name represents a key of a header
+                                  minLength: 1
+                                  type: string
+                                value:
+                                  description: Value represents the value of a header specified by a key
+                                  minLength: 1
+                                  type: string
+                              required:
+                              - name
+                              - value
+                              type: object
+                            type: array
+                          responseStatusCode:
+                            description: ResponseStatusCode is the HTTP status code to use for responses to rate-limited requests. Codes must be in the 400-599 range (inclusive). If not specified, the Envoy default of 429 (Too Many Requests) is used.
+                            format: int32
+                            maximum: 599
+                            minimum: 400
+                            type: integer
+                          unit:
+                            description: Unit defines the period of time within which requests over the limit will be rate limited.
+                            enum:
+                            - second
+                            - minute
+                            - hour
+                            type: string
+                        required:
+                        - requests
+                        - unit
+                        type: object
+                    type: object
                   tls:
                     description: If present the fields describes TLS properties of the virtual host. The SNI names that will be matched on are described in fqdn, the tls.secretName secret must contain a certificate that itself contains a name that matches the FQDN.
                     properties:

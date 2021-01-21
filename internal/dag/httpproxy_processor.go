@@ -299,6 +299,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		return
 	}
 	insecure.CORSPolicy = cp
+
+	rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
+	if err != nil {
+		validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
+			"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
+		return
+	}
+	insecure.RateLimitPolicy = rlp
+
 	addRoutes(insecure, routes)
 
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
@@ -306,6 +315,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
 		secure := p.dag.EnsureSecureVirtualHost(host)
 		secure.CORSPolicy = cp
+
+		rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
+				"Spec.VirtualHost.RateLimitPolicy is invalid: %s", err)
+			return
+		}
+		secure.RateLimitPolicy = rlp
+
 		addRoutes(secure, routes)
 	}
 }
@@ -430,6 +448,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		rlp, err := rateLimitPolicy(route.RateLimitPolicy)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RateLimitPolicyNotValid",
+				"route.rateLimitPolicy is invalid: %s", err)
+			return nil
+		}
+
 		r := &Route{
 			PathMatchCondition:    mergePathMatchConditions(conds),
 			HeaderMatchConditions: mergeHeaderMatchConditions(conds),
@@ -439,6 +464,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			RetryPolicy:           retryPolicy(route.RetryPolicy),
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
+			RateLimitPolicy:       rlp,
 		}
 
 		// If the enclosing root proxy enabled authorization,

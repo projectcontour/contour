@@ -21,6 +21,7 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
+	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
@@ -382,6 +383,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
+							},
+						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: &any.Any{
@@ -459,6 +469,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: &any.Any{
 									TypeUrl: HTTPFilterCORS,
 								},
+							},
+						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
 							},
 						}, {
 							Name: "router",
@@ -539,6 +558,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: &any.Any{
 									TypeUrl: HTTPFilterCORS,
 								},
+							},
+						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
 							},
 						}, {
 							Name: "router",
@@ -622,6 +650,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
+							},
+						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: &any.Any{
@@ -700,6 +737,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: &any.Any{
 									TypeUrl: HTTPFilterCORS,
 								},
+							},
+						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
 							},
 						}, {
 							Name: "router",
@@ -783,6 +829,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 								},
 							},
 						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
+							},
+						}, {
 							Name: "router",
 							ConfigType: &http.HttpFilter_TypedConfig{
 								TypedConfig: &any.Any{
@@ -860,6 +915,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: &any.Any{
 									TypeUrl: HTTPFilterCORS,
 								},
+							},
+						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
 							},
 						}, {
 							Name: "router",
@@ -941,6 +1005,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 								TypedConfig: &any.Any{
 									TypeUrl: HTTPFilterCORS,
 								},
+							},
+						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
 							},
 						}, {
 							Name: "router",
@@ -1234,6 +1307,16 @@ func TestAddFilter(t *testing.T) {
 						TypedConfig: &any.Any{
 							TypeUrl: HTTPFilterCORS,
 						},
+					},
+				},
+				{
+					Name: "local_ratelimit",
+					ConfigType: &http.HttpFilter_TypedConfig{
+						TypedConfig: protobuf.MustMarshalAny(
+							&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+								StatPrefix: "http",
+							},
+						),
 					},
 				},
 				FilterExternalAuthz("test", false, timeout.Setting{}),
