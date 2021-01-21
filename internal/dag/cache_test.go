@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
+	serviceapis "sigs.k8s.io/service-apis/apis/v1alpha1"
 )
 
 func TestKubernetesCacheInsert(t *testing.T) {
@@ -674,7 +674,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert service-apis TcPRoute": {
-			obj: &serviceapis.TcpRoute{
+			obj: &serviceapis.TCPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tcproute",
 					Namespace: "default",
@@ -887,13 +887,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: true,
 		},
 		"remove service-apis TcpRoute": {
-			cache: cache(&serviceapis.TcpRoute{
+			cache: cache(&serviceapis.TCPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tcproute",
 					Namespace: "default",
 				},
 			}),
-			obj: &serviceapis.TcpRoute{
+			obj: &serviceapis.TCPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tcproute",
 					Namespace: "default",
