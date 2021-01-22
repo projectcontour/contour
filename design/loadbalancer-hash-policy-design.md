@@ -109,7 +109,7 @@ Consistent values in this header would lead to Envoy routing to the same backend
 As per the documentation of the [`LoadBalancerPolicy` field on the `ExtensionService` object](https://projectcontour.io/docs/v1.11.0/config/api/#projectcontour.io/v1alpha1.ExtensionService), the `Cookie` load balancing strategy is invalid for use with the `ExtensionService`.
 Currently, that restriction does not seem to be enforced (or on the `TCPRoute` object either, for which the `Cookie` strategy is not compatible).
 This design proposes that we start to enforce these strategy restrictions and also restrict the new `RequestHash` strategy to only valid on `Route` objects.
-If specified on `ExtensionService` or `TCPRoute` objects, it will be overriden to the default `RoundRobin` strategy and a warning will be logged.
+If specified on `ExtensionService` or `TCPRoute` objects, it will be overridden to the default `RoundRobin` strategy and a warning will be logged.
 Overriding rather than throwing an error is a deliberate attempt to continue to allow the configured `HTTPProxy` or configured extension to function, albeit with basic load balancing enabled.
 
 ## Alternatives Considered
