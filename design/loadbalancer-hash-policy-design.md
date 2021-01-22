@@ -91,13 +91,13 @@ spec:
       port: 80
     loadBalancerPolicy:
       strategy: RequestHash
-      requesthashPolicies:
+      requestHashPolicies:
       - requestAttribute: Header
-        HashOptions:
+        hashOptions:
           headerName: X-Some-Header
-        Terminal: true
+        terminal: true
       - requestAttribute: Header
-        HashOptions:
+        hashOptions:
           headerName: User-Agent
 ```
 
