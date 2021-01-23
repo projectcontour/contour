@@ -393,11 +393,29 @@ func TestHeadersPolicy(t *testing.T) {
 				},
 			},
 		},
+		"dynamic service headers": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "l5d-dst-override",
+					Value: "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
+				}},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"L5d-Dst-Override": "myservice.myns.svc.cluster.local:80",
+				},
+			},
+		},
 	}
 
+	dynamicHeaders := map[string]string{
+		"CONTOUR_NAMESPACE":    "myns",
+		"CONTOUR_SERVICE_NAME": "myservice",
+		"CONTOUR_SERVICE_PORT": "80",
+	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(tc.hp)
+			got, gotErr := headersPolicyService(tc.hp, dynamicHeaders)
 			if tc.wantErr {
 				assert.Error(t, gotErr)
 			} else {
