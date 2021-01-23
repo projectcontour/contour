@@ -305,6 +305,7 @@ func TestLoadBalancerPolicy(t *testing.T) {
 func TestHeadersPolicy(t *testing.T) {
 	tests := map[string]struct {
 		hp      *contour_api_v1.HeadersPolicy
+		dhp     HeadersPolicy
 		want    HeadersPolicy
 		wantErr bool
 	}{
@@ -315,6 +316,7 @@ func TestHeadersPolicy(t *testing.T) {
 					Value: "100",
 				}},
 			},
+			dhp: HeadersPolicy{},
 			want: HeadersPolicy{
 				Set: map[string]string{
 					"X-App-Weight": "100",
@@ -328,6 +330,7 @@ func TestHeadersPolicy(t *testing.T) {
 					Value: "100%",
 				}},
 			},
+			dhp: HeadersPolicy{},
 			want: HeadersPolicy{
 				Set: map[string]string{
 					"X-App-Weight": "100%%",
@@ -341,6 +344,7 @@ func TestHeadersPolicy(t *testing.T) {
 					Value: "%HOSTNAME%",
 				}},
 			},
+			dhp: HeadersPolicy{},
 			want: HeadersPolicy{
 				Set: map[string]string{
 					"X-Envoy-Hostname": "%HOSTNAME%",
@@ -354,6 +358,7 @@ func TestHeadersPolicy(t *testing.T) {
 					Value: "%UNKNOWN%",
 				}},
 			},
+			dhp: HeadersPolicy{},
 			want: HeadersPolicy{
 				Set: map[string]string{
 					"X-Envoy-Unknown": "%%UNKNOWN%%",
@@ -367,6 +372,7 @@ func TestHeadersPolicy(t *testing.T) {
 					Value: "%REQ(Host)%",
 				}},
 			},
+			dhp: HeadersPolicy{},
 			want: HeadersPolicy{
 				Set: map[string]string{
 					"X-Request-Host": "%REQ(Host)%",
@@ -380,6 +386,7 @@ func TestHeadersPolicy(t *testing.T) {
 					Value: "%REQ(inv@lid-header)%",
 				}},
 			},
+			dhp: HeadersPolicy{},
 			want: HeadersPolicy{
 				Set: map[string]string{
 					"X-Request-Host": "%%REQ(inv@lid-header)%%",
@@ -393,6 +400,7 @@ func TestHeadersPolicy(t *testing.T) {
 					Value: "%HOSTNAME% - %PROTOCOL%",
 				}},
 			},
+			dhp: HeadersPolicy{},
 			want: HeadersPolicy{
 				Set: map[string]string{
 					"X-Host-Protocol": "%HOSTNAME% - %PROTOCOL%",
@@ -412,6 +420,55 @@ func TestHeadersPolicy(t *testing.T) {
 				},
 			},
 		},
+		"default header value with different object header value combined": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-Host-Protocol",
+					Value: "%HOSTNAME% - %PROTOCOL%",
+				}},
+			},
+			dhp: HeadersPolicy{
+				Set: map[string]string{
+					"X-Envoy-Hostname": "%HOSTNAME%",
+				},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-Envoy-Hostname": "%HOSTNAME%",
+					"X-Host-Protocol":  "%HOSTNAME% - %PROTOCOL%",
+				},
+			},
+		},
+		"default header value with same object header value not replaced": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "X-App-Weight",
+					Value: "100",
+				}},
+			},
+			dhp: HeadersPolicy{
+				Set: map[string]string{
+					"X-App-Weight": "10",
+				},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"X-App-Weight": "100",
+				},
+			},
+		},
+		"same header removed in default and object": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Remove: []string{"X-Sensitive-Header"},
+			},
+			dhp: HeadersPolicy{
+				Remove: []string{"X-Sensitive-Header"},
+			},
+			want: HeadersPolicy{
+				Set:    map[string]string{},
+				Remove: []string{"X-Sensitive-Header"},
+			},
+		},
 	}
 
 	dynamicHeaders := map[string]string{
@@ -421,7 +478,7 @@ func TestHeadersPolicy(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(tc.hp, dynamicHeaders)
+			got, gotErr := headersPolicyService(&tc.dhp, tc.hp, dynamicHeaders)
 			if tc.wantErr {
 				assert.Error(t, gotErr)
 			} else {
