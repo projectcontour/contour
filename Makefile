@@ -82,7 +82,7 @@ export GO111MODULE=on
 check: install check-test check-test-race ## Install and run tests
 
 .PHONY: checkall
-checkall: vendor check lint check-generate
+checkall: check lint check-generate
 
 build: ## Build the contour binary
 	go build -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
@@ -95,10 +95,6 @@ race:
 
 download: ## Download Go modules
 	go mod download
-
-## Vendor Go modules
-vendor:
-	go mod vendor
 
 multiarch-build-push: ## Build and push a multi-arch Contour container image to the Docker registry
 	docker buildx build \
