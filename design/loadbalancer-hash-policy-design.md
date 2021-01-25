@@ -47,10 +47,10 @@ If the `RequestHash` strategy is chosen, Contour will inspect the new `RequestHa
 
 ```
 type LoadBalancerPolicy struct {
-    // Now also supports `RequestHash`
-	Strategy string `json:"strategy,omitempty"`
+  // Now also supports `RequestHash`
+  Strategy string `json:"strategy,omitempty"`
 
-	RequestHashPolicies []RequestHashPolicy `json:"requestHashPolicies,omitempty"`
+  RequestHashPolicies []RequestHashPolicy `json:"requestHashPolicies,omitempty"`
 }
 ```
 
