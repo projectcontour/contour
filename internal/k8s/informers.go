@@ -19,7 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
+	serviceapis "sigs.k8s.io/service-apis/apis/v1alpha1"
 )
 
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch
@@ -45,11 +45,23 @@ func DefaultResources() []schema.GroupVersionResource {
 
 // ServiceAPIResources ...
 func ServiceAPIResources() []schema.GroupVersionResource {
-	return []schema.GroupVersionResource{
-		serviceapis.GroupVersion.WithResource("gatewayclasses"),
-		serviceapis.GroupVersion.WithResource("gateways"),
-		serviceapis.GroupVersion.WithResource("httproutes"),
-		serviceapis.GroupVersion.WithResource("tcproutes"),
+	return []schema.GroupVersionResource{{
+		Group:    serviceapis.GroupVersion.Group,
+		Version:  serviceapis.GroupVersion.Version,
+		Resource: "gatewayclasses",
+	}, {
+		Group:    serviceapis.GroupVersion.Group,
+		Version:  serviceapis.GroupVersion.Version,
+		Resource: "gateways",
+	}, {
+		Group:    serviceapis.GroupVersion.Group,
+		Version:  serviceapis.GroupVersion.Version,
+		Resource: "httproutes",
+	}, {
+		Group:    serviceapis.GroupVersion.Group,
+		Version:  serviceapis.GroupVersion.Version,
+		Resource: "tcproutes",
+	},
 	}
 }
 

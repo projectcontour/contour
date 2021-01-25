@@ -404,7 +404,164 @@ func TestHeadersPolicy(t *testing.T) {
 				assert.Equal(t, tc.want, *got)
 				assert.NoError(t, gotErr)
 			}
+		})
+	}
+}
 
+func TestRateLimitPolicy(t *testing.T) {
+	tests := map[string]struct {
+		in      *contour_api_v1.RateLimitPolicy
+		want    *RateLimitPolicy
+		wantErr string
+	}{
+		"nil input": {
+			in:   nil,
+			want: nil,
+		},
+		"nil local rate limit policy": {
+			in:   &contour_api_v1.RateLimitPolicy{},
+			want: nil,
+		},
+		"no burst": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 3,
+					Unit:     "second",
+				},
+			},
+			want: &RateLimitPolicy{
+				Local: &LocalRateLimitPolicy{
+					MaxTokens:     3,
+					TokensPerFill: 3,
+					FillInterval:  time.Second,
+				},
+			},
+		},
+		"burst": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 3,
+					Unit:     "second",
+					Burst:    4,
+				},
+			},
+			want: &RateLimitPolicy{
+				Local: &LocalRateLimitPolicy{
+					MaxTokens:     7,
+					TokensPerFill: 3,
+					FillInterval:  time.Second,
+				},
+			},
+		},
+		"custom response status code": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests:           10,
+					Unit:               "minute",
+					ResponseStatusCode: 431,
+				},
+			},
+			want: &RateLimitPolicy{
+				Local: &LocalRateLimitPolicy{
+					MaxTokens:          10,
+					TokensPerFill:      10,
+					FillInterval:       time.Minute,
+					ResponseStatusCode: 431,
+				},
+			},
+		},
+		"custom response headers to add": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 10,
+					Unit:     "hour",
+					ResponseHeadersToAdd: []contour_api_v1.HeaderValue{
+						{
+							Name:  "header-1",
+							Value: "header-value-1",
+						},
+						{
+							Name:  "header-2",
+							Value: "header-value-2",
+						},
+					},
+				},
+			},
+			want: &RateLimitPolicy{
+				Local: &LocalRateLimitPolicy{
+					MaxTokens:     10,
+					TokensPerFill: 10,
+					FillInterval:  time.Hour,
+					ResponseHeadersToAdd: map[string]string{
+						"Header-1": "header-value-1",
+						"Header-2": "header-value-2",
+					},
+				},
+			},
+		},
+		"duplicate response header": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 10,
+					Unit:     "hour",
+					ResponseHeadersToAdd: []contour_api_v1.HeaderValue{
+						{
+							Name:  "duplicate-header",
+							Value: "header-value-1",
+						},
+						{
+							Name:  "duplicate-header",
+							Value: "header-value-2",
+						},
+					},
+				},
+			},
+			wantErr: "duplicate header addition: \"Duplicate-Header\"",
+		},
+		"invalid response header name": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 10,
+					Unit:     "hour",
+					ResponseHeadersToAdd: []contour_api_v1.HeaderValue{
+						{
+							Name:  "invalid-header!",
+							Value: "header-value-1",
+						},
+					},
+				},
+			},
+			wantErr: `invalid header name "Invalid-Header!": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`,
+		},
+		"invalid unit": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 10,
+					Unit:     "invalid-unit",
+				},
+			},
+			wantErr: "invalid unit \"invalid-unit\" in local rate limit policy",
+		},
+		"invalid requests": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Local: &contour_api_v1.LocalRateLimitPolicy{
+					Requests: 0,
+					Unit:     "second",
+				},
+			},
+			wantErr: "invalid requests value 0 in local rate limit policy",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			rlp, err := rateLimitPolicy(tc.in)
+
+			if tc.wantErr != "" {
+				assert.EqualError(t, err, tc.wantErr)
+			} else {
+				assert.Equal(t, tc.want, rlp)
+			}
 		})
 	}
 }

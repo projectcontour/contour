@@ -185,6 +185,9 @@ type Route struct {
 
 	// ResponseHeadersPolicy defines how headers are managed during forwarding
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// RateLimitPolicy defines if/how requests for the route are rate limited.
+	RateLimitPolicy *RateLimitPolicy
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -239,6 +242,20 @@ type HeadersPolicy struct {
 
 	Set    map[string]string
 	Remove []string
+}
+
+// RateLimitPolicy holds rate limiting parameters.
+type RateLimitPolicy struct {
+	Local *LocalRateLimitPolicy
+}
+
+// LocalRateLimitPolicy holds local rate limiting parameters.
+type LocalRateLimitPolicy struct {
+	MaxTokens            uint32
+	TokensPerFill        uint32
+	FillInterval         time.Duration
+	ResponseStatusCode   uint32
+	ResponseHeadersToAdd map[string]string
 }
 
 // CORSPolicy allows setting the CORS policy
@@ -311,6 +328,10 @@ type VirtualHost struct {
 
 	// CORSPolicy is the cross-origin policy to apply to the VirtualHost.
 	CORSPolicy *CORSPolicy
+
+	// RateLimitPolicy defines if/how requests for the virtual host
+	// are rate limited.
+	RateLimitPolicy *RateLimitPolicy
 
 	routes map[string]*Route
 }

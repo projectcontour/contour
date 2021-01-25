@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
-	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
+	serviceapis "sigs.k8s.io/service-apis/apis/v1alpha1"
 )
 
 // A KubernetesCache holds Kubernetes objects and associated configuration and produces
@@ -54,7 +54,7 @@ type KubernetesCache struct {
 	gatewayclasses       map[types.NamespacedName]*serviceapis.GatewayClass
 	gateways             map[types.NamespacedName]*serviceapis.Gateway
 	httproutes           map[types.NamespacedName]*serviceapis.HTTPRoute
-	tcproutes            map[types.NamespacedName]*serviceapis.TcpRoute
+	tcproutes            map[types.NamespacedName]*serviceapis.TCPRoute
 	extensions           map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
 	initialize sync.Once
@@ -72,7 +72,7 @@ func (kc *KubernetesCache) init() {
 	kc.gatewayclasses = make(map[types.NamespacedName]*serviceapis.GatewayClass)
 	kc.gateways = make(map[types.NamespacedName]*serviceapis.Gateway)
 	kc.httproutes = make(map[types.NamespacedName]*serviceapis.HTTPRoute)
-	kc.tcproutes = make(map[types.NamespacedName]*serviceapis.TcpRoute)
+	kc.tcproutes = make(map[types.NamespacedName]*serviceapis.TCPRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
 
@@ -180,7 +180,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding HTTPRoute")
 		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
-	case *serviceapis.TcpRoute:
+	case *serviceapis.TCPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		// TODO(youngnick): Remove this once service-apis actually have behavior
 		// other than being added to the cache.
@@ -264,7 +264,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing HTTPRoute")
 		delete(kc.httproutes, m)
 		return ok
-	case *serviceapis.TcpRoute:
+	case *serviceapis.TCPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.tcproutes[m]
 		// TODO(youngnick): Remove this once service-apis actually have behavior

@@ -331,6 +331,15 @@ func (s *statusResult) HasError(condType string, reason, message string) *Contou
 	return s.Contour
 }
 
+// IsValid asserts that the proxy's CurrentStatus field is equal to "valid".
+func (s *statusResult) IsValid() *Contour {
+	s.T.Helper()
+
+	assert.Equal(s.T, status.ProxyStatusValid, status.ProxyStatus(s.Have.CurrentStatus))
+
+	return s.Contour
+}
+
 type Contour struct {
 	*grpc.ClientConn
 	*testing.T
