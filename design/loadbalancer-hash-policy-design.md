@@ -56,6 +56,7 @@ type LoadBalancerPolicy struct {
 
 This field will be a list of `RequestHashPolicy` objects with each element holding configuration for an individual hash policy.
 Each list element will allow users configuring a `Route` on a `HTTPProxy` to specify a separate request attribute for Envoy to hash in order to make an upstream load balancing decision.
+Users may configure multiple elements in order to ensure Envoy calculates a hash based on a collection of request attributes, for example a tuple of headers that may be present on a request.
 `RequestHashPolicy` contains a field `RequestAttribute` specifying which type of request attribute it is targeting.
 If `RequestAttribute` is empty or an unknown value, this hash policy entry will be ignored.
 Initially, only `Header` will be supported as a value for `RequestAttribute` though in the future, Contour may support the `Cookie` attribute, or others that Envoy makes configurable.
