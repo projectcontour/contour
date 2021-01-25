@@ -347,7 +347,8 @@ type LocalRateLimitPolicy struct {
 	Requests uint32 `json:"requests"`
 
 	// Unit defines the period of time within which requests
-	// over the limit will be rate limited.
+	// over the limit will be rate limited. Valid values are
+	// "second", "minute" and "hour".
 	// +kubebuilder:validation:Enum=second;minute;hour
 	// +required
 	Unit string `json:"unit"`
