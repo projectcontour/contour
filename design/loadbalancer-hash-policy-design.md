@@ -58,12 +58,14 @@ This field will be a list of `RequestHashPolicy` objects with each element holdi
 Each list element will allow users configuring a `Route` on a `HTTPProxy` to specify a separate request attribute for Envoy to hash in order to make an upstream load balancing decision.
 `RequestHashPolicy` contains a field `RequestAttribute` specifying which type of request attribute it is targeting.
 If `RequestAttribute` is empty or an unknown value, this hash policy entry will be ignored.
+Initially, only `Header` will be supported as a value for `RequestAttribute` though in the future, Contour may support the `Cookie` attribute, or others that Envoy makes configurable.
 `HashOptions` is a generic `map[string]string` field that may contain options specific to the requested attribute.
 This may include what individual element of a set of properties on the request to use as an identifier to hash (for example the header or cookie name to hash the value of) and/or additional parameters to pass to Envoy to calculate a hash with (for example the TTL on a generated cookie).
 Depending on the `RequestAttribute`, some fields of this generic map may be required, an if missing, the hash policy excluded.
 For example, to implement header hashing, the `headerName` field would be required.
 The `Terminal` field denotes if the attribute specified (e.g. header name) is found, Envoy should stop processing any subsequent hash policies in the list it is provided.
 This is a performance optimization and can provide a speedup in hash calculation if set and the attribute to hash on is found.
+An example of how this field may be used from the Envoy docs is [here](https://www.envoyproxy.io/docs/envoy/v1.17.0/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-hashpolicy-terminal).
 
 ```
 type RequestHashPolicy struct {
@@ -102,8 +104,8 @@ spec:
 ```
 
 The value of the `X-Some-Header` header will be hashed by Envoy if present and used to make a load balancing decision.
-If the header is present, Envoy will not move on to attempting to hash the `User-Agent` header value.
 Consistent values in this header would lead to Envoy routing to the same backend service instance.
+If the header is present, Envoy will *not* move on to attempting to hash the `User-Agent` header value.
 
 ### Handling Invalid Strategy Choice
 As per the documentation of the [`LoadBalancerPolicy` field on the `ExtensionService` object](https://projectcontour.io/docs/v1.11.0/config/api/#projectcontour.io/v1alpha1.ExtensionService), the `Cookie` load balancing strategy is invalid for use with the `ExtensionService`.
