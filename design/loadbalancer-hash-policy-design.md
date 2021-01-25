@@ -98,7 +98,7 @@ An example of how this feature would be used to hash on a specific header value 
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-   name: example
+  name: example
 spec:
   virtualhost:
     fqdn: example.projectcontour.io
