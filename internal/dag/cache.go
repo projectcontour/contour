@@ -16,6 +16,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -94,7 +95,24 @@ func (kc *KubernetesCache) matchesIngressClass(obj k8s.Object) bool {
 	}
 
 	return true
+}
 
+// matchesGatewayClass returns true if the given GatewayClass object
+// is a Contour domain.
+func (kc *KubernetesCache) matchesGatewayClass(obj *serviceapis.GatewayClass) bool {
+
+	if !strings.HasPrefix(obj.Spec.Controller, "projectcontour.io") {
+		kind := k8s.KindOf(obj)
+		om := obj.GetObjectMeta()
+
+		kc.WithField("name", om.GetName()).
+			WithField("namespace", om.GetNamespace()).
+			WithField("kind", kind).
+			WithField("gateway-class", obj.Spec.Controller).
+			Debug("ignoring object with unmatched gateway class")
+		return false
+	}
+	return true
 }
 
 // Insert inserts obj into the KubernetesCache.
@@ -160,12 +178,14 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.httpproxydelegations[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *serviceapis.GatewayClass:
-		m := k8s.NamespacedNameOf(obj)
-		// TODO(youngnick): Remove this once service-apis actually have behavior
-		// other than being added to the cache.
-		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding GatewayClass")
-		kc.gatewayclasses[k8s.NamespacedNameOf(obj)] = obj
-		return true
+		if kc.matchesGatewayClass(obj) {
+			m := k8s.NamespacedNameOf(obj)
+			// TODO(youngnick): Remove this once service-apis actually have behavior
+			// other than being added to the cache.
+			kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding GatewayClass")
+			kc.gatewayclasses[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		}
 	case *serviceapis.Gateway:
 		m := k8s.NamespacedNameOf(obj)
 		// TODO(youngnick): Remove this once service-apis actually have behavior

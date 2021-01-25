@@ -646,14 +646,29 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert service-apis Gatewayclass": {
+		"insert service-apis Gatewayclass with projectcontour.io domain": {
 			obj: &serviceapis.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "gatewayclass",
 					Namespace: "default",
 				},
+				Spec: serviceapis.GatewayClassSpec{
+					Controller: "projectcontour.io/contour",
+				},
 			},
 			want: true,
+		},
+		"insert service-apis Gatewayclass with non projectcontour.io domain": {
+			obj: &serviceapis.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "gatewayclass",
+					Namespace: "default",
+				},
+				Spec: serviceapis.GatewayClassSpec{
+					Controller: "othercontroller.com/contour",
+				},
+			},
+			want: false,
 		},
 		"insert service-apis Gateway": {
 			obj: &serviceapis.Gateway{
@@ -846,6 +861,9 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "gatewayclass",
 					Namespace: "default",
+				},
+				Spec: serviceapis.GatewayClassSpec{
+					Controller: "projectcontour.io/contour",
 				},
 			}),
 			obj: &serviceapis.GatewayClass{
