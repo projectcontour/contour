@@ -57,24 +57,38 @@ type LoadBalancerPolicy struct {
 This field will be a list of `RequestHashPolicy` objects with each element holding configuration for an individual hash policy.
 Each list element will allow users configuring a `Route` on a `HTTPProxy` to specify a separate request attribute for Envoy to hash in order to make an upstream load balancing decision.
 Users may configure multiple elements in order to ensure Envoy calculates a hash based on a collection of request attributes, for example a tuple of headers that may be present on a request.
-`RequestHashPolicy` contains a field `RequestAttribute` specifying which type of request attribute it is targeting.
-If `RequestAttribute` is empty or an unknown value, this hash policy entry will be ignored.
-Initially, only `Header` will be supported as a value for `RequestAttribute` though in the future, Contour may support the `Cookie` attribute, or others that Envoy makes configurable.
-`HashOptions` is a generic `map[string]string` field that may contain options specific to the requested attribute.
-This may include what individual element of a set of properties on the request to use as an identifier to hash (for example the header or cookie name to hash the value of) and/or additional parameters to pass to Envoy to calculate a hash with (for example the TTL on a generated cookie).
-Depending on the `RequestAttribute`, some fields of this generic map may be required, an if missing, the hash policy excluded.
-For example, to implement header hashing, the `headerName` field would be required.
+
 The `Terminal` field denotes if the attribute specified (e.g. header name) is found, Envoy should stop processing any subsequent hash policies in the list it is provided.
 This is a performance optimization and can provide a speedup in hash calculation if set and the attribute to hash on is found.
 An example of how this field may be used from the Envoy docs is [here](https://www.envoyproxy.io/docs/envoy/v1.17.0/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-hashpolicy-terminal).
 
+The remaining fields will be request attribute specific configuration options, for example `HeaderHashOptions` corresponding with a desire to generate a hash based on a request header.
+These attribute specific fields may include what an individual element of a set of properties on the request to use as an identifier to hash (for example the header or cookie name to hash the value of) and/or additional parameters to pass to Envoy to calculate a hash with (for example the TTL on a generated cookie).
+Exactly one hash option field must be set in a `RequestHashPolicy` element, otherwise it will be ignored and a warning set on the `HTTPProxy` resource it is part of.
+
 ```
 type RequestHashPolicy struct {
-	RequestAttribute string            `json:"requestAttribute,omitempty"`
-	HashOptions      map[string]string `json:"hashOptions,omitempty"`
-	Terminal         bool              `json:"terminal,omitempty"`
+  Terminal          bool               `json:"terminal,omitempty"`
+  HeaderHashOptions *HeaderHashOptions `json:"headerHashOptions,omitempty"`
+  // Possible future field
+  CookieHashOptions *CookieHashOptions `json:"cookieHashOptions,omitempty"`
 }
 ```
+
+We would also add an additional type for each type of hash option we supported, for example for header hashing:
+
+```
+type HeaderHashOptions struct {
+  Name string `json:"name,omitempty"`
+  // Possible future fields
+  ValueRewriteRegex       string `json:"valueRewriteRegex,omitempty"`
+  ValueRewriteReplacement string `json:"valueRewriteReplacement"`
+}
+```
+
+This solution was chosen to ensure ease of validation of user provided configuration using typed structs as opposed to a more generic data structure.
+The set of request hash policies likely bounded and there are only so many attributes that Envoy can reasonably hash an HTTP request on so the risk of an explosion of structs in this space is low.
+In addition, it will allow us to use `kubebuilder` annotations for validation and be able to use more nested data types as needed if configuration needs arise.
 
 ### HTTPProxy YAML Example
 
@@ -95,13 +109,11 @@ spec:
     loadBalancerPolicy:
       strategy: RequestHash
       requestHashPolicies:
-      - requestAttribute: Header
-        hashOptions:
-          headerName: X-Some-Header
+      - headerHashOptions:
+          name: X-Some-Header
         terminal: true
-      - requestAttribute: Header
-        hashOptions:
-          headerName: User-Agent
+      - headerHashOptions:
+          name: User-Agent
 ```
 
 The value of the `X-Some-Header` header will be hashed by Envoy if present and used to make a load balancing decision.
@@ -112,39 +124,31 @@ If the header is present, Envoy will *not* move on to attempting to hash the `Us
 As per the documentation of the [`LoadBalancerPolicy` field on the `ExtensionService` object](https://projectcontour.io/docs/v1.11.0/config/api/#projectcontour.io/v1alpha1.ExtensionService), the `Cookie` load balancing strategy is invalid for use with the `ExtensionService`.
 Currently, that restriction does not seem to be enforced (or on the `TCPRoute` object either, for which the `Cookie` strategy is not compatible).
 This design proposes that we start to enforce these strategy restrictions and also restrict the new `RequestHash` strategy to only valid on `Route` objects.
-If specified on `ExtensionService` or `TCPRoute` objects, it will be overridden to the default `RoundRobin` strategy and a warning will be logged.
+If specified on `ExtensionService` or `TCPRoute` objects, it will be overridden to the default `RoundRobin` strategy and a warning condition will be added to the status of the object.
 Overriding rather than throwing an error is a deliberate attempt to continue to allow the configured `HTTPProxy` or configured extension to function, albeit with basic load balancing enabled.
 
 ## Alternatives Considered
 
-### Per-Hash Policy Structs
+### Using `map[string]string` for `HashOptions` Type
 This alternative would change `RequestHashPolicy` to the below:
 
 ```
 type RequestHashPolicy struct {
-	Terminal          bool              `json:"terminal,omitempty"`
-	HeaderHashOptions HeaderHashOptions `json:"headerHashOptions,omitempty"`
-    // Possible future field
-	CookieHashOptions CookieHashOptions `json:"cookieHashOptions,omitempty"`
+  RequestAttribute  string            `json:"requestAttribute,omitempty"`
+  Terminal          bool              `json:"terminal,omitempty"`
+  HashOptions map[string]string       `json:"headerHashOptions,omitempty"`
 }
 ```
 
-With an additional type for each type of hash option we supported, for example for header hashing:
+`RequestHashPolicy` contains a field `RequestAttribute` specifying which type of request attribute it is targeting.
+If `RequestAttribute` is empty or an unknown value, this hash policy entry will be ignored and a warning set on the containing resource.
+Initially, only `Header` will be supported as a value for `RequestAttribute` though in the future, Contour may support the `Cookie` attribute, or others that Envoy makes configurable.
+`HashOptions` is a generic `map[string]string` field that may contain options specific to the requested attribute.
+Depending on the `RequestAttribute`, some fields of this generic map may be required, an if missing, the hash policy excluded.
+For example, to implement header hashing, the `headerName` field would be required.
 
-```
-type HeaderHashOptions struct {
-	HeaderName              string `json:"headerName,omitempty"`
-    // Possible future fields
-	ValueRewriteRegex       string `json:"valueRewriteRegex,omitempty"`
-	ValueRewriteReplacement string `json:"valueRewriteReplacement"`
-}
-
-```
-
-This would offer a more structured method of supplying different hash policy options as opposed to having to fit everything into a `map[string]string` we could ensure we can use whatever types we need.
-Only one of the hash option fields would be allowed to be set at a time, otherwise the `RequestHashPolicy` element would be ignored.
-The set of request hash policies seems like it is bounded, there are only so many attributes that Envoy can reasonably hash an HTTP request on.
-However, this option was not chosen because it could lead to an explosion of configuration structs, but it seems like the best alternative.
+This option was not chosen as it would require all future configuration fields to fit into a `string` value, making the possibility for more complex data types more difficult to use and validate.
+Strongly typed structs also match better with other configuration patterns we have used in Contour.
 
 ### Using `map[string]interface{}` for `HashOptions` Type
 This approach does have the benefit of not restricting hash options to string values if we choose to support a wide range of options in the future.
@@ -162,9 +166,9 @@ We could inline the fields in the `RequestHashPolicy` struct:
 
 ```
 type RequestHashPolicy struct {
-	RequestAttribute string `json:"requestAttribute,omitempty"`
-	HeaderName       string `json:"headerName,omitempty"`
-	Terminal         bool   `json:"terminal,omitempty"`
+  RequestAttribute string `json:"requestAttribute,omitempty"`
+  HeaderName       string `json:"headerName,omitempty"`
+  Terminal         bool   `json:"terminal,omitempty"`
 }
 ```
 
