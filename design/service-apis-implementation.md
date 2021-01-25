@@ -32,8 +32,13 @@ In terms of its stated goals, Contour is aiming at being an ingress controller -
 Currently, Contour provides "TCP Proxying" that allows the forwarding of TLS streams based on the SNI information, which is precisely what the Service APIs TLSRoute object is for.
 If Project Contour (the organisation) does add support for TCP and UDP forwarding, it will not be in the `projectcontour/contour` repo, but will be a separate repo.
 
+This design is intended to cover the initial `v1alpha1` release of the Service APIs. We will aim to implement the core featureset of the APIs at that point.
+We will then work with the upstream community on features that Contour and HTTPProxy currently support, but the Service APIs do not, and how best to represent those features in the APIs.
+So, there are some features that are currently gaps for Contour (wildcard domain names, and exact path matching seem like big ones),
+and some that Contour supports that the Service APIs do not (webscokets, configurable timeouts, header replacement, external auth, rate limiting, and so on).
+
 ## Goals
-- Define a data model and implementation for Contour's service-apis support.
+- Define a data model and implementation for Contour's service-apis support, covering the v1alpha1 version of the service-apis.
 - Layer 7 support only, which means HTTPRoutes, TLSRoutes only.
 
 ## Non Goals
@@ -106,7 +111,7 @@ The output of this watcher is both Envoy configuration, and a list of kind/name/
 Contour will only update the `status` of Gateway objects.
 
 ### HTTPRoute
-Contour will watch all HTTPRoute objects, and filter for entries matching a label selector in a valid Gateway `spec.listeners[].routes`,
+Contour will watch all HTTPRoute objects, and filter for entries matching a label selector in its configured Gateway's `spec.listeners[].routes`,
 and will configure the associated routes.
 Configuration of HTTPRoutes will be subject to the rules around the `RouteGateways` field.
 
@@ -121,7 +126,7 @@ For each invalid section, Contour will update status information with the sectio
 The output of this watcher is Envoy configuration.
 
 ### TLSRoute
-Contour will watch all TLSRoute objects, and filter for entries matching a label selector in a valid Gateway `spec.listeners[].routes`,
+Contour will watch all TLSRoute objects, and filter for entries matching a label selector in its configured Gateway's `spec.listeners[].routes`,
 and will configure the associated routes.
 Configuration of TLSRoutes  will be subject to the rules around the `RouteGateways` field.
 
