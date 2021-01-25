@@ -39,8 +39,9 @@ These ports must also have a place to go to on your backend's Service.
 
 Currently, Contour has command line flags to specify the ports that the Envoy containers should listen on.
 There are only two ports you can specify, secure and insecure, which default to `8443` and `8080` respectively.
-It's assumed that as part of the installation, you have a Service translating from port `80` to `8080` and `443` to `8443`.
-This is part of the example YAMLs.
+It's assumed that as part of the installation, your ports are translated from port `80` to `8080` and `443` to `8443`.
+In the example YAMLs, this is done with a `hostPort` on the Envoy daemonset, and the `Service` refers to `80` and `443`, not the translated ports.
+The important part for most Contour installations is the ports that are defined on the Envoy Service.
 
 If you have a Service in the packet forwarding path, then any extra ports you ask Envoy to serve on *must* be exposed via that Service for traffic to reach them.
 
@@ -63,7 +64,7 @@ These ports are referred to as "externally visible ports" throughout this docume
 with "externally visible secure port" meaning "whatever port an external user will go to to get to the secure port",
 and similarly for the "externally visible insecure port".
 
-Importantly, specifying a port for Envoy's secure or insecure listening port will be a fatal error for Contour.
+Importantly, pecifying a port for Envoy's secure or insecure listening port that does not match the a port on the Service will be a fatal error for Contour.
 This makes a simple misconfiguration that would result in no traffic flowing much more obvious.
 
 If users require, at a later date, Contour may add a feature that disables the service lookup, and assumes that the externally visible ports are the specified ones (that is, that there is no port translation to the Envoy processes).
@@ -88,6 +89,9 @@ The rules for how this `port` field interacts with the rest of Contour would the
     - TLS details set - port is the external version of the secure or insecure ports - treat as though no port was set. Redirection will be created.
     - no TLS details set - any port other than the insecure or secure ports, allow. A new listener will be created if one doesn't exist.
 
+A `port` setting, if set, will be included in the uniqueness check that currently only checks the FQDN.
+Two HTTPProxies that both contain the same FQDN and port will both be rendered invalid (which mirrors the current behavior when only checking FQDN).
+
 Contour will watch the `envoy` Service, and check that the supplied port matches one port on that Service, and apply slightly different logic if it's also one of the ports specified as secure or insecure in the config.
 
 ### Service APIs processing
@@ -98,8 +102,7 @@ This design will be included in the Service APIs design document.
 Pending agreement on the high-level design
 ## Alternatives Considered
 ### Don't change anything
-We can keep the same "only two ports" requirements going forward, but that will not allow us to solve the issues:
-[TCP Layer 4 Routing](https://github.com/projectcontour/contour/issues/3086)
+We can keep the same "only two ports" requirements going forward, but that will not allow us to solve this issue:
 [Exposing TCP with FQDN for mongodb](https://github.com/projectcontour/contour/issues/2922)
 
 ## Compatibility
