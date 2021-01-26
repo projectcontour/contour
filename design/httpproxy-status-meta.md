@@ -11,6 +11,13 @@ In addition, with this information, additional tooling can be developed against 
 ## Goals
 - Expose extra metadata information to HTTPProxy resources
 
+## Use-Cases
+- Allow owners of child HTTPProxy resource to understand what has been included to them without having access to a parent HTTPProxy
+
+## Future Use-Cases
+- If authentication is enabled
+- VHost has TLS
+
 ## Detailed Design
 Extend the HTTPProxy.Status struct to include additional fields to support exposing metadata information:
 
@@ -32,6 +39,7 @@ type HTTPProxyMetadata struct {
 // HTTPProxyParent describes an HTTPProxy who included
 // any MatchConditions or Fqdn to a child HTTPProxy.
 type HTTPProxyParent struct {
+  ObjectReference `json:
   // Name of HTTPProxy object
   Name string  `json:"name,omitempty"`
 
