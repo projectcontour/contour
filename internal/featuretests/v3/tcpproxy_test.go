@@ -838,3 +838,99 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		TypeUrl: routeType,
 	})
 }
+
+// "Cookie" and "RequestHash" policies are not valid on TCPProxy.
+func TestTCPProxyInvalidLoadBalancerPolicy(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	s1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+	}
+
+	svc := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+
+	rh.OnAdd(s1)
+	rh.OnAdd(svc)
+
+	hp1 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "kuard-tcp.example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: s1.Name,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
+					Name: svc.Name,
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "Cookie",
+				},
+			},
+		},
+	}
+	rh.OnAdd(hp1)
+
+	// Check that a basic cluster is produced with the default load balancer
+	// policy.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			cluster(
+				svc.Namespace+"/"+svc.Name+"/80/da39a3ee5e",
+				svc.Namespace+"/"+svc.Name,
+				svc.Namespace+"_"+svc.Name+"_80",
+			),
+		),
+		TypeUrl: clusterType,
+	})
+
+	rh.OnUpdate(hp1, &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "kuard-tcp.example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: s1.Name,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
+					Name: svc.Name,
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "RequestHash",
+				},
+			},
+		},
+	})
+
+	// Check that a basic cluster is produced with the default load balancer
+	// policy.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			cluster(
+				svc.Namespace+"/"+svc.Name+"/80/da39a3ee5e",
+				svc.Namespace+"/"+svc.Name,
+				svc.Namespace+"_"+svc.Name+"_80",
+			),
+		),
+		TypeUrl: clusterType,
+	})
+}

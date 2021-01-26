@@ -89,7 +89,7 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 		Timeout:               envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
 		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleTimeout),
 		PrefixRewrite:         r.PrefixRewrite,
-		HashPolicy:            hashPolicy(r),
+		HashPolicy:            hashPolicy(r.LoadBalancerHashPolicy),
 		RequestMirrorPolicies: mirrorPolicy(r),
 	}
 
@@ -124,21 +124,37 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 
 // hashPolicy returns a slice of hash policies iff at least one of the route's
 // clusters supplied uses the `Cookie` load balancing strategy.
-func hashPolicy(r *dag.Route) []*envoy_route_v3.RouteAction_HashPolicy {
-	for _, c := range r.Clusters {
-		if c.LoadBalancerPolicy == "Cookie" {
-			return []*envoy_route_v3.RouteAction_HashPolicy{{
-				PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
-					Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
-						Name: "X-Contour-Session-Affinity",
-						Ttl:  protobuf.Duration(0),
-						Path: "/",
+func hashPolicy(l *dag.LoadBalancerHashPolicy) []*envoy_route_v3.RouteAction_HashPolicy {
+	if l == nil {
+		return nil
+	}
+	switch l.Strategy {
+	case dag.LoadBalancerPolicyCookie:
+		return []*envoy_route_v3.RouteAction_HashPolicy{{
+			PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
+				Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
+					Name: "X-Contour-Session-Affinity",
+					Ttl:  protobuf.Duration(0),
+					Path: "/",
+				},
+			},
+		}}
+	case dag.LoadBalancerPolicyRequestHash:
+		hashPolicies := []*envoy_route_v3.RouteAction_HashPolicy{}
+		for _, h := range l.RequestHashPolicies {
+			hashPolicies = append(hashPolicies, &envoy_route_v3.RouteAction_HashPolicy{
+				Terminal: h.Terminal,
+				PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Header_{
+					Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+						HeaderName: h.HeaderHashOptions.HeaderName,
 					},
 				},
-			}}
+			})
 		}
+		return hashPolicies
+	default:
+		return nil
 	}
-	return nil
 }
 
 func mirrorPolicy(r *dag.Route) []*envoy_route_v3.RouteAction_RequestMirrorPolicy {

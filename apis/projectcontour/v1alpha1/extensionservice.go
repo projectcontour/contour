@@ -83,8 +83,9 @@ type ExtensionServiceSpec struct {
 	// +kubebuilder:validation:Enum=h2;h2c
 	Protocol *string `json:"protocol,omitempty"`
 
-	// The policy for load balancing GRPC service requests. Note
-	// that the `Cookie` load balancing strategy cannot be used here.
+	// The policy for load balancing GRPC service requests. Note that the
+	// `Cookie` and `RequestHash` load balancing strategies cannot be used
+	// here.
 	//
 	// +optional
 	LoadBalancerPolicy *contour_api_v1.LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`

@@ -251,6 +251,25 @@ func withSessionAffinity(route *envoy_route_v3.Route_Route) *envoy_route_v3.Rout
 	return route
 }
 
+type headerTerminalPair struct {
+	headerName string
+	terminal   bool
+}
+
+func withRequestHashPolicyHeader(route *envoy_route_v3.Route_Route, headerOptions ...headerTerminalPair) *envoy_route_v3.Route_Route {
+	for _, htp := range headerOptions {
+		route.Route.HashPolicy = append(route.Route.HashPolicy, &envoy_route_v3.RouteAction_HashPolicy{
+			Terminal: htp.terminal,
+			PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Header_{
+				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+					HeaderName: htp.headerName,
+				},
+			},
+		})
+	}
+	return route
+}
+
 func withRedirect() *envoy_route_v3.Route_Redirect {
 	return &envoy_route_v3.Route_Redirect{
 		Redirect: &envoy_route_v3.RedirectAction{

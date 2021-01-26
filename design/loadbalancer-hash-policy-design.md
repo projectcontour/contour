@@ -79,7 +79,7 @@ We would also add an additional type for each type of hash option we supported, 
 
 ```
 type HeaderHashOptions struct {
-  Name string `json:"name,omitempty"`
+  HeaderName string `json:"headerName,omitempty"`
   // Possible future fields
   ValueRewriteRegex       string `json:"valueRewriteRegex,omitempty"`
   ValueRewriteReplacement string `json:"valueRewriteReplacement"`
@@ -110,10 +110,10 @@ spec:
       strategy: RequestHash
       requestHashPolicies:
       - headerHashOptions:
-          name: X-Some-Header
+          headerName: X-Some-Header
         terminal: true
       - headerHashOptions:
-          name: User-Agent
+          headerName: User-Agent
 ```
 
 The value of the `X-Some-Header` header will be hashed by Envoy if present and used to make a load balancing decision.

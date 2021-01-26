@@ -455,16 +455,23 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		lbhp := loadBalancerHashPolicy(route.LoadBalancerPolicy, validCond)
+		lbPolicy := ""
+		if lbhp != nil {
+			lbPolicy = lbhp.Strategy
+		}
+
 		r := &Route{
-			PathMatchCondition:    mergePathMatchConditions(conds),
-			HeaderMatchConditions: mergeHeaderMatchConditions(conds),
-			Websocket:             route.EnableWebsockets,
-			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
-			TimeoutPolicy:         tp,
-			RetryPolicy:           retryPolicy(route.RetryPolicy),
-			RequestHeadersPolicy:  reqHP,
-			ResponseHeadersPolicy: respHP,
-			RateLimitPolicy:       rlp,
+			PathMatchCondition:     mergePathMatchConditions(conds),
+			HeaderMatchConditions:  mergeHeaderMatchConditions(conds),
+			Websocket:              route.EnableWebsockets,
+			HTTPSUpgrade:           routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
+			TimeoutPolicy:          tp,
+			RetryPolicy:            retryPolicy(route.RetryPolicy),
+			RequestHeadersPolicy:   reqHP,
+			ResponseHeadersPolicy:  respHP,
+			RateLimitPolicy:        rlp,
+			LoadBalancerHashPolicy: lbhp,
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -585,7 +592,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			c := &Cluster{
 				Upstream:              s,
-				LoadBalancerPolicy:    loadBalancerPolicy(route.LoadBalancerPolicy),
+				LoadBalancerPolicy:    lbPolicy,
 				Weight:                uint32(service.Weight),
 				HTTPHealthCheckPolicy: httpHealthCheckPolicy(route.HealthCheckPolicy),
 				UpstreamValidation:    uv,
@@ -643,6 +650,16 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 		return false
 	}
 
+	lbPolicy := loadBalancerPolicy(tcpproxy.LoadBalancerPolicy)
+	switch lbPolicy {
+	case LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
+		validCond.AddWarningf("SpecError", "IgnoredField",
+			"ignoring field %q; %s load balancer policy is not supported for TCPProxies",
+			"Spec.TCPProxy.LoadBalancerPolicy", lbPolicy)
+		// Reset load balancer policy to ensure the default.
+		lbPolicy = ""
+	}
+
 	if len(tcpproxy.Services) > 0 {
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
@@ -656,7 +673,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream:             s,
 				Protocol:             s.Protocol,
-				LoadBalancerPolicy:   loadBalancerPolicy(tcpproxy.LoadBalancerPolicy),
+				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 			})
 		}

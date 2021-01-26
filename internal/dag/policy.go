@@ -29,6 +29,28 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
+const (
+	// LoadBalancerPolicyWeightedLeastRequest specifies the backend with least
+	// active requests will be chosen by the load balancer.
+	LoadBalancerPolicyWeightedLeastRequest = "WeightedLeastRequest"
+
+	// LoadBalancerPolicyRandom denotes the load balancer will choose a random
+	// backend when routing a request.
+	LoadBalancerPolicyRandom = "Random"
+
+	// LoadBalancerPolicyRoundRobin denotes the load balancer will route
+	// requests in a round-robin fashion among backend instances.
+	LoadBalancerPolicyRoundRobin = "RoundRobin"
+
+	// LoadBalancerPolicyCookie denotes load balancing will be performed via a
+	// Contour specified cookie.
+	LoadBalancerPolicyCookie = "Cookie"
+
+	// LoadBalancerPolicyRequestHash denotes request attribute hashing is used
+	// to make load balancing decisions.
+	LoadBalancerPolicyRequestHash = "RequestHash"
+)
+
 // retryOn transforms a slice of retry on values to a comma-separated string.
 // CRD validation ensures that all retry on values are valid.
 func retryOn(ro []contour_api_v1.RetryOn) string {
@@ -275,12 +297,8 @@ func loadBalancerPolicy(lbp *contour_api_v1.LoadBalancerPolicy) string {
 		return ""
 	}
 	switch lbp.Strategy {
-	case "WeightedLeastRequest":
-		return "WeightedLeastRequest"
-	case "Random":
-		return "Random"
-	case "Cookie":
-		return "Cookie"
+	case LoadBalancerPolicyWeightedLeastRequest, LoadBalancerPolicyRandom, LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
+		return lbp.Strategy
 	default:
 		return ""
 	}
@@ -359,4 +377,56 @@ func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, erro
 	}
 
 	return rp, nil
+}
+
+func loadBalancerHashPolicy(lbp *contour_api_v1.LoadBalancerPolicy, validCond *contour_api_v1.DetailedCondition) *LoadBalancerHashPolicy {
+	if lbp == nil {
+		return nil
+	}
+	lbhp := &LoadBalancerHashPolicy{}
+	strategy := loadBalancerPolicy(lbp)
+	switch strategy {
+	case LoadBalancerPolicyRequestHash:
+		// Do nothing, we will validate the hash policies below.
+	default:
+		lbhp.Strategy = strategy
+		return lbhp
+	}
+
+	// Map of unique header names.
+	headerHashPolicies := map[string]bool{}
+	for _, hashPolicy := range lbp.RequestHashPolicies {
+		if hashPolicy.HeaderHashOptions == nil {
+			validCond.AddWarningf("SpecError", "IgnoredField",
+				"ignoring invalid nil hash policy options")
+			continue
+		}
+		headerName := hashPolicy.HeaderHashOptions.HeaderName
+		if headerName == "" {
+			validCond.AddWarningf("SpecError", "IgnoredField",
+				"ignoring invalid header hash policy options with empty header name")
+			continue
+		}
+		if _, ok := headerHashPolicies[headerName]; ok {
+			validCond.AddWarningf("SpecError", "IgnoredField",
+				"ignoring invalid header hash policy options with duplicated header name %s", headerName)
+			continue
+		}
+
+		headerHashPolicies[headerName] = true
+		lbhp.RequestHashPolicies = append(lbhp.RequestHashPolicies, RequestHashPolicy{
+			Terminal: hashPolicy.Terminal,
+			HeaderHashOptions: &HeaderHashOptions{
+				HeaderName: headerName,
+			},
+		})
+	}
+	if len(lbhp.RequestHashPolicies) > 0 {
+		lbhp.Strategy = LoadBalancerPolicyRequestHash
+	} else {
+		validCond.AddWarningf("SpecError", "IgnoredField",
+			"ignoring invalid header hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
+		lbhp.Strategy = LoadBalancerPolicyRoundRobin
+	}
+	return lbhp
 }
