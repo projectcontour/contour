@@ -335,6 +335,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 					DNSLookupFamily:       ctx.Config.Cluster.DNSLookupFamily,
 					ClientCertificate:     clientCert,
 				},
+				&dag.ServiceAPIsProcessor{},
 				&dag.ListenerProcessor{},
 			},
 		},
