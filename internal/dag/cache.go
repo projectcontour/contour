@@ -53,6 +53,8 @@ type KubernetesCache struct {
 	services             map[types.NamespacedName]*v1.Service
 	gateways             map[types.NamespacedName]*serviceapis.Gateway
 	httproutes           map[types.NamespacedName]*serviceapis.HTTPRoute
+	tlsroutes            map[types.NamespacedName]*serviceapis.TLSRoute
+	backendpolicies      map[types.NamespacedName]*serviceapis.BackendPolicy
 	extensions           map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
 	initialize sync.Once
@@ -69,6 +71,8 @@ func (kc *KubernetesCache) init() {
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.gateways = make(map[types.NamespacedName]*serviceapis.Gateway)
 	kc.httproutes = make(map[types.NamespacedName]*serviceapis.HTTPRoute)
+	kc.tlsroutes = make(map[types.NamespacedName]*serviceapis.TLSRoute)
+	kc.backendpolicies = make(map[types.NamespacedName]*serviceapis.BackendPolicy)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
 
@@ -169,6 +173,20 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding HTTPRoute")
 		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
+	case *serviceapis.TLSRoute:
+		m := k8s.NamespacedNameOf(obj)
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being added to the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding TLSRoute")
+		kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
+		return true
+	case *serviceapis.BackendPolicy:
+		m := k8s.NamespacedNameOf(obj)
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being added to the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding BackendPolicy")
+		kc.backendpolicies[k8s.NamespacedNameOf(obj)] = obj
+		return true
 	case *contour_api_v1alpha1.ExtensionService:
 		kc.extensions[k8s.NamespacedNameOf(obj)] = obj
 		return true
@@ -237,6 +255,22 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		// other than being removed from the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing HTTPRoute")
 		delete(kc.httproutes, m)
+		return ok
+	case *serviceapis.TLSRoute:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.tlsroutes[m]
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being removed from the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing TLSRoute")
+		delete(kc.tlsroutes, m)
+		return ok
+	case *serviceapis.BackendPolicy:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.backendpolicies[m]
+		// TODO(youngnick): Remove this once service-apis actually have behavior
+		// other than being removed from the cache.
+		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing BackendPolicy")
+		delete(kc.backendpolicies, m)
 		return ok
 	case *contour_api_v1alpha1.ExtensionService:
 		m := k8s.NamespacedNameOf(obj)
