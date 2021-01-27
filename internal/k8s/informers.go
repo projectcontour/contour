@@ -48,19 +48,11 @@ func ServiceAPIResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{{
 		Group:    serviceapis.GroupVersion.Group,
 		Version:  serviceapis.GroupVersion.Version,
-		Resource: "gatewayclasses",
-	}, {
-		Group:    serviceapis.GroupVersion.Group,
-		Version:  serviceapis.GroupVersion.Version,
 		Resource: "gateways",
 	}, {
 		Group:    serviceapis.GroupVersion.Group,
 		Version:  serviceapis.GroupVersion.Version,
 		Resource: "httproutes",
-	}, {
-		Group:    serviceapis.GroupVersion.Group,
-		Version:  serviceapis.GroupVersion.Version,
-		Resource: "tcproutes",
 	},
 	}
 }
