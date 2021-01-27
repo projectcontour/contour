@@ -9,6 +9,13 @@ These errors can come from invalid route configuration, missing service referenc
 To fix this, Contour will treat errors and warning differently and where possible, make a best effort to serve partially valid configurations.
 Configurations that are in an Error or Warning status, will serve HTTP error codes or not be added to configuration passed down to Envoy.
 
+## Personas
+
+There are two main personas that interact with this conflict design document:
+
+- User: A request to an application, routing through Envoy looking to access whatever resource an application running in Kubernetes should serve. This user is not aware of how the application is deployed or that it uses Kubernetes or Contour.
+- ResourceOwner: Someone to manages an HTTPProxy resource inside the Kubernetes cluster configuring the Route/Service combination to allow users of the application to access.
+
 ## Background
 HTTPProxy is designed as a multi-team aware Ingress that reduces annotation sprawl by providing a sensible home for configuration items.
 Additionally, HTTPProxy offers a feedback loop to ResourceOwners (See #Personas section below) via a `Status` field on the object.
@@ -24,15 +31,9 @@ There are ongoing efforts to change this logic to inform of all the errors or wa
 
 Contour currently invalidates the entire resource if a configuration error is encountered which can cause downtime for specific routes or even the entire virtual host.
 
-When processing HTTPProxy objects, it turns out some problems should not stop the rest of the object from being processed.
-To distinguish between fatal-for-processing and not, we propose calling the former Errors, and the latter Warnings.
-
-### Personas
-
-There are two main personas that interact with this conflict design document:
-
-- User: A request to an application, routing through Envoy looking to access whatever resource an application running in Kubernetes should serve. This user is not aware of how the application is deployed or that it uses Kubernetes or Contour.
-- ResourceOwner: Someone to manages an HTTPProxy resource inside the Kubernetes cluster configuring the Route/Service combination to allow users of the application to access.  
+When processing HTTPProxy objects, some problems should not stop the rest of the object from being processed.
+Contour will set an object to be status `Error` if the request response to the `User` is changed from what is configured.
+Contour will set a `Warning` when the object has an issue, but the response a `User` sees when accessing the application for which the resource is configured is not modified.
 
 ## Goals
 - Serve valid traffic configurations if portions of the spec are invalid
@@ -43,9 +44,6 @@ There are two main personas that interact with this conflict design document:
 
 ## High-Level Design
 Contour will set the error or warning condition when a problem is encountered, but do its best to still serve valid configurations.
-
-In general, Contour will set an object to be status `Error` if the request response to the `User` is changed from what is configured.
-Contour will set a `Warning` when the object has an issue, but the response a `User` sees when accessing the application for which the resource is configured is not modified.
 The `ResourceOwner` will understand there is an issue by looking at the object's `Status.Conditions.Errors` or `Status.Conditions.Warnings`. 
 
 Details on how Conditions are implemented can be found in the [HTTPProxy Status Conditions Design Doc](https://github.com/projectcontour/contour/blob/main/design/httpproxy-status-conditions.md#high-level-design).
