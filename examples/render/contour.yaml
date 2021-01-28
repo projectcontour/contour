@@ -45,6 +45,11 @@ data:
     #   determine which XDS Server implementation to utilize in Contour.
     #   xds-server-type: contour
     #
+    # Specify the service-apis Gateway Contour should watch.
+    # gateway:
+    #   name: contour
+    #   namespace: projectcontour
+    #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
     #
