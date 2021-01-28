@@ -125,28 +125,28 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 // hashPolicy returns a slice of Envoy hash policies from the passed in Contour
 // request hash policy configuration. Only one of header or cookie hash policies
 // should be set on any RequestHashPolicy element.
-func hashPolicy(r []dag.RequestHashPolicy) []*envoy_route_v3.RouteAction_HashPolicy {
-	if len(r) == 0 {
+func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.RouteAction_HashPolicy {
+	if len(requestHashPolicies) == 0 {
 		return nil
 	}
 	hashPolicies := []*envoy_route_v3.RouteAction_HashPolicy{}
-	for _, h := range r {
+	for _, rhp := range requestHashPolicies {
 		newHP := &envoy_route_v3.RouteAction_HashPolicy{
-			Terminal: h.Terminal,
+			Terminal: rhp.Terminal,
 		}
-		if h.HeaderHashOptions != nil {
+		if rhp.HeaderHashOptions != nil {
 			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Header_{
 				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
-					HeaderName: h.HeaderHashOptions.HeaderName,
+					HeaderName: rhp.HeaderHashOptions.HeaderName,
 				},
 			}
 		}
-		if h.CookieHashOptions != nil {
+		if rhp.CookieHashOptions != nil {
 			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
 				Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
-					Name: h.CookieHashOptions.CookieName,
-					Ttl:  protobuf.Duration(h.CookieHashOptions.TTL),
-					Path: h.CookieHashOptions.Path,
+					Name: rhp.CookieHashOptions.CookieName,
+					Ttl:  protobuf.Duration(rhp.CookieHashOptions.TTL),
+					Path: rhp.CookieHashOptions.Path,
 				},
 			}
 		}
