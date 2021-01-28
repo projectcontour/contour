@@ -427,9 +427,7 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 				},
 			})
 		}
-		if len(rhp) > 0 {
-			actualStrategy = LoadBalancerPolicyRequestHash
-		} else {
+		if len(rhp) == 0 {
 			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
 				"ignoring invalid header hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
 			rhp = nil
