@@ -122,8 +122,9 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 	}
 }
 
-// hashPolicy returns a slice of hash policies iff at least one of the route's
-// clusters supplied uses the `Cookie` or `RequestHash` load balancing strategy.
+// hashPolicy returns a slice of Envoy hash policies from the passed in Contour
+// request hash policy configuration. Only one of header or cookie hash policies
+// should be set on any RequestHashPolicy element.
 func hashPolicy(r []dag.RequestHashPolicy) []*envoy_route_v3.RouteAction_HashPolicy {
 	if len(r) == 0 {
 		return nil
