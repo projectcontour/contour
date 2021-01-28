@@ -397,14 +397,14 @@ func loadBalancerHashPolicy(lbp *contour_api_v1.LoadBalancerPolicy, validCond *c
 	headerHashPolicies := map[string]bool{}
 	for _, hashPolicy := range lbp.RequestHashPolicies {
 		if hashPolicy.HeaderHashOptions == nil {
-			validCond.AddWarningf("SpecError", "IgnoredField",
+			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
 				"ignoring invalid nil hash policy options")
 			continue
 		}
-		headerName := hashPolicy.HeaderHashOptions.HeaderName
-		if headerName == "" {
-			validCond.AddWarningf("SpecError", "IgnoredField",
-				"ignoring invalid header hash policy options with empty header name")
+		headerName := http.CanonicalHeaderKey(hashPolicy.HeaderHashOptions.HeaderName)
+		if msgs := validation.IsHTTPHeaderName(headerName); len(msgs) != 0 {
+			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+				"ignoring invalid header hash policy options with invalid header name %q: %v", headerName, msgs)
 			continue
 		}
 		if _, ok := headerHashPolicies[headerName]; ok {
@@ -412,8 +412,8 @@ func loadBalancerHashPolicy(lbp *contour_api_v1.LoadBalancerPolicy, validCond *c
 				"ignoring invalid header hash policy options with duplicated header name %s", headerName)
 			continue
 		}
-
 		headerHashPolicies[headerName] = true
+
 		lbhp.RequestHashPolicies = append(lbhp.RequestHashPolicies, RequestHashPolicy{
 			Terminal: hashPolicy.Terminal,
 			HeaderHashOptions: &HeaderHashOptions{
@@ -424,7 +424,7 @@ func loadBalancerHashPolicy(lbp *contour_api_v1.LoadBalancerPolicy, validCond *c
 	if len(lbhp.RequestHashPolicies) > 0 {
 		lbhp.Strategy = LoadBalancerPolicyRequestHash
 	} else {
-		validCond.AddWarningf("SpecError", "IgnoredField",
+		validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
 			"ignoring invalid header hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
 		lbhp.Strategy = LoadBalancerPolicyRoundRobin
 	}

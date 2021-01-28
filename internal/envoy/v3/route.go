@@ -123,7 +123,7 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 }
 
 // hashPolicy returns a slice of hash policies iff at least one of the route's
-// clusters supplied uses the `Cookie` load balancing strategy.
+// clusters supplied uses the `Cookie` or `RequestHash` load balancing strategy.
 func hashPolicy(l *dag.LoadBalancerHashPolicy) []*envoy_route_v3.RouteAction_HashPolicy {
 	if l == nil {
 		return nil

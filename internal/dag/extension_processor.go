@@ -112,7 +112,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)
 	switch lbPolicy {
 	case LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
-		validCondition.AddWarningf("SpecError", "IgnoredField",
+		validCondition.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
 			"ignoring field %q; %s load balancer policy is not supported for ExtensionClusters",
 			".Spec.LoadBalancerPolicy", lbPolicy)
 		// Reset load balancer policy to ensure the default.

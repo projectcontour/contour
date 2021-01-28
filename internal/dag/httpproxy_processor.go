@@ -653,7 +653,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 	lbPolicy := loadBalancerPolicy(tcpproxy.LoadBalancerPolicy)
 	switch lbPolicy {
 	case LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
-		validCond.AddWarningf("SpecError", "IgnoredField",
+		validCond.AddWarningf(contour_api_v1.ConditionTypeTCPProxyError, "IgnoredField",
 			"ignoring field %q; %s load balancer policy is not supported for TCPProxies",
 			"Spec.TCPProxy.LoadBalancerPolicy", lbPolicy)
 		// Reset load balancer policy to ensure the default.

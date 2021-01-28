@@ -2844,9 +2844,9 @@ func TestDAGInsert(t *testing.T) {
 							},
 						},
 						{
-							// Duplicated, should be ignored.
+							// Lower case but duplicated, should be ignored.
 							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
-								HeaderName: "X-Some-Header",
+								HeaderName: "x-some-header",
 							},
 						},
 						{

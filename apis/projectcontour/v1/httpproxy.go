@@ -613,6 +613,7 @@ type RequestHashPolicy struct {
 	// HeaderHashOptions should be set when request header hash based load
 	// balancing is desired. It must be the only hash option field set,
 	// otherwise this request hash policy object will be ignored.
+	// +kubebuilder:validation:Required
 	HeaderHashOptions *HeaderHashOptions `json:"headerHashOptions,omitempty"`
 }
 
