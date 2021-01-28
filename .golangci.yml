@@ -59,3 +59,9 @@ issues:
   - linters:
     - golint
     text: "don't use ALL_CAPS in Go names; use CamelCase"
+
+  # Independently from option `exclude` we use default exclude patterns,
+  # it can be disabled by this option. To list all
+  # excluded by default patterns execute `golangci-lint run --help`.
+  # Default value for this option is true.
+  exclude-use-default: false
