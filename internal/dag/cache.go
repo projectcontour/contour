@@ -51,10 +51,8 @@ type KubernetesCache struct {
 	secrets              map[types.NamespacedName]*v1.Secret
 	httpproxydelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
 	services             map[types.NamespacedName]*v1.Service
-	gatewayclasses       map[types.NamespacedName]*serviceapis.GatewayClass
 	gateways             map[types.NamespacedName]*serviceapis.Gateway
 	httproutes           map[types.NamespacedName]*serviceapis.HTTPRoute
-	tcproutes            map[types.NamespacedName]*serviceapis.TCPRoute
 	extensions           map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
 	initialize sync.Once
@@ -69,10 +67,8 @@ func (kc *KubernetesCache) init() {
 	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
 	kc.httpproxydelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
 	kc.services = make(map[types.NamespacedName]*v1.Service)
-	kc.gatewayclasses = make(map[types.NamespacedName]*serviceapis.GatewayClass)
 	kc.gateways = make(map[types.NamespacedName]*serviceapis.Gateway)
 	kc.httproutes = make(map[types.NamespacedName]*serviceapis.HTTPRoute)
-	kc.tcproutes = make(map[types.NamespacedName]*serviceapis.TCPRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
 
@@ -159,13 +155,6 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	case *contour_api_v1.TLSCertificateDelegation:
 		kc.httpproxydelegations[k8s.NamespacedNameOf(obj)] = obj
 		return true
-	case *serviceapis.GatewayClass:
-		m := k8s.NamespacedNameOf(obj)
-		// TODO(youngnick): Remove this once service-apis actually have behavior
-		// other than being added to the cache.
-		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding GatewayClass")
-		kc.gatewayclasses[k8s.NamespacedNameOf(obj)] = obj
-		return true
 	case *serviceapis.Gateway:
 		m := k8s.NamespacedNameOf(obj)
 		// TODO(youngnick): Remove this once service-apis actually have behavior
@@ -179,13 +168,6 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		// other than being added to the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding HTTPRoute")
 		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
-		return true
-	case *serviceapis.TCPRoute:
-		m := k8s.NamespacedNameOf(obj)
-		// TODO(youngnick): Remove this once service-apis actually have behavior
-		// other than being added to the cache.
-		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding TcpRoute")
-		kc.tcproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *contour_api_v1alpha1.ExtensionService:
 		kc.extensions[k8s.NamespacedNameOf(obj)] = obj
@@ -240,14 +222,6 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.httpproxydelegations[m]
 		delete(kc.httpproxydelegations, m)
 		return ok
-	case *serviceapis.GatewayClass:
-		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.gatewayclasses[m]
-		// TODO(youngnick): Remove this once service-apis actually have behavior
-		// other than being removed from the cache.
-		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing GatewayClass")
-		delete(kc.gatewayclasses, m)
-		return ok
 	case *serviceapis.Gateway:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.gateways[m]
@@ -263,14 +237,6 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		// other than being removed from the cache.
 		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing HTTPRoute")
 		delete(kc.httproutes, m)
-		return ok
-	case *serviceapis.TCPRoute:
-		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.tcproutes[m]
-		// TODO(youngnick): Remove this once service-apis actually have behavior
-		// other than being removed from the cache.
-		kc.WithField("experimental", "service-apis").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing TcpRoute")
-		delete(kc.tcproutes, m)
 		return ok
 	case *contour_api_v1alpha1.ExtensionService:
 		m := k8s.NamespacedNameOf(obj)
