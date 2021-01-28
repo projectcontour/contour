@@ -189,9 +189,9 @@ type Route struct {
 	// RateLimitPolicy defines if/how requests for the route are rate limited.
 	RateLimitPolicy *RateLimitPolicy
 
-	// LoadBalancerHashPolicy defines how a route's load balancing hash policy
-	// is configured.
-	LoadBalancerHashPolicy *LoadBalancerHashPolicy
+	// RequestHashPolicies is a list of policies for configuring hashes on
+	// request attributes.
+	RequestHashPolicies []RequestHashPolicy
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -268,6 +268,18 @@ type HeaderHashOptions struct {
 	HeaderName string
 }
 
+// CookieHashOptions contains options for hashing a HTTP cookie.
+type CookieHashOptions struct {
+	// CookieName is the name of the header to hash.
+	CookieName string
+
+	// TTL is how long the cookie should be valid for.
+	TTL time.Duration
+
+	// Path is the request path the cookie is valid for.
+	Path string
+}
+
 // RequestHashPolicy holds configuration for calculating hashes on
 // an individual request attribute.
 type RequestHashPolicy struct {
@@ -277,17 +289,9 @@ type RequestHashPolicy struct {
 
 	// HeaderHashOptions is set when a header hash is desired.
 	HeaderHashOptions *HeaderHashOptions
-}
 
-// LoadBalancerHashPolicy holds load balancing hash policies for load
-// balancing based on request attributes.
-type LoadBalancerHashPolicy struct {
-	// Strategy is the Contour load balancing strategy chosen.
-	Strategy string
-
-	// RequestHashPolicies is a list of policies for configuring hashes on
-	// request attributes.
-	RequestHashPolicies []RequestHashPolicy
+	// CookieHashOptions is set when a cookie hash is desired.
+	CookieHashOptions *CookieHashOptions
 }
 
 // CORSPolicy allows setting the CORS policy

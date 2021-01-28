@@ -89,7 +89,7 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 		Timeout:               envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
 		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleTimeout),
 		PrefixRewrite:         r.PrefixRewrite,
-		HashPolicy:            hashPolicy(r.LoadBalancerHashPolicy),
+		HashPolicy:            hashPolicy(r.RequestHashPolicies),
 		RequestMirrorPolicies: mirrorPolicy(r),
 	}
 
@@ -124,37 +124,34 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 
 // hashPolicy returns a slice of hash policies iff at least one of the route's
 // clusters supplied uses the `Cookie` or `RequestHash` load balancing strategy.
-func hashPolicy(l *dag.LoadBalancerHashPolicy) []*envoy_route_v3.RouteAction_HashPolicy {
-	if l == nil {
+func hashPolicy(r []dag.RequestHashPolicy) []*envoy_route_v3.RouteAction_HashPolicy {
+	if len(r) == 0 {
 		return nil
 	}
-	switch l.Strategy {
-	case dag.LoadBalancerPolicyCookie:
-		return []*envoy_route_v3.RouteAction_HashPolicy{{
-			PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
-				Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
-					Name: "X-Contour-Session-Affinity",
-					Ttl:  protobuf.Duration(0),
-					Path: "/",
-				},
-			},
-		}}
-	case dag.LoadBalancerPolicyRequestHash:
-		hashPolicies := []*envoy_route_v3.RouteAction_HashPolicy{}
-		for _, h := range l.RequestHashPolicies {
-			hashPolicies = append(hashPolicies, &envoy_route_v3.RouteAction_HashPolicy{
-				Terminal: h.Terminal,
-				PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Header_{
-					Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
-						HeaderName: h.HeaderHashOptions.HeaderName,
-					},
-				},
-			})
+	hashPolicies := []*envoy_route_v3.RouteAction_HashPolicy{}
+	for _, h := range r {
+		newHP := &envoy_route_v3.RouteAction_HashPolicy{
+			Terminal: h.Terminal,
 		}
-		return hashPolicies
-	default:
-		return nil
+		if h.HeaderHashOptions != nil {
+			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Header_{
+				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+					HeaderName: h.HeaderHashOptions.HeaderName,
+				},
+			}
+		}
+		if h.CookieHashOptions != nil {
+			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
+				Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
+					Name: h.CookieHashOptions.CookieName,
+					Ttl:  protobuf.Duration(h.CookieHashOptions.TTL),
+					Path: h.CookieHashOptions.Path,
+				},
+			}
+		}
+		hashPolicies = append(hashPolicies, newHP)
 	}
+	return hashPolicies
 }
 
 func mirrorPolicy(r *dag.Route) []*envoy_route_v3.RouteAction_RequestMirrorPolicy {

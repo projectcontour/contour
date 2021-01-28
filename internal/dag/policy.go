@@ -379,54 +379,65 @@ func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, erro
 	return rp, nil
 }
 
-func loadBalancerHashPolicy(lbp *contour_api_v1.LoadBalancerPolicy, validCond *contour_api_v1.DetailedCondition) *LoadBalancerHashPolicy {
+// Validates and returns list of hash policies along with lb actual strategy to
+// be used. Will return default strategy and empty list of hash policies if
+// validation fails.
+func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, validCond *contour_api_v1.DetailedCondition) ([]RequestHashPolicy, string) {
 	if lbp == nil {
-		return nil
+		return nil, ""
 	}
-	lbhp := &LoadBalancerHashPolicy{}
 	strategy := loadBalancerPolicy(lbp)
 	switch strategy {
+	case LoadBalancerPolicyCookie:
+		return []RequestHashPolicy{
+			{CookieHashOptions: &CookieHashOptions{
+				CookieName: "X-Contour-Session-Affinity",
+				TTL:        time.Duration(0),
+				Path:       "/",
+			}},
+		}, LoadBalancerPolicyCookie
 	case LoadBalancerPolicyRequestHash:
-		// Do nothing, we will validate the hash policies below.
+		rhp := []RequestHashPolicy{}
+		actualStrategy := strategy
+		// Map of unique header names.
+		headerHashPolicies := map[string]bool{}
+		for _, hashPolicy := range lbp.RequestHashPolicies {
+			if hashPolicy.HeaderHashOptions == nil {
+				validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+					"ignoring invalid nil hash policy options")
+				continue
+			}
+			headerName := http.CanonicalHeaderKey(hashPolicy.HeaderHashOptions.HeaderName)
+			if msgs := validation.IsHTTPHeaderName(headerName); len(msgs) != 0 {
+				validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+					"ignoring invalid header hash policy options with invalid header name %q: %v", headerName, msgs)
+				continue
+			}
+			if _, ok := headerHashPolicies[headerName]; ok {
+				validCond.AddWarningf("SpecError", "IgnoredField",
+					"ignoring invalid header hash policy options with duplicated header name %s", headerName)
+				continue
+			}
+			headerHashPolicies[headerName] = true
+
+			rhp = append(rhp, RequestHashPolicy{
+				Terminal: hashPolicy.Terminal,
+				HeaderHashOptions: &HeaderHashOptions{
+					HeaderName: headerName,
+				},
+			})
+		}
+		if len(rhp) > 0 {
+			actualStrategy = LoadBalancerPolicyRequestHash
+		} else {
+			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+				"ignoring invalid header hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
+			rhp = nil
+			actualStrategy = LoadBalancerPolicyRoundRobin
+		}
+		return rhp, actualStrategy
 	default:
-		lbhp.Strategy = strategy
-		return lbhp
+		return nil, strategy
 	}
 
-	// Map of unique header names.
-	headerHashPolicies := map[string]bool{}
-	for _, hashPolicy := range lbp.RequestHashPolicies {
-		if hashPolicy.HeaderHashOptions == nil {
-			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
-				"ignoring invalid nil hash policy options")
-			continue
-		}
-		headerName := http.CanonicalHeaderKey(hashPolicy.HeaderHashOptions.HeaderName)
-		if msgs := validation.IsHTTPHeaderName(headerName); len(msgs) != 0 {
-			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
-				"ignoring invalid header hash policy options with invalid header name %q: %v", headerName, msgs)
-			continue
-		}
-		if _, ok := headerHashPolicies[headerName]; ok {
-			validCond.AddWarningf("SpecError", "IgnoredField",
-				"ignoring invalid header hash policy options with duplicated header name %s", headerName)
-			continue
-		}
-		headerHashPolicies[headerName] = true
-
-		lbhp.RequestHashPolicies = append(lbhp.RequestHashPolicies, RequestHashPolicy{
-			Terminal: hashPolicy.Terminal,
-			HeaderHashOptions: &HeaderHashOptions{
-				HeaderName: headerName,
-			},
-		})
-	}
-	if len(lbhp.RequestHashPolicies) > 0 {
-		lbhp.Strategy = LoadBalancerPolicyRequestHash
-	} else {
-		validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
-			"ignoring invalid header hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
-		lbhp.Strategy = LoadBalancerPolicyRoundRobin
-	}
-	return lbhp
 }

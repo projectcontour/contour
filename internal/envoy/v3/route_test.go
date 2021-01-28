@@ -384,11 +384,15 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
-		"single service w/ session affinity": {
+		"single service w/ a cookie hash policy (session affinity)": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c2},
-				LoadBalancerHashPolicy: &dag.LoadBalancerHashPolicy{
-					Strategy: "Cookie",
+				RequestHashPolicies: []dag.RequestHashPolicy{
+					{CookieHashOptions: &dag.CookieHashOptions{
+						CookieName: "X-Contour-Session-Affinity",
+						TTL:        time.Duration(0),
+						Path:       "/",
+					}},
 				},
 			},
 			want: &envoy_route_v3.Route_Route{
@@ -408,11 +412,15 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
-		"multiple service w/ session affinity": {
+		"multiple services w/ a cookie hash policy (session affinity)": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c2, c2},
-				LoadBalancerHashPolicy: &dag.LoadBalancerHashPolicy{
-					Strategy: "Cookie",
+				RequestHashPolicies: []dag.RequestHashPolicy{
+					{CookieHashOptions: &dag.CookieHashOptions{
+						CookieName: "X-Contour-Session-Affinity",
+						TTL:        time.Duration(0),
+						Path:       "/",
+					}},
 				},
 			},
 			want: &envoy_route_v3.Route_Route{
@@ -444,19 +452,16 @@ func TestRouteRoute(t *testing.T) {
 		"single service w/ request header hashing": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c3},
-				LoadBalancerHashPolicy: &dag.LoadBalancerHashPolicy{
-					Strategy: "RequestHash",
-					RequestHashPolicies: []dag.RequestHashPolicy{
-						{
-							Terminal: true,
-							HeaderHashOptions: &dag.HeaderHashOptions{
-								HeaderName: "X-Some-Header",
-							},
+				RequestHashPolicies: []dag.RequestHashPolicy{
+					{
+						Terminal: true,
+						HeaderHashOptions: &dag.HeaderHashOptions{
+							HeaderName: "X-Some-Header",
 						},
-						{
-							HeaderHashOptions: &dag.HeaderHashOptions{
-								HeaderName: "User-Agent",
-							},
+					},
+					{
+						HeaderHashOptions: &dag.HeaderHashOptions{
+							HeaderName: "User-Agent",
 						},
 					},
 				},

@@ -455,23 +455,19 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		lbhp := loadBalancerHashPolicy(route.LoadBalancerPolicy, validCond)
-		lbPolicy := ""
-		if lbhp != nil {
-			lbPolicy = lbhp.Strategy
-		}
+		requestHashPolicies, lbPolicy := loadBalancerRequestHashPolicies(route.LoadBalancerPolicy, validCond)
 
 		r := &Route{
-			PathMatchCondition:     mergePathMatchConditions(conds),
-			HeaderMatchConditions:  mergeHeaderMatchConditions(conds),
-			Websocket:              route.EnableWebsockets,
-			HTTPSUpgrade:           routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
-			TimeoutPolicy:          tp,
-			RetryPolicy:            retryPolicy(route.RetryPolicy),
-			RequestHeadersPolicy:   reqHP,
-			ResponseHeadersPolicy:  respHP,
-			RateLimitPolicy:        rlp,
-			LoadBalancerHashPolicy: lbhp,
+			PathMatchCondition:    mergePathMatchConditions(conds),
+			HeaderMatchConditions: mergeHeaderMatchConditions(conds),
+			Websocket:             route.EnableWebsockets,
+			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
+			TimeoutPolicy:         tp,
+			RetryPolicy:           retryPolicy(route.RetryPolicy),
+			RequestHeadersPolicy:  reqHP,
+			ResponseHeadersPolicy: respHP,
+			RateLimitPolicy:       rlp,
+			RequestHashPolicies:   requestHashPolicies,
 		}
 
 		// If the enclosing root proxy enabled authorization,
