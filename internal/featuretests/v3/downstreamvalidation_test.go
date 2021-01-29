@@ -79,7 +79,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 
 	rh.OnAdd(proxy)
 
-	ingress_http := &envoy_listener_v3.Listener{
+	ingressHTTP := &envoy_listener_v3.Listener{
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 		FilterChains: envoy_v3.FilterChains(
@@ -88,7 +88,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}
 
-	ingress_https := &envoy_listener_v3.Listener{
+	ingressHTTPS := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -110,8 +110,8 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			ingress_http,
-			ingress_https,
+			ingressHTTP,
+			ingressHTTPS,
 			staticListener(),
 		),
 		TypeUrl: listenerType,

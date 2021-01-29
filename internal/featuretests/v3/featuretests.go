@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package featuretests provides end to end tests of specific features.
 package v3
+
+// provides end to end tests of specific features.
 
 import (
 	"context"
