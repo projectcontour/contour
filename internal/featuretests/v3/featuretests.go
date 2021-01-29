@@ -184,7 +184,9 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 }
 
 // resourceEventHandler composes a contour.EventHandler and a contour.EndpointsTranslator
-// into a single ResourceEventHandler type.
+// into a single ResourceEventHandler type. Its event handlers are *blocking* for non-Endpoints
+// resources: they wait until the DAG has been rebuilt and observed, and the sequence counter
+// has been incremented, before returning.
 type resourceEventHandler struct {
 	EventHandler     cache.ResourceEventHandler
 	EndpointsHandler cache.ResourceEventHandler
@@ -204,6 +206,9 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 		r.EndpointsHandler.OnAdd(obj)
 	default:
 		r.EventHandler.OnAdd(obj)
+
+		// Wait for the sequence counter to be incremented, which happens
+		// after the DAG has been rebuilt and observed.
 		<-r.Sequence
 	}
 }
@@ -223,6 +228,9 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 		r.EndpointsHandler.OnUpdate(oldObj, newObj)
 	default:
 		r.EventHandler.OnUpdate(oldObj, newObj)
+
+		// Wait for the sequence counter to be incremented, which happens
+		// after the DAG has been rebuilt and observed.
 		<-r.Sequence
 	}
 }
@@ -239,6 +247,9 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 		r.EndpointsHandler.OnDelete(obj)
 	default:
 		r.EventHandler.OnDelete(obj)
+
+		// Wait for the sequence counter to be incremented, which happens
+		// after the DAG has been rebuilt and observed.
 		<-r.Sequence
 	}
 }
@@ -337,6 +348,15 @@ func (s *statusResult) IsValid() *Contour {
 	s.T.Helper()
 
 	assert.Equal(s.T, status.ProxyStatusValid, status.ProxyStatus(s.Have.CurrentStatus))
+
+	return s.Contour
+}
+
+// IsInvalid asserts that the proxy's CurrentStatus field is equal to "invalid".
+func (s *statusResult) IsInvalid() *Contour {
+	s.T.Helper()
+
+	assert.Equal(s.T, status.ProxyStatusInvalid, status.ProxyStatus(s.Have.CurrentStatus))
 
 	return s.Contour
 }

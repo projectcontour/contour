@@ -188,6 +188,10 @@ type Route struct {
 
 	// RateLimitPolicy defines if/how requests for the route are rate limited.
 	RateLimitPolicy *RateLimitPolicy
+
+	// RequestHashPolicies is a list of policies for configuring hashes on
+	// request attributes.
+	RequestHashPolicies []RequestHashPolicy
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
@@ -256,6 +260,38 @@ type LocalRateLimitPolicy struct {
 	FillInterval         time.Duration
 	ResponseStatusCode   uint32
 	ResponseHeadersToAdd map[string]string
+}
+
+// HeaderHashOptions contains options for hashing a HTTP header.
+type HeaderHashOptions struct {
+	// HeaderName is the name of the header to hash.
+	HeaderName string
+}
+
+// CookieHashOptions contains options for hashing a HTTP cookie.
+type CookieHashOptions struct {
+	// CookieName is the name of the header to hash.
+	CookieName string
+
+	// TTL is how long the cookie should be valid for.
+	TTL time.Duration
+
+	// Path is the request path the cookie is valid for.
+	Path string
+}
+
+// RequestHashPolicy holds configuration for calculating hashes on
+// an individual request attribute.
+type RequestHashPolicy struct {
+	// Terminal determines if the request attribute is present, hash
+	// calculation should stop with this element.
+	Terminal bool
+
+	// HeaderHashOptions is set when a header hash is desired.
+	HeaderHashOptions *HeaderHashOptions
+
+	// CookieHashOptions is set when a cookie hash is desired.
+	CookieHashOptions *CookieHashOptions
 }
 
 // CORSPolicy allows setting the CORS policy
@@ -514,7 +550,7 @@ type Cluster struct {
 	// UpstreamValidation defines how to verify the backend service's certificate
 	UpstreamValidation *PeerValidationContext
 
-	// The load balancer type to use when picking a host in the cluster.
+	// The load balancer strategy to use when picking a host in the cluster.
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#enum-config-cluster-v3-cluster-lbpolicy
 	LoadBalancerPolicy string
 

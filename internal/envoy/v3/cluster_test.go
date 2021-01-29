@@ -646,6 +646,7 @@ func TestLBPolicy(t *testing.T) {
 		"":                     envoy_cluster_v3.Cluster_ROUND_ROBIN,
 		"unknown":              envoy_cluster_v3.Cluster_ROUND_ROBIN,
 		"Cookie":               envoy_cluster_v3.Cluster_RING_HASH,
+		"RequestHash":          envoy_cluster_v3.Cluster_RING_HASH,
 
 		// RingHash and Maglev were removed as options in 0.13.
 		// See #1150

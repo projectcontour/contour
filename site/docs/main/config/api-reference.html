@@ -1001,6 +1001,40 @@ namespace your condition with a label, like <code>controller.domain.com/Conditio
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.HeaderHashOptions">HeaderHashOptions
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RequestHashPolicy">RequestHashPolicy</a>)
+</p>
+<p>
+<p>HeaderHashOptions contains options to configure a HTTP request header hash
+policy, used in request attribute hash based load balancing.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>headerName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>HeaderName is the name of the HTTP request header that will be used to
+calculate the hash key. If the header specified is not present on a
+request, no hash will be produced.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.HeaderMatchCondition">HeaderMatchCondition
 </h3>
 <p>
@@ -1297,10 +1331,28 @@ string
 <td>
 <p>Strategy specifies the policy used to balance requests
 across the pool of backend pods. Valid policy names are
-<code>Random</code>, <code>RoundRobin</code>, <code>WeightedLeastRequest</code>, <code>Random</code>
-and <code>Cookie</code>. If an unknown strategy name is specified
+<code>Random</code>, <code>RoundRobin</code>, <code>WeightedLeastRequest</code>, <code>Cookie</code>,
+and <code>RequestHash</code>. If an unknown strategy name is specified
 or no policy is supplied, the default <code>RoundRobin</code> policy
 is used.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>requestHashPolicies</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RequestHashPolicy">
+[]RequestHashPolicy
+</a>
+</em>
+</td>
+<td>
+<p>RequestHashPolicies contains a list of hash policies to apply when the
+<code>RequestHash</code> load balancing strategy is chosen. If an element of the
+supplied list of hash policies is invalid, it will be ignored. If the
+list of hash policies is empty after validation, the load balancing
+strategy will fall back the the default <code>RoundRobin</code>.</p>
 </td>
 </tr>
 </tbody>
@@ -1569,6 +1621,57 @@ string
 <td>
 <p>Replacement is the string that the routing path prefix
 will be replaced with. This must not be empty.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.RequestHashPolicy">RequestHashPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.LoadBalancerPolicy">LoadBalancerPolicy</a>)
+</p>
+<p>
+<p>RequestHashPolicy contains configuration for an individual hash policy
+on a request attribute.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>terminal</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Terminal is a flag that allows for short-circuiting computing of a hash
+for a given request. If set to true, and the request attribute specified
+in the attribute hash options is present, no further hash policies will
+be used to calculate a hash for the request.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>headerHashOptions</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderHashOptions">
+HeaderHashOptions
+</a>
+</em>
+</td>
+<td>
+<p>HeaderHashOptions should be set when request header hash based load
+balancing is desired. It must be the only hash option field set,
+otherwise this request hash policy object will be ignored.</p>
 </td>
 </tr>
 </tbody>
@@ -2207,7 +2310,9 @@ LoadBalancerPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>The load balancing policy for the backend services.</p>
+<p>The load balancing policy for the backend services. Note that the
+<code>Cookie</code> and <code>RequestHash</code> load balancing strategies cannot be used
+here.</p>
 </td>
 </tr>
 <tr>
@@ -2827,8 +2932,9 @@ LoadBalancerPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>The policy for load balancing GRPC service requests. Note
-that the <code>Cookie</code> load balancing strategy cannot be used here.</p>
+<p>The policy for load balancing GRPC service requests. Note that the
+<code>Cookie</code> and <code>RequestHash</code> load balancing strategies cannot be used
+here.</p>
 </td>
 </tr>
 <tr>
@@ -2971,8 +3077,9 @@ LoadBalancerPolicy
 </td>
 <td>
 <em>(Optional)</em>
-<p>The policy for load balancing GRPC service requests. Note
-that the <code>Cookie</code> load balancing strategy cannot be used here.</p>
+<p>The policy for load balancing GRPC service requests. Note that the
+<code>Cookie</code> and <code>RequestHash</code> load balancing strategies cannot be used
+here.</p>
 </td>
 </tr>
 <tr>
