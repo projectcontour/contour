@@ -34,7 +34,7 @@ func clusterDefaults() *envoy_cluster_v3.Cluster {
 	return &envoy_cluster_v3.Cluster{
 		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
 		CommonLbConfig: ClusterCommonLBConfig(),
-		LbPolicy:       lbPolicy(""),
+		LbPolicy:       lbPolicy(dag.LoadBalancerPolicyRoundRobin),
 	}
 }
 
@@ -184,11 +184,11 @@ func edsconfig(cluster string, service *dag.Service) *envoy_cluster_v3.Cluster_E
 
 func lbPolicy(strategy string) envoy_cluster_v3.Cluster_LbPolicy {
 	switch strategy {
-	case "WeightedLeastRequest":
+	case dag.LoadBalancerPolicyWeightedLeastRequest:
 		return envoy_cluster_v3.Cluster_LEAST_REQUEST
-	case "Random":
+	case dag.LoadBalancerPolicyRandom:
 		return envoy_cluster_v3.Cluster_RANDOM
-	case "Cookie":
+	case dag.LoadBalancerPolicyCookie, dag.LoadBalancerPolicyRequestHash:
 		return envoy_cluster_v3.Cluster_RING_HASH
 	default:
 		return envoy_cluster_v3.Cluster_ROUND_ROBIN

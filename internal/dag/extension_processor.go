@@ -104,11 +104,21 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		},
 		Protocol:           "h2",
 		UpstreamValidation: nil,
-		LoadBalancerPolicy: loadBalancerPolicy(ext.Spec.LoadBalancerPolicy),
 		TimeoutPolicy:      tp,
 		SNI:                "",
 		ClientCertificate:  clientCertSecret,
 	}
+
+	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)
+	switch lbPolicy {
+	case LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
+		validCondition.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+			"ignoring field %q; %s load balancer policy is not supported for ExtensionClusters",
+			".Spec.LoadBalancerPolicy", lbPolicy)
+		// Reset load balancer policy to ensure the default.
+		lbPolicy = ""
+	}
+	extension.LoadBalancerPolicy = lbPolicy
 
 	// Timeouts are specified above the cluster (e.g.
 	// in the ext_authz filter). The ext_authz filter
