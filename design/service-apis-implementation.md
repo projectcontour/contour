@@ -110,7 +110,7 @@ For Listeners:
 - Listeners that specify a port that the Contour controller considers the default secure port will have a HTTP->HTTPS redirect created for them.
 - Listeners that specify a port that is not exposed via the Envoy service will be rejected.
 - Conflicts within a Gateway will result in the relevant Listeners both being rejected (as there is no way to determine which one was first).
-- Listeners are considered mergable if all the fields out of `hostname`, `port`, and `protocol` match, with some additional rules around TLS.
+- Listeners are considered mergeable if all the fields out of `hostname`, `port`, and `protocol` match, with some additional rules around TLS.
 - Further merging rules are specified in the detailed design below.
 - Listeners that refer to any other Route than HTTPRoute or TLSRoute will be ignored, and a condition placed on the corresponding `status.listeners[]` object saying that it was ignored because those objects are not supported.
 
@@ -215,7 +215,7 @@ That is, the Envoy Service `port` number is what the Listener must specify, rega
 #### Listener merging
 
 Listener merging is performed by Contour to coalesce any set of valid Listeners into minimal configuration for Envoy.
-Listener **conflict** is defined as two listeners that are not mergable for some reason.
+Listener **conflict** is defined as two listeners that are not mergeable for some reason.
 
 Listeners that are mergeable but have a conflict are both invalid and will be rejected, and their status updated accordingly.
 
@@ -242,7 +242,7 @@ Contour does not check the SAN of any referred certificates.
 Listeners that match on ProtocolType, PortNumber, and Hostname, but have different GatewayTLSConfig structs (that is, the `tls` stanza is different) are in conflict.
 
 Routes for a Listener are chosen using the `RoutBindingSelector`, as per the spec.
-Precendence rules in the spec must also be followed.
+Precedence rules in the spec must also be followed.
 
 The rules for implementing RouteBindingSelector are straightforward and will be implemented per the spec.
 #### Gateway Status
@@ -294,9 +294,6 @@ The not accepted HTTPRoute must have its `Admitted` Condition changed to `status
 
 If Hostnames match exactly, but TLS Config does not, that is a conflict and the oldest-object-wins rule applies also.
 That is, you can't specify a different certificate for the same hostname.
-
-
-
 
 ### TLSRoute
 
