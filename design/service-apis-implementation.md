@@ -35,7 +35,13 @@ If Project Contour (the organisation) does add support for TCP and UDP forwardin
 This design is intended to cover the initial `v1alpha1` release of the Service APIs. We will aim to implement the core featureset of the APIs at that point.
 We will then work with the upstream community on features that Contour and HTTPProxy currently support, but the Service APIs do not, and how best to represent those features in the APIs.
 So, there are some features that are currently gaps for Contour (wildcard domain names, and exact path matching seem like big ones),
-and some that Contour supports that the Service APIs do not (webscokets, configurable timeouts, header replacement, external auth, rate limiting, and so on).
+and some that Contour supports that the Service APIs do not (websockets, configurable timeouts, header replacement, external auth, rate limiting, and so on).
+
+Our eventual ideal is that HTTPProxy and Service-APIs will have feature parity.
+Practically, there may be times when HTTPProxy can move faster than Service-APIs because we have a smaller feature surface.
+We see this as a chance for HTTPProxy to test out ideas for Service-APIs functionality, and provide feedback on what features should be in the core, extension, and implementation-specific parts of the API.
+There should never be annotations required for functionality on Service-APIs objects.
+
 
 ## Goals
 - Define a data model and implementation for Contour's service-apis support, covering the v1alpha1 version of the service-apis.
@@ -57,6 +63,8 @@ Project Contour (the organisation) may investigate a Service-APIs based layer 4 
 
 Contour considers a Gateway to describe a single Envoy deployment, deployed and managed by something outside of itself.
 Contour expects to be supplied with the full name (name and namespace) of a single Gateway, which it will watch and update the status of.
+This will be a configuration file parameter.
+When a Gateway is not supplied, Contour will not do Service-APIs processing, or in other words, the existing `--experimental-service-apis` flag will be obsoleted and removed).
 Inside Contour will merge Listeners within its Gateway. (See the detailed design for the exact rules Contour will use for this.)
 
 ### Interrelated watches
@@ -106,6 +114,13 @@ For Listeners:
 - Further merging rules are specified in the detailed design below.
 - Listeners that refer to any other Route than HTTPRoute or TLSRoute will be ignored, and a condition placed on the corresponding `status.listeners[]` object saying that it was ignored because those objects are not supported.
 
+
+The Gateway may supply TLS config, in which case it is used as a default.
+The TLS config may be overridden by HTTPRoutes if the Gateway `spec.listeners[].tls.routeOverride` is set to `Allow`.
+This allows the Gateway to configure a default TLS certificate.
+Note that this feature has fiddly interactions with the various places in which a hostname may be specified;
+this will require careful test case design.
+
 The output of this watcher is both Envoy configuration, and a list of kind/name/namespace details for Routes to watch.
 
 Contour will only update the `status` of Gateway objects.
@@ -115,13 +130,19 @@ Contour will watch all HTTPRoute objects, and filter for entries matching a labe
 and will configure the associated routes.
 Configuration of HTTPRoutes will be subject to the rules around the `RouteGateways` field.
 
-TODO: Details about RouteTLSConfig.
+When a HTTPRoute specifies a hostname or slice of hostnames, those hostnames must match the hostnames in the Gateway.
+Note that more specific precise matches at the Hostname level may match less specific wildcard matches at the Gateway level.
+This allows the Gateway to define a default TLS certificate, which may only be overridden
+
+The HTTPRoute also has a facility to supply additional TLS Config using the `tls` stanza (the RouteTLSConfig field).
+The most important part here is that the field is only used if the `AllowRouteOverride` field is set in the referencing Gateway resource.
 
 Contour will only ever update the `status` of HTTPRoute objects.
 
 Errors or conflicts here will render that section of the config invalid.
 Other valid sections will still be passed to Envoy.
 For each invalid section, Contour will update status information with the section and the reason.
+
 
 The output of this watcher is Envoy configuration.
 
@@ -220,39 +241,74 @@ Contour does not check the SAN of any referred certificates.
 
 Listeners that match on ProtocolType, PortNumber, and Hostname, but have different GatewayTLSConfig structs (that is, the `tls` stanza is different) are in conflict.
 
+Routes for a Listener are chosen using the `RoutBindingSelector`, as per the spec.
+Precendence rules in the spec must also be followed.
+
+The rules for implementing RouteBindingSelector are straightforward and will be implemented per the spec.
+#### Gateway Status
+
+The only status that Contour will update in the Gateway is the `status.[]ListenerStatus` slice.
+This slice contains `ListenerStatus` entries that are expected to be keyed by `port`.
+If more than one Listener shares the same port, the `ListenerStatus` reports the combined status.
+
+As the API currently stands, Contour must combine the statuses for all Listeners that share a `port`, including Listeners that are being merged.
+If this proves awkward, we may need to ask for some upstream changes.
+
+Whenever Contour looks at a Listener, it will add an `Admitted` Condition.
+In the event that a ListenerStatus has everything okay (all mergeable Listeners pass validation), the `Admitted` condition will be `status: true`.
+If there are any errors, the `Admitted` Condition will be `status: false`, and the Reason will tell you more about why.
+
+### *Route general notes
+
+For both HTTPRoute and TLSRoute, there are two fields in common, `spec.gateways`, and `status.gateways`.
+Both resources will handle these fields as per the spec.
+
+The thing that's most worthy of comment is that if a Route is selected by a Listener's RouteBindingSelector, but does _not_ allow the Gateway in its RouteGateways, then the Route's `status.gateways[].conditions` field will have an `Admitted` Condition as per the spec.
+
 ### HTTPRoute
+
+#### RouteTLSConfig
+
+For HTTPRoute, the most complex part for implementation is the RouteTLSConfig struct, which allows the definition of TLS certificates for use with the associated Hostname.
+This can only be used if the `spec.listeners[].tls.routeOverride` field in the referencing Gateway resource is `Allow`.
+
+For Contour, we will need to ensure we have a good set of tests around how this field and the Gateway TLSConfig interact.
+
+We need testing to cover the following variables:
+- Gateway has TLS config true/false
+- Gateway allows TLS override true/false
+- Route has TLS override true/false
+- Route and Gateway match hostnames true/false
+
+In addition, we must ensure that the TLS config in the route will override the TLS config at the Gateway if it's allowed even if there are multiple matches (for example, if HTTPRoutes share the same hostname).
+
+#### Conflict Resolution and Route merging
+
+HTTPRoutes may be merged into a single Envoy config by Contour as long as:
+- the Hostnames match exactly and the TLS Config matches
+- the HTTPRouteRules are different
+
+In the event that two HTTPRoutes match on Hostname and RouteTLSConfig, and have matching HTTPRouteRules (`rules` stanza),
+then the oldest HTTPRoute's HTTPRouteRules should win.
+The not accepted HTTPRoute must have its `Admitted` Condition changed to `status: false` with a reason field to explain why, possibly including the name of the other resource.
+
+If Hostnames match exactly, but TLS Config does not, that is a conflict and the oldest-object-wins rule applies also.
+That is, you can't specify a different certificate for the same hostname.
+
+
+
 
 ### TLSRoute
 
+TODO: detail around TLSRoute
 
 
 ### Other concerns
-
-TODO: What do we do about updating status information? Probably just rely on whatever provisions Envoy to put the reachability info in the Gateway Status.
-
-
-For each object, I need to specify:
-How the watch will work
-Where the integration will be plumbed
-How do we handle the inter-related dynamic configuration?
-
-A detailed design describing how the changes to the product should be made.
-
-The names of types, fields, interfaces, and methods should be agreed on here, not debated in code review.
-The same applies to changes in CRDs, YAML examples, and so on.
-
-Ideally the changes should be made in sequence so that the work required to implement this design can be done incrementally, possibly in parallel.
 
 ## Alternatives Considered
 TODO: This will need further explanation of what the solution would look like if we didn't make one GatewayClass == One Contour.
 
 TODO: Some discussion of why layer 7 only.
 
-## Security Considerations
-TODO: I can't think of any yet.
-
 ## Implementation
 A description of the implementation, timelines, and any resources that have agreed to contribute.
-
-## Open Issues
-A discussion of issues relating to this proposal for which the author does not know the solution. This section may be omitted if there are none.
