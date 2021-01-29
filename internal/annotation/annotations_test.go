@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -432,6 +433,66 @@ func TestMatchIngressClass(t *testing.T) {
 		})
 	}
 }
+
+func TestCipherSuites(t *testing.T) {
+	testCases := map[string]struct {
+		ciphers []string
+		want    []string
+	}{
+		"no ciphers": {
+			ciphers: nil,
+			want:    config.DefaultTLSCiphers,
+		},
+		"valid list": {
+			ciphers: []string{
+				"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+				"  ECDHE-RSA-AES128-SHA ",
+				"",
+				"AES128-SHA",
+			},
+			want: []string{
+				"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+				"ECDHE-RSA-AES128-SHA",
+				"AES128-SHA",
+			},
+		},
+		"invalid cipher in list": {
+			ciphers: []string{
+				"NOTACIPHER",
+				"ECDHE-RSA-AES128-SHA",
+				"AES128-SHA",
+			},
+			want: []string{
+				"ECDHE-RSA-AES128-SHA",
+				"AES128-SHA",
+			},
+		},
+		"all invalid": {
+			ciphers: []string{
+				"NOTACIPHER",
+				"NOTACIPHEREITHER",
+				"ALSOINVALID",
+			},
+			want: config.DefaultTLSCiphers,
+		},
+		"cipher duplicated": {
+			ciphers: []string{
+				"ECDHE-RSA-AES128-SHA",
+				"ECDHE-RSA-AES128-SHA",
+			},
+			want: []string{
+				"ECDHE-RSA-AES128-SHA",
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, CipherSuites(tc.ciphers, config.DefaultTLSCiphers))
+		})
+	}
+}
+
 func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{
 		ServiceName: name,

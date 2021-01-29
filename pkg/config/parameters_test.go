@@ -215,6 +215,56 @@ func TestValidateTimeoutParams(t *testing.T) {
 
 }
 
+func TestTLSParametersValidation(t *testing.T) {
+	// Fallback certificate validation
+	assert.NoError(t, TLSParameters{
+		FallbackCertificate: NamespacedName{
+			Name:      "  ",
+			Namespace: "  ",
+		},
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		FallbackCertificate: NamespacedName{
+			Name:      "somename",
+			Namespace: "  ",
+		},
+	}.Validate())
+
+	// Client certificate validation
+	assert.NoError(t, TLSParameters{
+		ClientCertificate: NamespacedName{
+			Name:      "  ",
+			Namespace: "  ",
+		},
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		ClientCertificate: NamespacedName{
+			Name:      "",
+			Namespace: "somenamespace  ",
+		},
+	}.Validate())
+
+	// Cipher suites validation
+	assert.NoError(t, TLSParameters{
+		CipherSuites: []string{},
+	}.Validate())
+	assert.NoError(t, TLSParameters{
+		CipherSuites: []string{
+			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+			"ECDHE-ECDSA-AES128-SHA",
+			" ECDHE-RSA-AES128-SHA   ",
+			"AES128-GCM-SHA256",
+		},
+	}.Validate())
+	assert.Error(t, TLSParameters{
+		CipherSuites: []string{
+			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+			"NOTAVALIDCIPHER",
+			"AES128-GCM-SHA256",
+		},
+	}.Validate())
+}
+
 func TestConfigFileValidation(t *testing.T) {
 	check := func(yamlIn string) {
 		t.Helper()
@@ -253,6 +303,12 @@ tls:
 tls:
   envoy-client-certificate:
     name: foo
+`)
+
+	check(`
+tls:
+  cipher-suites:
+  - NOTVALID
 `)
 
 	check(`
@@ -306,10 +362,13 @@ tls:
 `)
 
 	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, "1.2", conf.TLS.MinimumProtocolVersion)
+		assert.Equal(t, "1.3", conf.TLS.MinimumProtocolVersion)
+		assert.Equal(t, TLSCiphers{"ECDHE-RSA-AES256-GCM-SHA384"}, conf.TLS.CipherSuites)
 	}, `
 tls:
-  minimum-protocol-version: 1.2
+  minimum-protocol-version: 1.3
+  cipher-suites:
+  - ECDHE-RSA-AES256-GCM-SHA384
 `)
 
 	check(func(t *testing.T, conf *Parameters) {

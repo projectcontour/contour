@@ -425,6 +425,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_3,
 					nil,
+					nil,
 					"h2", "http/1.1"),
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),
@@ -1055,6 +1056,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_2,
 					nil,
+					nil,
 					"h2", "http/1.1"),
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),
@@ -1119,6 +1121,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 				envoy_v3.DownstreamTLSContext(
 					&dag.Secret{Object: secret1},
 					envoy_tls_v3.TlsParameters_TLSv1_3,
+					nil,
 					nil,
 					"h2", "http/1.1"),
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),

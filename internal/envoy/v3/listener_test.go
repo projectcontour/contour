@@ -196,15 +196,20 @@ func TestDownstreamTLSContext(t *testing.T) {
 		},
 	}
 
+	cipherSuites := []string{
+		"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
+		"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+		"ECDHE-ECDSA-AES128-SHA",
+		"ECDHE-ECDSA-AES256-GCM-SHA384",
+		"ECDHE-RSA-AES256-GCM-SHA384",
+		// Commented out to ensure it is different from the default
+		// "ECDHE-ECDSA-AES256-SHA",
+	}
+
 	tlsParams := &envoy_tls_v3.TlsParameters{
 		TlsMinimumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_2,
 		TlsMaximumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_3,
-		CipherSuites: []string{
-			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
-			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
-			"ECDHE-ECDSA-AES256-GCM-SHA384",
-			"ECDHE-RSA-AES256-GCM-SHA384",
-		},
+		CipherSuites:              cipherSuites,
 	}
 
 	tlsCertificateSdsSecretConfigs := []*envoy_tls_v3.SdsSecretConfig{{
@@ -273,7 +278,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 		want *envoy_tls_v3.DownstreamTlsContext
 	}{
 		"TLS context without client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, nil, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -283,7 +288,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"TLS context with client authentication": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, peerValidationContext, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContext, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,
@@ -295,7 +300,7 @@ func TestDownstreamTLSContext(t *testing.T) {
 			},
 		},
 		"Downstream validation shall not support subjectName validation": {
-			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, peerValidationContextWithSubjectName, "h2", "http/1.1"),
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextWithSubjectName, "h2", "http/1.1"),
 			&envoy_tls_v3.DownstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					TlsParams:                      tlsParams,

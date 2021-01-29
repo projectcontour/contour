@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/projectcontour/contour/pkg/config"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -243,4 +244,26 @@ func MaxRequests(o metav1.ObjectMetaAccessor) uint32 {
 // '0' is returned if the annotation is absent or unparsable.
 func MaxRetries(o metav1.ObjectMetaAccessor) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-retries"))
+}
+
+// CipherSuites trims a list of ciphers to remove whitespace and duplicates,
+// returning the passed in default if the corrected list is empty.
+func CipherSuites(ciphers, defaultCiphers []string) []string {
+	uniqueCiphers := map[string]bool{}
+	validatedCiphers := []string{}
+	for _, v := range ciphers {
+		cipher := strings.TrimSpace(v)
+		if cipher != "" {
+			_, valid := config.ValidTLSCiphers[cipher]
+			_, found := uniqueCiphers[cipher]
+			if valid && !found {
+				uniqueCiphers[cipher] = true
+				validatedCiphers = append(validatedCiphers, cipher)
+			}
+		}
+	}
+	if len(validatedCiphers) == 0 {
+		return defaultCiphers
+	}
+	return validatedCiphers
 }

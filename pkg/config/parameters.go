@@ -225,6 +225,26 @@ type TLSParameters struct {
 	// to be used when establishing TLS connection to upstream
 	// cluster.
 	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
+
+	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
+}
+
+// Validate TLS fallback certificate, client certificate, and cipher suites
+func (t TLSParameters) Validate() error {
+	// Check TLS secret names.
+	if err := t.FallbackCertificate.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS fallback certificate: %w", err)
+	}
+
+	if err := t.ClientCertificate.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS client certificate: %w", err)
+	}
+
+	if err := t.CipherSuites.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS cipher suites: %w", err)
+	}
+
+	return nil
 }
 
 // ServerParameters holds the configuration for the Contour xDS server.
@@ -429,13 +449,8 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	// Check TLS secret names.
-	if err := p.TLS.FallbackCertificate.Validate(); err != nil {
-		return fmt.Errorf("invalid TLS fallback certificate: %w", err)
-	}
-
-	if err := p.TLS.ClientCertificate.Validate(); err != nil {
-		return fmt.Errorf("invalid TLS client certificate: %w", err)
+	if err := p.TLS.Validate(); err != nil {
+		return err
 	}
 
 	if err := p.Timeouts.Validate(); err != nil {

@@ -80,6 +80,8 @@ type ListenerConfig struct {
 	// MinimumTLSVersion defines the minimum TLS protocol version the proxy should accept.
 	MinimumTLSVersion string
 
+	CipherSuites []string
+
 	// DefaultHTTPVersions defines the default set of HTTP
 	// versions the proxy should accept. If not specified, all
 	// supported versions are accepted. This is applied to both
@@ -445,6 +447,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			downstreamTLS = envoy_v3.DownstreamTLSContext(
 				vh.Secret,
 				vers,
+				v.ListenerConfig.CipherSuites,
 				vh.DownstreamValidation,
 				alpnProtos...)
 		}
@@ -463,6 +466,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			downstreamTLS = envoy_v3.DownstreamTLSContext(
 				vh.FallbackCertificate,
 				v.ListenerConfig.minTLSVersion(),
+				v.ListenerConfig.CipherSuites,
 				vh.DownstreamValidation,
 				alpnProtos...)
 

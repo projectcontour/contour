@@ -327,6 +327,7 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_listener_v3.
 		envoy_v3.DownstreamTLSContext(
 			&dag.Secret{Object: secret},
 			envoy_tls_v3.TlsParameters_TLSv1_2,
+			nil,
 			peerValidationContext,
 			alpn...),
 		envoy_v3.Filters(filter),
@@ -339,6 +340,7 @@ func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *da
 		envoy_v3.DownstreamTLSContext(
 			&dag.Secret{Object: fallbackSecret},
 			envoy_tls_v3.TlsParameters_TLSv1_2,
+			nil,
 			peerValidationContext,
 			alpn...),
 		envoy_v3.Filters(
