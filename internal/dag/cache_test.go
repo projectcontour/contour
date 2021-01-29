@@ -664,6 +664,24 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert service-apis TLSRoute": {
+			obj: &serviceapis.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tlsroute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert service-apis BackendPolicy": {
+			obj: &serviceapis.BackendPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "backendpolicy",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
 		"insert extension service": {
 			obj: &contour_api_v1alpha1.ExtensionService{
 				ObjectMeta: fixture.ObjectMeta("default/extension"),
@@ -848,6 +866,36 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			obj: &serviceapis.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove service-apis TLSRoute": {
+			cache: cache(&serviceapis.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tlsroute",
+					Namespace: "default",
+				},
+			}),
+			obj: &serviceapis.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tlsroute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove service-apis BackendPolicy": {
+			cache: cache(&serviceapis.BackendPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "backendpolicy",
+					Namespace: "default",
+				},
+			}),
+			obj: &serviceapis.BackendPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "backendpolicy",
 					Namespace: "default",
 				},
 			},

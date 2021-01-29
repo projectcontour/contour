@@ -41,7 +41,7 @@ func DefaultResources() []schema.GroupVersionResource {
 	}
 }
 
-// +kubebuilder:rbac:groups="networking.k8s.io",resources=gatewayclasses;gateways;httproutes;tcproutes,verbs=get;list;watch
+// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gateways;httproutes;backendpolicies;tlsroutes,verbs=get;list;watch
 
 // ServiceAPIResources ...
 func ServiceAPIResources() []schema.GroupVersionResource {
@@ -53,6 +53,14 @@ func ServiceAPIResources() []schema.GroupVersionResource {
 		Group:    serviceapis.GroupVersion.Group,
 		Version:  serviceapis.GroupVersion.Version,
 		Resource: "httproutes",
+	}, {
+		Group:    serviceapis.GroupVersion.Group,
+		Version:  serviceapis.GroupVersion.Version,
+		Resource: "backendpolicies",
+	}, {
+		Group:    serviceapis.GroupVersion.Group,
+		Version:  serviceapis.GroupVersion.Version,
+		Resource: "tlsroutes",
 	},
 	}
 }
