@@ -117,6 +117,10 @@ type ListenerConfig struct {
 	// AllowChunkedLength enables setting allow_chunked_length on the HTTP1 options for all
 	// listeners.
 	AllowChunkedLength bool
+
+	// XffNumTrustedHops sets the number of additional ingress proxy hops from the
+	// right side of the x-forwarded-for HTTP header to trust.
+	XffNumTrustedHops uint32
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -332,6 +336,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 			MaxConnectionDuration(lvc.MaxConnectionDuration).
 			ConnectionShutdownGracePeriod(lvc.ConnectionShutdownGracePeriod).
 			AllowChunkedLength(lvc.AllowChunkedLength).
+			NumTrustedHops(lvc.XffNumTrustedHops).
 			Get()
 
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy_v3.Listener(
@@ -419,6 +424,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
+					NumTrustedHops(v.ListenerConfig.XffNumTrustedHops).
 					Get(),
 			)
 
@@ -479,6 +485,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
+					NumTrustedHops(v.ListenerConfig.XffNumTrustedHops).
 					Get(),
 			)
 

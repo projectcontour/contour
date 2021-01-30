@@ -30,6 +30,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | tls | TLS | | The default [TLS configuration](#tls-configuration). |
 | timeouts | TimeoutConfig | | The [timeout configuration](#timeout-configuration). |
 | cluster | ClusterConfig | | The [cluster configuration](#cluster-configuration). |
+| network | NetworkConfig | | The [network configuration](#network-configuration). |
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
 {: class="table thead-dark table-bordered"}
 <br>
@@ -106,6 +107,16 @@ The cluster configuration block can be used to configure various parameters for 
 {: class="table thead-dark table-bordered"}
 <br>
 
+### Network Configuration
+
+The network configuration block can be used to configure various parameters network connections.
+
+| Field Name | Type| Default  | Description |
+|------------|-----|----------|-------------|
+| num-trusted-hops | int | 0 | Configures the number of additional ingress proxy hops from the right side of the x-forwarded-for HTTP header to trust. |
+{: class="table thead-dark table-bordered"}
+<br>
+
 ### Server Configuration
 
 The server configuration block can be used to configure various settings for the `contour serve` command.
@@ -169,7 +180,12 @@ data:
     # cluster:
     #   configure the cluster dns lookup family
     #   valid options are: auto (default), v4, v6
-    #   dns-lookup-family: auto
+    #   dns-lookup-family: auto   
+    #
+    # network:
+    #   Configure the number of additional ingress proxy hops from the
+    #   right side of the x-forwarded-for HTTP header to trust.
+    #   num-trusted-hops: 0
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.

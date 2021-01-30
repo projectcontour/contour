@@ -66,13 +66,13 @@ func TestListener(t *testing.T) {
 			address: "0.0.0.0",
 			port:    9000,
 			f: []*envoy_listener_v3.Filter{
-				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null"), 0),
+				HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null"), 0, 0),
 			},
 			want: &envoy_listener_v3.Listener{
 				Name:    "http",
 				Address: SocketAddress("0.0.0.0", 9000),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null"), 0),
+					HTTPConnectionManager("http", FileAccessLogEnvoy("/dev/null"), 0, 0),
 				),
 				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
@@ -85,7 +85,7 @@ func TestListener(t *testing.T) {
 				ProxyProtocol(),
 			},
 			f: []*envoy_listener_v3.Filter{
-				HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null"), 0),
+				HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null"), 0, 0),
 			},
 			want: &envoy_listener_v3.Listener{
 				Name:    "http-proxy",
@@ -94,7 +94,7 @@ func TestListener(t *testing.T) {
 					ProxyProtocol(),
 				),
 				FilterChains: FilterChains(
-					HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null"), 0),
+					HTTPConnectionManager("http-proxy", FileAccessLogEnvoy("/dev/null"), 0, 0),
 				),
 				SocketOptions: TCPKeepaliveSocketOptions(),
 			},
@@ -325,6 +325,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 		maxConnectionDuration         timeout.Setting
 		connectionShutdownGracePeriod timeout.Setting
 		allowChunkedLength            bool
+		xffNumTrustedHops             uint32
 		want                          *envoy_listener_v3.Filter
 	}{
 		"default": {
@@ -1040,6 +1041,97 @@ func TestHTTPConnectionManager(t *testing.T) {
 				},
 			},
 		},
+		"enable XffNumTrustedHops": {
+			routename:                     "default/kuard",
+			accesslogger:                  FileAccessLogEnvoy("/dev/stdout"),
+			connectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
+			xffNumTrustedHops:             1,
+			want: &envoy_listener_v3.Filter{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+						StatPrefix: "default/kuard",
+						RouteSpecifier: &http.HttpConnectionManager_Rds{
+							Rds: &http.Rds{
+								RouteConfigName: "default/kuard",
+								ConfigSource: &envoy_core_v3.ConfigSource{
+									ResourceApiVersion: envoy_core_v3.ApiVersion_V3,
+									ConfigSourceSpecifier: &envoy_core_v3.ConfigSource_ApiConfigSource{
+										ApiConfigSource: &envoy_core_v3.ApiConfigSource{
+											ApiType:             envoy_core_v3.ApiConfigSource_GRPC,
+											TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+											GrpcServices: []*envoy_core_v3.GrpcService{{
+												TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+													EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+														ClusterName: "contour",
+													},
+												},
+											}},
+										},
+									},
+								},
+							},
+						},
+						HttpFilters: []*http.HttpFilter{{
+							Name: "compressor",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
+									CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
+										Name: "gzip",
+										TypedConfig: &any.Any{
+											TypeUrl: HTTPFilterGzip,
+										},
+									},
+								}),
+							},
+						}, {
+							Name: "grpcweb",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterGrpcWeb,
+								},
+							},
+						}, {
+							Name: "cors",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterCORS,
+								},
+							},
+						}, {
+							Name: "local_ratelimit",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(
+									&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+										StatPrefix: "http",
+									},
+								),
+							},
+						}, {
+							Name: "router",
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: &any.Any{
+									TypeUrl: HTTPFilterRouter,
+								},
+							},
+						}},
+						HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
+							// Enable support for HTTP/1.0 requests that carry
+							// a Host: header. See #537.
+							AcceptHttp_10: true,
+						},
+						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{},
+						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
+						UseRemoteAddress:          protobuf.Bool(true),
+						NormalizePath:             protobuf.Bool(true),
+						PreserveExternalRequestId: true,
+						MergeSlashes:              true,
+						DrainTimeout:              protobuf.Duration(90 * time.Second),
+						XffNumTrustedHops:         1,
+					}),
+				},
+			},
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -1053,6 +1145,7 @@ func TestHTTPConnectionManager(t *testing.T) {
 				MaxConnectionDuration(tc.maxConnectionDuration).
 				ConnectionShutdownGracePeriod(tc.connectionShutdownGracePeriod).
 				AllowChunkedLength(tc.allowChunkedLength).
+				NumTrustedHops(tc.xffNumTrustedHops).
 				DefaultFilters().
 				Get()
 

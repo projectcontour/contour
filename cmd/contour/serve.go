@@ -286,6 +286,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		ConnectionShutdownGracePeriod: connectionShutdownGracePeriod,
 		DefaultHTTPVersions:           parseDefaultHTTPVersions(ctx.Config.DefaultHTTPVersions),
 		AllowChunkedLength:            !ctx.Config.DisableAllowChunkedLength,
+		XffNumTrustedHops:             ctx.Config.Network.XffNumTrustedHops,
 	}
 
 	contourMetrics := metrics.NewMetrics(registry)
