@@ -20,7 +20,7 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -58,7 +58,7 @@ type Cache struct {
 // Get returns a pointer to a the cache entry if it exists, nil
 // otherwise. The return value is shared between all callers, who
 // should take care to cooperate.
-func (c *Cache) Get(obj k8s.Object) CacheEntry {
+func (c *Cache) Get(obj metav1.Object) CacheEntry {
 	kind := k8s.KindOf(obj)
 
 	if _, ok := c.entries[kind]; !ok {
@@ -69,7 +69,7 @@ func (c *Cache) Get(obj k8s.Object) CacheEntry {
 }
 
 // Put returns an entry to the cache.
-func (c *Cache) Put(obj k8s.Object, e CacheEntry) {
+func (c *Cache) Put(obj metav1.Object, e CacheEntry) {
 	kind := k8s.KindOf(obj)
 
 	if _, ok := c.entries[kind]; !ok {
@@ -88,7 +88,7 @@ func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, fu
 	pu := &ProxyUpdate{
 		Fullname:       k8s.NamespacedNameOf(proxy),
 		Generation:     proxy.Generation,
-		TransitionTime: v1.NewTime(time.Now()),
+		TransitionTime: metav1.NewTime(time.Now()),
 		Conditions:     make(map[ConditionType]*contour_api_v1.DetailedCondition),
 	}
 
