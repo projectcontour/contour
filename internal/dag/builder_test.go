@@ -2817,6 +2817,115 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxyCookieLoadBalancer := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "Cookie",
+				},
+			}},
+		},
+	}
+
+	proxyLoadBalancerHashPolicyHeader := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "RequestHash",
+					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+						{
+							Terminal: true,
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Some-Header",
+							},
+						},
+						{
+							// Lower case but duplicated, should be ignored.
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "x-some-header",
+							},
+						},
+						{
+							HeaderHashOptions: nil,
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Some-Other-Header",
+							},
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "",
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	proxyLoadBalancerHashPolicyHeaderAllInvalid := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "RequestHash",
+					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+						{
+							HeaderHashOptions: nil,
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "",
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
 	// proxy109 has a route that rewrites headers.
 	proxy109 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -5404,6 +5513,85 @@ func TestDAGInsert(t *testing.T) {
 								Set: map[string]string{
 									"X-Header": "",
 								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with cookie load balancing strategy": {
+			objs: []interface{}{
+				proxyCookieLoadBalancer,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters: []*Cluster{
+								{Upstream: service(s9), LoadBalancerPolicy: "Cookie"},
+							},
+							RequestHashPolicies: []RequestHashPolicy{
+								{
+									CookieHashOptions: &CookieHashOptions{
+										CookieName: "X-Contour-Session-Affinity",
+										TTL:        time.Duration(0),
+										Path:       "/",
+									},
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with load balancer request header hash policies": {
+			objs: []interface{}{
+				proxyLoadBalancerHashPolicyHeader,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters: []*Cluster{
+								{Upstream: service(s9), LoadBalancerPolicy: "RequestHash"},
+							},
+							RequestHashPolicies: []RequestHashPolicy{
+								{
+									Terminal: true,
+									HeaderHashOptions: &HeaderHashOptions{
+										HeaderName: "X-Some-Header",
+									},
+								},
+								{
+									HeaderHashOptions: &HeaderHashOptions{
+										HeaderName: "X-Some-Other-Header",
+									},
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with all invalid request header hash policies": {
+			objs: []interface{}{
+				proxyLoadBalancerHashPolicyHeaderAllInvalid,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters: []*Cluster{
+								{Upstream: service(s9), LoadBalancerPolicy: "RoundRobin"},
 							},
 						}),
 					),

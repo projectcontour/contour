@@ -280,6 +280,12 @@ func TestLoadBalancerPolicy(t *testing.T) {
 			},
 			want: "Cookie",
 		},
+		"RequestHash": {
+			lbp: &contour_api_v1.LoadBalancerPolicy{
+				Strategy: "RequestHash",
+			},
+			want: "RequestHash",
+		},
 		"unknown": {
 			lbp: &contour_api_v1.LoadBalancerPolicy{
 				Strategy: "please",

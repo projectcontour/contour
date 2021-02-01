@@ -29,6 +29,28 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
+const (
+	// LoadBalancerPolicyWeightedLeastRequest specifies the backend with least
+	// active requests will be chosen by the load balancer.
+	LoadBalancerPolicyWeightedLeastRequest = "WeightedLeastRequest"
+
+	// LoadBalancerPolicyRandom denotes the load balancer will choose a random
+	// backend when routing a request.
+	LoadBalancerPolicyRandom = "Random"
+
+	// LoadBalancerPolicyRoundRobin denotes the load balancer will route
+	// requests in a round-robin fashion among backend instances.
+	LoadBalancerPolicyRoundRobin = "RoundRobin"
+
+	// LoadBalancerPolicyCookie denotes load balancing will be performed via a
+	// Contour specified cookie.
+	LoadBalancerPolicyCookie = "Cookie"
+
+	// LoadBalancerPolicyRequestHash denotes request attribute hashing is used
+	// to make load balancing decisions.
+	LoadBalancerPolicyRequestHash = "RequestHash"
+)
+
 // retryOn transforms a slice of retry on values to a comma-separated string.
 // CRD validation ensures that all retry on values are valid.
 func retryOn(ro []contour_api_v1.RetryOn) string {
@@ -277,12 +299,8 @@ func loadBalancerPolicy(lbp *contour_api_v1.LoadBalancerPolicy) string {
 		return ""
 	}
 	switch lbp.Strategy {
-	case "WeightedLeastRequest":
-		return "WeightedLeastRequest"
-	case "Random":
-		return "Random"
-	case "Cookie":
-		return "Cookie"
+	case LoadBalancerPolicyWeightedLeastRequest, LoadBalancerPolicyRandom, LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
+		return lbp.Strategy
 	default:
 		return ""
 	}
@@ -361,4 +379,65 @@ func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, erro
 	}
 
 	return rp, nil
+}
+
+// Validates and returns list of hash policies along with lb actual strategy to
+// be used. Will return default strategy and empty list of hash policies if
+// validation fails.
+func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, validCond *contour_api_v1.DetailedCondition) ([]RequestHashPolicy, string) {
+	if lbp == nil {
+		return nil, ""
+	}
+	strategy := loadBalancerPolicy(lbp)
+	switch strategy {
+	case LoadBalancerPolicyCookie:
+		return []RequestHashPolicy{
+			{CookieHashOptions: &CookieHashOptions{
+				CookieName: "X-Contour-Session-Affinity",
+				TTL:        time.Duration(0),
+				Path:       "/",
+			}},
+		}, LoadBalancerPolicyCookie
+	case LoadBalancerPolicyRequestHash:
+		rhp := []RequestHashPolicy{}
+		actualStrategy := strategy
+		// Map of unique header names.
+		headerHashPolicies := map[string]bool{}
+		for _, hashPolicy := range lbp.RequestHashPolicies {
+			if hashPolicy.HeaderHashOptions == nil {
+				validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+					"ignoring invalid nil hash policy options")
+				continue
+			}
+			headerName := http.CanonicalHeaderKey(hashPolicy.HeaderHashOptions.HeaderName)
+			if msgs := validation.IsHTTPHeaderName(headerName); len(msgs) != 0 {
+				validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+					"ignoring invalid header hash policy options with invalid header name %q: %v", headerName, msgs)
+				continue
+			}
+			if _, ok := headerHashPolicies[headerName]; ok {
+				validCond.AddWarningf("SpecError", "IgnoredField",
+					"ignoring invalid header hash policy options with duplicated header name %s", headerName)
+				continue
+			}
+			headerHashPolicies[headerName] = true
+
+			rhp = append(rhp, RequestHashPolicy{
+				Terminal: hashPolicy.Terminal,
+				HeaderHashOptions: &HeaderHashOptions{
+					HeaderName: headerName,
+				},
+			})
+		}
+		if len(rhp) == 0 {
+			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+				"ignoring invalid header hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
+			rhp = nil
+			actualStrategy = LoadBalancerPolicyRoundRobin
+		}
+		return rhp, actualStrategy
+	default:
+		return nil, strategy
+	}
+
 }
