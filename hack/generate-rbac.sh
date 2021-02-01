@@ -8,10 +8,8 @@ readonly REPO=$(cd "$(dirname "$0")/.." && pwd)
 readonly PROGNAME=$(basename "$0")
 
 readonly GO111MODULE=on
-readonly GOFLAGS=-mod=vendor
 
 export GO111MODULE
-export GOFLAGS
 
 exec >"${REPO}/examples/contour/02-role-contour.yaml"
 
