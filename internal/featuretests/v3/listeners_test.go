@@ -452,6 +452,97 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	})
 }
 
+func TestTLSListenerCipherSuites(t *testing.T) {
+	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+		conf.CipherSuites = []string{"ECDHE-ECDSA-AES256-GCM-SHA384"}
+	})
+	defer done()
+
+	// secret1 is a tls secret
+	secret1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+	}
+
+	svc1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+
+	// p1 is a tls httpproxy
+	p1 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: secret1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "kuard.example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName:             secret1.Name,
+					MinimumProtocolVersion: "1.2",
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: svc1.Name,
+					Port: int(svc1.Spec.Ports[0].Port),
+				}},
+			}},
+		},
+	}
+
+	// add secret
+	rh.OnAdd(secret1)
+
+	l1 := &envoy_listener_v3.Listener{
+		Name:    "ingress_https",
+		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+		ListenerFilters: envoy_v3.ListenerFilters(
+			envoy_v3.TLSInspector(),
+		),
+		FilterChains: []*envoy_listener_v3.FilterChain{
+			envoy_v3.FilterChainTLS(
+				"kuard.example.com",
+				envoy_v3.DownstreamTLSContext(
+					&dag.Secret{Object: secret1},
+					envoy_tls_v3.TlsParameters_TLSv1_2,
+					[]string{"ECDHE-ECDSA-AES256-GCM-SHA384"},
+					nil,
+					"h2", "http/1.1"),
+				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
+			),
+		},
+		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+	}
+
+	// add service
+	rh.OnAdd(svc1)
+
+	rh.OnAdd(p1)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_http",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			l1,
+			staticListener(),
+		),
+		TypeUrl: listenerType,
+	})
+}
+
 func TestLDSFilter(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
