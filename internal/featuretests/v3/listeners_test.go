@@ -859,7 +859,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	// are using proxy protocol
 	rh.OnAdd(i1)
 
-	ingress_http := &envoy_listener_v3.Listener{
+	ingressHTTP := &envoy_listener_v3.Listener{
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("127.0.0.100", 9100),
 		FilterChains: envoy_v3.FilterChains(
@@ -867,7 +867,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		),
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}
-	ingress_https := &envoy_listener_v3.Listener{
+	ingressHTTPS := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("127.0.0.200", 9200),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -882,8 +882,8 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	}
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			ingress_http,
-			ingress_https,
+			ingressHTTP,
+			ingressHTTPS,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
@@ -952,7 +952,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 	rh.OnAdd(i1)
 
-	ingress_http := &envoy_listener_v3.Listener{
+	ingressHTTP := &envoy_listener_v3.Listener{
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 		FilterChains: envoy_v3.FilterChains(
@@ -960,7 +960,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		),
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}
-	ingress_https := &envoy_listener_v3.Listener{
+	ingressHTTPS := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -982,8 +982,8 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "1",
 		Resources: resources(t,
-			ingress_http,
-			ingress_https,
+			ingressHTTP,
+			ingressHTTPS,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
