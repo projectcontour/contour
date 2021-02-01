@@ -617,6 +617,7 @@ type ServiceCluster struct {
 	Services []WeightedService
 }
 
+// DeepCopy performs a deep copy of ServiceClusters
 // TODO(jpeach): apply deepcopy-gen to DAG objects.
 func (s *ServiceCluster) DeepCopy() *ServiceCluster {
 	s2 := ServiceCluster{
@@ -719,7 +720,7 @@ func (s *Secret) PrivateKey() []byte {
 	return s.Object.Data[v1.TLSPrivateKeyKey]
 }
 
-// Cluster http health check policy
+// HTTPHealthCheckPolicy http health check policy
 type HTTPHealthCheckPolicy struct {
 	Path               string
 	Host               string
@@ -729,7 +730,7 @@ type HTTPHealthCheckPolicy struct {
 	HealthyThreshold   uint32
 }
 
-// Cluster tcp health check policy
+// TCPHealthCheckPolicy tcp health check policy
 type TCPHealthCheckPolicy struct {
 	Interval           time.Duration
 	Timeout            time.Duration
