@@ -44,7 +44,7 @@ Contour should provision TLS hosts.
 | minimum-protocol-version| string | `1.2` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.2` (default) and `1.3`. Any other value defaults to TLS 1.2. |
 | fallback-certificate | | | [Fallback certificate configuration](#fallback-certificate). |
 | envoy-client-certificate | | | [Client certificate configuration for Envoy](#envoy-client-certificate). |
-| cipher-suites | []string | See [config package documentation](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-constants) | This field specifies the TLS ciphers to be applied to TLS listeners. Ciphers are validated against the supported set specified by Envoy [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites) |
+| cipher-suites | []string | See [config package documentation](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-constants) | This field specifies the TLS ciphers to be supported by TLS listeners when negotiating TLS 1.2. Note that this is ignored when TLS 1.3 is in use. Ciphers are validated against the supported set specified by Envoy [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites). |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -144,6 +144,13 @@ data:
     tls:
       # minimum TLS version that Contour will negotiate
       # minimumProtocolVersion: "1.2"
+      # TLS ciphers to be supported by Envoy TLS listeners when negotiating
+      # TLS 1.2.
+      # cipher-suites:
+      # - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+      # - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+      # - 'ECDHE-ECDSA-AES256-GCM-SHA384'
+      # - 'ECDHE-RSA-AES256-GCM-SHA384'
       fallback-certificate:
       # name: fallback-secret-name
       # namespace: projectcontour
