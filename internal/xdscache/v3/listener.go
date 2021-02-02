@@ -80,6 +80,8 @@ type ListenerConfig struct {
 	// MinimumTLSVersion defines the minimum TLS protocol version the proxy should accept.
 	MinimumTLSVersion string
 
+	// Ciphersuites defines the ciphers Envoy TLS listeners will accept when
+	// negotiating TLS 1.2.
 	CipherSuites []string
 
 	// DefaultHTTPVersions defines the default set of HTTP

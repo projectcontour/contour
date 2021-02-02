@@ -226,6 +226,10 @@ type TLSParameters struct {
 	// cluster.
 	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
 
+	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
+	// listeners when negotiating TLS 1.2. Ciphers are validated against the
+	// set that Envoy supports by default. Note that these will be ignored
+	// when TLS 1.3 is in use.
 	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
 }
 
