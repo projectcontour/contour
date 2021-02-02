@@ -6448,6 +6448,7 @@ func TestValidateHeaderAlteration(t *testing.T) {
 	tests := []struct {
 		name    string
 		in      *contour_api_v1.HeadersPolicy
+		dyn     map[string]string
 		want    *HeadersPolicy
 		wantErr error
 	}{{
@@ -6463,6 +6464,9 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Value: "blah",
 			}},
 			Remove: []string{"K-Nada"},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
 		},
 		want: &HeadersPolicy{
 			Set: map[string]string{
@@ -6482,11 +6486,17 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Value: "blah",
 			}},
 		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
 		wantErr: errors.New(`duplicate header addition: "K-Foo"`),
 	}, {
 		name: "duplicate remove",
 		in: &contour_api_v1.HeadersPolicy{
 			Remove: []string{"K-Foo", "k-foo"},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
 		},
 		wantErr: errors.New(`duplicate header removal: "K-Foo"`),
 	}, {
@@ -6497,11 +6507,17 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Value: "bar",
 			}},
 		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
 		wantErr: errors.New(`invalid set header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
 	}, {
 		name: "invalid remove header",
 		in: &contour_api_v1.HeadersPolicy{
 			Remove: []string{"  K-Foo"},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
 		},
 		wantErr: errors.New(`invalid remove header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
 	}, {
@@ -6511,6 +6527,9 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Name:  "Host",
 				Value: "bar",
 			}},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
 		},
 		wantErr: errors.New(`rewriting "Host" header is not supported`),
 	}, {
@@ -6527,6 +6546,9 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Value: "%DOWNSTREAM_LOCAL_ADDRESS%", // This is a known Envoy dynamic header
 			}},
 		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
 		want: &HeadersPolicy{
 			Set: map[string]string{
 				"K-Foo":           "100%%",
@@ -6534,11 +6556,45 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				"Lot-Of-Percents": "%%%%%%%%%%",
 			},
 		},
+	}, {
+		name: "dynamic service headers",
+		in: &contour_api_v1.HeadersPolicy{
+			Set: []contour_api_v1.HeaderValue{{
+				Name:  "l5d-dst-override",
+				Value: "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
+			}},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE":    "myns",
+			"CONTOUR_SERVICE_NAME": "myservice",
+			"CONTOUR_SERVICE_PORT": "80",
+		},
+		want: &HeadersPolicy{
+			Set: map[string]string{
+				"L5d-Dst-Override": "myservice.myns.svc.cluster.local:80",
+			},
+		},
+	}, {
+		name: "dynamic service headers without service name and port",
+		in: &contour_api_v1.HeadersPolicy{
+			Set: []contour_api_v1.HeaderValue{{
+				Name:  "l5d-dst-override",
+				Value: "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
+			}},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
+		want: &HeadersPolicy{
+			Set: map[string]string{
+				"L5d-Dst-Override": "%%CONTOUR_SERVICE_NAME%%.myns.svc.cluster.local:%%CONTOUR_SERVICE_PORT%%",
+			},
+		},
 	}}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(test.in)
+			got, gotErr := headersPolicyService(test.in, test.dyn)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
 		})

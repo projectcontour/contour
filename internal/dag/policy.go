@@ -88,12 +88,11 @@ func retryPolicy(rp *contour_api_v1.RetryPolicy) *RetryPolicy {
 	}
 }
 
-func headersPolicyService(policy *contour_api_v1.HeadersPolicy) (*HeadersPolicy, error) {
-	return headersPolicyRoute(policy, false)
-
+func headersPolicyService(policy *contour_api_v1.HeadersPolicy, dynamicHeaders map[string]string) (*HeadersPolicy, error) {
+	return headersPolicyRoute(policy, false, dynamicHeaders)
 }
 
-func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite bool) (*HeadersPolicy, error) {
+func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite bool, dynamicHeaders map[string]string) (*HeadersPolicy, error) {
 	if policy == nil {
 		return nil, nil
 	}
@@ -115,7 +114,7 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
 		}
-		set[key] = escapeHeaderValue(entry.Value)
+		set[key] = escapeHeaderValue(entry.Value, dynamicHeaders)
 	}
 
 	remove := sets.NewString()
@@ -145,7 +144,7 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 	}, nil
 }
 
-func escapeHeaderValue(value string) string {
+func escapeHeaderValue(value string, dynamicHeaders map[string]string) string {
 	// Envoy supports %-encoded variables, so literal %'s in the header's value must be escaped.  See:
 	// https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers#custom-request-response-headers
 	// Only allow a specific set of known good Envoy dynamic headers to pass through unescaped
@@ -153,6 +152,9 @@ func escapeHeaderValue(value string) string {
 		return value
 	}
 	escapedValue := strings.Replace(value, "%", "%%", -1)
+	for dynamicVar, dynamicVal := range dynamicHeaders {
+		escapedValue = strings.ReplaceAll(escapedValue, "%%"+dynamicVar+"%%", dynamicVal)
+	}
 	for _, envoyVar := range []string{
 		"DOWNSTREAM_REMOTE_ADDRESS",
 		"DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT",
@@ -373,7 +375,7 @@ func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, erro
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid header name %q: %v", key, msgs)
 		}
-		rp.Local.ResponseHeadersToAdd[key] = escapeHeaderValue(header.Value)
+		rp.Local.ResponseHeadersToAdd[key] = escapeHeaderValue(header.Value, map[string]string{})
 	}
 
 	return rp, nil
