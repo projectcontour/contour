@@ -263,7 +263,7 @@ If there are any errors, the `Admitted` Condition will be `status: false`, and t
 For both HTTPRoute and TLSRoute, there are two fields in common, `spec.gateways`, and `status.gateways`.
 Both resources will handle these fields as per the spec.
 
-The thing that's most worthy of comment is that if a Route is selected by a Listener's RouteBindingSelector, but does _not_ allow the Gateway in its RouteGateways, then the Route's `status.gateways[].conditions` field will have an `Admitted` Condition as per the spec.
+The thing that's most worthy of comment is that if a Route is selected by a Listener's RouteBindingSelector, but does _not_ allow the Gateway in its RouteGateways, then the Route's `status.gateways[].conditions` field will have an `Admitted` Condition with `status: false` as per the spec.
 
 ### HTTPRoute
 
@@ -297,15 +297,30 @@ That is, you can't specify a different certificate for the same hostname.
 
 ### TLSRoute
 
-TODO: detail around TLSRoute
-
-
+TLSRoute implementation is quite straightforward, only allows simple routing based on SNI.
+Contour will implement this object as per its API spec.
 ### Other concerns
 
 ## Alternatives Considered
-TODO: This will need further explanation of what the solution would look like if we didn't make one GatewayClass == One Contour.
 
-TODO: Some discussion of why layer 7 only.
+### Contour watches multiple Gateways
+The only main alternative considered for this design was making Contour possibly responsible for more than one Gateway.
+In this model, Contour would be configured with a `controller` string, and watch all GatewayClasses for that string in the `spec.controller` field.
+Contour would also watch all Gateways, and for Gateways with a matching `spec.gatewayClassName`, would use those as a basis for looking for routes.
+
+The reason this model wasn't chosen was that it's difficult to define how you could merge multiple Gateway objects into a single Envoy installation.
+Model-wise, it seems to be intended that a Gateway represents the actual thing that takes traffic and transforms it so it can get to the requested Pods.
+In Contour's case, this is Envoy, and it's extremely difficult to design a model where a single Envoy deployment could handle multiple different Gateway specs.
+
+Also, this model makes interacting with the Contour Operator much harder.
+In the model we've chosen, the Operator takes the Gateway as a request for an Envoy installation, with matching Contour installation.
+As part of that, Contour is requested to look at one and only one Gateway, which contradicts the "watches multiple Gateways" model.
 
 ## Implementation
-A description of the implementation, timelines, and any resources that have agreed to contribute.
+
+There is currently experimental support for *reading* the Service-APIs objects in Contour, we will add full support in something like this order:
+- Add support for configuring Gateway to the config file
+- Deprecate `--expermental-service-apis` command-line flag, so that it does nothing but log a referral to the new config item.
+- Implement the Service-APIs processor as a single DAG processor.
+- Release a version with Service-APIs support still marked experimental.
+- Remove the experimental tag once we're happy with the support.
