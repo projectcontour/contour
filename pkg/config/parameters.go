@@ -344,6 +344,17 @@ type ClusterParameters struct {
 	DNSLookupFamily ClusterDNSFamilyType `yaml:"dns-lookup-family"`
 }
 
+// NetworkParameters hold various configurable network values.
+type NetworkParameters struct {
+	// XffNumTrustedHops defines the number of additional ingress proxy hops from the
+	// right side of the x-forwarded-for HTTP header to trust when determining the origin
+	// client’s IP address.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/v1.17.0/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=xff_num_trusted_hops
+	// for more information.
+	XffNumTrustedHops uint32 `yaml:"num-trusted-hops"`
+}
+
 // Parameters contains the configuration file parameters for the
 // Contour ingress controller.
 type Parameters struct {
@@ -409,6 +420,9 @@ type Parameters struct {
 	// Cluster holds various configurable Envoy cluster values that can
 	// be set in the config file.
 	Cluster ClusterParameters `yaml:"cluster,omitempty"`
+
+	// Network holds various configurable Envoy network values.
+	Network NetworkParameters `yaml:"network,omitempty"`
 }
 
 // Validate verifies that the parameter values do not have any syntax errors.
@@ -485,6 +499,9 @@ func Defaults() Parameters {
 		DefaultHTTPVersions:   []HTTPVersionType{},
 		Cluster: ClusterParameters{
 			DNSLookupFamily: AutoClusterDNSFamily,
+		},
+		Network: NetworkParameters{
+			XffNumTrustedHops: 0,
 		},
 	}
 }
