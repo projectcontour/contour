@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 func TestDAGInsert(t *testing.T) {
@@ -3707,6 +3708,28 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	tcpProxyExternalNameService := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
+					Name:     s14.GetName(),
+					Port:     80,
+					Protocol: pointer.StringPtr("tls"),
+				}},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                         []interface{}
 		disablePermitInsecure        bool
@@ -6838,6 +6861,42 @@ func TestDAGInsert(t *testing.T) {
 								SNI: "externalservice.io",
 							}},
 						}),
+					),
+				},
+			),
+		},
+		"insert tcp proxy with externalName service": {
+			objs: []interface{}{
+				tcpProxyExternalNameService,
+				s14,
+				sec1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: []*Cluster{{
+									Upstream: &Service{
+										ExternalName: "externalservice.io",
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s14.Name,
+											ServiceNamespace: s14.Namespace,
+											ServicePort:      s14.Spec.Ports[0],
+										},
+									},
+									Protocol: "tls",
+									SNI:      "externalservice.io",
+								}},
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+						},
 					),
 				},
 			),
