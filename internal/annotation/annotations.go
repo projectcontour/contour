@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/projectcontour/contour/internal/timeout"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -130,19 +130,19 @@ func ParseUpstreamProtocols(m map[string]string) map[string]string {
 
 // HTTPAllowed returns true unless the kubernetes.io/ingress.allow-http annotation is
 // present and set to false.
-func HTTPAllowed(i *v1beta1.Ingress) bool {
+func HTTPAllowed(i *networking_v1.Ingress) bool {
 	return !(i.Annotations["kubernetes.io/ingress.allow-http"] == "false")
 }
 
 // TLSRequired returns true if the ingress.kubernetes.io/force-ssl-redirect annotation is
 // present and set to true.
-func TLSRequired(i *v1beta1.Ingress) bool {
+func TLSRequired(i *networking_v1.Ingress) bool {
 	return i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true"
 }
 
 // WebsocketRoutes retrieves the details of routes that should have websockets enabled from the
 // associated websocket-routes annotation.
-func WebsocketRoutes(i *v1beta1.Ingress) map[string]bool {
+func WebsocketRoutes(i *networking_v1.Ingress) map[string]bool {
 	routes := make(map[string]bool)
 	for _, v := range strings.Split(i.Annotations["projectcontour.io/websocket-routes"], ",") {
 		route := strings.TrimSpace(v)
@@ -155,12 +155,12 @@ func WebsocketRoutes(i *v1beta1.Ingress) map[string]bool {
 
 // NumRetries returns the number of retries specified by the
 // "projectcontour.io/num-retries" annotation.
-func NumRetries(i *v1beta1.Ingress) uint32 {
+func NumRetries(i *networking_v1.Ingress) uint32 {
 	return parseUInt32(ContourAnnotation(i, "num-retries"))
 }
 
 // PerTryTimeout returns the duration envoy will wait per retry cycle.
-func PerTryTimeout(i *v1beta1.Ingress) (timeout.Setting, error) {
+func PerTryTimeout(i *networking_v1.Ingress) (timeout.Setting, error) {
 	return timeout.Parse(ContourAnnotation(i, "per-try-timeout"))
 }
 

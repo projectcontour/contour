@@ -20,7 +20,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -113,11 +113,11 @@ func TestParseUpstreamProtocols(t *testing.T) {
 
 func TestWebsocketRoutes(t *testing.T) {
 	tests := map[string]struct {
-		a    *v1beta1.Ingress
+		a    *networking_v1.Ingress
 		want map[string]bool
 	}{
 		"empty": {
-			a: &v1beta1.Ingress{
+			a: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": "",
@@ -127,7 +127,7 @@ func TestWebsocketRoutes(t *testing.T) {
 			want: map[string]bool{},
 		},
 		"empty with spaces": {
-			a: &v1beta1.Ingress{
+			a: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": ", ,",
@@ -137,7 +137,7 @@ func TestWebsocketRoutes(t *testing.T) {
 			want: map[string]bool{},
 		},
 		"single value": {
-			a: &v1beta1.Ingress{
+			a: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": "/ws1",
@@ -149,7 +149,7 @@ func TestWebsocketRoutes(t *testing.T) {
 			},
 		},
 		"multiple values": {
-			a: &v1beta1.Ingress{
+			a: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": "/ws1,/ws2",
@@ -162,7 +162,7 @@ func TestWebsocketRoutes(t *testing.T) {
 			},
 		},
 		"multiple values with spaces and invalid entries": {
-			a: &v1beta1.Ingress{
+			a: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": " /ws1, , /ws2 ",
@@ -186,27 +186,27 @@ func TestWebsocketRoutes(t *testing.T) {
 
 func TestHttpAllowed(t *testing.T) {
 	tests := map[string]struct {
-		i     *v1beta1.Ingress
+		i     *networking_v1.Ingress
 		valid bool
 	}{
 		"basic ingress": {
-			i: &v1beta1.Ingress{
+			i: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
 				},
-				Spec: v1beta1.IngressSpec{
-					TLS: []v1beta1.IngressTLS{{
+				Spec: networking_v1.IngressSpec{
+					TLS: []networking_v1.IngressTLS{{
 						Hosts:      []string{"whatever.example.com"},
 						SecretName: "secret",
 					}},
-					Backend: backend("backend", intstr.FromInt(80)),
+					DefaultBackend: backend("backend", intstr.FromInt(80)),
 				},
 			},
 			valid: true,
 		},
 		"kubernetes.io/ingress.allow-http: \"false\"": {
-			i: &v1beta1.Ingress{
+			i: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
@@ -214,12 +214,12 @@ func TestHttpAllowed(t *testing.T) {
 						"kubernetes.io/ingress.allow-http": "false",
 					},
 				},
-				Spec: v1beta1.IngressSpec{
-					TLS: []v1beta1.IngressTLS{{
+				Spec: networking_v1.IngressSpec{
+					TLS: []networking_v1.IngressTLS{{
 						Hosts:      []string{"whatever.example.com"},
 						SecretName: "secret",
 					}},
-					Backend: backend("backend", intstr.FromInt(80)),
+					DefaultBackend: backend("backend", intstr.FromInt(80)),
 				},
 			},
 			valid: false,
@@ -325,7 +325,7 @@ func TestAnnotationKindValidation(t *testing.T) {
 	// table is valid.
 	for _, kind := range []string{
 		kindOf(&v1.Service{}),
-		kindOf(&v1beta1.Ingress{}),
+		kindOf(&networking_v1.Ingress{}),
 		kindOf(&contour_api_v1.HTTPProxy{}),
 	} {
 		for key := range annotationsByKind[kind] {
@@ -361,7 +361,7 @@ func TestMatchIngressClass(t *testing.T) {
 		want []bool
 	}{
 		"ingress nginx kubernetes.io/ingress.class": {
-			fixture: &v1beta1.Ingress{
+			fixture: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
@@ -373,7 +373,7 @@ func TestMatchIngressClass(t *testing.T) {
 			want: []bool{false, false},
 		},
 		"ingress nginx projectcontour.io/ingress.class": {
-			fixture: &v1beta1.Ingress{
+			fixture: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
@@ -385,7 +385,7 @@ func TestMatchIngressClass(t *testing.T) {
 			want: []bool{false, false},
 		},
 		"ingress contour kubernetes.io/ingress.class": {
-			fixture: &v1beta1.Ingress{
+			fixture: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
@@ -397,7 +397,7 @@ func TestMatchIngressClass(t *testing.T) {
 			want: []bool{true, true},
 		},
 		"ingress contour projectcontour.io/ingress.class": {
-			fixture: &v1beta1.Ingress{
+			fixture: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
@@ -409,7 +409,7 @@ func TestMatchIngressClass(t *testing.T) {
 			want: []bool{true, true},
 		},
 		"no annotation": {
-			fixture: &v1beta1.Ingress{
+			fixture: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "noannotation",
 					Namespace: "default",
@@ -432,10 +432,23 @@ func TestMatchIngressClass(t *testing.T) {
 		})
 	}
 }
-func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
-	return &v1beta1.IngressBackend{
-		ServiceName: name,
-		ServicePort: port,
+func backend(name string, port intstr.IntOrString) *networking_v1.IngressBackend {
+	var portObj networking_v1.ServiceBackendPort
+	if port.Type == intstr.Int {
+		portObj = networking_v1.ServiceBackendPort{
+			Number: port.IntVal,
+		}
+	} else {
+		portObj = networking_v1.ServiceBackendPort{
+			Name: port.StrVal,
+		}
+	}
+
+	return &networking_v1.IngressBackend{
+		Service: &networking_v1.IngressServiceBackend{
+			Name: name,
+			Port: portObj,
+		},
 	}
 }
 
@@ -452,7 +465,7 @@ func kindOf(obj interface{}) string {
 		return "Secret"
 	case *v1.Service:
 		return "Service"
-	case *v1beta1.Ingress:
+	case *networking_v1.Ingress:
 		return "Ingress"
 	case *contour_api_v1.HTTPProxy:
 		return "HTTPProxy"
