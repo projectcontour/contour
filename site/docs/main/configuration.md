@@ -32,6 +32,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | cluster | ClusterConfig | | The [cluster configuration](#cluster-configuration). |
 | network | NetworkConfig | | The [network configuration](#network-configuration). |
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
+| gateway | GatewayConfig |  | The [service-apis Gateway configuration](#gateway-configuration). |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -128,6 +129,17 @@ The server configuration block can be used to configure various settings for the
 {: class="table thead-dark table-bordered"}
 <br>
 
+### Gateway Configuration
+
+The gateway configuration block is used to configure which service-apis Gateway Contour should configure:
+
+| Field Name | Type| Default  | Description |
+|------------|-----|----------|-------------|
+| name | string | contour | This field specifies the name of a Gateway.  |
+| namespace | string | projectcontour | This field specifies the namespace of a Gateway.  |
+{: class="table thead-dark table-bordered"}
+<br>
+
 ### Configuration Example
 
 The following is an example ConfigMap with configuration file included:
@@ -144,6 +156,11 @@ data:
     # server:
     #   determine which XDS Server implementation to utilize in Contour.
     #   xds-server-type: contour
+    #
+    # specify the service-apis Gateway Contour should configure
+    # gateway:
+    #   name: contour
+    #   namespace: projectcontour
     #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
