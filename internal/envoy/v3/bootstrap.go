@@ -173,7 +173,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 						KeepaliveInterval: protobuf.UInt32(5),
 					},
 				},
-				TypedExtensionProtocolOptions: http2ProtocolOptions(),
+				Http2ProtocolOptions: new(envoy_core_v3.Http2ProtocolOptions), // enables http2
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 						Priority:           envoy_core_v3.RoutingPriority_HIGH,
