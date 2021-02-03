@@ -65,8 +65,8 @@ var DefaultTLSCiphers = TLSCiphers([]string{
 // Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
 var ValidTLSCiphers = map[string]struct{}{
 	"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]": {},
-	"ECDHE-ECDSA-AES128-GCM-SHA256":                                 {},
 	"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]":     {},
+	"ECDHE-ECDSA-AES128-GCM-SHA256":                                 {},
 	"ECDHE-RSA-AES128-GCM-SHA256":                                   {},
 	"ECDHE-ECDSA-AES128-SHA":                                        {},
 	"ECDHE-RSA-AES128-SHA":                                          {},
