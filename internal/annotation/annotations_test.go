@@ -279,7 +279,7 @@ func TestAnnotationKindValidation(t *testing.T) {
 		valid bool
 	}
 	tests := map[string]struct {
-		obj         metav1.ObjectMetaAccessor
+		obj         metav1.Object
 		annotations map[string]status
 	}{
 		"service": {
@@ -355,7 +355,7 @@ func TestMatchIngressClass(t *testing.T) {
 	// ingress class is empty
 	// ingress class is not empty.
 	tests := map[string]struct {
-		fixture metav1.ObjectMetaAccessor
+		fixture metav1.Object
 		// these are results for empty and "contour" ingress class
 		// respectively.
 		want []bool

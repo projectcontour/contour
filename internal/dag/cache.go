@@ -25,6 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
@@ -78,14 +79,13 @@ func (kc *KubernetesCache) init() {
 
 // matchesIngressClass returns true if the given Kubernetes object
 // belongs to the Ingress class that this cache is using.
-func (kc *KubernetesCache) matchesIngressClass(obj k8s.Object) bool {
+func (kc *KubernetesCache) matchesIngressClass(obj metav1.Object) bool {
 
 	if !annotation.MatchesIngressClass(obj, kc.IngressClass) {
 		kind := k8s.KindOf(obj)
-		om := obj.GetObjectMeta()
 
-		kc.WithField("name", om.GetName()).
-			WithField("namespace", om.GetNamespace()).
+		kc.WithField("name", obj.GetName()).
+			WithField("namespace", obj.GetNamespace()).
 			WithField("kind", kind).
 			WithField("ingress-class", annotation.IngressClass(obj)).
 			WithField("target-ingress-class", kc.IngressClass).
@@ -104,9 +104,9 @@ func (kc *KubernetesCache) matchesIngressClass(obj k8s.Object) bool {
 func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	kc.initialize.Do(kc.init)
 
-	if obj, ok := obj.(k8s.Object); ok {
+	if obj, ok := obj.(metav1.Object); ok {
 		kind := k8s.KindOf(obj)
-		for key := range obj.GetObjectMeta().GetAnnotations() {
+		for key := range obj.GetAnnotations() {
 			// Emit a warning if this is a known annotation that has
 			// been applied to an invalid object kind. Note that we
 			// only warn for known annotations because we want to
@@ -115,9 +115,8 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			if annotation.IsKnown(key) && !annotation.ValidForKind(kind, key) {
 				// TODO(jpeach): this should be exposed
 				// to the user as a status condition.
-				om := obj.GetObjectMeta()
-				kc.WithField("name", om.GetName()).
-					WithField("namespace", om.GetNamespace()).
+				kc.WithField("name", obj.GetName()).
+					WithField("namespace", obj.GetNamespace()).
 					WithField("kind", kind).
 					WithField("version", k8s.VersionOf(obj)).
 					WithField("annotation", key).
@@ -131,9 +130,8 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		valid, err := isValidSecret(obj)
 		if !valid {
 			if err != nil {
-				om := obj.GetObjectMeta()
-				kc.WithField("name", om.GetName()).
-					WithField("namespace", om.GetNamespace()).
+				kc.WithField("name", obj.GetName()).
+					WithField("namespace", obj.GetNamespace()).
 					WithField("kind", "Secret").
 					WithField("version", k8s.VersionOf(obj)).
 					Error(err)
