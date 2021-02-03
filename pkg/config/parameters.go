@@ -42,6 +42,27 @@ func (s ServerType) Validate() error {
 	}
 }
 
+// Validate the GatewayConfig.
+// Name & Namespace must be specified.
+func (g GatewayParameters) Validate() error {
+
+	var errorString string
+	if len(g.Name) == 0 {
+		errorString = "name required"
+	}
+	if len(g.Namespace) == 0 {
+		if len(errorString) > 0 {
+			errorString += ","
+		}
+		errorString = strings.TrimSpace(fmt.Sprintf("%s namespace required", errorString))
+	}
+
+	if len(errorString) > 0 {
+		return fmt.Errorf("invalid Gateway parameters specified: %s", errorString)
+	}
+	return nil
+}
+
 // ResourceVersion is a version of an xDS server.
 type ResourceVersion string
 
@@ -234,6 +255,13 @@ type ServerParameters struct {
 	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
 }
 
+// GatewayParameters holds the configuration for what service-api Gateway
+// Contour will be configured to serve traffic.
+type GatewayParameters struct {
+	Name      string `yaml:"name,omitempty"`
+	Namespace string `yaml:"namespace,omitempty"`
+}
+
 // LeaderElectionParameters holds the config bits for leader election
 // inside the  configuration file.
 type LeaderElectionParameters struct {
@@ -368,6 +396,10 @@ type Parameters struct {
 	// Server contains parameters for the xDS server.
 	Server ServerParameters `yaml:"server,omitempty"`
 
+	// GatewayConfig contains parameters for the service-apis Gateway that Contour
+	// is configured to serve traffic.
+	GatewayConfig GatewayParameters `yaml:"gateway,omitempty"`
+
 	// Address to be placed in status.loadbalancer field of Ingress objects.
 	// May be either a literal IP address or a host name.
 	// The value will be placed directly into the relevant field inside the status.loadBalancer struct.
@@ -435,6 +467,10 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
+	if err := p.GatewayConfig.Validate(); err != nil {
+		return err
+	}
+
 	if err := p.AccessLogFormat.Validate(); err != nil {
 		return err
 	}
@@ -475,6 +511,10 @@ func Defaults() Parameters {
 		Kubeconfig: filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		Server: ServerParameters{
 			XDSServerType: ContourServerType,
+		},
+		GatewayConfig: GatewayParameters{
+			Name:      "contour",
+			Namespace: contourNamespace,
 		},
 		IngressStatusAddress:      "",
 		AccessLogFormat:           DEFAULT_ACCESS_LOG_TYPE,
