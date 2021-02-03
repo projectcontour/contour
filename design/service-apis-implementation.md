@@ -208,9 +208,24 @@ When ingesting Gateways, Contour will import the configured named Gateway into i
 
 #### Listener Ports
 
-Contour allows the configuration of arbitrary ports, **as long as those ports are exposed via the Envoy service**.
-The port that is configured for the listener is the port as it appears at the Service.
-That is, the Envoy Service `port` number is what the Listener must specify, regardless of if there is a `targetPort` set on the Service.
+Contour allows the configuration of secure and insecure ports, but the ports specified in the Listener must match the ports as reachable from outside the cluster.
+
+In the example deployment, the port that is configured for the listener is the port as it is configured as a hostPort on the Envoy deployment.
+The hostPort is responsible for getting the insecure traffic (bound for port `80`) to the actual insecure listener (listening on port `8080`), and similarly for the secure traffic from `443` to `8443`.
+
+If you change the fields insecure and secure traffic is expected to go to from outside away from `80` and `443` respectively, we need to have a way to tell the redirect generator what to do, and a way to determine if the ports that a Gateway Listener is allowed to request.
+
+There are a few options here:
+- we can move the example YAMLs to do port translation at the Service using `targetPort` instead of `hostPort` on the Envoy daemonset, and then make sure that things match up when you're using an Envoy Service. This does not answer how to help people who are not using an Envoy Service.
+- we can simply allow people to configure the externally visible ports in the config file, and match listeners against that.
+
+This decision will be made by the implementer after trying them out.
+
+In either of these cases, the redirect generator can use the value of the secure port to generate redirects correctly.
+So if you're using `443` externally, your `http://foo.com` redirect will go to `https://foo.com`.
+If you using any other port for the secure port, your `http://foo.com` redirect will go to `https://foo.com:<port>` instead.
+
+We considered (in [#3263](https://github.com/projectcontour/contour/pull/3263)) changing Contour to be able to add extra listeners as well as the secure and insecure ones, but decided it was additional complexity this implementation did not initially need.
 
 #### Listener merging
 
@@ -323,4 +338,5 @@ There is currently experimental support for *reading* the Service-APIs objects i
 - Deprecate `--expermental-service-apis` command-line flag, so that it does nothing but log a referral to the new config item.
 - Implement the Service-APIs processor as a single DAG processor.
 - Release a version with Service-APIs support still marked experimental.
+- Evaluate the implementation, provide feedback to upstream, and so on.
 - Remove the experimental tag once we're happy with the support.
