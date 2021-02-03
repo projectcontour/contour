@@ -17,6 +17,8 @@ import (
 	"errors"
 	"testing"
 
+	networking_v1 "k8s.io/api/networking/v1"
+
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
@@ -777,6 +779,21 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			}),
 			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ingress",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove ingressv1": {
+			cache: cache(&networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ingress",
+					Namespace: "default",
+				},
+			}),
+			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",

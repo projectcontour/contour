@@ -110,7 +110,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	if proxy.Spec.VirtualHost == nil {
 		// mark HTTPProxy as orphaned.
-		p.setOrphaned(proxy)
+		p.orphaned[k8s.NamespacedNameOf(proxy)] = true
 		return
 	}
 
@@ -792,15 +792,6 @@ func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
 		}
 	}
 	return false
-}
-
-// setOrphaned records an HTTPProxy resource as orphaned.
-func (p *HTTPProxyProcessor) setOrphaned(obj k8s.Object) {
-	m := types.NamespacedName{
-		Name:      obj.GetObjectMeta().GetName(),
-		Namespace: obj.GetObjectMeta().GetNamespace(),
-	}
-	p.orphaned[m] = true
 }
 
 // expandPrefixMatches adds new Routes to account for the difference

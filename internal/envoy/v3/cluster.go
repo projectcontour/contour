@@ -20,9 +20,7 @@ import (
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -86,7 +84,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 			),
 		)
 	case "h2":
-		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
+		cluster.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{}
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
 			UpstreamTLSContext(
 				c.UpstreamValidation,
@@ -96,23 +94,10 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 			),
 		)
 	case "h2c":
-		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
+		cluster.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{}
 	}
 
 	return cluster
-}
-
-func http2ProtocolOptions() map[string]*any.Any {
-	return map[string]*any.Any{
-		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-					ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-						ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
-					},
-				},
-			}),
-	}
 }
 
 // ExtensionCluster builds a envoy_cluster_v3.Cluster struct for the given extension service.
@@ -144,7 +129,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 
 	switch ext.Protocol {
 	case "h2":
-		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
+		cluster.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{}
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
 			UpstreamTLSContext(
 				ext.UpstreamValidation,
@@ -154,7 +139,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 			),
 		)
 	case "h2c":
-		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
+		cluster.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{}
 	}
 
 	return cluster

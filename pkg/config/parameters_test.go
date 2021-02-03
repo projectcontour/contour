@@ -86,7 +86,7 @@ default-http-versions: []
 cluster:
   dns-lookup-family: auto
 `
-	assert.Equal(t, strings.TrimSpace(string(data)), strings.TrimSpace(expected))
+	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(data)))
 
 	conf, err := Parse(strings.NewReader(expected))
 	require.NoError(t, err)
@@ -418,5 +418,12 @@ default-http-versions:
 - http/2
 - HTTP/2
 - HTTP/1.1
+`)
+
+	check(func(t *testing.T, conf *Parameters) {
+		assert.Equal(t, uint32(1), conf.Network.XffNumTrustedHops)
+	}, `
+network:
+  num-trusted-hops: 1
 `)
 }

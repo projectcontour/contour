@@ -287,6 +287,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		ConnectionShutdownGracePeriod: connectionShutdownGracePeriod,
 		DefaultHTTPVersions:           parseDefaultHTTPVersions(ctx.Config.DefaultHTTPVersions),
 		AllowChunkedLength:            !ctx.Config.DisableAllowChunkedLength,
+		XffNumTrustedHops:             ctx.Config.Network.XffNumTrustedHops,
 	}
 
 	contourMetrics := metrics.NewMetrics(registry)
@@ -371,6 +372,20 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 
 		inf.AddEventHandler(&dynamicHandler)
+	}
+
+	// If Ingress v1 resource exist, then add informers to watch, otherwise
+	// add Ingress v1beta1 informers.
+	if clients.ResourcesExist(k8s.IngressV1Resources()...) {
+		for _, r := range k8s.IngressV1Resources() {
+			if err := informOnResource(clients, r, &dynamicHandler); err != nil {
+				log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
+			}
+		}
+	} else {
+		if err := informOnResource(clients, k8s.IngressV1Beta1Resource(), &dynamicHandler); err != nil {
+			log.WithError(err).WithField("resource", k8s.IngressV1Beta1Resource()).Fatal("failed to create informer")
+		}
 	}
 
 	// Inform on service-apis types if they are present.

@@ -20,11 +20,12 @@ import (
 	"strings"
 	"time"
 
+	networking_v1 "k8s.io/api/networking/v1"
+
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -190,7 +191,7 @@ func escapeHeaderValue(value string, dynamicHeaders map[string]string) string {
 }
 
 // ingressRetryPolicy builds a RetryPolicy from ingress annotations.
-func ingressRetryPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) *RetryPolicy {
+func ingressRetryPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) *RetryPolicy {
 	retryOn := annotation.ContourAnnotation(ingress, "retry-on")
 	if len(retryOn) < 1 {
 		return nil
@@ -215,7 +216,7 @@ func ingressRetryPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) *Retry
 	return rp
 }
 
-func ingressTimeoutPolicy(ingress *v1beta1.Ingress, log logrus.FieldLogger) TimeoutPolicy {
+func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) TimeoutPolicy {
 	response := annotation.ContourAnnotation(ingress, "response-timeout")
 	if len(response) == 0 {
 		// Note: due to a misunderstanding the name of the annotation is

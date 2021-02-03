@@ -70,7 +70,7 @@ func TestNonTLSListener(t *testing.T) {
 			&envoy_listener_v3.Listener{
 				Name:          "ingress_http",
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
@@ -129,7 +129,7 @@ func TestNonTLSListener(t *testing.T) {
 			&envoy_listener_v3.Listener{
 				Name:          "ingress_http",
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
@@ -200,7 +200,7 @@ func TestTLSListener(t *testing.T) {
 			&envoy_listener_v3.Listener{
 				Name:          "ingress_http",
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 			&envoy_listener_v3.Listener{
@@ -389,7 +389,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
@@ -441,7 +441,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
@@ -618,7 +618,7 @@ func TestLDSFilter(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
@@ -690,7 +690,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.ProxyProtocol(),
 				),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
@@ -783,7 +783,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.ProxyProtocol(),
 				),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 			ingress_https,
@@ -863,7 +863,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("127.0.0.100", 9100),
 		FilterChains: envoy_v3.FilterChains(
-			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 		),
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}
@@ -956,7 +956,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 		FilterChains: envoy_v3.FilterChains(
-			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log"), 0),
+			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log"), 0, 0),
 		),
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}
@@ -1056,7 +1056,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 		FilterChains: envoy_v3.FilterChains(
-			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 		),
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}
@@ -1162,7 +1162,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
@@ -1228,7 +1228,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
@@ -1296,8 +1296,56 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 				Name:    "ingress_http",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			staticListener(),
+		),
+		TypeUrl: listenerType,
+	})
+}
+
+func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
+	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
+		conf.XffNumTrustedHops = 1
+	})
+
+	defer done()
+
+	rh.OnAdd(fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+
+	// p1 is a httpproxy
+	p1 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "kuard.example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "backend",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnAdd(p1)
+
+	// verify that the xff-num-trusted-hops have been set to 1.
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:          "ingress_http",
+				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 1)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 			staticListener(),
