@@ -28,7 +28,6 @@ import (
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
@@ -181,16 +180,7 @@ func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, client
 }
 
 func h2cCluster(c *envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
-	c.TypedExtensionProtocolOptions = map[string]*any.Any{
-		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-					ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-						ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
-					},
-				},
-			}),
-	}
+	c.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{}
 	return c
 }
 

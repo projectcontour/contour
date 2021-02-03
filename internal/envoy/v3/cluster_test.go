@@ -19,10 +19,8 @@ import (
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -139,16 +137,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				TypedExtensionProtocolOptions: map[string]*any.Any{
-					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-									ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
-								},
-							},
-						}),
-				},
+				Http2ProtocolOptions: &envoy_core_v3.Http2ProtocolOptions{},
 			},
 		},
 		"h2 upstream": {
@@ -167,16 +156,7 @@ func TestCluster(t *testing.T) {
 				TransportSocket: UpstreamTLSTransportSocket(
 					UpstreamTLSContext(nil, "", nil, "h2"),
 				),
-				TypedExtensionProtocolOptions: map[string]*any.Any{
-					"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
-						&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
-							UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
-								ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
-									ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
-								},
-							},
-						}),
-				},
+				Http2ProtocolOptions: &envoy_core_v3.Http2ProtocolOptions{},
 			},
 		},
 		"externalName service": {
