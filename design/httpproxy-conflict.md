@@ -23,11 +23,6 @@ Contour has further extended this to add `Conditions` which allows for a set of 
 
 It's difficult to find errors and block them from breaking valid configurations since Contour currently processes objects after they are committed to the API server.
 Due to this, Contour cannot block changes to resources before they are committed like an `Admission Controller` would be able to do (See alternatives: `HTTPProxyInstance`).
-When processing HTTPProxy objects, some problems should not stop the rest of the object from being processed.
-To distinguish between fatal-for-processing and not, we propose calling the former `Errors`, and the latter `Warnings`.
-
-When the first error or warning is detected, these fields are updated and in the status of the HTTPProxy object, however if there are more errors, only the first is shown to the user.
-There are ongoing efforts to change this logic to inform of all the errors or warnings dealing with a specific object.
 
 Contour currently invalidates the entire resource if a configuration error is encountered which can cause downtime for specific routes or even the entire virtual host.
 
@@ -37,10 +32,40 @@ Contour will set a `Warning` when the object has an issue, but the response a `U
 
 ## Goals
 - Serve valid traffic configurations if portions of the spec are invalid
-- Define and distinguish between fatal and non-fatal errors
+- Define and distinguish between fatal errors, non-fatal errors, and warnings
 
 ## Non Goals
 - Change how Contour processes objects today from informers set against the Kubernetes API
+
+## Definitions
+
+This document will describe a Fatal & Non-Fatal Errors as well as Warnings.
+
+### Fatal Error
+An error encountered while processing an HTTPProxy spec where:
+
+- Contour stops processing the rest of the spec
+- Contour does not program any part of the HTTPProxy in Envoy
+  
+For example, an invalid FQDN.
+
+### Non-Fatal Error
+An error encountered while processing an HTTPProxy spec where:
+
+- Contour continues processing the rest of the spec
+- Contour does program the unaffected (valid) part of the HTTPProxy in Envoy
+- Users may get a different response for a given route than what was configured (e.g. a 502 instead of the desired upstream service)
+
+For example, a route to a nonexistent service (results in a 502 being programmed)
+
+### Warning
+An error encountered while processing an HTTPProxy spec where:
+
+- Contour continues processing the rest of the spec
+- Contour does program the unaffected part of the HTTPProxy in Envoy
+- Users are routed to the correct destinations, but some aspects of the request handling may be different from desired (e.g. missing timeout or retry settings)
+
+For example, invalid retry settings on a route (the route is still programmed, but without retry settings)
 
 ## High-Level Design
 Contour will set the error or warning condition when a problem is encountered, but do its best to still serve valid configurations.
