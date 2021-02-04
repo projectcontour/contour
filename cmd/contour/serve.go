@@ -279,7 +279,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		AccessLogType:                 ctx.Config.AccessLogFormat,
 		AccessLogFields:               ctx.Config.AccessLogFields,
 		MinimumTLSVersion:             annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, "1.2"),
-		CipherSuites:                  annotation.CipherSuites(ctx.Config.TLS.CipherSuites, config.DefaultTLSCiphers),
+		CipherSuites:                  config.SanitizeCipherSuites(ctx.Config.TLS.CipherSuites, config.DefaultTLSCiphers),
 		RequestTimeout:                requestTimeout,
 		ConnectionIdleTimeout:         connectionIdleTimeout,
 		StreamIdleTimeout:             streamIdleTimeout,

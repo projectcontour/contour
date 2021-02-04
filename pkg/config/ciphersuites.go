@@ -21,12 +21,32 @@ import (
 // TLSCiphers holds a list of TLS ciphers
 type TLSCiphers []string
 
+// SanitizeCipherSuites trims a list of ciphers to remove whitespace and
+// duplicates, returning the passed in default if the corrected list is empty.
+// The ciphers argument should be a list of valid ciphers.
+func SanitizeCipherSuites(ciphers, defaultCiphers []string) []string {
+	if len(ciphers) == 0 {
+		return defaultCiphers
+	}
+
+	uniqueCiphers := map[string]bool{}
+	validatedCiphers := []string{}
+	for _, v := range ciphers {
+		cipher := strings.TrimSpace(v)
+		if _, found := uniqueCiphers[cipher]; !found {
+			uniqueCiphers[cipher] = true
+			validatedCiphers = append(validatedCiphers, cipher)
+		}
+	}
+	return validatedCiphers
+}
+
 // Validate ciphers. Returns error on unsupported cipher.
 func (tlsCiphers TLSCiphers) Validate() error {
 	invalidCiphers := []string{}
 	for _, cipher := range tlsCiphers {
 		trimmed := strings.TrimSpace(cipher)
-		if _, ok := ValidTLSCiphers[trimmed]; !ok {
+		if _, ok := validTLSCiphers[trimmed]; !ok {
 			invalidCiphers = append(invalidCiphers, trimmed)
 		}
 	}
@@ -60,10 +80,10 @@ var DefaultTLSCiphers = TLSCiphers([]string{
 	//"AES256-SHA",
 })
 
-// ValidTLSCiphers contains the list of TLS ciphers that Envoy supports
+// validTLSCiphers contains the list of TLS ciphers that Envoy supports
 // See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
 // Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
-var ValidTLSCiphers = map[string]struct{}{
+var validTLSCiphers = map[string]struct{}{
 	"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]": {},
 	"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]":     {},
 	"ECDHE-ECDSA-AES128-GCM-SHA256":                                 {},

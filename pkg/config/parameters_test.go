@@ -284,6 +284,45 @@ func TestTLSParametersValidation(t *testing.T) {
 	}.Validate())
 }
 
+func TestSanitizeCipherSuites(t *testing.T) {
+	testCases := map[string]struct {
+		ciphers []string
+		want    []string
+	}{
+		"no ciphers": {
+			ciphers: nil,
+			want:    DefaultTLSCiphers,
+		},
+		"valid list": {
+			ciphers: []string{
+				"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+				"  ECDHE-RSA-AES128-SHA ",
+				"AES128-SHA",
+			},
+			want: []string{
+				"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+				"ECDHE-RSA-AES128-SHA",
+				"AES128-SHA",
+			},
+		},
+		"cipher duplicated": {
+			ciphers: []string{
+				"ECDHE-RSA-AES128-SHA",
+				"ECDHE-RSA-AES128-SHA",
+			},
+			want: []string{
+				"ECDHE-RSA-AES128-SHA",
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, SanitizeCipherSuites(tc.ciphers, DefaultTLSCiphers))
+		})
+	}
+}
+
 func TestConfigFileValidation(t *testing.T) {
 	check := func(yamlIn string) {
 		t.Helper()
