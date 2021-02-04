@@ -126,9 +126,9 @@ The output of this watcher is both Envoy configuration, and a list of kind/name/
 Contour will only update the `status` of Gateway objects.
 
 ### HTTPRoute
-Contour will watch all HTTPRoute objects, and filter for entries matching a label selector in its configured Gateway's `spec.listeners[].routes`,
-and will configure the associated routes.
-Configuration of HTTPRoutes will be subject to the rules around the `RouteGateways` field.
+Contour will watch all HTTPRoute objects, and filter for entries as per the spec.
+This is a two level filter, by the configured Gateway's rules about namespaces, and then by the label selector for the Routes themselves.
+Configuration of HTTPRoutes will be also subject to the rules around the `RouteGateways` field, for filtering which Gateways the HTTPRoute is allowed to be referenced by.
 
 When a HTTPRoute specifies a hostname or slice of hostnames, those hostnames must match the hostnames in the Gateway.
 Note that more specific precise matches at the Hostname level may match less specific wildcard matches at the Gateway level.
@@ -139,9 +139,10 @@ The most important part here is that the field is only used if the `AllowRouteOv
 
 Contour will only ever update the `status` of HTTPRoute objects.
 
-Errors or conflicts here will render that section of the config invalid.
-Other valid sections will still be passed to Envoy.
-For each invalid section, Contour will update status information with the section and the reason.
+Errors or conflicts here will render that rule invalid, but not the rest of the rules.
+Other valid rules will still be passed to Envoy.
+For each invalid rule, Contour will update status information with the rule and the reason.
+A conflict will **not** result in the whole HTTPRoute being rejected unless there are zero rules left.
 
 
 The output of this watcher is Envoy configuration.
