@@ -287,6 +287,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		DefaultHTTPVersions:           parseDefaultHTTPVersions(ctx.Config.DefaultHTTPVersions),
 		AllowChunkedLength:            !ctx.Config.DisableAllowChunkedLength,
 		XffNumTrustedHops:             ctx.Config.Network.XffNumTrustedHops,
+		UseExactConnectionBalancer:    ctx.Config.Listener.UseExactConnectionBalancer,
 	}
 
 	contourMetrics := metrics.NewMetrics(registry)

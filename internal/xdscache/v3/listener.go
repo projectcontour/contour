@@ -121,6 +121,10 @@ type ListenerConfig struct {
 	// XffNumTrustedHops sets the number of additional ingress proxy hops from the
 	// right side of the x-forwarded-for HTTP header to trust.
 	XffNumTrustedHops uint32
+
+	// UseExactConnectionBalancer
+	// If specified, the listener will use the exact connection balancer.
+	UseExactConnectionBalancer bool
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -355,6 +359,19 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 		// there's some https listeners, we need to sort the filter chains
 		// to ensure that the LDS entries are identical.
 		sort.Stable(sorter.For(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains))
+	}
+
+	// support more params of envoy listener
+
+	// 1. use the exact connection balancer
+	if lvc.UseExactConnectionBalancer {
+		for _, listener := range lv.listeners {
+			listener.ConnectionBalanceConfig = &envoy_listener_v3.Listener_ConnectionBalanceConfig{
+				BalanceType: &envoy_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance_{
+					ExactBalance: &envoy_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance{},
+				},
+			}
+		}
 	}
 
 	return lv.listeners
