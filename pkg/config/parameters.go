@@ -249,8 +249,9 @@ type TLSParameters struct {
 
 	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
 	// listeners when negotiating TLS 1.2. Ciphers are validated against the
-	// set that Envoy supports by default. Note that these will be ignored
-	// when TLS 1.3 is in use.
+	// set that Envoy supports by default. This parameter should only be used
+	// by advanced users. Note that these will be ignored when TLS 1.3 is in
+	// use.
 	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
 }
 
@@ -265,8 +266,11 @@ func (t TLSParameters) Validate() error {
 		return fmt.Errorf("invalid TLS client certificate: %w", err)
 	}
 
-	if err := t.CipherSuites.Validate(); err != nil {
-		return fmt.Errorf("invalid TLS cipher suites: %w", err)
+	// Ignore ciphers when TLS 1.3 is the minimum version.
+	if t.MinimumProtocolVersion != "1.3" {
+		if err := t.CipherSuites.Validate(); err != nil {
+			return fmt.Errorf("invalid TLS cipher suites: %w", err)
+		}
 	}
 
 	return nil

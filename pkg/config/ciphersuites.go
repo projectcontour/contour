@@ -21,41 +21,6 @@ import (
 // TLSCiphers holds a list of TLS ciphers
 type TLSCiphers []string
 
-// SanitizeCipherSuites trims a list of ciphers to remove whitespace and
-// duplicates, returning the passed in default if the corrected list is empty.
-// The ciphers argument should be a list of valid ciphers.
-func SanitizeCipherSuites(ciphers, defaultCiphers []string) []string {
-	if len(ciphers) == 0 {
-		return defaultCiphers
-	}
-
-	uniqueCiphers := map[string]bool{}
-	validatedCiphers := []string{}
-	for _, v := range ciphers {
-		cipher := strings.TrimSpace(v)
-		if _, found := uniqueCiphers[cipher]; !found {
-			uniqueCiphers[cipher] = true
-			validatedCiphers = append(validatedCiphers, cipher)
-		}
-	}
-	return validatedCiphers
-}
-
-// Validate ciphers. Returns error on unsupported cipher.
-func (tlsCiphers TLSCiphers) Validate() error {
-	invalidCiphers := []string{}
-	for _, cipher := range tlsCiphers {
-		trimmed := strings.TrimSpace(cipher)
-		if _, ok := validTLSCiphers[trimmed]; !ok {
-			invalidCiphers = append(invalidCiphers, trimmed)
-		}
-	}
-	if len(invalidCiphers) > 0 {
-		return fmt.Errorf("invalid ciphers: %s", strings.Join(invalidCiphers, ","))
-	}
-	return nil
-}
-
 // DefaultTLSCiphers contains the list of default ciphers used by Contour. A handful are
 // commented out, as they're arguably less secure. They're also unnecessary
 // - most of the clients that might need to use the commented ciphers are
@@ -98,4 +63,43 @@ var validTLSCiphers = map[string]struct{}{
 	"ECDHE-RSA-AES256-SHA":                                          {},
 	"AES256-GCM-SHA384":                                             {},
 	"AES256-SHA":                                                    {},
+}
+
+// Validate ciphers. Returns error on unsupported cipher.
+func (tlsCiphers TLSCiphers) Validate() error {
+	invalidCiphers := []string{}
+	for _, cipher := range tlsCiphers {
+		trimmed := strings.TrimSpace(cipher)
+		if _, ok := validTLSCiphers[trimmed]; !ok {
+			invalidCiphers = append(invalidCiphers, trimmed)
+		}
+	}
+	if len(invalidCiphers) > 0 {
+		return fmt.Errorf("invalid ciphers: %s", strings.Join(invalidCiphers, ","))
+	}
+	return nil
+}
+
+// SanitizeCipherSuites trims a list of ciphers to remove whitespace and
+// duplicates. The Contour default is returned if the list is empty.
+// An empty list is returned if the passed in TLS version is 1.3.
+// The ciphers argument should be a list of valid ciphers.
+func SanitizeCipherSuites(ciphers []string, minTLSVersion string) []string {
+	if minTLSVersion == "1.3" {
+		return nil
+	}
+	if len(ciphers) == 0 {
+		return DefaultTLSCiphers
+	}
+
+	uniqueCiphers := map[string]bool{}
+	validatedCiphers := []string{}
+	for _, v := range ciphers {
+		cipher := strings.TrimSpace(v)
+		if _, found := uniqueCiphers[cipher]; !found {
+			uniqueCiphers[cipher] = true
+			validatedCiphers = append(validatedCiphers, cipher)
+		}
+	}
+	return validatedCiphers
 }

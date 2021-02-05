@@ -282,12 +282,23 @@ func TestTLSParametersValidation(t *testing.T) {
 			"AES128-GCM-SHA256",
 		},
 	}.Validate())
+
+	// When TLS 1.3 is selected, don't check ciphers
+	assert.NoError(t, TLSParameters{
+		MinimumProtocolVersion: "1.3",
+		CipherSuites: []string{
+			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+			"NOTAVALIDCIPHER",
+			"AES128-GCM-SHA256",
+		},
+	}.Validate())
 }
 
 func TestSanitizeCipherSuites(t *testing.T) {
 	testCases := map[string]struct {
-		ciphers []string
-		want    []string
+		ciphers       []string
+		minTLSVersion string
+		want          []string
 	}{
 		"no ciphers": {
 			ciphers: nil,
@@ -314,11 +325,20 @@ func TestSanitizeCipherSuites(t *testing.T) {
 				"ECDHE-RSA-AES128-SHA",
 			},
 		},
+		"TLS 1.3": {
+			ciphers: []string{
+				"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+				"  ECDHE-RSA-AES128-SHA ",
+				"AES128-SHA",
+			},
+			minTLSVersion: "1.3",
+			want:          nil,
+		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, SanitizeCipherSuites(tc.ciphers, DefaultTLSCiphers))
+			assert.Equal(t, tc.want, SanitizeCipherSuites(tc.ciphers, tc.minTLSVersion))
 		})
 	}
 }

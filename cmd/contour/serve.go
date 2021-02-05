@@ -268,6 +268,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return fmt.Errorf("error parsing request timeout: %w", err)
 	}
 
+	minTLSVersion := annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, "1.2")
+	cipherSuites := config.SanitizeCipherSuites(ctx.Config.TLS.CipherSuites, minTLSVersion)
+
 	listenerConfig := xdscache_v3.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
@@ -278,8 +281,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HTTPSAccessLog:                ctx.httpsAccessLog,
 		AccessLogType:                 ctx.Config.AccessLogFormat,
 		AccessLogFields:               ctx.Config.AccessLogFields,
-		MinimumTLSVersion:             annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, "1.2"),
-		CipherSuites:                  config.SanitizeCipherSuites(ctx.Config.TLS.CipherSuites, config.DefaultTLSCiphers),
+		MinimumTLSVersion:             minTLSVersion,
+		CipherSuites:                  cipherSuites,
 		RequestTimeout:                requestTimeout,
 		ConnectionIdleTimeout:         connectionIdleTimeout,
 		StreamIdleTimeout:             streamIdleTimeout,
