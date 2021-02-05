@@ -18,7 +18,7 @@ metadata:
   name: external-name-svc
 spec:
   type: ExternalName
-  externalName: projectcontour.io
+  externalName: envoyproxy.io
   ports:
     - name: https
       port: 443
@@ -41,7 +41,7 @@ spec:
     requestHeadersPolicy:
       set:
       - name: Host
-        value: projectcontour.io
+        value: envoyproxy.io
 
 ---
 
@@ -71,6 +71,7 @@ Response := client.Get({
     "Host": "externalname.bar.com",
     "User-Agent": client.ua("external-name-test"),
   },
+  "enable_redirect": true,
 })
 
 check_for_status_code [msg] {
