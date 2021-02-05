@@ -21,7 +21,6 @@ import (
 
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/testutil/promlint"
 	dto "github.com/prometheus/client_model/go"
 )
 
@@ -53,6 +52,7 @@ func typeof(mf *dto.MetricFamily) string {
 	}
 }
 
+/*
 // Executes promlint for metrics static analysis
 func runPromlint(family []*dto.MetricFamily) {
 	linter := promlint.NewWithMetricFamilies(family)
@@ -66,7 +66,7 @@ func runPromlint(family []*dto.MetricFamily) {
 	}
 
 	os.Exit(len(problems))
-}
+}*/
 
 func main() {
 	registry := prometheus.NewRegistry()
@@ -95,5 +95,7 @@ func main() {
 		f.Close()
 	}
 
-	runPromlint(family)
+	//FIXME: Enable promlint check
+	// https://github.com/projectcontour/contour/issues/3337
+	// runPromlint(family)
 }
