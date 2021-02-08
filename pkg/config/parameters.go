@@ -385,6 +385,10 @@ func (t TimeoutParameters) Validate() error {
 		return fmt.Errorf("max connection duration %q: %w", t.MaxConnectionDuration, err)
 	}
 
+	if err := v(t.DelayedCloseTimeout); err != nil {
+		return fmt.Errorf("delayed close timeout %q: %w", t.DelayedCloseTimeout, err)
+	}
+
 	if err := v(t.ConnectionShutdownGracePeriod); err != nil {
 		return fmt.Errorf("connection shutdown grace period %q: %w", t.ConnectionShutdownGracePeriod, err)
 	}

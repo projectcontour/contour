@@ -1033,77 +1033,6 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"tls-cipher-suites from config": {
-			ListenerConfig: ListenerConfig{
-				CipherSuites: []string{
-					"ECDHE-ECDSA-AES256-GCM-SHA384",
-					"ECDHE-RSA-AES256-GCM-SHA384",
-				},
-			},
-			objs: []interface{}{
-				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "simple",
-						Namespace: "default",
-					},
-					Spec: contour_api_v1.HTTPProxySpec{
-						VirtualHost: &contour_api_v1.VirtualHost{
-							Fqdn: "www.example.com",
-							TLS: &contour_api_v1.TLS{
-								SecretName: "secret",
-							},
-						},
-						Routes: []contour_api_v1.Route{{
-							Services: []contour_api_v1.Service{{
-								Name: "backend",
-								Port: 80,
-							}},
-						}},
-					},
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "secret",
-						Namespace: "default",
-					},
-					Type: "kubernetes.io/tls",
-					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
-				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "backend",
-						Namespace: "default",
-					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
-							Name:     "http",
-							Protocol: "TCP",
-							Port:     80,
-						}},
-					},
-				},
-			},
-			want: listenermap(&envoy_listener_v3.Listener{
-				Name:          ENVOY_HTTP_LISTENER,
-				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG), 0, 0)),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			}, &envoy_listener_v3.Listener{
-				Name:    ENVOY_HTTPS_LISTENER,
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
-				FilterChains: []*envoy_listener_v3.FilterChain{{
-					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
-						ServerNames: []string{"www.example.com"},
-					},
-					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, []string{"ECDHE-ECDSA-AES256-GCM-SHA384", "ECDHE-RSA-AES256-GCM-SHA384"}, "h2", "http/1.1"),
-					Filters:         envoy_v3.Filters(httpsFilterFor("www.example.com")),
-				}},
-				ListenerFilters: envoy_v3.ListenerFilters(
-					envoy_v3.TLSInspector(),
-				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			}),
-		},
 		"httpproxy with fallback certificate and with delayed close timeout set": {
 			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbacksecret",
@@ -1187,7 +1116,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
 						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().
@@ -1201,7 +1130,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						TransportProtocol: "tls",
 					},
-					TransportSocket: transportSocket("fallbacksecret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					TransportSocket: transportSocket("fallbacksecret", envoy_tls_v3.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
@@ -2249,7 +2178,7 @@ func TestListenerVisit(t *testing.T) {
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						ServerNames: []string{"www.example.com"},
 					},
-					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, "h2", "http/1.1"),
 					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
 						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
 						DefaultFilters().
