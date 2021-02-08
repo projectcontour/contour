@@ -84,7 +84,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 			),
 		)
 	case "h2":
-		cluster.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{}
+		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
 			UpstreamTLSContext(
 				c.UpstreamValidation,
@@ -94,7 +94,7 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 			),
 		)
 	case "h2c":
-		cluster.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{}
+		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
 	}
 
 	return cluster
@@ -129,7 +129,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 
 	switch ext.Protocol {
 	case "h2":
-		cluster.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{}
+		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
 		cluster.TransportSocket = UpstreamTLSTransportSocket(
 			UpstreamTLSContext(
 				ext.UpstreamValidation,
@@ -139,7 +139,7 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 			),
 		)
 	case "h2c":
-		cluster.Http2ProtocolOptions = &envoy_core_v3.Http2ProtocolOptions{}
+		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
 	}
 
 	return cluster

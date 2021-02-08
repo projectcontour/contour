@@ -17,12 +17,14 @@ import (
 	"testing"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	"github.com/golang/protobuf/ptypes/any"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,6 +32,7 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+// Assert that services of type v1.ServiceTypeExternalName can be
 // referenced by an Ingress, or HTTPProxy document.
 func TestExternalNameService(t *testing.T) {
 	rh, c, done := setup(t)
@@ -202,7 +205,16 @@ func TestExternalNameService(t *testing.T) {
 			DefaultCluster(
 				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&envoy_cluster_v3.Cluster{
-					Http2ProtocolOptions: &envoy_core_v3.Http2ProtocolOptions{},
+					TypedExtensionProtocolOptions: map[string]*any.Any{
+						"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
+							&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
+								UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+									ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+										ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
+									},
+								},
+							}),
+					},
 				},
 				&envoy_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
