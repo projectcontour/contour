@@ -103,8 +103,7 @@ spec:
 
 #### Headers
 
-By default, Envoy sets the `x-envoy-ratelimited` header on rate limited responses.
-Additional headers can optionally be added to rate limited responses, by configuring the `responseHeadersToAdd` field.
+Headers can optionally be added to rate limited responses, by configuring the `responseHeadersToAdd` field.
 
 ```yaml
 apiVersion: projectcontour.io/v1
@@ -127,5 +126,5 @@ spec:
         unit: minute
         responseHeadersToAdd:
         - name: x-contour-ratelimited
-          value: true
+          value: "true"
 ```
