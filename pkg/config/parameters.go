@@ -338,19 +338,19 @@ func (t TimeoutParameters) Validate() error {
 	}
 
 	if err := v(t.ConnectionIdleTimeout); err != nil {
-		return fmt.Errorf("connection idle timeout %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("connection idle timeout %q: %w", t.ConnectionIdleTimeout, err)
 	}
 
 	if err := v(t.StreamIdleTimeout); err != nil {
-		return fmt.Errorf("stream idle timeout %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("stream idle timeout %q: %w", t.StreamIdleTimeout, err)
 	}
 
 	if err := v(t.MaxConnectionDuration); err != nil {
-		return fmt.Errorf("max connection duration %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("max connection duration %q: %w", t.MaxConnectionDuration, err)
 	}
 
 	if err := v(t.ConnectionShutdownGracePeriod); err != nil {
-		return fmt.Errorf("connection shutdown grace period %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("connection shutdown grace period %q: %w", t.ConnectionShutdownGracePeriod, err)
 	}
 
 	return nil
