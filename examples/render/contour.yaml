@@ -119,6 +119,7 @@ data:
     #   connection-idle-timeout: 60s
     #   stream-idle-timeout: 5m
     #   max-connection-duration: infinity
+    #   delayed-close-timeout: 1s
     #   connection-shutdown-grace-period: 5s
     #
     # Envoy cluster settings.

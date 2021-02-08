@@ -147,6 +147,7 @@ type httpConnectionManagerBuilder struct {
 	requestTimeout                timeout.Setting
 	connectionIdleTimeout         timeout.Setting
 	streamIdleTimeout             timeout.Setting
+	delayedCloseTimeout           timeout.Setting
 	maxConnectionDuration         timeout.Setting
 	connectionShutdownGracePeriod timeout.Setting
 	filters                       []*http.HttpFilter
@@ -199,6 +200,12 @@ func (b *httpConnectionManagerBuilder) ConnectionIdleTimeout(timeout timeout.Set
 // StreamIdleTimeout sets the stream idle timeout on the connection manager.
 func (b *httpConnectionManagerBuilder) StreamIdleTimeout(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.streamIdleTimeout = timeout
+	return b
+}
+
+// DelayedCloseTimeout sets the delayed close timeout on the connection manager.
+func (b *httpConnectionManagerBuilder) DelayedCloseTimeout(timeout timeout.Setting) *httpConnectionManagerBuilder {
+	b.delayedCloseTimeout = timeout
 	return b
 }
 
@@ -386,10 +393,11 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		PreserveExternalRequestId: true,
 		MergeSlashes:              true,
 
-		RequestTimeout:    envoy.Timeout(b.requestTimeout),
-		StreamIdleTimeout: envoy.Timeout(b.streamIdleTimeout),
-		DrainTimeout:      envoy.Timeout(b.connectionShutdownGracePeriod),
-		XffNumTrustedHops: b.numTrustedHops,
+		RequestTimeout:      envoy.Timeout(b.requestTimeout),
+		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),
+		DrainTimeout:        envoy.Timeout(b.connectionShutdownGracePeriod),
+		DelayedCloseTimeout: envoy.Timeout(b.delayedCloseTimeout),
+		XffNumTrustedHops:   b.numTrustedHops,
 	}
 
 	// Max connection duration is infinite/disabled by default in Envoy, so if the timeout setting
