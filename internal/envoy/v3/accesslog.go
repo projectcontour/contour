@@ -15,6 +15,7 @@ package v3
 
 import (
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	_struct "github.com/golang/protobuf/ptypes/struct"
@@ -53,8 +54,12 @@ func FileAccessLogJSON(path string, fields config.AccessLogFields) []*envoy_acce
 		ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
 				Path: path,
-				AccessLogFormat: &envoy_file_v3.FileAccessLog_JsonFormat{
-					JsonFormat: jsonformat,
+				AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
+					LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
+						Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
+							JsonFormat: jsonformat,
+						},
+					},
 				},
 			}),
 		},
