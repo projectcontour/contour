@@ -12,6 +12,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+skip[msg] {
+  msg := "018-external-name-service is flaky, skipping until it's fixed"
+}
+
+---
+
 apiVersion: v1
 kind: Service
 metadata:
