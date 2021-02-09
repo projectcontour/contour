@@ -52,8 +52,8 @@ For example, many projects allow network buffer sizes to be configured arbitrari
 In providing the tools, but little or no guidance on how they should be used, infinitely tweakable knobs forces the burden of mastering the high dimensional configuration space onto the end users of the product.
 The secondary impact on support teams and the upstream development team should not be discounted, both in terms of difficulty in diagnosing problems, and the possibility of configuration drift between environments.
 
-Contour takes the position that when there is a sensible default value for an Envoy configuration parameters, Contour will apply.
-We've used this position in the past by compressing HTTP response bodies unconditionally, disallowing TLS/1.0, choosing as secure as possible a default cipher suite, and so on.
+Contour takes the position that when there is a sensible default value for an Envoy configuration parameters, Contour will apply it.
+We've used this position in the past by compressing HTTP response bodies unconditionally, disallowing TLS/1.0 and 1.1, choosing as secure as possible a default cipher suite, and so on.
 
 When Contour was first developed, generally we stopped there.
 However, users of Contour found that this approach, while excellent for the combined cluster operator/application developer users, was not ideal when the cluster operator had to keep a large production deployment up and running.
