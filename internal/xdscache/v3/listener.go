@@ -343,7 +343,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 
 	if lv.http {
 		// Add a listener if there are vhosts bound to http.
-		builder := envoy_v3.HTTPConnectionManagerBuilder().
+		cm := envoy_v3.HTTPConnectionManagerBuilder().
 			Codec(envoy_v3.CodecForVersions(lv.DefaultHTTPVersions...)).
 			DefaultFilters().
 			RouteConfigName(ENVOY_HTTP_LISTENER).
@@ -356,13 +356,9 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 			MaxConnectionDuration(lvc.MaxConnectionDuration).
 			ConnectionShutdownGracePeriod(lvc.ConnectionShutdownGracePeriod).
 			AllowChunkedLength(lvc.AllowChunkedLength).
-			NumTrustedHops(lvc.XffNumTrustedHops)
-
-		if rlc := lv.RateLimitConfig; rlc != nil {
-			builder.AddFilter(envoy_v3.GlobalRateLimitFilter(rlc.Domain, rlc.Timeout, rlc.FailOpen, rlc.ExtensionService))
-		}
-
-		cm := builder.Get()
+			NumTrustedHops(lvc.XffNumTrustedHops).
+			AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(lv.RateLimitConfig))).
+			Get()
 
 		lv.listeners[ENVOY_HTTP_LISTENER] = envoy_v3.Listener(
 			ENVOY_HTTP_LISTENER,
@@ -383,6 +379,19 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 	}
 
 	return lv.listeners
+}
+
+func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLimitConfig {
+	if config == nil {
+		return nil
+	}
+
+	return &envoy_v3.GlobalRateLimitConfig{
+		ExtensionService: config.ExtensionService,
+		FailOpen:         config.FailOpen,
+		Timeout:          config.Timeout,
+		Domain:           config.Domain,
+	}
 }
 
 func proxyProtocol(useProxy bool) []*envoy_listener_v3.ListenerFilter {
@@ -434,7 +443,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// metrics prefix to keep compatibility with previous
 			// Contour versions since the metrics prefix will be
 			// coded into monitoring dashboards.
-			builder := envoy_v3.HTTPConnectionManagerBuilder().
+			cm := envoy_v3.HTTPConnectionManagerBuilder().
 				Codec(envoy_v3.CodecForVersions(v.DefaultHTTPVersions...)).
 				AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
 				DefaultFilters().
@@ -449,13 +458,11 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 				ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
 				AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
-				NumTrustedHops(v.ListenerConfig.XffNumTrustedHops)
+				NumTrustedHops(v.ListenerConfig.XffNumTrustedHops).
+				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(v.RateLimitConfig))).
+				Get()
 
-			if rlc := v.RateLimitConfig; rlc != nil {
-				builder.AddFilter(envoy_v3.GlobalRateLimitFilter(rlc.Domain, rlc.Timeout, rlc.FailOpen, rlc.ExtensionService))
-			}
-
-			filters = envoy_v3.Filters(builder.Get())
+			filters = envoy_v3.Filters(cm)
 
 			alpnProtos = envoy_v3.ProtoNamesForVersions(v.DefaultHTTPVersions...)
 		} else {
@@ -503,7 +510,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				vh.DownstreamValidation,
 				alpnProtos...)
 
-			builder := envoy_v3.HTTPConnectionManagerBuilder().
+			cm := envoy_v3.HTTPConnectionManagerBuilder().
 				DefaultFilters().
 				RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
 				MetricsPrefix(ENVOY_HTTPS_LISTENER).
@@ -515,14 +522,12 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 				ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
 				AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
-				NumTrustedHops(v.ListenerConfig.XffNumTrustedHops)
-
-			if rlc := v.RateLimitConfig; rlc != nil {
-				builder.AddFilter(envoy_v3.GlobalRateLimitFilter(rlc.Domain, rlc.Timeout, rlc.FailOpen, rlc.ExtensionService))
-			}
+				NumTrustedHops(v.ListenerConfig.XffNumTrustedHops).
+				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(v.RateLimitConfig))).
+				Get()
 
 			// Default filter chain
-			filters = envoy_v3.Filters(builder.Get())
+			filters = envoy_v3.Filters(cm)
 
 			v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
 				envoy_v3.FilterChainTLSFallback(downstreamTLS, filters))

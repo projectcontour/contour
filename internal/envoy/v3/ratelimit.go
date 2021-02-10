@@ -107,20 +107,34 @@ func GlobalRateLimits(descriptors []*dag.RateLimitDescriptor) []*envoy_route_v3.
 	return rateLimits
 }
 
-// GlobalRateLimitFilter returns a configured HTTP global rate limit filter.
-func GlobalRateLimitFilter(domain string, timeout timeout.Setting, failOpen bool, extensionService types.NamespacedName) *http.HttpFilter {
+// GlobalRateLimitConfig stores configuration for
+// an HTTP global rate limiting filter.
+type GlobalRateLimitConfig struct {
+	ExtensionService types.NamespacedName
+	FailOpen         bool
+	Timeout          timeout.Setting
+	Domain           string
+}
+
+// GlobalRateLimitFilter returns a configured HTTP global rate limit filter,
+// or nil if config is nil.
+func GlobalRateLimitFilter(config *GlobalRateLimitConfig) *http.HttpFilter {
+	if config == nil {
+		return nil
+	}
+
 	return &http.HttpFilter{
 		Name: wellknown.HTTPRateLimit,
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
-				Domain:          domain,
-				Timeout:         envoy.Timeout(timeout),
-				FailureModeDeny: !failOpen,
+				Domain:          config.Domain,
+				Timeout:         envoy.Timeout(config.Timeout),
+				FailureModeDeny: !config.FailOpen,
 				RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
 					GrpcService: &envoy_core_v3.GrpcService{
 						TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 							EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
-								ClusterName: dag.ExtensionClusterName(extensionService),
+								ClusterName: dag.ExtensionClusterName(config.ExtensionService),
 							},
 						},
 					},

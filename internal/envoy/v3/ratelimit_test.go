@@ -171,6 +171,8 @@ func TestGlobalRateLimits(t *testing.T) {
 }
 
 func TestGlobalRateLimitFilter(t *testing.T) {
+	assert.Nil(t, GlobalRateLimitFilter(nil))
+
 	want := &http.HttpFilter{
 		Name: wellknown.HTTPRateLimit,
 		ConfigType: &http.HttpFilter_TypedConfig{
@@ -192,5 +194,12 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, want, GlobalRateLimitFilter("domain", timeout.DurationSetting(time.Second), true, k8s.NamespacedNameFrom("projectcontour/ratelimit")))
+	cfg := &GlobalRateLimitConfig{
+		ExtensionService: k8s.NamespacedNameFrom("projectcontour/ratelimit"),
+		FailOpen:         true,
+		Timeout:          timeout.DurationSetting(time.Second),
+		Domain:           "domain",
+	}
+
+	assert.Equal(t, want, GlobalRateLimitFilter(cfg))
 }
