@@ -1,8 +1,59 @@
 # Contour Configuration Reference
 
+- [Serve Flags](#serve-flags)
 - [Configuration File](#configuration-file)
 - [Environment Variables](#environment-variables)
 - [Bootstrap Config File](#bootstrap-config-file)
+
+## Overview
+
+There are various ways to configure Contour, flags, the configuration file, as well as environment variables.
+Contour has a precedence of configuration for contour serve, meaning anything configured in the config file is overridden by environment vars which are overridden by cli flags.
+
+## Serve Flags
+
+The `contour serve` command is the main command which is used to watch for Kubernetes resource and process them into Envoy configuration which is then streamed to any Envoy via its xDS gRPC connection.
+There are a number of flags that can be passed to this command which further configures how Contour operates. 
+Many of these flags are mirrored in the [Contour Configuration File](#configuration-file).
+
+| Flag Name         | Description        |
+|-------------------|--------------------|
+| `--config-path`       | Path to base configuration |
+| `--incluster`         | Use in cluster configuration |
+| `--kubeconfig=</path/to/file>` |    Path to kubeconfig (if not in running inside a cluster) |
+| `--xds-address=<ipaddr>` | xDS gRPC API address |
+| `--xds-port=<port>`       | xDS gRPC API port |
+| `--stats-address=<ipaddr>` | Envoy /stats interface address |
+| `--stats-port=<port>`  |  Envoy /stats interface port |
+| `--debug-http-address=<address>` | Address the debug http endpoint will bind to. |
+| `--debug-http-port=<port>`  | Port the debug http endpoint will bind to |
+| `--http-address=<ipaddr>`  | Address the metrics HTTP endpoint will bind to |
+| `--http-port=<port>`  |    Port the metrics HTTP endpoint will bind to. |
+| `--health-address=<ipaddr>` |   Address the health HTTP endpoint will bind to |
+| `--health-port=<port>` | Port the health HTTP endpoint will bind to |
+| `--contour-cafile=</path/to/file|CONTOUR_CERT_FILE>` | CA bundle file name for serving gRPC with TLS |
+| `--contour-cert-file=</path/to/file|CONTOUR_CERT_FILE>`  | Contour certificate file name for serving gRPC over TLS |
+| `--contour-key-file=</path/to/file|CONTOUR_KEY_FILE>` | Contour key file name for serving gRPC over TLS |
+| `--insecure`  |               Allow serving without TLS secured gRPC |
+| `--root-namespaces=<ns,ns>` | Restrict contour to searching these namespaces for root ingress routes |
+| `--ingress-class-name=<name>` | Contour IngressClass name |
+| `--ingress-status-address=<address>`  | Address to set in Ingress object status |
+| `--envoy-http-access-log=</path/to/file>`  | Envoy HTTP access log |
+| `--envoy-https-access-log=</path/to/file>`  | Envoy HTTPS access log |
+| `--envoy-service-http-address=<ipaddr>`  | Kubernetes Service address for HTTP requests |
+| `--envoy-service-https-address=<ipaddr>` | Kubernetes Service address for HTTPS requests |
+| `--envoy-service-http-port=<port>` | Kubernetes Service port for HTTP requests |
+| `--envoy-service-https-port=<port>` |  Kubernetes Service port for HTTPS requests |
+| `--envoy-service-name=<name>` | Name of the Envoy service to inspect for Ingress status details. |
+| `--envoy-service-namespace=<namespace>` | Envoy Service Namespace  |
+| `--use-proxy-protocol`  |     Use PROXY protocol for all listeners |
+| `--accesslog-format=<envoy|json>` | Format for Envoy access logs |
+| `--disable-leader-election` | Disable leader election mechanism |
+| `-d, --debug`   |                  Enable debug logging |
+| `--kubernetes-debug=<log level>`  | Enable Kubernetes client debug logging |
+| `--experimental-service-apis` | DEPRECATED: Please configure the gateway.name & gateway.namespace in the configuration file. | 
+{: class="table thead-dark table-bordered"}
+<br>
 
 ## Configuration File
 
@@ -93,6 +144,7 @@ The timeout configuration block can be used to configure various timeouts for th
 | connection-idle-timeout| string | `60s` | This field defines how long the proxy should wait while there are no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating an HTTP connection. Must be a [valid Go duration string][4], or `infinity` to disable the timeout entirely. See [the Envoy documentation][8] for more information. |
 | stream-idle-timeout| string | `5m`* |This field defines how long the proxy should wait while there is no request activity (for HTTP/1.1) or stream activity (for HTTP/2) before terminating the HTTP request or stream. Must be a [valid Go duration string][4], or `infinity` to disable the timeout entirely. See [the Envoy documentation][9] for more information. |
 | max-connection-duration | string | none* | This field defines the maximum period of time after an HTTP connection has been established from the client to the proxy before it is closed by the proxy, regardless of whether there has been activity or not. Must be a [valid Go duration string][4], or omitted or set to `infinity` for no max duration. See [the Envoy documentation][10] for more information. |
+| delayed-close-timeout | string | `1s`* | *Note: this is an advanced setting that should not normally need to be tuned.* <br /><br /> This field defines how long envoy will wait, once connection close processing has been initiated, for the downstream peer to close the connection before Envoy closes the socket associated with the connection. Setting this timeout to 'infinity' will disable it.  See [the Envoy documentation][13] for more information. |
 | connection-shutdown-grace-period | string | `5s`* | This field defines how long the proxy will wait between sending an initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During this grace period, the proxy will continue to respond to new streams. After the final GOAWAY frame has been sent, the proxy will refuse new streams. Must be a [valid Go duration string][4]. See [the Envoy documentation][11] for more information. |
 {: class="table thead-dark table-bordered"}
 <br>
@@ -300,3 +352,4 @@ connects to Contour:
 [10]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration
 [11]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-drain-timeout
 [12]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-request-timeout
+[13]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout

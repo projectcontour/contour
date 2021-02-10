@@ -308,6 +308,17 @@ type TimeoutParameters struct {
 	// for more information.
 	MaxConnectionDuration string `yaml:"max-connection-duration,omitempty"`
 
+	// DelayedCloseTimeout defines how long envoy will wait, once connection
+	// close processing has been initiated, for the downstream peer to close
+	// the connection before Envoy closes the socket associated with the connection.
+	//
+	// Setting this timeout to 'infinity' will disable it, equivalent to setting it to '0'
+	// in Envoy. Leaving it unset will result in the Envoy default value being used.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout
+	// for more information.
+	DelayedCloseTimeout string `yaml:"delayed-close-timeout,omitempty"`
+
 	// ConnectionShutdownGracePeriod defines how long the proxy will wait between sending an
 	// initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection.
 	// During this grace period, the proxy will continue to respond to new streams. After the final
@@ -338,19 +349,23 @@ func (t TimeoutParameters) Validate() error {
 	}
 
 	if err := v(t.ConnectionIdleTimeout); err != nil {
-		return fmt.Errorf("connection idle timeout %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("connection idle timeout %q: %w", t.ConnectionIdleTimeout, err)
 	}
 
 	if err := v(t.StreamIdleTimeout); err != nil {
-		return fmt.Errorf("stream idle timeout %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("stream idle timeout %q: %w", t.StreamIdleTimeout, err)
 	}
 
 	if err := v(t.MaxConnectionDuration); err != nil {
-		return fmt.Errorf("max connection duration %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("max connection duration %q: %w", t.MaxConnectionDuration, err)
+	}
+
+	if err := v(t.DelayedCloseTimeout); err != nil {
+		return fmt.Errorf("delayed close timeout %q: %w", t.DelayedCloseTimeout, err)
 	}
 
 	if err := v(t.ConnectionShutdownGracePeriod); err != nil {
-		return fmt.Errorf("connection shutdown grace period %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("connection shutdown grace period %q: %w", t.ConnectionShutdownGracePeriod, err)
 	}
 
 	return nil

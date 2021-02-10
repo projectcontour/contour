@@ -87,6 +87,8 @@ type serveContext struct {
 	// types.
 	// If the value is true, Contour will register for all the service-apis types
 	// (GatewayClass, Gateway, HTTPRoute, TCPRoute, and any more as they are added)
+	//
+	// DEPRECATED: Configure the Gateway.Name & Gateway.Namespace in the configuration file.
 	UseExperimentalServiceAPITypes bool `yaml:"-"`
 }
 

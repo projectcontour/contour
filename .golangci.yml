@@ -47,11 +47,6 @@ issues:
   - linters:
     - staticcheck
     text: "SA1019: package github.com/golang/protobuf"
-  # Disable deprecation warnings for Http2ProtocolOptions, which we're still using for compatibility
-  # with Envoy 1.16 to allow no-downtime upgrades, and which we can't nolint by line (see above).
-  - linters:
-    - staticcheck
-    text: "Http2ProtocolOptions is deprecated: Do not use."
   - linters:
     - golint
     text: "var `ingress_https` should be `ingressHTTPS`"

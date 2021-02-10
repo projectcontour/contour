@@ -144,6 +144,10 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
+		if tls.Passthrough && tls.EnableFallbackCertificate {
+			validCond.AddError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures",
+				"Spec.VirtualHost.TLS: both Passthrough and enableFallbackCertificate were specified")
+		}
 		if !isBlank(tls.SecretName) && tls.Passthrough {
 			validCond.AddError(contour_api_v1.ConditionTypeTLSError, "TLSConfigNotValid",
 				"Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
