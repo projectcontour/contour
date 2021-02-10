@@ -84,6 +84,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | network | NetworkConfig | | The [network configuration](#network-configuration). |
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
 | gateway | GatewayConfig |  | The [service-apis Gateway configuration](#gateway-configuration). |
+| rateLimitService | RateLimitServiceConfig | | The [rate limit service configuration](#rate-limit-service-configuration). |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -189,6 +190,18 @@ The gateway configuration block is used to configure which service-apis Gateway 
 |------------|-----|----------|-------------|
 | name | string | contour | This field specifies the name of a Gateway.  |
 | namespace | string | projectcontour | This field specifies the namespace of a Gateway.  |
+{: class="table thead-dark table-bordered"}
+<br>
+
+### Rate Limit Service Configuration
+
+The rate limit service configuration block is used to configure an optional global rate limit service:
+
+| Field Name | Type| Default  | Description |
+|------------|-----|----------|-------------|
+| extensionService | string | <none> | This field identifies the extension service defining the rate limit service, formatted as <namespace>/<name>.  |
+| domain | string | contour | This field defines the rate limit domain to pass to the rate limit service.  |
+| failOpen | bool | false | This field defines whether to allow requests to proceed when the rate limit service fails to respond with a valid rate limit decision within the timeout defined on the extension service.  |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -302,6 +315,11 @@ data:
     #   Configure the number of additional ingress proxy hops from the
     #   right side of the x-forwarded-for HTTP header to trust.
     #   num-trusted-hops: 0
+    #
+    # rateLimitService:
+    #   extensionService: projectcontour/ratelimit
+    #   domain: contour
+    #   failOpen: false
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.

@@ -511,7 +511,8 @@ type RateLimitService struct {
 	Domain string `yaml:"domain,omitempty"`
 
 	// FailOpen defines whether to allow requests to proceed when the
-	// Rate Limit Service fails to respond properly.
+	// Rate Limit Service fails to respond with a valid rate limit
+	// decision within the timeout defined on the extension service.
 	FailOpen bool `yaml:"failOpen,omitempty"`
 }
 

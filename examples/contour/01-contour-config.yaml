@@ -106,3 +106,7 @@ data:
     #   Configure the number of additional ingress proxy hops from the
     #   right side of the x-forwarded-for HTTP header to trust.
     #   num-trusted-hops: 0
+    # rateLimitService:
+    #   extensionService: projectcontour/ratelimit
+    #   domain: contour
+    #   failOpen: false
