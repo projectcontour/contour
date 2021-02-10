@@ -12,11 +12,41 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-skip[msg] {
-  msg := "018-external-name-service is flaky, skipping until it's fixed"
-}
+---
+
+# This test covers proxying to both TLS and non-TLS
+# ExternalName services. The ExternalName services
+# point to DNS names of in-cluster services, to avoid
+# flaky dependencies on external domains.
 
 ---
+
+# Test Case 1: the non-TLS echo server
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+# Create an ExternalName service that uses the DNS
+# name of the service created above.
 
 apiVersion: v1
 kind: Service
@@ -24,13 +54,15 @@ metadata:
   name: external-name-svc
 spec:
   type: ExternalName
-  externalName: projectcontour.io
+  externalName: echo.default
   ports:
-    - name: https
-      port: 443
+    - name: http
+      port: 80
       protocol: TCP
 
 ---
+
+# Proxy to the external name service.
 
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -38,16 +70,15 @@ metadata:
   name: external-name-proxy
 spec:
   virtualhost:
-    fqdn: externalname.bar.com
+    fqdn: external.io
   routes:
   - services:
     - name: external-name-svc
-      port: 443
-      protocol: tls
+      port: 80
     requestHeadersPolicy:
       set:
       - name: Host
-        value: projectcontour.io
+        value: echo.default
 
 ---
 
@@ -74,7 +105,159 @@ import data.contour.http.expect
 Response := client.Get({
   "url": url.http("/"),
   "headers": {
-    "Host": "externalname.bar.com",
+    "Host": "external.io",
+    "User-Agent": client.ua("external-name-test"),
+  },
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
+}
+
+---
+
+# Test Case 2: the TLS echo server
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca-projectcontour-io
+spec:
+  isCA: true
+  usages:
+  - signing
+  - cert sign
+  subject:
+    organizationalUnits:
+    - io
+    - projectcontour
+    - testsuite
+  commonName: issuer
+  secretName: ca-projectcontour-io
+  issuerRef:
+    name: selfsigned
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: ca-projectcontour-io
+spec:
+  ca:
+    secretName: ca-projectcontour-io
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: backend-server-cert
+spec:
+  commonName: echo
+  usages:
+  - server auth
+  dnsNames:
+  - echo
+  secretName: backend-server-cert
+  issuerRef:
+    name: ca-projectcontour-io
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo-tls
+$apply:
+  fixture:
+    as: echo-tls
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo-tls
+$apply:
+  fixture:
+    as: echo-tls
+
+---
+
+# Create an ExternalName service that uses the DNS
+# name of the service created above.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-name-svc-tls
+spec:
+  type: ExternalName
+  externalName: echo-tls.default
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+
+---
+
+# Proxy to the external name service.
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: external-name-proxy-tls
+spec:
+  virtualhost:
+    fqdn: tls.externalname.io
+  routes:
+  - services:
+    - name: external-name-svc-tls
+      port: 443
+      protocol: tls
+    requestHeadersPolicy:
+      set:
+      - name: Host
+        value: echo-tls.default
+
+---
+
+import data.contour.resources
+
+fatal_proxy_is_not_valid[msg] {
+  name := "external-name-proxy-tls"
+  proxy := resources.get("httpproxies", name)
+  status := object.get(proxy, "status", {})
+
+  object.get(status, "currentStatus", "") != "valid"
+
+  msg := sprintf("HTTP proxy for '%s' is not valid\n%s", [
+    name, yaml.marshal(status)
+  ])
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+Response := client.Get({
+  "url": url.http("/"),
+  "headers": {
+    "Host": "tls.externalname.io",
     "User-Agent": client.ua("external-name-test"),
   },
 })
