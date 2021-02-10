@@ -200,8 +200,8 @@ func TestDownstreamTLSContext(t *testing.T) {
 		TlsMinimumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_2,
 		TlsMaximumProtocolVersion: envoy_tls_v3.TlsParameters_TLSv1_3,
 		CipherSuites: []string{
-			"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
-			"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+			"ECDHE-ECDSA-AES128-GCM-SHA256",
+			"ECDHE-RSA-AES128-GCM-SHA256",
 			"ECDHE-ECDSA-AES128-SHA",
 			"ECDHE-RSA-AES128-SHA",
 			"ECDHE-ECDSA-AES256-GCM-SHA384",
