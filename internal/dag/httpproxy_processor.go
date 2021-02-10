@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 // defaultExtensionRef populates the unset fields in ref with default values.
@@ -102,6 +103,28 @@ func (p *HTTPProxyProcessor) Run(dag *DAG, source *KubernetesCache) {
 	}
 }
 
+// Credits to https://github.com/kubernetes/apimachinery/blob/master/pkg/util/validation/validation.go#L95
+// Had to rewrite it here as we don't need FieldPath
+func (p *HTTPProxyProcessor) isValidFQDN(name string) []string {
+	allErrs := []string{}
+	if strings.HasSuffix(name, ".") {
+		name = name[:len(name)-1]
+	}
+	if errs := validation.IsDNS1123Subdomain(name); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+	if len(strings.Split(name, ".")) < 2 {
+		allErrs = append(allErrs, "domain should have at least 2 segments separated by dots")
+	}
+
+	for _, label := range strings.Split(name, ".") {
+		if errs := validation.IsDNS1123Label(label); len(errs) > 0 {
+			allErrs = append(allErrs, errs...)
+		}
+	}
+	return allErrs
+}
+
 func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	pa, commit := p.dag.StatusCache.ProxyAccessor(proxy)
 	validCond := pa.ConditionFor(status.ValidCondition)
@@ -118,6 +141,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	if isBlank(host) {
 		validCond.AddError(contour_api_v1.ConditionTypeVirtualHostError, "FQDNNotSpecified",
 			"Spec.VirtualHost.Fqdn must be specified")
+		return
+	}
+
+	// Check if FQDN is conformant according to RFC1123
+	if errs := p.isValidFQDN(host); len(errs) != 0 {
+		validCond.AddError(contour_api_v1.ConditionTypeVirtualHostError, "FQDNNotRFC1123Conformant",
+			"Spec.VirtualHost.Fqdn must be conformant according to RFC1123")
 		return
 	}
 	pa.Vhost = host

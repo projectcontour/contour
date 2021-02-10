@@ -2440,4 +2440,37 @@ func TestDAGStatus(t *testing.T) {
 				Valid(),
 		},
 	})
+
+	// FQDN Validation
+	invalidFQDN := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "example",
+			Generation: 24,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "my-domain-${somevariable}.example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "invalid FQDN", testcase{
+		objs: []interface{}{invalidFQDN, fixture.ServiceRootsHome},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: invalidFQDN.Name, Namespace: invalidFQDN.Namespace}: fixture.NewValidCondition().
+				WithGeneration(invalidFQDN.Generation).
+				WithError(contour_api_v1.ConditionTypeVirtualHostError, "FQDNNotRFC1123Conformant",
+					"Spec.VirtualHost.Fqdn must be conformant according to RFC1123"),
+		},
+	})
 }
