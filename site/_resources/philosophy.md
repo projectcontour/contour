@@ -59,8 +59,6 @@ When Contour was first developed, generally we stopped there.
 However, users of Contour found that this approach, while excellent for the combined cluster operator/application developer users, was not ideal when the cluster operator had to keep a large production deployment up and running.
 
 Contour still and always will attempt to choose the best default for the largest set of users, but we will allow tweaking of those defaults when requested.
-The TLS cipher suite is a great example of this.
-Contour will move reasonably quickly on keeping the default cipher suite up to date with the current standards, but we allow configuration of the cipher suite, so cluster operators have the option to override the defaults as they need to.
 
 In addition, sometimes it's useful for application developers to be able to override some global defaults.
 When we do allow overriding of defaults, we will do our best to also supply [Gatekeeper](https://github.com/open-policy-agent/gatekeeper) policies and validations to allow cluster operators to limit the *range* of values that app devs may configure.
@@ -68,7 +66,7 @@ When we do allow overriding of defaults, we will do our best to also supply [Gat
 ### Limited feature scope
 
 The Contour project has a well defined scope: a reverse proxy implementation for HTTP workloads on Kubernetes clusters.
-Contour's limited support for TCP proxying is intended solely for Contour to to support web applications which desire to handle TLS directly.
+Contour's limited support for TCP proxying is intended solely for Contour to support web applications which desire to handle TLS directly.
 
 ### Every feature is supportable by the application developer or cluster administrator
 
