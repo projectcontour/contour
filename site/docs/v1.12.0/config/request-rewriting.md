@@ -218,3 +218,42 @@ Contour already sets the `X-Request-Start` request header to
 `t=%START_TIME(%s.%3f)%` which is the Unix epoch time when the request
 started.
 
+To enable setting header values based on the destination service Contour also supports:
+
+* `%CONTOUR_NAMESPACE%`
+* `%CONTOUR_SERVICE_NAME%`
+* `%CONTOUR_SERVICE_PORT%`
+
+For example, with the following HTTPProxy object that has a per-Service requestHeadersPolicy using these variables:
+```
+# httpproxy.yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: basic
+  namespace: myns
+spec:
+  virtualhost:
+    fqdn: foo-basic.bar.com
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s1
+          port: 80
+          requestHeadersPolicy:
+            set:
+            - name: l5d-dst-override
+              value: "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%"
+```
+the values would be:
+* `CONTOUR_NAMESPACE: "myns"`
+* `CONTOUR_SERVICE_NAME: "s1"`
+* `CONTOUR_SERVICE_PORT: "80"`
+
+and the `l5-dst-override` header would be set to `s1.myns.svc.cluster.local:80`.
+
+For per-Route requestHeadersPolicy only `%CONTOUR_NAMESPACE%` is set and using
+`%CONTOUR_SERVICE_NAME%` and `%CONTOUR_SERVICE_PORT%` will end up as the
+literal values `%%CONTOUR_SERVICE_NAME%%` and `%%CONTOUR_SERVICE_PORT%%`,
+respectively.
