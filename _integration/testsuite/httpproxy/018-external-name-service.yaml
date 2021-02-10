@@ -12,11 +12,41 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-skip[msg] {
-  msg := "018-external-name-service is flaky, skipping until it's fixed"
-}
+---
+
+# This test covers proxying to both TLS and non-TLS
+# ExternalName services. The ExternalName services
+# point to DNS names of in-cluster services, to avoid
+# flaky dependencies on external domains.
 
 ---
+
+# Test Case 1: the non-TLS echo server
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+# Create an ExternalName service that uses the DNS
+# name of the service created above.
 
 apiVersion: v1
 kind: Service
