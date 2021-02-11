@@ -246,6 +246,31 @@ type TLSParameters struct {
 	// to be used when establishing TLS connection to upstream
 	// cluster.
 	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
+
+	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
+	// listeners when negotiating TLS 1.2. Ciphers are validated against the
+	// set that Envoy supports by default. This parameter should only be used
+	// by advanced users. Note that these will be ignored when TLS 1.3 is in
+	// use.
+	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
+}
+
+// Validate TLS fallback certificate, client certificate, and cipher suites
+func (t TLSParameters) Validate() error {
+	// Check TLS secret names.
+	if err := t.FallbackCertificate.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS fallback certificate: %w", err)
+	}
+
+	if err := t.ClientCertificate.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS client certificate: %w", err)
+	}
+
+	if err := t.CipherSuites.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS cipher suites: %w", err)
+	}
+
+	return nil
 }
 
 // ServerParameters holds the configuration for the Contour xDS server.
@@ -494,13 +519,8 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	// Check TLS secret names.
-	if err := p.TLS.FallbackCertificate.Validate(); err != nil {
-		return fmt.Errorf("invalid TLS fallback certificate: %w", err)
-	}
-
-	if err := p.TLS.ClientCertificate.Validate(); err != nil {
-		return fmt.Errorf("invalid TLS client certificate: %w", err)
+	if err := p.TLS.Validate(); err != nil {
+		return err
 	}
 
 	if err := p.Timeouts.Validate(); err != nil {
