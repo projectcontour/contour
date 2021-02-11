@@ -1104,6 +1104,348 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
+		"httpproxy with fallback certificate and with request timeout set": {
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			ListenerConfig: ListenerConfig{
+				RequestTimeout: timeout.DurationSetting(90 * time.Second),
+			},
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_api_v1.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Services: []contour_api_v1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoy_v3.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						DefaultFilters().
+						RequestTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}, &envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						RequestTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+				}, {
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						TransportProtocol: "tls",
+					},
+					TransportSocket: transportSocket("fallbacksecret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						RequestTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+					Name: "fallback-certificate",
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}),
+		},
+		"httpproxy with fallback certificate and with connection idle timeout set": {
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			ListenerConfig: ListenerConfig{
+				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
+			},
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_api_v1.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Services: []contour_api_v1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoy_v3.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						DefaultFilters().
+						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}, &envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+				}, {
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						TransportProtocol: "tls",
+					},
+					TransportSocket: transportSocket("fallbacksecret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+					Name: "fallback-certificate",
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}),
+		},
+		"httpproxy with fallback certificate and with stream idle timeout set": {
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			ListenerConfig: ListenerConfig{
+				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
+			},
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_api_v1.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Services: []contour_api_v1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoy_v3.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						DefaultFilters().
+						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}, &envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+				}, {
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						TransportProtocol: "tls",
+					},
+					TransportSocket: transportSocket("fallbacksecret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+					Name: "fallback-certificate",
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}),
+		},
 		"httpproxy with fallback certificate and with delayed close timeout set": {
 			fallbackCertificate: &types.NamespacedName{
 				Name:      "fallbacksecret",
@@ -1208,6 +1550,234 @@ func TestListenerVisit(t *testing.T) {
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DelayedCloseTimeout(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+					Name: "fallback-certificate",
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}),
+		},
+		"httpproxy with fallback certificate and with max connection duration set": {
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			ListenerConfig: ListenerConfig{
+				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
+			},
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_api_v1.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Services: []contour_api_v1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoy_v3.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						DefaultFilters().
+						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}, &envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+				}, {
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						TransportProtocol: "tls",
+					},
+					TransportSocket: transportSocket("fallbacksecret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+					Name: "fallback-certificate",
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}),
+		},
+		"httpproxy with fallback certificate and with connection shutdown grace period set": {
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			ListenerConfig: ListenerConfig{
+				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
+			},
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_api_v1.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Services: []contour_api_v1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoy_v3.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						DefaultFilters().
+						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}, &envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
+						Get(),
+					),
+				}, {
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						TransportProtocol: "tls",
+					},
+					TransportSocket: transportSocket("fallbacksecret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
 					Name: "fallback-certificate",
