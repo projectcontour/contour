@@ -111,6 +111,9 @@ type ListenerConfig struct {
 	// StreamIdleTimeout configures the stream_idle_timeout for all Connection Managers.
 	StreamIdleTimeout timeout.Setting
 
+	// DelayedCloseTimeout configures the delayed_close_timeout for all Connection Managers.
+	DelayedCloseTimeout timeout.Setting
+
 	// MaxConnectionDuration configures the common_http_protocol_options.max_connection_duration for all
 	// Connection Managers.
 	MaxConnectionDuration timeout.Setting
@@ -337,6 +340,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 			RequestTimeout(lvc.RequestTimeout).
 			ConnectionIdleTimeout(lvc.ConnectionIdleTimeout).
 			StreamIdleTimeout(lvc.StreamIdleTimeout).
+			DelayedCloseTimeout(lvc.DelayedCloseTimeout).
 			MaxConnectionDuration(lvc.MaxConnectionDuration).
 			ConnectionShutdownGracePeriod(lvc.ConnectionShutdownGracePeriod).
 			AllowChunkedLength(lvc.AllowChunkedLength).
@@ -425,6 +429,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					RequestTimeout(v.ListenerConfig.RequestTimeout).
 					ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
 					StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
+					DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
 					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
@@ -488,6 +493,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 					RequestTimeout(v.ListenerConfig.RequestTimeout).
 					ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
 					StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
+					DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
 					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).

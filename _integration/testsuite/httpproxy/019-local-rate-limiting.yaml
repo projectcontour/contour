@@ -37,7 +37,48 @@ $apply:
 
 ---
 
-# This proxy has a local rate limit on the virtual host.
+# Create the HTTPProxy without rate limits first
+# and wait until we get a 200 from it before applying
+# rate limits and counting responses. This ensures
+# the pods are up and receiving traffic and prevents
+# the test from being flaky.
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: vhostratelimit
+spec:
+  virtualhost:
+    fqdn: vhostratelimit.projectcontour.io
+  routes:
+  - services:
+    - name: echo
+      port: 80
+---
+
+# Wait until we get a 200 from the proxy confirming
+# the pods are up and serving traffic.
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+Response := client.Get({
+  "url": url.http("/"),
+  "headers": {
+    "Host": "vhostratelimit.projectcontour.io",
+    "User-Agent": client.ua("local-rate-limit"),
+  },
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
+}
+
+---
+
+# Add a local rate limit policy on the virtual host.
+
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
@@ -55,23 +96,9 @@ spec:
       port: 80
 ---
 
-# Wait for the service to have endpoints before trying to make
-# a request.
-
-import data.contour.resources
-
-error_endpoints_not_ready[msg] {
-  ep := resources.get("endpoints", "echo")
-  
-  not ep.subsets[0].addresses
-  
-  msg := "endpoints for svc/ingress-conformance-echo are not ready"
-}
-
----
 
 # Make a request against the proxy, confirm a 200 response
-# is returned.
+# is returned since we're allowed one request per hour.
 
 import data.contour.http.client
 import data.contour.http.client.url
@@ -137,7 +164,7 @@ spec:
 ---
 
 # Make a request against the proxy, confirm a 200 response
-# is returned.
+# is returned since we're allowed one request per hour.
 
 import data.contour.http.client
 import data.contour.http.client.url

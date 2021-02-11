@@ -255,6 +255,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if err != nil {
 		return fmt.Errorf("error parsing stream idle timeout: %w", err)
 	}
+	delayedCloseTimeout, err := timeout.Parse(ctx.Config.Timeouts.DelayedCloseTimeout)
+	if err != nil {
+		return fmt.Errorf("error parsing delayed close timeout: %w", err)
+	}
 	maxConnectionDuration, err := timeout.Parse(ctx.Config.Timeouts.MaxConnectionDuration)
 	if err != nil {
 		return fmt.Errorf("error parsing max connection duration: %w", err)
@@ -283,6 +287,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		RequestTimeout:                requestTimeout,
 		ConnectionIdleTimeout:         connectionIdleTimeout,
 		StreamIdleTimeout:             streamIdleTimeout,
+		DelayedCloseTimeout:           delayedCloseTimeout,
 		MaxConnectionDuration:         maxConnectionDuration,
 		ConnectionShutdownGracePeriod: connectionShutdownGracePeriod,
 		DefaultHTTPVersions:           parseDefaultHTTPVersions(ctx.Config.DefaultHTTPVersions),
