@@ -146,6 +146,11 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 
 		s, err := p.dag.EnsureService(m, port, p.source)
 		if err != nil {
+			p.WithError(err).
+				WithField("name", ing.GetName()).
+				WithField("namespace", ing.GetNamespace()).
+				WithField("service", be.Service.Name).
+				Error("unresolved service reference")
 			continue
 		}
 
