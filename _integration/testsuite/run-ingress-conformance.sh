@@ -30,8 +30,8 @@ readonly INGRESS_CONFORMANCE_IMAGE=${INGRESS_CONFORMANCE_IMAGE:-gcr.io/k8s-stagi
 
 # Set the Ingress Status Address so conformance test pods are reachable in tests
 # This multiline sed command is for compatibility across MacOS and GNU sed
-${KUBECTL} apply -f <(sed 's/\s*- serve/&\
-        - --ingress-status-address=envoy.projectcontour/' ${REPO}/examples/contour/03-contour.yaml)
+${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' ${REPO}/examples/contour/03-contour.yaml | sed 's/\s*- serve/&\
+        - --ingress-status-address=envoy.projectcontour/')
 ${KUBECTL} rollout status -n projectcontour deployment contour
 
 ${SONOBUOY} run \
