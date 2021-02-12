@@ -135,7 +135,7 @@ func TestVisitListeners(t *testing.T) {
 						FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 							ServerNames: []string{"tcpproxy.example.com"},
 						},
-						TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2),
+						TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil),
 						Filters:         envoy_v3.Filters(envoy_v3.TCPProxy(ENVOY_HTTPS_LISTENER, p1, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTPS_ACCESS_LOG))),
 					}},
 					ListenerFilters: envoy_v3.ListenerFilters(
