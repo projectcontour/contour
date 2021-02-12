@@ -89,7 +89,7 @@ data:
                 "stack": false,
                 "steppedLine": false,
                 "targets": [{
-                    "expr": "avg(contour_httpproxy_total{namespace=~\"$Namespace\"}) by (namespace)",
+                    "expr": "avg(contour_httpproxy{namespace=~\"$Namespace\"}) by (namespace)",
                     "format": "time_series",
                     "interval": "",
                     "intervalFactor": 1,
@@ -169,7 +169,7 @@ data:
                 "stack": false,
                 "steppedLine": false,
                 "targets": [{
-                    "expr": "avg(contour_httpproxy_orphaned_total{namespace=~\"$Namespace\"}) by (namespace)",
+                    "expr": "avg(contour_httpproxy_orphaned{namespace=~\"$Namespace\"}) by (namespace)",
                     "format": "time_series",
                     "interval": "",
                     "intervalFactor": 1,
@@ -249,7 +249,7 @@ data:
                 "stack": false,
                 "steppedLine": false,
                 "targets": [{
-                    "expr": "avg(contour_httpproxy_valid_total{namespace=~\"$Namespace\",vhost=~\"$VHost\"}) by (namespace,vhost)",
+                    "expr": "avg(contour_httpproxy_valid{namespace=~\"$Namespace\",vhost=~\"$VHost\"}) by (namespace,vhost)",
                     "format": "time_series",
                     "interval": "",
                     "intervalFactor": 1,
@@ -329,7 +329,7 @@ data:
                 "stack": false,
                 "steppedLine": false,
                 "targets": [{
-                    "expr": "avg(contour_httpproxy_invalid_total{namespace=~\"$Namespace\",vhost=~\"$VHost\"}) by (namespace,vhost)",
+                    "expr": "avg(contour_httpproxy_invalid{namespace=~\"$Namespace\",vhost=~\"$VHost\"}) by (namespace,vhost)",
                     "format": "time_series",
                     "interval": "",
                     "intervalFactor": 1,
@@ -409,7 +409,7 @@ data:
                 "stack": false,
                 "steppedLine": false,
                 "targets": [{
-                    "expr": "avg(contour_httpproxy_root_total{namespace=~\"$Namespace\"}) by (namespace)",
+                    "expr": "avg(contour_httpproxy_root{namespace=~\"$Namespace\"}) by (namespace)",
                     "format": "time_series",
                     "interval": "",
                     "intervalFactor": 1,
@@ -3245,7 +3245,7 @@ data:
       "title": "Contour APIserver stats",
       "uid": "u4C2S-QZz",
       "version": 8
-    }  
+    }
 
 ---
 apiVersion: v1
@@ -3262,7 +3262,7 @@ data:
     data = /var/lib/grafana/data
     logs = /var/log/grafana
     plugins = /var/lib/grafana/plugins
-  
+
     [server]
     ;protocol = http
     ;http_addr =
@@ -3275,7 +3275,7 @@ data:
     ;enable_gzip = false
     ;cert_file =
     ;cert_key =
-  
+
     [database]
     ;type = sqlite3
     ;host = 127.0.0.1:3306
@@ -3284,19 +3284,19 @@ data:
     ;password =
     ;ssl_mode = disable
     ;path = grafana.db
-  
+
     [session]
     ;provider = file
     ;provider_config = sessions
     ;cookie_name = grafana_sess
     ;cookie_secure = false
     ;session_life_time = 86400
-  
+
     [analytics]
     ;reporting_enabled = true
     check_for_updates = true
     ;google_analytics_ua_id =
-  
+
     [security]
     ;admin_user = admin
     ;admin_password =
@@ -3306,12 +3306,12 @@ data:
     ;cookie_remember_name = grafana_remember
     ;disable_gravatar = false
     ;data_source_proxy_whitelist =
-  
+
     [snapshots]
     ;external_enabled = true
     ;external_snapshot_url = https://snapshots-origin.raintank.io
     ;external_snapshot_name = Publish to snapshot.raintank.io
-  
+
     [users]
     ;allow_sign_up = true
     ;allow_org_create = true
@@ -3319,25 +3319,25 @@ data:
     ;auto_assign_org_role = Viewer
     ;login_hint = email or username
     ;default_theme = dark
-  
+
     [auth.anonymous]
     ;enabled = false
     ;org_name = Main Org.
     ;org_role = Viewer
-  
+
     [auth.proxy]
     ;enabled = false
     ;header_name = X-WEBAUTH-USER
     ;header_property = username
     ;auto_sign_up = true
-  
+
     [auth.basic]
     ;enabled = true
-  
+
     [auth.ldap]
     ;enabled = false
     ;config_file = /etc/grafana/ldap.toml
-  
+
     [smtp]
     ;enabled = false
     ;host = localhost:25
@@ -3347,35 +3347,35 @@ data:
     ;key_file =
     ;skip_verify = false
     ;from_address = admin@grafana.localhost
-  
+
     [emails]
     ;welcome_email_on_sign_up = false
-  
+
     [log]
     mode = console
     level = info
-  
+
     [log.console]
     ;level =
     ;format = console
-  
+
     [event_publisher]
     ;enabled = false
     ;rabbitmq_url = amqp://localhost/
     ;exchange = grafana_events
-  
+
     [dashboards.json]
     enabled = true
     path = /var/lib/grafana/dashboards
-  
+
     [metrics]
     ;enabled           = true
     ;interval_seconds  = 10
-  
+
     ; [metrics.graphite]
     ; address = localhost:2003
     ; prefix = prod.grafana.%(instance_name)s.
-  
+
     [grafana_net]
     url = https://grafana.net
 ---
