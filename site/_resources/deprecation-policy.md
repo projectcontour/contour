@@ -23,7 +23,7 @@ We use the same rules as Kubernetes:
 | Sample Version Tag | State | Deprecation timeframe | Notes                                                                                                      |
 | ------------------ | ----- | --------------------- | ---------------------------------------------------------------------------------------------------------- |
 | v1alpha1           | Alpha | Any time              | Behavior can change any time, Fields can be removed at any time                                            |
-| v1beta1            | Beta  | 1 release            | Behavior can change any time, fields won't be removed without a version bump (ie `v1alpha1` to `v1alpha2`) |
+| v1beta1            | Beta  | 1 release             | Behavior can change any time, fields won't be removed without a version bump (ie `v1alpha1` to `v1alpha2`) |
 | v1                 | GA    | 1 year                | No fields will be removed, no behavior will substantially change. Fields can be added.                     |
 
 
@@ -33,11 +33,11 @@ The `projectcontour.io` CRDs contain some helper code, for accessing various par
 
 The API guarantees apply here as well, in the following way:
 
-| Sample Version Tag | State | Change/Deprecation timeframe | Notes                                                                                                      |
-| ------------------ | ----- | --------------------- | ---------------------------------------------------------------------------------------------------------- |
-| v1alpha1           | Alpha | Any time              | Function and method signatures can change any time. Implementation may change any time.                         |
-| v1beta1            | Beta  | 1 release            | Function and method signatures won't change without a version bump. Implementation may change any time. |
-| v1                 | GA    | 1 year                | Function and method signatures won't change without a version bump. Implementation may change any time, but behavior changes must be restricted to minor ones (that is, you can change how a return value is made, but not what it means)|
+| Sample Version Tag | State | Change/Deprecation timeframe | Notes                                                                                                                                                                                                                                     |
+| ------------------ | ----- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v1alpha1           | Alpha | Any time                     | Function and method signatures can change any time. Implementation may change any time.                                                                                                                                                   |
+| v1beta1            | Beta  | 1 release                    | Function and method signatures won't change without a version bump. Implementation may change any time.                                                                                                                                   |
+| v1                 | GA    | 1 year                       | Function and method signatures won't change without a version bump. Implementation may change any time, but behavior changes must be restricted to minor ones (that is, you can change how a return value is made, but not what it means) |
 
 
 
@@ -61,3 +61,13 @@ We use the following cycle for config file settings:
 - We wait the timeline period
 - The setting is moved or removed.
 
+## Metrics
+
+Removing/Renaming metrics is a breaking change as it might cause alerts/ dashboards to break for operators.
+
+We try to use the following cycle for deprecating metrics:
+- Description for metrics should be updated to mark these metrics as deprecated.
+- If you are renaming metrics, then add metrics with new names
+- Update [grafana dashboards]({{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/examples/grafana/02-grafana-configmap.yaml) if applicable
+- Update [alertmanager rules]({{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/examples/prometheus/02-prometheus-alertrules-configmap.yaml) if applicable
+- Make sure you have added release notes indicating the subsequent release when deprecated metrics will be removed.
