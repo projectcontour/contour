@@ -68,6 +68,17 @@ To run the tests for a single package, change to package directory and run:
 go test .
 ```
 
+### Lint
+
+Before making a commit, it's always a good idea to check the code for common programming mistakes, misspellings and other potential errors. The lint checks can be run by invoking the make lint task:
+
+```shell
+make lint
+```
+
+Note: The lint tasks require the [codespell](https://github.com/codespell-project/codespell) application. Be sure to install version 2.0 or newer before running the lint tasks.
+
+
 ## Contribution workflow
 
 This section describes the process for contributing a bug fix or new feature.
