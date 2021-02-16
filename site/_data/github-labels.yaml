@@ -87,6 +87,13 @@ default:
       previously:
         - name: area/service-apis
     - color: 0052cc
+      description: Issues or PRs related to the Gateway (Gateway API working group) API.
+      name: area/gateway-api
+      target: both
+      addedBy: label
+      previously:
+        - name: area/service-apis
+    - color: 0052cc
       description: Issues or PRs related to the web site.
       name: area/website
       target: both
