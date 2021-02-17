@@ -24,6 +24,13 @@ This guide assumes that you have:
 ## Deploy an RLS
 
 For this guide, we'll deploy the [Envoy rate limit service][4] as our RLS.
+Per the project's README:
+
+> The rate limit service is a Go/gRPC service designed to enable generic rate limit scenarios from different types of applications.
+> Applications request a rate limit decision based on a domain and a set of descriptors.
+> The service reads the configuration from disk via [runtime][10], composes a cache key, and talks to the Redis cache.
+> A decision is then returned to the caller.
+
 However, any service that implements the [RateLimitService gRPC interface][5] is supported by Contour/Envoy.
 
 Create a config map with [the ratelimit service configuration][6]:
@@ -425,3 +432,4 @@ The YAML used in this guide is available [in the Contour repository][9].
 [7]: /docs/{{site.latest}}/config/rate-limiting/
 [8]: /docs/{{site.latest}}/config/api/
 [9]: {{site.github.repository_url}}/tree/main/examples/ratelimit
+[10]: https://github.com/lyft/goruntime

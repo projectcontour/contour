@@ -177,8 +177,15 @@ spec:
 Now add a reference to it in the Contour config file:
 ```yaml
 rateLimitService:
+  # The namespace/name of the extension service.
   extensionService: projectcontour/ratelimit
+  # The domain value to pass to the RLS for all rate limit
+  # requests. Acts as a container for a set of rate limit
+  # definitions within the RLS.
   domain: contour
+  # Whether to allow requests to proceed when the rate limit
+  # service fails to respond with a valid rate limit decision
+  # within the timeout defined on the extension service.
   failOpen: true
 ```
 

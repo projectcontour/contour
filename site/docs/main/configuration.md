@@ -200,7 +200,7 @@ The rate limit service configuration block is used to configure an optional glob
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | extensionService | string | <none> | This field identifies the extension service defining the rate limit service, formatted as <namespace>/<name>.  |
-| domain | string | contour | This field defines the rate limit domain to pass to the rate limit service.  |
+| domain | string | contour | This field defines the rate limit domain value to pass to the rate limit service. Acts as a container for a set of rate limit definitions within the RLS.  |
 | failOpen | bool | false | This field defines whether to allow requests to proceed when the rate limit service fails to respond with a valid rate limit decision within the timeout defined on the extension service.  |
 {: class="table thead-dark table-bordered"}
 <br>
