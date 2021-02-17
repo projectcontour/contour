@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	serviceapis "sigs.k8s.io/service-apis/apis/v1alpha1"
+
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -28,7 +30,374 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
+
+func TestDAGInsertServiceAPIs(t *testing.T) {
+
+	kuardService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	blogService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blogsvc",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	gateway := &serviceapis.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gateway",
+			Namespace: "default",
+		},
+		Spec: serviceapis.GatewaySpec{
+			Listeners: []serviceapis.Listener{{
+				Port:     80,
+				Protocol: "HTTP",
+				Routes: serviceapis.RouteBindingSelector{
+					Selector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app": "contour",
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	tests := map[string]struct {
+		objs                         []interface{}
+		disablePermitInsecure        bool
+		fallbackCertificateName      string
+		fallbackCertificateNamespace string
+		want                         []Vertex
+	}{
+		"insert basic single route, single hostname": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				&serviceapis.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: serviceapis.HTTPRouteSpec{
+						Hostnames: []serviceapis.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []serviceapis.HTTPRouteRule{{
+							Matches: []serviceapis.HTTPRouteMatch{{
+								Path: serviceapis.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        8080,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		"insert basic multiple routes, single hostname": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				blogService,
+				&serviceapis.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: serviceapis.HTTPRouteSpec{
+						Hostnames: []serviceapis.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []serviceapis.HTTPRouteRule{{
+							Matches: []serviceapis.HTTPRouteMatch{{
+								Path: serviceapis.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        8080,
+							}},
+						}, {
+							Matches: []serviceapis.HTTPRouteMatch{{
+								Path: serviceapis.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/blog",
+								},
+							}},
+							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("blogsvc"),
+								Port:        80,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							prefixroute("/", service(kuardService)), prefixroute("/blog", service(blogService))),
+					),
+				},
+			),
+		},
+		"multiple hosts": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				&serviceapis.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: serviceapis.HTTPRouteSpec{
+						Hostnames: []serviceapis.Hostname{
+							"test.projectcontour.io",
+							"test2.projectcontour.io",
+							"test3.projectcontour.io",
+							"test4.projectcontour.io",
+						},
+						Rules: []serviceapis.HTTPRouteRule{{
+							Matches: []serviceapis.HTTPRouteMatch{{
+								Path: serviceapis.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        8080,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test2.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test3.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test4.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		"no host defined": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				&serviceapis.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: serviceapis.HTTPRouteSpec{
+						Rules: []serviceapis.HTTPRouteRule{{
+							Matches: []serviceapis.HTTPRouteMatch{{
+								Path: serviceapis.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        8080,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		// If the ServiceName referenced from an HTTPRoute is missing,
+		// the route should not be added.
+		"missing service": {
+			objs: []interface{}{
+				gateway,
+				&serviceapis.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: serviceapis.HTTPRouteSpec{
+						Rules: []serviceapis.HTTPRouteRule{{
+							Matches: []serviceapis.HTTPRouteMatch{{
+								Path: serviceapis.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        8080,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// Single host with single route containing multiple prefixes to the same service.
+		"insert basic single route with multiple prefixes, single hostname": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				&serviceapis.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: serviceapis.HTTPRouteSpec{
+						Hostnames: []serviceapis.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []serviceapis.HTTPRouteRule{{
+							Matches: []serviceapis.HTTPRouteMatch{{
+								Path: serviceapis.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}, {
+								Path: serviceapis.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/blog",
+								},
+							}, {
+								Path: serviceapis.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/tech",
+								},
+							}},
+							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        8080,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							prefixroute("/", service(kuardService)),
+							prefixroute("/blog", service(kuardService)),
+							prefixroute("/tech", service(kuardService))),
+					),
+				},
+			),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+
+			builder := Builder{
+				Source: KubernetesCache{
+					FieldLogger: fixture.NewTestLogger(t),
+				},
+				Processors: []Processor{
+					&IngressProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&HTTPProxyProcessor{
+						DisablePermitInsecure: tc.disablePermitInsecure,
+						FallbackCertificate: &types.NamespacedName{
+							Name:      tc.fallbackCertificateName,
+							Namespace: tc.fallbackCertificateNamespace,
+						},
+					},
+					&ServiceAPIsProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&ListenerProcessor{},
+				},
+			}
+
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			dag := builder.Build()
+
+			got := make(map[int]*Listener)
+			dag.Visit(listenerMap(got).Visit)
+
+			want := make(map[int]*Listener)
+			for _, v := range tc.want {
+				if l, ok := v.(*Listener); ok {
+					want[l.Port] = l
+				}
+			}
+			assert.Equal(t, want, got)
+		})
+	}
+}
 
 func TestDAGInsert(t *testing.T) {
 	// The DAG is sensitive to ordering, adding an ingress, then a service,
