@@ -755,6 +755,14 @@ func TestVirtualHost(t *testing.T) {
 				Domains: []string{"*"},
 			},
 		},
+		"wildcard hostname": {
+			hostname: "*.bar.com",
+			port:     9999,
+			want: &envoy_route_v3.VirtualHost{
+				Name:    "*.bar.com",
+				Domains: []string{"*.bar.com"},
+			},
+		},
 		"www.example.com": {
 			hostname: "www.example.com",
 			port:     9999,
@@ -1077,6 +1085,30 @@ func TestRouteMatch(t *testing.T) {
 					// is permitted to be a bare regex.
 					SafeRegex: SafeRegexMatch("/v.1/*"),
 				},
+			},
+		},
+		"header regex match": {
+			route: &dag.Route{
+				HeaderMatchConditions: []dag.HeaderMatchCondition{{
+					Name:      "x-regex-header",
+					Value:     "[a-z0-9][a-z0-9-]+someniceregex",
+					MatchType: "regex",
+					Invert:    false,
+				}},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				Headers: []*envoy_route_v3.HeaderMatcher{{
+					Name:        "x-regex-header",
+					InvertMatch: false,
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
+						SafeRegexMatch: &matcher.RegexMatcher{
+							EngineType: &matcher.RegexMatcher_GoogleRe2{
+								GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+							},
+							Regex: "[a-z0-9][a-z0-9-]+someniceregex",
+						},
+					},
+				}},
 			},
 		},
 	}

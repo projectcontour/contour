@@ -1241,7 +1241,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
-				// no hostname
+				// No hostname.
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
@@ -1250,20 +1250,13 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			}, {
-				Host: "*",
-				IngressRuleValue: networking_v1.IngressRuleValue{
-					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Backend: *backendv1("kuard", intstr.FromString("http")),
-						}},
-					},
-				},
-			}, {
+				// Allow wildcard as first label.
+				// K8s will only allow hostnames with wildcards of this form.
 				Host: "*.example.com",
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
-							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+							Backend: *backendv1("kuard", intstr.FromString("http")),
 						}},
 					},
 				},
@@ -1908,7 +1901,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: v1beta1.IngressSpec{
 			Rules: []v1beta1.IngressRule{{
-				// no hostname
+				// No hostname.
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
@@ -1919,25 +1912,15 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			}, {
-				Host: "*",
+				// Allow wildcard as first label.
+				// K8s will only allow hostnames with wildcards of this form.
+				Host: "*.example.com",
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "kuard",
 								ServicePort: intstr.FromString("http"),
-							},
-						}},
-					},
-				},
-			}, {
-				Host: "*.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuarder",
-								ServicePort: intstr.FromInt(8080),
 							},
 						}},
 					},
@@ -5811,7 +5794,6 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		// issue 1234
 		"insert ingress with wildcard hostnames": {
 			objs: []interface{}{
 				s1,
@@ -5822,6 +5804,17 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*.example.com", &Route{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{
+									Name:      ":authority",
+									MatchType: "regex",
+									Value:     "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com",
+								},
+							},
+							Clusters: clusters(service(s1)),
+						}),
 					),
 				},
 			),
@@ -6016,7 +6009,6 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		// issue 1234
 		"ingressv1: insert ingress with wildcard hostnames": {
 			objs: []interface{}{
 				s1,
@@ -6027,6 +6019,17 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*.example.com", &Route{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{
+									Name:      ":authority",
+									MatchType: "regex",
+									Value:     "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com",
+								},
+							},
+							Clusters: clusters(service(s1)),
+						}),
 					),
 				},
 			),

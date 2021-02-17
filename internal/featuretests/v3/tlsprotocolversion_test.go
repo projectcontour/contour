@@ -62,7 +62,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *featuretests.Backend(s1),
+							Backend: *featuretests.IngressV1Beta1Backend(s1),
 						}},
 					},
 				},
@@ -108,7 +108,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *featuretests.Backend(s1),
+							Backend: *featuretests.IngressV1Beta1Backend(s1),
 						}},
 					},
 				},

@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"regexp"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -109,12 +110,9 @@ func (p *IngressProcessor) computeIngresses() {
 
 func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule networking_v1.IngressRule) {
 	host := rule.Host
-	if strings.Contains(host, "*") {
-		// reject hosts with wildcard characters.
-		return
-	}
+
+	// If host name is blank, rewrite to Envoy's * default host.
 	if host == "" {
-		// if host name is blank, rewrite to Envoy's * default host.
 		host = "*"
 	}
 
@@ -154,7 +152,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 			continue
 		}
 
-		r, err := route(ing, path, s, clientCertSecret, p.FieldLogger)
+		r, err := route(ing, rule.Host, path, s, clientCertSecret, p.FieldLogger)
 		if err != nil {
 			p.WithError(err).
 				WithField("name", ing.GetName()).
@@ -179,8 +177,12 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 	}
 }
 
+const singleDNSLabelWildcardRegex = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+
+var _ = regexp.MustCompile(singleDNSLabelWildcardRegex)
+
 // route builds a dag.Route for the supplied Ingress.
-func route(ingress *networking_v1.Ingress, path string, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) (*Route, error) {
+func route(ingress *networking_v1.Ingress, host string, path string, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) (*Route, error) {
 	log = log.WithFields(logrus.Fields{
 		"name":      ingress.Name,
 		"namespace": ingress.Namespace,
@@ -209,6 +211,24 @@ func route(ingress *networking_v1.Ingress, path string, service *Service, client
 	}
 
 	r.PathMatchCondition = &PrefixMatchCondition{Prefix: path}
+
+	// If we have a wildcard match, add a header match regex rule to match the
+	// hostname so we can be sure to only match one DNS label. This is required
+	// as Envoy's virtualhost hostname wildcard matching can match multiple
+	// labels. This match ignores a port in the hostname in case it is present.
+	if strings.HasPrefix(host, "*.") {
+		r.HeaderMatchConditions = []HeaderMatchCondition{
+			{
+				// Internally Envoy uses the HTTP/2 ":authority" header in
+				// place of the HTTP/1 "host" header.
+				// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-headermatcher
+				Name:      ":authority",
+				MatchType: "regex",
+				Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(host[1:]),
+			},
+		}
+	}
+
 	return r, nil
 }
 
