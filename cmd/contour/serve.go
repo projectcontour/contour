@@ -272,6 +272,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return fmt.Errorf("error parsing request timeout: %w", err)
 	}
 
+	// connection balancer
+	if ok := ctx.Config.Listener.ConnectionBalancer == "exact" || ctx.Config.Listener.ConnectionBalancer == ""; !ok {
+		log.Warnf("invalid connection balancer value %s. the connection balancer only support exact for now.", ctx.Config.Listener.ConnectionBalancer)
+		ctx.Config.Listener.ConnectionBalancer == ""
+	}
+
 	listenerConfig := xdscache_v3.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
@@ -293,7 +299,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		DefaultHTTPVersions:           parseDefaultHTTPVersions(ctx.Config.DefaultHTTPVersions),
 		AllowChunkedLength:            !ctx.Config.DisableAllowChunkedLength,
 		XffNumTrustedHops:             ctx.Config.Network.XffNumTrustedHops,
-		UseExactConnectionBalancer:    ctx.Config.Listener.UseExactConnectionBalancer,
+		ConnectionBalancer:            ctx.Config.Listener.ConnectionBalancer,
 	}
 
 	contourMetrics := metrics.NewMetrics(registry)

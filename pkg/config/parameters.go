@@ -425,11 +425,11 @@ type NetworkParameters struct {
 
 // ListenerParameters hold various configurable listener values.
 type ListenerParameters struct {
-	// UseExactConnectionBalancer. If specified, the listener will use the exact connection balancer
+	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
 	// for more information.
-	UseExactConnectionBalancer bool `yaml:"use-exact-connection-balancer"`
+	ConnectionBalancer string `yaml:"connection-balancer"`
 }
 
 // Parameters contains the configuration file parameters for the
@@ -591,7 +591,7 @@ func Defaults() Parameters {
 			XffNumTrustedHops: 0,
 		},
 		Listener: ListenerParameters{
-			UseExactConnectionBalancer: false,
+			ConnectionBalancer: "",
 		},
 	}
 }
