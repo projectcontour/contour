@@ -275,7 +275,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// connection balancer
 	if ok := ctx.Config.Listener.ConnectionBalancer == "exact" || ctx.Config.Listener.ConnectionBalancer == ""; !ok {
 		log.Warnf("invalid connection balancer value %s. the connection balancer only support exact for now.", ctx.Config.Listener.ConnectionBalancer)
-		ctx.Config.Listener.ConnectionBalancer == ""
+		ctx.Config.Listener.ConnectionBalancer = ""
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
