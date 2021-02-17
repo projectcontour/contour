@@ -74,6 +74,7 @@ type RebuildMetricsObserver struct {
 
 func (m *RebuildMetricsObserver) OnChange(d *dag.DAG) {
 	m.Metrics.SetDAGLastRebuilt(time.Now())
+	m.Metrics.SetDAGRebuiltTotal()
 
 	timer := prometheus.NewTimer(m.Metrics.CacheHandlerOnUpdateSummary)
 	m.NextObserver.OnChange(d)
