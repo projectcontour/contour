@@ -187,6 +187,10 @@ func validateCRDs(dynamicClient dynamic.Interface, log logrus.FieldLogger) {
 
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
+	ectx := context.Background()
+	serveContext, cancel := context.WithCancel(ectx)
+	defer cancel()
+
 	// Establish k8s core & dynamic client connections.
 	clients, err := k8s.NewClients(ctx.Config.Kubeconfig, ctx.Config.InCluster)
 	if err != nil {
@@ -448,7 +452,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log.Info("starting informers")
 		defer log.Println("stopped informers")
 
-		if err := clients.StartInformers(stop); err != nil {
+		if err := clients.StartInformers(serveContext); err != nil {
 			log.WithError(err).Error("failed to start informers")
 		}
 
@@ -578,7 +582,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log := log.WithField("context", "xds")
 
 		log.Printf("waiting for informer caches to sync")
-		if !clients.WaitForCacheSync(stop) {
+		if !clients.WaitForCacheSync(serveContext) {
 			return errors.New("informer cache failed to sync")
 		}
 		log.Printf("informer caches synced")
@@ -589,7 +593,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		case config.EnvoyServerType:
 			v3cache := contour_xds_v3.NewSnapshotCache(false, log)
 			snapshotHandler.AddSnapshotter(v3cache)
-			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(context.Background(), v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
+			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(serveContext, v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
 		case config.ContourServerType:
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 		default:
@@ -631,6 +635,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		select {
 		case sig := <-c:
 			log.WithField("context", "sigterm-handler").WithField("signal", sig).Info("shutting down")
+			cancel()
 		case <-stop:
 			// Do nothing. The group is shutting down.
 		}
@@ -638,7 +643,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	})
 
 	// GO!
-	return g.Run(context.Background())
+	return g.Run(serveContext)
 }
 
 func contains(namespaces []string, ns string) bool {

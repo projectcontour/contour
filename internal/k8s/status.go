@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // StatusUpdate contains an all the information needed to change an object's status to perform a specific update.
@@ -93,7 +94,7 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 
 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		// Fetch the lister cache for the informer associated with this resource.
-		if err := suh.Clients.Cache().Get(context.Background(), upd.NamespacedName, obj); err != nil {
+		if err := suh.Clients.Cache().Get(context.Background(), upd.NamespacedName, obj.(client.Object)); err != nil {
 			return err
 		}
 
