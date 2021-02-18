@@ -678,11 +678,20 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 					"Spec.TCPProxy unresolved service reference: %s", err)
 				return false
 			}
+
+			// Determine the protocol to use to speak to this Cluster.
+			protocol, err := getProtocol(service, s)
+			if err != nil {
+				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "UnsupportedProtocol", err.Error())
+				return false
+			}
+
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream:             s,
-				Protocol:             s.Protocol,
+				Protocol:             protocol,
 				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
+				SNI:                  s.ExternalName,
 			})
 		}
 		secure := p.dag.EnsureSecureVirtualHost(host)
