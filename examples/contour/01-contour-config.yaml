@@ -30,6 +30,13 @@ data:
     tls:
     # minimum TLS version that Contour will negotiate
     # minimum-protocol-version: "1.2"
+    # TLS ciphers to be supported by Envoy TLS listeners when negotiating
+    # TLS 1.2.
+    # cipher-suites:
+    # - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+    # - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+    # - 'ECDHE-ECDSA-AES256-GCM-SHA384'
+    # - 'ECDHE-RSA-AES256-GCM-SHA384'
     # Defines the Kubernetes name/namespace matching a secret to use
     # as the fallback certificate when requests which don't match the
     # SNI defined for a vhost.
@@ -85,6 +92,7 @@ data:
     #   connection-idle-timeout: 60s
     #   stream-idle-timeout: 5m
     #   max-connection-duration: infinity
+    #   delayed-close-timeout: 1s
     #   connection-shutdown-grace-period: 5s
     #
     # Envoy cluster settings.

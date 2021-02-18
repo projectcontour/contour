@@ -432,6 +432,7 @@ func TestMatchIngressClass(t *testing.T) {
 		})
 	}
 }
+
 func backend(name string, port intstr.IntOrString) *networking_v1.IngressBackend {
 	var portObj networking_v1.ServiceBackendPort
 	if port.Type == intstr.Int {

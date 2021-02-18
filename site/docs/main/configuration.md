@@ -97,6 +97,7 @@ Contour should provision TLS hosts.
 | minimum-protocol-version| string | `1.2` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.2` (default) and `1.3`. Any other value defaults to TLS 1.2. |
 | fallback-certificate | | | [Fallback certificate configuration](#fallback-certificate). |
 | envoy-client-certificate | | | [Client certificate configuration for Envoy](#envoy-client-certificate). |
+| cipher-suites | []string | See [config package documentation](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-constants) | This field specifies the TLS ciphers to be supported by TLS listeners when negotiating TLS 1.2. This parameter should only be used by advanced users. Note that this is ignored when TLS 1.3 is in use. The set of ciphers that are allowed is a superset of those supported by default in stock, non-FIPS Envoy builds and FIPS builds as specified [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites). Custom ciphers not accepted by Envoy in a standard build are not supported. |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -144,6 +145,7 @@ The timeout configuration block can be used to configure various timeouts for th
 | connection-idle-timeout| string | `60s` | This field defines how long the proxy should wait while there are no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating an HTTP connection. Must be a [valid Go duration string][4], or `infinity` to disable the timeout entirely. See [the Envoy documentation][8] for more information. |
 | stream-idle-timeout| string | `5m`* |This field defines how long the proxy should wait while there is no request activity (for HTTP/1.1) or stream activity (for HTTP/2) before terminating the HTTP request or stream. Must be a [valid Go duration string][4], or `infinity` to disable the timeout entirely. See [the Envoy documentation][9] for more information. |
 | max-connection-duration | string | none* | This field defines the maximum period of time after an HTTP connection has been established from the client to the proxy before it is closed by the proxy, regardless of whether there has been activity or not. Must be a [valid Go duration string][4], or omitted or set to `infinity` for no max duration. See [the Envoy documentation][10] for more information. |
+| delayed-close-timeout | string | `1s`* | *Note: this is an advanced setting that should not normally need to be tuned.* <br /><br /> This field defines how long envoy will wait, once connection close processing has been initiated, for the downstream peer to close the connection before Envoy closes the socket associated with the connection. Setting this timeout to 'infinity' will disable it.  See [the Envoy documentation][13] for more information. |
 | connection-shutdown-grace-period | string | `5s`* | This field defines how long the proxy will wait between sending an initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During this grace period, the proxy will continue to respond to new streams. After the final GOAWAY frame has been sent, the proxy will refuse new streams. Must be a [valid Go duration string][4]. See [the Envoy documentation][11] for more information. |
 {: class="table thead-dark table-bordered"}
 <br>
@@ -226,6 +228,13 @@ data:
     tls:
     # minimum TLS version that Contour will negotiate
     # minimum-protocol-version: "1.2"
+    # TLS ciphers to be supported by Envoy TLS listeners when negotiating
+    # TLS 1.2.
+    # cipher-suites:
+    # - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+    # - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+    # - 'ECDHE-ECDSA-AES256-GCM-SHA384'
+    # - 'ECDHE-RSA-AES256-GCM-SHA384'
     # Defines the Kubernetes name/namespace matching a secret to use
     # as the fallback certificate when requests which don't match the
     # SNI defined for a vhost.
@@ -351,3 +360,4 @@ connects to Contour:
 [10]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration
 [11]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-drain-timeout
 [12]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-request-timeout
+[13]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout

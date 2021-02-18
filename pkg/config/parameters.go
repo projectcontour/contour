@@ -246,6 +246,31 @@ type TLSParameters struct {
 	// to be used when establishing TLS connection to upstream
 	// cluster.
 	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
+
+	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
+	// listeners when negotiating TLS 1.2. Ciphers are validated against the
+	// set that Envoy supports by default. This parameter should only be used
+	// by advanced users. Note that these will be ignored when TLS 1.3 is in
+	// use.
+	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
+}
+
+// Validate TLS fallback certificate, client certificate, and cipher suites
+func (t TLSParameters) Validate() error {
+	// Check TLS secret names.
+	if err := t.FallbackCertificate.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS fallback certificate: %w", err)
+	}
+
+	if err := t.ClientCertificate.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS client certificate: %w", err)
+	}
+
+	if err := t.CipherSuites.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS cipher suites: %w", err)
+	}
+
+	return nil
 }
 
 // ServerParameters holds the configuration for the Contour xDS server.
@@ -308,6 +333,17 @@ type TimeoutParameters struct {
 	// for more information.
 	MaxConnectionDuration string `yaml:"max-connection-duration,omitempty"`
 
+	// DelayedCloseTimeout defines how long envoy will wait, once connection
+	// close processing has been initiated, for the downstream peer to close
+	// the connection before Envoy closes the socket associated with the connection.
+	//
+	// Setting this timeout to 'infinity' will disable it, equivalent to setting it to '0'
+	// in Envoy. Leaving it unset will result in the Envoy default value being used.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout
+	// for more information.
+	DelayedCloseTimeout string `yaml:"delayed-close-timeout,omitempty"`
+
 	// ConnectionShutdownGracePeriod defines how long the proxy will wait between sending an
 	// initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection.
 	// During this grace period, the proxy will continue to respond to new streams. After the final
@@ -347,6 +383,10 @@ func (t TimeoutParameters) Validate() error {
 
 	if err := v(t.MaxConnectionDuration); err != nil {
 		return fmt.Errorf("max connection duration %q: %w", t.MaxConnectionDuration, err)
+	}
+
+	if err := v(t.DelayedCloseTimeout); err != nil {
+		return fmt.Errorf("delayed close timeout %q: %w", t.DelayedCloseTimeout, err)
 	}
 
 	if err := v(t.ConnectionShutdownGracePeriod); err != nil {
@@ -479,13 +519,8 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	// Check TLS secret names.
-	if err := p.TLS.FallbackCertificate.Validate(); err != nil {
-		return fmt.Errorf("invalid TLS fallback certificate: %w", err)
-	}
-
-	if err := p.TLS.ClientCertificate.Validate(); err != nil {
-		return fmt.Errorf("invalid TLS client certificate: %w", err)
+	if err := p.TLS.Validate(); err != nil {
+		return err
 	}
 
 	if err := p.Timeouts.Validate(); err != nil {
