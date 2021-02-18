@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/cache"
-	serviceapis "sigs.k8s.io/service-apis/apis/v1alpha1"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 func TestConvertUnstructured(t *testing.T) {
@@ -190,7 +190,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	gatewayclass1 := &serviceapis.GatewayClass{
+	gatewayclass1 := &gatewayapi_v1alpha1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gatewayclass",
 			Namespace: "default",
@@ -208,7 +208,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	gateway1 := &serviceapis.Gateway{
+	gateway1 := &gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gateway",
 			Namespace: "default",
@@ -226,7 +226,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	hpr1 := &serviceapis.HTTPRoute{
+	hpr1 := &gatewayapi_v1alpha1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "httproute",
 			Namespace: "default",
@@ -244,7 +244,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	tr1 := &serviceapis.TCPRoute{
+	tr1 := &gatewayapi_v1alpha1.TCPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tcproute",
 			Namespace: "default",

@@ -45,7 +45,7 @@ data:
     #   determine which XDS Server implementation to utilize in Contour.
     #   xds-server-type: contour
     #
-    # Specify the service-apis Gateway Contour should watch.
+    # Specify the gateway-api Gateway Contour should watch.
     # gateway:
     #   name: contour
     #   namespace: projectcontour
@@ -160,7 +160,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: extensionservices.projectcontour.io
 spec:
@@ -415,7 +415,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: httpproxies.projectcontour.io
 spec:
@@ -1491,6 +1491,7 @@ spec:
                                 format: int32
                                 type: integer
                               protocol:
+                                default: TCP
                                 description: 'Protocol is the protocol of the service port of which status is recorded here The supported values are: "TCP", "UDP", "SCTP"'
                                 type: string
                             required:
@@ -1522,7 +1523,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: tlscertificatedelegations.projectcontour.io
 spec:

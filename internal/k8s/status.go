@@ -104,7 +104,7 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 
 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		// Fetch the lister cache for the informer associated with this resource.
-		if err := suh.Clients.Cache().Get(context.Background(), upd.NamespacedName, obj); err != nil {
+		if err := suh.Clients.Cache().Get(context.Background(), upd.NamespacedName, obj.(client.Object)); err != nil {
 			return err
 		}
 

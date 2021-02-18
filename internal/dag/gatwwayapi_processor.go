@@ -17,12 +17,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	serviceapis "sigs.k8s.io/service-apis/apis/v1alpha1"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-// ServiceAPIsProcessor translates Service API types into DAG
+// GatewayAPIProcessor translates Gateway API types into DAG
 // objects and adds them to the DAG.
-type ServiceAPIsProcessor struct {
+type GatewayAPIProcessor struct {
 	logrus.FieldLogger
 
 	dag    *DAG
@@ -31,7 +31,7 @@ type ServiceAPIsProcessor struct {
 
 // Run translates Service APIs into DAG objects and
 // adds them to the DAG.
-func (p *ServiceAPIsProcessor) Run(dag *DAG, source *KubernetesCache) {
+func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	p.dag = dag
 	p.source = source
 
@@ -46,7 +46,7 @@ func (p *ServiceAPIsProcessor) Run(dag *DAG, source *KubernetesCache) {
 	}
 }
 
-func (p *ServiceAPIsProcessor) computeHTTPRoute(route *serviceapis.HTTPRoute) {
+func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute) {
 
 	// Validate TLS Configuration
 	if route.Spec.TLS != nil {
@@ -71,7 +71,7 @@ func (p *ServiceAPIsProcessor) computeHTTPRoute(route *serviceapis.HTTPRoute) {
 
 		for _, match := range rule.Matches {
 			switch match.Path.Type {
-			case serviceapis.PathMatchPrefix:
+			case gatewayapi_v1alpha1.PathMatchPrefix:
 				pathPrefixes = append(pathPrefixes, stringOrDefault(match.Path.Value, "/"))
 			default:
 				p.Error("NOT IMPLEMENTED: Only PathMatchPrefix is currently implemented.")
@@ -87,7 +87,7 @@ func (p *ServiceAPIsProcessor) computeHTTPRoute(route *serviceapis.HTTPRoute) {
 			meta := types.NamespacedName{Name: *forward.ServiceName, Namespace: route.Namespace}
 
 			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
-			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(forward.Port)), p.source)
+			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*forward.Port)), p.source)
 			if err != nil {
 				// TODO: Raise `ResolvedRefs` condition on Gateway with `DegradedRoutes` reason.
 				p.Errorf("Service %q does not exist in namespace %q", meta.Name, meta.Namespace)
@@ -108,7 +108,7 @@ func (p *ServiceAPIsProcessor) computeHTTPRoute(route *serviceapis.HTTPRoute) {
 }
 
 // routes builds a []*dag.Route for the supplied set of pathPrefixes & services.
-func (p *ServiceAPIsProcessor) routes(pathPrefixes []string, services []*Service) []*Route {
+func (p *GatewayAPIProcessor) routes(pathPrefixes []string, services []*Service) []*Route {
 	var clusters []*Cluster
 	var routes []*Route
 
