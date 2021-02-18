@@ -19,7 +19,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// If registry is non-nil gRPC server metrics will be automatically
+// NewServer If registry is non-nil gRPC server metrics will be automatically
 // configured and enabled.
 func NewServer(registry *prometheus.Registry, opts ...grpc.ServerOption) *grpc.Server {
 	var metrics *grpc_prometheus.ServerMetrics

@@ -80,12 +80,12 @@ default:
       previously:
         - name: Ingress
     - color: 0052cc
-      description: Issues or PRs related to the Gateway (Service APIs working group) API.
-      name: area/service-apis
+      description: Issues or PRs related to the Gateway (Gateway API working group) API.
+      name: area/gateway-api
       target: both
       addedBy: label
       previously:
-        - name: service-apis
+        - name: area/service-apis
     - color: 0052cc
       description: Issues or PRs related to the web site.
       name: area/website

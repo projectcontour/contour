@@ -55,6 +55,18 @@ func TestRouteRoute(t *testing.T) {
 		LoadBalancerPolicy: "Cookie",
 	}
 
+	c3 := &dag.Cluster{
+		Upstream: &dag.Service{
+			Weighted: dag.WeightedService{
+				Weight:           1,
+				ServiceName:      s1.Name,
+				ServiceNamespace: s1.Namespace,
+				ServicePort:      s1.Spec.Ports[0],
+			},
+		},
+		LoadBalancerPolicy: "RequestHash",
+	}
+
 	tests := map[string]struct {
 		route *dag.Route
 		want  *envoy_route_v3.Route_Route
@@ -372,9 +384,16 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
-		"single service w/ session affinity": {
+		"single service w/ a cookie hash policy (session affinity)": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c2},
+				RequestHashPolicies: []dag.RequestHashPolicy{
+					{CookieHashOptions: &dag.CookieHashOptions{
+						CookieName: "X-Contour-Session-Affinity",
+						TTL:        time.Duration(0),
+						Path:       "/",
+					}},
+				},
 			},
 			want: &envoy_route_v3.Route_Route{
 				Route: &envoy_route_v3.RouteAction{
@@ -393,9 +412,16 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
-		"multiple service w/ session affinity": {
+		"multiple services w/ a cookie hash policy (session affinity)": {
 			route: &dag.Route{
 				Clusters: []*dag.Cluster{c2, c2},
+				RequestHashPolicies: []dag.RequestHashPolicy{
+					{CookieHashOptions: &dag.CookieHashOptions{
+						CookieName: "X-Contour-Session-Affinity",
+						TTL:        time.Duration(0),
+						Path:       "/",
+					}},
+				},
 			},
 			want: &envoy_route_v3.Route_Route{
 				Route: &envoy_route_v3.RouteAction{
@@ -423,33 +449,45 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
-		"mixed service w/ session affinity": {
+		"single service w/ request header hashing": {
 			route: &dag.Route{
-				Clusters: []*dag.Cluster{c2, c1},
+				Clusters: []*dag.Cluster{c3},
+				RequestHashPolicies: []dag.RequestHashPolicy{
+					{
+						Terminal: true,
+						HeaderHashOptions: &dag.HeaderHashOptions{
+							HeaderName: "X-Some-Header",
+						},
+					},
+					{
+						HeaderHashOptions: &dag.HeaderHashOptions{
+							HeaderName: "User-Agent",
+						},
+					},
+				},
 			},
 			want: &envoy_route_v3.Route_Route{
 				Route: &envoy_route_v3.RouteAction{
-					ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-						WeightedClusters: &envoy_route_v3.WeightedCluster{
-							Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
-								Name:   "default/kuard/8080/da39a3ee5e",
-								Weight: protobuf.UInt32(1),
-							}, {
-								Name:   "default/kuard/8080/e4f81994fe",
-								Weight: protobuf.UInt32(1),
-							}},
-							TotalWeight: protobuf.UInt32(2),
-						},
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/1a2ffc1fef",
 					},
-					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{{
-						PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
-							Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{
-								Name: "X-Contour-Session-Affinity",
-								Ttl:  protobuf.Duration(0),
-								Path: "/",
+					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{
+						{
+							Terminal: true,
+							PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Header_{
+								Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+									HeaderName: "X-Some-Header",
+								},
 							},
 						},
-					}},
+						{
+							PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Header_{
+								Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+									HeaderName: "User-Agent",
+								},
+							},
+						},
+					},
 				},
 			},
 		},

@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/projectcontour/contour/internal/timeout"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -94,8 +94,8 @@ func ValidForKind(kind string, key string) bool {
 
 // ContourAnnotation checks the Object for the given annotation with the
 // "projectcontour.io/" prefix.
-func ContourAnnotation(o metav1.ObjectMetaAccessor, key string) string {
-	a := o.GetObjectMeta().GetAnnotations()
+func ContourAnnotation(o metav1.Object, key string) string {
+	a := o.GetAnnotations()
 
 	return a["projectcontour.io/"+key]
 }
@@ -130,19 +130,19 @@ func ParseUpstreamProtocols(m map[string]string) map[string]string {
 
 // HTTPAllowed returns true unless the kubernetes.io/ingress.allow-http annotation is
 // present and set to false.
-func HTTPAllowed(i *v1beta1.Ingress) bool {
+func HTTPAllowed(i *networking_v1.Ingress) bool {
 	return !(i.Annotations["kubernetes.io/ingress.allow-http"] == "false")
 }
 
 // TLSRequired returns true if the ingress.kubernetes.io/force-ssl-redirect annotation is
 // present and set to true.
-func TLSRequired(i *v1beta1.Ingress) bool {
+func TLSRequired(i *networking_v1.Ingress) bool {
 	return i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true"
 }
 
 // WebsocketRoutes retrieves the details of routes that should have websockets enabled from the
 // associated websocket-routes annotation.
-func WebsocketRoutes(i *v1beta1.Ingress) map[string]bool {
+func WebsocketRoutes(i *networking_v1.Ingress) map[string]bool {
 	routes := make(map[string]bool)
 	for _, v := range strings.Split(i.Annotations["projectcontour.io/websocket-routes"], ",") {
 		route := strings.TrimSpace(v)
@@ -155,12 +155,12 @@ func WebsocketRoutes(i *v1beta1.Ingress) map[string]bool {
 
 // NumRetries returns the number of retries specified by the
 // "projectcontour.io/num-retries" annotation.
-func NumRetries(i *v1beta1.Ingress) uint32 {
+func NumRetries(i *networking_v1.Ingress) uint32 {
 	return parseUInt32(ContourAnnotation(i, "num-retries"))
 }
 
 // PerTryTimeout returns the duration envoy will wait per retry cycle.
-func PerTryTimeout(i *v1beta1.Ingress) (timeout.Setting, error) {
+func PerTryTimeout(i *networking_v1.Ingress) (timeout.Setting, error) {
 	return timeout.Parse(ContourAnnotation(i, "per-try-timeout"))
 }
 
@@ -168,8 +168,8 @@ func PerTryTimeout(i *v1beta1.Ingress) (timeout.Setting, error) {
 // annotations:
 // 1. projectcontour.io/ingress.class
 // 2. kubernetes.io/ingress.class
-func IngressClass(o metav1.ObjectMetaAccessor) string {
-	a := o.GetObjectMeta().GetAnnotations()
+func IngressClass(o metav1.Object) string {
+	a := o.GetAnnotations()
 	if class, ok := a["projectcontour.io/ingress.class"]; ok {
 		return class
 	}
@@ -181,7 +181,7 @@ func IngressClass(o metav1.ObjectMetaAccessor) string {
 
 // MatchesIngressClass checks that the passed object has an ingress class that matches
 // either the passed ingress-class string, or DEFAULT_INGRESS_CLASS if it's empty.
-func MatchesIngressClass(o metav1.ObjectMetaAccessor, ic string) bool {
+func MatchesIngressClass(o metav1.Object, ic string) bool {
 
 	switch IngressClass(o) {
 	case ic:
@@ -214,7 +214,7 @@ func MinTLSVersion(version string, defaultVal string) string {
 // 1. projectcontour.io/max-connections
 //
 // '0' is returned if the annotation is absent or unparsable.
-func MaxConnections(o metav1.ObjectMetaAccessor) uint32 {
+func MaxConnections(o metav1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-connections"))
 }
 
@@ -223,7 +223,7 @@ func MaxConnections(o metav1.ObjectMetaAccessor) uint32 {
 // 1. projectcontour.io/max-pending-requests
 //
 // '0' is returned if the annotation is absent or unparsable.
-func MaxPendingRequests(o metav1.ObjectMetaAccessor) uint32 {
+func MaxPendingRequests(o metav1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-pending-requests"))
 }
 
@@ -232,7 +232,7 @@ func MaxPendingRequests(o metav1.ObjectMetaAccessor) uint32 {
 // 1. projectcontour.io/max-requests
 //
 // '0' is returned if the annotation is absent or unparsable.
-func MaxRequests(o metav1.ObjectMetaAccessor) uint32 {
+func MaxRequests(o metav1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-requests"))
 }
 
@@ -241,6 +241,6 @@ func MaxRequests(o metav1.ObjectMetaAccessor) uint32 {
 // 1. projectcontour.io/max-retries
 //
 // '0' is returned if the annotation is absent or unparsable.
-func MaxRetries(o metav1.ObjectMetaAccessor) uint32 {
+func MaxRetries(o metav1.Object) uint32 {
 	return parseUInt32(ContourAnnotation(o, "max-retries"))
 }

@@ -223,8 +223,10 @@ Each route can have a load balancing strategy applied to determine which of its 
 The following list are the options available to choose from:
 
 - `RoundRobin`: Each healthy upstream Endpoint is selected in round robin order (Default strategy if none selected).
-- `WeightedLeastRequest`: The least request strategy uses an O(1) algorithm which selects two random healthy Endpoints and picks the Endpoint which has fewer active requests. Note: This algorithm is simple and sufficient for load testing. It should not be used where true weighted least request behavior is desired.
+- `WeightedLeastRequest`:  The least request load balancer uses different algorithms depending on whether hosts have the same or different weights in an attempt to route traffic based upon the number of active requests or the load at the time of selection. 
 - `Random`: The random strategy selects a random healthy Endpoints.
+- `RequestHash`: The request hashing strategy allows for load balancing based on request attributes. An upstream Endpoint is selected based on the hash of an element of a request. Requests that contain a consistent value in a HTTP request header for example will be routed to the same upstream Endpoint. Currently only hashing of HTTP request headers is supported.
+- `Cookie`: The cookie load balancing strategy is similar to the request hash strategy and is a convenience feature to implement session affinity, as described below.
 
 More information on the load balancing strategy can be found in [Envoy's documentation][7].
 
@@ -251,6 +253,36 @@ spec:
       loadBalancerPolicy:
         strategy: WeightedLeastRequest
 ```
+
+The below example demonstrates how header hash load balancing policies can be configured:
+
+```yaml
+# httpproxy-lb-request-hash.yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: lb-request-hash 
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: request-hash.bar.com
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: httpbin
+      port: 8080
+    loadBalancerPolicy:
+      strategy: RequestHash
+      requestHashPolicies:
+      - headerHashOptions:
+          headerName: X-Some-Header
+        terminal: true
+      - headerHashOptions:
+          headerName: User-Agent
+```
+
+In this example, if a client request contains the `X-Some-Header` header, the value of the header will be hashed and used to route to an upstream Endpoint. This could be used to implement a similar workflow to cookie-based session affinity by passing a consistent value for this header. If it is present, because it is set as a `terminal` hash option, Envoy will not continue on to process to `User-Agent` header to calculate a hash. If `X-Some-Header` is not present, Envoy will use the `User-Agent` header value to make a routing decision.
 
 ## Session Affinity
 

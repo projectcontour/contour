@@ -2369,4 +2369,75 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	// issue 3197: Fallback and passthrough HTTPProxy directive should emit a config error
+	tlsPassthroughAndFallback := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "example",
+			Generation: 24,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				TLS: &contour_api_v1.TLS{
+					Passthrough:               true,
+					EnableFallbackCertificate: true,
+				},
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "TLS with passthrough and fallback cert enabled is invalid", testcase{
+		objs: []interface{}{tlsPassthroughAndFallback, fixture.ServiceRootsHome},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: tlsPassthroughAndFallback.Name, Namespace: tlsPassthroughAndFallback.Namespace}: fixture.NewValidCondition().
+				WithGeneration(tlsPassthroughAndFallback.Generation).WithError(
+				contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures",
+				`Spec.VirtualHost.TLS: both Passthrough and enableFallbackCertificate were specified`,
+			),
+		},
+	})
+	tlsPassthrough := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "roots",
+			Name:       "example",
+			Generation: 24,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				TLS: &contour_api_v1.TLS{
+					Passthrough:               true,
+					EnableFallbackCertificate: false,
+				},
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "valid TLS passthrough", testcase{
+		objs: []interface{}{tlsPassthrough, fixture.ServiceRootsHome},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: tlsPassthrough.Name, Namespace: tlsPassthrough.Namespace}: fixture.NewValidCondition().
+				WithGeneration(tlsPassthrough.Generation).
+				Valid(),
+		},
+	})
 }

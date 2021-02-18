@@ -17,12 +17,14 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
+	networking_v1beta1 "k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	serviceapis "sigs.k8s.io/service-apis/apis/v1alpha1"
 )
 
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch
+// +kubebuilder:rbac:groups="networking.k8s.io",resources=ingressclasses,verbs=get;list;watch
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses/status,verbs=create;get;update
 
 // +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies;tlscertificatedelegations,verbs=get;list;watch
@@ -37,19 +39,25 @@ func DefaultResources() []schema.GroupVersionResource {
 		contour_api_v1.TLSCertificateDelegationGVR,
 		contour_api_v1alpha1.ExtensionServiceGVR,
 		corev1.SchemeGroupVersion.WithResource("services"),
-		v1beta1.SchemeGroupVersion.WithResource("ingresses"),
 	}
 }
 
-// +kubebuilder:rbac:groups="networking.k8s.io",resources=gatewayclasses;gateways;httproutes;tcproutes,verbs=get;list;watch
+func IngressV1Beta1Resource() schema.GroupVersionResource {
+	return networking_v1beta1.SchemeGroupVersion.WithResource("ingresses")
+}
+
+func IngressV1Resources() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{
+		networking_v1.SchemeGroupVersion.WithResource("ingresses"),
+		networking_v1.SchemeGroupVersion.WithResource("ingressclasses"),
+	}
+}
+
+// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gateways;httproutes;backendpolicies;tlsroutes,verbs=get;list;watch
 
 // ServiceAPIResources ...
 func ServiceAPIResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{{
-		Group:    serviceapis.GroupVersion.Group,
-		Version:  serviceapis.GroupVersion.Version,
-		Resource: "gatewayclasses",
-	}, {
 		Group:    serviceapis.GroupVersion.Group,
 		Version:  serviceapis.GroupVersion.Version,
 		Resource: "gateways",
@@ -60,7 +68,11 @@ func ServiceAPIResources() []schema.GroupVersionResource {
 	}, {
 		Group:    serviceapis.GroupVersion.Group,
 		Version:  serviceapis.GroupVersion.Version,
-		Resource: "tcproutes",
+		Resource: "backendpolicies",
+	}, {
+		Group:    serviceapis.GroupVersion.Group,
+		Version:  serviceapis.GroupVersion.Version,
+		Resource: "tlsroutes",
 	},
 	}
 }

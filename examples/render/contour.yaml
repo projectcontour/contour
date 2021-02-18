@@ -45,6 +45,11 @@ data:
     #   determine which XDS Server implementation to utilize in Contour.
     #   xds-server-type: contour
     #
+    # Specify the service-apis Gateway Contour should watch.
+    # gateway:
+    #   name: contour
+    #   namespace: projectcontour
+    #
     # should contour expect to be running inside a k8s cluster
     # incluster: true
     #
@@ -59,6 +64,13 @@ data:
     tls:
     # minimum TLS version that Contour will negotiate
     # minimum-protocol-version: "1.2"
+    # TLS ciphers to be supported by Envoy TLS listeners when negotiating
+    # TLS 1.2.
+    # cipher-suites:
+    # - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+    # - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+    # - 'ECDHE-ECDSA-AES256-GCM-SHA384'
+    # - 'ECDHE-RSA-AES256-GCM-SHA384'
     # Defines the Kubernetes name/namespace matching a secret to use
     # as the fallback certificate when requests which don't match the
     # SNI defined for a vhost.
@@ -114,6 +126,7 @@ data:
     #   connection-idle-timeout: 60s
     #   stream-idle-timeout: 5m
     #   max-connection-duration: infinity
+    #   delayed-close-timeout: 1s
     #   connection-shutdown-grace-period: 5s
     #
     # Envoy cluster settings.
@@ -121,6 +134,12 @@ data:
     #   configure the cluster dns lookup family
     #   valid options are: auto (default), v4, v6
     #   dns-lookup-family: auto
+    #
+    # Envoy network settings.
+    # network:
+    #   Configure the number of additional ingress proxy hops from the
+    #   right side of the x-forwarded-for HTTP header to trust.
+    #   num-trusted-hops: 0
 
 ---
 apiVersion: apiextensions.k8s.io/v1
@@ -160,10 +179,28 @@ spec:
             description: ExtensionServiceSpec defines the desired state of an ExtensionService resource.
             properties:
               loadBalancerPolicy:
-                description: The policy for load balancing GRPC service requests. Note that the `Cookie` load balancing strategy cannot be used here.
+                description: The policy for load balancing GRPC service requests. Note that the `Cookie` and `RequestHash` load balancing strategies cannot be used here.
                 properties:
+                  requestHashPolicies:
+                    description: RequestHashPolicies contains a list of hash policies to apply when the `RequestHash` load balancing strategy is chosen. If an element of the supplied list of hash policies is invalid, it will be ignored. If the list of hash policies is empty after validation, the load balancing strategy will fall back the the default `RoundRobin`.
+                    items:
+                      description: RequestHashPolicy contains configuration for an individual hash policy on a request attribute.
+                      properties:
+                        headerHashOptions:
+                          description: HeaderHashOptions should be set when request header hash based load balancing is desired. It must be the only hash option field set, otherwise this request hash policy object will be ignored.
+                          properties:
+                            headerName:
+                              description: HeaderName is the name of the HTTP request header that will be used to calculate the hash key. If the header specified is not present on a request, no hash will be produced.
+                              minLength: 1
+                              type: string
+                          type: object
+                        terminal:
+                          description: Terminal is a flag that allows for short-circuiting computing of a hash for a given request. If set to true, and the request attribute specified in the attribute hash options is present, no further hash policies will be used to calculate a hash for the request.
+                          type: boolean
+                      type: object
+                    type: array
                   strategy:
-                    description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Random` and `Cookie`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
+                    description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Cookie`, and `RequestHash`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
                     type: string
                 type: object
               protocol:
@@ -549,8 +586,26 @@ spec:
                     loadBalancerPolicy:
                       description: The load balancing policy for this route.
                       properties:
+                        requestHashPolicies:
+                          description: RequestHashPolicies contains a list of hash policies to apply when the `RequestHash` load balancing strategy is chosen. If an element of the supplied list of hash policies is invalid, it will be ignored. If the list of hash policies is empty after validation, the load balancing strategy will fall back the the default `RoundRobin`.
+                          items:
+                            description: RequestHashPolicy contains configuration for an individual hash policy on a request attribute.
+                            properties:
+                              headerHashOptions:
+                                description: HeaderHashOptions should be set when request header hash based load balancing is desired. It must be the only hash option field set, otherwise this request hash policy object will be ignored.
+                                properties:
+                                  headerName:
+                                    description: HeaderName is the name of the HTTP request header that will be used to calculate the hash key. If the header specified is not present on a request, no hash will be produced.
+                                    minLength: 1
+                                    type: string
+                                type: object
+                              terminal:
+                                description: Terminal is a flag that allows for short-circuiting computing of a hash for a given request. If set to true, and the request attribute specified in the attribute hash options is present, no further hash policies will be used to calculate a hash for the request.
+                                type: boolean
+                            type: object
+                          type: array
                         strategy:
-                          description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Random` and `Cookie`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
+                          description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Cookie`, and `RequestHash`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
                           type: string
                       type: object
                     pathRewritePolicy:
@@ -887,10 +942,28 @@ spec:
                     - name
                     type: object
                   loadBalancerPolicy:
-                    description: The load balancing policy for the backend services.
+                    description: The load balancing policy for the backend services. Note that the `Cookie` and `RequestHash` load balancing strategies cannot be used here.
                     properties:
+                      requestHashPolicies:
+                        description: RequestHashPolicies contains a list of hash policies to apply when the `RequestHash` load balancing strategy is chosen. If an element of the supplied list of hash policies is invalid, it will be ignored. If the list of hash policies is empty after validation, the load balancing strategy will fall back the the default `RoundRobin`.
+                        items:
+                          description: RequestHashPolicy contains configuration for an individual hash policy on a request attribute.
+                          properties:
+                            headerHashOptions:
+                              description: HeaderHashOptions should be set when request header hash based load balancing is desired. It must be the only hash option field set, otherwise this request hash policy object will be ignored.
+                              properties:
+                                headerName:
+                                  description: HeaderName is the name of the HTTP request header that will be used to calculate the hash key. If the header specified is not present on a request, no hash will be produced.
+                                  minLength: 1
+                                  type: string
+                              type: object
+                            terminal:
+                              description: Terminal is a flag that allows for short-circuiting computing of a hash for a given request. If set to true, and the request attribute specified in the attribute hash options is present, no further hash policies will be used to calculate a hash for the request.
+                              type: boolean
+                          type: object
+                        type: array
                       strategy:
-                        description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Random` and `Cookie`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
+                        description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Cookie`, and `RequestHash`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
                         type: string
                     type: object
                   services:
@@ -1647,10 +1720,7 @@ rules:
 - apiGroups:
   - networking.k8s.io
   resources:
-  - gatewayclasses
-  - gateways
-  - httproutes
-  - tcproutes
+  - ingressclasses
   verbs:
   - get
   - list
@@ -1671,6 +1741,17 @@ rules:
   - create
   - get
   - update
+- apiGroups:
+  - networking.x-k8s.io
+  resources:
+  - backendpolicies
+  - gateways
+  - httproutes
+  - tlsroutes
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - projectcontour.io
   resources:

@@ -22,21 +22,21 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestRetryPolicyIngress(t *testing.T) {
 	tests := map[string]struct {
-		i    *v1beta1.Ingress
+		i    *networking_v1.Ingress
 		want *RetryPolicy
 	}{
 		"no anotations": {
-			i:    &v1beta1.Ingress{},
+			i:    &networking_v1.Ingress{},
 			want: nil,
 		},
 		"retry-on": {
-			i: &v1beta1.Ingress{
+			i: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on": "5xx",
@@ -48,7 +48,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			},
 		},
 		"explicitly zero retries": {
-			i: &v1beta1.Ingress{
+			i: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":    "5xx",
@@ -62,7 +62,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			},
 		},
 		"num-retries": {
-			i: &v1beta1.Ingress{
+			i: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":    "5xx",
@@ -76,7 +76,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			},
 		},
 		"no retry count, per try timeout": {
-			i: &v1beta1.Ingress{
+			i: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":        "5xx",
@@ -91,7 +91,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			},
 		},
 		"explicit 0s timeout": {
-			i: &v1beta1.Ingress{
+			i: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":        "5xx",
@@ -280,6 +280,12 @@ func TestLoadBalancerPolicy(t *testing.T) {
 			},
 			want: "Cookie",
 		},
+		"RequestHash": {
+			lbp: &contour_api_v1.LoadBalancerPolicy{
+				Strategy: "RequestHash",
+			},
+			want: "RequestHash",
+		},
 		"unknown": {
 			lbp: &contour_api_v1.LoadBalancerPolicy{
 				Strategy: "please",
@@ -393,11 +399,29 @@ func TestHeadersPolicy(t *testing.T) {
 				},
 			},
 		},
+		"dynamic service headers": {
+			hp: &contour_api_v1.HeadersPolicy{
+				Set: []contour_api_v1.HeaderValue{{
+					Name:  "l5d-dst-override",
+					Value: "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
+				}},
+			},
+			want: HeadersPolicy{
+				Set: map[string]string{
+					"L5d-Dst-Override": "myservice.myns.svc.cluster.local:80",
+				},
+			},
+		},
 	}
 
+	dynamicHeaders := map[string]string{
+		"CONTOUR_NAMESPACE":    "myns",
+		"CONTOUR_SERVICE_NAME": "myservice",
+		"CONTOUR_SERVICE_PORT": "80",
+	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(tc.hp)
+			got, gotErr := headersPolicyService(tc.hp, dynamicHeaders)
 			if tc.wantErr {
 				assert.Error(t, gotErr)
 			} else {

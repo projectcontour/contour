@@ -30,7 +30,6 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/internal/status"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -110,9 +109,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 			},
 
 			staticListener()),
-	}).Status(p).Like(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: string(status.ProxyStatusValid),
-	})
+	}).Status(p).IsValid()
 }
 
 func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
@@ -198,9 +195,7 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 			staticListener()),
-	}).Status(p).Like(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: string(status.ProxyStatusValid),
-	})
+	}).Status(p).IsValid()
 }
 
 func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
@@ -515,9 +510,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 			staticListener()),
-	}).Status(invalid).Like(contour_api_v1.HTTPProxyStatus{
-		CurrentStatus: string(status.ProxyStatusValid),
-	})
+	}).Status(invalid).IsValid()
 }
 
 func TestAuthorization(t *testing.T) {

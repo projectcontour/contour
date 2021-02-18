@@ -11,10 +11,8 @@ readonly YEAR=$(date +%Y)
 readonly PATHS="${1:-"./apis/..."}"
 
 readonly GO111MODULE=on
-readonly GOFLAGS=-mod=vendor
 
 export GO111MODULE
-export GOFLAGS
 
 boilerplate() {
     cat <<EOF

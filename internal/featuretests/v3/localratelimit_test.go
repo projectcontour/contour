@@ -64,7 +64,7 @@ func filterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 				Name:    "ingress_http",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 				// TODO since this uses the same helper as the actual Contour code, this is not a very good test.
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 			staticListener()),

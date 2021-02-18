@@ -375,7 +375,9 @@ type LocalRateLimitPolicy struct {
 
 // TCPProxy contains the set of services to proxy TCP connections.
 type TCPProxy struct {
-	// The load balancing policy for the backend services.
+	// The load balancing policy for the backend services. Note that the
+	// `Cookie` and `RequestHash` load balancing strategies cannot be used
+	// here.
 	// +optional
 	LoadBalancerPolicy *LoadBalancerPolicy `json:"loadBalancerPolicy,omitempty"`
 	// Services are the services to proxy traffic
@@ -588,15 +590,49 @@ type PathRewritePolicy struct {
 	ReplacePrefix []ReplacePrefix `json:"replacePrefix,omitempty"`
 }
 
+// HeaderHashOptions contains options to configure a HTTP request header hash
+// policy, used in request attribute hash based load balancing.
+type HeaderHashOptions struct {
+	// HeaderName is the name of the HTTP request header that will be used to
+	// calculate the hash key. If the header specified is not present on a
+	// request, no hash will be produced.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	HeaderName string `json:"headerName,omitempty"`
+}
+
+// RequestHashPolicy contains configuration for an individual hash policy
+// on a request attribute.
+type RequestHashPolicy struct {
+	// Terminal is a flag that allows for short-circuiting computing of a hash
+	// for a given request. If set to true, and the request attribute specified
+	// in the attribute hash options is present, no further hash policies will
+	// be used to calculate a hash for the request.
+	Terminal bool `json:"terminal,omitempty"`
+
+	// HeaderHashOptions should be set when request header hash based load
+	// balancing is desired. It must be the only hash option field set,
+	// otherwise this request hash policy object will be ignored.
+	// +kubebuilder:validation:Required
+	HeaderHashOptions *HeaderHashOptions `json:"headerHashOptions,omitempty"`
+}
+
 // LoadBalancerPolicy defines the load balancing policy.
 type LoadBalancerPolicy struct {
 	// Strategy specifies the policy used to balance requests
 	// across the pool of backend pods. Valid policy names are
-	// `Random`, `RoundRobin`, `WeightedLeastRequest`, `Random`
-	// and `Cookie`. If an unknown strategy name is specified
+	// `Random`, `RoundRobin`, `WeightedLeastRequest`, `Cookie`,
+	// and `RequestHash`. If an unknown strategy name is specified
 	// or no policy is supplied, the default `RoundRobin` policy
 	// is used.
 	Strategy string `json:"strategy,omitempty"`
+
+	// RequestHashPolicies contains a list of hash policies to apply when the
+	// `RequestHash` load balancing strategy is chosen. If an element of the
+	// supplied list of hash policies is invalid, it will be ignored. If the
+	// list of hash policies is empty after validation, the load balancing
+	// strategy will fall back the the default `RoundRobin`.
+	RequestHashPolicies []RequestHashPolicy `json:"requestHashPolicies,omitempty"`
 }
 
 // HeadersPolicy defines how headers are managed during forwarding.

@@ -620,6 +620,58 @@ func TestClusterVisit(t *testing.T) {
 				},
 			),
 		},
+		"httpproxy with RequestHash lb algorithm and valid header hash option": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+								Strategy: "RequestHash",
+								RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+									{
+										HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+											HeaderName: "X-Custom-Header",
+										},
+									},
+								},
+							},
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				service("default", "backend", v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				}),
+			},
+			want: clustermap(
+				&envoy_cluster_v3.Cluster{
+					Name:                 "default/backend/80/1a2ffc1fef",
+					AltStatName:          "default_backend_80",
+					ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+					EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+						EdsConfig:   envoy_v3.ConfigSource("contour"),
+						ServiceName: "default/backend/http",
+					},
+					LbPolicy: envoy_cluster_v3.Cluster_RING_HASH,
+				},
+			),
+		},
 		// Removed testcase - "httpproxy with differing lb algorithms"
 		// HTTPProxy has LB algorithm as a route-level construct, so it's not possible.
 		"httpproxy with unknown lb algorithm": {
