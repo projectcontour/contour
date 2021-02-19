@@ -322,6 +322,7 @@ integration: ## Run integration tests against a real k8s cluster
 	./_integration/testsuite/install-service-apis.sh
 	./_integration/testsuite/install-contour-working.sh
 	./_integration/testsuite/install-fallback-certificate.sh
+	./_integration/testsuite/install-ratelimit-service.sh
 	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/httpproxy/*.yaml
 	./_integration/testsuite/cleanup.sh
 

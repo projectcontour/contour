@@ -172,6 +172,10 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 			evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
 		}
 
+		if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Global != nil {
+			evh.RateLimits = envoy_v3.GlobalRateLimits(vh.RateLimitPolicy.Global.Descriptors)
+		}
+
 		v.routes[ENVOY_HTTP_LISTENER].VirtualHosts = append(v.routes[ENVOY_HTTP_LISTENER].VirtualHosts, evh)
 	}
 }
