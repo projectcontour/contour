@@ -335,7 +335,14 @@ type RateLimitPolicy struct {
 	// Local defines local rate limiting parameters, i.e. parameters
 	// for rate limiting that occurs within each Envoy pod as requests
 	// are handled.
+	// +optional
 	Local *LocalRateLimitPolicy `json:"local,omitempty"`
+
+	// Global defines global rate limiting parameters, i.e. parameters
+	// defining descriptors that are sent to an external rate limit
+	// service (RLS) for a rate limit decision on each request.
+	// +optional
+	Global *GlobalRateLimitPolicy `json:"global,omitempty"`
 }
 
 // LocalRateLimitPolicy defines local rate limiting parameters.
@@ -372,6 +379,77 @@ type LocalRateLimitPolicy struct {
 	// +optional
 	ResponseHeadersToAdd []HeaderValue `json:"responseHeadersToAdd,omitempty"`
 }
+
+// GlobalRateLimitPolicy defines global rate limiting parameters.
+type GlobalRateLimitPolicy struct {
+	// Descriptors defines the list of descriptors that will
+	// be generated and sent to the rate limit service. Each
+	// descriptor contains 1+ key-value pair entries.
+	// +required
+	// +kubebuilder:validation:MinItems=1
+	Descriptors []RateLimitDescriptor `json:"descriptors,omitempty"`
+}
+
+// RateLimitDescriptor defines a list of key-value pair generators.
+type RateLimitDescriptor struct {
+	// Entries is the list of key-value pair generators.
+	// +required
+	// +kubebuilder:validation:MinItems=1
+	Entries []RateLimitDescriptorEntry `json:"entries,omitempty"`
+}
+
+// RateLimitDescriptorEntry is a key-value pair generator. Exactly
+// one field on this struct must be non-nil.
+type RateLimitDescriptorEntry struct {
+	// GenericKey defines a descriptor entry with a static key and value.
+	// +optional
+	GenericKey *GenericKeyDescriptor `json:"genericKey,omitempty"`
+
+	// RequestHeader defines a descriptor entry that's populated only if
+	// a given header is present on the request. The descriptor key is static,
+	// and the descriptor value is equal to the value of the header.
+	// +optional
+	RequestHeader *RequestHeaderDescriptor `json:"requestHeader,omitempty"`
+
+	// RemoteAddress defines a descriptor entry with a key of "remote_address"
+	// and a value equal to the client's IP address (from x-forwarded-for).
+	// +optional
+	RemoteAddress *RemoteAddressDescriptor `json:"remoteAddress,omitempty"`
+}
+
+// GenericKeyDescriptor defines a descriptor entry with a static key and
+// value.
+type GenericKeyDescriptor struct {
+	// Key defines the key of the descriptor entry. If not set, the
+	// key is set to "generic_key".
+	// +optional
+	Key string `json:"key,omitempty"`
+
+	// Value defines the value of the descriptor entry.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	Value string `json:"value,omitempty"`
+}
+
+// RequestHeaderDescriptor defines a descriptor entry that's populated only
+// if a given header is present on the request. The value of the descriptor
+// entry is equal to the value of the header (if present).
+type RequestHeaderDescriptor struct {
+	// HeaderName defines the name of the header to look for on the request.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	HeaderName string `json:"headerName,omitempty"`
+
+	// DescriptorKey defines the key to use on the descriptor entry.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	DescriptorKey string `json:"descriptorKey,omitempty"`
+}
+
+// RemoteAddressDescriptor defines a descriptor entry with a key of
+// "remote_address" and a value equal to the client's IP address
+// (from x-forwarded-for).
+type RemoteAddressDescriptor struct{}
 
 // TCPProxy contains the set of services to proxy TCP connections.
 type TCPProxy struct {

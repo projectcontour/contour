@@ -90,14 +90,20 @@ func externalNameCluster(name, servicename, statName, externalName string, port 
 	})
 }
 
-func routeCluster(cluster string) *envoy_route_v3.Route_Route {
-	return &envoy_route_v3.Route_Route{
+func routeCluster(cluster string, opts ...func(*envoy_route_v3.Route_Route)) *envoy_route_v3.Route_Route {
+	r := &envoy_route_v3.Route_Route{
 		Route: &envoy_route_v3.RouteAction{
 			ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 				Cluster: cluster,
 			},
 		},
 	}
+
+	for _, o := range opts {
+		o(r)
+	}
+
+	return r
 }
 
 func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {

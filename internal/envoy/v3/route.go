@@ -93,6 +93,10 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 		RequestMirrorPolicies: mirrorPolicy(r),
 	}
 
+	if r.RateLimitPolicy != nil && r.RateLimitPolicy.Global != nil {
+		ra.RateLimits = GlobalRateLimits(r.RateLimitPolicy.Global.Descriptors)
+	}
+
 	// Check for host header policy and set if found
 	if val := envoy.HostReplaceHeader(r.RequestHeadersPolicy); val != "" {
 		ra.HostRewriteSpecifier = &envoy_route_v3.RouteAction_HostRewriteLiteral{

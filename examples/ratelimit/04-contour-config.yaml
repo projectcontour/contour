@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contour
+  namespace: projectcontour
+data:
+  contour.yaml: |
+    rateLimitService:
+      extensionService: projectcontour/ratelimit
+      domain: contour
+      failOpen: false

@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -334,16 +335,38 @@ func prefixReplacementsAreValid(replacements []contour_api_v1.ReplacePrefix) (st
 }
 
 func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, error) {
-	if in == nil || in.Local == nil {
+	if in == nil || (in.Local == nil && in.Global == nil) {
 		return nil, nil
 	}
 
-	if in.Local.Requests <= 0 {
-		return nil, fmt.Errorf("invalid requests value %d in local rate limit policy", in.Local.Requests)
+	rp := &RateLimitPolicy{}
+
+	local, err := localRateLimitPolicy(in.Local)
+	if err != nil {
+		return nil, err
+	}
+	rp.Local = local
+
+	global, err := globalRateLimitPolicy(in.Global)
+	if err != nil {
+		return nil, err
+	}
+	rp.Global = global
+
+	return rp, nil
+}
+
+func localRateLimitPolicy(in *contour_api_v1.LocalRateLimitPolicy) (*LocalRateLimitPolicy, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	if in.Requests <= 0 {
+		return nil, fmt.Errorf("invalid requests value %d in local rate limit policy", in.Requests)
 	}
 
 	var fillInterval time.Duration
-	switch in.Local.Unit {
+	switch in.Unit {
 	case "second":
 		fillInterval = time.Second
 	case "minute":
@@ -351,35 +374,84 @@ func rateLimitPolicy(in *contour_api_v1.RateLimitPolicy) (*RateLimitPolicy, erro
 	case "hour":
 		fillInterval = time.Hour
 	default:
-		return nil, fmt.Errorf("invalid unit %q in local rate limit policy", in.Local.Unit)
+		return nil, fmt.Errorf("invalid unit %q in local rate limit policy", in.Unit)
 	}
 
-	rp := &RateLimitPolicy{
-		Local: &LocalRateLimitPolicy{
-			MaxTokens:          in.Local.Requests + in.Local.Burst,
-			TokensPerFill:      in.Local.Requests,
-			FillInterval:       fillInterval,
-			ResponseStatusCode: in.Local.ResponseStatusCode,
-		},
+	res := &LocalRateLimitPolicy{
+		MaxTokens:          in.Requests + in.Burst,
+		TokensPerFill:      in.Requests,
+		FillInterval:       fillInterval,
+		ResponseStatusCode: in.ResponseStatusCode,
 	}
 
-	for _, header := range in.Local.ResponseHeadersToAdd {
+	for _, header := range in.ResponseHeadersToAdd {
 		// initialize map if we haven't yet
-		if rp.Local.ResponseHeadersToAdd == nil {
-			rp.Local.ResponseHeadersToAdd = map[string]string{}
+		if res.ResponseHeadersToAdd == nil {
+			res.ResponseHeadersToAdd = map[string]string{}
 		}
 
 		key := http.CanonicalHeaderKey(header.Name)
-		if _, ok := rp.Local.ResponseHeadersToAdd[key]; ok {
+		if _, ok := res.ResponseHeadersToAdd[key]; ok {
 			return nil, fmt.Errorf("duplicate header addition: %q", key)
 		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			return nil, fmt.Errorf("invalid header name %q: %v", key, msgs)
 		}
-		rp.Local.ResponseHeadersToAdd[key] = escapeHeaderValue(header.Value, map[string]string{})
+		res.ResponseHeadersToAdd[key] = escapeHeaderValue(header.Value, map[string]string{})
 	}
 
-	return rp, nil
+	return res, nil
+}
+
+func globalRateLimitPolicy(in *contour_api_v1.GlobalRateLimitPolicy) (*GlobalRateLimitPolicy, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	res := &GlobalRateLimitPolicy{}
+
+	for _, d := range in.Descriptors {
+		var rld RateLimitDescriptor
+
+		for _, entry := range d.Entries {
+			// ensure exactly one field is populated on the entry
+			var set int
+
+			if entry.GenericKey != nil {
+				set++
+
+				rld.Entries = append(rld.Entries, RateLimitDescriptorEntry{
+					GenericKeyKey:   entry.GenericKey.Key,
+					GenericKeyValue: entry.GenericKey.Value,
+				})
+			}
+
+			if entry.RequestHeader != nil {
+				set++
+
+				rld.Entries = append(rld.Entries, RateLimitDescriptorEntry{
+					HeaderMatchHeaderName:    entry.RequestHeader.HeaderName,
+					HeaderMatchDescriptorKey: entry.RequestHeader.DescriptorKey,
+				})
+			}
+
+			if entry.RemoteAddress != nil {
+				set++
+
+				rld.Entries = append(rld.Entries, RateLimitDescriptorEntry{
+					RemoteAddress: true,
+				})
+			}
+
+			if set != 1 {
+				return nil, errors.New("rate limit descriptor entry must have exactly one field set")
+			}
+		}
+
+		res.Descriptors = append(res.Descriptors, &rld)
+	}
+
+	return res, nil
 }
 
 // Validates and returns list of hash policies along with lb actual strategy to
