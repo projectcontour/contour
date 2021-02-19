@@ -95,15 +95,12 @@ func (c *Clients) InformerForResource(gvr schema.GroupVersionResource) (Informer
 	return c.cache.GetInformerForKind(context.Background(), gvk)
 }
 
-func (c *Clients) StartInformers(stopChan <-chan struct{}) error {
-	return c.cache.Start(stopChan)
+func (c *Clients) StartInformers(ctx context.Context) error {
+	return c.cache.Start(ctx)
 }
 
-func (c *Clients) WaitForCacheSync(stopChan <-chan struct{}) bool {
-	// Note that in later controller-runtime releases, the API
-	// takes a context.Context argument so we have to use context
-	// cancellation to propagate the stop.
-	return c.cache.WaitForCacheSync(stopChan)
+func (c *Clients) WaitForCacheSync(ctx context.Context) bool {
+	return c.cache.WaitForCacheSync(ctx)
 }
 
 func (c *Clients) Cache() client.Reader {
