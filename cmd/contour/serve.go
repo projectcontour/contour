@@ -449,17 +449,17 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	var g workgroup.Group
 
 	// Register a task to start all the informers.
-	g.Add(func(stop <-chan struct{}) error {
+	g.AddContext(func(taskCtx context.Context) error {
 		log := log.WithField("context", "informers")
 
 		log.Info("starting informers")
 		defer log.Println("stopped informers")
 
-		if err := clients.StartInformers(stop); err != nil {
+		if err := clients.StartInformers(taskCtx); err != nil {
 			log.WithError(err).Error("failed to start informers")
 		}
 
-		<-stop
+		<-taskCtx.Done()
 		return nil
 	})
 
@@ -581,11 +581,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Info("Watching Service for Ingress status")
 	}
 
-	g.Add(func(stop <-chan struct{}) error {
+	g.AddContext(func(taskCtx context.Context) error {
 		log := log.WithField("context", "xds")
 
 		log.Printf("waiting for informer caches to sync")
-		if !clients.WaitForCacheSync(stop) {
+		if !clients.WaitForCacheSync(taskCtx) {
 			return errors.New("informer cache failed to sync")
 		}
 		log.Printf("informer caches synced")
@@ -619,7 +619,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		defer log.Info("stopped xDS server")
 
 		go func() {
-			<-stop
+			<-taskCtx.Done()
 
 			// We don't use GracefulStop here because envoy
 			// has long-lived hanging xDS requests. There's no

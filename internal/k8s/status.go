@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // StatusUpdate contains an all the information needed to change an object's status to perform a specific update.
@@ -81,13 +82,23 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 		return
 	}
 
-	obj, err := suh.Converter.scheme.New(gvk)
+	tmpl, err := suh.Converter.scheme.New(gvk)
 	if err != nil {
 		suh.Log.WithError(err).
 			WithField("name", upd.NamespacedName.Name).
 			WithField("namespace", upd.NamespacedName.Namespace).
 			WithField("kind", gvk).
 			Error("failed to allocate template object")
+		return
+	}
+
+	obj, ok := tmpl.(client.Object)
+	if !ok {
+		suh.Log.
+			WithField("name", upd.NamespacedName.Name).
+			WithField("namespace", upd.NamespacedName.Namespace).
+			WithField("kind", gvk).
+			Error("failed to type-assert to client.Object")
 		return
 	}
 
