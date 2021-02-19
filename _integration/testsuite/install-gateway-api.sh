@@ -14,7 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# install-gateway-apis.sh: Install the gateway-apis CRDs.
+# install-gateway-api.sh: Install the gateway-api CRDs.
 
 set -o pipefail
 set -o errexit

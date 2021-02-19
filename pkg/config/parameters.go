@@ -436,7 +436,7 @@ type Parameters struct {
 	// Server contains parameters for the xDS server.
 	Server ServerParameters `yaml:"server,omitempty"`
 
-	// GatewayConfig contains parameters for the gateway-apis Gateway that Contour
+	// GatewayConfig contains parameters for the gateway-api Gateway that Contour
 	// is configured to serve traffic.
 	GatewayConfig GatewayParameters `yaml:"gateway,omitempty"`
 

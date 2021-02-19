@@ -78,12 +78,26 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			}
 		}
 
+		// Validate the ForwardTos.
+		var forwardTos []gatewayapi_v1alpha1.HTTPRouteForwardTo
 		for _, forward := range rule.ForwardTo {
 			// Verify the service is valid
 			if forward.ServiceName == nil {
 				p.Error("ServiceName must be specified and is currently only type implemented!")
-				break
+				continue
 			}
+
+			// TODO: Do not require port to be present (#3352).
+			if forward.Port == nil {
+				p.Error("ServicePort must be specified.")
+				continue
+			}
+			forwardTos = append(forwardTos, forward)
+		}
+
+		// Process any valid forwardTo.
+		for _, forward := range forwardTos {
+
 			meta := types.NamespacedName{Name: *forward.ServiceName, Namespace: route.Namespace}
 
 			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
@@ -96,8 +110,12 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			services = append(services, service)
 		}
 
-		routes := p.routes(pathPrefixes, services)
+		if len(services) == 0 {
+			p.Errorf("Route %q rule invalid due to invalid forwardTo configuration.", route.Name)
+			continue
+		}
 
+		routes := p.routes(pathPrefixes, services)
 		for _, vhost := range hosts {
 			vhost := p.dag.EnsureVirtualHost(vhost)
 			for _, route := range routes {

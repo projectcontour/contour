@@ -303,6 +303,36 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
+		// If port is not defined the route will be marked as invalid (#3352).
+		"missing port": {
+			objs: []interface{}{
+				gateway,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        nil,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
 		// Single host with single route containing multiple prefixes to the same service.
 		"insert basic single route with multiple prefixes, single hostname": {
 			objs: []interface{}{
