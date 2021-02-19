@@ -495,6 +495,25 @@ type Parameters struct {
 
 	// Network holds various configurable Envoy network values.
 	Network NetworkParameters `yaml:"network,omitempty"`
+
+	// RateLimitService optionally holds properties of the Rate Limit Service
+	// to be used for global rate limiting.
+	RateLimitService RateLimitService `yaml:"rateLimitService,omitempty"`
+}
+
+// RateLimitService defines properties of a global Rate Limit Service.
+type RateLimitService struct {
+	// ExtensionService identifies the extension service defining the RLS,
+	// formatted as <namespace>/<name>.
+	ExtensionService string `yaml:"extensionService,omitempty"`
+
+	// Domain is passed to the Rate Limit Service.
+	Domain string `yaml:"domain,omitempty"`
+
+	// FailOpen defines whether to allow requests to proceed when the
+	// Rate Limit Service fails to respond with a valid rate limit
+	// decision within the timeout defined on the extension service.
+	FailOpen bool `yaml:"failOpen,omitempty"`
 }
 
 // Validate verifies that the parameter values do not have any syntax errors.

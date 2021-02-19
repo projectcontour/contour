@@ -60,7 +60,8 @@ func (p *ExtensionServiceProcessor) Run(dag *DAG, cache *KubernetesCache) {
 	}
 }
 
-// Generate a unique Envoy cluster name for an ExtensionCluster.
+// ExtensionClusterName generates a unique Envoy cluster name
+// for an ExtensionCluster.
 // The namespaced name of an ExtensionCluster is globally
 // unique, so we can simply use that as the cluster name. As
 // long as we scope the context with the "extension" prefix
@@ -68,7 +69,7 @@ func (p *ExtensionServiceProcessor) Run(dag *DAG, cache *KubernetesCache) {
 // a hash of the contents because we want a 1-1 mapping between
 // ExtensionServices and Envoy Clusters; we don't want a new
 // Envoy Cluster just because a field changed.
-func extensionClusterName(meta types.NamespacedName) string {
+func ExtensionClusterName(meta types.NamespacedName) string {
 	return strings.Join([]string{"extension", meta.Namespace, meta.Name}, "/")
 }
 
@@ -95,7 +96,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	}
 
 	extension := ExtensionCluster{
-		Name: extensionClusterName(k8s.NamespacedNameOf(ext)),
+		Name: ExtensionClusterName(k8s.NamespacedNameOf(ext)),
 		Upstream: ServiceCluster{
 			ClusterName: path.Join(
 				"extension",

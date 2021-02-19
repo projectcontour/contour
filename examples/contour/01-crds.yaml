@@ -492,6 +492,52 @@ spec:
                     rateLimitPolicy:
                       description: The policy for rate limiting on the route.
                       properties:
+                        global:
+                          description: Global defines global rate limiting parameters, i.e. parameters defining descriptors that are sent to an external rate limit service (RLS) for a rate limit decision on each request.
+                          properties:
+                            descriptors:
+                              description: Descriptors defines the list of descriptors that will be generated and sent to the rate limit service. Each descriptor contains 1+ key-value pair entries.
+                              items:
+                                description: RateLimitDescriptor defines a list of key-value pair generators.
+                                properties:
+                                  entries:
+                                    description: Entries is the list of key-value pair generators.
+                                    items:
+                                      description: RateLimitDescriptorEntry is a key-value pair generator. Exactly one field on this struct must be non-nil.
+                                      properties:
+                                        genericKey:
+                                          description: GenericKey defines a descriptor entry with a static key and value.
+                                          properties:
+                                            key:
+                                              description: Key defines the key of the descriptor entry. If not set, the key is set to "generic_key".
+                                              type: string
+                                            value:
+                                              description: Value defines the value of the descriptor entry.
+                                              minLength: 1
+                                              type: string
+                                          type: object
+                                        remoteAddress:
+                                          description: RemoteAddress defines a descriptor entry with a key of "remote_address" and a value equal to the client's IP address (from x-forwarded-for).
+                                          type: object
+                                        requestHeader:
+                                          description: RequestHeader defines a descriptor entry that's populated only if a given header is present on the request. The descriptor key is static, and the descriptor value is equal to the value of the header.
+                                          properties:
+                                            descriptorKey:
+                                              description: DescriptorKey defines the key to use on the descriptor entry.
+                                              minLength: 1
+                                              type: string
+                                            headerName:
+                                              description: HeaderName defines the name of the header to look for on the request.
+                                              minLength: 1
+                                              type: string
+                                          type: object
+                                      type: object
+                                    minItems: 1
+                                    type: array
+                                type: object
+                              minItems: 1
+                              type: array
+                          type: object
                         local:
                           description: Local defines local rate limiting parameters, i.e. parameters for rate limiting that occurs within each Envoy pod as requests are handled.
                           properties:
@@ -1014,6 +1060,52 @@ spec:
                   rateLimitPolicy:
                     description: The policy for rate limiting on the virtual host.
                     properties:
+                      global:
+                        description: Global defines global rate limiting parameters, i.e. parameters defining descriptors that are sent to an external rate limit service (RLS) for a rate limit decision on each request.
+                        properties:
+                          descriptors:
+                            description: Descriptors defines the list of descriptors that will be generated and sent to the rate limit service. Each descriptor contains 1+ key-value pair entries.
+                            items:
+                              description: RateLimitDescriptor defines a list of key-value pair generators.
+                              properties:
+                                entries:
+                                  description: Entries is the list of key-value pair generators.
+                                  items:
+                                    description: RateLimitDescriptorEntry is a key-value pair generator. Exactly one field on this struct must be non-nil.
+                                    properties:
+                                      genericKey:
+                                        description: GenericKey defines a descriptor entry with a static key and value.
+                                        properties:
+                                          key:
+                                            description: Key defines the key of the descriptor entry. If not set, the key is set to "generic_key".
+                                            type: string
+                                          value:
+                                            description: Value defines the value of the descriptor entry.
+                                            minLength: 1
+                                            type: string
+                                        type: object
+                                      remoteAddress:
+                                        description: RemoteAddress defines a descriptor entry with a key of "remote_address" and a value equal to the client's IP address (from x-forwarded-for).
+                                        type: object
+                                      requestHeader:
+                                        description: RequestHeader defines a descriptor entry that's populated only if a given header is present on the request. The descriptor key is static, and the descriptor value is equal to the value of the header.
+                                        properties:
+                                          descriptorKey:
+                                            description: DescriptorKey defines the key to use on the descriptor entry.
+                                            minLength: 1
+                                            type: string
+                                          headerName:
+                                            description: HeaderName defines the name of the header to look for on the request.
+                                            minLength: 1
+                                            type: string
+                                        type: object
+                                    type: object
+                                  minItems: 1
+                                  type: array
+                              type: object
+                            minItems: 1
+                            type: array
+                        type: object
                       local:
                         description: Local defines local rate limiting parameters, i.e. parameters for rate limiting that occurs within each Envoy pod as requests are handled.
                         properties:

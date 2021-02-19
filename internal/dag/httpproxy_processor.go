@@ -258,7 +258,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					Namespace: stringOrDefault(ref.Namespace, proxy.Namespace),
 				}
 
-				ext := p.dag.GetExtensionCluster(extensionClusterName(extensionName))
+				ext := p.dag.GetExtensionCluster(ExtensionClusterName(extensionName))
 				if ext == nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "ExtensionServiceNotFound",
 						"Spec.Virtualhost.Authorization.ServiceRef extension service %q not found", extensionName)
