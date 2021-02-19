@@ -353,8 +353,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
-				RootNamespaces:       ctx.proxyRootNamespaces(),
-				IngressClass:         ctx.ingressClass,
+				RootNamespaces: ctx.proxyRootNamespaces(),
+				IngressClass:   ctx.ingressClass,
+				Gateway: types.NamespacedName{
+					Name:      ctx.Config.GatewayConfig.Name,
+					Namespace: ctx.Config.GatewayConfig.Namespace,
+				},
 				ConfiguredSecretRefs: configuredSecretRefs,
 				FieldLogger:          log.WithField("context", "KubernetesCache"),
 			},

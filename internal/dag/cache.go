@@ -45,6 +45,9 @@ type KubernetesCache struct {
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
 
+	// Gateway defines the current Gateway which Contour is configured to watch.
+	Gateway types.NamespacedName
+
 	// Secrets that are referred from the configuration file.
 	ConfiguredSecretRefs []*types.NamespacedName
 
@@ -54,7 +57,7 @@ type KubernetesCache struct {
 	secrets              map[types.NamespacedName]*v1.Secret
 	httpproxydelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
 	services             map[types.NamespacedName]*v1.Service
-	gateways             map[types.NamespacedName]*gatewayapi_v1alpha1.Gateway
+	gateway              *gatewayapi_v1alpha1.Gateway
 	httproutes           map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute
 	tlsroutes            map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute
 	backendpolicies      map[types.NamespacedName]*gatewayapi_v1alpha1.BackendPolicy
@@ -73,7 +76,6 @@ func (kc *KubernetesCache) init() {
 	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
 	kc.httpproxydelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
 	kc.services = make(map[types.NamespacedName]*v1.Service)
-	kc.gateways = make(map[types.NamespacedName]*gatewayapi_v1alpha1.Gateway)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute)
 	kc.backendpolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha1.BackendPolicy)
@@ -98,6 +100,27 @@ func (kc *KubernetesCache) matchesIngressClass(obj metav1.Object) bool {
 
 	return true
 
+}
+
+// matchesGateway returns true if the given Kubernetes object
+// belongs to the Gateway that this cache is using.
+func (kc *KubernetesCache) matchesGateway(obj metav1.Object) bool {
+
+	fmt.Println("--- obj: ", k8s.NamespacedNameOf(obj))
+	fmt.Println("--- gateway: ", kc.Gateway)
+
+	if k8s.NamespacedNameOf(obj) != kc.Gateway {
+		kind := k8s.KindOf(obj)
+
+		kc.WithField("name", obj.GetName()).
+			WithField("namespace", obj.GetNamespace()).
+			WithField("kind", kind).
+			WithField("configured gateway name", kc.Gateway.Name).
+			WithField("configured gateway namespace", kc.Gateway.Namespace).
+			Debug("ignoring object with unmatched gateway")
+		return false
+	}
+	return true
 }
 
 // Insert inserts obj into the KubernetesCache.
@@ -171,16 +194,13 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.httpproxydelegations[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *gatewayapi_v1alpha1.Gateway:
-		m := k8s.NamespacedNameOf(obj)
-		// TODO(youngnick): Remove this once gateway-api actually have behavior
-		// other than being added to the cache.
-		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding Gateway")
-		kc.gateways[k8s.NamespacedNameOf(obj)] = obj
-		return true
+		if kc.matchesGateway(obj) {
+			kc.WithField("experimental", "gateway-api").WithField("name", obj.Name).WithField("namespace", obj.Namespace).Debug("Adding Gateway")
+			kc.gateway = obj
+			return true
+		}
 	case *gatewayapi_v1alpha1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
-		// TODO(youngnick): Remove this once gateway-api actually have behavior
-		// other than being added to the cache.
 		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding HTTPRoute")
 		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
@@ -354,18 +374,15 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		delete(kc.httpproxydelegations, m)
 		return ok
 	case *gatewayapi_v1alpha1.Gateway:
-		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.gateways[m]
-		// TODO(youngnick): Remove this once gateway-api actually have behavior
-		// other than being removed from the cache.
-		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing Gateway")
-		delete(kc.gateways, m)
-		return ok
+		if obj.Name == kc.gateway.Name && obj.Namespace == kc.gateway.Namespace {
+			kc.WithField("experimental", "gateway-api").WithField("name", obj.Name).WithField("namespace", obj.Namespace).Debug("Removing Gateway")
+			kc.gateway = nil
+			return true
+		}
+		return false
 	case *gatewayapi_v1alpha1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httproutes[m]
-		// TODO(youngnick): Remove this once gateway-api actually have behavior
-		// other than being removed from the cache.
 		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing HTTPRoute")
 		delete(kc.httproutes, m)
 		return ok

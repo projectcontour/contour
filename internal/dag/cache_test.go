@@ -650,11 +650,20 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert gateway-api Gateway": {
 			obj: &gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gateway",
-					Namespace: "default",
+					Name:      "contour",
+					Namespace: "projectcontour",
 				},
 			},
 			want: true,
+		},
+		"insert invalid gateway-api Gateway": {
+			obj: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "another",
+					Namespace: "controller",
+				},
+			},
+			want: false,
 		},
 		"insert gateway-api HTTPRoute": {
 			obj: &gatewayapi_v1alpha1.HTTPRoute{
@@ -708,6 +717,10 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				ConfiguredSecretRefs: []*types.NamespacedName{
 					{Name: "secretReferredByConfigFile", Namespace: "default"}},
 				FieldLogger: fixture.NewTestLogger(t),
+				Gateway: types.NamespacedName{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
 			}
 			for _, p := range tc.pre {
 				cache.Insert(p)
@@ -722,6 +735,10 @@ func TestKubernetesCacheRemove(t *testing.T) {
 	cache := func(objs ...interface{}) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
+			Gateway: types.NamespacedName{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
 		}
 		for _, o := range objs {
 			cache.Insert(o)
@@ -860,14 +877,14 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		"remove gateway-api Gateway": {
 			cache: cache(&gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gateway",
-					Namespace: "default",
+					Name:      "contour",
+					Namespace: "projectcontour",
 				},
 			}),
 			obj: &gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gateway",
-					Namespace: "default",
+					Name:      "contour",
+					Namespace: "projectcontour",
 				},
 			},
 			want: true,
