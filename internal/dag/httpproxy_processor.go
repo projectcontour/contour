@@ -110,7 +110,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	if proxy.Spec.VirtualHost == nil {
 		// mark HTTPProxy as orphaned.
-		p.setOrphaned(proxy)
+		p.orphaned[k8s.NamespacedNameOf(proxy)] = true
 		return
 	}
 
@@ -144,6 +144,10 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
+		if tls.Passthrough && tls.EnableFallbackCertificate {
+			validCond.AddError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures",
+				"Spec.VirtualHost.TLS: both Passthrough and enableFallbackCertificate were specified")
+		}
 		if !isBlank(tls.SecretName) && tls.Passthrough {
 			validCond.AddError(contour_api_v1.ConditionTypeTLSError, "TLSConfigNotValid",
 				"Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
@@ -674,11 +678,20 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 					"Spec.TCPProxy unresolved service reference: %s", err)
 				return false
 			}
+
+			// Determine the protocol to use to speak to this Cluster.
+			protocol, err := getProtocol(service, s)
+			if err != nil {
+				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "UnsupportedProtocol", err.Error())
+				return false
+			}
+
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream:             s,
-				Protocol:             s.Protocol,
+				Protocol:             protocol,
 				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
+				SNI:                  s.ExternalName,
 			})
 		}
 		secure := p.dag.EnsureSecureVirtualHost(host)
@@ -792,15 +805,6 @@ func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
 		}
 	}
 	return false
-}
-
-// setOrphaned records an HTTPProxy resource as orphaned.
-func (p *HTTPProxyProcessor) setOrphaned(obj k8s.Object) {
-	m := types.NamespacedName{
-		Name:      obj.GetObjectMeta().GetName(),
-		Namespace: obj.GetObjectMeta().GetNamespace(),
-	}
-	p.orphaned[m] = true
 }
 
 // expandPrefixMatches adds new Routes to account for the difference

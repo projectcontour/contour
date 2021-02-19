@@ -52,6 +52,22 @@ func typeof(mf *dto.MetricFamily) string {
 	}
 }
 
+/*
+// Executes promlint for metrics static analysis
+func runPromlint(family []*dto.MetricFamily) {
+	linter := promlint.NewWithMetricFamilies(family)
+	problems, err := linter.Lint()
+	if err != nil {
+		log.Fatalf("promlint failed: %s", err)
+	}
+
+	for _, problem := range problems {
+		fmt.Printf("%s: %s\n", problem.Metric, problem.Text)
+	}
+
+	os.Exit(len(problems))
+}*/
+
 func main() {
 	registry := prometheus.NewRegistry()
 	m := metrics.NewMetrics(registry)
@@ -78,4 +94,8 @@ func main() {
 
 		f.Close()
 	}
+
+	//FIXME: Enable promlint check
+	// https://github.com/projectcontour/contour/issues/3337
+	// runPromlint(family)
 }

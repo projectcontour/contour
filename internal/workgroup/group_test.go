@@ -57,8 +57,9 @@ func TestGroupAddContext(t *testing.T) {
 		return io.EOF
 	})
 
-	g.AddContext(func(ctx context.Context) {
+	g.AddContext(func(ctx context.Context) error {
 		<-ctx.Done()
+		return nil
 	})
 
 	result := make(chan error)

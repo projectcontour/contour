@@ -45,7 +45,7 @@ func setupLeadershipElection(
 ) chan struct{} {
 	le, leader, deposed := newLeaderElector(log, conf, clients)
 
-	g.AddContext(func(electionCtx context.Context) {
+	g.AddContext(func(electionCtx context.Context) error {
 		log.WithFields(logrus.Fields{
 			"configmapname":      conf.Name,
 			"configmapnamespace": conf.Namespace,
@@ -53,6 +53,7 @@ func setupLeadershipElection(
 
 		le.Run(electionCtx)
 		log.Info("stopped leader election")
+		return nil
 	})
 
 	g.Add(func(stop <-chan struct{}) error {

@@ -22,6 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -70,7 +71,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		return
 	}
 
-	var typed Object
+	var typed metav1.Object
 	var gvr schema.GroupVersionResource
 	var kind string
 
@@ -93,8 +94,8 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 
 	if !annotation.MatchesIngressClass(typed, s.IngressClass) {
 		s.Logger.
-			WithField("name", typed.GetObjectMeta().GetName()).
-			WithField("namespace", typed.GetObjectMeta().GetNamespace()).
+			WithField("name", typed.GetName()).
+			WithField("namespace", typed.GetNamespace()).
 			WithField("ingress-class", annotation.IngressClass(typed)).
 			WithField("target-ingress-class", s.IngressClass).
 			WithField("kind", kind).
@@ -103,16 +104,16 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 	}
 
 	s.Logger.
-		WithField("name", typed.GetObjectMeta().GetName()).
-		WithField("namespace", typed.GetObjectMeta().GetNamespace()).
+		WithField("name", typed.GetName()).
+		WithField("namespace", typed.GetNamespace()).
 		WithField("ingress-class", annotation.IngressClass(typed)).
 		WithField("kind", kind).
 		WithField("defined-ingress-class", s.IngressClass).
 		Debug("received an object, sending status address update")
 
 	s.StatusUpdater.Send(NewStatusUpdate(
-		typed.GetObjectMeta().GetName(),
-		typed.GetObjectMeta().GetNamespace(),
+		typed.GetName(),
+		typed.GetNamespace(),
 		gvr,
 		StatusMutatorFunc(func(obj interface{}) interface{} {
 			switch o := obj.(type) {
@@ -126,7 +127,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 				return dco
 			default:
 				panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
-					typed.GetObjectMeta().GetName(), typed.GetObjectMeta().GetNamespace(),
+					typed.GetName(), typed.GetNamespace(),
 				))
 			}
 		}),
