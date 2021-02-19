@@ -28,5 +28,4 @@ require (
 	sigs.k8s.io/controller-tools v0.4.1
 	sigs.k8s.io/gateway-api v0.2.0
 	sigs.k8s.io/kustomize/kyaml v0.1.1
-	sigs.k8s.io/service-apis v0.1.0
 )
