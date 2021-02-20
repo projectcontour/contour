@@ -172,6 +172,16 @@ The network configuration block can be used to configure various parameters netw
 {: class="table thead-dark table-bordered"}
 <br>
 
+### Listener Configuration
+
+The listenter configuration block can be used to configure various parameters for Envoy listener.
+
+| Field Name | Type| Default  | Description |
+|------------|-----|----------|-------------|
+| connection-balancer | string | `""` | This field specifies the listener connection balancer. The validated value is `exact`. If the value is `exact`, the listener will use the exact connection balancer. See [the Envoy documentation][14] for more information. |
+{: class="table thead-dark table-bordered"}
+<br>
+
 ### Server Configuration
 
 The server configuration block can be used to configure various settings for the `contour serve` command.
@@ -379,3 +389,4 @@ connects to Contour:
 [11]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-drain-timeout
 [12]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-request-timeout
 [13]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout
+[14]: https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
