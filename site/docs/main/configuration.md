@@ -174,7 +174,7 @@ The network configuration block can be used to configure various parameters netw
 
 ### Listener Configuration
 
-The listenter configuration block can be used to configure various parameters for Envoy listener.
+The listener configuration block can be used to configure various parameters for Envoy listener.
 
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
