@@ -82,6 +82,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | timeouts | TimeoutConfig | | The [timeout configuration](#timeout-configuration). |
 | cluster | ClusterConfig | | The [cluster configuration](#cluster-configuration). |
 | network | NetworkConfig | | The [network configuration](#network-configuration). |
+| listener | ListenerConfig | | The [listener configuration](#listener-configuration). |
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
 | gateway | GatewayConfig |  | The [service-apis Gateway configuration](#gateway-configuration). |
 | rateLimitService | RateLimitServiceConfig | | The [rate limit service configuration](#rate-limit-service-configuration). |
@@ -178,7 +179,7 @@ The listener configuration block can be used to configure various parameters for
 
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
-| connection-balancer | string | `""` | This field specifies the listener connection balancer. The validated value is `exact`. If the value is `exact`, the listener will use the exact connection balancer. See [the Envoy documentation][14] for more information. |
+| connection-balancer | string | `""` | This field specifies the listener connection balancer. If the value is `exact`, the listener will use the exact connection balancer. See [the Envoy documentation][14] for more information. |
 {: class="table thead-dark table-bordered"}
 <br>
 
