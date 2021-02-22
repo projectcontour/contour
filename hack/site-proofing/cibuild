@@ -18,4 +18,4 @@ htmlproofer ./_site \
     --allow-hash-href \
     --http-status-ignore 429 \
     --typhoeus-config '{"headers": {"User-Agent": "Mozilla/5.0 (Linux x86_64; rv:84.0) Gecko/20100101 Firefox/84.0"}}' \
-    --url-ignore "/www.haproxy.org/,/tools.ietf.org/" # gives false positive timeouts
+    --url-ignore "/www.haproxy.org/,/tools.ietf.org/,/www.envoyproxy.io/,/envoyproxy.io/" # gives false positive timeouts
