@@ -238,8 +238,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	registry.MustRegister(prometheus.NewGoCollector())
 
 	// Before we can build the event handler, we need to initialize the converter we'll
-	// use to convert from Unstructured. Thanks to kubebuilder types from service-apis, this now can
-	// return an error.
+	// use to convert from Unstructured.
 	converter, err := k8s.NewUnstructuredConverter()
 	if err != nil {
 		return err
@@ -374,8 +373,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 					DNSLookupFamily:       ctx.Config.Cluster.DNSLookupFamily,
 					ClientCertificate:     clientCert,
 				},
-				&dag.ServiceAPIsProcessor{
-					FieldLogger: log.WithField("context", "ServiceAPISProcessor"),
+				&dag.GatewayAPIProcessor{
+					FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
 				},
 				&dag.ListenerProcessor{},
 			},
@@ -427,11 +426,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	}
 
-	// Inform on service-apis types if they are present.
+	// Inform on gateway-api types if they are present.
 	if ctx.UseExperimentalServiceAPITypes {
 		log.Warn("DEPRECATED: The flag '--experimental-service-apis' is deprecated and should not be used. Please configure the gateway.name & gateway.namespace in the configuration file to specify which Gateway Contour will be watching.")
 	}
-	for _, r := range k8s.ServiceAPIResources() {
+	for _, r := range k8s.GatewayAPIResources() {
 		if !clients.ResourcesExist(r) {
 			log.WithField("resource", r).Warn("resource type not present on API server")
 			continue
@@ -621,7 +620,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		case config.EnvoyServerType:
 			v3cache := contour_xds_v3.NewSnapshotCache(false, log)
 			snapshotHandler.AddSnapshotter(v3cache)
-			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(context.Background(), v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
+			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(taskCtx, v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
 		case config.ContourServerType:
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 		default:

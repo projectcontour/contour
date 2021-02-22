@@ -83,7 +83,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | cluster | ClusterConfig | | The [cluster configuration](#cluster-configuration). |
 | network | NetworkConfig | | The [network configuration](#network-configuration). |
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
-| gateway | GatewayConfig |  | The [service-apis Gateway configuration](#gateway-configuration). |
+| gateway | GatewayConfig |  | The [gateway-api Gateway configuration](#gateway-configuration). |
 | rateLimitService | RateLimitServiceConfig | | The [rate limit service configuration](#rate-limit-service-configuration). |
 {: class="table thead-dark table-bordered"}
 <br>
@@ -184,7 +184,7 @@ The server configuration block can be used to configure various settings for the
 
 ### Gateway Configuration
 
-The gateway configuration block is used to configure which service-apis Gateway Contour should configure:
+The gateway configuration block is used to configure which gateway-api Gateway Contour should configure:
 
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
@@ -222,7 +222,7 @@ data:
     #   determine which XDS Server implementation to utilize in Contour.
     #   xds-server-type: contour
     #
-    # specify the service-apis Gateway Contour should configure
+    # specify the gateway-api Gateway Contour should configure
     # gateway:
     #   name: contour
     #   namespace: projectcontour
