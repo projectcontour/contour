@@ -44,7 +44,7 @@ spec:
             - name: REDIS_URL
               value: redis:6379
         - name: ratelimit
-          image: docker.io/envoyproxy/ratelimit:6f5de117 # latest a/o Jan 22 2021
+          image: docker.io/envoyproxy/ratelimit:6f5de117  # latest a/o Jan 22 2021
           ports:
             - containerPort: 8080
               name: http
