@@ -394,6 +394,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 
 			builder := Builder{
 				Source: KubernetesCache{
+					Gateway: types.NamespacedName{
+						Name:      "contour",
+						Namespace: "projectcontour",
+					},
 					FieldLogger: fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
