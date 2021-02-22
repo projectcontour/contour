@@ -319,7 +319,7 @@ site-check: ## Test the site's links
 
 integration: ## Run integration tests against a real k8s cluster
 	./_integration/testsuite/make-kind-cluster.sh
-	./_integration/testsuite/install-service-apis.sh
+	./_integration/testsuite/install-gateway-api.sh
 	./_integration/testsuite/install-contour-working.sh
 	./_integration/testsuite/install-fallback-certificate.sh
 	./_integration/testsuite/install-ratelimit-service.sh

@@ -83,7 +83,7 @@ For example, we will ensure that HTTPProxy objects have status conditions that t
 
 ### We meet users where they are
 Contour currently supports Ingress v1beta1, and HTTPProxy.
-In the near future, we'll add support for Ingress v1 and after that the Service-APIs.
+In the near future, we'll add support for Ingress v1 and after that the Gateway-API.
 We don't ask users to choose which ingress API they want to use, instead we will consider providing support for any requested types to meet users wherever they are.
 
 This goal is in conflict with the goal of a minimum surface area, but we realize that channeling all our users to an API which is only implemented in Contour is bad for their interoperability and limits our total addressable market.

@@ -14,7 +14,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# install-service-apiss.sh: Install the service-apis CRDs.
+# install-gateway-api.sh: Install the gateway-api CRDs.
 
 set -o pipefail
 set -o errexit
@@ -23,4 +23,4 @@ set -o nounset
 readonly KUBECTL=${KUBECTL:-kubectl}
 readonly VERSION=v0.1.0
 
-${KUBECTL} kustomize "github.com/kubernetes-sigs/service-apis/config/crd?ref=${VERSION}" | ${KUBECTL} apply -f -
+${KUBECTL} kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=${VERSION}" | ${KUBECTL} apply -f -
