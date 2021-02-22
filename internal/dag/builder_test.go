@@ -18,8 +18,6 @@ import (
 	"testing"
 	"time"
 
-	serviceapis "sigs.k8s.io/service-apis/apis/v1alpha1"
-
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -31,9 +29,15 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func TestDAGInsertServiceAPIs(t *testing.T) {
+func gatewayPort(port int) *gatewayapi_v1alpha1.PortNumber {
+	p := gatewayapi_v1alpha1.PortNumber(port)
+	return &p
+}
+
+func TestDAGInsertGatewayAPI(t *testing.T) {
 
 	kuardService := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -65,16 +69,16 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 		},
 	}
 
-	gateway := &serviceapis.Gateway{
+	gateway := &gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gateway",
 			Namespace: "default",
 		},
-		Spec: serviceapis.GatewaySpec{
-			Listeners: []serviceapis.Listener{{
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
 				Protocol: "HTTP",
-				Routes: serviceapis.RouteBindingSelector{
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Selector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"app": "contour",
@@ -96,7 +100,7 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 			objs: []interface{}{
 				gateway,
 				kuardService,
-				&serviceapis.HTTPRoute{
+				&gatewayapi_v1alpha1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
@@ -104,20 +108,20 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 							"app": "contour",
 						},
 					},
-					Spec: serviceapis.HTTPRouteSpec{
-						Hostnames: []serviceapis.Hostname{
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []serviceapis.HTTPRouteRule{{
-							Matches: []serviceapis.HTTPRouteMatch{{
-								Path: serviceapis.HTTPPathMatch{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
 									Type:  "Prefix",
 									Value: "/",
 								},
 							}},
-							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("kuard"),
-								Port:        8080,
+								Port:        gatewayPort(8080),
 							}},
 						}},
 					},
@@ -137,7 +141,7 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 				gateway,
 				kuardService,
 				blogService,
-				&serviceapis.HTTPRoute{
+				&gatewayapi_v1alpha1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
@@ -145,31 +149,31 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 							"app": "contour",
 						},
 					},
-					Spec: serviceapis.HTTPRouteSpec{
-						Hostnames: []serviceapis.Hostname{
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []serviceapis.HTTPRouteRule{{
-							Matches: []serviceapis.HTTPRouteMatch{{
-								Path: serviceapis.HTTPPathMatch{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
 									Type:  "Prefix",
 									Value: "/",
 								},
 							}},
-							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("kuard"),
-								Port:        8080,
+								Port:        gatewayPort(8080),
 							}},
 						}, {
-							Matches: []serviceapis.HTTPRouteMatch{{
-								Path: serviceapis.HTTPPathMatch{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
 									Type:  "Prefix",
 									Value: "/blog",
 								},
 							}},
-							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("blogsvc"),
-								Port:        80,
+								Port:        gatewayPort(80),
 							}},
 						}},
 					},
@@ -189,7 +193,7 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 			objs: []interface{}{
 				gateway,
 				kuardService,
-				&serviceapis.HTTPRoute{
+				&gatewayapi_v1alpha1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
@@ -197,23 +201,23 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 							"app": "contour",
 						},
 					},
-					Spec: serviceapis.HTTPRouteSpec{
-						Hostnames: []serviceapis.Hostname{
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 							"test2.projectcontour.io",
 							"test3.projectcontour.io",
 							"test4.projectcontour.io",
 						},
-						Rules: []serviceapis.HTTPRouteRule{{
-							Matches: []serviceapis.HTTPRouteMatch{{
-								Path: serviceapis.HTTPPathMatch{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
 									Type:  "Prefix",
 									Value: "/",
 								},
 							}},
-							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("kuard"),
-								Port:        8080,
+								Port:        gatewayPort(8080),
 							}},
 						}},
 					},
@@ -235,7 +239,7 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 			objs: []interface{}{
 				gateway,
 				kuardService,
-				&serviceapis.HTTPRoute{
+				&gatewayapi_v1alpha1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
@@ -243,17 +247,17 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 							"app": "contour",
 						},
 					},
-					Spec: serviceapis.HTTPRouteSpec{
-						Rules: []serviceapis.HTTPRouteRule{{
-							Matches: []serviceapis.HTTPRouteMatch{{
-								Path: serviceapis.HTTPPathMatch{
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
 									Type:  "Prefix",
 									Value: "/",
 								},
 							}},
-							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("kuard"),
-								Port:        8080,
+								Port:        gatewayPort(8080),
 							}},
 						}},
 					},
@@ -273,7 +277,7 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 		"missing service": {
 			objs: []interface{}{
 				gateway,
-				&serviceapis.HTTPRoute{
+				&gatewayapi_v1alpha1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
@@ -281,17 +285,47 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 							"app": "contour",
 						},
 					},
-					Spec: serviceapis.HTTPRouteSpec{
-						Rules: []serviceapis.HTTPRouteRule{{
-							Matches: []serviceapis.HTTPRouteMatch{{
-								Path: serviceapis.HTTPPathMatch{
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
 									Type:  "Prefix",
 									Value: "/",
 								},
 							}},
-							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("kuard"),
-								Port:        8080,
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// If port is not defined the route will be marked as invalid (#3352).
+		"missing port": {
+			objs: []interface{}{
+				gateway,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        nil,
 							}},
 						}},
 					},
@@ -304,7 +338,7 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 			objs: []interface{}{
 				gateway,
 				kuardService,
-				&serviceapis.HTTPRoute{
+				&gatewayapi_v1alpha1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
 						Namespace: "default",
@@ -312,30 +346,30 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 							"app": "contour",
 						},
 					},
-					Spec: serviceapis.HTTPRouteSpec{
-						Hostnames: []serviceapis.Hostname{
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []serviceapis.HTTPRouteRule{{
-							Matches: []serviceapis.HTTPRouteMatch{{
-								Path: serviceapis.HTTPPathMatch{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
 									Type:  "Prefix",
 									Value: "/",
 								},
 							}, {
-								Path: serviceapis.HTTPPathMatch{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
 									Type:  "Prefix",
 									Value: "/blog",
 								},
 							}, {
-								Path: serviceapis.HTTPPathMatch{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
 									Type:  "Prefix",
 									Value: "/tech",
 								},
 							}},
-							ForwardTo: []serviceapis.HTTPRouteForwardTo{{
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("kuard"),
-								Port:        8080,
+								Port:        gatewayPort(8080),
 							}},
 						}},
 					},
@@ -360,6 +394,10 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 
 			builder := Builder{
 				Source: KubernetesCache{
+					Gateway: types.NamespacedName{
+						Name:      "contour",
+						Namespace: "projectcontour",
+					},
 					FieldLogger: fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
@@ -373,7 +411,7 @@ func TestDAGInsertServiceAPIs(t *testing.T) {
 							Namespace: tc.fallbackCertificateNamespace,
 						},
 					},
-					&ServiceAPIsProcessor{
+					&GatewayAPIProcessor{
 						FieldLogger: fixture.NewTestLogger(t),
 					},
 					&ListenerProcessor{},

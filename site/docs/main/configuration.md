@@ -83,7 +83,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | cluster | ClusterConfig | | The [cluster configuration](#cluster-configuration). |
 | network | NetworkConfig | | The [network configuration](#network-configuration). |
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
-| gateway | GatewayConfig |  | The [service-apis Gateway configuration](#gateway-configuration). |
+| gateway | GatewayConfig |  | The [gateway-api Gateway configuration](#gateway-configuration). |
 | rateLimitService | RateLimitServiceConfig | | The [rate limit service configuration](#rate-limit-service-configuration). |
 {: class="table thead-dark table-bordered"}
 <br>
@@ -98,7 +98,7 @@ Contour should provision TLS hosts.
 | minimum-protocol-version| string | `1.2` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.2` (default) and `1.3`. Any other value defaults to TLS 1.2. |
 | fallback-certificate | | | [Fallback certificate configuration](#fallback-certificate). |
 | envoy-client-certificate | | | [Client certificate configuration for Envoy](#envoy-client-certificate). |
-| cipher-suites | []string | See [config package documentation](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-constants) | This field specifies the TLS ciphers to be supported by TLS listeners when negotiating TLS 1.2. This parameter should only be used by advanced users. Note that this is ignored when TLS 1.3 is in use. The set of ciphers that are allowed is a superset of those supported by default in stock, non-FIPS Envoy builds and FIPS builds as specified [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites). Custom ciphers not accepted by Envoy in a standard build are not supported. |
+| cipher-suites | []string | See [config package documentation](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-variables) | This field specifies the TLS ciphers to be supported by TLS listeners when negotiating TLS 1.2. This parameter should only be used by advanced users. Note that this is ignored when TLS 1.3 is in use. The set of ciphers that are allowed is a superset of those supported by default in stock, non-FIPS Envoy builds and FIPS builds as specified [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites). Custom ciphers not accepted by Envoy in a standard build are not supported. |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -184,7 +184,7 @@ The server configuration block can be used to configure various settings for the
 
 ### Gateway Configuration
 
-The gateway configuration block is used to configure which service-apis Gateway Contour should configure:
+The gateway configuration block is used to configure which gateway-api Gateway Contour should configure:
 
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
@@ -222,7 +222,7 @@ data:
     #   determine which XDS Server implementation to utilize in Contour.
     #   xds-server-type: contour
     #
-    # specify the service-apis Gateway Contour should configure
+    # specify the gateway-api Gateway Contour should configure
     # gateway:
     #   name: contour
     #   namespace: projectcontour
