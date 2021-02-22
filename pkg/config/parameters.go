@@ -280,8 +280,8 @@ type ServerParameters struct {
 	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
 }
 
-// GatewayParameters holds the configuration for what service-api Gateway
-// Contour will be configured to serve traffic.
+// GatewayParameters holds the configuration for what Gateway API Gateway
+// Contour will be configured to watch.
 type GatewayParameters struct {
 	Name      string `yaml:"name,omitempty"`
 	Namespace string `yaml:"namespace,omitempty"`
