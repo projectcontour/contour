@@ -104,10 +104,7 @@ func (kc *KubernetesCache) matchesIngressClass(obj metav1.Object) bool {
 
 // matchesGateway returns true if the given Kubernetes object
 // belongs to the Gateway that this cache is using.
-func (kc *KubernetesCache) matchesGateway(obj metav1.Object) bool {
-
-	fmt.Println("--- obj: ", k8s.NamespacedNameOf(obj))
-	fmt.Println("--- gateway: ", kc.Gateway)
+func (kc *KubernetesCache) matchesGateway(obj *gatewayapi_v1alpha1.Gateway) bool {
 
 	if k8s.NamespacedNameOf(obj) != kc.Gateway {
 		kind := k8s.KindOf(obj)
@@ -374,7 +371,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		delete(kc.httpproxydelegations, m)
 		return ok
 	case *gatewayapi_v1alpha1.Gateway:
-		if obj.Name == kc.gateway.Name && obj.Namespace == kc.gateway.Namespace {
+		if kc.matchesGateway(obj) {
 			kc.WithField("experimental", "gateway-api").WithField("name", obj.Name).WithField("namespace", obj.Namespace).Debug("Removing Gateway")
 			kc.gateway = nil
 			return true
