@@ -17,7 +17,7 @@ This section describes how to build Contour from source.
 
 1. *Install Go*
 
-    Contour requires [Go 1.15][1] or later.
+    Contour requires [Go 1.16][1] or later.
     We also assume that you're familiar with Go's [`GOPATH` workspace][3] convention, and have the appropriate environment variables set.
 
 ### Fetch the source
