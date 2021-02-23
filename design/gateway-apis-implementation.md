@@ -3,7 +3,7 @@
 Status: Accepted
 
 ## Abstract
-The Gateway API are the evolution of the Kubernetes APIs that relate to `Services`, such as Ingress.
+The Gateway API is the evolution of the Kubernetes APIs that relate to `Services`, such as Ingress.
 This document outlines what parts of these APIs Contour will implement, and how it will do so.
 
 ## Background
@@ -18,7 +18,7 @@ The Gateway API targets three personas:
 
 The cluster operator and application developer are basically the same as Contour's Cluster Administrator and Application Developer personas, which will be important for this design.
 
-In terms of the APIs themsleves, the Gateway API has 3 primary API resources (taken from the gateway-apis docs site):
+In terms of the APIs themselves, the Gateway API has 3 primary API resources (taken from the gateway-apis docs site):
 
 - GatewayClass defines a set of gateways with a common configuration and behavior.
 - Gateway requests a point where traffic can be translated to Services within the cluster, using an internal Listener construct.
@@ -45,7 +45,7 @@ There should never be annotations required for functionality on Gateway API obje
 
 
 ## Goals
-- Define a data model and implementation for Contour's gateway-apis support, covering the v1alpha1 version of the gateway-apis.
+- Define a data model and implementation for Contour's Gateway API support, covering the v1alpha1 version of the Gateway API.
 - Layer 7 support only, which means HTTPRoutes, TLSRoutes only.
 
 ## Non Goals
@@ -192,7 +192,7 @@ The current pattern across most of the objects is:
 
 This pattern is applicable to all the Gateway API objects, with the exception of GatewayClass, which is not relevant for Contour.
 
-There are already internal fields in the cache to hold GatewayClass and some other gateway-apis objects.
+There are already internal fields in the cache to hold GatewayClass and some other Gateway API objects.
 GatewayClass will be removed as part of this work, then we will use this scaffolding to build the actual functionality on top.
 
 #### Hostname matching
@@ -337,7 +337,7 @@ As part of that, Contour is requested to look at one and only one Gateway, which
 
 There is currently experimental support for *reading* the Gateway API objects in Contour, we will add full support in something like this order:
 - Add support for configuring Gateway to the config file
-- Deprecate `--expermental-service-apis` command-line flag, so that it does nothing but log a referral to the new config item.
+- Deprecate `--experimental-service-apis` command-line flag, so that it does nothing but log a referral to the new config item.
 - Implement the Gateway API processor as a single DAG processor.
 - Release a version with Gateway API support still marked experimental.
 - Evaluate the implementation, provide feedback to upstream, and so on.
