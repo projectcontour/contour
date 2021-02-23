@@ -423,6 +423,14 @@ type NetworkParameters struct {
 	XffNumTrustedHops uint32 `yaml:"num-trusted-hops"`
 }
 
+// ListenerParameters hold various configurable listener values.
+type ListenerParameters struct {
+	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
+	// for more information.
+	ConnectionBalancer string `yaml:"connection-balancer"`
+}
+
 // Parameters contains the configuration file parameters for the
 // Contour ingress controller.
 type Parameters struct {
@@ -496,6 +504,8 @@ type Parameters struct {
 	// Network holds various configurable Envoy network values.
 	Network NetworkParameters `yaml:"network,omitempty"`
 
+	// Listener holds various configurable Envoy Listener values.
+	Listener ListenerParameters `yaml:"listener,omitempty"`
 	// RateLimitService optionally holds properties of the Rate Limit Service
 	// to be used for global rate limiting.
 	RateLimitService RateLimitService `yaml:"rateLimitService,omitempty"`
@@ -596,6 +606,9 @@ func Defaults() Parameters {
 		},
 		Network: NetworkParameters{
 			XffNumTrustedHops: 0,
+		},
+		Listener: ListenerParameters{
+			ConnectionBalancer: "",
 		},
 	}
 }

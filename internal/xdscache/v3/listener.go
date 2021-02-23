@@ -130,6 +130,11 @@ type ListenerConfig struct {
 	// right side of the x-forwarded-for HTTP header to trust.
 	XffNumTrustedHops uint32
 
+	// ConnectionBalancer
+	// The validated value is 'exact'.
+	// If no configuration is specified, Envoy will not attempt to balance active connections between worker threads
+	// If specified, the listener will use the exact connection balancer.
+	ConnectionBalancer string
 	// RateLimitConfig optionally configures the global Rate Limit Service to be
 	// used.
 	RateLimitConfig *RateLimitConfig
@@ -376,6 +381,20 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 		// there's some https listeners, we need to sort the filter chains
 		// to ensure that the LDS entries are identical.
 		sort.Stable(sorter.For(lv.listeners[ENVOY_HTTPS_LISTENER].FilterChains))
+	}
+
+	// support more params of envoy listener
+
+	// 1. connection balancer
+	switch lvc.ConnectionBalancer {
+	case "exact":
+		for _, listener := range lv.listeners {
+			listener.ConnectionBalanceConfig = &envoy_listener_v3.Listener_ConnectionBalanceConfig{
+				BalanceType: &envoy_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance_{
+					ExactBalance: &envoy_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance{},
+				},
+			}
+		}
 	}
 
 	return lv.listeners

@@ -155,6 +155,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 		},
 		StaticResources: &envoy_bootstrap_v3.Bootstrap_StaticResources{
 			Clusters: []*envoy_cluster_v3.Cluster{{
+				DnsLookupFamily:      parseDNSLookupFamily(c.DNSLookupFamily),
 				Name:                 "contour",
 				AltStatName:          strings.Join([]string{c.Namespace, "contour", strconv.Itoa(c.GetXdsGRPCPort())}, "_"),
 				ConnectTimeout:       protobuf.Duration(5 * time.Second),
