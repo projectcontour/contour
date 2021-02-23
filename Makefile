@@ -317,7 +317,11 @@ site-devel: ## Launch the website in a Docker container
 site-check: ## Test the site's links
 	docker run --rm -v $$(pwd):/src -it $(JEKYLL_IMAGE) bash -c "cd /src && ./hack/site-proofing/cibuild"
 
-integration: ## Run integration tests against a real k8s cluster
+check-integration:
+	@integration-tester --version > /dev/null 2>&1 || (echo "ERROR: To run the integration tests, you will need to install integration-tester (https://github.com/projectcontour/integration-tester)"; exit 1)
+
+.PHONY: integration ## Run integration tests against a real k8s cluster
+integration: check-integration
 	./_integration/testsuite/make-kind-cluster.sh
 	./_integration/testsuite/install-gateway-api.sh
 	./_integration/testsuite/install-contour-working.sh
