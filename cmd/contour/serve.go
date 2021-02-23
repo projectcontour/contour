@@ -273,6 +273,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return fmt.Errorf("error parsing request timeout: %w", err)
 	}
 
+	// connection balancer
+	if ok := ctx.Config.Listener.ConnectionBalancer == "exact" || ctx.Config.Listener.ConnectionBalancer == ""; !ok {
+		log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", ctx.Config.Listener.ConnectionBalancer)
+		ctx.Config.Listener.ConnectionBalancer = ""
+	}
+
 	listenerConfig := xdscache_v3.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
@@ -294,6 +300,37 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		DefaultHTTPVersions:           parseDefaultHTTPVersions(ctx.Config.DefaultHTTPVersions),
 		AllowChunkedLength:            !ctx.Config.DisableAllowChunkedLength,
 		XffNumTrustedHops:             ctx.Config.Network.XffNumTrustedHops,
+		ConnectionBalancer:            ctx.Config.Listener.ConnectionBalancer,
+	}
+
+	if ctx.Config.RateLimitService.ExtensionService != "" {
+		namespacedName := k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService)
+		client := clients.DynamicClient().Resource(contour_api_v1alpha1.ExtensionServiceGVR).Namespace(namespacedName.Namespace)
+
+		// ensure the specified ExtensionService exists
+		res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("error getting rate limit extension service %s: %v", namespacedName, err)
+		}
+		var extensionSvc contour_api_v1alpha1.ExtensionService
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &extensionSvc); err != nil {
+			return fmt.Errorf("error converting rate limit extension service %s: %v", namespacedName, err)
+		}
+		// get the response timeout from the ExtensionService
+		var responseTimeout timeout.Setting
+		if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
+			responseTimeout, err = timeout.Parse(tp.Response)
+			if err != nil {
+				return fmt.Errorf("error parsing rate limit extension service %s response timeout: %v", namespacedName, err)
+			}
+		}
+
+		listenerConfig.RateLimitConfig = &xdscache_v3.RateLimitConfig{
+			ExtensionService: namespacedName,
+			Domain:           ctx.Config.RateLimitService.Domain,
+			Timeout:          responseTimeout,
+			FailOpen:         ctx.Config.RateLimitService.FailOpen,
+		}
 	}
 
 	if ctx.Config.RateLimitService.ExtensionService != "" {

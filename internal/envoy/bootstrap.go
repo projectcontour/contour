@@ -84,6 +84,10 @@ type BootstrapConfig struct {
 	// referenced in the configuration actually exist. This option is for
 	// testing only.
 	SkipFilePathCheck bool
+
+	// DNSLookupFamily specifies DNS Resolution Policy to use for Envoy -> Contour cluster name lookup.
+	// Either v4, v6 or auto.
+	DNSLookupFamily string
 }
 
 func (c *BootstrapConfig) GetXdsAddress() string { return stringOrDefault(c.XDSAddress, "127.0.0.1") }
@@ -95,7 +99,9 @@ func (c *BootstrapConfig) GetAdminPort() int { return intOrDefault(c.AdminPort, 
 func (c *BootstrapConfig) GetAdminAccessLogPath() string {
 	return stringOrDefault(c.AdminAccessLogPath, "/dev/null")
 }
-
+func (c *BootstrapConfig) GetDNSLookupFamily() string {
+	return stringOrDefault(c.DNSLookupFamily, "auto")
+}
 func stringOrDefault(s, def string) string {
 	if s == "" {
 		return def
