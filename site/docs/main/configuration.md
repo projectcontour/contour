@@ -82,6 +82,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | timeouts | TimeoutConfig | | The [timeout configuration](#timeout-configuration). |
 | cluster | ClusterConfig | | The [cluster configuration](#cluster-configuration). |
 | network | NetworkConfig | | The [network configuration](#network-configuration). |
+| listener | ListenerConfig | | The [listener configuration](#listener-configuration). |
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
 | gateway | GatewayConfig |  | The [gateway-api Gateway configuration](#gateway-configuration). |
 | rateLimitService | RateLimitServiceConfig | | The [rate limit service configuration](#rate-limit-service-configuration). |
@@ -169,6 +170,16 @@ The network configuration block can be used to configure various parameters netw
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | num-trusted-hops | int | 0 | Configures the number of additional ingress proxy hops from the right side of the x-forwarded-for HTTP header to trust. |
+{: class="table thead-dark table-bordered"}
+<br>
+
+### Listener Configuration
+
+The listener configuration block can be used to configure various parameters for Envoy listener.
+
+| Field Name | Type| Default  | Description |
+|------------|-----|----------|-------------|
+| connection-balancer | string | `""` | This field specifies the listener connection balancer. If the value is `exact`, the listener will use the exact connection balancer to balance connections between threads in a single Envoy process. See [the Envoy documentation][14] for more information. |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -380,3 +391,4 @@ connects to Contour:
 [11]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-drain-timeout
 [12]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-request-timeout
 [13]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout
+[14]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener.proto#config-listener-v3-listener-connectionbalanceconfig
