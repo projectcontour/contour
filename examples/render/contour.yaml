@@ -1636,9 +1636,11 @@ spec:
   - port: 80
     name: http
     protocol: TCP
+    targetPort: 8080
   - port: 443
     name: https
     protocol: TCP
+    targetPort: 8443
   selector:
     app: envoy
   type: LoadBalancer
@@ -1685,8 +1687,6 @@ spec:
         - --incluster
         - --xds-address=0.0.0.0
         - --xds-port=8001
-        - --envoy-service-http-port=80
-        - --envoy-service-https-port=443
         - --contour-cafile=/certs/ca.crt
         - --contour-cert-file=/certs/tls.crt
         - --contour-key-file=/certs/tls.key
@@ -1820,11 +1820,11 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         ports:
-        - containerPort: 80
+        - containerPort: 8080
           hostPort: 80
           name: http
           protocol: TCP
-        - containerPort: 443
+        - containerPort: 8443
           hostPort: 443
           name: https
           protocol: TCP

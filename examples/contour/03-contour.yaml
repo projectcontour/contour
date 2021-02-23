@@ -40,8 +40,6 @@ spec:
         - --incluster
         - --xds-address=0.0.0.0
         - --xds-port=8001
-        - --envoy-service-http-port=80
-        - --envoy-service-https-port=443
         - --contour-cafile=/certs/ca.crt
         - --contour-cert-file=/certs/tls.crt
         - --contour-key-file=/certs/tls.key

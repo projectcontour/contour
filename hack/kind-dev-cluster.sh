@@ -46,10 +46,10 @@ nodes:
 - role: control-plane
 - role: worker
   extraPortMappings:
-  - containerPort: 80
+  - containerPort: 8080
     hostPort: 80
     listenAddress: "0.0.0.0"
-  - containerPort: 443
+  - containerPort: 8443
     hostPort: 443
     listenAddress: "0.0.0.0"
 EOF
