@@ -67,3 +67,54 @@ status = 302
 from = "/quickstart/*/contour-custom-resource.yaml"
 to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/contour/contour.yaml"
 status = 302
+
+# Redirect /quickstart/gateway.yaml to the example Gateway manifest that matches :latest.
+#
+# kubectl apply https://projectcontour.io/quickstart/gateway.yaml
+[[redirects]]
+from = "/quickstart/gateway.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.13/examples/gateway/gateway.yaml"
+status = 302
+
+# Redirect versioned quickstarts so that they can easily be referenced by
+# users or for upgrade testing.
+#
+# kubectl apply https://projectcontour.io/quickstart/v1.11.0/gateway.yaml
+[[redirects]]
+from = "/quickstart/*/gateway.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/gateway.yaml"
+status = 302
+
+# Redirect /quickstart/gateway-nodeport.yaml to the example Gateway manifest that matches :latest.
+#
+# kubectl apply https://projectcontour.io/quickstart/gateway-nodeport.yaml
+[[redirects]]
+from = "/quickstart/gateway-nodeport.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.13/examples/gateway/gateway-nodeport.yaml"
+status = 302
+
+# Redirect versioned quickstarts so that they can easily be referenced by
+# users or for upgrade testing.
+#
+# kubectl apply https://projectcontour.io/quickstart/v1.11.0/gateway-nodeport.yaml
+[[redirects]]
+from = "/quickstart/*/gateway-nodeport.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/gateway-nodeport.yaml"
+status = 302
+
+# Redirect /quickstart/kuard.yaml to the example Kuard manifest that matches :latest.
+#
+# kubectl apply https://projectcontour.io/quickstart/kuard.yaml
+[[redirects]]
+from = "/quickstart/kuard.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/release-1.13/examples/gateway/kuard/kuard.yaml"
+status = 302
+
+# Redirect versioned quickstarts so that they can easily be referenced by
+# users or for upgrade testing.
+#
+# kubectl apply https://projectcontour.io/quickstart/v1.11.0/kuard.yaml
+[[redirects]]
+from = "/quickstart/*/kuard.yaml"
+to = "https://raw.githubusercontent.com/projectcontour/contour-operator/:splat/examples/gateway/kuard/kuard.yaml"
+status = 302
