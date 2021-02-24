@@ -5,9 +5,8 @@ set -o nounset
 set -o pipefail
 
 readonly KUSTOMIZE_VERS="v3.8.6"
-readonly KUBECTL_VERS="v1.19.2"
-readonly KIND_VERS="v0.9.0"
-readonly INTEGRATION_TESTER_VERS="6.0.0"
+readonly KUBECTL_VERS="v1.20.4"
+readonly KIND_VERS="v0.10.0"
 readonly SONOBUOY_VERS="0.19.0"
 
 readonly PROGNAME=$(basename $0)
