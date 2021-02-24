@@ -1,50 +1,51 @@
-# Service-APIs implementation design
+# Gateway API implementation design
 
 Status: Accepted
 
 ## Abstract
-The Service-APIs are the evolution of the Kubernetes APIs that relate to `Services`, such as Ingress.
+The Gateway API is the evolution of the Kubernetes APIs that relate to `Services`, such as Ingress.
 This document outlines what parts of these APIs Contour will implement, and how it will do so.
 
 ## Background
-The Service-APIs are a subproject of Kubernetes SIG-Network, and are an attempt to re-do the mechanics around `Services` and `Ingress`, and how they interact.
-They are aiming to cover the things currently implemented by Layer 4 load balancers that implement `Services` of type `LoadBalancer`, and ingress controllers (like Contour).
+The Gateway API project is a subproject of Kubernetes SIG-Network, and is an attempt to re-do the mechanics around `Services` and `Ingress`, and how they interact.
+It consists of a number of objects, not just the Gateway object, but that object is the key, so the API as a whole is named after it.
+The project is aiming to cover the things currently implemented by Layer 4 load balancers that implement `Services` of type `LoadBalancer`, and ingress controllers (like Contour).
 
-The Service APIs target three personas:
+The Gateway API targets three personas:
 - Infrastructure provider: The infrastructure provider (infra) is responsible for the overall environment that the cluster(s) are operating in. Examples include: the cloud provider (AWS, Azure, GCP, ...), the PaaS provider in a company.
 - Cluster operator: The cluster operator (ops) is responsible for administration of entire clusters. They manage policies, network access, application permissions.
 - Application developer: The application developer (dev) is responsible for defining their application configuration (e.g. timeouts, request matching/filter) and Service composition (e.g. path routing to backends).
 
 The cluster operator and application developer are basically the same as Contour's Cluster Administrator and Application Developer personas, which will be important for this design.
 
-In terms of the APIs themsleves, the Service APIs have 3 primary API resources (taken from the service-apis docs site):
+In terms of the APIs themselves, the Gateway API has 3 primary API resources (taken from the gateway-apis docs site):
 
 - GatewayClass defines a set of gateways with a common configuration and behavior.
 - Gateway requests a point where traffic can be translated to Services within the cluster, using an internal Listener construct.
 - Routes describe how traffic coming via the Gateway maps to the Services.
 
 In Contour, we've previously solved a lot of the same problems with HTTPProxy (and IngressRoute before it).
-That functionality can be described in the Service APIs by HTTPRoutes and TLSRoutes, as they describe Layer 7 ingress, as Contour does today.
+That functionality can be described in the Gateway API by HTTPRoutes and TLSRoutes, as they describe Layer 7 ingress, as Contour does today.
 
 Other types of routes include TCPRoutes and UDPRoutes, which are intended for Layer 4 load balancers. Implementations may also define their own Route objects, at the cost of interoperability.
 
 In terms of its stated goals, Contour is aiming at being an ingress controller - that is, a Layer 7 proxy with some api gateway functions.
-Currently, Contour provides "TCP Proxying" that allows the forwarding of TLS streams based on the SNI information, which is precisely what the Service APIs TLSRoute object is for.
+Currently, Contour provides "TCP Proxying" that allows the forwarding of TLS streams based on the SNI information, which is precisely what the Gateway API TLSRoute object is for.
 If Project Contour (the organisation) does add support for TCP and UDP forwarding, it will not be in the `projectcontour/contour` repo, but will be a separate repo.
 
-This design is intended to cover the initial `v1alpha1` release of the Service APIs. We will aim to implement the core featureset of the APIs at that point.
-We will then work with the upstream community on features that Contour and HTTPProxy currently support, but the Service APIs do not, and how best to represent those features in the APIs.
+This design is intended to cover the initial `v1alpha1` release of the Gateway API. We will aim to implement the core featureset of the APIs at that point.
+We will then work with the upstream community on features that Contour and HTTPProxy currently support, but the Gateway API do not, and how best to represent those features in the APIs.
 So, there are some features that are currently gaps for Contour (wildcard domain names, and exact path matching seem like big ones),
-and some that Contour supports that the Service APIs do not (websockets, configurable timeouts, header replacement, external auth, rate limiting, and so on).
+and some that Contour supports that the Gateway API do not (websockets, configurable timeouts, header replacement, external auth, rate limiting, and so on).
 
-Our eventual ideal is that HTTPProxy and Service-APIs will have feature parity.
-Practically, there may be times when HTTPProxy can move faster than Service-APIs because we have a smaller feature surface.
-We see this as a chance for HTTPProxy to test out ideas for Service-APIs functionality, and provide feedback on what features should be in the core, extension, and implementation-specific parts of the API.
-There should never be annotations required for functionality on Service-APIs objects.
+Our eventual ideal is that HTTPProxy and Gateway API will have feature parity.
+Practically, there may be times when HTTPProxy can move faster than Gateway API because we have a smaller feature surface.
+We see this as a chance for HTTPProxy to test out ideas for Gateway API functionality, and provide feedback on what features should be in the core, extension, and implementation-specific parts of the API.
+There should never be annotations required for functionality on Gateway API objects.
 
 
 ## Goals
-- Define a data model and implementation for Contour's service-apis support, covering the v1alpha1 version of the service-apis.
+- Define a data model and implementation for Contour's Gateway API support, covering the v1alpha1 version of the Gateway API.
 - Layer 7 support only, which means HTTPRoutes, TLSRoutes only.
 
 ## Non Goals
@@ -53,39 +54,39 @@ There should never be annotations required for functionality on Service-APIs obj
 
 ## High-Level Design
 
-### Service APIs implementation surface area
+### Gateway API implementation surface area
 
-Contour's support for the Service APIs will include support for the HTTPRoute and TLSRoute objects only, not any other type of Route - this includes no TCPRoute or UDPRoute support.
+Contour's support for the Gateway API will include support for the HTTPRoute and TLSRoute objects only, not any other type of Route - this includes no TCPRoute or UDPRoute support.
 Contour is a layer 7 ingress controller, and the layer 4 load balancing implies by TCPRoute and UDPRoute is out of scope for this tool (that is, `projectcontour/contour`).
-Project Contour (the organisation) may investigate a Service-APIs based layer 4 solution in the future, but that effort will not be in `projectcontour/contour`.
+Project Contour (the organisation) may investigate a Gateway API based layer 4 solution in the future, but that effort will not be in `projectcontour/contour`.
 
 ### Contour Gateway model
 
 Contour considers a Gateway to describe a single Envoy deployment, deployed and managed by something outside of itself.
 Contour expects to be supplied with the full name (name and namespace) of a single Gateway, which it will watch and update the status of.
 This will be a configuration file parameter.
-When a Gateway is not supplied, Contour will not do Service-APIs processing, or in other words, the existing `--experimental-service-apis` flag will be obsoleted and removed).
+When a Gateway is not supplied, Contour will not do Gateway API processing, or in other words, the existing `--experimental-service-apis` flag will be obsoleted and removed).
 Inside Contour will merge Listeners within its Gateway. (See the detailed design for the exact rules Contour will use for this.)
 
 ### Interrelated watches
 
-The Service APIs are a set of interrelated Kubernetes objects, where a change in one object can mean that the scope of objects Contour is interested in will change.
+The Gateway API is a set of interrelated Kubernetes objects, where a change in one object can mean that the scope of objects Contour is interested in will change.
 Because of this, Contour will watch all events associated with its named Gateway, HTTPRoute, TLSRoute, and BackendPolicy objects, and filter the objects it takes action on internally, rather than using a filtered watch (as those are costly to set up and tear down).
 
 Contour does not watch a GatewayClass, as its deployment model expects a Contour to be part of the implementation for a *particular* Gateway.
 
-### Combining Service APIs with other configuration
+### Combining Gateway API with other configuration
 
 When it calculates the Envoy configuration using the DAG, Contour layers different types of configuration in order.
 So, currently, Ingress is overwritten by HTTPProxy, so if an Ingress and a HTTPProxy specify the exact same route, the HTTPProxy will win.
 
-Once we have the Service-APIs available as well, we have to choose the order.
-In this design, I suggest having the order be Ingress is overwritten by HTTPProxy, is overwritten by the service-apis.
-I could see reversing HTTPProxy and the Service APIs here, but I think this acknowledges that the Service APIs are really an evolution of the ideas in HTTPProxy, and will probably end up being the community standard.
+Once we have the Gateway API available as well, we have to choose the order.
+In this design, I suggest having the order be Ingress is overwritten by HTTPProxy, is overwritten by the Gateway API.
+I could see reversing HTTPProxy and the Gateway API here, but I think this acknowledges that the Gateway API are really an evolution of the ideas in HTTPProxy, and will probably end up being the community standard.
 
 ### Status management
 
-Each object in the Service APIs set has its own status definition. In general, Contour will update the status of any object that comes into scope with its details, ensuring that the `observedGeneration` field is set correctly.
+Each object in the Gateway API set has its own status definition. In general, Contour will update the status of any object that comes into scope with its details, ensuring that the `observedGeneration` field is set correctly.
 When objects fall out of scope, any status set by Contour will not be removed.
 It's expected that things that check the status will also check the `observedGeneration` to check if the status information is up-to-date with the current object generation.
 
@@ -177,10 +178,10 @@ The boolean it represents will be deduced from the following rules:
 - the referenced gateway exists.
 
 If the gateway is configured but does not exist, then this is a fatal error and Contour will exit.
-If the gateway is removed while Contour is operating, then an error will be logged, and all config associated with the Service APIs will be removed from Envoy.
+If the gateway is removed while Contour is operating, then an error will be logged, and all config associated with the Gateway API will be removed from Envoy.
 
 ### Code changes
-Contour already has support for importing the Service APIs objects into its Kubernetes cache.
+Contour already has support for importing the Gateway API objects into its Kubernetes cache.
 However, for some types, we need to be able to keep some details - this design suggests making those details properties of the cache, as `IngressClass` is currently.
 
 For ingestion, the general pattern currently is that the EventHandler in `internal/contour/handler.go` handles all objects, and calls out to the KubernetesCache from `internal/dag/cache.go`.
@@ -189,14 +190,14 @@ The current pattern across most of the objects is:
 - add it to the cache
 - indicate with a return value if the add should result in a DAG (and consequently an Envoy config) rebuild.
 
-This pattern is applicable to all the Service APIs objects, with the exception of GatewayClass, which is not relevant for Contour.
+This pattern is applicable to all the Gateway API objects, with the exception of GatewayClass, which is not relevant for Contour.
 
-There are already internal fields in the cache to hold GatewayClass and some other service-apis objects.
+There are already internal fields in the cache to hold GatewayClass and some other Gateway API objects.
 GatewayClass will be removed as part of this work, then we will use this scaffolding to build the actual functionality on top.
 
 #### Hostname matching
 
-In many of the Service APIs objects, Hostnames *may* be specified, and *may* be either "precise" (a domain name without the terminating dot of a network host), or "wildcard" (a domain name prefixed with a single wildcard label).
+In many of the Gateway API objects, Hostnames *may* be specified, and *may* be either "precise" (a domain name without the terminating dot of a network host), or "wildcard" (a domain name prefixed with a single wildcard label).
 Per the API spec, only the first DNS label of the hostname may be a wildcard, and the wildcard must match only a single label.
 
 Hostnames are considered to match if they exactly match, or if a precise hostname matches the suffix of a wildcard hostname (that is, if they match after the first DNS label is discarded.)
@@ -334,10 +335,10 @@ As part of that, Contour is requested to look at one and only one Gateway, which
 
 ## Implementation
 
-There is currently experimental support for *reading* the Service-APIs objects in Contour, we will add full support in something like this order:
+There is currently experimental support for *reading* the Gateway API objects in Contour, we will add full support in something like this order:
 - Add support for configuring Gateway to the config file
-- Deprecate `--expermental-service-apis` command-line flag, so that it does nothing but log a referral to the new config item.
-- Implement the Service-APIs processor as a single DAG processor.
-- Release a version with Service-APIs support still marked experimental.
+- Deprecate `--experimental-service-apis` command-line flag, so that it does nothing but log a referral to the new config item.
+- Implement the Gateway API processor as a single DAG processor.
+- Release a version with Gateway API support still marked experimental.
 - Evaluate the implementation, provide feedback to upstream, and so on.
 - Remove the experimental tag once we're happy with the support.
