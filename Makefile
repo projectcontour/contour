@@ -29,6 +29,12 @@ endif
 # Platforms to build the multi-arch image for.
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
+# Base build image to use.
+BUILD_BASE_IMAGE ?= golang:1.15.8
+
+# Enable build with CGO.
+BUILD_CGO_ENABLED ?= 0
+
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
 # LOCALIP as an env var before running 'make local' will solve that.
@@ -99,9 +105,11 @@ download: ## Download Go modules
 multiarch-build-push: ## Build and push a multi-arch Contour container image to the Docker registry
 	docker buildx build \
 		--platform $(IMAGE_PLATFORMS) \
+		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
+		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(IMAGE_TAGS) \
 		--push \
@@ -109,9 +117,11 @@ multiarch-build-push: ## Build and push a multi-arch Contour container image to 
 
 container: ## Build the Contour container image
 	docker build \
+		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
+		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(shell pwd) \
 		--tag $(IMAGE):$(VERSION)
