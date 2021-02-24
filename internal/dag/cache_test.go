@@ -647,6 +647,15 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert namespace": {
+			obj: &v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "namespace",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
 		"insert gateway-api Gateway": {
 			obj: &gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -782,6 +791,21 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			obj: &v1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "service",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove namespace": {
+			cache: cache(&v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "namespace",
+					Namespace: "default",
+				},
+			}),
+			obj: &v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "namespace",
 					Namespace: "default",
 				},
 			},
