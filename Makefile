@@ -62,8 +62,8 @@ GO_BUILD_VARS = \
 	github.com/projectcontour/contour/internal/build.Sha=${BUILD_SHA} \
 	github.com/projectcontour/contour/internal/build.Branch=${BUILD_BRANCH}
 
-GO_TAGS := -tags "oidc gcp"
-GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
+GO_TAGS := -tags "oidc gcp osusergo netgo"
+GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS)) $(EXTRA_GO_LDFLAGS)
 
 # Docker labels to be applied to the Contour image. We don't transform
 # this with make because it's not worth pulling the tricks needed to handle
@@ -110,10 +110,11 @@ multiarch-build-push: ## Build and push a multi-arch Contour container image to 
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
 		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
+		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(IMAGE_TAGS) \
 		--push \
-		.
+		$(shell pwd)
 
 container: ## Build the Contour container image
 	docker build \
@@ -122,6 +123,7 @@ container: ## Build the Contour container image
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
 		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
+		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(shell pwd) \
 		--tag $(IMAGE):$(VERSION)
