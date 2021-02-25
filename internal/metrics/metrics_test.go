@@ -79,15 +79,10 @@ func TestWriteProxyMetric(t *testing.T) {
 	tests := map[string]struct {
 		proxyMetrics       RouteMetric
 		total              testMetric
-		deprecatedTotal    testMetric
 		valid              testMetric
-		deprecatedValid    testMetric
 		invalid            testMetric
-		deprecatedInvalid  testMetric
 		orphaned           testMetric
-		deprecatedOrphaned testMetric
 		root               testMetric
-		deprecatedRoot     testMetric
 	}{
 		"simple": {
 			proxyMetrics: RouteMetric{
@@ -131,29 +126,6 @@ func TestWriteProxyMetric(t *testing.T) {
 					},
 				},
 			},
-			deprecatedTotal: testMetric{
-				metric: DeprecatedHTTPProxyTotalGauge,
-				want: []*io_prometheus_client.Metric{
-					{
-						Label: []*io_prometheus_client.LabelPair{{
-							Name:  func() *string { i := "namespace"; return &i }(),
-							Value: func() *string { i := "foons"; return &i }(),
-						}},
-						Gauge: &io_prometheus_client.Gauge{
-							Value: func() *float64 { i := float64(3); return &i }(),
-						},
-					},
-					{
-						Label: []*io_prometheus_client.LabelPair{{
-							Name:  func() *string { i := "namespace"; return &i }(),
-							Value: func() *string { i := "testns"; return &i }(),
-						}},
-						Gauge: &io_prometheus_client.Gauge{
-							Value: func() *float64 { i := float64(6); return &i }(),
-						},
-					},
-				},
-			},
 			orphaned: testMetric{
 				metric: HTTPProxyOrphanedGauge,
 				want: []*io_prometheus_client.Metric{
@@ -168,39 +140,8 @@ func TestWriteProxyMetric(t *testing.T) {
 					},
 				},
 			},
-			deprecatedOrphaned: testMetric{
-				metric: DeprecatedHTTPProxyOrphanedGauge,
-				want: []*io_prometheus_client.Metric{
-					{
-						Label: []*io_prometheus_client.LabelPair{{
-							Name:  func() *string { i := "namespace"; return &i }(),
-							Value: func() *string { i := "testns"; return &i }(),
-						}},
-						Gauge: &io_prometheus_client.Gauge{
-							Value: func() *float64 { i := float64(1); return &i }(),
-						},
-					},
-				},
-			},
 			valid: testMetric{
 				metric: HTTPProxyValidGauge,
-				want: []*io_prometheus_client.Metric{
-					{
-						Label: []*io_prometheus_client.LabelPair{{
-							Name:  func() *string { i := "namespace"; return &i }(),
-							Value: func() *string { i := "testns"; return &i }(),
-						}, {
-							Name:  func() *string { i := "vhost"; return &i }(),
-							Value: func() *string { i := "foo.com"; return &i }(),
-						}},
-						Gauge: &io_prometheus_client.Gauge{
-							Value: func() *float64 { i := float64(3); return &i }(),
-						},
-					},
-				},
-			},
-			deprecatedValid: testMetric{
-				metric: DeprecatedHTTPProxyValidGauge,
 				want: []*io_prometheus_client.Metric{
 					{
 						Label: []*io_prometheus_client.LabelPair{{
@@ -233,39 +174,8 @@ func TestWriteProxyMetric(t *testing.T) {
 					},
 				},
 			},
-			deprecatedInvalid: testMetric{
-				metric: DeprecatedHTTPProxyInvalidGauge,
-				want: []*io_prometheus_client.Metric{
-					{
-						Label: []*io_prometheus_client.LabelPair{{
-							Name:  func() *string { i := "namespace"; return &i }(),
-							Value: func() *string { i := "testns"; return &i }(),
-						}, {
-							Name:  func() *string { i := "vhost"; return &i }(),
-							Value: func() *string { i := "foo.com"; return &i }(),
-						}},
-						Gauge: &io_prometheus_client.Gauge{
-							Value: func() *float64 { i := float64(2); return &i }(),
-						},
-					},
-				},
-			},
 			root: testMetric{
 				metric: HTTPProxyRootTotalGauge,
-				want: []*io_prometheus_client.Metric{
-					{
-						Label: []*io_prometheus_client.LabelPair{{
-							Name:  func() *string { i := "namespace"; return &i }(),
-							Value: func() *string { i := "testns"; return &i }(),
-						}},
-						Gauge: &io_prometheus_client.Gauge{
-							Value: func() *float64 { i := float64(4); return &i }(),
-						},
-					},
-				},
-			},
-			deprecatedRoot: testMetric{
-				metric: DeprecatedHTTPProxyRootTotalGauge,
 				want: []*io_prometheus_client.Metric{
 					{
 						Label: []*io_prometheus_client.LabelPair{{
@@ -298,55 +208,30 @@ func TestWriteProxyMetric(t *testing.T) {
 			}
 
 			gotTotal := []*io_prometheus_client.Metric{}
-			gotDeprecatedTotal := []*io_prometheus_client.Metric{}
 			gotValid := []*io_prometheus_client.Metric{}
-			gotDeprecatedValid := []*io_prometheus_client.Metric{}
 			gotInvalid := []*io_prometheus_client.Metric{}
-			gotDeprecatedInvalid := []*io_prometheus_client.Metric{}
 			gotOrphaned := []*io_prometheus_client.Metric{}
-			gotDeprecatedOrphaned := []*io_prometheus_client.Metric{}
 			gotRoot := []*io_prometheus_client.Metric{}
-			gotDeprecatedRoot := []*io_prometheus_client.Metric{}
 			for _, mf := range gathering {
 				switch mf.GetName() {
 				case tc.total.metric:
 					gotTotal = mf.Metric
-				case tc.deprecatedTotal.metric:
-					gotDeprecatedTotal = mf.Metric
 				case tc.valid.metric:
 					gotValid = mf.Metric
-				case tc.deprecatedValid.metric:
-					gotDeprecatedValid = mf.Metric
 				case tc.invalid.metric:
 					gotInvalid = mf.Metric
-				case tc.deprecatedInvalid.metric:
-					gotDeprecatedInvalid = mf.Metric
 				case tc.orphaned.metric:
 					gotOrphaned = mf.Metric
-				case tc.deprecatedOrphaned.metric:
-					gotDeprecatedOrphaned = mf.Metric
 				case tc.root.metric:
 					gotRoot = mf.Metric
-				case tc.deprecatedRoot.metric:
-					gotDeprecatedRoot = mf.Metric
 				}
 			}
 
 			assert.Equal(t, tc.total.want, gotTotal)
-			assert.Equal(t, tc.deprecatedTotal.want, gotDeprecatedTotal)
-			assert.Equal(t, gotTotal, gotDeprecatedTotal)
 			assert.Equal(t, tc.valid.want, gotValid)
-			assert.Equal(t, tc.deprecatedValid.want, gotDeprecatedValid)
-			assert.Equal(t, gotValid, gotDeprecatedValid)
 			assert.Equal(t, tc.invalid.want, gotInvalid)
-			assert.Equal(t, tc.deprecatedInvalid.want, gotDeprecatedInvalid)
-			assert.Equal(t, gotInvalid, gotDeprecatedInvalid)
 			assert.Equal(t, tc.orphaned.want, gotOrphaned)
-			assert.Equal(t, tc.deprecatedOrphaned.want, gotDeprecatedOrphaned)
-			assert.Equal(t, gotOrphaned, gotDeprecatedOrphaned)
 			assert.Equal(t, tc.root.want, gotRoot)
-			assert.Equal(t, tc.deprecatedRoot.want, gotDeprecatedRoot)
-			assert.Equal(t, gotRoot, gotDeprecatedRoot)
 		})
 	}
 }

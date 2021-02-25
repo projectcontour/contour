@@ -15,7 +15,6 @@
 package metrics
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -27,12 +26,6 @@ import (
 // Metrics provide Prometheus metrics for the app
 type Metrics struct {
 	buildInfoGauge *prometheus.GaugeVec
-
-	deprecatedProxyTotalGauge     *prometheus.GaugeVec
-	deprecatedProxyRootTotalGauge *prometheus.GaugeVec
-	deprecatedProxyInvalidGauge   *prometheus.GaugeVec
-	deprecatedProxyValidGauge     *prometheus.GaugeVec
-	deprecatedProxyOrphanedGauge  *prometheus.GaugeVec
 
 	proxyTotalGauge     *prometheus.GaugeVec
 	proxyRootTotalGauge *prometheus.GaugeVec
@@ -66,12 +59,6 @@ type Meta struct {
 const (
 	BuildInfoGauge = "contour_build_info"
 
-	DeprecatedHTTPProxyTotalGauge     = "contour_httpproxy_total"
-	DeprecatedHTTPProxyRootTotalGauge = "contour_httpproxy_root_total"
-	DeprecatedHTTPProxyInvalidGauge   = "contour_httpproxy_invalid_total"
-	DeprecatedHTTPProxyValidGauge     = "contour_httpproxy_valid_total"
-	DeprecatedHTTPProxyOrphanedGauge  = "contour_httpproxy_orphaned_total"
-
 	HTTPProxyTotalGauge     = "contour_httpproxy"
 	HTTPProxyRootTotalGauge = "contour_httpproxy_root"
 	HTTPProxyInvalidGauge   = "contour_httpproxy_invalid"
@@ -100,51 +87,6 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			[]string{"branch", "revision", "version"},
 		),
 		proxyMetricCache: &RouteMetric{},
-		deprecatedProxyTotalGauge: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: DeprecatedHTTPProxyTotalGauge,
-				Help: fmt.Sprintf(
-					"(Deprecated): Total number of HTTPProxies that exist regardless of status. Use %s instead",
-					HTTPProxyTotalGauge),
-			},
-			[]string{"namespace"},
-		),
-		deprecatedProxyRootTotalGauge: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: DeprecatedHTTPProxyRootTotalGauge,
-				Help: fmt.Sprintf(
-					"(Deprecated): Total number of root HTTPProxies. Note there will only be a single root HTTPProxy per vhost. Use %s instead",
-					HTTPProxyRootTotalGauge),
-			},
-			[]string{"namespace"},
-		),
-		deprecatedProxyInvalidGauge: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: DeprecatedHTTPProxyInvalidGauge,
-				Help: fmt.Sprintf(
-					"(Deprecated): Total number of invalid HTTPProxies. Use %s instead.",
-					HTTPProxyInvalidGauge),
-			},
-			[]string{"namespace", "vhost"},
-		),
-		deprecatedProxyValidGauge: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: DeprecatedHTTPProxyValidGauge,
-				Help: fmt.Sprintf(
-					"(Deprecated): Total number of valid HTTPProxies. Use %s instead",
-					HTTPProxyValidGauge),
-			},
-			[]string{"namespace", "vhost"},
-		),
-		deprecatedProxyOrphanedGauge: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: DeprecatedHTTPProxyOrphanedGauge,
-				Help: fmt.Sprintf(
-					"(Deprecated): Total number of orphaned HTTPProxies which have no root delegating to them. Use %s instead",
-					HTTPProxyOrphanedGauge),
-			},
-			[]string{"namespace"},
-		),
 		proxyTotalGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: HTTPProxyTotalGauge,
@@ -216,15 +158,10 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 	registry.MustRegister(
 		m.buildInfoGauge,
 		m.proxyTotalGauge,
-		m.deprecatedProxyTotalGauge,
 		m.proxyRootTotalGauge,
-		m.deprecatedProxyRootTotalGauge,
 		m.proxyInvalidGauge,
-		m.deprecatedProxyInvalidGauge,
 		m.proxyValidGauge,
-		m.deprecatedProxyValidGauge,
 		m.proxyOrphanedGauge,
-		m.deprecatedProxyOrphanedGauge,
 		m.dagRebuildGauge,
 		m.dagRebuildTotal,
 		m.CacheHandlerOnUpdateSummary,
@@ -271,50 +208,40 @@ func (m *Metrics) SetHTTPProxyMetric(metrics RouteMetric) {
 	// Process metrics
 	for meta, value := range metrics.Total {
 		m.proxyTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
-		m.deprecatedProxyTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
 		delete(m.proxyMetricCache.Total, meta)
 	}
 	for meta, value := range metrics.Invalid {
 		m.proxyInvalidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
-		m.deprecatedProxyInvalidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
 		delete(m.proxyMetricCache.Invalid, meta)
 	}
 	for meta, value := range metrics.Orphaned {
 		m.proxyOrphanedGauge.WithLabelValues(meta.Namespace).Set(float64(value))
-		m.deprecatedProxyOrphanedGauge.WithLabelValues(meta.Namespace).Set(float64(value))
 		delete(m.proxyMetricCache.Orphaned, meta)
 	}
 	for meta, value := range metrics.Valid {
 		m.proxyValidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
-		m.deprecatedProxyValidGauge.WithLabelValues(meta.Namespace, meta.VHost).Set(float64(value))
 		delete(m.proxyMetricCache.Valid, meta)
 	}
 	for meta, value := range metrics.Root {
 		m.proxyRootTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
-		m.deprecatedProxyRootTotalGauge.WithLabelValues(meta.Namespace).Set(float64(value))
 		delete(m.proxyMetricCache.Root, meta)
 	}
 
 	// All metrics processed, now remove what's left as they are not needed
 	for meta := range m.proxyMetricCache.Total {
 		m.proxyTotalGauge.DeleteLabelValues(meta.Namespace)
-		m.deprecatedProxyTotalGauge.DeleteLabelValues(meta.Namespace)
 	}
 	for meta := range m.proxyMetricCache.Invalid {
 		m.proxyInvalidGauge.DeleteLabelValues(meta.Namespace, meta.VHost)
-		m.deprecatedProxyInvalidGauge.DeleteLabelValues(meta.Namespace, meta.VHost)
 	}
 	for meta := range m.proxyMetricCache.Orphaned {
 		m.proxyOrphanedGauge.DeleteLabelValues(meta.Namespace)
-		m.deprecatedProxyOrphanedGauge.DeleteLabelValues(meta.Namespace)
 	}
 	for meta := range m.proxyMetricCache.Valid {
 		m.proxyValidGauge.DeleteLabelValues(meta.Namespace, meta.VHost)
-		m.deprecatedProxyValidGauge.DeleteLabelValues(meta.Namespace, meta.VHost)
 	}
 	for meta := range m.proxyMetricCache.Root {
 		m.proxyRootTotalGauge.DeleteLabelValues(meta.Namespace)
-		m.deprecatedProxyRootTotalGauge.DeleteLabelValues(meta.Namespace)
 	}
 
 	m.proxyMetricCache = &RouteMetric{
