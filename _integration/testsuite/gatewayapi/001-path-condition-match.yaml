@@ -76,6 +76,7 @@ apiVersion: networking.x-k8s.io/v1alpha1
 kind: GatewayClass
 metadata:
   name: contour-class
+  namespace: projectcontour
 spec:
   controller: projectcontour.io/ingress-controller
 
@@ -84,7 +85,8 @@ spec:
 apiVersion: networking.x-k8s.io/v1alpha1
 kind: Gateway
 metadata:
-  name: contour-gateway
+  name: contour
+  namespace: projectcontour
 spec:
   gatewayClassName: contour-class
   listeners:

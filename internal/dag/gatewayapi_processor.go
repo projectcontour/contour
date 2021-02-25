@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"github.com/projectcontour/contour/internal/selector"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -41,8 +42,42 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		p.source = nil
 	}()
 
+	// Gateway must defined for resources to be processed.
+	if p.source.gateway == nil {
+		p.Error("Gateway is not defined!")
+		return
+	}
+
 	for _, route := range p.source.httproutes {
-		p.computeHTTPRoute(route)
+
+		var validRoutes []*gatewayapi_v1alpha1.HTTPRoute
+
+		// Filter the HTTPRoutes that match the gateway which Contour is configured to watch.
+		// RouteBindingSelector defines a schema for associating routes with the Gateway.
+		// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
+
+		// ## RouteBindingSelector ##
+		//
+		// Selector specifies a set of route labels used for selecting routes to associate
+		// with the Gateway. If this Selector is defined, only routes matching the Selector
+		// are associated with the Gateway. An empty Selector matches all routes.
+		for _, listener := range p.source.gateway.Spec.Listeners {
+
+			if len(listener.Routes.Selector.MatchLabels) > 0 || len(listener.Routes.Selector.MatchExpressions) > 0 {
+				// Look for matching labels on Selector.
+				if selector.MatchesLabelSelector(listener.Routes.Selector, route.Labels) {
+					validRoutes = append(validRoutes, route)
+				}
+			} else {
+				// Empty Selector matches all routes.
+				validRoutes = append(validRoutes, route)
+			}
+		}
+
+		// Process all the routes that match this Gateway.
+		for _, validRoute := range validRoutes {
+			p.computeHTTPRoute(validRoute)
+		}
 	}
 }
 

@@ -83,6 +83,11 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						MatchLabels: map[string]string{
 							"app": "contour",
 						},
+						MatchExpressions: []metav1.LabelSelectorRequirement{{
+							Key:      "type",
+							Operator: "In",
+							Values:   []string{"controller"},
+						}},
 					},
 				},
 			}},
@@ -105,7 +110,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "basic",
 						Namespace: "default",
 						Labels: map[string]string{
-							"app": "contour",
+							"app":  "contour",
+							"type": "controller",
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
@@ -146,7 +152,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "basic",
 						Namespace: "default",
 						Labels: map[string]string{
-							"app": "contour",
+							"app":  "contour",
+							"type": "controller",
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
@@ -198,7 +205,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "basic",
 						Namespace: "default",
 						Labels: map[string]string{
-							"app": "contour",
+							"app":  "contour",
+							"type": "controller",
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
@@ -244,7 +252,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "basic",
 						Namespace: "default",
 						Labels: map[string]string{
-							"app": "contour",
+							"app":  "contour",
+							"type": "controller",
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
@@ -282,7 +291,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "basic",
 						Namespace: "default",
 						Labels: map[string]string{
-							"app": "contour",
+							"app":  "contour",
+							"type": "controller",
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
@@ -312,7 +322,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "basic",
 						Namespace: "default",
 						Labels: map[string]string{
-							"app": "contour",
+							"app":  "contour",
+							"type": "controller",
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
@@ -343,7 +354,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "basic",
 						Namespace: "default",
 						Labels: map[string]string{
-							"app": "contour",
+							"app":  "contour",
+							"type": "controller",
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
@@ -398,6 +410,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},
+					gateway:     gateway,
 					FieldLogger: fixture.NewTestLogger(t),
 				},
 				Processors: []Processor{
