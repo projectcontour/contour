@@ -27,6 +27,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -99,7 +100,7 @@ func globalRateLimitFilterExists(t *testing.T, rh cache.ResourceEventHandler, c 
 	}).Status(p).IsValid()
 }
 
-func globalRateLimitNoRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalRateLimitNoRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls bool) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -121,25 +122,52 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh cache.ResourceEventHand
 			},
 		},
 	}
-	rh.OnAdd(p)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		TypeUrl: routeType,
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration(
-				"ingress_http",
-				envoy_v3.VirtualHost("foo.com",
-					&envoy_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/s1/80/da39a3ee5e"),
-					},
+	if tls {
+		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+			SecretName: "tls-cert",
+		}
+	}
+
+	rh.OnAdd(p)
+	c.Status(p).IsValid()
+
+	switch tls {
+	case true:
+		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl: routeType,
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration(
+					"https/foo.com",
+					envoy_v3.VirtualHost("foo.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/s1/80/da39a3ee5e"),
+						},
+					),
 				),
 			),
-		),
-	}).Status(p).IsValid()
+		})
+	default:
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl: routeType,
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration(
+					"ingress_http",
+					envoy_v3.VirtualHost("foo.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/s1/80/da39a3ee5e"),
+						},
+					),
+				),
+			),
+		})
+	}
+
 }
 
-func globalRateLimitVhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalRateLimitVhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls bool) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -177,7 +205,15 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHa
 			},
 		},
 	}
+
+	if tls {
+		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+			SecretName: "tls-cert",
+		}
+	}
+
 	rh.OnAdd(p)
+	c.Status(p).IsValid()
 
 	route := &envoy_route_v3.Route{
 		Match:  routePrefix("/"),
@@ -202,14 +238,21 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHa
 		},
 	}
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		TypeUrl: routeType,
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http", vhost)),
-	}).Status(p).IsValid()
+	switch tls {
+	case true:
+		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl:   routeType,
+			Resources: resources(t, envoy_v3.RouteConfiguration("https/foo.com", vhost)),
+		})
+	default:
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl:   routeType,
+			Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", vhost)),
+		})
+	}
 }
 
-func globalRateLimitRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalRateLimitRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls bool) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -247,7 +290,15 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHa
 			},
 		},
 	}
+
+	if tls {
+		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+			SecretName: "tls-cert",
+		}
+	}
+
 	rh.OnAdd(p)
+	c.Status(p).IsValid()
 
 	route := &envoy_route_v3.Route{
 		Match: routePrefix("/"),
@@ -273,14 +324,21 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHa
 
 	vhost := envoy_v3.VirtualHost("foo.com", route)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		TypeUrl: routeType,
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http", vhost)),
-	}).Status(p).IsValid()
+	switch tls {
+	case true:
+		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl:   routeType,
+			Resources: resources(t, envoy_v3.RouteConfiguration("https/foo.com", vhost)),
+		})
+	default:
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl:   routeType,
+			Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", vhost)),
+		})
+	}
 }
 
-func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls bool) {
 	p := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -334,7 +392,15 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh cache.Resourc
 			},
 		},
 	}
+
+	if tls {
+		p.Spec.VirtualHost.TLS = &contour_api_v1.TLS{
+			SecretName: "tls-cert",
+		}
+	}
+
 	rh.OnAdd(p)
+	c.Status(p).IsValid()
 
 	route := &envoy_route_v3.Route{
 		Match: routePrefix("/"),
@@ -376,20 +442,51 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh cache.Resourc
 		},
 	}
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		TypeUrl: routeType,
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http", vhost)),
-	}).Status(p).IsValid()
+	switch tls {
+	case true:
+		c.Request(routeType, "https/foo.com").Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl:   routeType,
+			Resources: resources(t, envoy_v3.RouteConfiguration("https/foo.com", vhost)),
+		})
+	default:
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl:   routeType,
+			Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", vhost)),
+		})
+	}
 }
 
 func TestGlobalRateLimiting(t *testing.T) {
 	subtests := map[string]func(*testing.T, cache.ResourceEventHandler, *Contour){
-		"GlobalRateLimitFilterExists":          globalRateLimitFilterExists,
-		"NoRateLimitsDefined":                  globalRateLimitNoRateLimitsDefined,
-		"VirtualHostRateLimitDefined":          globalRateLimitVhostRateLimitDefined,
-		"RouteRateLimitDefined":                globalRateLimitRouteRateLimitDefined,
-		"VirtualHostAndRouteRateLimitsDefined": globalRateLimitVhostAndRouteRateLimitDefined,
+		"GlobalRateLimitFilterExists": globalRateLimitFilterExists,
+
+		// test cases for insecure/non-TLS vhosts
+		"NoRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+			globalRateLimitNoRateLimitsDefined(t, rh, c, false)
+		},
+		"VirtualHostRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+			globalRateLimitVhostRateLimitDefined(t, rh, c, false)
+		},
+		"RouteRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+			globalRateLimitRouteRateLimitDefined(t, rh, c, false)
+		},
+		"VirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+			globalRateLimitVhostAndRouteRateLimitDefined(t, rh, c, false)
+		},
+
+		// test cases for secure/TLS vhosts
+		"TLSNoRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+			globalRateLimitNoRateLimitsDefined(t, rh, c, true)
+		},
+		"TLSVirtualHostRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+			globalRateLimitVhostRateLimitDefined(t, rh, c, true)
+		},
+		"TLSRouteRateLimitDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+			globalRateLimitRouteRateLimitDefined(t, rh, c, true)
+		},
+		"TLSVirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+			globalRateLimitVhostAndRouteRateLimitDefined(t, rh, c, false)
+		},
 	}
 
 	for n, f := range subtests {
@@ -406,6 +503,11 @@ func TestGlobalRateLimiting(t *testing.T) {
 			// Add common test fixtures.
 			rh.OnAdd(fixture.NewService("s1").WithPorts(corev1.ServicePort{Port: 80}))
 			rh.OnAdd(fixture.NewService("s2").WithPorts(corev1.ServicePort{Port: 80}))
+			rh.OnAdd(&corev1.Secret{
+				ObjectMeta: fixture.ObjectMeta("tls-cert"),
+				Type:       "kubernetes.io/tls",
+				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+			})
 
 			f(t, rh, c)
 		})
