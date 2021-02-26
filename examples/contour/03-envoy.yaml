@@ -68,11 +68,11 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         ports:
-        - containerPort: 80
+        - containerPort: 8080
           hostPort: 80
           name: http
           protocol: TCP
-        - containerPort: 443
+        - containerPort: 8443
           hostPort: 443
           name: https
           protocol: TCP
