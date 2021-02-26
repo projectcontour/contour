@@ -122,5 +122,5 @@ A 200 HTTP status code should be returned.
 [3]: https://projectcontour.io/resources/compatibility-matrix/
 [4]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [5]: https://github.com/projectcontour/contour-operator
-[6]: https://github.com/projectcontour/contour/blob/main/design/service-apis-implementation.md
+[6]: https://github.com/projectcontour/contour/blob/main/design/gateway-apis-implementation.md
 [7]: https://github.com/projectcontour/contour-operator/blob/main/design/gateway-api.md
