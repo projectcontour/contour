@@ -17,16 +17,27 @@ jobs:
       - name: integration tests
         run: |
           make integration
+  # TODO: re-enable once Ingress v1 support is complete
+  # ingress-conformance:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: add deps to path
+  #       run: |
+  #         ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+  #         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+  #     - name: ingress conformance tests
+  #       run: |
+  #         make check-ingress-conformance
   test-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.15.6'
+          go-version: '1.16.0'
       - name: test
         run: |
-          go mod vendor
           make install
           make check-coverage
       - name: codeCoverage
@@ -39,10 +50,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.15.6'
+          go-version: '1.16.0'
       - name: test
         run: |
-          go mod vendor
           make install
           make check-coverage
   lint:
@@ -73,9 +83,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
-          go-version: '1.15.6'
+          go-version: '1.16.0'
       - name: generate
         run: |
-          go mod vendor
-          make generate
+          make generate lint-yamllint lint-flags
           ./hack/actions/check-uncommitted-codegen.sh

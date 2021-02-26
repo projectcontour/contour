@@ -23,11 +23,419 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
+
+func gatewayPort(port int) *gatewayapi_v1alpha1.PortNumber {
+	p := gatewayapi_v1alpha1.PortNumber(port)
+	return &p
+}
+
+func TestDAGInsertGatewayAPI(t *testing.T) {
+
+	kuardService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	blogService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "blogsvc",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	gateway := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gateway",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: "HTTP",
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Selector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app": "contour",
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	tests := map[string]struct {
+		objs                         []interface{}
+		disablePermitInsecure        bool
+		fallbackCertificateName      string
+		fallbackCertificateNamespace string
+		want                         []Vertex
+	}{
+		"insert basic single route, single hostname": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		"insert basic multiple routes, single hostname": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				blogService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}, {
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/blog",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("blogsvc"),
+								Port:        gatewayPort(80),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							prefixroute("/", service(kuardService)), prefixroute("/blog", service(blogService))),
+					),
+				},
+			),
+		},
+		"multiple hosts": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+							"test2.projectcontour.io",
+							"test3.projectcontour.io",
+							"test4.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test2.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test3.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test4.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		"no host defined": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		// If the ServiceName referenced from an HTTPRoute is missing,
+		// the route should not be added.
+		"missing service": {
+			objs: []interface{}{
+				gateway,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// If port is not defined the route will be marked as invalid (#3352).
+		"missing port": {
+			objs: []interface{}{
+				gateway,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        nil,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// Single host with single route containing multiple prefixes to the same service.
+		"insert basic single route with multiple prefixes, single hostname": {
+			objs: []interface{}{
+				gateway,
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app": "contour",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}, {
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/blog",
+								},
+							}, {
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/tech",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							prefixroute("/", service(kuardService)),
+							prefixroute("/blog", service(kuardService)),
+							prefixroute("/tech", service(kuardService))),
+					),
+				},
+			),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+
+			builder := Builder{
+				Source: KubernetesCache{
+					Gateway: types.NamespacedName{
+						Name:      "contour",
+						Namespace: "projectcontour",
+					},
+					FieldLogger: fixture.NewTestLogger(t),
+				},
+				Processors: []Processor{
+					&IngressProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&HTTPProxyProcessor{
+						DisablePermitInsecure: tc.disablePermitInsecure,
+						FallbackCertificate: &types.NamespacedName{
+							Name:      tc.fallbackCertificateName,
+							Namespace: tc.fallbackCertificateNamespace,
+						},
+					},
+					&GatewayAPIProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&ListenerProcessor{},
+				},
+			}
+
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			dag := builder.Build()
+
+			got := make(map[int]*Listener)
+			dag.Visit(listenerMap(got).Visit)
+
+			want := make(map[int]*Listener)
+			for _, v := range tc.want {
+				if l, ok := v.(*Listener); ok {
+					want[l.Port] = l
+				}
+			}
+			assert.Equal(t, want, got)
+		})
+	}
+}
 
 func TestDAGInsert(t *testing.T) {
 	// The DAG is sensitive to ordering, adding an ingress, then a service,
@@ -101,6 +509,649 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Data: map[string][]byte{
 			CACertificateKey: []byte(fixture.CERTIFICATE),
+		},
+	}
+
+	i1V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromInt(8080)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i1aV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.allow-http": "false",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromInt(8080)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i2V1 is functionally identical to i1V1
+	i2V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+			}},
+		},
+	}
+
+	// i2aV1 is missing a http key from the spec.rule.
+	// see issue 606
+	i2aV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				Host: "test1.test.com",
+			}},
+		},
+	}
+
+	// i3V1 is similar to i2V1 but includes a hostname on the ingress rule
+	i3V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host:             "kuard.example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+			}},
+		},
+	}
+	// i4V1 is like i1V1 except it uses a named service port
+	i4V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i5V1 is functionally identical to i2V1
+	i5V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
+	// i6V1 contains two named vhosts which point to the same service
+	// one of those has TLS
+	i6V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host:             "a.example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+			}, {
+				Host:             "b.example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
+	i6aV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.allow-http": "false",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host:             "a.example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+			}, {
+				Host:             "b.example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
+
+	i6bV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host:             "b.example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
+
+	i6cV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-vhosts",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+				"kubernetes.io/ingress.allow-http":         "false",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host:             "b.example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromString("http"))),
+			}},
+		},
+	}
+
+	// i7V1 contains a single vhost with two paths
+	i7V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-paths",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host: "b.example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}, {
+							Path:    "/kuarder",
+							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i8V1 is identical to i7V1 but uses multiple IngressRules
+	i8V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-rules",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host: "b.example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}, {
+				Host: "b.example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/kuarder",
+							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+	// i9V1 is identical to i8V1 but disables non TLS connections
+	i9V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-rules",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.allow-http": "false",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host: "b.example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}, {
+				Host: "b.example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/kuarder",
+							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i10aV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "two-rules",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/tls-minimum-protocol-version": "1.3",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"b.example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host: "b.example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i11V1 has a websocket route
+	i11V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "websocket",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/websocket-routes": "/ws1 , /ws2",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}, {
+							Path:    "/ws1",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i12aV1 has an invalid timeout
+	i12aV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/request-timeout": "peanut",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i12bV1 has a reasonable timeout
+	i12bV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/request-timeout": "1m30s", // 90 seconds y'all
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	// i12cV1 has an unreasonable timeout
+	i12cV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/request-timeout": "infinite",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{HTTP: &networking_v1.HTTPIngressRuleValue{
+					Paths: []networking_v1.HTTPIngressPath{{Path: "/",
+						Backend: *backendv1("kuard", intstr.FromString("http")),
+					}}},
+				}}}},
+	}
+
+	i12dV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/response-timeout": "peanut",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i12eV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/response-timeout": "1m30s", // 90 seconds y'all
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i12fV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/response-timeout": "infinite",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{HTTP: &networking_v1.HTTPIngressRuleValue{
+					Paths: []networking_v1.HTTPIngressPath{{Path: "/",
+						Backend: *backendv1("kuard", intstr.FromString("http")),
+					}}},
+				}}}},
+	}
+
+	// i13_v1 a and b are a pair of ingressesv1 for the same vhost
+	// they represent a tricky way over 'overlaying' routes from one
+	// ingress onto another
+	i13aV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "app",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"ingress.kubernetes.io/force-ssl-redirect": "true",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"example.com"},
+				SecretName: "example-tls",
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *backendv1("app-service", intstr.FromInt(8080)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i13bV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
+							Backend: *backendv1("challenge-service", intstr.FromInt(8009)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i3aV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(80))),
+			}},
+		},
+	}
+
+	i14V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "timeout",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/retry-on":        "gateway-error",
+				"projectcontour.io/num-retries":     "6",
+				"projectcontour.io/per-try-timeout": "10s",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i15V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "regex",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/[^/]+/invoices(/.*|/?)", // issue 1243
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i15InvalidRegexV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "regex",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "^\\/(?!\\/)(.*?)",
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i16V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "wildcards",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				// no hostname
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}, {
+				Host: "*",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromString("http")),
+						}},
+					},
+				},
+			}, {
+				Host: "*.example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	i17V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				Host:             "example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+			}},
 		},
 	}
 
@@ -2817,6 +3868,115 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxyCookieLoadBalancer := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "Cookie",
+				},
+			}},
+		},
+	}
+
+	proxyLoadBalancerHashPolicyHeader := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "RequestHash",
+					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+						{
+							Terminal: true,
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Some-Header",
+							},
+						},
+						{
+							// Lower case but duplicated, should be ignored.
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "x-some-header",
+							},
+						},
+						{
+							HeaderHashOptions: nil,
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Some-Other-Header",
+							},
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "",
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	proxyLoadBalancerHashPolicyHeaderAllInvalid := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "RequestHash",
+					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+						{
+							HeaderHashOptions: nil,
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "",
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
 	// proxy109 has a route that rewrites headers.
 	proxy109 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -2951,6 +4111,28 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 				}},
 			}},
+		},
+	}
+
+	tcpProxyExternalNameService := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
+					Name:     s14.GetName(),
+					Port:     80,
+					Protocol: pointer.StringPtr("tls"),
+				}},
+			},
 		},
 	}
 
@@ -3094,6 +4276,149 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				s1,
 				i5,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ default backend w/o matching service": {
+			objs: []interface{}{
+				i1V1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert ingress w/ default backend": {
+			objs: []interface{}{
+				i1V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ single unnamed backend w/o matching service": {
+			objs: []interface{}{
+				i2V1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert ingress w/ single unnamed backend": {
+			objs: []interface{}{
+				i2V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with missing spec.rule.http key": {
+			objs: []interface{}{
+				i2aV1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert ingress w/ host name and single backend w/o matching service": {
+			objs: []interface{}{
+				i3V1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert ingress w/ host name and single backend": {
+			objs: []interface{}{
+				i3V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert non matching service then ingress w/ default backend": {
+			objs: []interface{}{
+				s2,
+				i1V1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert ingress w/ default backend then matching service with wrong port": {
+			objs: []interface{}{
+				i1V1,
+				s3,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert unnamed ingress w/ single backend then matching service with wrong port": {
+			objs: []interface{}{
+				i2V1,
+				s3,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert ingress w/ default backend then matching service w/ named port": {
+			objs: []interface{}{
+				i4V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert service w/ named port then ingress w/ default backend": {
+			objs: []interface{}{
+				s1,
+				i4V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ single unnamed backend w/ named service port then service": {
+			objs: []interface{}{
+				i5V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert service then ingress w/ single unnamed backend w/ named service port": {
+			objs: []interface{}{
+				s1,
+				i5V1,
 			},
 			want: listeners(
 				&Listener{
@@ -3445,6 +4770,341 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"ingressv1: insert secret then ingress w/o tls": {
+			objs: []interface{}{
+				sec1,
+				i1V1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert service, secret then ingress w/o tls": {
+			objs: []interface{}{
+				s1,
+				sec1,
+				i1V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert secret then ingress w/ tls": {
+			objs: []interface{}{
+				sec1,
+				i3V1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert service, secret then ingress w/ tls": {
+			objs: []interface{}{
+				s1,
+				sec1,
+				i3V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("kuard.example.com", sec1, prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert service w/ secret with w/ blank ca.crt": {
+			objs: []interface{}{
+				s1,
+				sec3, // issue 1644
+				i3V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+					),
+				},
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("kuard.example.com", sec3, prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert invalid secret then ingress w/o tls": {
+			objs: []interface{}{
+				sec2,
+				i1V1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert service, invalid secret then ingress w/o tls": {
+			objs: []interface{}{
+				s1,
+				sec2,
+				i1V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert invalid secret then ingress w/ tls": {
+			objs: []interface{}{
+				sec2,
+				i3V1,
+			},
+			want: listeners(),
+		},
+		"ingressv1: insert service, invalid secret then ingress w/ tls": {
+			objs: []interface{}{
+				s1,
+				sec2,
+				i3V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ two vhosts": {
+			objs: []interface{}{
+				i6V1,
+			},
+			want: nil, // no matching service
+		},
+		"ingressv1: insert ingress w/ two vhosts then matching service": {
+			objs: []interface{}{
+				i6V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("a.example.com", prefixroute("/", service(s1))),
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert service then ingress w/ two vhosts": {
+			objs: []interface{}{
+				s1,
+				i6V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("a.example.com", prefixroute("/", service(s1))),
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ two vhosts then service then secret": {
+			objs: []interface{}{
+				i6V1,
+				s1,
+				sec1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("a.example.com", prefixroute("/", service(s1))),
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert service then secret then ingress w/ two vhosts": {
+			objs: []interface{}{
+				s1,
+				sec1,
+				i6V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("a.example.com", prefixroute("/", service(s1))),
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ two paths then one service": {
+			objs: []interface{}{
+				i7V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("b.example.com",
+							prefixroute("/", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ two paths then services": {
+			objs: []interface{}{
+				i7V1,
+				s2,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("b.example.com",
+							prefixroute("/", service(s1)),
+							prefixroute("/kuarder", service(s2)),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: insert two services then ingress w/ two ingress rules": {
+			objs: []interface{}{
+				s1, s2, i8V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("b.example.com",
+							prefixroute("/", service(s1)),
+							prefixroute("/kuarder", service(s2)),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ two paths httpAllowed: false": {
+			objs: []interface{}{
+				i9V1,
+			},
+			want: []Vertex{},
+		},
+		"ingressv1: insert ingress w/ two paths httpAllowed: false then tls and service": {
+			objs: []interface{}{
+				i9V1,
+				sec1,
+				s1, s2,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("b.example.com", sec1,
+							prefixroute("/", service(s1)),
+							prefixroute("/kuarder", service(s2)),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: insert default ingress httpAllowed: false": {
+			objs: []interface{}{
+				i1aV1,
+			},
+			want: []Vertex{},
+		},
+		"ingressv1: insert default ingress httpAllowed: false then tls and service": {
+			objs: []interface{}{
+				i1aV1, sec1, s1,
+			},
+			want: []Vertex{}, // default ingress cannot be tls
+		},
+		"ingressv1: insert ingress w/ two vhosts httpAllowed: false": {
+			objs: []interface{}{
+				i6aV1,
+			},
+			want: []Vertex{},
+		},
+		"ingressv1: insert ingress w/ two vhosts httpAllowed: false then tls and service": {
+			objs: []interface{}{
+				i6aV1, sec1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("b.example.com", sec1, prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ force-ssl-redirect: true": {
+			objs: []interface{}{
+				i6bV1, sec1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("b.example.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("b.example.com", sec1, routeUpgrade("/", service(s1))),
+					),
+				},
+			),
+		},
+
+		"ingressv1: insert ingress w/ force-ssl-redirect: true and allow-http: false": {
+			objs: []interface{}{
+				i6cV1, sec1, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("b.example.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("b.example.com", sec1, routeUpgrade("/", service(s1))),
+					),
+				},
+			),
+		},
 		"insert httpproxy with tls version 1.2": {
 			objs: []interface{}{
 				proxyMinTLS12, s1, sec1,
@@ -3616,7 +5276,86 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
+		"ingressv1: insert ingress w/ tls min proto annotation": {
+			objs: []interface{}{
+				i10aV1,
+				sec1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("b.example.com", prefixroute("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "b.example.com",
+								routes: routes(
+									prefixroute("/", service(s1)),
+								),
+							},
+							MinTLSVersion: "1.3",
+							Secret:        secret(sec1),
+						},
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ websocket route annotation": {
+			objs: []interface{}{
+				i11V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							prefixroute("/", service(s1)),
+							routeWebsocket("/ws1", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ invalid legacy timeout annotation": {
+			objs: []interface{}{
+				i12aV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
+						}),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ invalid timeout annotation": {
+			objs: []interface{}{
+				i12dV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
+						}),
+					),
+				},
+			),
+		},
 		"insert httpproxy w/ invalid timeoutpolicy": {
 			objs: []interface{}{
 				proxyTimeoutPolicyInvalidResponse,
@@ -3664,7 +5403,46 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
+		"ingressv1: insert ingress w/ valid legacy timeout annotation": {
+			objs: []interface{}{
+				i12bV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
+							TimeoutPolicy: TimeoutPolicy{
+								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
+							},
+						}),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ valid timeout annotation": {
+			objs: []interface{}{
+				i12eV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
+							TimeoutPolicy: TimeoutPolicy{
+								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
+							},
+						}),
+					),
+				},
+			),
+		},
 		"insert httpproxy w/ valid timeoutpolicy": {
 			objs: []interface{}{
 				proxyTimeoutPolicyValidResponse,
@@ -3725,7 +5503,46 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-
+		"ingressv1: insert ingress w/ legacy infinite timeout annotation": {
+			objs: []interface{}{
+				i12cV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
+							TimeoutPolicy: TimeoutPolicy{
+								ResponseTimeout: timeout.DisabledSetting(),
+							},
+						}),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress w/ infinite timeout annotation": {
+			objs: []interface{}{
+				i12fV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
+							TimeoutPolicy: TimeoutPolicy{
+								ResponseTimeout: timeout.DisabledSetting(),
+							},
+						}),
+					),
+				},
+			),
+		},
 		"insert httpproxy w/ infinite timeoutpolicy": {
 			objs: []interface{}{
 				proxyTimeoutPolicyInfiniteResponse,
@@ -3976,6 +5793,187 @@ func TestDAGInsert(t *testing.T) {
 		"insert ingress then service w/ upstream annotations": {
 			objs: []interface{}{
 				i1,
+				s1b,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							prefixroute("/", &Service{
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s1b.Name,
+									ServiceNamespace: s1b.Namespace,
+									ServicePort:      s1b.Spec.Ports[0],
+								},
+								MaxConnections:     9000,
+								MaxPendingRequests: 4096,
+								MaxRequests:        404,
+								MaxRetries:         7,
+							}),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with timeout policy": {
+			objs: []interface{}{
+				i14V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters:           clustermap(s1),
+							RetryPolicy: &RetryPolicy{
+								RetryOn:       "gateway-error",
+								NumRetries:    6,
+								PerTryTimeout: timeout.DurationSetting(10 * time.Second),
+							},
+						}),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with regex route": {
+			objs: []interface{}{
+				i15V1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", &Route{
+							PathMatchCondition: regex("/[^/]+/invoices(/.*|/?)"),
+							Clusters:           clustermap(s1),
+						}),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress with invalid regex route": {
+			objs: []interface{}{
+				i15InvalidRegexV1,
+				s1,
+			},
+			want: listeners(),
+		},
+		// issue 1234
+		"ingressv1: insert ingress with wildcard hostnames": {
+			objs: []interface{}{
+				s1,
+				i16V1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress overlay": {
+			objs: []interface{}{
+				i13aV1, i13bV1, sec13, s13a, s13b,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeUpgrade("/", service(s13a)),
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+						),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("example.com", sec13,
+							routeUpgrade("/", service(s13a)),
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: h2c service annotation": {
+			objs: []interface{}{
+				i3aV1, s3a,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							prefixroute("/", &Service{
+								Protocol: "h2c",
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s3a.Name,
+									ServiceNamespace: s3a.Namespace,
+									ServicePort:      s3a.Spec.Ports[0],
+								},
+							}),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: h2 service annotation": {
+			objs: []interface{}{
+				i3aV1, s3b,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							prefixroute("/", &Service{
+								Protocol: "h2",
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s3b.Name,
+									ServiceNamespace: s3b.Namespace,
+									ServicePort:      s3b.Spec.Ports[0],
+								},
+							}),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: tls service annotation": {
+			objs: []interface{}{
+				i3aV1, s3c,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							prefixroute("/", &Service{
+								Protocol: "tls",
+								Weighted: WeightedService{
+									Weight:           1,
+									ServiceName:      s3c.Name,
+									ServiceNamespace: s3c.Namespace,
+									ServicePort:      s3c.Spec.Ports[0],
+								},
+							}),
+						),
+					),
+				},
+			),
+		},
+		"ingressv1: insert ingress then service w/ upstream annotations": {
+			objs: []interface{}{
+				i1V1,
 				s1b,
 			},
 			want: listeners(
@@ -5038,19 +7036,19 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				sec1,
 				s9,
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "nginx",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"example.com"},
 							SecretName: s1.Name,
 						}},
-						Rules: []v1beta1.IngressRule{{
+						Rules: []networking_v1.IngressRule{{
 							Host:             "example.com",
-							IngressRuleValue: ingressrulevalue(backend(s9.Name, intstr.FromInt(80))),
+							IngressRuleValue: ingressrulev1value(backendv1(s9.Name, intstr.FromInt(80))),
 						}},
 					},
 				},
@@ -5229,6 +7227,22 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"ingressv1: Ingress then HTTPProxy with identical details, except referencing s2a": {
+			objs: []interface{}{
+				i17V1,
+				proxy1f,
+				s1,
+				s2a,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s2a))),
+					),
+				},
+			),
+		},
 		"insert proxy with externalName service": {
 			objs: []interface{}{
 				proxyExternalNameService,
@@ -5253,6 +7267,42 @@ func TestDAGInsert(t *testing.T) {
 								SNI: "externalservice.io",
 							}},
 						}),
+					),
+				},
+			),
+		},
+		"insert tcp proxy with externalName service": {
+			objs: []interface{}{
+				tcpProxyExternalNameService,
+				s14,
+				sec1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "example.com",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: []*Cluster{{
+									Upstream: &Service{
+										ExternalName: "externalservice.io",
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s14.Name,
+											ServiceNamespace: s14.Namespace,
+											ServicePort:      s14.Spec.Ports[0],
+										},
+									},
+									Protocol: "tls",
+									SNI:      "externalservice.io",
+								}},
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+						},
 					),
 				},
 			),
@@ -5404,6 +7454,85 @@ func TestDAGInsert(t *testing.T) {
 								Set: map[string]string{
 									"X-Header": "",
 								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with cookie load balancing strategy": {
+			objs: []interface{}{
+				proxyCookieLoadBalancer,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters: []*Cluster{
+								{Upstream: service(s9), LoadBalancerPolicy: "Cookie"},
+							},
+							RequestHashPolicies: []RequestHashPolicy{
+								{
+									CookieHashOptions: &CookieHashOptions{
+										CookieName: "X-Contour-Session-Affinity",
+										TTL:        time.Duration(0),
+										Path:       "/",
+									},
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with load balancer request header hash policies": {
+			objs: []interface{}{
+				proxyLoadBalancerHashPolicyHeader,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters: []*Cluster{
+								{Upstream: service(s9), LoadBalancerPolicy: "RequestHash"},
+							},
+							RequestHashPolicies: []RequestHashPolicy{
+								{
+									Terminal: true,
+									HeaderHashOptions: &HeaderHashOptions{
+										HeaderName: "X-Some-Header",
+									},
+								},
+								{
+									HeaderHashOptions: &HeaderHashOptions{
+										HeaderName: "X-Some-Other-Header",
+									},
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with all invalid request header hash policies": {
+			objs: []interface{}{
+				proxyLoadBalancerHashPolicyHeaderAllInvalid,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefix("/"),
+							Clusters: []*Cluster{
+								{Upstream: service(s9), LoadBalancerPolicy: "RoundRobin"},
 							},
 						}),
 					),
@@ -5927,10 +8056,43 @@ func backend(name string, port intstr.IntOrString) *v1beta1.IngressBackend {
 	}
 }
 
+func backendv1(name string, port intstr.IntOrString) *networking_v1.IngressBackend {
+
+	var v1port networking_v1.ServiceBackendPort
+
+	switch port.Type {
+	case intstr.Int:
+		v1port = networking_v1.ServiceBackendPort{
+			Number: port.IntVal,
+		}
+	case intstr.String:
+		v1port = networking_v1.ServiceBackendPort{
+			Name: port.StrVal,
+		}
+	}
+
+	return &networking_v1.IngressBackend{
+		Service: &networking_v1.IngressServiceBackend{
+			Name: name,
+			Port: v1port,
+		},
+	}
+}
+
 func ingressrulevalue(backend *v1beta1.IngressBackend) v1beta1.IngressRuleValue {
 	return v1beta1.IngressRuleValue{
 		HTTP: &v1beta1.HTTPIngressRuleValue{
 			Paths: []v1beta1.HTTPIngressPath{{
+				Backend: *backend,
+			}},
+		},
+	}
+}
+
+func ingressrulev1value(backend *networking_v1.IngressBackend) networking_v1.IngressRuleValue {
+	return networking_v1.IngressRuleValue{
+		HTTP: &networking_v1.HTTPIngressRuleValue{
+			Paths: []networking_v1.HTTPIngressPath{{
 				Backend: *backend,
 			}},
 		},
@@ -6087,50 +8249,39 @@ func TestDAGRootNamespaces(t *testing.T) {
 
 func TestHttpPaths(t *testing.T) {
 	tests := map[string]struct {
-		rule v1beta1.IngressRule
-		want []v1beta1.HTTPIngressPath
+		rule networking_v1.IngressRule
+		want []networking_v1.HTTPIngressPath
 	}{
 		"zero value": {
-			rule: v1beta1.IngressRule{},
+			rule: networking_v1.IngressRule{},
 			want: nil,
 		},
 		"empty paths": {
-			rule: v1beta1.IngressRule{
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{},
+			rule: networking_v1.IngressRule{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{},
 				},
 			},
 			want: nil,
 		},
 		"several paths": {
-			rule: v1beta1.IngressRule{
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromString("http"),
-							},
+			rule: networking_v1.IngressRule{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1("kuard", intstr.FromString("http")),
 						}, {
-							Path: "/kuarder",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuarder",
-								ServicePort: intstr.FromInt(8080),
-							},
+							Path:    "/kuarder",
+							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
 						}},
 					},
 				},
 			},
-			want: []v1beta1.HTTPIngressPath{{
-				Backend: v1beta1.IngressBackend{
-					ServiceName: "kuard",
-					ServicePort: intstr.FromString("http"),
-				},
+			want: []networking_v1.HTTPIngressPath{{
+				Backend: *backendv1("kuard", intstr.FromString("http")),
 			}, {
-				Path: "/kuarder",
-				Backend: v1beta1.IngressBackend{ServiceName: "kuarder",
-					ServicePort: intstr.FromInt(8080),
-				},
+				Path:    "/kuarder",
+				Backend: *backendv1("kuarder", intstr.FromInt(8080)),
 			}},
 		},
 	}
@@ -6260,6 +8411,7 @@ func TestValidateHeaderAlteration(t *testing.T) {
 	tests := []struct {
 		name    string
 		in      *contour_api_v1.HeadersPolicy
+		dyn     map[string]string
 		want    *HeadersPolicy
 		wantErr error
 	}{{
@@ -6275,6 +8427,9 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Value: "blah",
 			}},
 			Remove: []string{"K-Nada"},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
 		},
 		want: &HeadersPolicy{
 			Set: map[string]string{
@@ -6294,11 +8449,17 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Value: "blah",
 			}},
 		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
 		wantErr: errors.New(`duplicate header addition: "K-Foo"`),
 	}, {
 		name: "duplicate remove",
 		in: &contour_api_v1.HeadersPolicy{
 			Remove: []string{"K-Foo", "k-foo"},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
 		},
 		wantErr: errors.New(`duplicate header removal: "K-Foo"`),
 	}, {
@@ -6309,11 +8470,17 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Value: "bar",
 			}},
 		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
 		wantErr: errors.New(`invalid set header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
 	}, {
 		name: "invalid remove header",
 		in: &contour_api_v1.HeadersPolicy{
 			Remove: []string{"  K-Foo"},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
 		},
 		wantErr: errors.New(`invalid remove header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
 	}, {
@@ -6323,6 +8490,9 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Name:  "Host",
 				Value: "bar",
 			}},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
 		},
 		wantErr: errors.New(`rewriting "Host" header is not supported`),
 	}, {
@@ -6339,6 +8509,9 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				Value: "%DOWNSTREAM_LOCAL_ADDRESS%", // This is a known Envoy dynamic header
 			}},
 		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
 		want: &HeadersPolicy{
 			Set: map[string]string{
 				"K-Foo":           "100%%",
@@ -6346,11 +8519,45 @@ func TestValidateHeaderAlteration(t *testing.T) {
 				"Lot-Of-Percents": "%%%%%%%%%%",
 			},
 		},
+	}, {
+		name: "dynamic service headers",
+		in: &contour_api_v1.HeadersPolicy{
+			Set: []contour_api_v1.HeaderValue{{
+				Name:  "l5d-dst-override",
+				Value: "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
+			}},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE":    "myns",
+			"CONTOUR_SERVICE_NAME": "myservice",
+			"CONTOUR_SERVICE_PORT": "80",
+		},
+		want: &HeadersPolicy{
+			Set: map[string]string{
+				"L5d-Dst-Override": "myservice.myns.svc.cluster.local:80",
+			},
+		},
+	}, {
+		name: "dynamic service headers without service name and port",
+		in: &contour_api_v1.HeadersPolicy{
+			Set: []contour_api_v1.HeaderValue{{
+				Name:  "l5d-dst-override",
+				Value: "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
+			}},
+		},
+		dyn: map[string]string{
+			"CONTOUR_NAMESPACE": "myns",
+		},
+		want: &HeadersPolicy{
+			Set: map[string]string{
+				"L5d-Dst-Override": "%%CONTOUR_SERVICE_NAME%%.myns.svc.cluster.local:%%CONTOUR_SERVICE_PORT%%",
+			},
+		},
 	}}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(test.in)
+			got, gotErr := headersPolicyService(test.in, test.dyn)
 			assert.Equal(t, test.want, got)
 			assert.Equal(t, test.wantErr, gotErr)
 		})

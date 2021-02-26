@@ -50,10 +50,7 @@ rules:
 - apiGroups:
   - networking.k8s.io
   resources:
-  - gatewayclasses
-  - gateways
-  - httproutes
-  - tcproutes
+  - ingressclasses
   verbs:
   - get
   - list
@@ -74,6 +71,17 @@ rules:
   - create
   - get
   - update
+- apiGroups:
+  - networking.x-k8s.io
+  resources:
+  - backendpolicies
+  - gateways
+  - httproutes
+  - tlsroutes
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - projectcontour.io
   resources:

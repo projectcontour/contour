@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/cache"
-	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 func TestConvertUnstructured(t *testing.T) {
@@ -181,7 +181,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	gatewayClassUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x.k8s.io/v1alpha1",
+			"apiVersion": "networking.x-k8s.io/v1alpha1",
 			"kind":       "GatewayClass",
 			"metadata": map[string]interface{}{
 				"name":      "gatewayclass",
@@ -190,7 +190,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	gatewayclass1 := &serviceapis.GatewayClass{
+	gatewayclass1 := &gatewayapi_v1alpha1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gatewayclass",
 			Namespace: "default",
@@ -199,7 +199,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	gatewayUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x.k8s.io/v1alpha1",
+			"apiVersion": "networking.x-k8s.io/v1alpha1",
 			"kind":       "Gateway",
 			"metadata": map[string]interface{}{
 				"name":      "gateway",
@@ -208,7 +208,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	gateway1 := &serviceapis.Gateway{
+	gateway1 := &gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gateway",
 			Namespace: "default",
@@ -217,7 +217,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	httpRouteUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x.k8s.io/v1alpha1",
+			"apiVersion": "networking.x-k8s.io/v1alpha1",
 			"kind":       "HTTPRoute",
 			"metadata": map[string]interface{}{
 				"name":      "httproute",
@@ -226,7 +226,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	hpr1 := &serviceapis.HTTPRoute{
+	hpr1 := &gatewayapi_v1alpha1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "httproute",
 			Namespace: "default",
@@ -235,8 +235,8 @@ func TestConvertUnstructured(t *testing.T) {
 
 	tcpRouteUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x.k8s.io/v1alpha1",
-			"kind":       "TcpRoute",
+			"apiVersion": "networking.x-k8s.io/v1alpha1",
+			"kind":       "TCPRoute",
 			"metadata": map[string]interface{}{
 				"name":      "tcproute",
 				"namespace": "default",
@@ -244,7 +244,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	tr1 := &serviceapis.TcpRoute{
+	tr1 := &gatewayapi_v1alpha1.TCPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tcproute",
 			Namespace: "default",

@@ -20,10 +20,6 @@ set -o pipefail
 
 readonly IMG="docker.io/projectcontour/contour:$NEWVERS"
 
-# If you are running this script, there's a good chance you switched
-# branches, do ensure the vendor cache is current.
-go mod vendor
-
 if [ -n "$(git tag --list "$NEWVERS")" ]; then
     printf "%s: tag '%s' already exists\n" "$PROGNAME" "$NEWVERS"
     exit 1

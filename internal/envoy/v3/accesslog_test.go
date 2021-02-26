@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	_struct "github.com/golang/protobuf/ptypes/struct"
@@ -63,10 +64,14 @@ func TestJSONFileAccessLog(t *testing.T) {
 				ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
 						Path: "/dev/stdout",
-						AccessLogFormat: &envoy_file_v3.FileAccessLog_JsonFormat{
-							JsonFormat: &_struct.Struct{
-								Fields: map[string]*_struct.Value{
-									"@timestamp": sv("%START_TIME%"),
+						AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
+							LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
+								Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
+									JsonFormat: &_struct.Struct{
+										Fields: map[string]*_struct.Value{
+											"@timestamp": sv("%START_TIME%"),
+										},
+									},
 								},
 							},
 						},
@@ -89,14 +94,18 @@ func TestJSONFileAccessLog(t *testing.T) {
 				ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
 					TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
 						Path: "/dev/stdout",
-						AccessLogFormat: &envoy_file_v3.FileAccessLog_JsonFormat{
-							JsonFormat: &_struct.Struct{
-								Fields: map[string]*_struct.Value{
-									"@timestamp": sv("%START_TIME%"),
-									"method":     sv("%REQ(:METHOD)%"),
-									"custom1":    sv("%REQ(X-CUSTOM-HEADER)%"),
-									"custom2":    sv("%DURATION%.0"),
-									"custom3":    sv("ST=%START_TIME(%s.%6f)%"),
+						AccessLogFormat: &envoy_file_v3.FileAccessLog_LogFormat{
+							LogFormat: &envoy_config_core_v3.SubstitutionFormatString{
+								Format: &envoy_config_core_v3.SubstitutionFormatString_JsonFormat{
+									JsonFormat: &_struct.Struct{
+										Fields: map[string]*_struct.Value{
+											"@timestamp": sv("%START_TIME%"),
+											"method":     sv("%REQ(:METHOD)%"),
+											"custom1":    sv("%REQ(X-CUSTOM-HEADER)%"),
+											"custom2":    sv("%DURATION%.0"),
+											"custom3":    sv("ST=%START_TIME(%s.%6f)%"),
+										},
+									},
 								},
 							},
 						},

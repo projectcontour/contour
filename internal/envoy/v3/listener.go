@@ -26,6 +26,7 @@ import (
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	envoy_extensions_filters_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
@@ -146,10 +147,13 @@ type httpConnectionManagerBuilder struct {
 	requestTimeout                timeout.Setting
 	connectionIdleTimeout         timeout.Setting
 	streamIdleTimeout             timeout.Setting
+	delayedCloseTimeout           timeout.Setting
 	maxConnectionDuration         timeout.Setting
 	connectionShutdownGracePeriod timeout.Setting
 	filters                       []*http.HttpFilter
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
+	allowChunkedLength            bool
+	numTrustedHops                uint32
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -199,6 +203,12 @@ func (b *httpConnectionManagerBuilder) StreamIdleTimeout(timeout timeout.Setting
 	return b
 }
 
+// DelayedCloseTimeout sets the delayed close timeout on the connection manager.
+func (b *httpConnectionManagerBuilder) DelayedCloseTimeout(timeout timeout.Setting) *httpConnectionManagerBuilder {
+	b.delayedCloseTimeout = timeout
+	return b
+}
+
 // MaxConnectionDuration sets the max connection duration on the connection manager.
 func (b *httpConnectionManagerBuilder) MaxConnectionDuration(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.maxConnectionDuration = timeout
@@ -208,6 +218,16 @@ func (b *httpConnectionManagerBuilder) MaxConnectionDuration(timeout timeout.Set
 // ConnectionShutdownGracePeriod sets the drain timeout on the connection manager.
 func (b *httpConnectionManagerBuilder) ConnectionShutdownGracePeriod(timeout timeout.Setting) *httpConnectionManagerBuilder {
 	b.connectionShutdownGracePeriod = timeout
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) AllowChunkedLength(enabled bool) *httpConnectionManagerBuilder {
+	b.allowChunkedLength = enabled
+	return b
+}
+
+func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectionManagerBuilder {
+	b.numTrustedHops = num
 	return b
 }
 
@@ -244,6 +264,18 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 				TypedConfig: &any.Any{
 					TypeUrl: HTTPFilterCORS,
 				},
+			},
+		},
+		&http.HttpFilter{
+			Name: "local_ratelimit",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(
+					&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+						StatPrefix: "http",
+						// since no token bucket is defined here, the filter is disabled
+						// globally but can be enabled on a per-vhost/route basis.
+					},
+				),
 			},
 		},
 		&http.HttpFilter{
@@ -351,7 +383,8 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		HttpProtocolOptions: &envoy_core_v3.Http1ProtocolOptions{
 			// Enable support for HTTP/1.0 requests that carry
 			// a Host: header. See #537.
-			AcceptHttp_10: true,
+			AcceptHttp_10:      true,
+			AllowChunkedLength: b.allowChunkedLength,
 		},
 		UseRemoteAddress: protobuf.Bool(true),
 		NormalizePath:    protobuf.Bool(true),
@@ -360,9 +393,11 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		PreserveExternalRequestId: true,
 		MergeSlashes:              true,
 
-		RequestTimeout:    envoy.Timeout(b.requestTimeout),
-		StreamIdleTimeout: envoy.Timeout(b.streamIdleTimeout),
-		DrainTimeout:      envoy.Timeout(b.connectionShutdownGracePeriod),
+		RequestTimeout:      envoy.Timeout(b.requestTimeout),
+		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),
+		DrainTimeout:        envoy.Timeout(b.connectionShutdownGracePeriod),
+		DelayedCloseTimeout: envoy.Timeout(b.delayedCloseTimeout),
+		XffNumTrustedHops:   b.numTrustedHops,
 	}
 
 	// Max connection duration is infinite/disabled by default in Envoy, so if the timeout setting
@@ -395,16 +430,18 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route, access log, and client request timeout.
-func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration) *envoy_listener_v3.Filter {
+func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration, xffNumTrustedHops uint32) *envoy_listener_v3.Filter {
 	return HTTPConnectionManagerBuilder().
 		RouteConfigName(routename).
 		MetricsPrefix(routename).
 		AccessLoggers(accesslogger).
 		RequestTimeout(timeout.DurationSetting(requestTimeout)).
+		NumTrustedHops(xffNumTrustedHops).
 		DefaultFilters().
 		Get()
 }
 
+// HTTPConnectionManagerBuilder creates a new HTTP connection manager builder.
 func HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
 	return &httpConnectionManagerBuilder{}
 }

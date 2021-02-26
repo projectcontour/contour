@@ -82,11 +82,7 @@ type serveContext struct {
 	// DisableLeaderElection can only be set by command line flag.
 	DisableLeaderElection bool
 
-	// Should Contour register to watch the new service-apis types?
-	// By default this value is false, meaning Contour will not do anything with any of the new
-	// types.
-	// If the value is true, Contour will register for all the service-apis types
-	// (GatewayClass, Gateway, HTTPRoute, TCPRoute, and any more as they are added)
+	// DEPRECATED: Configure the Gateway.Name & Gateway.Namespace in the configuration file.
 	UseExperimentalServiceAPITypes bool `yaml:"-"`
 }
 

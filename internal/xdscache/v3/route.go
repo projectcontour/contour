@@ -148,6 +148,12 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 				rt.ResponseHeadersToAdd = envoy_v3.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
 				rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
 			}
+			if route.RateLimitPolicy != nil && route.RateLimitPolicy.Local != nil {
+				if rt.TypedPerFilterConfig == nil {
+					rt.TypedPerFilterConfig = map[string]*any.Any{}
+				}
+				rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local, "vhost."+vh.Name)
+			}
 			routes = append(routes, rt)
 		}
 	})
@@ -155,11 +161,19 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 	if len(routes) > 0 {
 		sortRoutes(routes)
 
-		var evh *envoy_route_v3.VirtualHost
-		if cp := envoy_v3.CORSPolicy(vh.CORSPolicy); cp != nil {
-			evh = envoy_v3.CORSVirtualHost(vh.Name, cp, routes...)
-		} else {
-			evh = envoy_v3.VirtualHost(vh.Name, routes...)
+		evh := envoy_v3.VirtualHost(vh.Name, routes...)
+		if vh.CORSPolicy != nil {
+			evh.Cors = envoy_v3.CORSPolicy(vh.CORSPolicy)
+		}
+		if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Local != nil {
+			if evh.TypedPerFilterConfig == nil {
+				evh.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+			evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
+		}
+
+		if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Global != nil {
+			evh.RateLimits = envoy_v3.GlobalRateLimits(vh.RateLimitPolicy.Global.Descriptors)
 		}
 
 		v.routes[ENVOY_HTTP_LISTENER].VirtualHosts = append(v.routes[ENVOY_HTTP_LISTENER].VirtualHosts, evh)
@@ -187,19 +201,27 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			rt.ResponseHeadersToAdd = envoy_v3.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
 			rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
 		}
+		if route.RateLimitPolicy != nil && route.RateLimitPolicy.Local != nil {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local, "vhost."+svh.Name)
+		}
 
 		// If authorization is enabled on this host, we may need to set per-route filter overrides.
 		if svh.AuthorizationService != nil {
 			// Apply per-route authorization policy modifications.
 			if route.AuthDisabled {
-				rt.TypedPerFilterConfig = map[string]*any.Any{
-					"envoy.filters.http.ext_authz": envoy_v3.RouteAuthzDisabled(),
+				if rt.TypedPerFilterConfig == nil {
+					rt.TypedPerFilterConfig = map[string]*any.Any{}
 				}
+				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = envoy_v3.RouteAuthzDisabled()
 			} else {
 				if len(route.AuthContext) > 0 {
-					rt.TypedPerFilterConfig = map[string]*any.Any{
-						"envoy.filters.http.ext_authz": envoy_v3.RouteAuthzContext(route.AuthContext),
+					if rt.TypedPerFilterConfig == nil {
+						rt.TypedPerFilterConfig = map[string]*any.Any{}
 					}
+					rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = envoy_v3.RouteAuthzContext(route.AuthContext)
 				}
 			}
 		}
@@ -216,11 +238,18 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			v.routes[name] = envoy_v3.RouteConfiguration(name)
 		}
 
-		var evh *envoy_route_v3.VirtualHost
-		if cp := envoy_v3.CORSPolicy(svh.CORSPolicy); cp != nil {
-			evh = envoy_v3.CORSVirtualHost(svh.VirtualHost.Name, cp, routes...)
-		} else {
-			evh = envoy_v3.VirtualHost(svh.VirtualHost.Name, routes...)
+		evh := envoy_v3.VirtualHost(svh.VirtualHost.Name, routes...)
+		if svh.CORSPolicy != nil {
+			evh.Cors = envoy_v3.CORSPolicy(svh.CORSPolicy)
+		}
+		if svh.RateLimitPolicy != nil && svh.RateLimitPolicy.Local != nil {
+			if evh.TypedPerFilterConfig == nil {
+				evh.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+			evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(svh.RateLimitPolicy.Local, "vhost."+svh.Name)
+		}
+		if svh.RateLimitPolicy != nil && svh.RateLimitPolicy.Global != nil {
+			evh.RateLimits = envoy_v3.GlobalRateLimits(svh.RateLimitPolicy.Global.Descriptors)
 		}
 
 		v.routes[name].VirtualHosts = append(v.routes[name].VirtualHosts, evh)
@@ -234,11 +263,18 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 				v.routes[ENVOY_FALLBACK_ROUTECONFIG] = envoy_v3.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG)
 			}
 
-			var fvh *envoy_route_v3.VirtualHost
-			if cp := envoy_v3.CORSPolicy(svh.CORSPolicy); cp != nil {
-				fvh = envoy_v3.CORSVirtualHost(svh.Name, cp, routes...)
-			} else {
-				fvh = envoy_v3.VirtualHost(svh.Name, routes...)
+			fvh := envoy_v3.VirtualHost(svh.Name, routes...)
+			if svh.CORSPolicy != nil {
+				fvh.Cors = envoy_v3.CORSPolicy(svh.CORSPolicy)
+			}
+			if svh.RateLimitPolicy != nil && svh.RateLimitPolicy.Local != nil {
+				if fvh.TypedPerFilterConfig == nil {
+					fvh.TypedPerFilterConfig = map[string]*any.Any{}
+				}
+				fvh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(svh.RateLimitPolicy.Local, "vhost."+svh.Name)
+			}
+			if svh.RateLimitPolicy != nil && svh.RateLimitPolicy.Global != nil {
+				fvh.RateLimits = envoy_v3.GlobalRateLimits(svh.RateLimitPolicy.Global.Descriptors)
 			}
 
 			v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts = append(v.routes[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts, fvh)

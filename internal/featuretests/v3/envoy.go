@@ -90,14 +90,20 @@ func externalNameCluster(name, servicename, statName, externalName string, port 
 	})
 }
 
-func routeCluster(cluster string) *envoy_route_v3.Route_Route {
-	return &envoy_route_v3.Route_Route{
+func routeCluster(cluster string, opts ...func(*envoy_route_v3.Route_Route)) *envoy_route_v3.Route_Route {
+	r := &envoy_route_v3.Route_Route{
 		Route: &envoy_route_v3.RouteAction{
 			ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
 				Cluster: cluster,
 			},
 		},
 	}
+
+	for _, o := range opts {
+		o(r)
+	}
+
+	return r
 }
 
 func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
@@ -251,6 +257,25 @@ func withSessionAffinity(route *envoy_route_v3.Route_Route) *envoy_route_v3.Rout
 	return route
 }
 
+type headerTerminalPair struct {
+	headerName string
+	terminal   bool
+}
+
+func withRequestHashPolicyHeader(route *envoy_route_v3.Route_Route, headerOptions ...headerTerminalPair) *envoy_route_v3.Route_Route {
+	for _, htp := range headerOptions {
+		route.Route.HashPolicy = append(route.Route.HashPolicy, &envoy_route_v3.RouteAction_HashPolicy{
+			Terminal: htp.terminal,
+			PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Header_{
+				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+					HeaderName: htp.headerName,
+				},
+			},
+		})
+	}
+	return route
+}
+
 func withRedirect() *envoy_route_v3.Route_Redirect {
 	return &envoy_route_v3.Route_Redirect{
 		Redirect: &envoy_route_v3.RedirectAction{
@@ -308,6 +333,7 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_listener_v3.
 		envoy_v3.DownstreamTLSContext(
 			&dag.Secret{Object: secret},
 			envoy_tls_v3.TlsParameters_TLSv1_2,
+			nil,
 			peerValidationContext,
 			alpn...),
 		envoy_v3.Filters(filter),
@@ -320,6 +346,7 @@ func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *da
 		envoy_v3.DownstreamTLSContext(
 			&dag.Secret{Object: fallbackSecret},
 			envoy_tls_v3.TlsParameters_TLSv1_2,
+			nil,
 			peerValidationContext,
 			alpn...),
 		envoy_v3.Filters(
@@ -390,7 +417,7 @@ func defaultHTTPListener() *envoy_listener_v3.Listener {
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 		FilterChains: envoy_v3.FilterChains(
-			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 		),
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}

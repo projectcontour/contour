@@ -249,15 +249,87 @@ func extInconsistentProto(_ *testing.T, rh cache.ResourceEventHandler, c *Contou
 	})
 }
 
+// "Cookie" and "RequestHash" policies are not valid on ExtensionService.
+func extInvalidLoadBalancerPolicy(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+	ext := &v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("ns/ext"),
+		Spec: v1alpha1.ExtensionServiceSpec{
+			Services: []v1alpha1.ExtensionServiceTarget{
+				{Name: "svc1", Port: 8081},
+				{Name: "svc2", Port: 8082},
+			},
+			LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+				Strategy: "Cookie",
+			},
+		},
+	}
+
+	rh.OnAdd(ext)
+
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+		Resources: resources(t,
+			DefaultCluster(
+				// Default load balancer policy should be set as we were passed
+				// an invalid value, we can assert we get a basic cluster.
+				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
+				&envoy_cluster_v3.Cluster{
+					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
+						&envoy_v3_tls.UpstreamTlsContext{
+							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+								AlpnProtocols: []string{"h2"},
+							},
+						},
+					),
+				},
+			),
+		),
+	})
+
+	rh.OnUpdate(ext, &v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("ns/ext"),
+		Spec: v1alpha1.ExtensionServiceSpec{
+			Services: []v1alpha1.ExtensionServiceTarget{
+				{Name: "svc1", Port: 8081},
+				{Name: "svc2", Port: 8082},
+			},
+			LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+				Strategy: "RequestHash",
+			},
+		},
+	})
+
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+		Resources: resources(t,
+			DefaultCluster(
+				// Default load balancer policy should be set as we were passed
+				// an invalid value, we can assert we get a basic cluster.
+				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
+				&envoy_cluster_v3.Cluster{
+					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
+						&envoy_v3_tls.UpstreamTlsContext{
+							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+								AlpnProtocols: []string{"h2"},
+							},
+						},
+					),
+				},
+			),
+		),
+	})
+}
+
 func TestExtensionService(t *testing.T) {
 	subtests := map[string]func(*testing.T, cache.ResourceEventHandler, *Contour){
-		"Basic":              extBasic,
-		"Cleartext":          extCleartext,
-		"UpstreamValidation": extUpstreamValidation,
-		"ExternalName":       extExternalName,
-		"MissingService":     extMissingService,
-		"InconsistentProto":  extInconsistentProto,
-		"InvalidTimeout":     extInvalidTimeout,
+		"Basic":                     extBasic,
+		"Cleartext":                 extCleartext,
+		"UpstreamValidation":        extUpstreamValidation,
+		"ExternalName":              extExternalName,
+		"MissingService":            extMissingService,
+		"InconsistentProto":         extInconsistentProto,
+		"InvalidTimeout":            extInvalidTimeout,
+		"InvalidLoadBalancerPolicy": extInvalidLoadBalancerPolicy,
 	}
 
 	for n, f := range subtests {

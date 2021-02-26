@@ -24,11 +24,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	serviceapis "sigs.k8s.io/service-apis/api/v1alpha1"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 func TestKubernetesCacheInsert(t *testing.T) {
@@ -646,26 +647,26 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert service-apis Gatewayclass": {
-			obj: &serviceapis.GatewayClass{
+		"insert gateway-api Gateway": {
+			obj: &gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gatewayclass",
-					Namespace: "default",
+					Name:      "contour",
+					Namespace: "projectcontour",
 				},
 			},
 			want: true,
 		},
-		"insert service-apis Gateway": {
-			obj: &serviceapis.Gateway{
+		"insert invalid gateway-api Gateway": {
+			obj: &gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gateway",
-					Namespace: "default",
+					Name:      "another",
+					Namespace: "controller",
 				},
 			},
-			want: true,
+			want: false,
 		},
-		"insert service-apis HTTPRoute": {
-			obj: &serviceapis.HTTPRoute{
+		"insert gateway-api HTTPRoute": {
+			obj: &gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
@@ -673,10 +674,19 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert service-apis TcPRoute": {
-			obj: &serviceapis.TcpRoute{
+		"insert gateway-api TLSRoute": {
+			obj: &gatewayapi_v1alpha1.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "tcproute",
+					Name:      "tlsroute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert gateway-api BackendPolicy": {
+			obj: &gatewayapi_v1alpha1.BackendPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "backendpolicy",
 					Namespace: "default",
 				},
 			},
@@ -707,6 +717,10 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				ConfiguredSecretRefs: []*types.NamespacedName{
 					{Name: "secretReferredByConfigFile", Namespace: "default"}},
 				FieldLogger: fixture.NewTestLogger(t),
+				Gateway: types.NamespacedName{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
 			}
 			for _, p := range tc.pre {
 				cache.Insert(p)
@@ -721,6 +735,10 @@ func TestKubernetesCacheRemove(t *testing.T) {
 	cache := func(objs ...interface{}) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
+			Gateway: types.NamespacedName{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
 		}
 		for _, o := range objs {
 			cache.Insert(o)
@@ -777,6 +795,21 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			}),
 			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ingress",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove ingressv1": {
+			cache: cache(&networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "ingress",
+					Namespace: "default",
+				},
+			}),
+			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
@@ -841,44 +874,29 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: false,
 		},
-		"remove service-apis Gatewayclass": {
-			cache: cache(&serviceapis.GatewayClass{
+		"remove gateway-api Gateway": {
+			cache: cache(&gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gatewayclass",
-					Namespace: "default",
+					Name:      "contour",
+					Namespace: "projectcontour",
 				},
 			}),
-			obj: &serviceapis.GatewayClass{
+			obj: &gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gatewayclass",
-					Namespace: "default",
+					Name:      "contour",
+					Namespace: "projectcontour",
 				},
 			},
 			want: true,
 		},
-		"remove service-apis Gateway": {
-			cache: cache(&serviceapis.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gateway",
-					Namespace: "default",
-				},
-			}),
-			obj: &serviceapis.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "gateway",
-					Namespace: "default",
-				},
-			},
-			want: true,
-		},
-		"remove service-apis HTTPRoute": {
-			cache: cache(&serviceapis.HTTPRoute{
+		"remove gateway-api HTTPRoute": {
+			cache: cache(&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
 				},
 			}),
-			obj: &serviceapis.HTTPRoute{
+			obj: &gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
@@ -886,16 +904,31 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			},
 			want: true,
 		},
-		"remove service-apis TcpRoute": {
-			cache: cache(&serviceapis.TcpRoute{
+		"remove gateway-api TLSRoute": {
+			cache: cache(&gatewayapi_v1alpha1.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "tcproute",
+					Name:      "tlsroute",
 					Namespace: "default",
 				},
 			}),
-			obj: &serviceapis.TcpRoute{
+			obj: &gatewayapi_v1alpha1.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "tcproute",
+					Name:      "tlsroute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove gateway-api BackendPolicy": {
+			cache: cache(&gatewayapi_v1alpha1.BackendPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "backendpolicy",
+					Namespace: "default",
+				},
+			}),
+			obj: &gatewayapi_v1alpha1.BackendPolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "backendpolicy",
 					Namespace: "default",
 				},
 			},

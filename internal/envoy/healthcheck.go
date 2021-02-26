@@ -15,8 +15,8 @@ package envoy
 
 import "time"
 
+// Default healthcheck / lb algorithm values
 const (
-	// Default healthcheck / lb algorithm values
 	HCTimeout            = 2 * time.Second
 	HCInterval           = 10 * time.Second
 	HCUnhealthyThreshold = 3

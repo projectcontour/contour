@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ratelimit-config
+  namespace: projectcontour
+data:
+  ratelimit-config.yaml: |
+    domain: contour
+    descriptors:
+      # requests with a descriptor of ["generic_key": "foo"]
+      # are limited to one per minute.
+      - key: generic_key
+        value: foo
+        rate_limit:
+          unit: minute
+          requests_per_unit: 1
+
+      # each unique remote address (i.e. client IP)
+      # is limited to one request per minute.
+      - key: remote_address
+        rate_limit:
+          unit: minute
+          requests_per_unit: 3

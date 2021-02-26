@@ -23,7 +23,6 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/status"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -79,16 +78,16 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 
 	rh.OnAdd(proxy)
 
-	ingress_http := &envoy_listener_v3.Listener{
+	ingressHTTP := &envoy_listener_v3.Listener{
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 		FilterChains: envoy_v3.FilterChains(
-			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0),
+			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
 		),
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}
 
-	ingress_https := &envoy_listener_v3.Listener{
+	ingressHTTPS := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 		ListenerFilters: envoy_v3.ListenerFilters(
@@ -110,13 +109,11 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			ingress_http,
-			ingress_https,
+			ingressHTTP,
+			ingressHTTPS,
 			staticListener(),
 		),
 		TypeUrl: listenerType,
-	}).Status(proxy).Like(
-		contour_api_v1.HTTPProxyStatus{CurrentStatus: string(status.ProxyStatusValid)},
-	)
+	}).Status(proxy).IsValid()
 
 }

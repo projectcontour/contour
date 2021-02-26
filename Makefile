@@ -82,7 +82,7 @@ export GO111MODULE=on
 check: install check-test check-test-race ## Install and run tests
 
 .PHONY: checkall
-checkall: vendor check lint check-generate
+checkall: check lint check-generate
 
 build: ## Build the contour binary
 	go build -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
@@ -95,10 +95,6 @@ race:
 
 download: ## Download Go modules
 	go mod download
-
-## Vendor Go modules
-vendor:
-	go mod vendor
 
 multiarch-build-push: ## Build and push a multi-arch Contour container image to the Docker registry
 	docker buildx build \
@@ -321,15 +317,27 @@ site-devel: ## Launch the website in a Docker container
 site-check: ## Test the site's links
 	docker run --rm -v $$(pwd):/src -it $(JEKYLL_IMAGE) bash -c "cd /src && ./hack/site-proofing/cibuild"
 
-integration: ## Run integration tests against a real k8s cluster
+check-integration:
+	@integration-tester --version > /dev/null 2>&1 || (echo "ERROR: To run the integration tests, you will need to install integration-tester (https://github.com/projectcontour/integration-tester)"; exit 1)
+
+.PHONY: integration ## Run integration tests against a real k8s cluster
+integration: check-integration
 	./_integration/testsuite/make-kind-cluster.sh
+	./_integration/testsuite/install-gateway-api.sh
 	./_integration/testsuite/install-contour-working.sh
 	./_integration/testsuite/install-fallback-certificate.sh
-	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/httpproxy/*.yaml
+	./_integration/testsuite/install-ratelimit-service.sh
+	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/httpproxy/*.yaml ./_integration/testsuite/gatewayapi/*.yaml
+	./_integration/testsuite/cleanup.sh
+
+check-ingress-conformance: ## Run Ingress controller conformance
+	./_integration/testsuite/make-kind-cluster.sh
+	./_integration/testsuite/install-contour-working.sh
+	./_integration/testsuite/run-ingress-conformance.sh
 	./_integration/testsuite/cleanup.sh
 
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes
 	@echo
 	@echo Targets:
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9._-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9._-]+:.*?## / {printf "  %-25s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort

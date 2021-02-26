@@ -37,23 +37,24 @@ func (g *Group) Add(fn func(<-chan struct{}) error) {
 // The function will be executed in its own goroutine when Run is called.
 // The context supplied to the function will be canceled when the group
 // exits. AddContext must be called before Run.
-func (g *Group) AddContext(fn func(context.Context)) {
+func (g *Group) AddContext(fn func(context.Context) error) {
 	g.fn = append(g.fn, func(stop <-chan struct{}) error {
 		ctx, cancel := context.WithCancel(context.Background())
-		done := make(chan int)
+		res := make(chan error)
+
+		// run the function & send the result on res
 		go func() {
-			defer close(done)
-			fn(ctx)
+			res <- fn(ctx)
 		}()
+
 		// wait for stop
 		<-stop
 
 		// cancel fn(ctx)
 		cancel()
 
-		// wait for fn(ctx) to exit
-		<-done
-		return nil
+		// wait for fn(ctx) to return
+		return <-res
 	})
 }
 

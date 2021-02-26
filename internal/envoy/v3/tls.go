@@ -19,8 +19,6 @@ import (
 
 func ParseTLSVersion(version string) envoy_tls_v3.TlsParameters_TlsProtocol {
 	switch version {
-	case "1.1":
-		return envoy_tls_v3.TlsParameters_TLSv1_1
 	case "1.2":
 		return envoy_tls_v3.TlsParameters_TLSv1_2
 	case "1.3":

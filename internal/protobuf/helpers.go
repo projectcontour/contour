@@ -104,7 +104,7 @@ func AnyMessageTypeOf(msg proto.Message) string {
 	return a.TypeUrl
 }
 
-/// MustMarshalJSON marshals msg to indented JSON.
+// MustMarshalJSON marshals msg to indented JSON.
 func MustMarshalJSON(msg proto.Message) string {
 	m := jsonpb.Marshaler{Indent: "  "}
 

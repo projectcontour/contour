@@ -1,0 +1,103 @@
+---
+# NOTE: this deployment is intended for demonstrating global
+# rate limiting functionality only and should NOT be considered
+# production-ready.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ratelimit
+  name: ratelimit
+  namespace: projectcontour
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # This value of maxSurge means that during a rolling update
+      # the new ReplicaSet will be created first.
+      maxSurge: 50%
+  selector:
+    matchLabels:
+      app: ratelimit
+  template:
+    metadata:
+      labels:
+        app: ratelimit
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: ratelimit
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+        - name: redis
+          image: redis:alpine
+          env:
+            - name: REDIS_SOCKET_TYPE
+              value: tcp
+            - name: REDIS_URL
+              value: redis:6379
+        - name: ratelimit
+          image: docker.io/envoyproxy/ratelimit:6f5de117  # latest a/o Jan 22 2021
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+            - containerPort: 8081
+              name: grpc
+              protocol: TCP
+          volumeMounts:
+            - name: ratelimit-config
+              mountPath: /data/ratelimit/config
+              readOnly: true
+          env:
+            - name: USE_STATSD
+              value: "false"
+            - name: LOG_LEVEL
+              value: debug
+            - name: REDIS_SOCKET_TYPE
+              value: tcp
+            - name: REDIS_URL
+              value: localhost:6379
+            - name: RUNTIME_ROOT
+              value: /data
+            - name: RUNTIME_SUBDIRECTORY
+              value: ratelimit
+            - name: RUNTIME_WATCH_ROOT
+              value: "false"
+            # need to set RUNTIME_IGNOREDOTFILES to true to avoid issues with
+            # how Kubernetes mounts configmaps into pods.
+            - name: RUNTIME_IGNOREDOTFILES
+              value: "true"
+          command: ["/bin/ratelimit"]
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: ratelimit-config  
+          configMap:
+            name: ratelimit-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratelimit
+  namespace: projectcontour
+spec:
+  ports:
+  - port: 8081
+    name: grpc
+    protocol: TCP
+  selector:
+    app: ratelimit
+  type: ClusterIP

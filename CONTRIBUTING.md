@@ -17,7 +17,7 @@ This section describes how to build Contour from source.
 
 1. *Install Go*
 
-    Contour requires [Go 1.15][1] or later.
+    Contour requires [Go 1.16][1] or later.
     We also assume that you're familiar with Go's [`GOPATH` workspace][3] convention, and have the appropriate environment variables set.
 
 ### Fetch the source
@@ -67,6 +67,17 @@ To run the tests for a single package, change to package directory and run:
 ```
 go test .
 ```
+
+### Lint
+
+Before making a commit, it's always a good idea to check the code for common programming mistakes, misspellings and other potential errors. The lint checks can be run by invoking the make lint task:
+
+```shell
+make lint
+```
+
+Note: The lint tasks require the [codespell](https://github.com/codespell-project/codespell) application. Be sure to install version 2.0 or newer before running the lint tasks.
+
 
 ## Contribution workflow
 

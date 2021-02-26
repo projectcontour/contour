@@ -20,19 +20,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// Object is any Kubernetes object that has an ObjectMeta.
-// TODO(youngnick): Review references to this and replace them
-// with straight metav1.ObjectMetaAccessor calls if we can.
-type Object interface {
-	metav1.ObjectMetaAccessor
-}
-
 // NamespacedNameOf returns the NamespacedName of any given Kubernetes object.
-func NamespacedNameOf(obj Object) types.NamespacedName {
-	m := obj.GetObjectMeta()
+func NamespacedNameOf(obj metav1.Object) types.NamespacedName {
 	name := types.NamespacedName{
-		Name:      m.GetName(),
-		Namespace: m.GetNamespace(),
+		Name:      obj.GetName(),
+		Namespace: obj.GetNamespace(),
 	}
 
 	if name.Namespace == "" {

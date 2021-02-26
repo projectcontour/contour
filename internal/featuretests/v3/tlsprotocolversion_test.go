@@ -130,6 +130,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 					&dag.Secret{Object: sec1},
 					envoy_tls_v3.TlsParameters_TLSv1_3,
 					nil,
+					nil,
 					"h2", "http/1.1"),
 				envoy_v3.Filters(httpsFilterFor("kuard.example.com")),
 			),

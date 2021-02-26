@@ -105,6 +105,10 @@ spec:
               value: '%RESPONSE_FLAGS%'
             - name: X-Dynamic-Header-24
               value: '%RESPONSE_CODE_DETAILS%'
+            - name: X-Contour-Namespace
+              value: '%CONTOUR_NAMESPACE%'
+            - name: X-Contour-Service
+              value: '%CONTOUR_SERVICE_NAME%:%CONTOUR_SERVICE_PORT%'
           responseHeadersPolicy:
             set:
             - name: X-App-Weight
@@ -240,3 +244,7 @@ check_nondynamic_with_multiple_field_header [msg] {
   msg := expect.response_header_is(Response, "X-Host-Protocol", sprintf("%s - HTTP/1.1", [host]))
 }
 
+# Check dynamic service headers are populated as expected
+check_dynamic_service_headers [msg] {
+  msg := expect.response_header_is(Response, "X-Contour-Service", "ingress-conformance-echo:80")
+}
