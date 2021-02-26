@@ -116,16 +116,16 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 			if err := isw.clients.Cache().List(context.Background(), &ingressList); err != nil {
 				isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
 			} else {
-				for _, i := range ingressList.Items {
-					u.OnAdd(i)
+				for i := range ingressList.Items {
+					u.OnAdd(&ingressList.Items[i])
 				}
 			}
 
 			if err := isw.clients.Cache().List(context.Background(), &proxyList); err != nil {
 				isw.log.WithError(err).WithField("kind", "HTTPProxy").Error("failed to list objects")
 			} else {
-				for _, i := range proxyList.Items {
-					u.OnAdd(i)
+				for i := range proxyList.Items {
+					u.OnAdd(&proxyList.Items[i])
 				}
 			}
 		}
