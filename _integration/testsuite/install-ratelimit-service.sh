@@ -51,6 +51,16 @@ data:
         rate_limit:
           unit: hour
           requests_per_unit: 1
+      - key: generic_key
+        value: tlsvhostlimit
+        rate_limit:
+          unit: hour
+          requests_per_unit: 1
+      - key: generic_key
+        value: tlsroutelimit
+        rate_limit:
+          unit: hour
+          requests_per_unit: 1
 EOF
 
 # Create the ratelimit deployment, service and extension service.
