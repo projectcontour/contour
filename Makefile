@@ -29,6 +29,12 @@ endif
 # Platforms to build the multi-arch image for.
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
+# Base build image to use.
+BUILD_BASE_IMAGE ?= golang:1.16.0
+
+# Enable build with CGO.
+BUILD_CGO_ENABLED ?= 0
+
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
 # LOCALIP as an env var before running 'make local' will solve that.
@@ -56,8 +62,8 @@ GO_BUILD_VARS = \
 	github.com/projectcontour/contour/internal/build.Sha=${BUILD_SHA} \
 	github.com/projectcontour/contour/internal/build.Branch=${BUILD_BRANCH}
 
-GO_TAGS := -tags "oidc gcp"
-GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
+GO_TAGS := -tags "oidc gcp osusergo netgo"
+GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS)) $(EXTRA_GO_LDFLAGS)
 
 # Docker labels to be applied to the Contour image. We don't transform
 # this with make because it's not worth pulling the tricks needed to handle
@@ -99,19 +105,25 @@ download: ## Download Go modules
 multiarch-build-push: ## Build and push a multi-arch Contour container image to the Docker registry
 	docker buildx build \
 		--platform $(IMAGE_PLATFORMS) \
+		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
+		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
+		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(IMAGE_TAGS) \
 		--push \
-		.
+		$(shell pwd)
 
 container: ## Build the Contour container image
 	docker build \
+		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
+		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
+		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(shell pwd) \
 		--tag $(IMAGE):$(VERSION)
