@@ -471,14 +471,24 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if ctx.UseExperimentalServiceAPITypes {
 		log.Warn("DEPRECATED: The flag '--experimental-service-apis' is deprecated and should not be used. Please configure the gateway.name & gateway.namespace in the configuration file to specify which Gateway Contour will be watching.")
 	}
+
+	foundGatewayAPI := false
 	for _, r := range k8s.GatewayAPIResources() {
 		if !clients.ResourcesExist(r) {
 			log.WithField("resource", r).Warn("resource type not present on API server")
 			continue
 		}
+		foundGatewayAPI = true
 
 		if err := informOnResource(clients, r, &dynamicHandler); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
+		}
+	}
+
+	// Only watch namespaces if Gateway API is found.
+	if foundGatewayAPI {
+		if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler); err != nil {
+			log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
 		}
 	}
 
