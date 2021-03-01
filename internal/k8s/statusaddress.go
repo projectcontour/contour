@@ -87,8 +87,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		gvr = contour_api_v1.SchemeGroupVersion.WithResource("httpproxies")
 		kind = "httpproxy"
 	default:
-		s.Logger.
-			Debug("unsupported type received")
+		s.Logger.Debugf("unsupported type %T received", o)
 		return
 	}
 
