@@ -477,9 +477,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		if !clients.ResourcesExist(r) {
 			log.WithField("resource", r).Warn("resource type not present on API server")
 			continue
-		} else {
-			foundGatewayAPI = true
 		}
+		foundGatewayAPI = true
 
 		if err := informOnResource(clients, r, &dynamicHandler); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
