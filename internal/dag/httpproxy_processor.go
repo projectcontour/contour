@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -109,7 +110,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	if proxy.Spec.VirtualHost == nil {
 		// mark HTTPProxy as orphaned.
-		p.setOrphaned(proxy)
+		p.orphaned[k8s.NamespacedNameOf(proxy)] = true
 		return
 	}
 
@@ -143,6 +144,10 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 	var tlsEnabled bool
 	if tls := proxy.Spec.VirtualHost.TLS; tls != nil {
+		if tls.Passthrough && tls.EnableFallbackCertificate {
+			validCond.AddError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures",
+				"Spec.VirtualHost.TLS: both Passthrough and enableFallbackCertificate were specified")
+		}
 		if !isBlank(tls.SecretName) && tls.Passthrough {
 			validCond.AddError(contour_api_v1.ConditionTypeTLSError, "TLSConfigNotValid",
 				"Spec.VirtualHost.TLS: both Passthrough and SecretName were specified")
@@ -253,7 +258,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					Namespace: stringOrDefault(ref.Namespace, proxy.Namespace),
 				}
 
-				ext := p.dag.GetExtensionCluster(extensionClusterName(extensionName))
+				ext := p.dag.GetExtensionCluster(ExtensionClusterName(extensionName))
 				if ext == nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeAuthError, "ExtensionServiceNotFound",
 						"Spec.Virtualhost.Authorization.ServiceRef extension service %q not found", extensionName)
@@ -405,6 +410,10 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		delete(p.orphaned, types.NamespacedName{Name: includedProxy.Name, Namespace: includedProxy.Namespace})
 	}
 
+	dynamicHeaders := map[string]string{
+		"CONTOUR_NAMESPACE": proxy.Namespace,
+	}
+
 	for _, route := range proxy.Spec.Routes {
 		if err := pathMatchConditionsValid(route.Conditions); err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "PathMatchConditionsNotValid",
@@ -421,14 +430,14 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		reqHP, err := headersPolicyRoute(route.RequestHeadersPolicy, true /* allow Host */)
+		reqHP, err := headersPolicyRoute(route.RequestHeadersPolicy, true /* allow Host */, dynamicHeaders)
 		if err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RequestHeadersPolicyInvalid",
 				"%s on request headers", err)
 			return nil
 		}
 
-		respHP, err := headersPolicyRoute(route.ResponseHeadersPolicy, false /* disallow Host */)
+		respHP, err := headersPolicyRoute(route.ResponseHeadersPolicy, false /* disallow Host */, dynamicHeaders)
 		if err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "ResponseHeaderPolicyInvalid",
 				"%s on response headers", err)
@@ -455,6 +464,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		requestHashPolicies, lbPolicy := loadBalancerRequestHashPolicies(route.LoadBalancerPolicy, validCond)
+
 		r := &Route{
 			PathMatchCondition:    mergePathMatchConditions(conds),
 			HeaderMatchConditions: mergeHeaderMatchConditions(conds),
@@ -465,6 +476,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
 			RateLimitPolicy:       rlp,
+			RequestHashPolicies:   requestHashPolicies,
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -559,14 +571,17 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				}
 			}
 
-			reqHP, err := headersPolicyService(service.RequestHeadersPolicy)
+			dynamicHeaders["CONTOUR_SERVICE_NAME"] = service.Name
+			dynamicHeaders["CONTOUR_SERVICE_PORT"] = strconv.Itoa(service.Port)
+
+			reqHP, err := headersPolicyService(service.RequestHeadersPolicy, dynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "RequestHeadersPolicyInvalid",
 					"%s on request headers", err)
 				return nil
 			}
 
-			respHP, err := headersPolicyService(service.ResponseHeadersPolicy)
+			respHP, err := headersPolicyService(service.ResponseHeadersPolicy, dynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ResponseHeadersPolicyInvalid",
 					"%s on response headers", err)
@@ -585,7 +600,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			c := &Cluster{
 				Upstream:              s,
-				LoadBalancerPolicy:    loadBalancerPolicy(route.LoadBalancerPolicy),
+				LoadBalancerPolicy:    lbPolicy,
 				Weight:                uint32(service.Weight),
 				HTTPHealthCheckPolicy: httpHealthCheckPolicy(route.HealthCheckPolicy),
 				UpstreamValidation:    uv,
@@ -643,6 +658,16 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 		return false
 	}
 
+	lbPolicy := loadBalancerPolicy(tcpproxy.LoadBalancerPolicy)
+	switch lbPolicy {
+	case LoadBalancerPolicyCookie, LoadBalancerPolicyRequestHash:
+		validCond.AddWarningf(contour_api_v1.ConditionTypeTCPProxyError, "IgnoredField",
+			"ignoring field %q; %s load balancer policy is not supported for TCPProxies",
+			"Spec.TCPProxy.LoadBalancerPolicy", lbPolicy)
+		// Reset load balancer policy to ensure the default.
+		lbPolicy = ""
+	}
+
 	if len(tcpproxy.Services) > 0 {
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
@@ -653,11 +678,20 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 					"Spec.TCPProxy unresolved service reference: %s", err)
 				return false
 			}
+
+			// Determine the protocol to use to speak to this Cluster.
+			protocol, err := getProtocol(service, s)
+			if err != nil {
+				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "UnsupportedProtocol", err.Error())
+				return false
+			}
+
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream:             s,
-				Protocol:             s.Protocol,
-				LoadBalancerPolicy:   loadBalancerPolicy(tcpproxy.LoadBalancerPolicy),
+				Protocol:             protocol,
+				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
+				SNI:                  s.ExternalName,
 			})
 		}
 		secure := p.dag.EnsureSecureVirtualHost(host)
@@ -771,15 +805,6 @@ func (p *HTTPProxyProcessor) rootAllowed(namespace string) bool {
 		}
 	}
 	return false
-}
-
-// setOrphaned records an HTTPProxy resource as orphaned.
-func (p *HTTPProxyProcessor) setOrphaned(obj k8s.Object) {
-	m := types.NamespacedName{
-		Name:      obj.GetObjectMeta().GetName(),
-		Namespace: obj.GetObjectMeta().GetNamespace(),
-	}
-	p.orphaned[m] = true
 }
 
 // expandPrefixMatches adds new Routes to account for the difference

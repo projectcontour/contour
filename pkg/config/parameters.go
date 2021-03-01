@@ -42,6 +42,27 @@ func (s ServerType) Validate() error {
 	}
 }
 
+// Validate the GatewayConfig.
+// Name & Namespace must be specified.
+func (g GatewayParameters) Validate() error {
+
+	var errorString string
+	if len(g.Name) == 0 {
+		errorString = "name required"
+	}
+	if len(g.Namespace) == 0 {
+		if len(errorString) > 0 {
+			errorString += ","
+		}
+		errorString = strings.TrimSpace(fmt.Sprintf("%s namespace required", errorString))
+	}
+
+	if len(errorString) > 0 {
+		return fmt.Errorf("invalid Gateway parameters specified: %s", errorString)
+	}
+	return nil
+}
+
 // ResourceVersion is a version of an xDS server.
 type ResourceVersion string
 
@@ -225,6 +246,31 @@ type TLSParameters struct {
 	// to be used when establishing TLS connection to upstream
 	// cluster.
 	ClientCertificate NamespacedName `yaml:"envoy-client-certificate,omitempty"`
+
+	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
+	// listeners when negotiating TLS 1.2. Ciphers are validated against the
+	// set that Envoy supports by default. This parameter should only be used
+	// by advanced users. Note that these will be ignored when TLS 1.3 is in
+	// use.
+	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
+}
+
+// Validate TLS fallback certificate, client certificate, and cipher suites
+func (t TLSParameters) Validate() error {
+	// Check TLS secret names.
+	if err := t.FallbackCertificate.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS fallback certificate: %w", err)
+	}
+
+	if err := t.ClientCertificate.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS client certificate: %w", err)
+	}
+
+	if err := t.CipherSuites.Validate(); err != nil {
+		return fmt.Errorf("invalid TLS cipher suites: %w", err)
+	}
+
+	return nil
 }
 
 // ServerParameters holds the configuration for the Contour xDS server.
@@ -232,6 +278,13 @@ type ServerParameters struct {
 	// Defines the XDSServer to use for `contour serve`.
 	// Defaults to "contour"
 	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
+}
+
+// GatewayParameters holds the configuration for what Gateway API Gateway
+// Contour will be configured to watch.
+type GatewayParameters struct {
+	Name      string `yaml:"name,omitempty"`
+	Namespace string `yaml:"namespace,omitempty"`
 }
 
 // LeaderElectionParameters holds the config bits for leader election
@@ -280,6 +333,17 @@ type TimeoutParameters struct {
 	// for more information.
 	MaxConnectionDuration string `yaml:"max-connection-duration,omitempty"`
 
+	// DelayedCloseTimeout defines how long envoy will wait, once connection
+	// close processing has been initiated, for the downstream peer to close
+	// the connection before Envoy closes the socket associated with the connection.
+	//
+	// Setting this timeout to 'infinity' will disable it, equivalent to setting it to '0'
+	// in Envoy. Leaving it unset will result in the Envoy default value being used.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout
+	// for more information.
+	DelayedCloseTimeout string `yaml:"delayed-close-timeout,omitempty"`
+
 	// ConnectionShutdownGracePeriod defines how long the proxy will wait between sending an
 	// initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection.
 	// During this grace period, the proxy will continue to respond to new streams. After the final
@@ -310,19 +374,23 @@ func (t TimeoutParameters) Validate() error {
 	}
 
 	if err := v(t.ConnectionIdleTimeout); err != nil {
-		return fmt.Errorf("connection idle timeout %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("connection idle timeout %q: %w", t.ConnectionIdleTimeout, err)
 	}
 
 	if err := v(t.StreamIdleTimeout); err != nil {
-		return fmt.Errorf("stream idle timeout %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("stream idle timeout %q: %w", t.StreamIdleTimeout, err)
 	}
 
 	if err := v(t.MaxConnectionDuration); err != nil {
-		return fmt.Errorf("max connection duration %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("max connection duration %q: %w", t.MaxConnectionDuration, err)
+	}
+
+	if err := v(t.DelayedCloseTimeout); err != nil {
+		return fmt.Errorf("delayed close timeout %q: %w", t.DelayedCloseTimeout, err)
 	}
 
 	if err := v(t.ConnectionShutdownGracePeriod); err != nil {
-		return fmt.Errorf("connection shutdown grace period %q: %w", t.RequestTimeout, err)
+		return fmt.Errorf("connection shutdown grace period %q: %w", t.ConnectionShutdownGracePeriod, err)
 	}
 
 	return nil
@@ -344,6 +412,25 @@ type ClusterParameters struct {
 	DNSLookupFamily ClusterDNSFamilyType `yaml:"dns-lookup-family"`
 }
 
+// NetworkParameters hold various configurable network values.
+type NetworkParameters struct {
+	// XffNumTrustedHops defines the number of additional ingress proxy hops from the
+	// right side of the x-forwarded-for HTTP header to trust when determining the origin
+	// client’s IP address.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/v1.17.0/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=xff_num_trusted_hops
+	// for more information.
+	XffNumTrustedHops uint32 `yaml:"num-trusted-hops"`
+}
+
+// ListenerParameters hold various configurable listener values.
+type ListenerParameters struct {
+	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
+	// for more information.
+	ConnectionBalancer string `yaml:"connection-balancer"`
+}
+
 // Parameters contains the configuration file parameters for the
 // Contour ingress controller.
 type Parameters struct {
@@ -356,6 +443,10 @@ type Parameters struct {
 
 	// Server contains parameters for the xDS server.
 	Server ServerParameters `yaml:"server,omitempty"`
+
+	// GatewayConfig contains parameters for the gateway-api Gateway that Contour
+	// is configured to serve traffic.
+	GatewayConfig GatewayParameters `yaml:"gateway,omitempty"`
 
 	// Address to be placed in status.loadbalancer field of Ingress objects.
 	// May be either a literal IP address or a host name.
@@ -409,6 +500,30 @@ type Parameters struct {
 	// Cluster holds various configurable Envoy cluster values that can
 	// be set in the config file.
 	Cluster ClusterParameters `yaml:"cluster,omitempty"`
+
+	// Network holds various configurable Envoy network values.
+	Network NetworkParameters `yaml:"network,omitempty"`
+
+	// Listener holds various configurable Envoy Listener values.
+	Listener ListenerParameters `yaml:"listener,omitempty"`
+	// RateLimitService optionally holds properties of the Rate Limit Service
+	// to be used for global rate limiting.
+	RateLimitService RateLimitService `yaml:"rateLimitService,omitempty"`
+}
+
+// RateLimitService defines properties of a global Rate Limit Service.
+type RateLimitService struct {
+	// ExtensionService identifies the extension service defining the RLS,
+	// formatted as <namespace>/<name>.
+	ExtensionService string `yaml:"extensionService,omitempty"`
+
+	// Domain is passed to the Rate Limit Service.
+	Domain string `yaml:"domain,omitempty"`
+
+	// FailOpen defines whether to allow requests to proceed when the
+	// Rate Limit Service fails to respond with a valid rate limit
+	// decision within the timeout defined on the extension service.
+	FailOpen bool `yaml:"failOpen,omitempty"`
 }
 
 // Validate verifies that the parameter values do not have any syntax errors.
@@ -421,6 +536,10 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
+	if err := p.GatewayConfig.Validate(); err != nil {
+		return err
+	}
+
 	if err := p.AccessLogFormat.Validate(); err != nil {
 		return err
 	}
@@ -429,13 +548,8 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
-	// Check TLS secret names.
-	if err := p.TLS.FallbackCertificate.Validate(); err != nil {
-		return fmt.Errorf("invalid TLS fallback certificate: %w", err)
-	}
-
-	if err := p.TLS.ClientCertificate.Validate(); err != nil {
-		return fmt.Errorf("invalid TLS client certificate: %w", err)
+	if err := p.TLS.Validate(); err != nil {
+		return err
 	}
 
 	if err := p.Timeouts.Validate(); err != nil {
@@ -462,6 +576,10 @@ func Defaults() Parameters {
 		Server: ServerParameters{
 			XDSServerType: ContourServerType,
 		},
+		GatewayConfig: GatewayParameters{
+			Name:      "contour",
+			Namespace: contourNamespace,
+		},
 		IngressStatusAddress:      "",
 		AccessLogFormat:           DEFAULT_ACCESS_LOG_TYPE,
 		AccessLogFields:           DefaultFields,
@@ -485,6 +603,12 @@ func Defaults() Parameters {
 		DefaultHTTPVersions:   []HTTPVersionType{},
 		Cluster: ClusterParameters{
 			DNSLookupFamily: AutoClusterDNSFamily,
+		},
+		Network: NetworkParameters{
+			XffNumTrustedHops: 0,
+		},
+		Listener: ListenerParameters{
+			ConnectionBalancer: "",
 		},
 	}
 }

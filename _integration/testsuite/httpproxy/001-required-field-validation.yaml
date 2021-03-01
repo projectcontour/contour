@@ -63,27 +63,6 @@ $check: |
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: missing-tcp-services
-spec:
-  tcpproxy:
-    services:
-$check: |
-  matched_cause {
-    cause := input.error.details.causes[_]
-    cause.reason == "FieldValueInvalid"
-    cause.field == "spec.tcpproxy.services"
-  }
-
-  error[msg] {
-    not matched_cause
-    msg := "No error cause matched FieldValueInvalid/spec.tcpproxy.services"
-  }
-
----
-
-apiVersion: projectcontour.io/v1
-kind: HTTPProxy
-metadata:
   name: missing-includes-name
 spec:
   includes:

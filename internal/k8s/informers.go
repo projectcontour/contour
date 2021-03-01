@@ -17,12 +17,14 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
+	networking_v1beta1 "k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	serviceapis "sigs.k8s.io/service-apis/apis/v1alpha1"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch
+// +kubebuilder:rbac:groups="networking.k8s.io",resources=ingressclasses,verbs=get;list;watch
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses/status,verbs=create;get;update
 
 // +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies;tlscertificatedelegations,verbs=get;list;watch
@@ -37,30 +39,40 @@ func DefaultResources() []schema.GroupVersionResource {
 		contour_api_v1.TLSCertificateDelegationGVR,
 		contour_api_v1alpha1.ExtensionServiceGVR,
 		corev1.SchemeGroupVersion.WithResource("services"),
-		v1beta1.SchemeGroupVersion.WithResource("ingresses"),
 	}
 }
 
-// +kubebuilder:rbac:groups="networking.k8s.io",resources=gatewayclasses;gateways;httproutes;tcproutes,verbs=get;list;watch
+func IngressV1Beta1Resource() schema.GroupVersionResource {
+	return networking_v1beta1.SchemeGroupVersion.WithResource("ingresses")
+}
 
-// ServiceAPIResources ...
-func ServiceAPIResources() []schema.GroupVersionResource {
+func IngressV1Resources() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{
+		networking_v1.SchemeGroupVersion.WithResource("ingresses"),
+		networking_v1.SchemeGroupVersion.WithResource("ingressclasses"),
+	}
+}
+
+// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gateways;httproutes;backendpolicies;tlsroutes,verbs=get;list;watch
+
+// GatewayAPIResources ...
+func GatewayAPIResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{{
-		Group:    serviceapis.GroupVersion.Group,
-		Version:  serviceapis.GroupVersion.Version,
-		Resource: "gatewayclasses",
-	}, {
-		Group:    serviceapis.GroupVersion.Group,
-		Version:  serviceapis.GroupVersion.Version,
+		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
 		Resource: "gateways",
 	}, {
-		Group:    serviceapis.GroupVersion.Group,
-		Version:  serviceapis.GroupVersion.Version,
+		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
 		Resource: "httproutes",
 	}, {
-		Group:    serviceapis.GroupVersion.Group,
-		Version:  serviceapis.GroupVersion.Version,
-		Resource: "tcproutes",
+		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Resource: "backendpolicies",
+	}, {
+		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Resource: "tlsroutes",
 	},
 	}
 }

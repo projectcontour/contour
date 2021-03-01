@@ -7,7 +7,7 @@ SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.17.0
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.17.1
 
 # The version of Jekyll is pinned in site/Gemfile.lock.
 # https://docs.netlify.com/configure-builds/common-configurations/#jekyll
@@ -28,6 +28,12 @@ endif
 
 # Platforms to build the multi-arch image for.
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
+
+# Base build image to use.
+BUILD_BASE_IMAGE ?= golang:1.16.0
+
+# Enable build with CGO.
+BUILD_CGO_ENABLED ?= 0
 
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
@@ -56,8 +62,8 @@ GO_BUILD_VARS = \
 	github.com/projectcontour/contour/internal/build.Sha=${BUILD_SHA} \
 	github.com/projectcontour/contour/internal/build.Branch=${BUILD_BRANCH}
 
-GO_TAGS := -tags "oidc gcp"
-GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS))
+GO_TAGS := -tags "oidc gcp osusergo netgo"
+GO_LDFLAGS := -s -w $(patsubst %,-X %, $(GO_BUILD_VARS)) $(EXTRA_GO_LDFLAGS)
 
 # Docker labels to be applied to the Contour image. We don't transform
 # this with make because it's not worth pulling the tricks needed to handle
@@ -82,7 +88,7 @@ export GO111MODULE=on
 check: install check-test check-test-race ## Install and run tests
 
 .PHONY: checkall
-checkall: vendor check lint check-generate
+checkall: check lint check-generate
 
 build: ## Build the contour binary
 	go build -mod=readonly -v -ldflags="$(GO_LDFLAGS)" $(GO_TAGS) $(MODULE)/cmd/contour
@@ -96,26 +102,28 @@ race:
 download: ## Download Go modules
 	go mod download
 
-## Vendor Go modules
-vendor:
-	go mod vendor
-
 multiarch-build-push: ## Build and push a multi-arch Contour container image to the Docker registry
 	docker buildx build \
 		--platform $(IMAGE_PLATFORMS) \
+		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
+		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
+		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(IMAGE_TAGS) \
 		--push \
-		.
+		$(shell pwd)
 
 container: ## Build the Contour container image
 	docker build \
+		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
 		--build-arg "BUILD_SHA=$(BUILD_SHA)" \
+		--build-arg "BUILD_CGO_ENABLED=$(BUILD_CGO_ENABLED)" \
+		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(shell pwd) \
 		--tag $(IMAGE):$(VERSION)
@@ -321,15 +329,27 @@ site-devel: ## Launch the website in a Docker container
 site-check: ## Test the site's links
 	docker run --rm -v $$(pwd):/src -it $(JEKYLL_IMAGE) bash -c "cd /src && ./hack/site-proofing/cibuild"
 
-integration: ## Run integration tests against a real k8s cluster
+check-integration:
+	@integration-tester --version > /dev/null 2>&1 || (echo "ERROR: To run the integration tests, you will need to install integration-tester (https://github.com/projectcontour/integration-tester)"; exit 1)
+
+.PHONY: integration ## Run integration tests against a real k8s cluster
+integration: check-integration
 	./_integration/testsuite/make-kind-cluster.sh
+	./_integration/testsuite/install-gateway-api.sh
 	./_integration/testsuite/install-contour-working.sh
 	./_integration/testsuite/install-fallback-certificate.sh
-	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/httpproxy/*.yaml
+	./_integration/testsuite/install-ratelimit-service.sh
+	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/httpproxy/*.yaml ./_integration/testsuite/gatewayapi/*.yaml
+	./_integration/testsuite/cleanup.sh
+
+check-ingress-conformance: ## Run Ingress controller conformance
+	./_integration/testsuite/make-kind-cluster.sh
+	./_integration/testsuite/install-contour-working.sh
+	./_integration/testsuite/run-ingress-conformance.sh
 	./_integration/testsuite/cleanup.sh
 
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes
 	@echo
 	@echo Targets:
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9._-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9._-]+:.*?## / {printf "  %-25s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort

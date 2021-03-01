@@ -16,10 +16,12 @@ package dag
 import (
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -105,7 +107,7 @@ func (p *IngressProcessor) computeIngresses() {
 	}
 }
 
-func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1.IngressRule) {
+func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule networking_v1.IngressRule) {
 	host := rule.Host
 	if strings.Contains(host, "*") {
 		// reject hosts with wildcard characters.
@@ -133,9 +135,22 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 	for _, httppath := range httppaths(rule) {
 		path := stringOrDefault(httppath.Path, "/")
 		be := httppath.Backend
-		m := types.NamespacedName{Name: be.ServiceName, Namespace: ing.Namespace}
-		s, err := p.dag.EnsureService(m, be.ServicePort, p.source)
+		m := types.NamespacedName{Name: be.Service.Name, Namespace: ing.Namespace}
+
+		var port intstr.IntOrString
+		if len(be.Service.Port.Name) > 0 {
+			port = intstr.FromString(be.Service.Port.Name)
+		} else {
+			port = intstr.FromInt(int(be.Service.Port.Number))
+		}
+
+		s, err := p.dag.EnsureService(m, port, p.source)
 		if err != nil {
+			p.WithError(err).
+				WithField("name", ing.GetName()).
+				WithField("namespace", ing.GetNamespace()).
+				WithField("service", be.Service.Name).
+				Error("unresolved service reference")
 			continue
 		}
 
@@ -165,7 +180,7 @@ func (p *IngressProcessor) computeIngressRule(ing *v1beta1.Ingress, rule v1beta1
 }
 
 // route builds a dag.Route for the supplied Ingress.
-func route(ingress *v1beta1.Ingress, path string, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) (*Route, error) {
+func route(ingress *networking_v1.Ingress, path string, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) (*Route, error) {
 	log = log.WithFields(logrus.Fields{
 		"name":      ingress.Name,
 		"namespace": ingress.Namespace,
@@ -199,9 +214,9 @@ func route(ingress *v1beta1.Ingress, path string, service *Service, clientCertSe
 
 // rulesFromSpec merges the IngressSpec's Rules with a synthetic
 // rule representing the default backend.
-func rulesFromSpec(spec v1beta1.IngressSpec) []v1beta1.IngressRule {
+func rulesFromSpec(spec networking_v1.IngressSpec) []networking_v1.IngressRule {
 	rules := spec.Rules
-	if backend := spec.Backend; backend != nil {
+	if backend := spec.DefaultBackend; backend != nil {
 		rule := defaultBackendRule(backend)
 		rules = append(rules, rule)
 	}
@@ -209,14 +224,16 @@ func rulesFromSpec(spec v1beta1.IngressSpec) []v1beta1.IngressRule {
 }
 
 // defaultBackendRule returns an IngressRule that represents the IngressBackend.
-func defaultBackendRule(be *v1beta1.IngressBackend) v1beta1.IngressRule {
-	return v1beta1.IngressRule{
-		IngressRuleValue: v1beta1.IngressRuleValue{
-			HTTP: &v1beta1.HTTPIngressRuleValue{
-				Paths: []v1beta1.HTTPIngressPath{{
-					Backend: v1beta1.IngressBackend{
-						ServiceName: be.ServiceName,
-						ServicePort: be.ServicePort,
+func defaultBackendRule(be *networking_v1.IngressBackend) networking_v1.IngressRule {
+	return networking_v1.IngressRule{
+		IngressRuleValue: networking_v1.IngressRuleValue{
+			HTTP: &networking_v1.HTTPIngressRuleValue{
+				Paths: []networking_v1.HTTPIngressPath{{
+					Backend: networking_v1.IngressBackend{
+						Service: &networking_v1.IngressServiceBackend{
+							Name: be.Service.Name,
+							Port: be.Service.Port,
+						},
 					},
 				}},
 			},
@@ -234,7 +251,7 @@ func stringOrDefault(s, def string) string {
 // httppaths returns a slice of HTTPIngressPath values for a given IngressRule.
 // In the case that the IngressRule contains no valid HTTPIngressPaths, a
 // nil slice is returned.
-func httppaths(rule v1beta1.IngressRule) []v1beta1.HTTPIngressPath {
+func httppaths(rule networking_v1.IngressRule) []networking_v1.HTTPIngressPath {
 	if rule.IngressRuleValue.HTTP == nil {
 		// rule.IngressRuleValue.HTTP value is optional.
 		return nil

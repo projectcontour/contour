@@ -105,7 +105,7 @@ func (in *ExtensionServiceSpec) DeepCopyInto(out *ExtensionServiceSpec) {
 	if in.LoadBalancerPolicy != nil {
 		in, out := &in.LoadBalancerPolicy, &out.LoadBalancerPolicy
 		*out = new(v1.LoadBalancerPolicy)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	if in.TimeoutPolicy != nil {
 		in, out := &in.TimeoutPolicy, &out.TimeoutPolicy

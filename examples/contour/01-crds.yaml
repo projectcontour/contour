@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: extensionservices.projectcontour.io
 spec:
@@ -36,10 +36,28 @@ spec:
             description: ExtensionServiceSpec defines the desired state of an ExtensionService resource.
             properties:
               loadBalancerPolicy:
-                description: The policy for load balancing GRPC service requests. Note that the `Cookie` load balancing strategy cannot be used here.
+                description: The policy for load balancing GRPC service requests. Note that the `Cookie` and `RequestHash` load balancing strategies cannot be used here.
                 properties:
+                  requestHashPolicies:
+                    description: RequestHashPolicies contains a list of hash policies to apply when the `RequestHash` load balancing strategy is chosen. If an element of the supplied list of hash policies is invalid, it will be ignored. If the list of hash policies is empty after validation, the load balancing strategy will fall back the the default `RoundRobin`.
+                    items:
+                      description: RequestHashPolicy contains configuration for an individual hash policy on a request attribute.
+                      properties:
+                        headerHashOptions:
+                          description: HeaderHashOptions should be set when request header hash based load balancing is desired. It must be the only hash option field set, otherwise this request hash policy object will be ignored.
+                          properties:
+                            headerName:
+                              description: HeaderName is the name of the HTTP request header that will be used to calculate the hash key. If the header specified is not present on a request, no hash will be produced.
+                              minLength: 1
+                              type: string
+                          type: object
+                        terminal:
+                          description: Terminal is a flag that allows for short-circuiting computing of a hash for a given request. If set to true, and the request attribute specified in the attribute hash options is present, no further hash policies will be used to calculate a hash for the request.
+                          type: boolean
+                      type: object
+                    type: array
                   strategy:
-                    description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Random` and `Cookie`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
+                    description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Cookie`, and `RequestHash`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
                     type: string
                 type: object
               protocol:
@@ -240,7 +258,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: httpproxies.projectcontour.io
 spec:
@@ -425,8 +443,26 @@ spec:
                     loadBalancerPolicy:
                       description: The load balancing policy for this route.
                       properties:
+                        requestHashPolicies:
+                          description: RequestHashPolicies contains a list of hash policies to apply when the `RequestHash` load balancing strategy is chosen. If an element of the supplied list of hash policies is invalid, it will be ignored. If the list of hash policies is empty after validation, the load balancing strategy will fall back the the default `RoundRobin`.
+                          items:
+                            description: RequestHashPolicy contains configuration for an individual hash policy on a request attribute.
+                            properties:
+                              headerHashOptions:
+                                description: HeaderHashOptions should be set when request header hash based load balancing is desired. It must be the only hash option field set, otherwise this request hash policy object will be ignored.
+                                properties:
+                                  headerName:
+                                    description: HeaderName is the name of the HTTP request header that will be used to calculate the hash key. If the header specified is not present on a request, no hash will be produced.
+                                    minLength: 1
+                                    type: string
+                                type: object
+                              terminal:
+                                description: Terminal is a flag that allows for short-circuiting computing of a hash for a given request. If set to true, and the request attribute specified in the attribute hash options is present, no further hash policies will be used to calculate a hash for the request.
+                                type: boolean
+                            type: object
+                          type: array
                         strategy:
-                          description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Random` and `Cookie`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
+                          description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Cookie`, and `RequestHash`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
                           type: string
                       type: object
                     pathRewritePolicy:
@@ -456,6 +492,52 @@ spec:
                     rateLimitPolicy:
                       description: The policy for rate limiting on the route.
                       properties:
+                        global:
+                          description: Global defines global rate limiting parameters, i.e. parameters defining descriptors that are sent to an external rate limit service (RLS) for a rate limit decision on each request.
+                          properties:
+                            descriptors:
+                              description: Descriptors defines the list of descriptors that will be generated and sent to the rate limit service. Each descriptor contains 1+ key-value pair entries.
+                              items:
+                                description: RateLimitDescriptor defines a list of key-value pair generators.
+                                properties:
+                                  entries:
+                                    description: Entries is the list of key-value pair generators.
+                                    items:
+                                      description: RateLimitDescriptorEntry is a key-value pair generator. Exactly one field on this struct must be non-nil.
+                                      properties:
+                                        genericKey:
+                                          description: GenericKey defines a descriptor entry with a static key and value.
+                                          properties:
+                                            key:
+                                              description: Key defines the key of the descriptor entry. If not set, the key is set to "generic_key".
+                                              type: string
+                                            value:
+                                              description: Value defines the value of the descriptor entry.
+                                              minLength: 1
+                                              type: string
+                                          type: object
+                                        remoteAddress:
+                                          description: RemoteAddress defines a descriptor entry with a key of "remote_address" and a value equal to the client's IP address (from x-forwarded-for).
+                                          type: object
+                                        requestHeader:
+                                          description: RequestHeader defines a descriptor entry that's populated only if a given header is present on the request. The descriptor key is static, and the descriptor value is equal to the value of the header.
+                                          properties:
+                                            descriptorKey:
+                                              description: DescriptorKey defines the key to use on the descriptor entry.
+                                              minLength: 1
+                                              type: string
+                                            headerName:
+                                              description: HeaderName defines the name of the header to look for on the request.
+                                              minLength: 1
+                                              type: string
+                                          type: object
+                                      type: object
+                                    minItems: 1
+                                    type: array
+                                type: object
+                              minItems: 1
+                              type: array
+                          type: object
                         local:
                           description: Local defines local rate limiting parameters, i.e. parameters for rate limiting that occurs within each Envoy pod as requests are handled.
                           properties:
@@ -493,7 +575,7 @@ spec:
                               minimum: 400
                               type: integer
                             unit:
-                              description: Unit defines the period of time within which requests over the limit will be rate limited.
+                              description: Unit defines the period of time within which requests over the limit will be rate limited. Valid values are "second", "minute" and "hour".
                               enum:
                               - second
                               - minute
@@ -763,10 +845,28 @@ spec:
                     - name
                     type: object
                   loadBalancerPolicy:
-                    description: The load balancing policy for the backend services.
+                    description: The load balancing policy for the backend services. Note that the `Cookie` and `RequestHash` load balancing strategies cannot be used here.
                     properties:
+                      requestHashPolicies:
+                        description: RequestHashPolicies contains a list of hash policies to apply when the `RequestHash` load balancing strategy is chosen. If an element of the supplied list of hash policies is invalid, it will be ignored. If the list of hash policies is empty after validation, the load balancing strategy will fall back the the default `RoundRobin`.
+                        items:
+                          description: RequestHashPolicy contains configuration for an individual hash policy on a request attribute.
+                          properties:
+                            headerHashOptions:
+                              description: HeaderHashOptions should be set when request header hash based load balancing is desired. It must be the only hash option field set, otherwise this request hash policy object will be ignored.
+                              properties:
+                                headerName:
+                                  description: HeaderName is the name of the HTTP request header that will be used to calculate the hash key. If the header specified is not present on a request, no hash will be produced.
+                                  minLength: 1
+                                  type: string
+                              type: object
+                            terminal:
+                              description: Terminal is a flag that allows for short-circuiting computing of a hash for a given request. If set to true, and the request attribute specified in the attribute hash options is present, no further hash policies will be used to calculate a hash for the request.
+                              type: boolean
+                          type: object
+                        type: array
                       strategy:
-                        description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Random` and `Cookie`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
+                        description: Strategy specifies the policy used to balance requests across the pool of backend pods. Valid policy names are `Random`, `RoundRobin`, `WeightedLeastRequest`, `Cookie`, and `RequestHash`. If an unknown strategy name is specified or no policy is supplied, the default `RoundRobin` policy is used.
                         type: string
                     type: object
                   services:
@@ -960,6 +1060,52 @@ spec:
                   rateLimitPolicy:
                     description: The policy for rate limiting on the virtual host.
                     properties:
+                      global:
+                        description: Global defines global rate limiting parameters, i.e. parameters defining descriptors that are sent to an external rate limit service (RLS) for a rate limit decision on each request.
+                        properties:
+                          descriptors:
+                            description: Descriptors defines the list of descriptors that will be generated and sent to the rate limit service. Each descriptor contains 1+ key-value pair entries.
+                            items:
+                              description: RateLimitDescriptor defines a list of key-value pair generators.
+                              properties:
+                                entries:
+                                  description: Entries is the list of key-value pair generators.
+                                  items:
+                                    description: RateLimitDescriptorEntry is a key-value pair generator. Exactly one field on this struct must be non-nil.
+                                    properties:
+                                      genericKey:
+                                        description: GenericKey defines a descriptor entry with a static key and value.
+                                        properties:
+                                          key:
+                                            description: Key defines the key of the descriptor entry. If not set, the key is set to "generic_key".
+                                            type: string
+                                          value:
+                                            description: Value defines the value of the descriptor entry.
+                                            minLength: 1
+                                            type: string
+                                        type: object
+                                      remoteAddress:
+                                        description: RemoteAddress defines a descriptor entry with a key of "remote_address" and a value equal to the client's IP address (from x-forwarded-for).
+                                        type: object
+                                      requestHeader:
+                                        description: RequestHeader defines a descriptor entry that's populated only if a given header is present on the request. The descriptor key is static, and the descriptor value is equal to the value of the header.
+                                        properties:
+                                          descriptorKey:
+                                            description: DescriptorKey defines the key to use on the descriptor entry.
+                                            minLength: 1
+                                            type: string
+                                          headerName:
+                                            description: HeaderName defines the name of the header to look for on the request.
+                                            minLength: 1
+                                            type: string
+                                        type: object
+                                    type: object
+                                  minItems: 1
+                                  type: array
+                              type: object
+                            minItems: 1
+                            type: array
+                        type: object
                       local:
                         description: Local defines local rate limiting parameters, i.e. parameters for rate limiting that occurs within each Envoy pod as requests are handled.
                         properties:
@@ -997,7 +1143,7 @@ spec:
                             minimum: 400
                             type: integer
                           unit:
-                            description: Unit defines the period of time within which requests over the limit will be rate limited.
+                            description: Unit defines the period of time within which requests over the limit will be rate limited. Valid values are "second", "minute" and "hour".
                             enum:
                             - second
                             - minute
@@ -1174,6 +1320,29 @@ spec:
                         ip:
                           description: IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)
                           type: string
+                        ports:
+                          description: Ports is a list of records of service ports If used, every port defined in the service should have an entry in it
+                          items:
+                            properties:
+                              error:
+                                description: 'Error is to record the problem with the service port The format of the error shall comply with the following rules: - built-in error values shall be specified in this file and those shall use   CamelCase names - cloud provider specific error values must have names that comply with the   format foo.example.com/CamelCase. --- The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)'
+                                maxLength: 316
+                                pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                                type: string
+                              port:
+                                description: Port is the port number of the service port of which status is recorded here
+                                format: int32
+                                type: integer
+                              protocol:
+                                default: TCP
+                                description: 'Protocol is the protocol of the service port of which status is recorded here The supported values are: "TCP", "UDP", "SCTP"'
+                                type: string
+                            required:
+                            - port
+                            - protocol
+                            type: object
+                          type: array
+                          x-kubernetes-list-type: atomic
                       type: object
                     type: array
                 type: object
@@ -1197,7 +1366,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.0
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: tlscertificatedelegations.projectcontour.io
 spec:

@@ -16,6 +16,8 @@ package v3
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/internal/featuretests"
+
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
@@ -271,6 +273,47 @@ func TestExternalNameService(t *testing.T) {
 				&envoy_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
 						envoy_v3.UpstreamTLSContext(nil, "external.address", nil),
+					),
+				},
+			),
+		),
+	})
+
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "default",
+		},
+		Type: "kubernetes.io/tls",
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+	}
+
+	// Create TCPProxy with upstream protocol 'tls' to an externalName type service
+	// and verify that the SNI on the upstream request matches the externalName value.
+	rh.OnDelete(fixture.NewProxy("kuard").WithSpec(contour_api_v1.HTTPProxySpec{}))
+	rh.OnAdd(sec1)
+	rh.OnAdd(fixture.NewProxy("kuard").
+		WithFQDN("kuard.projectcontour.io").
+		WithCertificate(sec1.Name).
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{{
+					Protocol: pointer.StringPtr("tls"),
+					Name:     s1.Name,
+					Port:     80,
+				}},
+			},
+		}),
+	)
+
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+		Resources: resources(t,
+			DefaultCluster(
+				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
+				&envoy_cluster_v3.Cluster{
+					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
+						envoy_v3.UpstreamTLSContext(nil, "foo.io", nil),
 					),
 				},
 			),

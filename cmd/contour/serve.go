@@ -27,6 +27,7 @@ import (
 
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -48,6 +49,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
@@ -105,49 +107,49 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		return nil
 	}
 
-	serve.Flag("config-path", "Path to base configuration.").Short('c').Action(parseConfig).ExistingFileVar(&configFile)
+	serve.Flag("config-path", "Path to base configuration.").Short('c').PlaceHolder("/path/to/file").Action(parseConfig).ExistingFileVar(&configFile)
 
 	serve.Flag("incluster", "Use in cluster configuration.").BoolVar(&ctx.Config.InCluster)
-	serve.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").StringVar(&ctx.Config.Kubeconfig)
+	serve.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").PlaceHolder("/path/to/file").StringVar(&ctx.Config.Kubeconfig)
 
-	serve.Flag("xds-address", "xDS gRPC API address.").StringVar(&ctx.xdsAddr)
-	serve.Flag("xds-port", "xDS gRPC API port.").IntVar(&ctx.xdsPort)
+	serve.Flag("xds-address", "xDS gRPC API address.").PlaceHolder("<ipaddr>").StringVar(&ctx.xdsAddr)
+	serve.Flag("xds-port", "xDS gRPC API port.").PlaceHolder("<port>").IntVar(&ctx.xdsPort)
 
-	serve.Flag("stats-address", "Envoy /stats interface address.").StringVar(&ctx.statsAddr)
-	serve.Flag("stats-port", "Envoy /stats interface port.").IntVar(&ctx.statsPort)
+	serve.Flag("stats-address", "Envoy /stats interface address.").PlaceHolder("<ipaddr>").StringVar(&ctx.statsAddr)
+	serve.Flag("stats-port", "Envoy /stats interface port.").PlaceHolder("<port>").IntVar(&ctx.statsPort)
 
-	serve.Flag("debug-http-address", "Address the debug http endpoint will bind to.").StringVar(&ctx.debugAddr)
-	serve.Flag("debug-http-port", "Port the debug http endpoint will bind to.").IntVar(&ctx.debugPort)
+	serve.Flag("debug-http-address", "Address the debug http endpoint will bind to.").PlaceHolder("<ipaddr>").StringVar(&ctx.debugAddr)
+	serve.Flag("debug-http-port", "Port the debug http endpoint will bind to.").PlaceHolder("<port>").IntVar(&ctx.debugPort)
 
-	serve.Flag("http-address", "Address the metrics HTTP endpoint will bind to.").StringVar(&ctx.metricsAddr)
-	serve.Flag("http-port", "Port the metrics HTTP endpoint will bind to.").IntVar(&ctx.metricsPort)
-	serve.Flag("health-address", "Address the health HTTP endpoint will bind to.").StringVar(&ctx.healthAddr)
-	serve.Flag("health-port", "Port the health HTTP endpoint will bind to.").IntVar(&ctx.healthPort)
+	serve.Flag("http-address", "Address the metrics HTTP endpoint will bind to.").PlaceHolder("<ipaddr>").StringVar(&ctx.metricsAddr)
+	serve.Flag("http-port", "Port the metrics HTTP endpoint will bind to.").PlaceHolder("<port>").IntVar(&ctx.metricsPort)
+	serve.Flag("health-address", "Address the health HTTP endpoint will bind to.").PlaceHolder("<ipaddr>").StringVar(&ctx.healthAddr)
+	serve.Flag("health-port", "Port the health HTTP endpoint will bind to.").PlaceHolder("<port>").IntVar(&ctx.healthPort)
 
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS.").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
-	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS.").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
-	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS.").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
+	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS.").PlaceHolder("/path/to/file").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
+	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS.").PlaceHolder("/path/to/file").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
 	serve.Flag("insecure", "Allow serving without TLS secured gRPC.").BoolVar(&ctx.PermitInsecureGRPC)
-	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").StringVar(&ctx.rootNamespaces)
+	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").PlaceHolder("<ns,ns>").StringVar(&ctx.rootNamespaces)
 
-	serve.Flag("ingress-class-name", "Contour IngressClass name.").StringVar(&ctx.ingressClass)
-	serve.Flag("ingress-status-address", "Address to set in Ingress object status.").StringVar(&ctx.Config.IngressStatusAddress)
-	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").StringVar(&ctx.httpAccessLog)
-	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log.").StringVar(&ctx.httpsAccessLog)
-	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests.").StringVar(&ctx.httpAddr)
-	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests.").StringVar(&ctx.httpsAddr)
-	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests.").IntVar(&ctx.httpPort)
-	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests.").IntVar(&ctx.httpsPort)
-	serve.Flag("envoy-service-name", "Envoy Service Name.").StringVar(&ctx.Config.EnvoyServiceName)
-	serve.Flag("envoy-service-namespace", "Envoy Service Namespace.").StringVar(&ctx.Config.EnvoyServiceNamespace)
+	serve.Flag("ingress-class-name", "Contour IngressClass name.").PlaceHolder("<name>").StringVar(&ctx.ingressClass)
+	serve.Flag("ingress-status-address", "Address to set in Ingress object status.").PlaceHolder("<address>").StringVar(&ctx.Config.IngressStatusAddress)
+	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
+	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpsAccessLog)
+	serve.Flag("envoy-service-http-address", "Kubernetes Service address for HTTP requests.").PlaceHolder("ipaddr").StringVar(&ctx.httpAddr)
+	serve.Flag("envoy-service-https-address", "Kubernetes Service address for HTTPS requests.").PlaceHolder("<ipaddr>").StringVar(&ctx.httpsAddr)
+	serve.Flag("envoy-service-http-port", "Kubernetes Service port for HTTP requests.").PlaceHolder("<port>").IntVar(&ctx.httpPort)
+	serve.Flag("envoy-service-https-port", "Kubernetes Service port for HTTPS requests.").PlaceHolder("<port>").IntVar(&ctx.httpsPort)
+	serve.Flag("envoy-service-name", "Name of the Envoy service to inspect for Ingress status details.").PlaceHolder("<name>").StringVar(&ctx.Config.EnvoyServiceName)
+	serve.Flag("envoy-service-namespace", "Envoy Service Namespace.").PlaceHolder("<namespace>").StringVar(&ctx.Config.EnvoyServiceNamespace)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners.").BoolVar(&ctx.useProxyProto)
 
-	serve.Flag("accesslog-format", "Format for Envoy access logs.").StringVar((*string)(&ctx.Config.AccessLogFormat))
+	serve.Flag("accesslog-format", "Format for Envoy access logs.").PlaceHolder("<envoy|json>").StringVar((*string)(&ctx.Config.AccessLogFormat))
 	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
 
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
-	serve.Flag("kubernetes-debug", "Enable Kubernetes client debug logging.").UintVar(&ctx.KubernetesDebug)
-	serve.Flag("experimental-service-apis", "Subscribe to the new service-apis types.").BoolVar(&ctx.UseExperimentalServiceAPITypes)
+	serve.Flag("kubernetes-debug", "Enable Kubernetes client debug logging with log level.").PlaceHolder("<log level>").UintVar(&ctx.KubernetesDebug)
+	serve.Flag("experimental-service-apis", "DEPRECATED: Please configure the gateway.name & gateway.namespace in the configuration file.").BoolVar(&ctx.UseExperimentalServiceAPITypes)
 	return serve, ctx
 }
 
@@ -236,8 +238,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	registry.MustRegister(prometheus.NewGoCollector())
 
 	// Before we can build the event handler, we need to initialize the converter we'll
-	// use to convert from Unstructured. Thanks to kubebuilder types from service-apis, this now can
-	// return an error.
+	// use to convert from Unstructured.
 	converter, err := k8s.NewUnstructuredConverter()
 	if err != nil {
 		return err
@@ -255,6 +256,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if err != nil {
 		return fmt.Errorf("error parsing stream idle timeout: %w", err)
 	}
+	delayedCloseTimeout, err := timeout.Parse(ctx.Config.Timeouts.DelayedCloseTimeout)
+	if err != nil {
+		return fmt.Errorf("error parsing delayed close timeout: %w", err)
+	}
 	maxConnectionDuration, err := timeout.Parse(ctx.Config.Timeouts.MaxConnectionDuration)
 	if err != nil {
 		return fmt.Errorf("error parsing max connection duration: %w", err)
@@ -268,6 +273,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return fmt.Errorf("error parsing request timeout: %w", err)
 	}
 
+	// connection balancer
+	if ok := ctx.Config.Listener.ConnectionBalancer == "exact" || ctx.Config.Listener.ConnectionBalancer == ""; !ok {
+		log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", ctx.Config.Listener.ConnectionBalancer)
+		ctx.Config.Listener.ConnectionBalancer = ""
+	}
+
 	listenerConfig := xdscache_v3.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
@@ -279,13 +290,77 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		AccessLogType:                 ctx.Config.AccessLogFormat,
 		AccessLogFields:               ctx.Config.AccessLogFields,
 		MinimumTLSVersion:             annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, "1.2"),
+		CipherSuites:                  config.SanitizeCipherSuites(ctx.Config.TLS.CipherSuites),
 		RequestTimeout:                requestTimeout,
 		ConnectionIdleTimeout:         connectionIdleTimeout,
 		StreamIdleTimeout:             streamIdleTimeout,
+		DelayedCloseTimeout:           delayedCloseTimeout,
 		MaxConnectionDuration:         maxConnectionDuration,
 		ConnectionShutdownGracePeriod: connectionShutdownGracePeriod,
 		DefaultHTTPVersions:           parseDefaultHTTPVersions(ctx.Config.DefaultHTTPVersions),
 		AllowChunkedLength:            !ctx.Config.DisableAllowChunkedLength,
+		XffNumTrustedHops:             ctx.Config.Network.XffNumTrustedHops,
+		ConnectionBalancer:            ctx.Config.Listener.ConnectionBalancer,
+	}
+
+	if ctx.Config.RateLimitService.ExtensionService != "" {
+		namespacedName := k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService)
+		client := clients.DynamicClient().Resource(contour_api_v1alpha1.ExtensionServiceGVR).Namespace(namespacedName.Namespace)
+
+		// ensure the specified ExtensionService exists
+		res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("error getting rate limit extension service %s: %v", namespacedName, err)
+		}
+		var extensionSvc contour_api_v1alpha1.ExtensionService
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &extensionSvc); err != nil {
+			return fmt.Errorf("error converting rate limit extension service %s: %v", namespacedName, err)
+		}
+		// get the response timeout from the ExtensionService
+		var responseTimeout timeout.Setting
+		if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
+			responseTimeout, err = timeout.Parse(tp.Response)
+			if err != nil {
+				return fmt.Errorf("error parsing rate limit extension service %s response timeout: %v", namespacedName, err)
+			}
+		}
+
+		listenerConfig.RateLimitConfig = &xdscache_v3.RateLimitConfig{
+			ExtensionService: namespacedName,
+			Domain:           ctx.Config.RateLimitService.Domain,
+			Timeout:          responseTimeout,
+			FailOpen:         ctx.Config.RateLimitService.FailOpen,
+		}
+	}
+
+	if ctx.Config.RateLimitService.ExtensionService != "" {
+		namespacedName := k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService)
+		client := clients.DynamicClient().Resource(contour_api_v1alpha1.ExtensionServiceGVR).Namespace(namespacedName.Namespace)
+
+		// ensure the specified ExtensionService exists
+		res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("error getting rate limit extension service %s: %v", namespacedName, err)
+		}
+		var extensionSvc contour_api_v1alpha1.ExtensionService
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &extensionSvc); err != nil {
+			return fmt.Errorf("error converting rate limit extension service %s: %v", namespacedName, err)
+		}
+		// get the response timeout from the ExtensionService
+		var responseTimeout timeout.Setting
+		if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
+			responseTimeout, err = timeout.Parse(tp.Response)
+			if err != nil {
+				return fmt.Errorf("error parsing rate limit extension service %s response timeout: %v", namespacedName, err)
+			}
+		}
+
+		listenerConfig.RateLimitConfig = &xdscache_v3.RateLimitConfig{
+			ExtensionService: namespacedName,
+			Domain:           ctx.Config.RateLimitService.Domain,
+			Timeout:          responseTimeout,
+			FailOpen:         ctx.Config.RateLimitService.FailOpen,
+		}
 	}
 
 	contourMetrics := metrics.NewMetrics(registry)
@@ -315,8 +390,12 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
-				RootNamespaces:       ctx.proxyRootNamespaces(),
-				IngressClass:         ctx.ingressClass,
+				RootNamespaces: ctx.proxyRootNamespaces(),
+				IngressClass:   ctx.ingressClass,
+				Gateway: types.NamespacedName{
+					Name:      ctx.Config.GatewayConfig.Name,
+					Namespace: ctx.Config.GatewayConfig.Namespace,
+				},
 				ConfiguredSecretRefs: configuredSecretRefs,
 				FieldLogger:          log.WithField("context", "KubernetesCache"),
 			},
@@ -334,6 +413,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 					FallbackCertificate:   fallbackCert,
 					DNSLookupFamily:       ctx.Config.Cluster.DNSLookupFamily,
 					ClientCertificate:     clientCert,
+				},
+				&dag.GatewayAPIProcessor{
+					FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
 				},
 				&dag.ListenerProcessor{},
 			},
@@ -371,17 +453,32 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		inf.AddEventHandler(&dynamicHandler)
 	}
 
-	// Inform on service-apis types if they are present.
-	if ctx.UseExperimentalServiceAPITypes {
-		for _, r := range k8s.ServiceAPIResources() {
-			if !clients.ResourcesExist(r) {
-				log.WithField("resource", r).Warn("resource type not present on API server")
-				continue
-			}
-
+	// If Ingress v1 resource exist, then add informers to watch, otherwise
+	// add Ingress v1beta1 informers.
+	if clients.ResourcesExist(k8s.IngressV1Resources()...) {
+		for _, r := range k8s.IngressV1Resources() {
 			if err := informOnResource(clients, r, &dynamicHandler); err != nil {
 				log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 			}
+		}
+	} else {
+		if err := informOnResource(clients, k8s.IngressV1Beta1Resource(), &dynamicHandler); err != nil {
+			log.WithError(err).WithField("resource", k8s.IngressV1Beta1Resource()).Fatal("failed to create informer")
+		}
+	}
+
+	// Inform on gateway-api types if they are present.
+	if ctx.UseExperimentalServiceAPITypes {
+		log.Warn("DEPRECATED: The flag '--experimental-service-apis' is deprecated and should not be used. Please configure the gateway.name & gateway.namespace in the configuration file to specify which Gateway Contour will be watching.")
+	}
+	for _, r := range k8s.GatewayAPIResources() {
+		if !clients.ResourcesExist(r) {
+			log.WithField("resource", r).Warn("resource type not present on API server")
+			continue
+		}
+
+		if err := informOnResource(clients, r, &dynamicHandler); err != nil {
+			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
 
@@ -417,17 +514,17 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	var g workgroup.Group
 
 	// Register a task to start all the informers.
-	g.Add(func(stop <-chan struct{}) error {
+	g.AddContext(func(taskCtx context.Context) error {
 		log := log.WithField("context", "informers")
 
 		log.Info("starting informers")
 		defer log.Println("stopped informers")
 
-		if err := clients.StartInformers(stop); err != nil {
+		if err := clients.StartInformers(taskCtx); err != nil {
 			log.WithError(err).Error("failed to start informers")
 		}
 
-		<-stop
+		<-taskCtx.Done()
 		return nil
 	})
 
@@ -549,11 +646,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Info("Watching Service for Ingress status")
 	}
 
-	g.Add(func(stop <-chan struct{}) error {
+	g.AddContext(func(taskCtx context.Context) error {
 		log := log.WithField("context", "xds")
 
 		log.Printf("waiting for informer caches to sync")
-		if !clients.WaitForCacheSync(stop) {
+		if !clients.WaitForCacheSync(taskCtx) {
 			return errors.New("informer cache failed to sync")
 		}
 		log.Printf("informer caches synced")
@@ -564,7 +661,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		case config.EnvoyServerType:
 			v3cache := contour_xds_v3.NewSnapshotCache(false, log)
 			snapshotHandler.AddSnapshotter(v3cache)
-			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(context.Background(), v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
+			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(taskCtx, v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
 		case config.ContourServerType:
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 		default:
@@ -587,7 +684,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		defer log.Info("stopped xDS server")
 
 		go func() {
-			<-stop
+			<-taskCtx.Done()
 
 			// We don't use GracefulStop here because envoy
 			// has long-lived hanging xDS requests. There's no

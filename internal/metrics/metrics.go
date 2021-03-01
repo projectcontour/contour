@@ -34,6 +34,7 @@ type Metrics struct {
 	proxyOrphanedGauge  *prometheus.GaugeVec
 
 	dagRebuildGauge             *prometheus.GaugeVec
+	dagRebuildTotal             prometheus.Counter
 	CacheHandlerOnUpdateSummary prometheus.Summary
 	EventHandlerOperations      *prometheus.CounterVec
 
@@ -58,13 +59,14 @@ type Meta struct {
 const (
 	BuildInfoGauge = "contour_build_info"
 
-	HTTPProxyTotalGauge     = "contour_httpproxy_total"
-	HTTPProxyRootTotalGauge = "contour_httpproxy_root_total"
-	HTTPProxyInvalidGauge   = "contour_httpproxy_invalid_total"
-	HTTPProxyValidGauge     = "contour_httpproxy_valid_total"
-	HTTPProxyOrphanedGauge  = "contour_httpproxy_orphaned_total"
+	HTTPProxyTotalGauge     = "contour_httpproxy"
+	HTTPProxyRootTotalGauge = "contour_httpproxy_root"
+	HTTPProxyInvalidGauge   = "contour_httpproxy_invalid"
+	HTTPProxyValidGauge     = "contour_httpproxy_valid"
+	HTTPProxyOrphanedGauge  = "contour_httpproxy_orphaned"
 
 	DAGRebuildGauge             = "contour_dagrebuild_timestamp"
+	DAGRebuildTotal             = "contour_dagrebuild_total"
 	cacheHandlerOnUpdateSummary = "contour_cachehandler_onupdate_duration_seconds"
 	eventHandlerOperations      = "contour_eventhandler_operation_total"
 )
@@ -127,6 +129,12 @@ func NewMetrics(registry *prometheus.Registry) *Metrics {
 			},
 			[]string{},
 		),
+		dagRebuildTotal: prometheus.NewCounter(
+			prometheus.CounterOpts{
+				Name: DAGRebuildTotal,
+				Help: "Total number of times DAG has been rebuilt since startup",
+			},
+		),
 		CacheHandlerOnUpdateSummary: prometheus.NewSummary(prometheus.SummaryOpts{
 			Name:       cacheHandlerOnUpdateSummary,
 			Help:       "Histogram for the runtime of xDS cache regeneration.",
@@ -155,6 +163,7 @@ func (m *Metrics) register(registry *prometheus.Registry) {
 		m.proxyValidGauge,
 		m.proxyOrphanedGauge,
 		m.dagRebuildGauge,
+		m.dagRebuildTotal,
 		m.CacheHandlerOnUpdateSummary,
 		m.EventHandlerOperations,
 	)
@@ -179,7 +188,6 @@ func (m *Metrics) Zero() {
 
 	m.SetDAGLastRebuilt(time.Now())
 	m.SetHTTPProxyMetric(zeroes)
-
 	m.EventHandlerOperations.WithLabelValues("add", "Secret").Inc()
 
 	prometheus.NewTimer(m.CacheHandlerOnUpdateSummary).ObserveDuration()
@@ -188,6 +196,11 @@ func (m *Metrics) Zero() {
 // SetDAGLastRebuilt records the last time the DAG was rebuilt.
 func (m *Metrics) SetDAGLastRebuilt(ts time.Time) {
 	m.dagRebuildGauge.WithLabelValues().Set(float64(ts.Unix()))
+}
+
+// SetDAGRebuiltTotal records the total number of times DAG was rebuilt
+func (m *Metrics) SetDAGRebuiltTotal() {
+	m.dagRebuildTotal.Inc()
 }
 
 // SetHTTPProxyMetric sets metric values for a set of HTTPProxies
