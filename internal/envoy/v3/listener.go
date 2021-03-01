@@ -564,19 +564,21 @@ func FilterMisdirectedRequests(fqdn string) *http.HttpFilter {
 	code := `
 function envoy_on_request(request_handle)
 	local headers = request_handle:headers()
-	local host = string.lower(headers:get(":authority"))
+	local original_host = string.lower(headers:get(":authority"))
+	local host = original_host
 	local target = "%s"
 
 	if host ~= target then
 		s, e = string.find(host, ":", 1, true)
 		if s ~= nil then
 			host = string.sub(host, 1, s - 1)
+			headers:replace(":authority", host)
 		end
 
 		if host ~= target then
 			request_handle:respond(
 				{[":status"] = "421"},
-				string.format("misdirected request to %%q", headers:get(":authority"))
+				string.format("misdirected request to %%q", original_host)
 			)
 		end
 	end
