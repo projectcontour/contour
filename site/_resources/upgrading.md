@@ -18,15 +18,15 @@ This document describes the changes needed to upgrade your Contour installation.
 
 <div id="toc" class="navigation"></div>
 
-## Upgrading Contour 1.12.0 to 1.13.0
+## Upgrading Contour 1.12.0 to 1.13.1
 
-Contour 1.13.0 is the current stable release.
+Contour 1.13.1 is the current stable release.
 
 ### Required Envoy version
 
-All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.17.0`.
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.17.1`.
 
-Please see the [Envoy Release Notes][28] for information about issues fixed in Envoy 1.17.0.
+Please see the [Envoy Release Notes][29] for information about issues fixed in Envoy 1.17.1.
 
 ### The easy way to upgrade
 
@@ -36,11 +36,11 @@ If the following are true for you:
 * You are using our [quickstart example][18] deployments.
 * Your cluster can take a few minutes of downtime.
 
-Then the simplest way to upgrade to 1.13.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+Then the simplest way to upgrade to 1.13.1 is to delete the `projectcontour` namespace and reapply one of the example configurations:
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.13.0/contour.yaml
+$ kubectl apply -f {{site.url}}/quickstart/v1.13.1/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -49,8 +49,8 @@ You'll need to re-check where your DNS names are pointing as well, using [Get yo
 
 ### The less easy way
 
-This section contains information for administrators who wish to apply the Contour 1.12.0 to 1.13.0 changes manually.
-The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.13.0` tag.
+This section contains information for administrators who wish to apply the Contour 1.12.0 to 1.13.1 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.13.1` tag.
 
 The Contour CRD definition must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
 
@@ -65,7 +65,7 @@ This will rotate the TLS certificates used for gRPC security.
 $ kubectl apply -f examples/contour/02-job-certgen.yaml
 ```
 
-If your version of Contour is older than v1.12, please upgrade to v1.12 first, then upgrade to v1.13.
+If your version of Contour is older than v1.12, please upgrade to v1.12 first, then upgrade to v1.13.1.
 
 Upgrade your Contour deployment:
 
@@ -1158,3 +1158,4 @@ $ kubectl get configmap -n heptio-contour -o yaml contour
 [26]: {% link _guides/xds-migration.md %}
 [27]: https://www.envoyproxy.io/docs/envoy/v1.16.2/version_history/current
 [28]: https://www.envoyproxy.io/docs/envoy/v1.17.0/version_history/current
+[29]: https://www.envoyproxy.io/docs/envoy/v1.17.1/version_history/current
