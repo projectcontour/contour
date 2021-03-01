@@ -15,7 +15,7 @@ package selector
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-// MatchesSelector returns true if the selector set matches the values in the labels.
+// MatchesLabelSelector returns true if the selector set matches the values in the labels.
 func MatchesLabelSelector(selector metav1.LabelSelector, matchLabels map[string]string) bool {
 
 	matchesLabels := false

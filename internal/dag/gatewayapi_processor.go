@@ -42,7 +42,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		p.source = nil
 	}()
 
-	// Gateway must defined for resources to be processed.
+	// Gateway must be defined for resources to be processed.
 	if p.source.gateway == nil {
 		p.Error("Gateway is not defined!")
 		return
