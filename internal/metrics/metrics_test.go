@@ -77,12 +77,12 @@ func TestSetDAGLastRebuilt(t *testing.T) {
 
 func TestWriteProxyMetric(t *testing.T) {
 	tests := map[string]struct {
-		proxyMetrics       RouteMetric
-		total              testMetric
-		valid              testMetric
-		invalid            testMetric
-		orphaned           testMetric
-		root               testMetric
+		proxyMetrics RouteMetric
+		total        testMetric
+		valid        testMetric
+		invalid      testMetric
+		orphaned     testMetric
+		root         testMetric
 	}{
 		"simple": {
 			proxyMetrics: RouteMetric{
