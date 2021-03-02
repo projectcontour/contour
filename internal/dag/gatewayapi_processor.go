@@ -64,19 +64,11 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		// are associated with the Gateway. An empty Selector matches all routes.
 		for _, listener := range p.source.gateway.Spec.Listeners {
 
-			if len(listener.Routes.Selector.MatchLabels) > 0 || len(listener.Routes.Selector.MatchExpressions) > 0 {
-
-				l, err := metav1.LabelSelectorAsSelector(&listener.Routes.Selector)
-				if err != nil {
-					p.Errorf("Error processing Spec.Routes.Selector, skipping route: %w", err)
-					continue
-				}
-
-				// Look for matching labels on Selector.
-				if l.Matches(labels.Set(route.Labels)) {
-					validRoutes = append(validRoutes, route)
-				}
-			} else {
+			matches, err := matchRoutes(listener.Routes.Selector, route.Labels)
+			if err != nil {
+				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+			}
+			if matches {
 				// Empty Selector matches all routes.
 				validRoutes = append(validRoutes, route)
 			}
@@ -87,6 +79,23 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			p.computeHTTPRoute(validRoute)
 		}
 	}
+}
+
+// matchRoutes returns true if the selector matches the labels on the object or is not defined.
+func matchRoutes(selector metav1.LabelSelector, objLabels map[string]string) (bool, error) {
+
+	// If a selector is defined then check that it matches the labels on the object.
+	if len(selector.MatchLabels) > 0 || len(selector.MatchExpressions) > 0 {
+		l, err := metav1.LabelSelectorAsSelector(&selector)
+		if err != nil {
+			return false, err
+		}
+
+		// Look for matching labels on Selector.
+		return l.Matches(labels.Set(objLabels)), nil
+	}
+	// If no selector is defined then it matches by default.
+	return true, nil
 }
 
 func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute) {
