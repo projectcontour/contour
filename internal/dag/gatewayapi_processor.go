@@ -49,9 +49,9 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		return
 	}
 
-	for _, route := range p.source.httproutes {
+	var validRoutes []*gatewayapi_v1alpha1.HTTPRoute
 
-		var validRoutes []*gatewayapi_v1alpha1.HTTPRoute
+	for _, route := range p.source.httproutes {
 
 		// Filter the HTTPRoutes that match the gateway which Contour is configured to watch.
 		// RouteBindingSelector defines a schema for associating routes with the Gateway.
@@ -64,25 +64,27 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		// are associated with the Gateway. An empty Selector matches all routes.
 		for _, listener := range p.source.gateway.Spec.Listeners {
 
-			matches, err := matchRoutes(listener.Routes.Selector, route.Labels)
+			matches, err := selectorMatches(listener.Routes.Selector, route.Labels)
 			if err != nil {
 				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
 			}
 			if matches {
 				// Empty Selector matches all routes.
 				validRoutes = append(validRoutes, route)
+				break
 			}
 		}
-
-		// Process all the routes that match this Gateway.
-		for _, validRoute := range validRoutes {
-			p.computeHTTPRoute(validRoute)
-		}
 	}
+
+	// Process all the routes that match this Gateway.
+	for _, validRoute := range validRoutes {
+		p.computeHTTPRoute(validRoute)
+	}
+
 }
 
-// matchRoutes returns true if the selector matches the labels on the object or is not defined.
-func matchRoutes(selector metav1.LabelSelector, objLabels map[string]string) (bool, error) {
+// selectorMatches returns true if the selector matches the labels on the object or is not defined.
+func selectorMatches(selector metav1.LabelSelector, objLabels map[string]string) (bool, error) {
 
 	// If a selector is defined then check that it matches the labels on the object.
 	if len(selector.MatchLabels) > 0 || len(selector.MatchExpressions) > 0 {

@@ -107,6 +107,31 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	gatewaySelectorNotMatching := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gatewayWithSelector",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: "HTTP",
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Selector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"not": "matching",
+						},
+						MatchExpressions: []metav1.LabelSelectorRequirement{{
+							Key:      "something",
+							Operator: "In",
+							Values:   []string{"else"},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	tests := map[string]struct {
 		objs                         []interface{}
 		disablePermitInsecure        bool
@@ -197,6 +222,41 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 			),
+		},
+		// Test that a gateway selector doesn't select routes that do not match.
+		"insert basic single route, single hostname which doesn't match gateway's selector": {
+			gateway: gatewaySelectorNotMatching,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
 		},
 		"insert basic multiple routes, single hostname": {
 			gateway: gatewayWithSelector,
