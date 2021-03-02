@@ -47,7 +47,7 @@ type Builder struct {
 // configured DAG processors, in order.
 func (b *Builder) Build() *DAG {
 	dag := DAG{
-		StatusCache: status.NewCache(),
+		StatusCache: status.NewCache(b.Source.ConfiguredGateway),
 	}
 
 	for _, p := range b.Processors {

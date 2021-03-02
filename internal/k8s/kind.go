@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 // KindOf returns the kind string for the given Kubernetes object.
@@ -48,6 +49,8 @@ func KindOf(obj interface{}) string {
 			return "ExtensionService"
 		case *unstructured.Unstructured:
 			return obj.GetKind()
+		case *gatewayapi_v1alpha1.HTTPRoute:
+			return "HTTPRoute"
 		default:
 			return ""
 		}

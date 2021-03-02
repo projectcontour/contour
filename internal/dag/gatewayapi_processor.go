@@ -18,6 +18,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -167,10 +168,12 @@ func selectorMatches(selector metav1.LabelSelector, objLabels map[string]string)
 }
 
 func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute) {
+	routeAccessor, commit := p.dag.StatusCache.HTTPRouteAccessor(route)
+	defer commit()
 
 	// Validate TLS Configuration
 	if route.Spec.TLS != nil {
-		p.Error("NOT IMPLEMENTED: The 'RouteTLSConfig' is not yet implemented.")
+		routeAccessor.ConditionFor(status.NotImplemented, "NotImplemented", "HTTPRoute.Spec.TLS: Not yet implemented.")
 	}
 
 	// Determine the hosts on the route, if no hosts
@@ -212,44 +215,44 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			case gatewayapi_v1alpha1.PathMatchPrefix:
 				pathPrefixes = append(pathPrefixes, stringOrDefault(match.Path.Value, "/"))
 			default:
-				p.Error("NOT IMPLEMENTED: Only PathMatchPrefix is currently implemented.")
+				routeAccessor.ConditionFor(status.Invalid, "PathMatchType", "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.")
 			}
 		}
 
+		if len(rule.ForwardTo) == 0 {
+			// TODO: Raise `ResolvedRefs` condition on Gateway with `DegradedRoutes` reason (#3455).
+			routeAccessor.ConditionFor(status.Invalid, "ForwardTo", "At least one Spec.Rules.ForwardTo must be specified.")
+			continue
+		}
+
 		// Validate the ForwardTos.
-		var forwardTos []gatewayapi_v1alpha1.HTTPRouteForwardTo
 		for _, forward := range rule.ForwardTo {
 			// Verify the service is valid
 			if forward.ServiceName == nil {
-				p.Error("ServiceName must be specified and is currently only type implemented!")
+				routeAccessor.ConditionFor(status.Invalid, "ForwardTo", "Spec.Rules.ForwardTo.ServiceName must be specified.")
 				continue
 			}
 
 			// TODO: Do not require port to be present (#3352).
 			if forward.Port == nil {
-				p.Error("ServicePort must be specified.")
+				routeAccessor.ConditionFor(status.Invalid, "ForwardTo", "Spec.Rules.ForwardTo.ServicePort must be specified.")
 				continue
 			}
-			forwardTos = append(forwardTos, forward)
-		}
-
-		// Process any valid forwardTo.
-		for _, forward := range forwardTos {
 
 			meta := types.NamespacedName{Name: *forward.ServiceName, Namespace: route.Namespace}
 
 			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
 			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*forward.Port)), p.source)
 			if err != nil {
-				// TODO: Raise `ResolvedRefs` condition on Gateway with `DegradedRoutes` reason.
-				p.Errorf("Service %q does not exist in namespace %q", meta.Name, meta.Namespace)
-				return
+				// TODO: Raise `ResolvedRefs` condition on Gateway with `DegradedRoutes` reason (#3455).
+				routeAccessor.ConditionFor(status.Invalid, "ForwardTo", fmt.Sprintf("Service %q does not exist in namespace %q", meta.Name, meta.Namespace))
+				continue
 			}
 			services = append(services, service)
 		}
 
 		if len(services) == 0 {
-			p.Errorf("Route %q rule invalid due to invalid forwardTo configuration.", route.Name)
+			routeAccessor.ConditionFor(status.Invalid, "ForwardTo", "All Spec.Rules.ForwardTos are invalid.")
 			continue
 		}
 
@@ -260,6 +263,15 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 				vhost.addRoute(route)
 			}
 		}
+	}
+
+	// Determine if any errors exist in conditions and set the "Admitted"
+	// condition accordingly.
+	switch len(routeAccessor.Conditions) {
+	case 0:
+		routeAccessor.ConditionFor(status.AdmittedConditionValid, "Valid", "Valid HTTPRoute")
+	default:
+		routeAccessor.ConditionFor(status.AdmittedConditionInvalid, "ErrorsExist", "Errors Found, check other Conditions for details.")
 	}
 }
 
