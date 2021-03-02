@@ -14,7 +14,7 @@
 package dag
 
 import (
-	"github.com/projectcontour/contour/internal/selector"
+	"github.com/projectcontour/contour/internal/match"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -65,7 +65,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 			if len(listener.Routes.Selector.MatchLabels) > 0 || len(listener.Routes.Selector.MatchExpressions) > 0 {
 				// Look for matching labels on Selector.
-				if selector.MatchesLabelSelector(listener.Routes.Selector, route.Labels) {
+				if match.LabelSelector(listener.Routes.Selector, route.Labels) {
 					validRoutes = append(validRoutes, route)
 				}
 			} else {

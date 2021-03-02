@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package selector
+package match
 
 import (
 	"testing"
@@ -136,7 +136,7 @@ func TestMatchesSelector(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 
-			got := MatchesLabelSelector(tc.selector, tc.labels)
+			got := LabelSelector(tc.selector, tc.labels)
 			assert.Equal(t, tc.want, got)
 		})
 	}

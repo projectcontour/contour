@@ -11,12 +11,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package selector
+package match
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-// MatchesLabelSelector returns true if the selector set matches the values in the labels.
-func MatchesLabelSelector(selector metav1.LabelSelector, matchLabels map[string]string) bool {
+// LabelSelector returns true if the selector set matches the values in the labels.
+func LabelSelector(selector metav1.LabelSelector, matchLabels map[string]string) bool {
 
 	matchesLabels := false
 	matchesExpression := false
