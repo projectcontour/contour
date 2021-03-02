@@ -14,8 +14,9 @@
 package dag
 
 import (
-	"github.com/projectcontour/contour/internal/match"
 	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
@@ -64,8 +65,15 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		for _, listener := range p.source.gateway.Spec.Listeners {
 
 			if len(listener.Routes.Selector.MatchLabels) > 0 || len(listener.Routes.Selector.MatchExpressions) > 0 {
+
+				l, err := metav1.LabelSelectorAsSelector(&listener.Routes.Selector)
+				if err != nil {
+					p.Errorf("Error processing Spec.Routes.Selector, skipping route: %w", err)
+					continue
+				}
+
 				// Look for matching labels on Selector.
-				if match.LabelSelector(listener.Routes.Selector, route.Labels) {
+				if l.Matches(labels.Set(route.Labels)) {
 					validRoutes = append(validRoutes, route)
 				}
 			} else {
