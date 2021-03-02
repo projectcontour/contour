@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 // ServerType is the name of a xDS server implementation.
@@ -396,6 +397,45 @@ func (t TimeoutParameters) Validate() error {
 	return nil
 }
 
+type HeadersPolicy struct {
+	Set    map[string]string `yaml:"set,omitempty"`
+	Remove []string          `yaml:"remove,omitempty"`
+}
+
+func (h HeadersPolicy) Validate() error {
+	for key := range h.Set {
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return fmt.Errorf("invalid header name %q: %v", key, msgs)
+		}
+	}
+	for _, val := range h.Remove {
+		if msgs := validation.IsHTTPHeaderName(val); len(msgs) != 0 {
+			return fmt.Errorf("invalid header name %q: %v", val, msgs)
+		}
+	}
+	return nil
+}
+
+// PolicyParameters holds default policy used if not explicitly set by the user
+type PolicyParameters struct {
+	// RequestHeadersPolicy defines the request headers set/removed on all routes
+	RequestHeadersPolicy HeadersPolicy `yaml:"request-headers,omitempty"`
+
+	// ResponseHeadersPolicy defines the response headers set/removed on all routes
+	ResponseHeadersPolicy HeadersPolicy `yaml:"response-headers,omitempty"`
+}
+
+// Validate the header parameters.
+func (h PolicyParameters) Validate() error {
+	if err := h.RequestHeadersPolicy.Validate(); err != nil {
+		return err
+	}
+	if err := h.ResponseHeadersPolicy.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ClusterParameters holds various configurable cluster values.
 type ClusterParameters struct {
 	// DNSLookupFamily defines how external names are looked up
@@ -483,6 +523,9 @@ type Parameters struct {
 	// be set in the config file.
 	Timeouts TimeoutParameters `yaml:"timeouts,omitempty"`
 
+	// Policy specifies default policy applied if not overridden by the user
+	Policy PolicyParameters `yaml:"policy,omitempty"`
+
 	// Namespace of the envoy service to inspect for Ingress status details.
 	EnvoyServiceNamespace string `yaml:"envoy-service-namespace,omitempty"`
 
@@ -556,6 +599,10 @@ func (p *Parameters) Validate() error {
 		return err
 	}
 
+	if err := p.Policy.Validate(); err != nil {
+		return err
+	}
+
 	for _, v := range p.DefaultHTTPVersions {
 		if err := v.Validate(); err != nil {
 			return err
@@ -597,6 +644,10 @@ func Defaults() Parameters {
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.
 			ConnectionIdleTimeout: "60s",
+		},
+		Policy: PolicyParameters{
+			RequestHeadersPolicy:  HeadersPolicy{},
+			ResponseHeadersPolicy: HeadersPolicy{},
 		},
 		EnvoyServiceName:      "envoy",
 		EnvoyServiceNamespace: contourNamespace,
