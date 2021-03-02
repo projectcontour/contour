@@ -24,6 +24,7 @@ set -o nounset
 readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
+readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.20.2"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
 readonly WAITTIME=${WAITTIME:-5m}
 
@@ -37,6 +38,7 @@ kind::cluster::exists() {
 kind::cluster::create() {
     ${KIND} create cluster \
         --name "${CLUSTERNAME}" \
+        --image "${NODEIMAGE}" \
         --wait "${WAITTIME}" \
         --config "${REPO}/_integration/testsuite/kind-expose-port.yaml"
 }
