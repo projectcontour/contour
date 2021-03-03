@@ -1,0 +1,15 @@
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: example-httpproxy
+  namespace: default
+spec:
+  routes:
+    - services:
+      - name: example-service
+        port: 50001
+        protocol: h2c
+  virtualhost:
+    fqdn: app.example.com
+    tls:
+      secretName: letsencrypt-example

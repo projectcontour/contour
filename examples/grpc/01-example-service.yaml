@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: example-service
+  labels:
+    app: example-service
+spec:
+  ports:
+    - port: 50001
+      protocol: TCP
+      targetPort: 50001
+  selector:
+    app: example
+  type: ClusterIP
+  sessionAffinity: None
