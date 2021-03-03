@@ -279,6 +279,30 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		ctx.Config.Listener.ConnectionBalancer = ""
 	}
 
+	var requestHeadersPolicy dag.HeadersPolicy
+	if ctx.Config.Policy.RequestHeadersPolicy.Set != nil {
+		requestHeadersPolicy.Set = make(map[string]string)
+		for k, v := range ctx.Config.Policy.RequestHeadersPolicy.Set {
+			requestHeadersPolicy.Set[k] = v
+		}
+	}
+	if ctx.Config.Policy.RequestHeadersPolicy.Remove != nil {
+		requestHeadersPolicy.Remove = make([]string, len(ctx.Config.Policy.RequestHeadersPolicy.Remove))
+		requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, ctx.Config.Policy.RequestHeadersPolicy.Remove...)
+	}
+
+	var responseHeadersPolicy dag.HeadersPolicy
+	if ctx.Config.Policy.ResponseHeadersPolicy.Set != nil {
+		responseHeadersPolicy.Set = make(map[string]string)
+		for k, v := range ctx.Config.Policy.RequestHeadersPolicy.Set {
+			responseHeadersPolicy.Set[k] = v
+		}
+	}
+	if ctx.Config.Policy.ResponseHeadersPolicy.Remove != nil {
+		responseHeadersPolicy.Remove = make([]string, len(ctx.Config.Policy.ResponseHeadersPolicy.Remove))
+		responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, ctx.Config.Policy.ResponseHeadersPolicy.Remove...)
+	}
+
 	listenerConfig := xdscache_v3.ListenerConfig{
 		UseProxyProto:                 ctx.useProxyProto,
 		HTTPAddress:                   ctx.httpAddr,
@@ -413,6 +437,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 					FallbackCertificate:   fallbackCert,
 					DNSLookupFamily:       ctx.Config.Cluster.DNSLookupFamily,
 					ClientCertificate:     clientCert,
+					RequestHeadersPolicy:  &requestHeadersPolicy,
+					ResponseHeadersPolicy: &responseHeadersPolicy,
 				},
 				&dag.GatewayAPIProcessor{
 					FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
@@ -471,14 +497,24 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if ctx.UseExperimentalServiceAPITypes {
 		log.Warn("DEPRECATED: The flag '--experimental-service-apis' is deprecated and should not be used. Please configure the gateway.name & gateway.namespace in the configuration file to specify which Gateway Contour will be watching.")
 	}
+
+	foundGatewayAPI := false
 	for _, r := range k8s.GatewayAPIResources() {
 		if !clients.ResourcesExist(r) {
 			log.WithField("resource", r).Warn("resource type not present on API server")
 			continue
 		}
+		foundGatewayAPI = true
 
 		if err := informOnResource(clients, r, &dynamicHandler); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
+		}
+	}
+
+	// Only watch namespaces if Gateway API is found.
+	if foundGatewayAPI {
+		if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler); err != nil {
+			log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
 		}
 	}
 

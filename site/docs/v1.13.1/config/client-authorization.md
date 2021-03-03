@@ -65,24 +65,6 @@ The `.spec.validation` field should specify the expected server name
 from the authorization server's TLS certificate, and the trusted CA bundle
 that can be used to validate the TLS chain of trust.
 
-### Side-car Authorization Server
-
-Instead of running the authorization server as a separate set of Pods it can
-also be run as a side-car alongside each Envoy Pod, accessed over localhost.
-To achieve this, create a Service of type ExternalName that resolves to the
-localhost IP - for example:
-```
-kind: Service
-apiVersion: v1
-metadata:
-  name: localhost
-spec:
-  type: ExternalName
-  externalName: localhost
-selector: {}
-```
-and set the `.spec.services[].name` field to the name of the Service.
-
 ## Authorizing Virtual Hosts
 
 The [`.spec.virtualhost.authorization`][5] field in the Contour `HTTPProxy`

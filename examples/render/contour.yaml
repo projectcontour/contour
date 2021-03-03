@@ -154,6 +154,22 @@ data:
     #   service fails to respond with a valid rate limit decision within
     #   the timeout defined on the extension service.
     #   failOpen: false
+    #
+    # Global Policy settings.
+    # policy:
+    #   # Default headers to set on all requests (unless set/removed on the HTTPProxy object itself)
+    #   request-headers:
+    #     set:
+    #       # example: the hostname of the Envoy instance that proxied the request
+    #       X-Envoy-Hostname: %HOSTNAME%
+    #       # example: add a l5d-dst-override header to instruct Linkerd what service the request is destined for
+    #       l5d-dst-override: %CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%
+    #   # default headers to set on all responses (unless set/removed on the HTTPProxy object itself)
+    #   response-headers:
+    #     set:
+    #       # example: Envoy flags that provide additional details about the response or connection
+    #       X-Envoy-Response-Flags: %RESPONSE_FLAGS%
+    #
 
 ---
 apiVersion: apiextensions.k8s.io/v1
@@ -1820,6 +1836,14 @@ rules:
   - ""
   resources:
   - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
   verbs:
   - get
   - list

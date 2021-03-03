@@ -78,7 +78,6 @@ Where Contour settings can also be specified with command-line flags, the comman
 | json-fields | string array | [fields][5]| This is the list the field names to include in the JSON [access log format][2]. |
 | kubeconfig | string | `$HOME/.kube/config` | Path to a Kubernetes [kubeconfig file][3] for when Contour is executed outside a cluster. |
 | leaderelection | leaderelection | | The [leader election configuration](#leader-election-configuration). |
-| policy | PolicyConfig | | The default [policy configuration](#policy-configuration). |
 | tls | TLS | | The default [TLS configuration](#tls-configuration). |
 | timeouts | TimeoutConfig | | The [timeout configuration](#timeout-configuration). |
 | cluster | ClusterConfig | | The [cluster configuration](#cluster-configuration). |
@@ -202,35 +201,8 @@ The gateway configuration block is used to configure which gateway-api Gateway C
 |------------|-----|----------|-------------|
 | name | string | contour | This field specifies the name of a Gateway.  |
 | namespace | string | projectcontour | This field specifies the namespace of a Gateway.  |
-
-### Policy Configuration
-
-The Policy configuration block can be used to configure default policy values
-that are set if not overridden by the user.
-
-The `request-headers` field is used to rewrite headers on a HTTP request, and
-the `response-headers` field is used to rewrite headers on a HTTP response.
-
-| Field Name | Type| Default  | Description |
-|------------|-----|----------|-------------|
-| request-headers | HeaderPolicy | none | The default request headers set or removed on all service routes if not overridden in the object |
-| response-headers | HeaderPolicy | none | The default response headers set or removed on all service routes if not overridden in the object |
 {: class="table thead-dark table-bordered"}
 <br>
-
-#### HeaderPolicy
-
-The `set` field sets an HTTP header value, creating it if it doesn't already exist but not overwriting it if it does.
-The `remove` field removes an HTTP header.
-
-| Field Name | Type| Default  | Description |
-|------------|-----|----------|-------------|
-| set | map[string]string | none | Map of headers to set on all service routes if not overridden in the object |
-| remove | []string | none | List of headers to remove on all service routes if not overridden in the object |
-{: class="table thead-dark table-bordered"}
-<br>
-Note: the values of entries in the `set` and `remove` fields can be overridden in HTTPProxy objects but it it not possible to remove these entries.
-
 
 ### Rate Limit Service Configuration
 
@@ -359,22 +331,6 @@ data:
     #   extensionService: projectcontour/ratelimit
     #   domain: contour
     #   failOpen: false
-    #
-    # Global Policy settings.
-    # policy:
-    #   # Default headers to set on all requests (unless set/removed on the HTTPProxy object itself)
-    #   request-headers:
-    #     set:
-    #       # example: the hostname of the Envoy instance that proxied the request
-    #       X-Envoy-Hostname: %HOSTNAME%
-    #       # example: add a l5d-dst-override header to instruct Linkerd what service the request is destined for
-    #       l5d-dst-override: %CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%
-    #   # default headers to set on all responses (unless set/removed on the HTTPProxy object itself)
-    #   response-headers:
-    #     set:
-    #       # example: Envoy flags that provide additional details about the response or connection
-    #       X-Envoy-Response-Flags: %RESPONSE_FLAGS%
-    #
 ```
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.

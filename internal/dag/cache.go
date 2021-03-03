@@ -57,6 +57,7 @@ type KubernetesCache struct {
 	secrets              map[types.NamespacedName]*v1.Secret
 	httpproxydelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
 	services             map[types.NamespacedName]*v1.Service
+	namespaces           map[types.NamespacedName]*v1.Namespace
 	gateway              *gatewayapi_v1alpha1.Gateway
 	httproutes           map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute
 	tlsroutes            map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute
@@ -76,6 +77,7 @@ func (kc *KubernetesCache) init() {
 	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
 	kc.httpproxydelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
 	kc.services = make(map[types.NamespacedName]*v1.Service)
+	kc.namespaces = make(map[types.NamespacedName]*v1.Namespace)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute)
 	kc.backendpolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha1.BackendPolicy)
@@ -167,6 +169,9 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	case *v1.Service:
 		kc.services[k8s.NamespacedNameOf(obj)] = obj
 		return kc.serviceTriggersRebuild(obj)
+	case *v1.Namespace:
+		kc.namespaces[k8s.NamespacedNameOf(obj)] = obj
+		return true
 	case *v1beta1.Ingress:
 		if kc.matchesIngressClass(obj) {
 			// Convert the v1beta1 object to v1 before adding to the
@@ -345,6 +350,11 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.services[m]
 		delete(kc.services, m)
+		return ok
+	case *v1.Namespace:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.namespaces[m]
+		delete(kc.namespaces, m)
 		return ok
 	case *v1beta1.Ingress:
 		m := k8s.NamespacedNameOf(obj)

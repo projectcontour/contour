@@ -117,6 +117,37 @@ func TestValidateClusterDNSFamilyType(t *testing.T) {
 	assert.NoError(t, IPv6ClusterDNSFamily.Validate())
 }
 
+func TestValidateHeadersPolicy(t *testing.T) {
+	assert.Error(t, HeadersPolicy{
+		Set: map[string]string{
+			"inv@lid-header": "ook",
+		},
+	}.Validate())
+	assert.Error(t, HeadersPolicy{
+		Remove: []string{"inv@lid-header"},
+	}.Validate())
+	assert.NoError(t, HeadersPolicy{
+		Set:    map[string]string{},
+		Remove: []string{},
+	}.Validate())
+	assert.NoError(t, HeadersPolicy{
+		Set: map[string]string{"X-Envoy-Host": "envoy-a12345"},
+	}.Validate())
+	assert.NoError(t, HeadersPolicy{
+		Set: map[string]string{
+			"X-Envoy-Host":     "envoy-s12345",
+			"l5d-dst-override": "kuard.default.svc.cluster.local:80",
+		},
+		Remove: []string{"Sensitive-Header"},
+	}.Validate())
+	assert.NoError(t, HeadersPolicy{
+		Set: map[string]string{
+			"X-Envoy-Host":     "%HOSTNAME%",
+			"l5d-dst-override": "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
+		},
+	}.Validate())
+}
+
 func TestValidateNamespacedName(t *testing.T) {
 	assert.NoErrorf(t, NamespacedName{}.Validate(), "empty name should be OK")
 	assert.NoError(t, NamespacedName{Name: "name", Namespace: "ns"}.Validate())
