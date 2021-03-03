@@ -15,6 +15,8 @@ package dag
 
 import (
 	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
@@ -41,9 +43,61 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		p.source = nil
 	}()
 
-	for _, route := range p.source.httproutes {
-		p.computeHTTPRoute(route)
+	// Gateway must be defined for resources to be processed.
+	if p.source.gateway == nil {
+		p.Error("Gateway is not defined!")
+		return
 	}
+
+	var validRoutes []*gatewayapi_v1alpha1.HTTPRoute
+
+	for _, route := range p.source.httproutes {
+
+		// Filter the HTTPRoutes that match the gateway which Contour is configured to watch.
+		// RouteBindingSelector defines a schema for associating routes with the Gateway.
+		// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
+
+		// ## RouteBindingSelector ##
+		//
+		// Selector specifies a set of route labels used for selecting routes to associate
+		// with the Gateway. If this Selector is defined, only routes matching the Selector
+		// are associated with the Gateway. An empty Selector matches all routes.
+		for _, listener := range p.source.gateway.Spec.Listeners {
+
+			matches, err := selectorMatches(listener.Routes.Selector, route.Labels)
+			if err != nil {
+				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+			}
+			if matches {
+				// Empty Selector matches all routes.
+				validRoutes = append(validRoutes, route)
+				break
+			}
+		}
+	}
+
+	// Process all the routes that match this Gateway.
+	for _, validRoute := range validRoutes {
+		p.computeHTTPRoute(validRoute)
+	}
+
+}
+
+// selectorMatches returns true if the selector matches the labels on the object or is not defined.
+func selectorMatches(selector metav1.LabelSelector, objLabels map[string]string) (bool, error) {
+
+	// If a selector is defined then check that it matches the labels on the object.
+	if len(selector.MatchLabels) > 0 || len(selector.MatchExpressions) > 0 {
+		l, err := metav1.LabelSelectorAsSelector(&selector)
+		if err != nil {
+			return false, err
+		}
+
+		// Look for matching labels on Selector.
+		return l.Matches(labels.Set(objLabels)), nil
+	}
+	// If no selector is defined then it matches by default.
+	return true, nil
 }
 
 func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute) {

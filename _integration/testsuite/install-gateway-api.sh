@@ -21,6 +21,6 @@ set -o errexit
 set -o nounset
 
 readonly KUBECTL=${KUBECTL:-kubectl}
-readonly VERSION=v0.1.0
+readonly VERSION=v0.2.0
 
 ${KUBECTL} kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=${VERSION}" | ${KUBECTL} apply -f -
