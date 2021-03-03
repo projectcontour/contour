@@ -70,6 +70,12 @@ type HTTPProxyProcessor struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *types.NamespacedName
+
+	// Request headers that will be set on all routes (optional).
+	RequestHeadersPolicy *HeadersPolicy
+
+	// Response headers that will be set on all routes (optional).
+	ResponseHeadersPolicy *HeadersPolicy
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -574,14 +580,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			dynamicHeaders["CONTOUR_SERVICE_NAME"] = service.Name
 			dynamicHeaders["CONTOUR_SERVICE_PORT"] = strconv.Itoa(service.Port)
 
-			reqHP, err := headersPolicyService(service.RequestHeadersPolicy, dynamicHeaders)
+			reqHP, err := headersPolicyService(p.RequestHeadersPolicy, service.RequestHeadersPolicy, dynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "RequestHeadersPolicyInvalid",
 					"%s on request headers", err)
 				return nil
 			}
-
-			respHP, err := headersPolicyService(service.ResponseHeadersPolicy, dynamicHeaders)
+			respHP, err := headersPolicyService(p.ResponseHeadersPolicy, service.ResponseHeadersPolicy, dynamicHeaders)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ResponseHeadersPolicyInvalid",
 					"%s on response headers", err)
