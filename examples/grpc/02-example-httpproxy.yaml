@@ -8,7 +8,7 @@ spec:
     - services:
       - name: example-service
         port: 50001
-        protocol: h2c # If backend service doesnot support tls otherwise use h2 if backend service support/configured tls
+        protocol: h2c # If backend service does not support tls otherwise use h2 if backend service support/configured tls
   virtualhost:
     fqdn: app.example.com
     tls:
