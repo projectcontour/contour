@@ -29,3 +29,7 @@ If you have your own Grafana and Prometheus deployment already, the supplied [Co
 ## `kind`, `root-rbac`
 
 Both of these examples are fragments used in other documentation ([deploy-options](https://projectcontour.io/docs/main/deploy-options))
+
+## `grpc`
+
+GRPC configuration with HTTPProxy.
