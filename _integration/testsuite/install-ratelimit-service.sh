@@ -46,7 +46,7 @@ data:
         rate_limit:
           unit: hour
           requests_per_unit: 1
-      - key: generic_key
+      - key: route_limit_key
         value: routelimit
         rate_limit:
           unit: hour
