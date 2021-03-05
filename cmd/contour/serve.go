@@ -407,6 +407,37 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// register observer for endpoints updates.
 	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
 
+	// Get the appropriate DAG processors.
+	dagProcessors := []dag.Processor{
+		&dag.IngressProcessor{
+			FieldLogger:       log.WithField("context", "IngressProcessor"),
+			ClientCertificate: clientCert,
+		},
+		&dag.ExtensionServiceProcessor{
+			FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
+			ClientCertificate: clientCert,
+		},
+		&dag.HTTPProxyProcessor{
+			DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
+			FallbackCertificate:   fallbackCert,
+			DNSLookupFamily:       ctx.Config.Cluster.DNSLookupFamily,
+			ClientCertificate:     clientCert,
+			RequestHeadersPolicy:  &requestHeadersPolicy,
+			ResponseHeadersPolicy: &responseHeadersPolicy,
+		},
+	}
+	if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
+		log.Debug("Gateway API found, adding Gateway API processor")
+		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
+			FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
+		})
+	} else {
+		log.Debug("Gateway API not found, not adding Gateway API processor")
+	}
+	// The listener processor has to go last since it looks at
+	// the output of the other processors.
+	dagProcessors = append(dagProcessors, &dag.ListenerProcessor{})
+
 	// Build the core Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
@@ -423,28 +454,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				ConfiguredSecretRefs: configuredSecretRefs,
 				FieldLogger:          log.WithField("context", "KubernetesCache"),
 			},
-			Processors: []dag.Processor{
-				&dag.IngressProcessor{
-					FieldLogger:       log.WithField("context", "IngressProcessor"),
-					ClientCertificate: clientCert,
-				},
-				&dag.ExtensionServiceProcessor{
-					FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
-					ClientCertificate: clientCert,
-				},
-				&dag.HTTPProxyProcessor{
-					DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
-					FallbackCertificate:   fallbackCert,
-					DNSLookupFamily:       ctx.Config.Cluster.DNSLookupFamily,
-					ClientCertificate:     clientCert,
-					RequestHeadersPolicy:  &requestHeadersPolicy,
-					ResponseHeadersPolicy: &responseHeadersPolicy,
-				},
-				&dag.GatewayAPIProcessor{
-					FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
-				},
-				&dag.ListenerProcessor{},
-			},
+			Processors: dagProcessors,
 		},
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
