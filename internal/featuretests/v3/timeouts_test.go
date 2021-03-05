@@ -17,7 +17,6 @@ import (
 	"testing"
 	"time"
 
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -57,22 +56,22 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
-	c.Request(listenerType, xdscache_v3.ENVOY_HTTP_LISTENER).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		TypeUrl: listenerType,
-		Resources: resources(t,
-			&envoy_listener_v3.Listener{
-				Name:          xdscache_v3.ENVOY_HTTP_LISTENER,
-				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
-					RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
-					MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG)).
-					DefaultFilters().
-					Get(),
-				),
-			}),
-	})
+	httpListener := defaultHTTPListener()
+	httpListener.FilterChains = envoy_v3.FilterChains(
+		envoy_v3.HTTPConnectionManagerBuilder().
+			RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
+			MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
+			AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG)).
+			DefaultFilters().
+			Get(),
+	)
+
+	c.Request(listenerType, xdscache_v3.ENVOY_HTTP_LISTENER).Equals(
+		&envoy_discovery_v3.DiscoveryResponse{
+			TypeUrl:   listenerType,
+			Resources: resources(t, httpListener),
+		},
+	)
 }
 
 func TestNonZeroTimeoutsSpecified(t *testing.T) {
@@ -110,24 +109,21 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 	}
 	rh.OnAdd(hp1)
 
+	httpListener := defaultHTTPListener()
+	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+		RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
+		MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG)).
+		DefaultFilters().
+		ConnectionIdleTimeout(timeout.DurationSetting(7 * time.Second)).
+		StreamIdleTimeout(timeout.DurationSetting(70 * time.Second)).
+		MaxConnectionDuration(timeout.DurationSetting(700 * time.Second)).
+		ConnectionShutdownGracePeriod(timeout.DurationSetting(7000 * time.Second)).
+		Get(),
+	)
+
 	c.Request(listenerType, xdscache_v3.ENVOY_HTTP_LISTENER).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		TypeUrl: listenerType,
-		Resources: resources(t,
-			&envoy_listener_v3.Listener{
-				Name:          xdscache_v3.ENVOY_HTTP_LISTENER,
-				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
-					RouteConfigName(xdscache_v3.ENVOY_HTTP_LISTENER).
-					MetricsPrefix(xdscache_v3.ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy(xdscache_v3.DEFAULT_HTTP_ACCESS_LOG)).
-					DefaultFilters().
-					ConnectionIdleTimeout(timeout.DurationSetting(7 * time.Second)).
-					StreamIdleTimeout(timeout.DurationSetting(70 * time.Second)).
-					MaxConnectionDuration(timeout.DurationSetting(700 * time.Second)).
-					ConnectionShutdownGracePeriod(timeout.DurationSetting(7000 * time.Second)).
-					Get(),
-				),
-			}),
+		TypeUrl:   listenerType,
+		Resources: resources(t, httpListener),
 	})
 }

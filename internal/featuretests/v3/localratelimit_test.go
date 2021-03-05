@@ -18,7 +18,6 @@ import (
 	"time"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -60,13 +59,7 @@ func filterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
-				Name:    "ingress_http",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
-				// TODO since this uses the same helper as the actual Contour code, this is not a very good test.
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0)),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
+			defaultHTTPListener(),
 			staticListener()),
 	}).Status(p).IsValid()
 }

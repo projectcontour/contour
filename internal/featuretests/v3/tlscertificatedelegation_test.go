@@ -105,15 +105,6 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	}
 	rh.OnAdd(t1)
 
-	ingressHTTP := &envoy_listener_v3.Listener{
-		Name:    "ingress_http",
-		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
-		FilterChains: envoy_v3.FilterChains(
-			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
-		),
-		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-	}
-
 	ingressHTTPS := &envoy_listener_v3.Listener{
 		Name:    "ingress_https",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
@@ -130,7 +121,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			ingressHTTP,
+			defaultHTTPListener(),
 			ingressHTTPS,
 			staticListener(),
 		),
@@ -156,7 +147,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			ingressHTTP,
+			defaultHTTPListener(),
 			ingressHTTPS,
 			staticListener(),
 		),
@@ -264,7 +255,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			ingressHTTP,
+			defaultHTTPListener(),
 			ingressHTTPS,
 			staticListener(),
 		),
