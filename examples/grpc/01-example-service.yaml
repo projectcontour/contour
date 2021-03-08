@@ -13,3 +13,4 @@ spec:
     app: example
   type: ClusterIP
   sessionAffinity: None
+  
