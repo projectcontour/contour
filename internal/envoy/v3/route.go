@@ -259,15 +259,9 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
 
 // VirtualHost creates a new route.VirtualHost.
 func VirtualHost(hostname string, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
-	domains := []string{hostname}
-	if hostname != "*" {
-		// NOTE(jpeach) see also envoy.FilterMisdirectedRequests().
-		domains = append(domains, hostname+":*")
-	}
-
 	return &envoy_route_v3.VirtualHost{
 		Name:    envoy.Hashname(60, hostname),
-		Domains: domains,
+		Domains: []string{hostname},
 		Routes:  routes,
 	}
 }
