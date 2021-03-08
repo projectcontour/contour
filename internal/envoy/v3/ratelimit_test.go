@@ -180,35 +180,105 @@ func TestGlobalRateLimits(t *testing.T) {
 }
 
 func TestGlobalRateLimitFilter(t *testing.T) {
-	assert.Nil(t, GlobalRateLimitFilter(nil))
-
-	want := &http.HttpFilter{
-		Name: wellknown.HTTPRateLimit,
-		ConfigType: &http.HttpFilter_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
-				Domain:          "domain",
-				Timeout:         protobuf.Duration(time.Second),
-				FailureModeDeny: false,
-				RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-					GrpcService: &envoy_core_v3.GrpcService{
-						TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-							EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
-								ClusterName: "extension/projectcontour/ratelimit",
+	tests := map[string]struct {
+		cfg  *GlobalRateLimitConfig
+		want *http.HttpFilter
+	}{
+		"nil config produces nil filter": {
+			cfg:  nil,
+			want: nil,
+		},
+		"all fields configured correctly with FailOpen=false": {
+			cfg: &GlobalRateLimitConfig{
+				ExtensionService: k8s.NamespacedNameFrom("projectcontour/ratelimit"),
+				Timeout:          timeout.DurationSetting(7 * time.Second),
+				Domain:           "domain",
+				FailOpen:         false,
+			},
+			want: &http.HttpFilter{
+				Name: wellknown.HTTPRateLimit,
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+						Domain:          "domain",
+						Timeout:         protobuf.Duration(7 * time.Second),
+						FailureModeDeny: true,
+						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+							GrpcService: &envoy_core_v3.GrpcService{
+								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+										ClusterName: "extension/projectcontour/ratelimit",
+									},
+								},
 							},
+							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 						},
-					},
-					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+					}),
 				},
-			}),
+			},
+		},
+		"all fields configured correctly with FailOpen=true": {
+			cfg: &GlobalRateLimitConfig{
+				ExtensionService: k8s.NamespacedNameFrom("projectcontour/ratelimit"),
+				Timeout:          timeout.DurationSetting(7 * time.Second),
+				Domain:           "domain",
+				FailOpen:         true,
+			},
+			want: &http.HttpFilter{
+				Name: wellknown.HTTPRateLimit,
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+						Domain:          "domain",
+						Timeout:         protobuf.Duration(7 * time.Second),
+						FailureModeDeny: false,
+						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+							GrpcService: &envoy_core_v3.GrpcService{
+								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+										ClusterName: "extension/projectcontour/ratelimit",
+									},
+								},
+							},
+							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+						},
+					}),
+				},
+			},
+		},
+		"EnableXRateLimitHeaders=true is configured correctly": {
+			cfg: &GlobalRateLimitConfig{
+				ExtensionService:        k8s.NamespacedNameFrom("projectcontour/ratelimit"),
+				Timeout:                 timeout.DurationSetting(7 * time.Second),
+				Domain:                  "domain",
+				FailOpen:                true,
+				EnableXRateLimitHeaders: true,
+			},
+			want: &http.HttpFilter{
+				Name: wellknown.HTTPRateLimit,
+				ConfigType: &http.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+						Domain:          "domain",
+						Timeout:         protobuf.Duration(7 * time.Second),
+						FailureModeDeny: false,
+						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+							GrpcService: &envoy_core_v3.GrpcService{
+								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+										ClusterName: "extension/projectcontour/ratelimit",
+									},
+								},
+							},
+							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+						},
+						EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+					}),
+				},
+			},
 		},
 	}
 
-	cfg := &GlobalRateLimitConfig{
-		ExtensionService: k8s.NamespacedNameFrom("projectcontour/ratelimit"),
-		FailOpen:         true,
-		Timeout:          timeout.DurationSetting(time.Second),
-		Domain:           "domain",
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, GlobalRateLimitFilter(tc.cfg))
+		})
 	}
-
-	assert.Equal(t, want, GlobalRateLimitFilter(cfg))
 }

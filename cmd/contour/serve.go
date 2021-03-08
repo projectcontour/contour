@@ -350,10 +350,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 
 		listenerConfig.RateLimitConfig = &xdscache_v3.RateLimitConfig{
-			ExtensionService: namespacedName,
-			Domain:           ctx.Config.RateLimitService.Domain,
-			Timeout:          responseTimeout,
-			FailOpen:         ctx.Config.RateLimitService.FailOpen,
+			ExtensionService:        namespacedName,
+			Domain:                  ctx.Config.RateLimitService.Domain,
+			Timeout:                 responseTimeout,
+			FailOpen:                ctx.Config.RateLimitService.FailOpen,
+			EnableXRateLimitHeaders: ctx.Config.RateLimitService.EnableXRateLimitHeaders,
 		}
 	}
 

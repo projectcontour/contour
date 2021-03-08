@@ -567,6 +567,14 @@ type RateLimitService struct {
 	// Rate Limit Service fails to respond with a valid rate limit
 	// decision within the timeout defined on the extension service.
 	FailOpen bool `yaml:"failOpen,omitempty"`
+
+	// EnableXRateLimitHeaders defines whether to include the X-RateLimit
+	// headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset
+	// (as defined by the IETF Internet-Draft linked below), on responses
+	// to clients when the Rate Limit Service is consulted for a request.
+	//
+	// ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
+	EnableXRateLimitHeaders bool `yaml:"enableXRateLimitHeaders,omitempty"`
 }
 
 // Validate verifies that the parameter values do not have any syntax errors.
