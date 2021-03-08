@@ -89,7 +89,10 @@ _Note: the PR will probably fail the siteproof check due to [#2032](https://gith
 
 ### Release the operator
 
-1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
+1. Verify the [operator example manifest](https://github.com/projectcontour/contour-operator/blob/main/examples/operator/operator.yaml)
+   is in-sync with the Contour [example manifests](https://github.com/projectcontour/contour/tree/main/examples). If not,
+   submit a PR to update the operator and get it merged before proceeding.
+   Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a local release branch:
 
     ```bash
@@ -230,6 +233,9 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 
 ### Release the operator
 
+1. Verify the [operator example manifest](https://github.com/projectcontour/contour-operator/blob/main/examples/operator/operator.yaml)
+   is in-sync with the Contour [example manifests](https://github.com/projectcontour/contour/tree/main/examples). If not,
+   submit a PR to update the operator and get it merged before proceeding.
 1. Get a list of commit SHAs from `main` to backport.
 1. Check out the release branch for the minor version you're patching (i.e. `release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}`), ensure it's up to date, and ensure you have a clean working directory.
 1. Create a new local feature branch from the release branch.
