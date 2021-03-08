@@ -17,7 +17,6 @@ import (
 	"testing"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	ratelimit_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
@@ -63,41 +62,42 @@ func globalRateLimitFilterExists(t *testing.T, rh cache.ResourceEventHandler, c 
 	}
 	rh.OnAdd(p)
 
-	hcmBuilder := envoy_v3.HTTPConnectionManagerBuilder().
+	httpListener := defaultHTTPListener()
+
+	// replace the default filter chains with an HCM that includes the global
+	// rate limit filter.
+	hcm := envoy_v3.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout")).
-		DefaultFilters()
-
-	hcmBuilder.AddFilter(&http.HttpFilter{
-		Name: wellknown.HTTPRateLimit,
-		ConfigType: &http.HttpFilter_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
-				Domain:          "contour",
-				FailureModeDeny: true,
-				RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
-					GrpcService: &envoy_core_v3.GrpcService{
-						TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
-							EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
-								ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+		DefaultFilters().
+		AddFilter(&http.HttpFilter{
+			Name: wellknown.HTTPRateLimit,
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+					Domain:          "contour",
+					FailureModeDeny: true,
+					RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+						GrpcService: &envoy_core_v3.GrpcService{
+							TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+								EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+									ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+								},
 							},
 						},
+						TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 					},
-					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
-				},
-			}),
-		},
-	})
+				}),
+			},
+		}).
+		Get()
+
+	httpListener.FilterChains = envoy_v3.FilterChains(hcm)
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: listenerType,
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
-				Name:          "ingress_http",
-				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(hcmBuilder.Get()),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
+			httpListener,
 			staticListener()),
 	}).Status(p).IsValid()
 }

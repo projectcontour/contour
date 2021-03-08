@@ -16,12 +16,9 @@ package v3
 import (
 	"testing"
 
-	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
-	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
@@ -72,14 +69,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	// assert that the insecure listener and the stats listener are present in LDS.
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
-				Name:    "ingress_http",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
-				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
+			defaultHTTPListener(),
 			staticListener(),
 		),
 		TypeUrl: listenerType,
@@ -120,14 +110,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	// assert that the insecure listener and the stats listener are present in LDS.
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
-				Name:    "ingress_http",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
-				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
+			defaultHTTPListener(),
 			staticListener(),
 		),
 		TypeUrl: listenerType,
@@ -177,14 +160,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	// assert that the insecure listener and the stats listener are present in LDS.
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			&envoy_listener_v3.Listener{
-				Name:    "ingress_http",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
-				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
+			defaultHTTPListener(),
 			staticListener(),
 		),
 		TypeUrl: listenerType,

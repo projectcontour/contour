@@ -394,19 +394,13 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
+			// ingress_http is present for
+			// http://kuard-tcp.example.com/ -> default/backend:80
+			defaultHTTPListener(),
+
+			// ingress_https is present for
+			// kuard-tcp.example.com:443 terminated at envoy then forwarded to default/backend:80
 			&envoy_listener_v3.Listener{
-				// ingress_http is present for
-				// http://kuard-tcp.example.com/ -> default/backend:80
-				Name:    "ingress_http",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
-				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
-			&envoy_listener_v3.Listener{
-				// ingress_https is present for
-				// kuard-tcp.example.com:443 terminated at envoy then forwarded to default/backend:80
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
@@ -490,19 +484,13 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
+			// ingress_http is present for
+			// http://kuard-tcp.example.com/ -> default/backend:80
+			defaultHTTPListener(),
+
+			// ingress_https is present for
+			// kuard-tcp.example.com:443 terminated at envoy then tcpproxied to default/backend:80
 			&envoy_listener_v3.Listener{
-				// ingress_http is present for
-				// http://kuard-tcp.example.com/ -> default/backend:80
-				Name:    "ingress_http",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
-				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
-			&envoy_listener_v3.Listener{
-				// ingress_https is present for
-				// kuard-tcp.example.com:443 terminated at envoy then tcpproxied to default/backend:80
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
@@ -579,19 +567,13 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
+			// ingress_http is present for
+			// http://kuard-tcp.example.com/ -> default/backend:80
+			defaultHTTPListener(),
+
+			// ingress_https is present for
+			// kuard-tcp.example.com:443 direct to default/backend:80
 			&envoy_listener_v3.Listener{
-				// ingress_http is present for
-				// http://kuard-tcp.example.com/ -> default/backend:80
-				Name:    "ingress_http",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
-				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
-			&envoy_listener_v3.Listener{
-				// ingress_https is present for
-				// kuard-tcp.example.com:443 direct to default/backend:80
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
@@ -672,21 +654,15 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
+			// ingress_http is present for
+			// http://kuard-tcp.example.com/ -> default/backend:80, this is not 301 upgraded
+			// because permitInsecure: true is in use.
+			defaultHTTPListener(),
+
+			// ingress_https is present for
+			// kuard-tcp.example.com:443 direct to default/backend:80, envoy does not handle
+			// the TLS handshake beyond SNI demux because passthrough: true is in use.
 			&envoy_listener_v3.Listener{
-				// ingress_http is present for
-				// http://kuard-tcp.example.com/ -> default/backend:80, this is not 301 upgraded
-				// because permitInsecure: true is in use.
-				Name:    "ingress_http",
-				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains: envoy_v3.FilterChains(
-					envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout"), 0, 0),
-				),
-				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-			},
-			&envoy_listener_v3.Listener{
-				// ingress_https is present for
-				// kuard-tcp.example.com:443 direct to default/backend:80, envoy does not handle
-				// the TLS handshake beyond SNI demux because passthrough: true is in use.
 				Name:    "ingress_https",
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
