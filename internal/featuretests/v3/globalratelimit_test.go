@@ -496,6 +496,108 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh cache.Resourc
 	}
 }
 
+func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+	p := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "proxy1",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "foo.com",
+			},
+			Routes: []contour_api_v1.Route{
+				{
+					Services: []contour_api_v1.Service{
+						{
+							Name: "s1",
+							Port: 80,
+						},
+					},
+					RateLimitPolicy: &contour_api_v1.RateLimitPolicy{
+						Global: &contour_api_v1.GlobalRateLimitPolicy{
+							Descriptors: []contour_api_v1.RateLimitDescriptor{
+								// first descriptor
+								{
+									Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										{
+											RemoteAddress: &contour_api_v1.RemoteAddressDescriptor{},
+										},
+										{
+											GenericKey: &contour_api_v1.GenericKeyDescriptor{Value: "generic-key-value"},
+										},
+									},
+								},
+								// second descriptor
+								{
+									Entries: []contour_api_v1.RateLimitDescriptorEntry{
+										{
+											RequestHeader: &contour_api_v1.RequestHeaderDescriptor{HeaderName: "X-Contour", DescriptorKey: "header-descriptor"},
+										},
+										{
+											GenericKey: &contour_api_v1.GenericKeyDescriptor{Key: "generic-key-key", Value: "generic-key-value-2"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	rh.OnAdd(p)
+	c.Status(p).IsValid()
+
+	route := &envoy_route_v3.Route{
+		Match: routePrefix("/"),
+		Action: routeCluster("default/s1/80/da39a3ee5e", func(r *envoy_route_v3.Route_Route) {
+			r.Route.RateLimits = []*envoy_route_v3.RateLimit{
+				{
+					Actions: []*envoy_route_v3.RateLimit_Action{
+						{
+							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
+								RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},
+							},
+						},
+						{
+							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{DescriptorValue: "generic-key-value"},
+							},
+						},
+					},
+				},
+				{
+					Actions: []*envoy_route_v3.RateLimit_Action{
+						{
+							ActionSpecifier: &envoy_route_v3.RateLimit_Action_RequestHeaders_{
+								RequestHeaders: &envoy_route_v3.RateLimit_Action_RequestHeaders{
+									HeaderName:    "X-Contour",
+									DescriptorKey: "header-descriptor",
+								},
+							},
+						},
+						{
+							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+									DescriptorKey:   "generic-key-key",
+									DescriptorValue: "generic-key-value-2"},
+							},
+						},
+					},
+				},
+			}
+		}),
+	}
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl:   routeType,
+		Resources: resources(t, envoy_v3.RouteConfiguration("ingress_http", envoy_v3.VirtualHost("foo.com", route))),
+	})
+
+}
+
 type tlsConfig struct {
 	enabled         bool
 	fallbackEnabled bool
@@ -552,6 +654,8 @@ func TestGlobalRateLimiting(t *testing.T) {
 		"FallbackVirtualHostAndRouteRateLimitsDefined": func(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 			globalRateLimitVhostAndRouteRateLimitDefined(t, rh, c, fallbackEnabled)
 		},
+
+		"MultipleDescriptorsAndEntriesDefined": globalRateLimitMultipleDescriptorsAndEntries,
 	}
 
 	for n, f := range subtests {

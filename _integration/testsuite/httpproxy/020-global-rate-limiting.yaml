@@ -161,6 +161,9 @@ spec:
         descriptors:
           - entries:
               - genericKey:
+                  # specify a custom key here as an added test
+                  # that this is configured with Envoy if specified.
+                  key: route_limit_key
                   value: routelimit
   - conditions:
       - prefix: /unlimited

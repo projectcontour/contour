@@ -107,6 +107,7 @@ func TestGlobalRateLimits(t *testing.T) {
 					Entries: []dag.RateLimitDescriptorEntry{
 						{RemoteAddress: true},
 						{GenericKeyValue: "generic-key-val"},
+						{GenericKeyKey: "generic-key-custom-key", GenericKeyValue: "generic-key-val"},
 					},
 				},
 				{
@@ -128,6 +129,14 @@ func TestGlobalRateLimits(t *testing.T) {
 						{
 							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
 								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+									DescriptorValue: "generic-key-val",
+								},
+							},
+						},
+						{
+							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
+								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+									DescriptorKey:   "generic-key-custom-key",
 									DescriptorValue: "generic-key-val",
 								},
 							},

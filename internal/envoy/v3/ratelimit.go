@@ -79,6 +79,7 @@ func GlobalRateLimits(descriptors []*dag.RateLimitDescriptor) []*envoy_route_v3.
 				rl.Actions = append(rl.Actions, &envoy_route_v3.RateLimit_Action{
 					ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
 						GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
+							DescriptorKey:   entry.GenericKeyKey,
 							DescriptorValue: entry.GenericKeyValue,
 						},
 					},
