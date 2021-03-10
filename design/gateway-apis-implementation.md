@@ -65,8 +65,11 @@ Project Contour (the organisation) may investigate a Gateway API based layer 4 s
 Contour considers a Gateway to describe a single Envoy deployment, deployed and managed by something outside of itself.
 Contour expects to be supplied with the full name (name and namespace) of a single Gateway, which it will watch and update the status of.
 This will be a configuration file parameter.
-When a Gateway is not supplied, Contour will not do Gateway API processing, or in other words, the existing `--experimental-service-apis` flag will be obsoleted and removed).
+When a Gateway is not supplied, Contour will look for a default Gateway named `contour` in the namespace `projectcontour`, the existing `--experimental-service-apis` flag will be obsoleted and removed.
 Inside Contour will merge Listeners within its Gateway. (See the detailed design for the exact rules Contour will use for this.)
+
+Contour is responsible for the Gateway, HTTPRoute, and TLSRoute objects since it requires information in those three objects to fully process and configure Envoy regardless of how Contour/Envoy are deployed within a cluster.
+Contour must take action accordingly to validate the configuration supplied and raise conditions and errors appropriately.
 
 ### Interrelated watches
 
@@ -81,12 +84,13 @@ When it calculates the Envoy configuration using the DAG, Contour layers differe
 So, currently, Ingress is overwritten by HTTPProxy, so if an Ingress and a HTTPProxy specify the exact same route, the HTTPProxy will win.
 
 Once we have the Gateway API available as well, we have to choose the order.
-In this design, I suggest having the order be Ingress is overwritten by HTTPProxy, is overwritten by the Gateway API.
+Ingress is overwritten by HTTPProxy, which is overwritten by Gateway API.
 I could see reversing HTTPProxy and the Gateway API here, but I think this acknowledges that the Gateway API are really an evolution of the ideas in HTTPProxy, and will probably end up being the community standard.
 
 ### Status management
 
-Each object in the Gateway API set has its own status definition. In general, Contour will update the status of any object that comes into scope with its details, ensuring that the `observedGeneration` field is set correctly.
+Each object in the Gateway API set has its own status definition. 
+In general, Contour will update the status of any object that comes into scope with its details, ensuring that the `observedGeneration` field is set correctly.
 When objects fall out of scope, any status set by Contour will not be removed.
 It's expected that things that check the status will also check the `observedGeneration` to check if the status information is up-to-date with the current object generation.
 
@@ -99,22 +103,21 @@ Contour does not watch or interact with GatewayClass in any way.
 #### Gateway
 Contour will watch its configured Gateway object.
 
-Contour is not able to specify the address that the Envoy deployment will listen on, and so will ignore any entries in the Gateway's `spec.addresses` field.
-Contour will not update the `status.addresses` field.
+Contour will update the `status.addresses` field if it is able to derive proper information from the environment or utilizing the `--ingress-status-address` flag allowing for that information to be passed into Contour.
 
 For Contour, the key Gateway section are the Listeners. These define how an implementation should listen for traffic described by Routes.
 
-(The remainder of this document assumes that [#3263](https://github.com/projectcontour/contour/pull/3263) has been approved and merged.)
+(The remainder of this section assumes that [#3263](https://github.com/projectcontour/contour/pull/3263) has been approved and merged.)
 
 For Listeners:
 - Listeners inside Gateways will be merged where possible.
-- Listeners that specify a port that the Contour controller considers the default secure port will have a HTTP->HTTPS redirect created for them.
+- Listeners that specify a port that the Contour controller considers the default secure port will have a HTTP->HTTPS redirect created for them [once a design is established](https://github.com/kubernetes-sigs/gateway-api/issues/51).
 - Listeners that specify a port that is not exposed via the Envoy service will be rejected.
 - Conflicts within a Gateway will result in the relevant Listeners both being rejected (as there is no way to determine which one was first).
 - Listeners are considered mergeable if all the fields out of `hostname`, `port`, and `protocol` match, with some additional rules around TLS.
 - Further merging rules are specified in the detailed design below.
 - Listeners that refer to any other Route than HTTPRoute or TLSRoute will be ignored, and a condition placed on the corresponding `status.listeners[]` object saying that it was ignored because those objects are not supported.
-
+    
 
 The Gateway may supply TLS config, in which case it is used as a default.
 The TLS config may be overridden by HTTPRoutes if the Gateway `spec.listeners[].tls.routeOverride` is set to `Allow`.
@@ -174,10 +177,10 @@ gateway:
 
 The current flag `--experimental-service-apis` will be removed.
 The boolean it represents will be deduced from the following rules:
-- the gateway is configured in the config file.
-- the referenced gateway exists.
+- the referenced gateway exists matching the default or configuration file.
 
-If the gateway is configured but does not exist, then this is a fatal error and Contour will exit.
+If the Gateway API CRDs are not installed, Contour will ignore processing them until they are installed in the cluster and Contour is restarted.
+If the gateway is configured but does not exist, then once the Gateway is created, Contour will process & pass configuration off to Envoy.
 If the gateway is removed while Contour is operating, then an error will be logged, and all config associated with the Gateway API will be removed from Envoy.
 
 ### Code changes
@@ -262,19 +265,40 @@ Routes for a Listener are chosen using the `RoutBindingSelector`, as per the spe
 Precedence rules in the spec must also be followed.
 
 The rules for implementing RouteBindingSelector are straightforward and will be implemented per the spec.
+
 #### Gateway Status
 
-The only status that Contour will update in the Gateway is the `status.[]ListenerStatus` slice.
+Contour will update the Gateway's `status.[]ListenerStatus` slice, the `status.conditions`, as well as the `status.[]GatewayAddress` slice.
 This slice contains `ListenerStatus` entries that are expected to be keyed by `port`.
 If more than one Listener shares the same port, the `ListenerStatus` reports the combined status.
 
 As the API currently stands, Contour must combine the statuses for all Listeners that share a `port`, including Listeners that are being merged.
 If this proves awkward, we may need to ask for some upstream changes.
 
+Any Gateway starts with the "type:Scheduled", "status:false", "reason:NotReconciled", "message:Waiting for controller".
+When Contour spins up and processes its first DAG, then it should update the status to be "Ready", "status: True".
+
+##### Listener Status
+
 Whenever Contour looks at a Listener, it will add an `Admitted` Condition.
 In the event that a ListenerStatus has everything okay (all mergeable Listeners pass validation), the `Admitted` condition will be `status: true`.
 If there are any errors, the `Admitted` Condition will be `status: false`, and the Reason will tell you more about why.
 
+Contour should raise any of the following depending on the types of errors encountered:
+- Reason: Conflicted
+    - HostnameConflict
+    - ProtocolConflict
+    - RouteConflict
+- Reason: Detached
+    - PortUnavailable
+    - UnsupportedExtension
+    - UnsupportedProtocol
+    - UnsupportedAddress
+- Reason: ResolvedRefs
+    - DegradedRoutes
+    - InvalidCertificateRef
+    - InvalidRoutesRef
+    
 ### *Route general notes
 
 For both HTTPRoute and TLSRoute, there are two fields in common, `spec.gateways`, and `status.gateways`.
