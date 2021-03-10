@@ -817,8 +817,10 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
-			v1.ServicePort{Name: "alt", Port: 8080, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(
+			v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
+			v1.ServicePort{Name: "alt", Port: 8080, TargetPort: intstr.FromInt(8080)},
+		),
 	)
 
 	rh.OnAdd(fixture.NewService("test-gui").
@@ -835,7 +837,6 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 				ServiceName: "kuard",
 				ServicePort: intstr.FromInt(80),
 			},
-
 			Rules: []v1beta1.IngressRule{{
 				Host: "test-gui",
 				IngressRuleValue: v1beta1.IngressRuleValue{
@@ -850,6 +851,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 					},
 				},
 			}, {
+				// Empty host.
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
@@ -883,6 +885,65 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
 						Action: routecluster("default/test-gui/80/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+		Nonce:   "1",
+	})
+}
+
+func TestDefaultBackendIsOverridenByNoHostIngressRule(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	rh.OnAdd(fixture.NewService("kuard").
+		WithPorts(
+			v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)},
+			v1.ServicePort{Name: "alt", Port: 8080, TargetPort: intstr.FromInt(8080)},
+		),
+	)
+
+	rh.OnAdd(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hello",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Backend: &v1beta1.IngressBackend{
+				ServiceName: "kuard",
+				ServicePort: intstr.FromInt(80),
+			},
+			Rules: []v1beta1.IngressRule{{
+				// Empty host.
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{
+							{
+								// This conflicts with the default backend and
+								// should override it.
+								Path: "/",
+								Backend: v1beta1.IngressBackend{
+									ServiceName: "kuard",
+									ServicePort: intstr.FromInt(8080),
+								},
+							},
+						},
+					},
+				},
+			}},
+		},
+	})
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		VersionInfo: "1",
+		Resources: routeResources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("*",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routecluster("default/kuard/8080/da39a3ee5e"),
 					},
 				),
 			),

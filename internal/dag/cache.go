@@ -241,7 +241,6 @@ func toV1Ingress(obj *v1beta1.Ingress) *networking_v1.Ingress {
 
 	var convertedTLS []networking_v1.IngressTLS
 	var convertedIngressRules []networking_v1.IngressRule
-	var paths []networking_v1.HTTPIngressPath
 	var convertedDefaultBackend *networking_v1.IngressBackend
 
 	for _, tls := range obj.Spec.TLS {
@@ -260,6 +259,7 @@ func toV1Ingress(obj *v1beta1.Ingress) *networking_v1.Ingress {
 		}
 
 		if r.HTTP != nil {
+			var paths []networking_v1.HTTPIngressPath
 
 			for _, p := range r.HTTP.Paths {
 				var pathType networking_v1.PathType
