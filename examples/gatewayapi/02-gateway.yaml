@@ -1,0 +1,44 @@
+kind: GatewayClass
+apiVersion: networking.x-k8s.io/v1alpha1
+metadata:
+  name: contour-class
+spec:
+  controller: projectcontour.io/ingress-controller
+---
+kind: Gateway
+apiVersion: networking.x-k8s.io/v1alpha1
+metadata:
+  name: contour
+  namespace: projectcontour
+spec:
+  gatewayClassName: contour-class
+  listeners:
+    - protocol: HTTP
+      port: 80
+      routes:
+        kind: HTTPRoute
+        selector:
+          matchLabels:
+            app: http
+        namespaces:
+          from: "All"
+---
+kind: HTTPRoute
+apiVersion: networking.x-k8s.io/v1alpha1
+metadata:
+  name: default-route
+  namespace: projectcontour-roots
+  labels:
+    app: http
+spec:
+  tls:
+  hostnames:
+    - local.projectcontour.io
+  rules:
+    - matches:
+        - path:
+            type: Prefix
+            value: /
+      forwardTo:
+        - serviceName: rootapp
+          port: 80

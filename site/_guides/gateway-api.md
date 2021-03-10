@@ -35,9 +35,51 @@ The following prerequisites must be met before using Gateway API with Contour:
 - A working [Kubernetes][2] cluster. Refer to the [compatibility matrix][3] for cluster version requirements.
 - The [kubectl][4] command-line tool, installed and configured to access your cluster.
 
-### Using Gateway API with Contour Operator
+### Deploy
 
-The preferred method for using Gateway API is with [Contour Operator][5]. This is because the GatewayClass and Gateway
+#### Option 1: kubectl apply
+
+Gateway API is a set of CRDs that need to be applied to your cluster first before deploying Contour.
+This getting started guide is perfect to be used with [Kind configuration](https://projectcontour.io/docs/v1.13.1/deploy-options/#kind).
+
+Apply the Gateway API CRDs:
+```shell
+$ kubectl kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v0.2.0" | kubectl apply -f -
+```
+
+Deploy Contour:
+```shell
+$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+```
+
+Create some sample resources:
+```shell
+$ kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/main/examples/contour/01-common.yaml
+```
+
+Create some sample Gateway API resources:
+```shell
+$ kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/main/examples/contour/02-gateway.yaml
+```
+
+This creates:
+
+- Namespace `projectcontour` to run Contour & Envoy.
+- Namespace `projectcontour-roots` to run sample apps.
+- Sample Deployment/Service sample apps.
+- A GatewayClass named `contour-class` that abstracts the infrastructure-specific configuration from Gateways.
+- A Gateway named `contour` in namespace `projectcontour`.
+
+Test it out!
+
+Use `curl` to test access to the application:
+```shell
+$ curl -i http://local.projectcontour.io
+```
+
+### Option 2: Contour Operator
+
+Another method for using Gateway API is with [Contour Operator][5]. This is because the GatewayClass and Gateway
 resources should be managed by active controllers that are implemented by the operator. Refer to the [contour][6] and
 [operator][7] designs for additional background on the gateway API implementation.
 
