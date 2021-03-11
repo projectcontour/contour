@@ -1052,6 +1052,18 @@ func TestRouteMatch(t *testing.T) {
 				},
 			},
 		},
+		"path exact": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.ExactMatchCondition{
+					Path: "/foo",
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_Path{
+					Path: "/foo",
+				},
+			},
+		},
 		"path regex": {
 			route: &dag.Route{
 				PathMatchCondition: &dag.RegexMatchCondition{

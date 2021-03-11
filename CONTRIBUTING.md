@@ -191,6 +191,37 @@ This will push to `:latest` in `docker.io/davecheney` obviously you'll also need
 
 To verify your change by deploying the image you built, take one of the [deployment manifests][7], edit it to point to your new image, and deploy to your Kubernetes cluster.
 
+## Contour testing
+
+This section provides some useful information and guidelines for working with Contour's tests.
+
+### Glossary
+
+#### Config/Data Categories
+* **Kubernetes Config**: `HTTPProxy`, `Ingress` or [Gateway API][8] config that Contour watches and converts to Envoy config.
+* **DAG**: The internal Contour representation of L7 proxy concepts. Kubernetes config is first converted to DAG objects before being converted to Envoy config.
+* **Envoy Config**: Configuration that can be provided to Envoy via xDS. This is Contour's final output, generated directly from the DAG. 
+
+#### Test Categories
+* **Unit Test**: A Go test for a particular function/package. In some cases, these test more than one package at a time.
+* **Feature Test**: A Go test in `internal/featuretests` that tests the translation of Kubernetes config to Envoy config, using a Contour event handler and xDS server. 
+* **Integration Test**: A YAML/rego test in `_integration/testsuite` that performs a full end-to-end test of Contour running in a cluster. Typically verifies the behavior of HTTP requests given a Kubernetes config (currently `HTTPProxy` and Gateway API configs have test cases).
+
+### Summary of Major Test Suites
+
+The following table describes the major test suites covering the core Contour processing pipeline (Kubernetes config -> DAG -> Envoy config).
+In general, changes to the core processing pipeline should be accompanied by new/updated test cases in each of these test suites.
+
+| Test Suite | Description |
+| ---------- | ----------- |
+| `internal/dag/builder_test.go` (specifically `TestDAGInsert*` functions) | Tests conversion of Kubernetes config to DAG objects. |
+| `internal/dag/status_test.go` | Tests invalid Kubernetes (`HTTPProxy`) configs, verifying their status/conditions. |
+| `internal/envoy/v3/*_test.go` | Tests conversion of DAG objects to Envoy config. |
+| `internal/xdscache/v3/*_test.go` (specifically the `Test[Cluster\|Listener\|Route\|Secret]Visit` functions) | Tests conversion of Kubernetes config to Envoy config. |
+| `internal/featuretests/v3/*_test.go` | Tests conversion of Kubernetes config to Envoy config, using a ~full Contour event handler and xDS server. |
+| `_integration/testsuite/[httpproxy\|gatewayapi]` | E2E tests with Contour running in a cluster. Verifies behavior of HTTP requests for configured proxies. |
+
+
 ## DCO Sign off
 
 All authors to the project retain copyright to their work. However, to ensure
@@ -262,3 +293,4 @@ By making a contribution to this project, I certify that:
 [6]: https://github.com/projectcontour/contour/issues/new/choose
 [6]: site/_resources/tagging.md
 [7]: site/docs/main/deploy-options.md
+[8]: https://gateway-api.sigs.k8s.io/

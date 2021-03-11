@@ -107,6 +107,15 @@ type PrefixMatchCondition struct {
 	Prefix string
 }
 
+func (pc *ExactMatchCondition) String() string {
+	return "exact: " + pc.Path
+}
+
+// ExactMatchCondition matches the entire path of a URL.
+type ExactMatchCondition struct {
+	Path string
+}
+
 func (pc *PrefixMatchCondition) String() string {
 	return "prefix: " + pc.Prefix
 }
