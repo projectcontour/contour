@@ -1,10 +1,10 @@
 ---
-title: FIPS
+title: FIPS 140-2 in Contour
 layout: page
 ---
 
-The [Federal Information Processing Standard (FIPS) 140-2](https://csrc.nist.gov/publications/detail/fips/140/2/final) publication describes United States government approved security requirements for cryptographic modules.
-Software that is validated by an accredited [Cryptographic Module Validation Program (CVMP) laboratory](https://csrc.nist.gov/projects/testing-laboratories) can be suitable for use in applications for US governmental departments or in industries subject to US Federal regulations.
+The [Federal Information Processing Standard (FIPS) 140-2][0] publication describes United States government approved security requirements for cryptographic modules.
+Software that is validated by an accredited [Cryptographic Module Validation Program (CVMP) laboratory][1] can be suitable for use in applications for US governmental departments or in industries subject to US Federal regulations.
 
 As a full application is not often tested by a CVMP laboratory, we cannot say that Contour is FIPS validated.
 Rather, Contour can be built and configured in a manner that adheres to the standards FIPS 140-2 establishes.
@@ -23,11 +23,11 @@ The Contour project does not have any plans to distribute any binaries compiled 
 
 ## Notes on BoringCrypto
 
-This guide shows how Contour and Envoy can be built with [BoringSSL](https://boringssl.googlesource.com/boringssl/) as the cryptographic module.
+This guide shows how Contour and Envoy can be built with [BoringSSL][2] as the cryptographic module.
 BoringSSL is Google's fork of OpenSSL and as a whole is not FIPS validated, but a specific core library called BoringCrypto is.
-For more detailed information about BoringCrypto see [this document](https://boringssl.googlesource.com/boringssl/+/master/crypto/fipsmodule/FIPS.md).
+For more detailed information about BoringCrypto see [this document][3].
 
-We are using BoringSSL/BoringCrypto in this example because Contour is written in Go and there is an open source [BoringCrypto flavor of Go](https://go.googlesource.com/go/+/dev.boringcrypto/README.boringcrypto.md) readily available.
+We are using BoringSSL/BoringCrypto in this example because Contour is written in Go and there is an open source [BoringCrypto flavor of Go][4] readily available.
 In addition, Envoy uses BoringSSL at its core and already has well defined build processes for building in a FIPS compliant mode.
 
 One could possibly perform the same sort of operations with another library with FIPS 140-2 a validated cryptographic module (e.g. OpenSSL).
@@ -35,23 +35,23 @@ However, that is out of the scope of this guide and interested users will have t
 
 ## Building Contour
 
-In this section we will describe how the [`projectcontour/contour`](https://hub.docker.com/r/projectcontour/contour) container image can be compiled and linked to BoringCrypto for FIPS compliance.
+In this section we will describe how the [`projectcontour/contour`][5] container image can be compiled and linked to BoringCrypto for FIPS compliance.
 We will be modifying the standard build process by setting up some dependencies and passing additional arguments to the same `make` target used to build the standard, non-FIPS image distributed by the project.
 
 You will need some software downloaded and installed on the computer you are performing the Contour FIPS build on:
 - Contour source code checked out to the version you would like to build
-- [GNU Make](https://www.gnu.org/software/make/)
-- [Docker](https://www.docker.com/)
+- [GNU Make][6]
+- [Docker][7]
 
-The Contour [Dockerfile](../../Dockerfile) uses a multistage build that performs compilation in an image that contains the necessary build tools and dependencies and then exports compiled artifacts to a final image.
+The Contour [Dockerfile][8] uses a multistage build that performs compilation in an image that contains the necessary build tools and dependencies and then exports compiled artifacts to a final image.
 In order to minimize the `projectcontour/contour` image footprint, the final output image only consists of a single layer, containing a lone file: the statically compiled `contour` binary.
 The standard Contour build uses the upstream `golang` image as a build base, however we will have to swap that out to build Contour with BoringCrypto.
 
 We can use the Google-provided Go implementation that has patches on top of standard Go to enable integrating BoringCrypto.
-This is available to us in the [`goboring/golang`](https://hub.docker.com/r/goboring/golang/) container image we can use as a build base.
+This is available to us in the [`goboring/golang`][9] container image we can use as a build base.
 In addition, to ensure we can statically compile the `contour` binary when it is linked with the BoringCrypto C library, we must pass some additional arguments to the `make container` target.
 
-To perform the Contour image build with BoringCrypto, change directories to where you have the Contour source code checked out and run the following (replacing `<goboring-version-tag>` with the appropriate version of Go and BoringCrypto, see [here](https://go.googlesource.com/go/+/dev.boringcrypto/misc/boring/README.md#version-strings) for version specifics):
+To perform the Contour image build with BoringCrypto, change directories to where you have the Contour source code checked out and run the following (replacing `<goboring-version-tag>` with the appropriate version of Go and BoringCrypto, see [here][10] for version specifics):
 
 ```bash
 make container BUILD_CGO_ENABLED=1 BUILD_BASE_IMAGE=goboring/golang:<goboring-version-tag> BUILD_EXTRA_GO_LDFLAGS="-linkmode=external -extldflags=-static"
@@ -74,11 +74,11 @@ Once you have a `projectcontour/contour` image built, you can re-tag it if neede
 
 ## Building Envoy
 
-Envoy has support for building in a FIPS compliant mode as [documented here](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl.html#fips-140-2).
+Envoy has support for building in a FIPS compliant mode as [documented here][11].
 The upstream project does not distribute a FIPS compliant Envoy container image, but combining the documented process with the processes for building the Envoy executable and container image, we can produce one.
 
 Again we will need the Envoy source code checked out to the version to build and Docker installed on your computer.
-The simplest way to build Envoy without having to learn [Bazel](https://bazel.build/) and set up a C++ toolchain on your computer is to build using the Envoy build container image which contains the necessary tools pre-installed.
+The simplest way to build Envoy without having to learn [Bazel][12] and set up a C++ toolchain on your computer is to build using the Envoy build container image which contains the necessary tools pre-installed.
 Note that if you do build with FIPS mode outside of the build container, you can only do so on a Linux-amd64 architecture.
 
 We can first compile the Envoy binary by running the following in a `bash` shell from the Envoy source directory:
@@ -92,7 +92,7 @@ Once that build completes, you should have a file named `envoy_binary.tar.gz` in
 
 If you would like to build an image with Envoy according to your own specifications, you can unpack the resulting tar archive and you will find a stripped Envoy binary in the `build_release_stripped` directory and a unstripped Envoy with debug info in the `build_release` directory.
 
-To build an image matching the canonical Envoy upstream release image ([`envoyproxy/envoy`](https://hub.docker.com/r/envoyproxy/envoy)), run the following:
+To build an image matching the canonical Envoy upstream release image ([`envoyproxy/envoy`][13]), run the following:
 
 ```bash
 # Make ./linux/amd64 directories.
@@ -112,13 +112,32 @@ Using a FIPS flavor of Envoy will do most of the heavy lifting here without any 
 
 The critical communication paths and how they are set up to be FIPS compliant are enumerated below:
 - Contour -> k8s API
-  - Contour uses [`client-go`](https://github.com/kubernetes/client-go) to communicate with the k8s API
+  - Contour uses [`client-go`][14] to communicate with the k8s API
   - `client-go` uses the default Golang cipher suites configuration
   - When compiled with BoringCrypto Go, this set of ciphers is FIPS compliant and not configurable by users
 - Envoy -> Contour xDS Server, extension services, upstream services
-  - A FIPS compliant build of Envoy will choose FIPS approved TLS ciphers when negotiating TLS 1.2 as documented [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites)
+  - A FIPS compliant build of Envoy will choose FIPS approved TLS ciphers when negotiating TLS 1.2 as documented [here][15]
   - The set of ciphers is not configurable
 - TLS client -> Envoy
-  - As of [Contour 1.13.0](https://github.com/projectcontour/contour/releases/tag/v1.13.0), the ciphers Envoy will accept as a server when negotiating TLS 1.2
-  - The [default set of ciphers Contour configures](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-variables) includes some ciphers that are not FIPS approved
-  - Users must configure FIPS approved ciphers from the list [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites)
+  - As of [Contour 1.13.0][16], the ciphers Envoy will accept as a server when negotiating TLS 1.2
+  - The [default set of ciphers Contour configures][17] includes some ciphers that are not FIPS approved
+  - Users must configure FIPS approved ciphers from the list [here][15]
+
+[0]: https://csrc.nist.gov/publications/detail/fips/140/2/final
+[1]: https://csrc.nist.gov/projects/testing-laboratories
+[2]: https://boringssl.googlesource.com/boringssl/
+[3]: https://boringssl.googlesource.com/boringssl/+/master/crypto/fipsmodule/FIPS.md
+[4]: https://go.googlesource.com/go/+/dev.boringcrypto/README.boringcrypto.md
+[5]: https://hub.docker.com/r/projectcontour/contour
+[6]: https://www.gnu.org/software/make/
+[7]: https://www.docker.com/
+[8]: {{site.github.repository_url}}/blob/main/Dockerfile
+[9]: https://hub.docker.com/r/goboring/golang/
+[10]: https://go.googlesource.com/go/+/dev.boringcrypto/misc/boring/README.md#version-strings
+[11]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl.html#fips-140-2
+[12]: https://bazel.build/
+[13]: https://hub.docker.com/r/envoyproxy/envoy
+[14]: https://github.com/kubernetes/client-go
+[15]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites
+[16]: https://github.com/projectcontour/contour/releases/tag/v1.13.0
+[17]: https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-variables
