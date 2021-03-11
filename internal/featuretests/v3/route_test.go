@@ -894,7 +894,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 	})
 }
 
-func TestDefaultBackendIsOverridenByNoHostIngressRule(t *testing.T) {
+func TestDefaultBackendIsOverriddenByNoHostIngressRule(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
