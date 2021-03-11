@@ -73,6 +73,13 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 			},
 			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
+	case *dag.ExactMatchCondition:
+		return &envoy_route_v3.RouteMatch{
+			PathSpecifier: &envoy_route_v3.RouteMatch_Path{
+				Path: c.Path,
+			},
+			Headers: headerMatcher(route.HeaderMatchConditions),
+		}
 	default:
 		return &envoy_route_v3.RouteMatch{
 			Headers: headerMatcher(route.HeaderMatchConditions),
