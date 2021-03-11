@@ -578,7 +578,7 @@ function envoy_on_request(request_handle)
 	if host ~= target then
 		request_handle:respond(
 			{[":status"] = "421"},
-			string.format("misdirected request to %%q", headers:get(":authority"))
+			string.format("misdirected request to %%q", host)
 		)
 	end
 end
