@@ -1284,6 +1284,53 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	iPathMatchTypesV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pathmatchtypes",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+								Path:     "/exact",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+								Path:     "/exact_with_regex/.*",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix_with_regex/.*",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								Path:     "/implementation_specific",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								Path:     "/implementation_specific_with_regex/.*",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -1958,6 +2005,54 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	iPathMatchTypes := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pathmatchtypes",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
+								Path:     "/exact",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
+								Path:     "/exact_with_regex/.*",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix_with_regex/.*",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								Path:     "/implementation_specific",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								Path:     "/implementation_specific_with_regex/.*",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
 	// s3a and b have http/2 protocol annotations
 	s3a := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -5811,6 +5906,45 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: listeners(),
 		},
+		"insert ingress with various path match types": {
+			objs: []interface{}{
+				iPathMatchTypes,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							&Route{
+								PathMatchCondition: exact("/exact"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/exact_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: prefix("/prefix"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/prefix_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/implementation_specific"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/implementation_specific_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+						),
+					),
+				},
+			),
+		},
 		// issue 1234
 		"insert ingress with wildcard hostnames": {
 			objs: []interface{}{
@@ -5991,6 +6125,45 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 			},
 			want: listeners(),
+		},
+		"ingressv1: insert ingress with various path match types": {
+			objs: []interface{}{
+				iPathMatchTypesV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							&Route{
+								PathMatchCondition: exact("/exact"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/exact_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: prefix("/prefix"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/prefix_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/implementation_specific"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/implementation_specific_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+						),
+					),
+				},
+			),
 		},
 		// issue 1234
 		"ingressv1: insert ingress with wildcard hostnames": {
@@ -8941,6 +9114,7 @@ func listeners(ls ...*Listener) []Vertex {
 }
 
 func prefix(prefix string) MatchCondition { return &PrefixMatchCondition{Prefix: prefix} }
+func exact(path string) MatchCondition    { return &ExactMatchCondition{Path: path} }
 func regex(regex string) MatchCondition   { return &RegexMatchCondition{Regex: regex} }
 
 func withMirror(r *Route, mirror *Service) *Route {

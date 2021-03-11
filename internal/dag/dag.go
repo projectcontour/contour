@@ -107,8 +107,8 @@ type PrefixMatchCondition struct {
 	Prefix string
 }
 
-func (pc *ExactMatchCondition) String() string {
-	return "exact: " + pc.Path
+func (ec *ExactMatchCondition) String() string {
+	return "exact: " + ec.Path
 }
 
 // ExactMatchCondition matches the entire path of a URL.
