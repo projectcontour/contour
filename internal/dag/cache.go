@@ -51,18 +51,18 @@ type KubernetesCache struct {
 	// Secrets that are referred from the configuration file.
 	ConfiguredSecretRefs []*types.NamespacedName
 
-	ingresses            map[types.NamespacedName]*networking_v1.Ingress
-	ingressclasses       map[string]*networking_v1.IngressClass
-	httpproxies          map[types.NamespacedName]*contour_api_v1.HTTPProxy
-	secrets              map[types.NamespacedName]*v1.Secret
-	httpproxydelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
-	services             map[types.NamespacedName]*v1.Service
-	namespaces           map[string]*v1.Namespace
-	gateway              *gatewayapi_v1alpha1.Gateway
-	httproutes           map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute
-	tlsroutes            map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute
-	backendpolicies      map[types.NamespacedName]*gatewayapi_v1alpha1.BackendPolicy
-	extensions           map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
+	ingresses                 map[types.NamespacedName]*networking_v1.Ingress
+	ingressclasses            map[string]*networking_v1.IngressClass
+	httpproxies               map[types.NamespacedName]*contour_api_v1.HTTPProxy
+	secrets                   map[types.NamespacedName]*v1.Secret
+	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
+	services                  map[types.NamespacedName]*v1.Service
+	namespaces                map[string]*v1.Namespace
+	gateway                   *gatewayapi_v1alpha1.Gateway
+	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute
+	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute
+	backendpolicies           map[types.NamespacedName]*gatewayapi_v1alpha1.BackendPolicy
+	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
 	initialize sync.Once
 
@@ -75,7 +75,7 @@ func (kc *KubernetesCache) init() {
 	kc.ingressclasses = make(map[string]*networking_v1.IngressClass)
 	kc.httpproxies = make(map[types.NamespacedName]*contour_api_v1.HTTPProxy)
 	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
-	kc.httpproxydelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
+	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute)
@@ -193,7 +193,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			return true
 		}
 	case *contour_api_v1.TLSCertificateDelegation:
-		kc.httpproxydelegations[k8s.NamespacedNameOf(obj)] = obj
+		kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *gatewayapi_v1alpha1.Gateway:
 		if kc.matchesGateway(obj) {
@@ -376,8 +376,8 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		return ok
 	case *contour_api_v1.TLSCertificateDelegation:
 		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.httpproxydelegations[m]
-		delete(kc.httpproxydelegations, m)
+		_, ok := kc.tlscertificatedelegations[m]
+		delete(kc.tlscertificatedelegations, m)
 		return ok
 	case *gatewayapi_v1alpha1.Gateway:
 		if kc.matchesGateway(obj) {
@@ -447,21 +447,40 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 		}
 	}
 
-	for _, ir := range kc.httpproxies {
-		if ir.Namespace != service.Namespace {
+	for _, proxy := range kc.httpproxies {
+		if proxy.Namespace != service.Namespace {
 			continue
 		}
-		for _, route := range ir.Spec.Routes {
+		for _, route := range proxy.Spec.Routes {
 			for _, s := range route.Services {
 				if s.Name == service.Name {
 					return true
 				}
 			}
 		}
-		if tcpproxy := ir.Spec.TCPProxy; tcpproxy != nil {
+		if tcpproxy := proxy.Spec.TCPProxy; tcpproxy != nil {
 			for _, s := range tcpproxy.Services {
 				if s.Name == service.Name {
 					return true
+				}
+			}
+		}
+	}
+
+	// TODO: This checks for ANY httproute that matches
+	// a service, however, it's possible that the route
+	// doesn't match the selector/namespaces defined on
+	// the gateway and is a noop dag rebuild.
+	for _, route := range kc.httproutes {
+		if route.Namespace != service.Namespace {
+			continue
+		}
+		for _, rule := range route.Spec.Rules {
+			for _, forward := range rule.ForwardTo {
+				if forward.ServiceName != nil {
+					if *forward.ServiceName == service.Name {
+						return true
+					}
 				}
 			}
 		}
@@ -486,7 +505,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 	delegations := make(map[string]bool) // targetnamespace/secretname to bool
 
 	// TODO(youngnick): Check if this is required.
-	for _, d := range kc.httpproxydelegations {
+	for _, d := range kc.tlscertificatedelegations {
 		for _, cd := range d.Spec.Delegations {
 			for _, n := range cd.TargetNamespaces {
 				delegations[n+"/"+cd.SecretName] = true
@@ -550,6 +569,25 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 	for _, s := range kc.ConfiguredSecretRefs {
 		if s.Namespace == secret.Namespace && s.Name == secret.Name {
 			return true
+		}
+	}
+
+	if kc.gateway != nil {
+		for _, listener := range kc.gateway.Spec.Listeners {
+			if listener.TLS == nil {
+				continue
+			}
+			if listener.TLS.CertificateRef == nil {
+				continue
+			}
+
+			ref := listener.TLS.CertificateRef
+			if ref.Kind == "Secret" &&
+				(ref.Group == "core" || ref.Group == "v1") {
+				if kc.gateway.Namespace == secret.Namespace && ref.Name == secret.Name {
+					return true
+				}
+			}
 		}
 	}
 
@@ -632,7 +670,7 @@ func (kc *KubernetesCache) DelegationPermitted(secret types.NamespacedName, targ
 		return true
 	}
 
-	for _, d := range kc.httpproxydelegations {
+	for _, d := range kc.tlscertificatedelegations {
 		if d.Namespace != secret.Namespace {
 			continue
 		}
