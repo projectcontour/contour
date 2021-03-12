@@ -410,6 +410,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 					}),
@@ -498,6 +501,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						RequestTimeout:            protobuf.Duration(10 * time.Second),
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
@@ -586,9 +592,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
 							IdleTimeout: protobuf.Duration(90 * time.Second),
 						},
-						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						AccessLog:        FileAccessLogEnvoy("/dev/stdout"),
+						UseRemoteAddress: protobuf.Bool(true),
+						NormalizePath:    protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 					}),
@@ -677,6 +686,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 						StreamIdleTimeout:         protobuf.Duration(90 * time.Second),
@@ -765,9 +777,12 @@ func TestHTTPConnectionManager(t *testing.T) {
 						CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
 							MaxConnectionDuration: protobuf.Duration(90 * time.Second),
 						},
-						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
-						UseRemoteAddress:          protobuf.Bool(true),
-						NormalizePath:             protobuf.Bool(true),
+						AccessLog:        FileAccessLogEnvoy("/dev/stdout"),
+						UseRemoteAddress: protobuf.Bool(true),
+						NormalizePath:    protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 					}),
@@ -856,6 +871,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 					}),
@@ -944,6 +962,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 						DelayedCloseTimeout:       protobuf.Duration(90 * time.Second),
@@ -1033,6 +1054,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 						DrainTimeout:              protobuf.Duration(90 * time.Second),
@@ -1124,6 +1148,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 						DrainTimeout:              protobuf.Duration(90 * time.Second),
@@ -1214,6 +1241,9 @@ func TestHTTPConnectionManager(t *testing.T) {
 						AccessLog:                 FileAccessLogEnvoy("/dev/stdout"),
 						UseRemoteAddress:          protobuf.Bool(true),
 						NormalizePath:             protobuf.Bool(true),
+						StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+							StripAnyHostPort: true,
+						},
 						PreserveExternalRequestId: true,
 						MergeSlashes:              true,
 						DrainTimeout:              protobuf.Duration(90 * time.Second),

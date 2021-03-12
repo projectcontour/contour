@@ -760,7 +760,7 @@ func TestVirtualHost(t *testing.T) {
 			port:     9999,
 			want: &envoy_route_v3.VirtualHost{
 				Name:    "www.example.com",
-				Domains: []string{"www.example.com", "www.example.com:*"},
+				Domains: []string{"www.example.com"},
 			},
 		},
 	}
@@ -783,7 +783,7 @@ func TestCORSVirtualHost(t *testing.T) {
 			cp:       nil,
 			want: &envoy_route_v3.VirtualHost{
 				Name:    "www.example.com",
-				Domains: []string{"www.example.com", "www.example.com:*"},
+				Domains: []string{"www.example.com"},
 			},
 		},
 		"cors policy": {
@@ -800,7 +800,7 @@ func TestCORSVirtualHost(t *testing.T) {
 			},
 			want: &envoy_route_v3.VirtualHost{
 				Name:    "www.example.com",
-				Domains: []string{"www.example.com", "www.example.com:*"},
+				Domains: []string{"www.example.com"},
 				Cors: &envoy_route_v3.CorsPolicy{
 					AllowOriginStringMatch: []*matcher.StringMatcher{
 						{
