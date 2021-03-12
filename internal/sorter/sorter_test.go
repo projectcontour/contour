@@ -101,6 +101,12 @@ func matchRegex(str string) *envoy_route_v3.RouteMatch_SafeRegex {
 	}
 }
 
+func matchExact(str string) *envoy_route_v3.RouteMatch_Path {
+	return &envoy_route_v3.RouteMatch_Path{
+		Path: str,
+	}
+}
+
 func exactHeader(name string, value string) *envoy_route_v3.HeaderMatcher {
 	return &envoy_route_v3.HeaderMatcher{
 		Name: name,
@@ -121,26 +127,38 @@ func presentHeader(name string) *envoy_route_v3.HeaderMatcher {
 
 func TestSortRoutesLongestPath(t *testing.T) {
 	want := []*envoy_route_v3.Route{
+		// Note that exact matches sort before regex and prefix matches.
+		{
+			Match: &envoy_route_v3.RouteMatch{
+				PathSpecifier: matchExact("/some/long/match"),
+			},
+		},
+		{
+			Match: &envoy_route_v3.RouteMatch{
+				PathSpecifier: matchExact("/exact/short"),
+			},
+		},
 		{
 			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchRegex("/this/is/the/longest"),
-			}},
-
+			},
+		},
 		// Note that regex matches sort before prefix matches.
 		{
 			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchRegex("."),
-			}},
-
+			},
+		},
 		{
 			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchPrefix("/path/prefix2"),
-			}},
-
+			},
+		},
 		{
 			Match: &envoy_route_v3.RouteMatch{
 				PathSpecifier: matchPrefix("/path/prefix"),
-			}},
+			},
+		},
 	}
 
 	have := shuffleRoutes(want)

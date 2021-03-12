@@ -15,6 +15,7 @@ package dag
 
 import (
 	"errors"
+	"regexp"
 	"testing"
 	"time"
 
@@ -858,8 +859,9 @@ func TestDAGInsert(t *testing.T) {
 						Paths: []networking_v1.HTTPIngressPath{{
 							Backend: *backendv1("kuard", intstr.FromString("http")),
 						}, {
-							Path:    "/kuarder",
-							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+							Path:     "/kuarder",
+							PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+							Backend:  *backendv1("kuarder", intstr.FromInt(8080)),
 						}},
 					},
 				},
@@ -892,8 +894,9 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
-							Path:    "/kuarder",
-							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+							Path:     "/kuarder",
+							PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+							Backend:  *backendv1("kuarder", intstr.FromInt(8080)),
 						}},
 					},
 				},
@@ -928,8 +931,9 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
-							Path:    "/kuarder",
-							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+							Path:     "/kuarder",
+							PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+							Backend:  *backendv1("kuarder", intstr.FromInt(8080)),
 						}},
 					},
 				},
@@ -1520,7 +1524,8 @@ func TestDAGInsert(t *testing.T) {
 								ServicePort: intstr.FromString("http"),
 							},
 						}, {
-							Path: "/kuarder",
+							Path:     "/kuarder",
+							PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "kuarder",
 								ServicePort: intstr.FromInt(8080),
@@ -1560,7 +1565,8 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/kuarder",
+							Path:     "/kuarder",
+							PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "kuarder",
 								ServicePort: intstr.FromInt(8080),
@@ -1602,7 +1608,8 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/kuarder",
+							Path:     "/kuarder",
+							PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "kuarder",
 								ServicePort: intstr.FromInt(8080),
@@ -4880,7 +4887,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
-							prefixroute("/kuarder", service(s2)),
+							exactroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -4896,7 +4903,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
-							prefixroute("/kuarder", service(s2)),
+							exactroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -4920,7 +4927,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						securevirtualhost("b.example.com", sec1,
 							prefixroute("/", service(s1)),
-							prefixroute("/kuarder", service(s2)),
+							exactroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5215,7 +5222,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
-							prefixroute("/kuarder", service(s2)),
+							exactroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5231,7 +5238,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
-							prefixroute("/kuarder", service(s2)),
+							exactroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5255,7 +5262,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						securevirtualhost("b.example.com", sec1,
 							prefixroute("/", service(s1)),
-							prefixroute("/kuarder", service(s2)),
+							exactroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5460,7 +5467,11 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", service(s1)),
-							routeWebsocket("/ws1", service(s1)),
+							&Route{
+								PathMatchCondition: prefixIngress("/ws1"),
+								Clusters:           clustermap(s1),
+								Websocket:          true,
+							},
 						),
 					),
 				},
@@ -5540,7 +5551,11 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", service(s1)),
-							routeWebsocket("/ws1", service(s1)),
+							&Route{
+								PathMatchCondition: prefixIngress("/ws1"),
+								Clusters:           clustermap(s1),
+								Websocket:          true,
+							},
 						),
 					),
 				},
@@ -5925,7 +5940,7 @@ func TestDAGInsert(t *testing.T) {
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: prefix("/prefix"),
+								PathMatchCondition: prefixIngress("/prefix"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
@@ -5970,7 +5985,10 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeUpgrade("/", service(s13a)),
-							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+							&Route{
+								PathMatchCondition: prefixIngress("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+								Clusters:           clustermap(s13b),
+							},
 						),
 					),
 				}, &Listener{
@@ -5978,7 +5996,10 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						securevirtualhost("example.com", sec13,
 							routeUpgrade("/", service(s13a)),
-							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+							&Route{
+								PathMatchCondition: prefixIngress("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+								Clusters:           clustermap(s13b),
+							},
 						),
 					),
 				},
@@ -6145,7 +6166,7 @@ func TestDAGInsert(t *testing.T) {
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: prefix("/prefix"),
+								PathMatchCondition: prefixIngress("/prefix"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
@@ -6190,7 +6211,10 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeUpgrade("/", service(s13a)),
-							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+							&Route{
+								PathMatchCondition: prefixIngress("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+								Clusters:           clustermap(s13b),
+							},
 						),
 					),
 				}, &Listener{
@@ -6198,7 +6222,10 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						securevirtualhost("example.com", sec13,
 							routeUpgrade("/", service(s13a)),
-							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+							&Route{
+								PathMatchCondition: prefixIngress("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+								Clusters:           clustermap(s13b),
+							},
 						),
 					),
 				},
@@ -9001,6 +9028,14 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	}
 }
 
+func exactroute(path string, first *Service, rest ...*Service) *Route {
+	services := append([]*Service{first}, rest...)
+	return &Route{
+		PathMatchCondition: &ExactMatchCondition{Path: path},
+		Clusters:           clusters(services...),
+	}
+}
+
 func routeProtocol(prefix string, protocol string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 
@@ -9114,8 +9149,11 @@ func listeners(ls ...*Listener) []Vertex {
 }
 
 func prefix(prefix string) MatchCondition { return &PrefixMatchCondition{Prefix: prefix} }
-func exact(path string) MatchCondition    { return &ExactMatchCondition{Path: path} }
-func regex(regex string) MatchCondition   { return &RegexMatchCondition{Regex: regex} }
+func prefixIngress(prefix string) MatchCondition {
+	return &RegexMatchCondition{Regex: regexp.QuoteMeta(prefix) + `((\/).*)?`}
+}
+func exact(path string) MatchCondition  { return &ExactMatchCondition{Path: path} }
+func regex(regex string) MatchCondition { return &RegexMatchCondition{Regex: regex} }
 
 func withMirror(r *Route, mirror *Service) *Route {
 	r.MirrorPolicy = &MirrorPolicy{

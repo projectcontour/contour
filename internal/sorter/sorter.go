@@ -119,6 +119,24 @@ func (s routeSorter) Less(i, j int) bool {
 		case *envoy_route_v3.RouteMatch_Prefix:
 			return true
 		}
+	case *envoy_route_v3.RouteMatch_Path:
+		switch b := s[j].Match.PathSpecifier.(type) {
+		case *envoy_route_v3.RouteMatch_Path:
+			cmp := strings.Compare(a.Path, b.Path)
+			switch cmp {
+			case 1:
+				// Sort longest path first.
+				return true
+			case -1:
+				return false
+			default:
+				return longestRouteByHeaders(s[i], s[j])
+			}
+		case *envoy_route_v3.RouteMatch_Prefix:
+			return true
+		case *envoy_route_v3.RouteMatch_SafeRegex:
+			return true
+		}
 	}
 
 	return false

@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"regexp"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -181,6 +182,10 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 	}
 }
 
+const prefixPathEnsureSegmentOnlyMatchRegex = `((\/).*)?`
+
+var _ = regexp.MustCompile(prefixPathEnsureSegmentOnlyMatchRegex)
+
 // route builds a dag.Route for the supplied Ingress.
 func route(ingress *networking_v1.Ingress, path string, pathType networking_v1.PathType, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) (*Route, error) {
 	log = log.WithFields(logrus.Fields{
@@ -212,7 +217,12 @@ func route(ingress *networking_v1.Ingress, path string, pathType networking_v1.P
 
 	switch pathType {
 	case networking_v1.PathTypePrefix:
-		r.PathMatchCondition = &PrefixMatchCondition{Prefix: path}
+		if path == "/" {
+			r.PathMatchCondition = &PrefixMatchCondition{Prefix: path}
+		} else {
+			prefixRegex := regexp.QuoteMeta(strings.TrimRight(path, "/")) + prefixPathEnsureSegmentOnlyMatchRegex
+			r.PathMatchCondition = &RegexMatchCondition{Regex: prefixRegex}
+		}
 	case networking_v1.PathTypeExact:
 		r.PathMatchCondition = &ExactMatchCondition{Path: path}
 	case networking_v1.PathTypeImplementationSpecific:

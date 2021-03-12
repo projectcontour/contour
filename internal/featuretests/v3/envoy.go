@@ -17,6 +17,7 @@ package v3
 
 import (
 	"path"
+	"regexp"
 	"time"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -110,6 +111,15 @@ func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_rout
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
+		},
+		HeaderMatchConditions: headers,
+	})
+}
+
+func routePrefixRegex(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+	return envoy_v3.RouteMatch(&dag.Route{
+		PathMatchCondition: &dag.RegexMatchCondition{
+			Regex: regexp.QuoteMeta(prefix) + `((\/).*)?`,
 		},
 		HeaderMatchConditions: headers,
 	})

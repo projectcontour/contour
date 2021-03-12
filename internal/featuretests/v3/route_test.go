@@ -124,7 +124,7 @@ func TestEditIngress(t *testing.T) {
 		Resources: routeResources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*", &envoy_route_v3.Route{
-					Match:  routePrefix("/testing"),
+					Match:  routePrefixRegex("/testing"),
 					Action: routecluster("default/kuard/80/da39a3ee5e"),
 				}),
 			),
@@ -184,7 +184,7 @@ func TestIngressPathRouteWithoutHost(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/hello"),
+						Match:  routePrefixRegex("/hello"),
 						Action: routecluster("default/hello/80/da39a3ee5e"),
 					},
 				),
@@ -277,7 +277,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.example.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/whoop"),
+						Match:  routePrefixRegex("/whoop"),
 						Action: routecluster("default/kerpow/9000/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
@@ -329,7 +329,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.example.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/whoop"),
+						Match:  routePrefixRegex("/whoop"),
 						Action: envoy_v3.UpgradeHTTPS(),
 					},
 					&envoy_route_v3.Route{
@@ -395,7 +395,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("hello.example.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/whoop"),
+						Match:  routePrefixRegex("/whoop"),
 						Action: envoy_v3.UpgradeHTTPS(),
 					},
 					&envoy_route_v3.Route{
@@ -407,7 +407,7 @@ func TestEditIngressInPlace(t *testing.T) {
 			envoy_v3.RouteConfiguration("https/hello.example.com",
 				envoy_v3.VirtualHost("hello.example.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/whoop"),
+						Match:  routePrefixRegex("/whoop"),
 						Action: routecluster("default/kerpow/9000/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
@@ -500,7 +500,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	assertRDS(t, c, "5", virtualhosts(
 		envoy_v3.VirtualHost("example.com",
 			&envoy_route_v3.Route{
-				Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+				Match:  routePrefixRegex("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 				Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 			},
 			&envoy_route_v3.Route{
@@ -511,7 +511,7 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	), virtualhosts(
 		envoy_v3.VirtualHost("example.com",
 			&envoy_route_v3.Route{
-				Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+				Match:  routePrefixRegex("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 				Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 			},
 			&envoy_route_v3.Route{
@@ -783,7 +783,7 @@ func TestRDSFilter(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("example.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+						Match:  routePrefixRegex("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 						Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
@@ -795,7 +795,7 @@ func TestRDSFilter(t *testing.T) {
 			envoy_v3.RouteConfiguration("https/example.com",
 				envoy_v3.VirtualHost("example.com",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
+						Match:  routePrefixRegex("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
 						Action: routecluster("nginx-ingress/challenge-service/8009/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{
@@ -871,7 +871,7 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/kuard"),
+						Match:  routePrefixRegex("/kuard"),
 						Action: routecluster("default/kuard/8080/da39a3ee5e"),
 					},
 					&envoy_route_v3.Route{

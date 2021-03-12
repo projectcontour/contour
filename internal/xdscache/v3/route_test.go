@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"regexp"
 	"testing"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 func TestRouteCacheContents(t *testing.T) {
@@ -657,7 +659,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_route_v3.Route{
-							Match:  routePrefix("/ws1"),
+							Match:  routePrefixIngress("/ws1"),
 							Action: websocketroute("default/kuard/8080/da39a3ee5e"),
 						},
 						&envoy_route_v3.Route{
@@ -780,6 +782,93 @@ func TestRouteVisit(t *testing.T) {
 						&envoy_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routetimeout("default/kuard/8080/da39a3ee5e", 90*time.Second),
+						},
+					),
+				),
+			),
+		},
+		"ingress different path matches": {
+			objs: []interface{}{
+				&v1beta1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1beta1.IngressSpec{
+						Rules: []v1beta1.IngressRule{{
+							IngressRuleValue: v1beta1.IngressRuleValue{
+								HTTP: &v1beta1.HTTPIngressRuleValue{
+									Paths: []v1beta1.HTTPIngressPath{
+										{
+											Path:     "/",
+											PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "kuard",
+												ServicePort: intstr.FromInt(8080),
+											},
+										},
+										{
+											Path:     "/foo",
+											PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "kuard",
+												ServicePort: intstr.FromInt(8080),
+											},
+										},
+										{
+											Path:     "/foo2",
+											PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "kuard",
+												ServicePort: intstr.FromInt(8080),
+											},
+										},
+										{
+											Path:     "/foo3",
+											PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "kuard",
+												ServicePort: intstr.FromInt(8080),
+											},
+										},
+									},
+								},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("*",
+						&envoy_route_v3.Route{
+							Match:  routeExact("/foo3"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
+						},
+						&envoy_route_v3.Route{
+							Match:  routeRegex("/foo2"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
+						},
+						&envoy_route_v3.Route{
+							Match:  routePrefixIngress("/foo"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
+						},
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
 					),
 				),
@@ -3050,10 +3139,28 @@ func routeRegex(regex string, headers ...dag.HeaderMatchCondition) *envoy_route_
 	})
 }
 
+func routePrefixIngress(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+	return envoy_v3.RouteMatch(&dag.Route{
+		PathMatchCondition: &dag.RegexMatchCondition{
+			Regex: regexp.QuoteMeta(prefix) + `((\/).*)?`,
+		},
+		HeaderMatchConditions: headers,
+	})
+}
+
 func routePrefix(prefix string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{
 			Prefix: prefix,
+		},
+		HeaderMatchConditions: headers,
+	})
+}
+
+func routeExact(path string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
+	return envoy_v3.RouteMatch(&dag.Route{
+		PathMatchCondition: &dag.ExactMatchCondition{
+			Path: path,
 		},
 		HeaderMatchConditions: headers,
 	})
