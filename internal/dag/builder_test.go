@@ -397,6 +397,155 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"wildcard hostname": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"*.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*.projectcontour.io", prefixroute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		"invalid hostnames - IP": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"192.168.122.1",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+									Path: gatewayapi_v1alpha1.HTTPPathMatch{
+										Type:  "Prefix",
+										Value: "/",
+									},
+								}},
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+								}},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"invalid hostnames - with port": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io:80",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+									Path: gatewayapi_v1alpha1.HTTPPathMatch{
+										Type:  "Prefix",
+										Value: "/",
+									},
+								}},
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+								}},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"invalid hostnames - wildcard label by itself": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"*",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+									Path: gatewayapi_v1alpha1.HTTPPathMatch{
+										Type:  "Prefix",
+										Value: "/",
+									},
+								}},
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+								}},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(),
+		},
 		// If the ServiceName referenced from an HTTPRoute is missing,
 		// the route should not be added.
 		"missing service": {
