@@ -45,8 +45,8 @@ type KubernetesCache struct {
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
 	IngressClass string
 
-	// Gateway defines the current Gateway which Contour is configured to watch.
-	Gateway types.NamespacedName
+	// ConfiguredGateway defines the current Gateway which Contour is configured to watch.
+	ConfiguredGateway types.NamespacedName
 
 	// Secrets that are referred from the configuration file.
 	ConfiguredSecretRefs []*types.NamespacedName
@@ -108,14 +108,14 @@ func (kc *KubernetesCache) matchesIngressClass(obj metav1.Object) bool {
 // belongs to the Gateway that this cache is using.
 func (kc *KubernetesCache) matchesGateway(obj *gatewayapi_v1alpha1.Gateway) bool {
 
-	if k8s.NamespacedNameOf(obj) != kc.Gateway {
+	if k8s.NamespacedNameOf(obj) != kc.ConfiguredGateway {
 		kind := k8s.KindOf(obj)
 
 		kc.WithField("name", obj.GetName()).
 			WithField("namespace", obj.GetNamespace()).
 			WithField("kind", kind).
-			WithField("configured gateway name", kc.Gateway.Name).
-			WithField("configured gateway namespace", kc.Gateway.Namespace).
+			WithField("configured gateway name", kc.ConfiguredGateway.Name).
+			WithField("configured gateway namespace", kc.ConfiguredGateway.Namespace).
 			Debug("ignoring object with unmatched gateway")
 		return false
 	}
