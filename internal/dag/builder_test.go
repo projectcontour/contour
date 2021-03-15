@@ -5850,6 +5850,30 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert ingress overlay reverse order": {
+			objs: []interface{}{
+				i13b, i13a, sec13, s13a, s13b,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeUpgrade("/", service(s13a)),
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+						),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						securevirtualhost("example.com", sec13,
+							routeUpgrade("/", service(s13a)),
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
+						),
+					),
+				},
+			),
+		},
 		"h2c service annotation": {
 			objs: []interface{}{
 				i3a, s3a,
