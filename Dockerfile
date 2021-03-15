@@ -31,5 +31,8 @@ RUN make build \
 	    BUILD_SHA=${BUILD_SHA} \
 	    BUILD_BRANCH=${BUILD_BRANCH}
 
+# Ensure we produced a static binary.
+RUN ldd contour | grep 'not a dynamic executable'
+
 FROM scratch AS final
 COPY --from=build /contour/contour /bin/contour
