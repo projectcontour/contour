@@ -467,10 +467,6 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 		}
 	}
 
-	// TODO: This checks for ANY httproute that matches
-	// a service, however, it's possible that the route
-	// doesn't match the selector/namespaces defined on
-	// the gateway and is a noop dag rebuild.
 	for _, route := range kc.httproutes {
 		if route.Namespace != service.Namespace {
 			continue
@@ -582,8 +578,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 			}
 
 			ref := listener.TLS.CertificateRef
-			if ref.Kind == "Secret" &&
-				(ref.Group == "core" || ref.Group == "v1") {
+			if ref.Kind == "Secret" && ref.Group == "core" {
 				if kc.gateway.Namespace == secret.Namespace && ref.Name == secret.Name {
 					return true
 				}
