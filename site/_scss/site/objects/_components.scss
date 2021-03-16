@@ -8,8 +8,8 @@
     }
 }
 .sub-page {
-    background-color: #fff;
-    h3 {
+    background-color: $white;
+    h2 {
         font-size: 22px;
         margin: 1.5rem 0;
     }
@@ -101,18 +101,18 @@
 }
 .getting-started {
     h2, p {
-        color: #000 !important;
+        color: $black !important;
     }
     h2 {
         font-size: 30px;
         margin-bottom: 10px;
     }
     a.btn {
-        border: 1px solid #0095D3;
-        color: #0095D3;
+        border: 1px solid $btn-blue;
+        color: $btn-blue;
         &:hover {
-            background-color: #0095D3;
-            color: #fff;
+            background-color: $btn-blue;
+            color: $white;
         }
     }
 }
