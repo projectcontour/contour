@@ -220,4 +220,4 @@ spec:
       weight: 20
 ```
 
-[1]: /docs/{{page.version}}/configuration#fallback-certificate
+[1]: /docs/{{< param version >}}/configuration#fallback-certificate

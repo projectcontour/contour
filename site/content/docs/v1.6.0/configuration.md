@@ -120,10 +120,10 @@ If present, the value of the `CONTOUR_NAMESPACE` environment variable is used as
 The `CONTOUR_NAMESPACE` environment variable is set via the [Downward API][6] in the Contour [example manifests][7].
 
 
-[1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/01-contour-config.yaml
+[1]: {{<param gh >}}/tree/{{< param version >}}/examples/contour/01-contour-config.yaml
 [2]: /guides/structured-logs
 [3]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 [4]: https://golang.org/pkg/time/#ParseDuration
 [5]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields
 [6]: https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/
-[7]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour
+[7]: {{<param gh >}}/tree/{{< param version >}}/examples/contour

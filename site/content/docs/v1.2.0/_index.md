@@ -1,8 +1,8 @@
 ---
-version: v1.2.0
 cascade:
   layout: docs
   gh: https://github.com/projectcontour/contour/tree/release-1.2
+  version: v1.2.0
 ---
 
 ## Overview
@@ -22,5 +22,5 @@ Getting started with Contour is as simple as one command.
 See the [Getting Started][3] document.
 
 [1]: https://www.envoyproxy.io/
-[2]: {% link docs/v1.2.0/httpproxy.md %}
-[3]: {% link getting-started.md %}
+[2]: /docs/v1.2.0/httpproxy
+[3]: /getting-started

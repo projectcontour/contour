@@ -12,8 +12,8 @@ At this time, Contour is the only Kubernetes Ingress Controller to support the I
 <p class="alert-deprecation">
 <b>Deprecation Notice</b><br>
 The <code>IngressRoute</code> CRD has been deprecated and will be removed in Contour 1.6.
-Please see the documentation for <a href="{% link docs/{{page.version}}/httpproxy.md %}"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
-You can also read the <a href="{% link _guides/ingressroute-to-httpproxy.md %}">IngressRoute to HTTPProxy upgrade</a> guide.
+Please see the documentation for <a href="/docs/{{< param version >}}/httpproxy"><code>HTTPProxy</code></a>, which is the successor to <code>IngressRoute</code>.
+You can also read the <a href="/_guides/ingressroute-to-httpproxy">IngressRoute to HTTPProxy upgrade</a> guide.
 </p>
 
 ## Key IngressRoute Benefits
@@ -47,7 +47,7 @@ spec:
 This Ingress object, named `basic`, will route incoming HTTP traffic with a `Host:` header for `foo-basic.bar.com` to a Service named `s1` on port `80`.
 Implementing similar behavior using an IngressRoute looks like this:
 
-{% highlight yaml linenos %}
+{{< highlight yaml linenos >}}
 # ingressroute.yaml
 apiVersion: contour.heptio.com/v1beta1
 kind: IngressRoute
@@ -61,7 +61,7 @@ spec:
       services:
         - name: s1
           port: 80
-{% endhighlight %}
+{{< /highlight >}}
 
 **Lines 1-5**: As with all other Kubernetes objects, an IngressRoute needs apiVersion, kind, and metadata fields. Note that the IngressRoute API is currently considered beta.
 
@@ -1009,7 +1009,7 @@ Some examples of invalid configurations that Contour provides statuses for:
 
 [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
 [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
-[3]: {{site.github.repository_url}}/tree/{{page.version}}/examples/example-workload/ingressroute
+[3]: {{<param gh >}}/tree/{{< param version >}}/examples/example-workload/ingressroute
 [4]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout
 [5]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/arch_overview/upstream/load_balancing/overview
-[6]: {{site.github.repository_url}}/tree/{{page.version}}/examples/root-rbac
+[6]: {{<param gh >}}/tree/{{< param version >}}/examples/root-rbac

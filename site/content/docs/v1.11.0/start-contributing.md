@@ -12,9 +12,9 @@ Thanks for taking the time to join our community and start contributing!
   - Meeting notes can be found [here](https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw).
   - Meetings are recorded and can be found [here](https://www.youtube.com/playlist?list=PL7bmigfV0EqTBsPrnCkzhu0R4SAWnBjLj).
 
-[1]: {{site.github.repository_url}}/blob/main/CODE_OF_CONDUCT.md
-[2]: {{site.github.repository_url}}/blob/main/CONTRIBUTING.md
-[3]: {{site.github.repository_url}}/issues
-[4]: {{site.footer_social_links.Slack.url}}
+[1]: {{<param gh >}}/blob/main/CODE_OF_CONDUCT.md
+[2]: {{<param gh >}}/blob/main/CONTRIBUTING.md
+[3]: {{<param gh >}}/issues
+[4]: {{< param slack_url >}}
 [5]: https://github.com/projectcontour/contour-operator/blob/main/docs/CONTRIBUTING.md
 [6]: https://github.com/projectcontour/contour-operator/issues

@@ -128,5 +128,5 @@ An example of this is included in the [examples directory][1] and shows how you 
 _**Note:** The restricted root namespace feature is only supported for HTTPProxy CRDs.
 `--root-namespaces` does not affect the operation of Ingress objects._
 
-[1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/root-rbac
-[2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.VirtualHost
+[1]: {{<param gh >}}/tree/{{< param version >}}/examples/root-rbac
+[2]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.VirtualHost

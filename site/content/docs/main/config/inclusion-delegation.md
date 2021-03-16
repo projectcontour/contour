@@ -131,5 +131,5 @@ spec:
 It is possible for HTTPProxy objects to exist that have not been delegated to by another HTTPProxy.
 These objects are considered "orphaned" and will be ignored by Contour in determining ingress configuration.
 
-[1]: /docs/{{page.version}}/config/request-routing#conditions
-[2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.HTTPProxySpec
+[1]: /docs/{{< param version >}}/config/request-routing#conditions
+[2]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.HTTPProxySpec

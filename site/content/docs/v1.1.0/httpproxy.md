@@ -38,7 +38,7 @@ spec:
 This Ingress object, named `basic`, will route incoming HTTP traffic with a `Host:` header for `foo-basic.bar.com` to a Service named `s1` on port `80`.
 Implementing similar behavior using an HTTPProxy looks like this:
 
-{% highlight yaml linenos %}
+{{< highlight yaml linenos >}}
 # httpproxy.yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
@@ -53,7 +53,7 @@ spec:
       services:
         - name: s1
           port: 80
-{% endhighlight %}
+{{< /highlight >}}
 
 **Lines 1-5**: As with all other Kubernetes objects, an HTTPProxy needs apiVersion, kind, and metadata fields. Note that the HTTPProxy API is currently considered beta.
 
@@ -1264,7 +1264,7 @@ Some examples of invalid configurations that Contour provides statuses for:
 
  [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
  [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
- [3]: {{site.github.repository_url}}/tree/{{page.version}}/examples/example-workload/httpproxy
+ [3]: {{<param gh >}}/tree/{{< param version >}}/examples/example-workload/httpproxy
  [4]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-timeout
  [5]: https://godoc.org/time#ParseDuration
  [6]: https://www.envoyproxy.io/docs/envoy/v1.11.2/api-v2/api/v2/route/route.proto.html#envoy-api-field-route-routeaction-idle-timeout

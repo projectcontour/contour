@@ -1,8 +1,9 @@
 ---
-version: v1.13.1
+
 cascade:
   layout: docs
   gh: https://github.com/projectcontour/contour/tree/release-1.13
+  version: v1.13.1
 ---
 
 ## Overview
@@ -22,6 +23,6 @@ Getting started with Contour is as simple as one command.
 See the [Getting Started][3] document.
 
 [1]: https://www.envoyproxy.io/
-[2]: {% link docs/{{page.version}}/config/fundamentals.md %}
-[3]: {% link getting-started.md %}
-[4]: {% link _resources/kubernetes.md %}
+[2]: /docs/{{< param version >}}/config/fundamentals
+[3]: /getting-started
+[4]: /_resources/kubernetes

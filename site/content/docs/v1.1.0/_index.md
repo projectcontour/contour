@@ -1,8 +1,8 @@
 ---
-version: v1.1.0
 cascade:
   layout: docs
   gh: https://github.com/projectcontour/contour/tree/release-1.1
+  version: v1.1.0
 ---
 
 ## Overview
@@ -23,4 +23,4 @@ See the [Getting Started][3] document.
 
 [1]: https://www.envoyproxy.io/
 [2]: httpproxy.md
-[3]: {% link getting-started.md %}
+[3]: /getting-started

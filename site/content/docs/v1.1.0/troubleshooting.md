@@ -87,5 +87,5 @@ See [the deployment documentation][5] for some tips on using these two deploymen
 [1]: https://golang.org/pkg/net/http/pprof
 [2]: https://en.wikipedia.org/wiki/DOT
 [3]: https://graphviz.gitlab.io/
-[4]: {%link img/kuard-dag.png %}
+[4]: /img/kuard-dag.png 
 [5]: deploy-options.md

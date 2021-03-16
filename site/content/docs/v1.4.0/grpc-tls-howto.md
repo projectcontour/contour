@@ -131,7 +131,7 @@ If using the built-in Contour certificate generation the following steps can be 
 Once this process is done, the certificates will be present as Secrets in the `projectcontour` namespace, as required by
 [examples/contour][4].
 
-[1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/02-job-certgen.yaml
-[2]: {{site.github.repository_url}}/tree/{{page.version}}/_integration/cert-contour.ext
-[3]: {{site.github.repository_url}}/tree/{{page.version}}/_integration/cert-envoy.ext
-[4]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour
+[1]: {{<param gh >}}/tree/{{< param version >}}/examples/contour/02-job-certgen.yaml
+[2]: {{<param gh >}}/tree/{{< param version >}}/_integration/cert-contour.ext
+[3]: {{<param gh >}}/tree/{{< param version >}}/_integration/cert-envoy.ext
+[4]: {{<param gh >}}/tree/{{< param version >}}/examples/contour

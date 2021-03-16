@@ -91,6 +91,6 @@ Contour can be configured with a `namespace/name` in the [Contour configuration 
 Envoy will send the certificate during TLS handshake when the backend applications request the client to present its certificate.
 Backend applications can validate the certificate to ensure that the connection is coming from Envoy.
 
-[1]: {% link docs/{{page.version}}/config/annotations.md %}
-[2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.Service
-[3]: /docs/{{page.version}}/configuration#fallback-certificate
+[1]: /docs/{{< param version >}}/config/annotations
+[2]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.Service
+[3]: /docs/{{< param version >}}/configuration#fallback-certificate

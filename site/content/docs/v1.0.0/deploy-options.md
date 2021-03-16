@@ -219,12 +219,12 @@ $ kubectl delete ns projectcontour
 ```
 
 [1]: #running-without-a-kubernetes-loadbalancer
-[2]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/README.md
+[2]: {{<param gh >}}/tree/{{< param version >}}/examples/contour/README.md
 [3]: #host-networking
-[4]: {% link _guides/proxy-proto.md %}
+[4]: /_guides/proxy-proto
 [5]: https://github.com/kubernetes-up-and-running/kuard
-[6]: {% link docs/v1.0.0/ingressroute.md %}
-[7]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/02-service-envoy.yaml
-[8]: {% link getting-started.md %}
-[9]: {% link docs/v1.0.0/httpproxy.md %}
-[10]: {% link _guides/deploy-aws-nlb.md %}
+[6]: /docs/v1.0.0/ingressroute
+[7]: {{<param gh >}}/tree/{{< param version >}}/examples/contour/02-service-envoy.yaml
+[8]: /getting-started
+[9]: /docs/v1.0.0/httpproxy
+[10]: /_guides/deploy-aws-nlb

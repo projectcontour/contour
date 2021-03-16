@@ -32,4 +32,4 @@ data:
 
 _Note:_ The default example `contour` includes this [file][1] for easy deployment of Contour.
 
-[1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/01-contour-config.yaml
+[1]: {{<param gh >}}/tree/{{< param version >}}/examples/contour/01-contour-config.yaml

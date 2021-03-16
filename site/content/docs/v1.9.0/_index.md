@@ -1,8 +1,9 @@
 ---
-version: v1.9.0
+
 cascade:
   layout: docs
   gh: https://github.com/projectcontour/contour/tree/release-1.9
+  version: v1.9.0
 ---
 
 ## Overview
@@ -23,5 +24,5 @@ See the [Getting Started][3] document.
 
 [1]: https://www.envoyproxy.io/
 [2]: httpproxy.md
-[3]: {% link getting-started.md %}
-[4]: {% link _resources/kubernetes.md %}
+[3]: /getting-started
+[4]: /_resources/kubernetes

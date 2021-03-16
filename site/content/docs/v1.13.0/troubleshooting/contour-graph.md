@@ -22,4 +22,4 @@ The following is an example of a DAG that maps `http://kuard.local:80/` to the
 
 [2]: https://en.wikipedia.org/wiki/DOT
 [3]: https://graphviz.gitlab.io/
-[4]: {%link img/kuard-dag.png %}
+[4]: /img/kuard-dag.png 

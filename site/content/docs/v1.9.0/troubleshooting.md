@@ -99,5 +99,5 @@ To change it to `debug`, edit the `envoy` DaemonSet in the `projectcontour` name
 [1]: https://golang.org/pkg/net/http/pprof
 [2]: https://en.wikipedia.org/wiki/DOT
 [3]: https://graphviz.gitlab.io/
-[4]: {%link img/kuard-dag.png %}
-[5]: {% link docs/main/deploy-options.md %}
+[4]: /img/kuard-dag.png 
+[5]: /docs/main/deploy-options

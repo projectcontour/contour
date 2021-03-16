@@ -215,13 +215,13 @@ connects to Contour:
 <br>
 
 
-[1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/01-contour-config.yaml
+[1]: {{<param gh >}}/tree/{{< param version >}}/examples/contour/01-contour-config.yaml
 [2]: /guides/structured-logs
 [3]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 [4]: https://golang.org/pkg/time/#ParseDuration
 [5]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields
 [6]: https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/
-[7]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour
+[7]: {{<param gh >}}/tree/{{< param version >}}/examples/contour
 [8]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-idle-timeout
 [9]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-stream-idle-timeout
 [10]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration
