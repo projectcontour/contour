@@ -1,0 +1,322 @@
+# default: global configuration to be applied to all repos
+# repos: list of repos with specific configuration to be applied in addition to default
+#   labels: list of labels - keys for each item: color, description, name, target, deleteAfter, previously
+#     deleteAfter: 2006-01-02T15:04:05Z (rfc3339)
+#     previously: list of previous labels (color name deleteAfter, previously)
+#     target: one of issues, prs, or both (also TBD)
+#     addedBy: human? prow plugin? other?
+---
+default:
+  labels:
+
+# Generally well-knownm widely recognized labels.
+    - color: 7057ff
+      description: Denotes an issue ready for a new contributor, according to the "help wanted" guidelines.
+      name: 'good first issue'
+      target: issues
+      addedBy: anyone
+    - color: 006b75
+      description: Denotes an issue that needs help from a contributor. Must meet "help wanted" guidelines.
+      name: 'help wanted'
+      target: issues
+      addedBy: anyone
+
+# Release notes.
+    - color: c2e0c6
+      description: Denotes a PR that will be considered when it comes time to generate release notes.
+      name: release-note
+      target: prs
+      addedBy: prow
+      previously:
+        - name: "release note"
+    - color: c2e0c6
+      description: Denotes a PR that introduces potentially breaking changes that require user action. # These actions will be specifically called out when it comes time to generate release notes.
+      name: release-note-action-required
+      target: prs
+      addedBy: prow
+
+# Area.
+    - color: 0052cc
+      description: Issues or PRs related to dependency changes.
+      name: area/dependency
+      target: both
+      addedBy: label
+      previously:
+        - name: dependencies
+    - color: 0052cc
+      description: Issues or PRs related to deployment tooling or infrastructure.
+      name: area/deployment
+      target: both
+      addedBy: label
+      previously:
+        - name: deployment
+    - color: 0052cc
+      description: Issues or PRs related to documentation.
+      name: area/documentation
+      target: both
+      addedBy: label
+      previously:
+        - name: documentation
+        - name: kind/documentation
+    - color: 0052cc
+      description: Issues or PRs related to the HTTPProxy API.
+      name: area/httpproxy
+      target: both
+      addedBy: label
+      previously:
+        - name: HTTPProxy
+    - color: 0052cc
+      description: Issues or PRs related to the IngressRoute API.
+      name: area/ingressroute
+      target: both
+      addedBy: label
+      previously:
+        - name: IngressRoute
+    - color: 0052cc
+      description: Issues or PRs related to the Ingress API.
+      name: area/ingress
+      target: both
+      addedBy: label
+      previously:
+        - name: Ingress
+    - color: 0052cc
+      description: Issues or PRs related to the Gateway (Service APIs working group) API.
+      name: area/service-apis
+      target: both
+      addedBy: label
+      previously:
+        - name: service-apis
+    - color: 0052cc
+      description: Issues or PRs related to the web site.
+      name: area/website
+      target: both
+      addedBy: label
+      previously:
+        - name: website
+    - color: 0052cc
+      description: Issues or PRs related to tests or testing tools.
+      name: area/testing
+      target: both
+      addedBy: label
+      previously:
+        - name: integration-testing
+    - color: 0052cc
+      description: Issues or PRs related to exposing status for APIs.
+      name: area/status
+      target: both
+      addedBy: label
+      previously:
+        - name: status
+    - color: 0052cc
+      description: Issues or PRs related to exposing time series metrics.
+      name: area/metrics
+      target: both
+      addedBy: label
+    - color: 0052cc
+      description: Issues or PRs related to project tools and automation.
+      name: area/tooling
+      target: both
+      addedBy: label
+    - color: 0052cc
+      description: Issues or PRs related to TLS support.
+      name: area/tls
+      target: both
+      addedBy: label
+    - color: 0052cc
+      description: Issues or PRs about making Contour easier to operate as a production service.
+      name: area/operational
+      target: both
+      addedBy: label
+
+# Blocked.
+    - color: "FF7B7B"
+      description: Categorizes the issue or PR as blocked because there is insufficient information to advance it.
+      name: blocked/needs-info
+      target: both
+      addedBy: label
+      previously:
+        - name: "waiting for info"
+    - color: "FF7B7B"
+      description: Categorizes the issue or PR as blocked because it needs a decision from product management.
+      name: blocked/needs-product
+      target: both
+      addedBy: label
+      previously:
+        - name: "Needs Product"
+    - color: "FF7B7B"
+      description: Categorizes the issue or PR as blocked because it needs a design document.
+      name: blocked/needs-design
+      target: both
+      addedBy: label
+      previously:
+        - name: "needs-design-doc"
+    - color: "FF7B7B"
+      description: Categorizes the issue or PR as blocked because it needs changes in Envoy.
+      name: blocked/needs-envoy
+      target: both
+      addedBy: label
+      previously:
+        - name: "waiting for upstream"
+
+# Kind.
+    - color: e11d21
+      description: Categorizes issue or PR as related to adding, removing, or otherwise changing an API
+      name: kind/api-change
+      target: both
+      addedBy: anyone
+    - color: e11d21
+      description: Categorizes issue or PR as related to a bug.
+      name: kind/bug
+      target: both
+      addedBy: anyone
+      previously:
+        - name: bug
+    - color: c7def8
+      description: Categorizes issue or PR as related to cleaning up code, process, or technical debt.
+      name: kind/cleanup
+      target: both
+      addedBy: anyone
+      previously:
+        - name: "tech-debt"
+    - color: e11d21
+      description: Categorizes issue or PR as related to a feature/enhancement marked for deprecation.
+      name: kind/deprecation
+      target: both
+      addedBy: anyone
+    - color: c7def8
+      description: Categorizes issue or PR as related to design.
+      name: kind/design
+      target: both
+      addedBy: anyone
+      previously:
+        - name: design
+    - color: e11d21
+      description: Categorizes issue or PR as related to a consistently or frequently failing test.
+      name: kind/failing-test
+      target: both
+      addedBy: anyone
+    - color: c7def8
+      description: Categorizes issue or PR as related to a new feature.
+      name: kind/feature
+      target: both
+      addedBy: anyone
+      previously:
+        - name: enhancement
+    - color: f7c6c7
+      description: Categorizes issue or PR as related to a flaky test.
+      name: kind/flake
+      target: both
+      addedBy: anyone
+    - color: e11d21
+      description: Categorizes issue or PR as related to a regression from a prior release.
+      name: kind/regression
+      target: both
+      addedBy: anyone
+    - color: "FFDC73"
+      description: Categorizes an issue as a user question.
+      name: kind/question
+      target: both
+      addedBy: anyone
+      previously:
+        - name: question
+
+# Lifecycle.
+    - color: ff5050
+      description: Indicates that an issue needs to be triaged by a project contributor.
+      name: lifecycle/needs-triage
+      target: both
+      addedBy: anyone
+    - color: d3e2f0
+      description: Indicates that an issue or PR should not be auto-closed due to staleness.
+      name: lifecycle/frozen
+      target: both
+      addedBy: anyone
+    - color: "795548"
+      description: Denotes an issue or PR has remained open with no activity and has become stale.
+      name: lifecycle/stale
+      target: both
+      addedBy: anyone
+      previously:
+        - name: stale
+    - color: "F58C28"
+      description: Denotes an issue that is assigned and is being actively investigated by the issue owner.
+      name: lifecycle/investigating
+      target: both
+      addedBy: anyone
+    - color: "90A8E4"
+      description: Denotes an issue that has been triaged and determined to be valid.
+      name: lifecycle/accepted
+      target: both
+      addedBy: anyone
+
+# Priority.
+    - color: fef2c0
+      description: Lowest priority. Possibly useful, but not yet enough support to actually get it done. # These are mostly place-holders for potentially good ideas, so that they don't get completely forgotten, and can be referenced /deduped every time they come up.
+      name: priority/awaiting-more-evidence
+      target: both
+      addedBy: anyone
+    - color: fbca04
+      description: Higher priority than priority/awaiting-more-evidence. # There appears to be general agreement that this would be good to have, but we may not have anyone available to work on it right now or in the immediate future. Community contributions would be most welcome in the mean time (although it might take a while to get them reviewed if reviewers are fully occupied with higher priority issues, for example immediately before a release).
+      name: priority/backlog
+      target: both
+      addedBy: anyone
+    - color: e11d21
+      description: Highest priority. Must be actively worked on as someone's top priority right now. # Stuff is burning. If it's not being actively worked on, someone is expected to drop what they're doing immediately to work on it. Team leaders are responsible for making sure that all the issues, labeled with this priority, in their area are being actively worked on. Examples include user-visible bugs in core features, broken builds or tests and critical security issues.  name: priority/critical-urgent
+      name: priority/critical-urgent
+      target: both
+      addedBy: anyone
+      previously:
+        - name: "p0 - Hair On Fire"
+    - color: eb6420
+      description: Must be staffed and worked on either currently, or very soon, ideally in time for the next release.
+      name: priority/important-soon
+      target: both
+      addedBy: anyone
+      previously:
+        - name: "p1 - Important"
+    - color: eb6420
+      description: Important over the long term, but may not be staffed and/or may need multiple releases to complete.
+      name: priority/important-longterm
+      target: both
+      addedBy: anyone
+      previously:
+        - name: "p2 - Long-term Important"
+
+# Size.
+    - color: ee9900
+      description: Denotes a PR that changes 100-499 lines, ignoring generated files.
+      name: size/L
+      target: prs
+      addedBy: prow
+    - color: eebb00
+      description: Denotes a PR that changes 30-99 lines, ignoring generated files.
+      name: size/M
+      target: prs
+      addedBy: prow
+    - color: 77bb00
+      description: Denotes a PR that changes 10-29 lines, ignoring generated files.
+      name: size/S
+      target: prs
+      addedBy: prow
+    - color: ee5500
+      description: Denotes a PR that changes 500-999 lines, ignoring generated files.
+      name: size/XL
+      target: prs
+      addedBy: prow
+    - color: "009900"
+      description: Denotes a PR that changes 0-9 lines, ignoring generated files.
+      name: size/XS
+      target: prs
+      addedBy: prow
+    - color: ee0000
+      description: Denotes a PR that changes 1000+ lines, ignoring generated files.
+      name: size/XXL
+      target: prs
+      addedBy: prow
+    - color: 7057ff
+      description: Denotes an issue ready for any "Hacktoberfest" contributor.
+      name: 'Hacktoberfest'
+      target: issues
+      addedBy: anyone
+
+repos:
