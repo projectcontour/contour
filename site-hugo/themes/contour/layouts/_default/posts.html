@@ -7,7 +7,7 @@
 		</div>
 		<div class="wrapper blog landing">
 			<div class="grid three">
-				{{ range (.Paginator 9).Pages.ByDate }}
+				{{ range (.Paginator 9).Pages.ByDate.Reverse }}
 					{{ partial "blog-post-card.html" . }}
 				{{ end }}
 			</div>

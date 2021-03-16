@@ -6,6 +6,7 @@ author_name: Contour Team
 categories: [kubernetes]
 # Tag should match author to drive author pages
 tags: ['Contour Team', 'release']
+date: 2019-11-01
 ---
 
 _Authored by Dave Cheney, Steve Sloka, Nick Young, and James Peach_

@@ -1,5 +1,5 @@
 ---
-layout: page
+# layout: page
 title: Guides
 description: Contour Resources
 id: guides

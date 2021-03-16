@@ -6,6 +6,7 @@ author_avatar: /img/contributors/steve-sloka.png
 categories: [kubernetes]
 # Tag should match author to drive author pages
 tags: ['Contour Team', 'Steve Sloka', 'release']
+date: 2020-03-03
 ---
 
 Contour continues to add new features to help you better manage Contour operations in a cluster. Our latest feature release, Contour 1.2.0, now includes support for certificate rotation for xDS gRPC interface between Contour and Envoy as well as a new subcommand which assists in Envoy rollouts to minimize the number of connection errors.  Additionally, Contour v1.2.1 is a security release which upgrades the version of Envoy to v1.13.1 which includes many [CVE fixes](https://groups.google.com/forum/#!msg/envoy-announce/sVqmxy0un2s/8aq430xiHAAJ).

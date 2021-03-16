@@ -1,7 +1,6 @@
 ---
-layout: page
 title: Getting Started
-description: Install Contour in your cluster
+description: Getting Started
 id: getting-started
 ---
 

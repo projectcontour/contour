@@ -18,11 +18,14 @@
         }
     }
     &.homepage {
-        //background-image: url(/img/hero-image.png);
+        background-image: url(/img/contour-homepage.svg);
         background-position: center center;
         background-repeat: no-repeat;
         background-size: cover;
         padding-bottom: 80px;
+        h1 {
+            font-size: 36px;
+        }
     }
     @include breakpoint(small) {
         .text-block {
@@ -137,6 +140,26 @@
     }
 }
 
+.blog-highlights {
+    .grid.three {
+        row-gap: 40px;
+        margin: 40px 0px;
+        .col {
+            border: 1px solid $lightgrey;
+            .icon {
+                max-height: 120px;
+                overflow: hidden;
+            }
+            .content {
+                padding: 0px 20px;
+            }
+        }
+    }
+    p.center {
+        text-align: center;
+    }
+}
+
 .team {
     background-color: $navyblue;
     h2, h3, p {
@@ -160,6 +183,7 @@
         column-gap: 20px;
         .image img {
             max-width: 120px;
+            border-radius: 50%;
         }
         .info {
             align-self: center;
@@ -168,6 +192,9 @@
                 &.name {
                     font-size: 16px;
                     font-family: $metropolis-medium;
+                    a {
+                        text-decoration: none;
+                    }
                 }
                 &.position {
                     font-size: 14px;
@@ -178,7 +205,6 @@
 }
 
 .hero.subpage-hero {
-    //background-image: url(/img/blog-hero-image.png);
     background-position: center center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -209,11 +235,17 @@
     padding-bottom: 50px;
     .col {
         border: 1px solid $lightgrey;
+        text-align: center;
+        .icon {
+            height: 150px;
+        }
         img {
-            width: 100%;
+            max-width: 100%;
+            max-height: 100%;
         }
         .content {
             padding: 0px 20px;
+            text-align: left;
         }
     }
     &.landing {
@@ -221,6 +253,17 @@
         margin-top: -90px;
         h3 a {
             font-size: 16px;
+        }
+        .icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+            img {
+                width: auto;
+                max-width: 100%;
+                max-height: 100%;
+            }
         }
         .pagination {
             margin: 30px auto 50px auto;
@@ -250,6 +293,9 @@
         background-color: #fff;
         margin: -110px 0px 0px -30px;
         padding: 30px 90px 30px 30px;
+        @include breakpoint(small) {
+            margin: -110px 0px 0px 0px;
+        }
         .author {
             color: $blue;
             margin: 0px;
@@ -303,6 +349,10 @@
         }
         img {
             max-width: 100%;
+        }
+        &.content {
+            margin-top: 0px;
+            padding-top: 0px;
         }
     }
 }
@@ -362,6 +412,28 @@
     background-color: #fff;
     margin-top: -90px;
     padding: 30px 30px 50px 30px;
+    .section-header {
+        margin-top: 3rem;
+        font-weight: 600;
+        font-size: 20px;
+    }
+    .embed-responsive {
+        position: relative;
+        &:before {
+            padding-top: 56.25%;
+            display: block;
+            content: "";
+        }
+        .embed-responsive-item {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+    }
     .grid {
         margin-bottom: 20px;
         .col {
@@ -372,9 +444,28 @@
                 justify-content: center;
                 min-height: 140px;
             }
+            img {
+                max-width: 100%;
+                &.podcast {
+                    max-height: 100px;
+                }
+            }
+            .twitter {
+                svg {
+                    margin-left: -25px;
+                }
+                img {
+                    max-width: 58px;
+                    height: auto;
+                }
+            }
+            h3 {
+                margin: 0px;
+                text-align: center;
+                font-size: 16px;
+            }
             .content {
                 padding: 0px 20px 20px 20px;
-                text-align: center;
                 &.plugins {
                     padding-top: 20px;
                     img {
@@ -390,11 +481,35 @@
                     padding-left: 20px;
                     li {
                         margin-bottom: 10px;
-                        color: $grey;
+                        display: list-item;
+                        color: #777;
+                        font-size: 1rem;
                         line-height: 1.6em;
                         list-style-image: url(/img/arrow.svg);
                     }
                 }
+                p {
+                    font-size: 1rem;
+                    color: #777;
+                    &.title {
+                        font-weight: 500;
+                        margin: 0px;
+                    }
+                    &.strong {
+                        font-weight: 600;
+                    }
+                }
+            }
+        }
+    }
+    &.resources {
+        .grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            .col .content p {
+                word-wrap: break-word;
+            }
+            @include breakpoint(small) {
+                grid-template-columns: 1fr;
             }
         }
     }

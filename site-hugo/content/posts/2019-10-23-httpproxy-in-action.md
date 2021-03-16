@@ -7,6 +7,7 @@ author_avatar: /img/contributors/steve-sloka.png
 categories: [kubernetes]
 # Tag should match author to drive author pages
 tags: ['Contour Team', 'Steve Sloka', 'tutorial']
+date: 2019-10-23
 ---
 
 In our previous [blog post][1], Dave Cheney walked through Contour’s evolution from `IngressRoute` to `HTTPProxy` and explained how & why the move happened.

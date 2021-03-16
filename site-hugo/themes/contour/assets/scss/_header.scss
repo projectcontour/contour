@@ -11,8 +11,6 @@ header {
         justify-content: space-between;
     }
     .desktop-links {
-        //float: right;
-        //margin: 15px 0px 0px 0px;
         padding-left: 0px;
     }
     a {
@@ -21,6 +19,10 @@ header {
         &.active {
             font-family: $metropolis-medium;
         }
+    }
+    .image {
+        height: 45px;
+        width: auto;
     }
     li img {
         vertical-align: bottom;
@@ -81,6 +83,7 @@ header {
             left: 0px;
             padding-bottom: 20px;
             display: none;
+            z-index: 1;
             .header-links {
                 margin: 0px 20px;
             }
@@ -94,6 +97,7 @@ header {
                 a {
                     font-size: 14px;
                     padding-right: 35px;
+                    margin-bottom: 20px;
                     &:last-of-type {
                         padding-right: 0px;
                     }
