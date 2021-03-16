@@ -113,6 +113,7 @@ GEM
 
 PLATFORMS
   ruby
+  universal-darwin-20
 
 DEPENDENCIES
   html-proofer (~> 3.16)
@@ -129,4 +130,4 @@ DEPENDENCIES
   jekyll-titles-from-headings (~> 0.5.3)
 
 BUNDLED WITH
-   2.1.4
+   2.2.2
