@@ -65,6 +65,24 @@ The `.spec.validation` field should specify the expected server name
 from the authorization server's TLS certificate, and the trusted CA bundle
 that can be used to validate the TLS chain of trust.
 
+### Side-car Authorization Server
+
+Instead of running the authorization server as a separate set of Pods it can
+also be run as a side-car alongside each Envoy Pod, accessed over localhost.
+To achieve this, create a Service of type ExternalName that resolves to the
+localhost IP - for example:
+```
+kind: Service
+apiVersion: v1
+metadata:
+  name: localhost
+spec:
+  type: ExternalName
+  externalName: localhost
+selector: {}
+```
+and set the `.spec.services[].name` field to the name of the Service.
+
 ## Authorizing Virtual Hosts
 
 The [`.spec.virtualhost.authorization`][5] field in the Contour `HTTPProxy`
@@ -115,9 +133,9 @@ A route can overwrite the value for a context key by setting it in the
 context field of authorization policy for the route.
 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/ext_authz_filter
-[2]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1alpha1.ExtensionService
+[2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1alpha1.ExtensionService
 [3]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto
-[4]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.UpstreamValidation
-[5]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.AuthorizationServer
-[6]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.AuthorizationPolicy
-[7]: {{< ref "guides/external-authorization.md" >}}
+[4]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.UpstreamValidation
+[5]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.AuthorizationServer
+[6]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.AuthorizationPolicy
+[7]: {% link _guides/external-authorization.md %}

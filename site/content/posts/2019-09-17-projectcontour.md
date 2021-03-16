@@ -7,6 +7,7 @@ categories: [kubernetes]
 # Tag should match author to drive author pages
 tags: ['Contour Team', 'Dave Cheney']
 date: 2019-09-17
+slug: projectcontour
 ---
 
 Times change. Summer turns to autumn, leaves fall from their branches, brands die and are reborn. The cycle of life.

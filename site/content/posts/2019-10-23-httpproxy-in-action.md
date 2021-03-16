@@ -8,6 +8,7 @@ categories: [kubernetes]
 # Tag should match author to drive author pages
 tags: ['Contour Team', 'Steve Sloka', 'tutorial']
 date: 2019-10-23
+slug: httpproxy-in-action
 ---
 
 In our previous [blog post][1], Dave Cheney walked through Contour’s evolution from `IngressRoute` to `HTTPProxy` and explained how & why the move happened.

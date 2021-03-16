@@ -7,6 +7,7 @@ categories: [kubernetes]
 # Tag should match author to drive author pages
 tags: ['Contour Team', 'Steve Sloka', 'release']
 date: 2020-01-16
+slug: announcing-contour-1.1
 ---
 
 Contour continues to take shape with new features. Our latest release, [Contour 1.1](https://github.com/projectcontour/contour/releases/tag/v1.1.0), now includes request and response header manipulation as well as host rewriting to external domains. Contour 1.1 also lets you specify a service’s protocol in HTTPProxy and adds back prefix rewrite support, which was the last feature blocking many users from migrating from IngressRoute to HTTPProxy.

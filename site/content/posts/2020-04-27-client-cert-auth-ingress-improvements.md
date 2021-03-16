@@ -7,6 +7,7 @@ categories: [kubernetes]
 # Tag should match author to drive author pages
 tags: ['Contour Team', 'Nick Young', 'release']
 date: 2020-04-27
+slug: client-cert-auth-ingress-improvements
 ---
 
 Our latest release of Contour is 1.4, which includes support for Client Certificate authentication in your HTTPProxy objects, and also updates Contour’s Ingress support to fix some missing or incorrect behaviors. In addition Contour 1.4 upgrades Envoy to 1.14.1, to keep up with Envoy’s current supported version.

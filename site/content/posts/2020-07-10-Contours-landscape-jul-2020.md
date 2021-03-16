@@ -7,6 +7,7 @@ categories: [kubernetes]
 # Tag should match author to drive author pages
 tags: ['Contour Team', 'Nick Young', 'landscape']
 date: 2020-07-10
+slug: contours-landscape-jul-2020
 ---
 
 # Contour’s landscape, June 2020

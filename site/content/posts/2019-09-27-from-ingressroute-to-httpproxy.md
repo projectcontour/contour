@@ -6,6 +6,7 @@ author_avatar: /img/contributors/dave-cheney.png
 categories: [kubernetes]
 tags: ['IngressRoute', 'HTTPProxy', 'ingress', 'Dave Cheney']
 date: 2019-09-27
+slug: from-ingressroute-to-httpproxy
 ---
 
 As part of the preparations to deliver Contour 1.0 at KubeCon US, [Contour 1.0.0-beta.1 (available now!)][1] renamed the [IngressRoute][2] CRD to [HTTPProxy][3].

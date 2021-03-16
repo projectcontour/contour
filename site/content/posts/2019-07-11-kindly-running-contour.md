@@ -8,6 +8,7 @@ categories: [kubernetes]
 # Tag should match author to drive author pages
 tags: ['Contour Team', 'Steve Sloka', 'kind']
 date: 2019-07-11
+slug: kindly-running-contour
 ---
 
 [kind][1] is a tool for running local Kubernetes clusters using Docker container “nodes.” Primarily designed for testing Kubernetes 1.11 or later, kind is initially targeting the upstream Kubernetes conformance tests, which are run to verify if a cluster meets standard expectations. It is also an excellent tool for creating a Kubernetes cluster locally on many platforms (Linux, macOS, or Windows), especially since it can create multi-node clusters quickly and reliably.
