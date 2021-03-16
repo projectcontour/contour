@@ -52,7 +52,7 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `-d, --debug`   |                  Enable debug logging |
 | `--kubernetes-debug=<log level>`  | Enable Kubernetes client debug logging |
 | `--experimental-service-apis` | DEPRECATED: Please configure the gateway.name & gateway.namespace in the configuration file. | 
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ## Configuration File
@@ -87,7 +87,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
 | gateway | GatewayConfig |  | The [gateway-api Gateway configuration](#gateway-configuration). |
 | rateLimitService | RateLimitServiceConfig | | The [rate limit service configuration](#rate-limit-service-configuration). |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### TLS Configuration
@@ -101,7 +101,7 @@ Contour should provision TLS hosts.
 | fallback-certificate | | | [Fallback certificate configuration](#fallback-certificate). |
 | envoy-client-certificate | | | [Client certificate configuration for Envoy](#envoy-client-certificate). |
 | cipher-suites | []string | See [config package documentation](https://pkg.go.dev/github.com/projectcontour/contour/pkg/config#pkg-variables) | This field specifies the TLS ciphers to be supported by TLS listeners when negotiating TLS 1.2. This parameter should only be used by advanced users. Note that this is ignored when TLS 1.3 is in use. The set of ciphers that are allowed is a superset of those supported by default in stock, non-FIPS Envoy builds and FIPS builds as specified [here](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#envoy-v3-api-field-extensions-transport-sockets-tls-v3-tlsparameters-cipher-suites). Custom ciphers not accepted by Envoy in a standard build are not supported. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Fallback Certificate
@@ -110,7 +110,7 @@ Contour should provision TLS hosts.
 |------------|-----|----------|-------------|
 | name       | string | `""` | This field specifies the name of the Kubernetes secret to use as the fallback certificate.      |
 | namespace  | string | `""` | This field specifies the namespace of the Kubernetes secret to use as the fallback certificate. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Envoy Client Certificate
@@ -119,7 +119,7 @@ Contour should provision TLS hosts.
 |------------|-----|----------|-------------|
 | name       | string | `""` | This field specifies the name of the Kubernetes secret to use as the client certificate and private key when establishing TLS connections to the backend service. |
 | namespace  | string | `""` | This field specifies the namespace of the Kubernetes secret to use as the client certificate and private key when establishing TLS connections to the backend service. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Leader Election Configuration
@@ -135,7 +135,7 @@ In the vast majority of deployments, only the `configmap-name` and `configmap-na
 | lease-duration | [duration][4] | `15s` | The duration of the leadership lease. |
 | renew-deadline | [duration][4] | `10s` | The length of time that the leader will retry refreshing leadership before giving up. |
 | retry-period | [duration][4] | `2s` | The interval at which Contour will attempt to the acquire leadership lease. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Timeout Configuration
@@ -150,7 +150,7 @@ The timeout configuration block can be used to configure various timeouts for th
 | max-connection-duration | string | none* | This field defines the maximum period of time after an HTTP connection has been established from the client to the proxy before it is closed by the proxy, regardless of whether there has been activity or not. Must be a [valid Go duration string][4], or omitted or set to `infinity` for no max duration. See [the Envoy documentation][10] for more information. |
 | delayed-close-timeout | string | `1s`* | *Note: this is an advanced setting that should not normally need to be tuned.* <br /><br /> This field defines how long envoy will wait, once connection close processing has been initiated, for the downstream peer to close the connection before Envoy closes the socket associated with the connection. Setting this timeout to 'infinity' will disable it.  See [the Envoy documentation][13] for more information. |
 | connection-shutdown-grace-period | string | `5s`* | This field defines how long the proxy will wait between sending an initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During this grace period, the proxy will continue to respond to new streams. After the final GOAWAY frame has been sent, the proxy will refuse new streams. Must be a [valid Go duration string][4]. See [the Envoy documentation][11] for more information. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 _* This is Envoy's default setting value and is not explicitly configured by Contour._
 
@@ -161,7 +161,7 @@ The cluster configuration block can be used to configure various parameters for 
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | dns-lookup-family | string | auto | This field specifies the dns-lookup-family to use for upstream requests to externalName type Kubernetes services from an HTTPProxy route. Values are: `auto`, `v4, `v6` |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Network Configuration
@@ -171,7 +171,7 @@ The network configuration block can be used to configure various parameters netw
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | num-trusted-hops | int | 0 | Configures the number of additional ingress proxy hops from the right side of the x-forwarded-for HTTP header to trust. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Listener Configuration
@@ -181,7 +181,7 @@ The listener configuration block can be used to configure various parameters for
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | connection-balancer | string | `""` | This field specifies the listener connection balancer. If the value is `exact`, the listener will use the exact connection balancer to balance connections between threads in a single Envoy process. See [the Envoy documentation][14] for more information. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Server Configuration
@@ -191,7 +191,7 @@ The server configuration block can be used to configure various settings for the
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | xds-server-type | string | contour | This field specifies the xDS Server to use. Options are `contour` or `envoy`.  |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Gateway Configuration
@@ -215,7 +215,7 @@ the `response-headers` field is used to rewrite headers on a HTTP response.
 |------------|-----|----------|-------------|
 | request-headers | HeaderPolicy | none | The default request headers set or removed on all service routes if not overridden in the object |
 | response-headers | HeaderPolicy | none | The default response headers set or removed on all service routes if not overridden in the object |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 #### HeaderPolicy
@@ -227,7 +227,7 @@ The `remove` field removes an HTTP header.
 |------------|-----|----------|-------------|
 | set | map[string]string | none | Map of headers to set on all service routes if not overridden in the object |
 | remove | []string | none | List of headers to remove on all service routes if not overridden in the object |
-{: class="table thead-dark table-bordered"}
+
 <br>
 Note: the values of entries in the `set` and `remove` fields can be overridden in HTTPProxy objects but it it not possible to remove these entries.
 
@@ -241,7 +241,7 @@ The rate limit service configuration block is used to configure an optional glob
 | extensionService | string | <none> | This field identifies the extension service defining the rate limit service, formatted as <namespace>/<name>.  |
 | domain | string | contour | This field defines the rate limit domain value to pass to the rate limit service. Acts as a container for a set of rate limit definitions within the RLS.  |
 | failOpen | bool | false | This field defines whether to allow requests to proceed when the rate limit service fails to respond with a valid rate limit decision within the timeout defined on the extension service.  |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Configuration Example
@@ -418,7 +418,7 @@ connects to Contour:
 | <nobr>--namespace</nobr> | projectcontour | Namespace the Envoy container will run, also configured via ENV variable "CONTOUR_NAMESPACE". Namespace is used as part of the metric names on static resources defined in the bootstrap configuration file.    |
 | <nobr>--xds-resource-version</nobr> | v3 | Currently, the only valid xDS API resource version is `v3`.  |
 | <nobr>--dns-lookup-damily</nobr> | auto | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6 or auto.  |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 

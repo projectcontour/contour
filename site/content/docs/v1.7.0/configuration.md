@@ -29,7 +29,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | request-timeout | [duration][4] | `0s` | **Deprecated and will be removed in a future release. Use [timeouts.request-timeout](#timeout-configuration) instead.**<br /><br /> This field specifies the default request timeout as a Go duration string. Zero means there is no timeout. |
 | tls | TLS | | The default [TLS configuration](#tls-configuration). |
 | timeouts | TimeoutConfig | | The [timeout configuration](#timeout-configuration). |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### TLS Configuration
@@ -41,7 +41,7 @@ Contour should provision TLS hosts.
 |------------|-----|----------|-------------|
 | minimum-protocol-version| string | `""` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.2` and `1.3`. Any other value defaults to TLS 1.1. |
 | fallback-certificate | | | [Fallback certificate configuration](#fallback-certificate). |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Fallback Certificate
@@ -50,7 +50,7 @@ Contour should provision TLS hosts.
 |------------|-----|----------|-------------|
 | name       | string | `""` | This field specifies the name of the Kubernetes secret to use as the fallback certificate.      |
 | namespace  | string | `""` | This field specifies the namespace of the Kubernetes secret to use as the fallback certificate. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Leader Election Configuration
@@ -66,7 +66,7 @@ In the vast majority of deployments, only the `configmap-name` and `configmap-na
 | lease-duration | [duration][4] | `15s` | The duration of the leadership lease. |
 | renew-deadline | [duration][4] | `10s` | The length of time that the leader will retry refreshing leadership before giving up. |
 | retry-period | [duration][4] | `2s` | The interval at which Contour will attempt to the acquire leadership lease. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 ### Timeout Configuration
@@ -80,7 +80,7 @@ The timeout configuration block can be used to configure various timeouts for th
 | stream-idle-timeout| string | `5m`* |This field defines how long the proxy should wait while there is no request activity (for HTTP/1.1) or stream activity (for HTTP/2) before terminating the HTTP request or stream. Must be a [valid Go duration string][4], or `infinity` to disable the timeout entirely. See [the Envoy documentation][9] for more information. |
 | max-connection-duration | string | none* | This field defines the maximum period of time after an HTTP connection has been established from the client to the proxy before it is closed by the proxy, regardless of whether there has been activity or not. Must be a [valid Go duration string][4], or omitted or set to `infinity` for no max duration. See [the Envoy documentation][10] for more information. |
 | connection-shutdown-grace-period | string | `5s`* | This field defines how long the proxy will wait between sending an initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During this grace period, the proxy will continue to respond to new streams. After the final GOAWAY frame has been sent, the proxy will refuse new streams. Must be a [valid Go duration string][4]. See [the Envoy documentation][11] for more information. |
-{: class="table thead-dark table-bordered"}
+
 <br>
 
 _* This is Envoy's default setting value and is not explicitly configured by Contour._

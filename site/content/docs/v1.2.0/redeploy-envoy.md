@@ -47,7 +47,7 @@ Finally, the pod's `terminationGracePeriodSeconds` is customized to extend the t
 The termination grace period defines an upper bound for long-lived sessions.
 If during shutdown, the connections aren't drained to the configured amount, the `terminationGracePeriodSeconds` will send a `SIGTERM` to the pod killing it.
 
-![shutdown-manager overview][1]{: .center-image }
+![shutdown-manager overview][1]
 
 ### Shutdown Manager Config Options
 

@@ -23,7 +23,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | leaderelection | leaderelection | | The [leader election configuration](#leader-election-configuration). |
 | request-timeout | [duration][4] | `0s` | This field specifies the default request timeout as a Go duration string. Zero means there is no timeout. |
 | tls | TLS | | The default [TLS configuration](#tls-configuration). |
-{: class="table thead-dark table-bordered"}
+
 
 ### TLS Configuration
 
@@ -33,7 +33,7 @@ Contour should provision TLS hosts.
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | minimum-protocol-version| string | `""` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.2` and `1.3`. Any other value defaults to TLS 1.1. |
-{: class="table thead-dark table-bordered"}
+
 
 ### Leader Election Configuration
 
@@ -48,7 +48,7 @@ In the vast majority of deployments, only the `configmap-name` and `configmap-na
 | lease-duration | [duration][4] | `15s` | The duration of the leadership lease. |
 | renew-deadline | [duration][4] | `10s` | The length of time that the leader will retry refreshing leadership before giving up. |
 | retry-period | [duration][4] | `2s` | The interval at which Contour will attempt to the acquire leadership lease. |
-{: class="table thead-dark table-bordered"}
+
 
 ### Configuration Example
 
