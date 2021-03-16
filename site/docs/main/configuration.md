@@ -241,6 +241,7 @@ The rate limit service configuration block is used to configure an optional glob
 | extensionService | string | <none> | This field identifies the extension service defining the rate limit service, formatted as <namespace>/<name>.  |
 | domain | string | contour | This field defines the rate limit domain value to pass to the rate limit service. Acts as a container for a set of rate limit definitions within the RLS.  |
 | failOpen | bool | false | This field defines whether to allow requests to proceed when the rate limit service fails to respond with a valid rate limit decision within the timeout defined on the extension service.  |
+| enableXRateLimitHeaders | bool | false | This field defines whether to include the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF Internet-Draft https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html), on responses to clients when the Rate Limit Service is consulted for a request. |
 {: class="table thead-dark table-bordered"}
 <br>
 
@@ -355,10 +356,25 @@ data:
     #   right side of the x-forwarded-for HTTP header to trust.
     #   num-trusted-hops: 0
     #
+    # Configure an optional global rate limit service.
     # rateLimitService:
+    #   Identifies the extension service defining the rate limit service,
+    #   formatted as <namespace>/<name>.
     #   extensionService: projectcontour/ratelimit
+    #   Defines the rate limit domain to pass to the rate limit service.
+    #   Acts as a container for a set of rate limit definitions within
+    #   the RLS.
     #   domain: contour
+    #   Defines whether to allow requests to proceed when the rate limit
+    #   service fails to respond with a valid rate limit decision within
+    #   the timeout defined on the extension service.
     #   failOpen: false
+    # Defines whether to include the X-RateLimit headers X-RateLimit-Limit,
+    # X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF
+    # Internet-Draft linked below), on responses to clients when the Rate
+    # Limit Service is consulted for a request.
+    # ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
+    #   enableXRateLimitHeaders: false
     #
     # Global Policy settings.
     # policy:

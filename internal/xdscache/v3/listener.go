@@ -141,10 +141,11 @@ type ListenerConfig struct {
 }
 
 type RateLimitConfig struct {
-	ExtensionService types.NamespacedName
-	Domain           string
-	Timeout          timeout.Setting
-	FailOpen         bool
+	ExtensionService        types.NamespacedName
+	Domain                  string
+	Timeout                 timeout.Setting
+	FailOpen                bool
+	EnableXRateLimitHeaders bool
 }
 
 // httpAddress returns the port for the HTTP (non TLS)
@@ -406,10 +407,11 @@ func envoyGlobalRateLimitConfig(config *RateLimitConfig) *envoy_v3.GlobalRateLim
 	}
 
 	return &envoy_v3.GlobalRateLimitConfig{
-		ExtensionService: config.ExtensionService,
-		FailOpen:         config.FailOpen,
-		Timeout:          config.Timeout,
-		Domain:           config.Domain,
+		ExtensionService:        config.ExtensionService,
+		FailOpen:                config.FailOpen,
+		Timeout:                 config.Timeout,
+		Domain:                  config.Domain,
+		EnableXRateLimitHeaders: config.EnableXRateLimitHeaders,
 	}
 }
 
