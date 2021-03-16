@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Upstream Health Checks
 
 ## HTTP Proxy Health Checking
 

@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Deployment Options
 
 The [Getting Started][8] guide shows you a simple way to get started with Contour on your cluster.
 This topic explains the details and shows you additional options.

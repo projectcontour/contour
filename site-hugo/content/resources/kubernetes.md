@@ -36,7 +36,6 @@ If you are using a Kubernetes distribution offered by a public cloud provider, w
 | 1.2.x           | 1.17, 1.16, 1.15   |
 | 1.1.x           | 1.15, 1.14, 1.13   |
 | 1.0.x           | 1.15, 1.14, 1.13   |
-{: class="table thead-dark table-bordered"}
 
 [1]: https://github.com/kubernetes/client-go
 [2]: https://github.com/kubernetes/client-go#compatibility-matrix

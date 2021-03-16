@@ -8,6 +8,13 @@
 		<div class="wrapper subpage blog">
 			<div class="blog-post content">
 				{{ .Content }}
+				<ul>
+				{{ range .Pages }}
+					<li>
+					  <p><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>
+					</li>
+				{{ end }}
+				</ul>
 			</div>
 		</div>
 	</main>

@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Contour Configuration Reference
 
 ## Configuration File
 

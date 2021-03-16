@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Request Rewriting
 
 ## Path Rewriting
 
@@ -60,7 +58,7 @@ spec:
         replacement: /app
 ```
 
-### Header Rewriting
+## Header Rewriting
 
 HTTPProxy supports rewriting HTTP request and response headers.
 The `Set` operation sets a HTTP header value, creating it if it doesn't already exist or overwriting it if it does.
@@ -153,3 +151,70 @@ spec:
 In these examples we are setting the header `X-Foo` with value `baz` on requests
 and stripping `X-Baz`.  We are then setting `X-Service-Name` on the response with
 value `s1`, and removing `X-Internal-Secret`.
+
+### Dynamic Header Values
+
+It is sometimes useful to set a header value using a dynamic value such as the
+hostname where the Envoy Pod is running (`%HOSTNAME%`) or the subject of the
+TLS client certificate (`%DOWNSTREAM_PEER_SUBJECT%`) or based on another header
+(`%REQ(header)%`).
+
+Examples:
+```
+    requestHeadersPolicy:
+      set:
+      - name: X-Envoy-Hostname
+        value: "%HOSTNAME%"
+      - name: X-Host-Protocol
+        value: "%REQ(Host)% - %PROTOCOL%"
+    responseHeadersPolicy:
+      set:
+      - name: X-Envoy-Response-Flags
+        value: "%RESPONSE_FLAGS%"
+```
+
+Contour supports most of the custom request/response header variables offered
+by Envoy - see the <a
+href="https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/headers#custom-request-response-headers">Envoy
+documentation </a> for details of what each of these resolve to:
+
+* `%DOWNSTREAM_REMOTE_ADDRESS%`
+* `%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%`
+* `%DOWNSTREAM_LOCAL_ADDRESS%`
+* `%DOWNSTREAM_LOCAL_ADDRESS_WITHOUT_PORT%`
+* `%DOWNSTREAM_LOCAL_PORT%`
+* `%DOWNSTREAM_LOCAL_URI_SAN%`
+* `%DOWNSTREAM_PEER_URI_SAN%`
+* `%DOWNSTREAM_LOCAL_SUBJECT%`
+* `%DOWNSTREAM_PEER_SUBJECT%`
+* `%DOWNSTREAM_PEER_ISSUER%`
+* `%DOWNSTREAM_TLS_SESSION_ID%`
+* `%DOWNSTREAM_TLS_CIPHER%`
+* `%DOWNSTREAM_TLS_VERSION%`
+* `%DOWNSTREAM_PEER_FINGERPRINT_256%`
+* `%DOWNSTREAM_PEER_FINGERPRINT_1%`
+* `%DOWNSTREAM_PEER_SERIAL%`
+* `%DOWNSTREAM_PEER_CERT%`
+* `%DOWNSTREAM_PEER_CERT_V_START%`
+* `%DOWNSTREAM_PEER_CERT_V_END%`
+* `%HOSTNAME%`
+* `%REQ(header-name)%`
+* `%PROTOCOL%`
+* `%RESPONSE_FLAGS%`
+* `%RESPONSE_CODE_DETAILS%`
+* `%UPSTREAM_REMOTE_ADDRESS%`
+
+Note that Envoy passes variables that can't be expanded through unchanged or
+skips them entirely - for example:
+* `%UPSTREAM_REMOTE_ADDRESS%` as a request header remains as
+  `%UPSTREAM_REMOTE_ADDRESS%` because as noted in the Envoy docs: "The upstream
+  remote address cannot be added to request headers as the upstream host has not
+  been selected when custom request headers are generated."
+* `%DOWNSTREAM_TLS_VERSION%` is skipped if TLS is not in use
+* Envoy ignores REQ headers that refer to an non-existent header - for example
+  `%REQ(Host)%` works as expected but `%REQ(Missing-Header)%` is skipped
+
+Contour already sets the `X-Request-Start` request header to
+`t=%START_TIME(%s.%3f)%` which is the Unix epoch time when the request
+started.
+

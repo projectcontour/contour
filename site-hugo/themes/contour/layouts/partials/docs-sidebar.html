@@ -14,8 +14,12 @@
                 <ul>
                     {{ range .subfolderitems }}
                     <li>
-                        {{ $url :=  (index (print "/docs/" $version .url "/"))  }}
-                        <a href="{{ $url }}" {{ if (eq  $.Page.RelPermalink $url)  }}class="active"{{ end }}>{{ .page }}</a>
+                        {{ if .link }}
+                            <a href="{{ .link }}">{{ .page }}</a>
+                        {{ else }}
+                            {{ $url :=  (index (print "/docs/" $version .url "/"))  }}
+                            <a href="{{ $url }}" {{ if (eq  $.Page.RelPermalink $url)  }}class="active"{{ end }}>{{ .link }} {{ .page }}</a>
+                        {{ end }}
                     </li>
                     {{ end }}
                 </ul>

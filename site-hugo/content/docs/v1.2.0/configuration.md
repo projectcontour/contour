@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Contour Configuration
 
 A configuration file can be passed to the `contour serve` command which specified additional properties that Contour should use when starting up.
 This file is passed to Contour via a ConfigMap which is mounted as a volume to the Contour pod.

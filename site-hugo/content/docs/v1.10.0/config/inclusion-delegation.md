@@ -1,6 +1,4 @@
----
-layout: docs
----
+# HTTPProxy Inclusion
 
 HTTPProxy permits the splitting of a system's configuration into separate HTTPProxy instances using **inclusion**.
 

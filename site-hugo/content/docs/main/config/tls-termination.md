@@ -1,6 +1,4 @@
----
-layout: docs
----
+# TLS Termination
 
 HTTPProxy follows a similar pattern to Ingress for configuring TLS credentials.
 
@@ -57,7 +55,6 @@ The TLS **Minimum Protocol Version** a virtual host should negotiate can be spec
 
 - 1.3
 - 1.2  (Default)
-- 1.1
 
 ## Fallback Certificate
 
@@ -222,4 +219,4 @@ spec:
       weight: 20
 ```
 
-[1]: /docs/{{page.version}}/configuration#fallback-certificate
+[1]: /docs/{{< param version >}}/configuration#fallback-certificate

@@ -23,7 +23,7 @@ For example, for a cert with common name foo.bar.com, requests to Foo.bar.com wo
 Similarly, for cert with wildcard name \*.bar.com, only requests to lower case name will match.
 Here is the [known issue][4] reported on Envoy.
 
-[1]: {{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/examples/contour/03-contour.yaml/#L45
-[2]: {% link _guides/proxy-proto.md %}
-[3]: {% link _guides/cert-manager.md %}
+[1]: {{< param github_url >}}/tree/{{< param latest_release_tag_name >}}/examples/contour/03-contour.yaml/#L45
+[2]: /guides/proxy-proto
+[3]: /guides/cert-manager
 [4]: https://github.com/envoyproxy/envoy/issues/6199

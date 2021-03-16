@@ -1,0 +1,15 @@
+{{ define "main" }}
+	<main>
+		<div class="hero subpage-hero">
+			<div class="wrapper">
+				<h1>{{ .Title }}</h1>
+			</div>
+		</div>
+		<div class="wrapper subpage blog">
+			<div class="blog-post content">
+				{{ .Content }}
+				{{ partial "github-labels.html" . }}
+			</div>
+		</div>
+	</main>
+{{ end }}

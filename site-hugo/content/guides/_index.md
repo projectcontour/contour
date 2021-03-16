@@ -8,6 +8,3 @@ id: guides
 
 This page contains links to articles on configuring specific Contour features.
 
-{% for guide in site.guides %}
-- [{{ guide.title }}]({{ guide.url }})
-{% endfor %}

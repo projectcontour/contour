@@ -1,6 +1,4 @@
----
-layout: docs
----
+# IngressRoute Reference
 
 <div id="toc" class="navigation"></div>
 

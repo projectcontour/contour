@@ -1,6 +1,4 @@
----
-layout: docs
----
+# External Service Routing
 
 HTTPProxy supports routing traffic to `ExternalName` service types.
 Contour looks at the `spec.externalName` field of the service and configures the route to use that DNS name instead of utilizing EDS.

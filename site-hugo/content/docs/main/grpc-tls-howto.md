@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Enabling TLS between Envoy and Contour
 
 This document describes the steps required to secure communication between Envoy and Contour.
 The outcome of this is that we will have two Secrets available in the `projectcontour` namespace:
@@ -163,8 +161,8 @@ When using the built-in Contour certificate generation, the following steps can 
 Once this process is done, the certificates will be present as Secrets in the `projectcontour` namespace, as required by
 [examples/contour][5].
 
-[1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/02-job-certgen.yaml
-[2]: {{site.github.repository_url}}/tree/{{page.version}}/_integration/cert-contour.ext
-[3]: {{site.github.repository_url}}/tree/{{page.version}}/_integration/cert-envoy.ext
-[4]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/03-envoy.yaml
-[5]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour
+[1]: {{< param gh >}}/examples/contour/02-job-certgen.yaml
+[2]: {{< param gh >}}/_integration/cert-contour.ext
+[3]: {{< param gh >}}/_integration/cert-envoy.ext
+[4]: {{< param gh >}}/examples/contour/03-envoy.yaml
+[5]: {{< param gh >}}/examples/contour

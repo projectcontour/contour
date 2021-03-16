@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Client Authorization
 
 Contour supports integrating external servers to authorize client requests.
 
@@ -117,9 +115,9 @@ A route can overwrite the value for a context key by setting it in the
 context field of authorization policy for the route.
 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/ext_authz_filter
-[2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1alpha1.ExtensionService
+[2]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1alpha1.ExtensionService
 [3]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto
-[4]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.UpstreamValidation
-[5]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.AuthorizationServer
-[6]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.AuthorizationPolicy
-[7]: {% link _guides/external-authorization.md %}
+[4]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.UpstreamValidation
+[5]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.AuthorizationServer
+[6]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.AuthorizationPolicy
+[7]: {{< ref "guides/external-authorization.md" >}}

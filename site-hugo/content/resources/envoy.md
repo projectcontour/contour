@@ -90,7 +90,7 @@ __Note:__ These extensions are tested against Envoy v1.16.1.
 
 [1]: https://groups.google.com/forum/#!topic/envoy-announce/Zo3ZEFuPWec
 [2]: https://groups.google.com/d/msg/envoy-announce/3-8S992PUV4/t-egdelVDwAJ
-[3]: {{site.github.repository_url}}/tree/{{site.github.latest_release.tag_name}}/examples/contour
+[3]: {{< param github_url >}}/tree/{{< param latest_release_tag_name >}}/examples/contour
 [4]: https://groups.google.com/d/msg/envoy-announce/BjgUTDTKAu8/DTfMMSyCAgAJ
 [5]: https://groups.google.com/forum/#!msg/envoy-announce/sVqmxy0un2s/8aq430xiHAAJ
 [6]: https://groups.google.com/d/msg/envoy-announce/y4C7hXH6WrU/eRoMZ6WaAgAJ

@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Operator Troubleshooting
 
 [Contour Operator][1] runs in a Kubernetes cluster and is managed by a
 [Deployment][2] resource. The following steps can be used to verify and

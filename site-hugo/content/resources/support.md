@@ -22,9 +22,7 @@ No support is offered for major, minor, or patch releases older than the `:lates
 
 ### Additional Resources
 
-- [Envoy Support Matrix][2]
-- [Kubernetes Support Matrix][3]
+- [Contour Compatibility Matrix][2]
 
-[1]: {% link _resources/tagging.md %}
-[2]: {% link _resources/envoy.md %}
-[3]: {% link _resources/kubernetes.md %}
+[1]: {{< ref "resources/tagging.md" >}}
+[2]: {{< ref "resources/compatibility-matrix.md" >}}

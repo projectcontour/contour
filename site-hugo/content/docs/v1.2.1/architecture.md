@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Contour Architecture
 
 The Contour Ingress controller is a collaboration between:
 

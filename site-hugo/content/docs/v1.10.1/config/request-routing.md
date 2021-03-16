@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Request Routing
 
 A HTTPProxy object must have at least one route or include defined.
 In this example, any requests to `multi-path.bar.com/blog` or `multi-path.bar.com/blog/*` will be routed to the Service `s2`.

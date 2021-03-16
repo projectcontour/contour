@@ -129,15 +129,15 @@ We've also got [a FAQ][4] for short-answer questions and conceptual stuff that d
 If you encounter issues, review the Troubleshooting section of [the docs][3], [file an issue][6], or talk to us on the [#contour channel][12] on the Kubernetes Slack server.
 
 [0]: https://aws.amazon.com/quickstart/architecture/vmware-kubernetes
-[1]: /docs/{{site.latest}}/deploy-options
-[2]: /docs/{{site.latest}}/config/fundamentals
-[3]: /docs/{{site.latest}}
-[4]: {% link _resources/faq.md %}
+[1]: /docs/{{< param docs_latest >}}/deploy-options
+[2]: /docs/{{< param docs_latest >}}/config/fundamentals
+[3]: /docs/{{< param docs_latest >}}
+[4]: {{< ref "resources/faq.md" >}}
 [6]: {{site.github.repository_url}}/issues
 [9]: https://github.com/kubernetes-up-and-running/kuard
 [10]: https://kubernetes.io/docs/concepts/services-networking/service
 [11]: https://kubernetes.io/docs/concepts/services-networking/ingress
-[12]: {{site.footer_social_links.Slack.url}}
+[12]: {{< param slack_url >}}
 [13]: https://projectcontour.io/resources/deprecation-policy/
 [14]: https://github.com/projectcontour/contour-operator/blob/main/README.md
 [15]: https://github.com/bitnami/charts/tree/master/bitnami/contour

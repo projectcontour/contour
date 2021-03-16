@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Virtual Hosts
 
 
 Similar to Ingress, HTTPProxy support name-based virtual hosting.

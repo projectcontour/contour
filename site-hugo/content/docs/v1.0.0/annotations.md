@@ -1,6 +1,4 @@
----
-layout: docs
----
+
 
 Annotations are used in Ingress Controllers to configure features that are not covered by the Kubernetes Ingress API.
 

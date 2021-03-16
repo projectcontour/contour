@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Accessing the Envoy Administration Interface
 
 Getting access to the Envoy [administration interface][1] can be useful for diagnosing issues with routing or cluster health.
 

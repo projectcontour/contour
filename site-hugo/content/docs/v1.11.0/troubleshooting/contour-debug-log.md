@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Enabling Contour Debug Logging
 
 The `contour serve` subcommand has two command-line flags that can be helpful for debugging.
 The `--debug` flag enables general Contour debug logging, which logs more information about how Contour is processing API resources.

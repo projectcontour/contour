@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Client Authorization
 
 Contour supports integrating external servers to authorize client requests.
 

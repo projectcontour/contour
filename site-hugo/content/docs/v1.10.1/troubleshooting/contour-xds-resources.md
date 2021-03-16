@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Interrogate Contour's xDS Resources
 
 Sometimes it's helpful to be able to interrogate Contour to find out exactly what [xDS][1] resource data it is sending to Envoy.
 Contour ships with a `contour cli` subcommand which can be used for this purpose.

@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Visualizing Contour's Internal Object Graph
 
 Contour models its configuration using a directed acyclic graph (DAG) of internal objects.
 This can be visualized through a debug endpoint that outputs the DAG in [DOT][2] format.

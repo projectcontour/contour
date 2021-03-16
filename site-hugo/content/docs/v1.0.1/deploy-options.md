@@ -1,6 +1,4 @@
----
-layout: docs
----
+The [Getting Started][8] guide shows you a simple way to get started with Contour on your cluster.
 This topic explains the details and shows you additional options.
 Most of this covers running Contour using a Kubernetes Service of `Type: LoadBalancer`.
 If you don't have a cluster with that capability see the [Running without a Kubernetes LoadBalancer][1] section.

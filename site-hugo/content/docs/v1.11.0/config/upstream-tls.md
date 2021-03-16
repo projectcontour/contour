@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Upstream TLS
 
 A HTTPProxy can proxy to an upstream TLS backend by annotating the upstream Kubernetes Service or by specifying the upstream protocol in the HTTPProxy [`services`][2] field.
 Applying the `projectcontour.io/upstream-protocol.tls` annotation to a Service object tells Contour that TLS should be enabled and which port should be used for the TLS connection.

@@ -1,7 +1,11 @@
 ---
 version: v1.6.1
-layout: docs
+cascade:
+  layout: docs
+  gh: https://github.com/projectcontour/contour/tree/release-1.6
 ---
+
+## Overview
 Contour is an Ingress controller for Kubernetes that works by deploying the [Envoy proxy][1] as a reverse proxy and load balancer.
 Contour supports dynamic configuration updates out of the box while maintaining a lightweight profile.
 

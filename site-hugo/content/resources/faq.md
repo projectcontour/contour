@@ -54,6 +54,6 @@ To test whether Contour is correctly deployed you can deploy the kuard example s
 $ kubectl apply -f https://projectcontour.io/examples/kuard.yaml
 ```
 
-[1]: /docs/{{site.latest}}/config/fundamentals
-[2]: {% link _guides/cert-manager.md %}
-[3]: /docs/{{site.latest}}/configuration
+[1]: /docs/{{< param docs_latest >}}/config/fundamentals
+[2]: /guides/cert-manager
+[3]: /docs/{{< param docs_latest >}}/configuration

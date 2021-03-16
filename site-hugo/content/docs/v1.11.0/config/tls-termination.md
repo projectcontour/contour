@@ -1,6 +1,4 @@
----
-layout: docs
----
+# TLS Termination
 
 HTTPProxy follows a similar pattern to Ingress for configuring TLS credentials.
 

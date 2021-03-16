@@ -84,4 +84,4 @@ json-fields:
 [2]: https://github.com/projectcontour/contour/blob/main/pkg/config/accesslog.go#L49-L93
 [3]: https://github.com/projectcontour/contour/blob/main/pkg/config/accesslog.go#L97-L102
 [4]: https://github.com/projectcontour/contour/blob/main/pkg/config/accesslog.go#L4
-[5]: {{site.github.repository_url}}/blob/{{site.github.latest_release.tag_name}}/examples/contour/01-contour-config.yaml
+[5]: {{< param github_url >}}/tree/{{< param latest_release_tag_name >}}/examples/contour/01-contour-config.yaml

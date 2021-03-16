@@ -1,6 +1,4 @@
----
-layout: docs
----
+# CORS
 
 A CORS (Cross-origin resource sharing) policy can be set for a HTTPProxy in order to allow cross-domain requests for trusted sources.
 If a policy is set, it will be applied to all the routes of the virtual host.

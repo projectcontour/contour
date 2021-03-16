@@ -629,16 +629,16 @@ $ curl -v http://httpbin.davecheney.com/get
 
 __Note:__ For HTTPProxy resources this happens automatically without the need for an annotation.
 
-[0]: {{site.github.repository_url}}
+[0]: {{< param github_url >}}
 [1]: https://github.com/jetstack/cert-manager
 [2]: https://letsencrypt.org/docs/rate-limits/
 [3]: http://httpbin.org/
 [4]: https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html
 [5]: https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
 [6]: https://letsencrypt.org/getting-started/
-[7]: /docs/{{site.latest}}/deploy-options/#get-your-hostname-or-ip-address
-[8]: {% link /img/cert-manager/httpbinhomepage.png %}
-[9]: {% link /img/cert-manager/httpbin.png %}
-[10]: {{site.github.repository_url}}/issues/950
-[11]: {{site.github.repository_url}}/issues/951
+[7]: /docs/{{< param docs_latest >}}/deploy-options/#get-your-hostname-or-ip-address
+[8]: /img/cert-manager/httpbinhomepage.png
+[9]: /img/cert-manager/httpbin.png
+[10]: {{< param github_url >}}/issues/950
+[11]: {{< param github_url >}}/issues/951
 [12]: https://cert-manager.io/docs/usage/ingress/

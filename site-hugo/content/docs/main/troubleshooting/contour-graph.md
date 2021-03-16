@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Visualizing Contour's Internal Object Graph
 
 Contour models its configuration using a directed acyclic graph (DAG) of internal objects.
 This can be visualized through a debug endpoint that outputs the DAG in [DOT][2] format.
@@ -24,4 +22,4 @@ The following is an example of a DAG that maps `http://kuard.local:80/` to the
 
 [2]: https://en.wikipedia.org/wiki/DOT
 [3]: https://graphviz.gitlab.io/
-[4]: {%link img/kuard-dag.png %}
+[4]: /img/kuard-dag.png

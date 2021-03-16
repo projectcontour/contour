@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Enabling TLS between Envoy and Contour
 
 This document describes the steps required to secure communication between Envoy and Contour.
 The outcome of this is that we will have three Secrets available in the `projectcontour` namespace:

@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Contour Configuration Reference
 
 - [Configuration File](#configuration-file)
 - [Environment Variables](#environment-variables)
@@ -20,6 +18,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | accesslog-format | string | `envoy` | This key sets the global [access log format][2] for Envoy. Valid options are `envoy` or `json`. |
 | debug | boolean | `false` | Enables debug logging. |
 | default-http-versions | string array | <code style="white-space:nowrap">HTTP/1.1</code> <br> <code style="white-space:nowrap">HTTP/2</code> | This array specifies the HTTP versions that Contour should program Envoy to serve. HTTP versions are specified as strings of the form "HTTP/x", where "x" represents the version number. |
+| disableAllowChunkedLength | boolean | `false` | If this field is true, Contour will disable the RFC-compliant Envoy behavior to strip the `Content-Length` header if `Transfer-Encoding: chunked` is also set. This is an emergency off-switch to revert back to Envoy's default behavior in case of failures. |
 | disablePermitInsecure | boolean | `false` | If this field is true, Contour will ignore `PermitInsecure` field in HTTPProxy documents. |
 | envoy-service-name | string | `envoy` | This sets the service name that will be inspected for address details to be applied to Ingress objects. |
 | envoy-service-namespace | string | `projectcontour` | This sets the namespace of the service that will be inspected for address details to be applied to Ingress objects. If the `CONTOUR_NAMESPACE` environment variable is present, Contour will populate this field with its value. |
@@ -42,7 +41,7 @@ Contour should provision TLS hosts.
 
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
-| minimum-protocol-version| string | `1.2` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.1`, `1.2` (default) and `1.3`. Any other value defaults to TLS 1.2. |
+| minimum-protocol-version| string | `1.2` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.2` (default) and `1.3`. Any other value defaults to TLS 1.2. |
 | fallback-certificate | | | [Fallback certificate configuration](#fallback-certificate). |
 | envoy-client-certificate | | | [Client certificate configuration for Envoy](#envoy-client-certificate). |
 {: class="table thead-dark table-bordered"}
@@ -143,7 +142,7 @@ data:
     # disablePermitInsecure: false
     tls:
       # minimum TLS version that Contour will negotiate
-      # minimumProtocolVersion: "1.1"
+      # minimumProtocolVersion: "1.2"
       fallback-certificate:
       # name: fallback-secret-name
       # namespace: projectcontour
@@ -217,13 +216,13 @@ connects to Contour:
 <br>
 
 
-[1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/01-contour-config.yaml
+[1]: {{< param gh >}}/examples/contour/01-contour-config.yaml
 [2]: /guides/structured-logs
 [3]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 [4]: https://golang.org/pkg/time/#ParseDuration
 [5]: https://godoc.org/github.com/projectcontour/contour/internal/envoy#DefaultFields
 [6]: https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/
-[7]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour
+[7]: {{< param gh >}}/examples/contour
 [8]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-idle-timeout
 [9]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-stream-idle-timeout
 [10]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration

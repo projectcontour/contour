@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Redeploying Envoy
 
 The Envoy process, the data path component of Contour, at times needs to be re-deployed.
 This could be due to an upgrade, a change in configuration, or a node-failure forcing a redeployment.

@@ -1,6 +1,4 @@
----
-layout: docs
----
+This document contains suggestions for debugging issues with your Contour installation.
 
 ## Envoy container not listening on port 8080 or 8443
 

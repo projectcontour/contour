@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Websockets
 
 WebSocket support can be enabled on specific routes using the `enableWebsockets` field:
 

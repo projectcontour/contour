@@ -1,6 +1,4 @@
----
-layout: docs
----
+# HTTPProxy Reference
 
 <div id="toc" class="navigation"></div>
 

@@ -1,6 +1,6 @@
 ---
 title: How We Work
-layout: page
+layout: how-we-work
 ---
 
 This page captures how we work on Contour.
@@ -54,30 +54,6 @@ It may not be necessary to decide how an issue should be addressed during triage
 - If you are in the process of investigating an issue, assign it to yourself and apply the "lifecycle/investigating" label.
 - In almost all cases, triaged issues should have kind and area labels. 
 - The priority and size labels are informative. Contributors should apply them at their discretion.
-
-<table class="table thead-dark table-striped table-bordered">
-
-<tr>
-    <th> Label </th>
-    <th> Description </th>
-</tr>
-
-{% for label in site.data["github-labels"].default.labels %}
-
-<tr>
-
-    <td>  
-    <div style="background-color:#{{label.color}}; width:20px; height:20px; float: left"></div>
-    &nbsp;
-    <a href="https://github.com/projectcontour/contour/labels/{{label.name | cgi_escape}}">{{label.name}}</a>
-    </td>
-
-    <td> {{label.description}} </td>
-</tr>
-
-{% endfor %}
-
-</table>
 
 
 [1]: https://dave.cheney.net/2019/02/18/talk-then-code

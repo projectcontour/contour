@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Enabling Envoy Debug Logging
 
 The `envoy` command has a `--log-level` [flag][1] that can be useful for debugging.
 By default, it's set to `info`.

@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Annotations Reference
 
 <div id="toc" class="navigation"></div>
 
@@ -86,6 +84,6 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
 [12]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto#envoy-v3-api-field-config-cluster-v3-circuitbreakers-thresholds-max-pending-requests
 [13]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto#envoy-v3-api-field-config-cluster-v3-circuitbreakers-thresholds-max-requests
 [14]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/circuit_breaker.proto#envoy-v3-api-field-config-cluster-v3-circuitbreakers-thresholds-max-retries
-[15]: {% link docs/{{page.version}}/config/fundamentals.md %}
+[15]: /docs/{{< param version >}}/config/fundamentals/
 [16]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-virtualhost-require-tls
-[17]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.UpstreamValidation
+[17]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.UpstreamValidation

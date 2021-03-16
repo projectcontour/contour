@@ -1110,7 +1110,8 @@ equal to. The condition is true if the header has any other value.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1.HeadersPolicy">HeadersPolicy</a>)
+<a href="#projectcontour.io/v1.HeadersPolicy">HeadersPolicy</a>, 
+<a href="#projectcontour.io/v1.LocalRateLimitPolicy">LocalRateLimitPolicy</a>)
 </p>
 <p>
 <p>HeaderValue represents a header name/value pair</p>
@@ -1304,6 +1305,98 @@ is used.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.LocalRateLimitPolicy">LocalRateLimitPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy</a>)
+</p>
+<p>
+<p>LocalRateLimitPolicy defines local rate limiting parameters.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>requests</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<p>Requests defines how many requests per unit of time should
+be allowed before rate limiting occurs.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>unit</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Unit defines the period of time within which requests
+over the limit will be rate limited. Valid values are
+&ldquo;second&rdquo;, &ldquo;minute&rdquo; and &ldquo;hour&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>burst</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Burst defines the number of requests above the requests per
+unit that should be allowed within a short period of time.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseStatusCode</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResponseStatusCode is the HTTP status code to use for responses
+to rate-limited requests. Codes must be in the 400-599 range
+(inclusive). If not specified, the Envoy default of 429 (Too
+Many Requests) is used.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>responseHeadersToAdd</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.HeaderValue">
+[]HeaderValue
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ResponseHeadersToAdd is an optional list of response headers to
+set when a request is rate-limited.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.MatchCondition">MatchCondition
 </h3>
 <p>
@@ -1387,6 +1480,42 @@ No HTTP headers or body content is rewritten.</p>
 <td>
 <em>(Optional)</em>
 <p>ReplacePrefix describes how the path prefix should be replaced.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.RateLimitPolicy">RateLimitPolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.VirtualHost">VirtualHost</a>)
+</p>
+<p>
+<p>RateLimitPolicy defines rate limiting parameters.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>local</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.LocalRateLimitPolicy">
+LocalRateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<p>Local defines local rate limiting parameters, i.e. parameters
+for rate limiting that occurs within each Envoy pod as requests
+are handled.</p>
 </td>
 </tr>
 </tbody>
@@ -1747,6 +1876,21 @@ HeadersPolicy
 <em>(Optional)</em>
 <p>The policy for managing response headers during proxying.
 Rewriting the &lsquo;Host&rsquo; header is not supported.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>rateLimitPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RateLimitPolicy">
+RateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy for rate limiting on the route.</p>
 </td>
 </tr>
 </tbody>
@@ -2217,7 +2361,9 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Minimum TLS version this vhost should negotiate</p>
+<p>MinimumProtocolVersion is the minimum TLS version this vhost should
+negotiate. Valid options are <code>1.2</code> (default) and <code>1.3</code>. Any other value
+defaults to TLS 1.2.</p>
 </td>
 </tr>
 <tr>
@@ -2528,6 +2674,21 @@ CORSPolicy
 <td>
 <em>(Optional)</em>
 <p>Specifies the cross-origin policy to apply to the VirtualHost.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>rateLimitPolicy</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.RateLimitPolicy">
+RateLimitPolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policy for rate limiting on the virtual host.</p>
 </td>
 </tr>
 </tbody>

@@ -20,11 +20,15 @@ markup:
     noClasses: true
     style: native
     tabWidth: 4
+  goldmark:
+    renderer:
+      unsafe: true
 params:
   twitter_url: "https://twitter.com/projectcontour"
   github_url: "https://github.com/projectcontour/contour"
   slack_url: "https://kubernetes.slack.com/messages/contour"
   github_base_url: "https://github.com/projectcontour/contour"
+  latest_release_tag_name: v1.11.0
   use_advanced_docs: true
   docs_right_sidebar: true
   docs_search: true

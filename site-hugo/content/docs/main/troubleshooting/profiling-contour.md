@@ -1,6 +1,4 @@
----
-layout: docs
----
+# Accessing Contour's /debug/pprof Service
 
 Contour exposes the [net/http/pprof][1] handlers for `go tool pprof` and `go tool trace` by default on `127.0.0.1:6060`.
 This service is useful for profiling Contour.
