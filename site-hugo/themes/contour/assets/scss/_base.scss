@@ -236,3 +236,15 @@ button {
     font-weight: normal;
     font-style: normal;
   }
+
+table {
+    border-spacing: 0px;
+    overflow-x: auto;
+    display: block;
+    th, td {
+        border: 1px solid #ccc;
+        border-collapse: collapse;
+        padding: 6px;
+        border-spacing: 0px;
+    }
+}
