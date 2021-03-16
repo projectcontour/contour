@@ -27,9 +27,9 @@ params:
   github_base_url: "https://github.com/projectcontour/contour"
   use_advanced_docs: true
   docs_right_sidebar: true
-  docs_search: false
-  docs_search_index_name: index_name
-  docs_search_api_key: api_key
+  docs_search: true
+  docs_search_index_name: projectcontour
+  docs_search_api_key: 5e2fa46757e313755936b88feae652d1
   docs_versioning: true
   docs_latest: v1.11.0
   docs_versions:
