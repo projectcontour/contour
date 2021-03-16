@@ -208,7 +208,7 @@
     background-position: center center;
     background-repeat: no-repeat;
     background-size: cover;
-    padding-bottom: 140px;
+    padding-bottom: 90px;
 
     h1 {
         font-size: 46px;
@@ -494,6 +494,10 @@
                 h3 {
                     margin-top: 0px;
                     text-align: center;
+
+                    a {
+                        font-size: 20px;
+                    }
                 }
                 ul {
                     padding-left: 20px;
@@ -569,32 +573,37 @@
             button {
                 background-image: url(/img/down-arrow.svg);
                 background-repeat: no-repeat;
-                background-position: right center;
+                background-position: 90% center;
+                border-radius: 5px;
                 display: inline;
-                padding: 0px 15px 0 0;
-                border: none;
+                padding: 10px 30px 10px 10px;
+                border: 1px solid $blue;
                 color: $black;
+                cursor: pointer;
                 font-size: 14px;
                 font-family: $metropolis-medium;
                 margin-bottom: 10px;
                 &:focus {
-                    outline: none;
+                    background-color: $lightgrey;
                 }
             }
         }
         .dropdown-menu {
             position: absolute;
-            border: 1px solid $darkgrey;
+            border: 1px solid $grey;
             border-radius: 5px;
-            top: 30px;
+            top: 35px;
             left: 0px;
             background-color: $white;
-            padding: 10px 20px;
+            padding: 10px 0;
             min-width: 100px;
             display: none;
             a {
                 display: block;
-                margin: 7px 0px;
+                padding: 7px 20px;
+                &:hover {
+                    background-color: $lightgrey;
+                }
             }
             &.dropdown-menu-visible {
                 display: block;
@@ -614,6 +623,7 @@
             background-image: url(/img/search-icon.svg);
             background-repeat: no-repeat;
             background-position: 95% center;
+            border-radius: 5px;
             &:focus {
                 outline: none;
             }
@@ -622,11 +632,53 @@
             }
         }
         .ds-dataset-1 {
-            padding: 5px;
+            padding: 15px 15px 0;
+            
+            a {
+                color: $darkgrey;
+                display: inline-block;
+                font-family: $metropolis-light;
+                margin-bottom: 10px;
+                
+                div {
+                    display: inline;
+                }
+            }
+
+            .algolia-docsearch-suggestion--subcategory-inline {
+                &::after {
+                    content: ' /';
+                }
+            }
+            
+            .algolia-docsearch-suggestion--highlight {
+                background-color: rgba($blue, .1);
+                color: $navyblue;
+            }
+
+            .algolia-docsearch-suggestion--title {
+                font-family: $metropolis-medium;
+            }
+            
+            .algolia-docsearch-suggestion--category-header,
+            .algolia-docsearch-suggestion--subcategory-column {
+                display: none;
+            }
+
+            .algolia-docsearch-footer {
+                font-size: 14px;
+                text-align: right;
+
+                a {
+                    font-size: 14px;
+                }
+            }
         }
         .ds-dropdown-menu {
             background-color: #fff;
             border: 1px solid #cecece;
+            border-radius: 5px;
+            width: 130%;
         }
         @include breakpoint(extra-large) {
             width: 22%;
@@ -642,7 +694,7 @@
             width: 100%;
         }
         a {
-            font-size: 14px;
+            font-size: 16px;
         }
         ul {
             list-style-type: disc;
@@ -674,10 +726,11 @@
         }
         code {
             border: 2px solid #EFEFEF;
-            color: $darkgrey;
+            color: $grey;
             padding: 2px 8px;
         }
         pre {
+            white-space: pre-wrap;
             code {
                 display: block;
                 border: 15px solid #EFEFEF;
