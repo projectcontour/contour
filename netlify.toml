@@ -1,7 +1,8 @@
 [build]
   base = "site/"
-  command = "jekyll build"
-  publish = "site/_site"
+  command = "hugo --gc --minify"
+  publish = "site/public"
+
 [build.processing]
   skip_processing = false # -> Enable processing
 [build.processing.css]
@@ -12,6 +13,16 @@
   minify = true # -> Run JS through a minifier to reduce file size.
 [build.processing.images]
   compress = true # -> Run all images through lossless image compression.
+
+[context.production.environment]
+  HUGO_VERSION = "0.81.0"
+
+[context.deploy-preview]
+command = "hugo --gc --minify --buildFuture -b $DEPLOY_PRIME_URL"
+
+[context.deploy-preview.environment]
+  HUGO_VERSION = "0.81.0"
+
 
 # Reference documentation
 # Optimization blog post: https://www.netlify.com/blog/2019/08/05/control-your-asset-optimization-settings-from-netlify.toml/
