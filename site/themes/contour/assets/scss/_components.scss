@@ -669,18 +669,17 @@
             padding-right: 20px;
         }
         @include breakpoint(extra-large) {
-            width: 58%;
+            width: 75%;
             padding-right: 20px;
         }
     }
     .right-nav {
         width: 21%;
         float: right;
-        background-color: #EFEFEF;
         margin: -30px -30px 0px 0px;
-        padding: 30px 30px 0px 0px;
         .right-nav-content {
-            padding-left: 20px;
+            background-color: #EFEFEF;
+            padding: 30px 30px 30px 20px;
             margin-right: -20px;
             position: sticky;
             top: 0;
@@ -714,12 +713,15 @@
             li {
                 display: block;
                 padding-right: 0px;
-                margin-bottom: 15px;
+                margin-bottom: 7px;
                 a {
+                    font-family: $metropolis-light;
                     font-size: 14px;
                 }
                 ul {
-                    margin-top: 15px;
+                    margin-top: 7px;
+                    padding-inline-start: 14px;
+
                 }
             }
         }

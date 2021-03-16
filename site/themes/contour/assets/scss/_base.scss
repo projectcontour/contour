@@ -25,7 +25,10 @@ body {
     @include breakpoint(small) {
         max-width: 100%;
     }
-    @include breakpoint(medium) {
+    &.docs {
+        @include breakpoint(extra-large) {
+            max-width: 80%;
+        }
     }
 }
 .clearfix {
