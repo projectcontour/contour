@@ -1559,7 +1559,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 						Listeners: []gatewayapi_v1alpha1.Listener{{
 							TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
 								CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
-									Group: "v1",
+									Group: "core",
 									Kind:  "Secret",
 									Name:  "tlscert",
 								},
