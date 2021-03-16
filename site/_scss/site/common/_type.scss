@@ -36,6 +36,17 @@ h5 {
 strong {
   font-weight: $font-weight-semibold;
 }
+
+h1, h2, h3 {
+  font-family: $font-family-header;
+  font-weight: 300;
+}
+
+p {
+  font-size: 16px;
+  color: #777;
+} 
+
 pre {
   display: block;
   font-size: $code-font-size;

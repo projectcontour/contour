@@ -14,14 +14,20 @@
     color: $white;
     font-weight: $font-weight-light;
   }
+  h1 {
+    font-size: 36px;
+  }
   .section-content {
     margin-top: 15px;
     .hero-content,
     .hero-cta {
       @include media-breakpoint-up(md) {
         @include make-col-ready();
-        @include make-col(8);
+        @include make-col(7);
       }
+    }
+    p {
+      color: #fff;
     }
   }
 

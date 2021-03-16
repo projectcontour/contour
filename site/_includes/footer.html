@@ -1,13 +1,13 @@
-<div class="section section-background-darkest-blue">
+<div class="section section-background-grey getting-started">
     <div class="section-content">
         <div class="row">
             <div class="col-xs-12 col-sm-6 col-lg-8">
-                <h5>{{ site.footer.title }}</h5>
+                <h2>{{ site.footer.title }}</h2>
                 <p>{{ site.footer.content }}</p>
             </div>
             <div class="col-xs-12 col-sm-6 col-lg-3 offset-lg-1">
                 <p><strong>{{ site.footer.cta_title }}</strong></p>
-                <a href="{{ site.footer.cta_url }}" class="btn btn-outline-light">{{ site.footer.cta_text }}</a>
+                <a href="{{ site.footer.cta_url }}" class="btn btn-sm btn-primary">{{ site.footer.cta_text }}</a>
             </div>
         </div>
     </div>
@@ -17,7 +17,7 @@
     <div class="section-content">
         <div class="row justify-content-between align-items-center">
             <div class="col-12 col-md-5 mb-3 mb-md-0">
-                <ul class="social-links text-center text-md-left">
+                <ul class="social-links text-md-left">
                     {% for link in site.footer_social_links %}
                     <li>
                       {% if link[1].fa_icon %}
@@ -27,15 +27,11 @@
                     {% endfor %}
                 </ul>
             </div>
-            <div class="col-12 col-md-7 text-center text-md-right">
-              <a href="/" aria-label="Contour homepage"><img src="/img/{{ site.logo }}" alt="Homepage" class="logo" /></a>
+            <div class="col-12 col-md-7 text-md-right">
+                <p class="copyright">&copy; {{ site.time | date: '%Y' }} {{ site.author }},</p>
+                <a href="{{ site.footer.vm-link }}" class="vm-logo">A VMware-backed project.</a>
+                <a href="/" alt="Homepage"><img src="/img/{{ site.logo }}" class="logo" /></a>
             </div>
-        </div>
-        <div class="row align-items-center">
-          <div class="col copyright text-center text-md-left mt-4">
-            &copy; Project Contour Authors
-            <br />
-            &copy; {{ 'now' | date: "%Y" }} <a href="https://linuxfoundation.org" target="_blank">The Linux Foundation</a>. All rights reserved. The Linux Foundation has registered trademarks and uses trademarks. For a list of trademarks of The Linux Foundation, please see our <a href="https://linuxfoundation.org/trademark-usage" target="_blank">Trademark Usage</a> page.
         </div>
     </div>
 </footer>
