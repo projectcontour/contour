@@ -68,8 +68,6 @@ done
 # Install Contour
 
 ${KUBECTL} apply -f ${REPO}/examples/contour/00-common.yaml
-
-# Update the config file to set a GatewayAPI Gateway.
 ${KUBECTL} apply -f ${REPO}/examples/contour/01-crds.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-rbac.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-role-contour.yaml
@@ -82,6 +80,8 @@ ${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPrese
 ${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-contour.yaml)
 ${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-envoy.yaml)
 
+# The Contour pod won't schedule until this ConfigMap is created, since it's mounted as a volume.
+# This is ok to create the config after the Contour deployment.
 ${KUBECTL} apply -f - <<EOF
 apiVersion: v1
 kind: ConfigMap
@@ -97,18 +97,13 @@ data:
       extensionService: projectcontour/ratelimit
       domain: contour
       failOpen: false
-    # The options below are copied from
-    # install-fallback-certificate.sh.
     tls:
       fallback-certificate:
         name: fallback-cert
         namespace: projectcontour
-    accesslog-format: envoy
-    disablePermitInsecure: false
 EOF
 
-
-# Install Certs
+# Install fallback cert
 
 ${KUBECTL} apply -f - <<EOF
 apiVersion: cert-manager.io/v1
