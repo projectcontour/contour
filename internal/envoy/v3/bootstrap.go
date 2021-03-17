@@ -46,7 +46,11 @@ func WriteBootstrap(c *envoy.BootstrapConfig) error {
 	}
 
 	if c.ResourcesDir != "" {
-		if err := os.MkdirAll(path.Join(c.ResourcesDir, "sds"), 0750); err != nil {
+		// Setting permissions to 0777 explicitly.
+		// Refer Issue: https://github.com/projectcontour/contour/issues/3264
+		// The secrets in this directory are "pointers" to actual secrets
+		// mounted from Kubernetes secrets; that means the actual secrets aren't 0777
+		if err := os.MkdirAll(path.Join(c.ResourcesDir, "sds"), 0777); err != nil {
 			return err
 		}
 	}
