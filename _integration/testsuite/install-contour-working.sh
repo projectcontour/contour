@@ -64,13 +64,124 @@ for t in $TAGS ; do
     kind::cluster::load docker.io/projectcontour/contour:$t
 done
 
+
 # Install Contour
-#
+
+${KUBECTL} apply -f ${REPO}/examples/contour/00-common.yaml
+${KUBECTL} apply -f ${REPO}/examples/contour/01-crds.yaml
+${KUBECTL} apply -f ${REPO}/examples/contour/02-rbac.yaml
+${KUBECTL} apply -f ${REPO}/examples/contour/02-role-contour.yaml
+${KUBECTL} apply -f ${REPO}/examples/contour/02-service-contour.yaml
+${KUBECTL} apply -f ${REPO}/examples/contour/02-service-envoy.yaml
+
 # Manifests use the "Always" image pull policy, which forces the kubelet to re-fetch from
 # DockerHub, which is why we have to update policy to `IfNotPresent`.
-for y in ${REPO}/examples/contour/*.yaml ; do
-  ${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < "$y")
-done
+${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/02-job-certgen.yaml)
+${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-contour.yaml)
+${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-envoy.yaml)
+
+# The Contour pod won't schedule until this ConfigMap is created, since it's mounted as a volume.
+# This is ok to create the config after the Contour deployment.
+${KUBECTL} apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: contour
+  namespace: projectcontour
+data:
+  contour.yaml: |
+    gateway:
+      name: contour
+      namespace: projectcontour
+    rateLimitService:
+      extensionService: projectcontour/ratelimit
+      domain: contour
+      failOpen: false
+    tls:
+      fallback-certificate:
+        name: fallback-cert
+        namespace: projectcontour
+EOF
+
+# Install fallback cert
+
+${KUBECTL} apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+EOF
+
+${KUBECTL} apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: fallback-cert
+  namespace: projectcontour
+spec:
+  dnsNames:
+  - fallback.projectcontour.io
+  secretName: fallback-cert
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+EOF
+
+${KUBECTL} apply -f - <<EOF
+apiVersion: projectcontour.io/v1
+kind: TLSCertificateDelegation
+metadata:
+  name: fallback-cert
+  namespace: projectcontour
+spec:
+  delegations:
+  - secretName: fallback-cert
+    targetNamespaces:
+    - "*"
+EOF
+
+# Wait for the fallback certificate to issue.
+${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour certificates/fallback-cert --for=condition=Ready
+
+# Define some rate limiting policies to correspond to
+# testsuite/httpproxy/020-global-rate-limiting.yaml.
+${KUBECTL} apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ratelimit-config
+  namespace: projectcontour
+data:
+  ratelimit-config.yaml: |
+    domain: contour
+    descriptors:
+      - key: generic_key
+        value: vhostlimit
+        rate_limit:
+          unit: hour
+          requests_per_unit: 1
+      - key: route_limit_key
+        value: routelimit
+        rate_limit:
+          unit: hour
+          requests_per_unit: 1
+      - key: generic_key
+        value: tlsvhostlimit
+        rate_limit:
+          unit: hour
+          requests_per_unit: 1
+      - key: generic_key
+        value: tlsroutelimit
+        rate_limit:
+          unit: hour
+          requests_per_unit: 1
+EOF
+
+# Create the ratelimit deployment, service and extension service.
+${KUBECTL} apply -f ${REPO}/examples/ratelimit/02-ratelimit.yaml
+${KUBECTL} apply -f ${REPO}/examples/ratelimit/03-ratelimit-extsvc.yaml
 
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=envoy pods --for=condition=Ready
