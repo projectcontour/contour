@@ -29,6 +29,8 @@ import (
 
 func TestLogDiscoveryRequestDetails(t *testing.T) {
 	log, logHook := test.NewNullLogger()
+	log.SetLevel(logrus.DebugLevel)
+
 	tests := map[string]struct {
 		discoveryReq    *envoy_service_discovery_v3.DiscoveryRequest
 		expectedLogMsg  string
@@ -135,6 +137,8 @@ func TestLogDiscoveryRequestDetails(t *testing.T) {
 
 func TestOnStreamRequestCallbackLogs(t *testing.T) {
 	log, logHook := test.NewNullLogger()
+	log.SetLevel(logrus.DebugLevel)
+
 	callbacks := NewRequestLoggingCallbacks(log)
 	err := callbacks.OnStreamRequest(999, &envoy_service_discovery_v3.DiscoveryRequest{
 		VersionInfo:   "req-version",
