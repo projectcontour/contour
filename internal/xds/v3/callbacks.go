@@ -54,7 +54,8 @@ func logDiscoveryRequestDetails(l logrus.FieldLogger, req *envoy_service_discove
 	}
 
 	log = log.WithField("resource_names", req.ResourceNames).WithField("type_url", req.GetTypeUrl())
-	log.Info("handling v3 xDS resource request")
+
+	log.Debug("handling v3 xDS resource request")
 
 	return log
 }
