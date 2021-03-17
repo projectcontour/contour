@@ -44,10 +44,17 @@ func (s ServerType) Validate() error {
 }
 
 // Validate the GatewayConfig.
-// Name & Namespace must be specified.
-func (g GatewayParameters) Validate() error {
+func (g *GatewayParameters) Validate() error {
 
 	var errorString string
+	if g == nil {
+		return nil
+	}
+
+	if len(g.Name) == 0 && len(g.Namespace) == 0 {
+		return nil
+	}
+
 	if len(g.Name) == 0 {
 		errorString = "name required"
 	}
@@ -486,7 +493,7 @@ type Parameters struct {
 
 	// GatewayConfig contains parameters for the gateway-api Gateway that Contour
 	// is configured to serve traffic.
-	GatewayConfig GatewayParameters `yaml:"gateway,omitempty"`
+	GatewayConfig *GatewayParameters `yaml:"gateway,omitempty"`
 
 	// Address to be placed in status.loadbalancer field of Ingress objects.
 	// May be either a literal IP address or a host name.
@@ -630,10 +637,6 @@ func Defaults() Parameters {
 		Kubeconfig: filepath.Join(os.Getenv("HOME"), ".kube", "config"),
 		Server: ServerParameters{
 			XDSServerType: ContourServerType,
-		},
-		GatewayConfig: GatewayParameters{
-			Name:      "contour",
-			Namespace: contourNamespace,
 		},
 		IngressStatusAddress:      "",
 		AccessLogFormat:           DEFAULT_ACCESS_LOG_TYPE,

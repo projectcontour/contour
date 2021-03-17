@@ -49,9 +49,6 @@ debug: false
 kubeconfig: TestParseDefaults/.kube/config
 server:
   xds-server-type: contour
-gateway:
-  name: contour
-  namespace: projectcontour
 accesslog-format: envoy
 json-fields:
 - '@timestamp'
@@ -165,9 +162,17 @@ func TestValidateServerType(t *testing.T) {
 }
 
 func TestValidateGatewayParameters(t *testing.T) {
-	assert.EqualError(t, GatewayParameters{Name: "gwname", Namespace: ""}.Validate(), "invalid Gateway parameters specified: namespace required")
-	assert.EqualError(t, GatewayParameters{Name: "", Namespace: "ns"}.Validate(), "invalid Gateway parameters specified: name required")
-	assert.EqualError(t, GatewayParameters{Name: "", Namespace: ""}.Validate(), "invalid Gateway parameters specified: name required, namespace required")
+	// Namespace is required if name is passed.
+	gw := &GatewayParameters{Name: "gwname", Namespace: ""}
+	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: namespace required")
+
+	// Name is required if namespace if passed.
+	gw = &GatewayParameters{Name: "", Namespace: "ns"}
+	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required")
+
+	// Not required if both aren't passed.
+	gw = &GatewayParameters{Name: "", Namespace: ""}
+	assert.Equal(t, nil, gw.Validate())
 }
 
 func TestValidateAccessLogType(t *testing.T) {

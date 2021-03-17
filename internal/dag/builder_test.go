@@ -522,7 +522,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 
 			builder := Builder{
 				Source: KubernetesCache{
-					Gateway: types.NamespacedName{
+					ConfiguredGateway: types.NamespacedName{
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},
