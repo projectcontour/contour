@@ -14,15 +14,12 @@
 package dag
 
 import (
-	"net"
-	"strings"
-
+	"github.com/projectcontour/contour/pkg/validation"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/validation"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -118,23 +115,12 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		hosts = append(hosts, "*")
 	} else {
 		for _, host := range route.Spec.Hostnames {
-			hostname := string(host)
-			if isIP := (net.ParseIP(hostname) != nil); isIP {
-				p.Errorf("hostname %q must be a DNS name, not an IP address", hostname)
+			h := string(host)
+			if err := validation.Hostname(h); err != nil {
+				p.Errorf("invalid hostname %s: %w", h, err)
 				continue
 			}
-			if strings.Contains(hostname, "*") {
-				if errs := validation.IsWildcardDNS1123Subdomain(hostname); errs != nil {
-					p.Errorf("invalid hostname %q: %v", hostname, errs)
-					continue
-				}
-			} else {
-				if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
-					p.Errorf("invalid listener hostname %q", hostname, errs)
-					continue
-				}
-			}
-			hosts = append(hosts, string(host))
+			hosts = append(hosts, h)
 		}
 	}
 
