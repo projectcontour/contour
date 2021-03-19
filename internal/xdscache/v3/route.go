@@ -119,22 +119,25 @@ func visitRoutes(root dag.Vertex) map[string]*envoy_route_v3.RouteConfiguration 
 }
 
 func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
-	var routes []*envoy_route_v3.Route
+	var routes []*dag.Route
 
 	vh.Visit(func(v dag.Vertex) {
 		route, ok := v.(*dag.Route)
 		if !ok {
 			return
 		}
+		routes = append(routes, route)
+	})
 
+	toEnvoyRoute := func(route *dag.Route) *envoy_route_v3.Route {
 		if route.HTTPSUpgrade {
 			// TODO(dfc) if we ensure the builder never returns a dag.Route connected
 			// to a SecureVirtualHost that requires upgrade, this logic can move to
 			// envoy.RouteRoute.
-			routes = append(routes, &envoy_route_v3.Route{
+			return &envoy_route_v3.Route{
 				Match:  envoy_v3.RouteMatch(route),
 				Action: envoy_v3.UpgradeHTTPS(),
-			})
+			}
 		} else {
 			rt := &envoy_route_v3.Route{
 				Match:  envoy_v3.RouteMatch(route),
@@ -154,14 +157,19 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 				}
 				rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local, "vhost."+vh.Name)
 			}
-			routes = append(routes, rt)
+			return rt
 		}
-	})
+	}
 
 	if len(routes) > 0 {
 		sortRoutes(routes)
 
-		evh := envoy_v3.VirtualHost(vh.Name, routes...)
+		var envoyRoutes []*envoy_route_v3.Route
+		for _, route := range routes {
+			envoyRoutes = append(envoyRoutes, toEnvoyRoute(route))
+		}
+
+		evh := envoy_v3.VirtualHost(vh.Name, envoyRoutes...)
 		if vh.CORSPolicy != nil {
 			evh.Cors = envoy_v3.CORSPolicy(vh.CORSPolicy)
 		}
@@ -181,14 +189,17 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 }
 
 func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
-	var routes []*envoy_route_v3.Route
+	var routes []*dag.Route
 
 	svh.Visit(func(v dag.Vertex) {
 		route, ok := v.(*dag.Route)
 		if !ok {
 			return
 		}
+		routes = append(routes, route)
+	})
 
+	toEnvoyRoute := func(route *dag.Route) *envoy_route_v3.Route {
 		rt := &envoy_route_v3.Route{
 			Match:  envoy_v3.RouteMatch(route),
 			Action: envoy_v3.RouteRoute(route),
@@ -226,11 +237,15 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			}
 		}
 
-		routes = append(routes, rt)
-	})
+		return rt
+	}
 
 	if len(routes) > 0 {
 		sortRoutes(routes)
+		var envoyRoutes []*envoy_route_v3.Route
+		for _, route := range routes {
+			envoyRoutes = append(envoyRoutes, toEnvoyRoute(route))
+		}
 
 		name := path.Join("https", svh.VirtualHost.Name)
 
@@ -238,7 +253,7 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 			v.routes[name] = envoy_v3.RouteConfiguration(name)
 		}
 
-		evh := envoy_v3.VirtualHost(svh.VirtualHost.Name, routes...)
+		evh := envoy_v3.VirtualHost(svh.VirtualHost.Name, envoyRoutes...)
 		if svh.CORSPolicy != nil {
 			evh.Cors = envoy_v3.CORSPolicy(svh.CORSPolicy)
 		}
@@ -263,7 +278,7 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 				v.routes[ENVOY_FALLBACK_ROUTECONFIG] = envoy_v3.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG)
 			}
 
-			fvh := envoy_v3.VirtualHost(svh.Name, routes...)
+			fvh := envoy_v3.VirtualHost(svh.Name, envoyRoutes...)
 			if svh.CORSPolicy != nil {
 				fvh.Cors = envoy_v3.CORSPolicy(svh.CORSPolicy)
 			}
@@ -303,12 +318,12 @@ func (v *routeVisitor) visit(vertex dag.Vertex) {
 }
 
 // sortRoutes sorts the given Route slice in place. Routes are ordered
-// first by longest prefix (or regex), then by the length of the
-// HeaderMatch slice (if any). The HeaderMatch slice is also ordered
-// by the matching header name.
-func sortRoutes(routes []*envoy_route_v3.Route) {
+// first by path match type, path match value via string comparison and
+// then by the length of the HeaderMatch slice (if any). The HeaderMatch
+// slice is also ordered by the matching header name.
+func sortRoutes(routes []*dag.Route) {
 	for _, r := range routes {
-		sort.Stable(sorter.For(r.Match.Headers))
+		sort.Stable(sorter.For(r.HeaderMatchConditions))
 	}
 
 	sort.Stable(sorter.For(routes))

@@ -24,13 +24,13 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 )
 
-func shuffleRoutes(routes []*envoy_route_v3.Route) []*envoy_route_v3.Route {
-	shuffled := make([]*envoy_route_v3.Route, len(routes))
+func shuffleRoutes(routes []*dag.Route) []*dag.Route {
+	shuffled := make([]*dag.Route, len(routes))
 
 	copy(shuffled, routes)
 
@@ -87,60 +87,78 @@ func TestSortVirtualHosts(t *testing.T) {
 	assert.Equal(t, have, want)
 }
 
-func matchPrefix(str string) *envoy_route_v3.RouteMatch_Prefix {
-	return &envoy_route_v3.RouteMatch_Prefix{
+func matchPrefix(str string) *dag.PrefixMatchCondition {
+	return &dag.PrefixMatchCondition{
 		Prefix: str,
 	}
 }
 
-func matchRegex(str string) *envoy_route_v3.RouteMatch_SafeRegex {
-	return &envoy_route_v3.RouteMatch_SafeRegex{
-		SafeRegex: &matcher.RegexMatcher{
-			Regex: str,
-		},
+func matchRegex(str string) *dag.RegexMatchCondition {
+	return &dag.RegexMatchCondition{
+		Regex: str,
 	}
 }
 
-func exactHeader(name string, value string) *envoy_route_v3.HeaderMatcher {
-	return &envoy_route_v3.HeaderMatcher{
-		Name: name,
-		HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_ExactMatch{
-			ExactMatch: value,
-		},
+func matchExact(str string) *dag.ExactMatchCondition {
+	return &dag.ExactMatchCondition{
+		Path: str,
 	}
 }
 
-func presentHeader(name string) *envoy_route_v3.HeaderMatcher {
-	return &envoy_route_v3.HeaderMatcher{
-		Name: name,
-		HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_PresentMatch{
-			PresentMatch: true,
-		},
+func exactHeader(name string, value string) dag.HeaderMatchCondition {
+	return dag.HeaderMatchCondition{
+		Name:      name,
+		MatchType: dag.HeaderMatchTypeExact,
+		Value:     value,
 	}
 }
 
-func TestSortRoutesLongestPath(t *testing.T) {
-	want := []*envoy_route_v3.Route{
+func containsHeader(name string, value string) dag.HeaderMatchCondition {
+	return dag.HeaderMatchCondition{
+		Name:      name,
+		MatchType: dag.HeaderMatchTypeContains,
+		Value:     value,
+	}
+}
+
+func presentHeader(name string) dag.HeaderMatchCondition {
+	return dag.HeaderMatchCondition{
+		Name:      name,
+		MatchType: dag.HeaderMatchTypePresent,
+	}
+}
+
+func TestSortRoutesPathMatch(t *testing.T) {
+	want := []*dag.Route{
+		// Note that exact matches sort before regex matches.
 		{
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchRegex("/this/is/the/longest"),
-			}},
-
+			PathMatchCondition: matchExact("/aab/a"),
+		},
+		{
+			PathMatchCondition: matchExact("/aab"),
+		},
+		{
+			PathMatchCondition: matchExact("/aaa"),
+		},
 		// Note that regex matches sort before prefix matches.
 		{
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchRegex("."),
-			}},
-
+			PathMatchCondition: matchRegex("/this/is/the/longest"),
+		},
 		{
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path/prefix2"),
-			}},
-
+			PathMatchCondition: matchRegex(`/foo((\/).*)*`),
+		},
 		{
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path/prefix"),
-			}},
+			PathMatchCondition: matchRegex("."),
+		},
+		{
+			PathMatchCondition: matchPrefix("/path/prefix2"),
+		},
+		{
+			PathMatchCondition: matchPrefix("/path/prefix/a"),
+		},
+		{
+			PathMatchCondition: matchPrefix("/path/prefix"),
+		},
 	}
 
 	have := shuffleRoutes(want)
@@ -150,35 +168,30 @@ func TestSortRoutesLongestPath(t *testing.T) {
 }
 
 func TestSortRoutesLongestHeaders(t *testing.T) {
-	want := []*envoy_route_v3.Route{
+	want := []*dag.Route{
 		{
 			// Although the header names are the same, this value
 			// should sort before the next one because it is
 			// textually longer.
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path"),
-				Headers: []*envoy_route_v3.HeaderMatcher{
-					exactHeader("header-name", "header-value"),
-				},
+			PathMatchCondition: matchPrefix("/path"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("header-name", "header-value"),
 			},
-		}, {
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path"),
-				Headers: []*envoy_route_v3.HeaderMatcher{
-					presentHeader("header-name"),
-				},
+		},
+		{
+			PathMatchCondition: matchPrefix("/path"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("header-name"),
 			},
-		}, {
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path"),
-				Headers: []*envoy_route_v3.HeaderMatcher{
-					exactHeader("long-header-name", "long-header-value"),
-				},
+		},
+		{
+			PathMatchCondition: matchPrefix("/path"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("long-header-name", "long-header-value"),
 			},
-		}, {
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path"),
-			},
+		},
+		{
+			PathMatchCondition: matchPrefix("/path"),
 		},
 	}
 
@@ -203,17 +216,19 @@ func TestSortSecrets(t *testing.T) {
 	assert.Equal(t, have, want)
 }
 
-func TestSortHeaderMatchers(t *testing.T) {
-	want := []*envoy_route_v3.HeaderMatcher{
+func TestSortHeaderMatchConditions(t *testing.T) {
+	want := []dag.HeaderMatchCondition{
 		// Note that if the header names are the same, we
-		// order by the protobuf string, in which case "exact"
-		// is less than "present".
+		// order by the type, "exact" sorts before "contains"
+		// which sorts before "present" in terms of specificity.
 		exactHeader("header-name", "anything"),
+		containsHeader("header-name", "something"),
 		presentHeader("header-name"),
 		exactHeader("long-header-name", "long-header-value"),
 	}
 
-	have := []*envoy_route_v3.HeaderMatcher{
+	have := []dag.HeaderMatchCondition{
+		want[3],
 		want[2],
 		want[1],
 		want[0],
