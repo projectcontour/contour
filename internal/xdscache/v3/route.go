@@ -138,27 +138,27 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 				Match:  envoy_v3.RouteMatch(route),
 				Action: envoy_v3.UpgradeHTTPS(),
 			}
-		} else {
-			rt := &envoy_route_v3.Route{
-				Match:  envoy_v3.RouteMatch(route),
-				Action: envoy_v3.RouteRoute(route),
-			}
-			if route.RequestHeadersPolicy != nil {
-				rt.RequestHeadersToAdd = envoy_v3.HeaderValueList(route.RequestHeadersPolicy.Set, false)
-				rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
-			}
-			if route.ResponseHeadersPolicy != nil {
-				rt.ResponseHeadersToAdd = envoy_v3.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
-				rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
-			}
-			if route.RateLimitPolicy != nil && route.RateLimitPolicy.Local != nil {
-				if rt.TypedPerFilterConfig == nil {
-					rt.TypedPerFilterConfig = map[string]*any.Any{}
-				}
-				rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local, "vhost."+vh.Name)
-			}
-			return rt
 		}
+		rt := &envoy_route_v3.Route{
+			Match:  envoy_v3.RouteMatch(route),
+			Action: envoy_v3.RouteRoute(route),
+		}
+		if route.RequestHeadersPolicy != nil {
+			rt.RequestHeadersToAdd = envoy_v3.HeaderValueList(route.RequestHeadersPolicy.Set, false)
+			rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
+		}
+		if route.ResponseHeadersPolicy != nil {
+			rt.ResponseHeadersToAdd = envoy_v3.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
+			rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
+		}
+		if route.RateLimitPolicy != nil && route.RateLimitPolicy.Local != nil {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local, "vhost."+vh.Name)
+		}
+		return rt
+
 	}
 
 	if len(routes) > 0 {
