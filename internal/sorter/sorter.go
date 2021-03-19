@@ -53,7 +53,7 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 		return true
 	case 1:
 		return false
-	case 0:
+	default:
 		switch s[i].MatchType {
 		case dag.HeaderMatchTypeExact:
 			// Exact matches are most specific so they sort first.
@@ -69,13 +69,9 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 			case dag.HeaderMatchTypePresent:
 				return true
 			}
-		case dag.HeaderMatchTypePresent:
-			// These sort last.
-			return false
 		}
+		return false
 	}
-
-	return false
 }
 
 // longestRouteByHeaderConditions compares the HeaderMatchCondition slices for

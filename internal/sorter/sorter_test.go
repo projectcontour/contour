@@ -148,6 +148,9 @@ func TestSortRoutesPathMatch(t *testing.T) {
 			PathMatchCondition: matchRegex(`/foo((\/).*)*`),
 		},
 		{
+			PathMatchCondition: matchRegex("/"),
+		},
+		{
 			PathMatchCondition: matchRegex("."),
 		},
 		{
@@ -173,6 +176,48 @@ func TestSortRoutesLongestHeaders(t *testing.T) {
 			// Although the header names are the same, this value
 			// should sort before the next one because it is
 			// textually longer.
+			PathMatchCondition: matchExact("/pathexact"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("header-name", "header-value"),
+			},
+		},
+		{
+			PathMatchCondition: matchExact("/pathexact"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("header-name"),
+			},
+		},
+		{
+			PathMatchCondition: matchExact("/pathexact"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("long-header-name", "long-header-value"),
+			},
+		},
+		{
+			PathMatchCondition: matchExact("/pathexact"),
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("header-name", "header-value"),
+			},
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("header-name"),
+			},
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("long-header-name", "long-header-value"),
+			},
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex"),
+		},
+		{
 			PathMatchCondition: matchPrefix("/path"),
 			HeaderMatchConditions: []dag.HeaderMatchCondition{
 				exactHeader("header-name", "header-value"),
@@ -221,6 +266,7 @@ func TestSortHeaderMatchConditions(t *testing.T) {
 		// Note that if the header names are the same, we
 		// order by the type, "exact" sorts before "contains"
 		// which sorts before "present" in terms of specificity.
+		presentHeader("ashort"),
 		exactHeader("header-name", "anything"),
 		containsHeader("header-name", "something"),
 		presentHeader("header-name"),
@@ -228,10 +274,11 @@ func TestSortHeaderMatchConditions(t *testing.T) {
 	}
 
 	have := []dag.HeaderMatchCondition{
+		want[4],
 		want[3],
+		want[0],
 		want[2],
 		want[1],
-		want[0],
 	}
 
 	sort.Stable(For(have))
