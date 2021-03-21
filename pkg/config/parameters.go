@@ -672,6 +672,10 @@ func Defaults() Parameters {
 		Listener: ListenerParameters{
 			ConnectionBalancer: "",
 		},
+		GatewayConfig: &GatewayParameters{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
 	}
 }
 

@@ -49,6 +49,9 @@ debug: false
 kubeconfig: TestParseDefaults/.kube/config
 server:
   xds-server-type: contour
+gateway:
+  name: contour
+  namespace: projectcontour
 accesslog-format: envoy
 json-fields:
 - '@timestamp'
