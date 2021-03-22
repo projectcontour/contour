@@ -92,7 +92,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
-				Protocol: "HTTP",
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
@@ -121,7 +121,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
-				Protocol: "HTTP",
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
@@ -140,7 +140,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
-				Protocol: "HTTP",
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
@@ -159,7 +159,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
-				Protocol: "HTTP",
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
@@ -188,7 +188,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
-				Protocol: "HTTP",
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
@@ -217,7 +217,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
-				Protocol: "HTTP",
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
 				},
@@ -233,7 +233,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
-				Protocol: "HTTP",
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Selector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
@@ -569,7 +569,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Spec: gatewayapi_v1alpha1.GatewaySpec{
 					Listeners: []gatewayapi_v1alpha1.Listener{{
 						Port:     80,
-						Protocol: "HTTP",
+						Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: "INVALID",
 						},
@@ -618,7 +618,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Spec: gatewayapi_v1alpha1.GatewaySpec{
 					Listeners: []gatewayapi_v1alpha1.Listener{{
 						Port:     80,
-						Protocol: "HTTP",
+						Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind:  "HTTPRoute",
 							Group: "INVALID",
@@ -5903,7 +5903,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "foo.com",
+								Name:         "foo.com",
+								ListenerName: "ingress_https",
 								routes: routes(
 									routeUpgrade("/", service(s1)),
 								),
@@ -5930,7 +5931,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "foo.com",
+								Name:         "foo.com",
+								ListenerName: "ingress_https",
 								routes: routes(
 									routeUpgrade("/", service(s1)),
 								),
@@ -5996,7 +5998,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "b.example.com",
+								Name:         "b.example.com",
+								ListenerName: "ingress_https",
 								routes: routes(
 									prefixroute("/", service(s1)),
 								),
@@ -6076,7 +6079,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "b.example.com",
+								Name:         "b.example.com",
+								ListenerName: "ingress_https",
 								routes: routes(
 									prefixroute("/", service(s1)),
 								),
@@ -7317,7 +7321,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "example.com",
+								Name:         "example.com",
+								ListenerName: "ingress_https",
 								routes: routes(
 									routeUpgrade("/", service(s1))),
 							},
@@ -7341,7 +7346,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "example.com",
+								Name:         "example.com",
+								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(
@@ -7384,7 +7390,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "www.example.com", // this is proxy39, not proxy38
+								Name:         "www.example.com", // this is proxy39, not proxy38
+								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(
@@ -7404,7 +7411,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "www.example.com",
+								Name:         "www.example.com",
+								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(
@@ -7425,7 +7433,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "www.example.com",
+								Name:         "www.example.com",
+								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(
@@ -7445,7 +7454,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "passthrough.example.com",
+								Name:         "passthrough.example.com",
+								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(
@@ -7821,7 +7831,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "kuard.example.com",
+								Name:         "kuard.example.com",
+								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(
@@ -7852,7 +7863,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "kuard.example.com",
+								Name:         "kuard.example.com",
+								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(
@@ -7893,7 +7905,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "kuard.example.com",
+								Name:         "kuard.example.com",
+								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(
@@ -7980,7 +7993,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "example.com",
+								Name:         "example.com",
+								ListenerName: "ingress_https",
 							},
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
@@ -8038,7 +8052,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "example.com",
+								Name:         "example.com",
+								ListenerName: "ingress_https",
 							},
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
@@ -8095,7 +8110,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "example.com",
+								Name:         "example.com",
+								ListenerName: "ingress_https",
 							},
 							MinTLSVersion: "",
 							TCPProxy: &TCPProxy{
@@ -8178,7 +8194,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name: "example.com",
+								Name:         "example.com",
+								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: []*Cluster{{
@@ -8475,8 +8492,9 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:   "example.com",
-								routes: routes(routeUpgrade("/", service(s9))),
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
@@ -8570,8 +8588,9 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:   "example.com",
-								routes: routes(routeUpgrade("/", service(s9))),
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
@@ -8634,8 +8653,9 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:   "example.com",
-								routes: routes(routeUpgrade("/", service(s9))),
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
@@ -8771,8 +8791,9 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:   "example.com",
-								routes: routes(routeUpgrade("/", service(s9))),
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
@@ -8780,8 +8801,9 @@ func TestDAGInsert(t *testing.T) {
 						},
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:   "projectcontour.io",
-								routes: routes(routeUpgrade("/", service(s9))),
+								Name:         "projectcontour.io",
+								ListenerName: "ingress_https",
+								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
@@ -8831,8 +8853,9 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:   "example.com",
-								routes: routes(routeUpgrade("/", service(s9))),
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
@@ -8883,8 +8906,9 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:   "example.com",
-								routes: routes(routeUpgrade("/", service(s9))),
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
 							Secret:              secret(sec1),
@@ -9682,16 +9706,18 @@ func virtualhosts(vx ...Vertex) []Vertex {
 
 func virtualhost(name string, first *Route, rest ...*Route) *VirtualHost {
 	return &VirtualHost{
-		Name:   name,
-		routes: routes(append([]*Route{first}, rest...)...),
+		Name:         name,
+		ListenerName: "ingress_http",
+		routes:       routes(append([]*Route{first}, rest...)...),
 	}
 }
 
 func securevirtualhost(name string, sec *v1.Secret, first *Route, rest ...*Route) *SecureVirtualHost {
 	return &SecureVirtualHost{
 		VirtualHost: VirtualHost{
-			Name:   name,
-			routes: routes(append([]*Route{first}, rest...)...),
+			Name:         name,
+			ListenerName: "ingress_https",
+			routes:       routes(append([]*Route{first}, rest...)...),
 		},
 		MinTLSVersion: "1.2",
 		Secret:        secret(sec),

@@ -47,27 +47,28 @@ const (
 	DEFAULT_HTTPS_LISTENER_PORT    = 8443
 )
 
+type Listener struct {
+	Name    string
+	Address string
+	Port    int
+}
+
 // ListenerConfig holds configuration parameters for building Envoy Listeners.
 type ListenerConfig struct {
-	// Envoy's HTTP (non TLS) listener address.
-	// If not set, defaults to DEFAULT_HTTP_LISTENER_ADDRESS.
-	HTTPAddress string
 
-	// Envoy's HTTP (non TLS) listener port.
-	// If not set, defaults to DEFAULT_HTTP_LISTENER_PORT.
-	HTTPPort int
+	// Envoy's HTTP (non TLS) listener addresses.
+	// If not set, defaults to a single listener with
+	// DEFAULT_HTTP_LISTENER_ADDRESS:DEFAULT_HTTP_LISTENER_PORT.
+	HTTPListeners map[string]Listener
 
 	// Envoy's HTTP (non TLS) access log path.
 	// If not set, defaults to DEFAULT_HTTP_ACCESS_LOG.
 	HTTPAccessLog string
 
-	// Envoy's HTTPS (TLS) listener address.
-	// If not set, defaults to DEFAULT_HTTPS_LISTENER_ADDRESS.
-	HTTPSAddress string
-
-	// Envoy's HTTPS (TLS) listener port.
-	// If not set, defaults to DEFAULT_HTTPS_LISTENER_PORT.
-	HTTPSPort int
+	// Envoy's HTTPS (TLS) listener addresses.
+	// If not set, defaults to a single listener with
+	// DEFAULT_HTTPS_LISTENER_ADDRESS:DEFAULT_HTTPS_LISTENER_PORT.
+	HTTPSListeners map[string]Listener
 
 	// Envoy's HTTPS (TLS) access log path.
 	// If not set, defaults to DEFAULT_HTTPS_ACCESS_LOG.
@@ -148,22 +149,61 @@ type RateLimitConfig struct {
 	EnableXRateLimitHeaders bool
 }
 
-// httpAddress returns the port for the HTTP (non TLS)
-// listener or DEFAULT_HTTP_LISTENER_ADDRESS if not configured.
-func (lvc *ListenerConfig) httpAddress() string {
-	if lvc.HTTPAddress != "" {
-		return lvc.HTTPAddress
+// DefaultListeners returns the configured Listeners or a single
+// Insecure (http) & single Secure (https) default listeners
+// if not provided.
+func (lvc *ListenerConfig) DefaultListeners() *ListenerConfig {
+
+	httpListeners := lvc.HTTPListeners
+	httpsListeners := lvc.HTTPSListeners
+
+	if len(lvc.HTTPListeners) == 0 {
+		httpListeners = map[string]Listener{
+			ENVOY_HTTP_LISTENER: {
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: DEFAULT_HTTP_LISTENER_ADDRESS,
+				Port:    DEFAULT_HTTP_LISTENER_PORT,
+			},
+		}
 	}
-	return DEFAULT_HTTP_LISTENER_ADDRESS
+
+	if len(lvc.HTTPSListeners) == 0 {
+		httpsListeners = map[string]Listener{
+			ENVOY_HTTPS_LISTENER: {
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: DEFAULT_HTTPS_LISTENER_ADDRESS,
+				Port:    DEFAULT_HTTPS_LISTENER_PORT,
+			},
+		}
+	}
+
+	lvc.HTTPListeners = httpListeners
+	lvc.HTTPSListeners = httpsListeners
+	return lvc
 }
 
-// httpPort returns the port for the HTTP (non TLS)
-// listener or DEFAULT_HTTP_LISTENER_PORT if not configured.
-func (lvc *ListenerConfig) httpPort() int {
-	if lvc.HTTPPort != 0 {
-		return lvc.HTTPPort
+func (lvc *ListenerConfig) SecureListeners() map[string]*envoy_listener_v3.Listener {
+	listeners := make(map[string]*envoy_listener_v3.Listener)
+
+	if len(lvc.HTTPSListeners) == 0 {
+		listeners[ENVOY_HTTPS_LISTENER] = envoy_v3.Listener(
+			ENVOY_HTTPS_LISTENER,
+			DEFAULT_HTTPS_LISTENER_ADDRESS,
+			DEFAULT_HTTPS_LISTENER_PORT,
+			secureProxyProtocol(lvc.UseProxyProto),
+		)
 	}
-	return DEFAULT_HTTP_LISTENER_PORT
+
+	for name, l := range lvc.HTTPSListeners {
+		listeners[name] = envoy_v3.Listener(
+			l.Name,
+			l.Address,
+			l.Port,
+			secureProxyProtocol(lvc.UseProxyProto),
+		)
+	}
+
+	return listeners
 }
 
 // httpAccessLog returns the access log for the HTTP (non TLS)
@@ -173,24 +213,6 @@ func (lvc *ListenerConfig) httpAccessLog() string {
 		return lvc.HTTPAccessLog
 	}
 	return DEFAULT_HTTP_ACCESS_LOG
-}
-
-// httpsAddress returns the port for the HTTPS (TLS)
-// listener or DEFAULT_HTTPS_LISTENER_ADDRESS if not configured.
-func (lvc *ListenerConfig) httpsAddress() string {
-	if lvc.HTTPSAddress != "" {
-		return lvc.HTTPSAddress
-	}
-	return DEFAULT_HTTPS_LISTENER_ADDRESS
-}
-
-// httpsPort returns the port for the HTTPS (TLS) listener
-// or DEFAULT_HTTPS_LISTENER_PORT if not configured.
-func (lvc *ListenerConfig) httpsPort() int {
-	if lvc.HTTPSPort != 0 {
-		return lvc.HTTPSPort
-	}
-	return DEFAULT_HTTPS_LISTENER_PORT
 }
 
 // httpsAccessLog returns the access log for the HTTPS (TLS)
@@ -328,32 +350,26 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 type listenerVisitor struct {
 	*ListenerConfig
 
-	listeners map[string]*envoy_listener_v3.Listener
-	http      bool // at least one dag.VirtualHost encountered
+	listeners        map[string]*envoy_listener_v3.Listener
+	httpListenerName string // Name of dag.VirtualHost encountered.
 }
 
 func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_listener_v3.Listener {
 	lv := listenerVisitor{
-		ListenerConfig: lvc,
-		listeners: map[string]*envoy_listener_v3.Listener{
-			ENVOY_HTTPS_LISTENER: envoy_v3.Listener(
-				ENVOY_HTTPS_LISTENER,
-				lvc.httpsAddress(),
-				lvc.httpsPort(),
-				secureProxyProtocol(lvc.UseProxyProto),
-			),
-		},
+		ListenerConfig: lvc.DefaultListeners(),
+		listeners:      lvc.SecureListeners(),
 	}
 
 	lv.visit(root)
 
-	if lv.http {
+	if httpListener, ok := lvc.HTTPListeners[lv.httpListenerName]; ok {
+
 		// Add a listener if there are vhosts bound to http.
 		cm := envoy_v3.HTTPConnectionManagerBuilder().
 			Codec(envoy_v3.CodecForVersions(lv.DefaultHTTPVersions...)).
 			DefaultFilters().
-			RouteConfigName(ENVOY_HTTP_LISTENER).
-			MetricsPrefix(ENVOY_HTTP_LISTENER).
+			RouteConfigName(httpListener.Name).
+			MetricsPrefix(httpListener.Name).
 			AccessLoggers(lvc.newInsecureAccessLog()).
 			RequestTimeout(lvc.RequestTimeout).
 			ConnectionIdleTimeout(lvc.ConnectionIdleTimeout).
@@ -366,10 +382,10 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 			AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(lv.RateLimitConfig))).
 			Get()
 
-		lv.listeners[ENVOY_HTTP_LISTENER] = envoy_v3.Listener(
-			ENVOY_HTTP_LISTENER,
-			lvc.httpAddress(),
-			lvc.httpPort(),
+		lv.listeners[httpListener.Name] = envoy_v3.Listener(
+			httpListener.Name,
+			httpListener.Address,
+			httpListener.Port,
 			proxyProtocol(lvc.UseProxyProto),
 			cm,
 		)
@@ -440,8 +456,8 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 	case *dag.VirtualHost:
 		// we only create on http listener so record the fact
 		// that we need to then double back at the end and add
-		// the listener properly.
-		v.http = true
+		// the listener properly
+		v.httpListenerName = vh.ListenerName
 	case *dag.SecureVirtualHost:
 		var alpnProtos []string
 		var filters []*envoy_listener_v3.Filter
@@ -470,7 +486,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				DefaultFilters().
 				AddFilter(authFilter).
 				RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
-				MetricsPrefix(ENVOY_HTTPS_LISTENER).
+				MetricsPrefix(vh.ListenerName).
 				AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
 				RequestTimeout(v.ListenerConfig.RequestTimeout).
 				ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
@@ -488,7 +504,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			alpnProtos = envoy_v3.ProtoNamesForVersions(v.DefaultHTTPVersions...)
 		} else {
 			filters = envoy_v3.Filters(
-				envoy_v3.TCPProxy(ENVOY_HTTPS_LISTENER,
+				envoy_v3.TCPProxy(vh.ListenerName,
 					vh.TCPProxy,
 					v.ListenerConfig.newSecureAccessLog()),
 			)
@@ -513,7 +529,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				alpnProtos...)
 		}
 
-		v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
+		v.listeners[vh.ListenerName].FilterChains = append(v.listeners[vh.ListenerName].FilterChains,
 			envoy_v3.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
 
 		// If this VirtualHost has enabled the fallback certificate then set a default
@@ -521,7 +537,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		// Note that we don't add the misdirected requests filter on this chain because at this
 		// point we don't actually know the full set of server names that will be bound to the
 		// filter chain through the ENVOY_FALLBACK_ROUTECONFIG route configuration.
-		if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains) {
+		if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(v.listeners[vh.ListenerName].FilterChains) {
 			// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
 			// the value defined in the Contour Configuration file if defined.
 			downstreamTLS = envoy_v3.DownstreamTLSContext(
@@ -534,7 +550,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			cm := envoy_v3.HTTPConnectionManagerBuilder().
 				DefaultFilters().
 				RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-				MetricsPrefix(ENVOY_HTTPS_LISTENER).
+				MetricsPrefix(vh.ListenerName).
 				AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
 				RequestTimeout(v.ListenerConfig.RequestTimeout).
 				ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
@@ -550,7 +566,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// Default filter chain
 			filters = envoy_v3.Filters(cm)
 
-			v.listeners[ENVOY_HTTPS_LISTENER].FilterChains = append(v.listeners[ENVOY_HTTPS_LISTENER].FilterChains,
+			v.listeners[vh.ListenerName].FilterChains = append(v.listeners[vh.ListenerName].FilterChains,
 				envoy_v3.FilterChainTLSFallback(downstreamTLS, filters))
 		}
 
