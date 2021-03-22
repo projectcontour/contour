@@ -63,7 +63,7 @@ func TestSortRouteConfiguration(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortVirtualHosts(t *testing.T) {
@@ -84,7 +84,7 @@ func TestSortVirtualHosts(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func matchPrefix(str string) *dag.PrefixMatchCondition {
@@ -103,6 +103,11 @@ func matchExact(str string) *dag.ExactMatchCondition {
 	return &dag.ExactMatchCondition{
 		Path: str,
 	}
+}
+
+func invertHeaderMatch(h dag.HeaderMatchCondition) dag.HeaderMatchCondition {
+	h.Invert = true
+	return h
 }
 
 func exactHeader(name string, value string) dag.HeaderMatchCondition {
@@ -167,7 +172,7 @@ func TestSortRoutesPathMatch(t *testing.T) {
 	have := shuffleRoutes(want)
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortRoutesLongestHeaders(t *testing.T) {
@@ -258,7 +263,7 @@ func TestSortSecrets(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortHeaderMatchConditions(t *testing.T) {
@@ -282,7 +287,59 @@ func TestSortHeaderMatchConditions(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
+}
+
+func TestSortHeaderMatchConditionsInverted(t *testing.T) {
+	// Inverted matches sort after standard matches.
+	want := []dag.HeaderMatchCondition{
+		exactHeader("header-name", "anything"),
+		invertHeaderMatch(exactHeader("header-name", "anything")),
+		containsHeader("header-name", "something"),
+		invertHeaderMatch(containsHeader("header-name", "something")),
+		presentHeader("header-name"),
+		invertHeaderMatch(presentHeader("header-name")),
+	}
+
+	have := []dag.HeaderMatchCondition{
+		want[5],
+		want[4],
+		want[3],
+		want[2],
+		want[1],
+		want[0],
+	}
+
+	sort.Stable(For(have))
+	assert.Equal(t, want, have)
+}
+
+func TestSortHeaderMatchConditionsValue(t *testing.T) {
+	// Use string comparison to sort values.
+	want := []dag.HeaderMatchCondition{
+		exactHeader("header-name", "a"),
+		invertHeaderMatch(exactHeader("header-name", "a")),
+		exactHeader("header-name", "b"),
+		exactHeader("header-name", "c"),
+		containsHeader("header-name", "a"),
+		invertHeaderMatch(containsHeader("header-name", "a")),
+		containsHeader("header-name", "b"),
+		containsHeader("header-name", "c"),
+	}
+
+	have := []dag.HeaderMatchCondition{
+		want[6],
+		want[5],
+		want[4],
+		want[7],
+		want[2],
+		want[1],
+		want[0],
+		want[3],
+	}
+
+	sort.Stable(For(have))
+	assert.Equal(t, want, have)
 }
 
 func TestSortClusters(t *testing.T) {
@@ -297,7 +354,7 @@ func TestSortClusters(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortClusterLoadAssignments(t *testing.T) {
@@ -312,7 +369,7 @@ func TestSortClusterLoadAssignments(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortHTTPWeightedClusters(t *testing.T) {
@@ -338,7 +395,7 @@ func TestSortHTTPWeightedClusters(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortTCPWeightedClusters(t *testing.T) {
@@ -364,7 +421,7 @@ func TestSortTCPWeightedClusters(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortListeners(t *testing.T) {
@@ -379,7 +436,7 @@ func TestSortListeners(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortFilterChains(t *testing.T) {
@@ -417,5 +474,5 @@ func TestSortFilterChains(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }

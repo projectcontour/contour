@@ -47,6 +47,18 @@ type headerMatchConditionSorter []dag.HeaderMatchCondition
 func (s headerMatchConditionSorter) Len() int      { return len(s) }
 func (s headerMatchConditionSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s headerMatchConditionSorter) Less(i, j int) bool {
+	sortValue := func(a dag.HeaderMatchCondition, b dag.HeaderMatchCondition) bool {
+		switch strings.Compare(a.Value, b.Value) {
+		case -1:
+			return true
+		case 1:
+			return false
+		default:
+			// The match that is not inverted sorts first.
+			return !a.Invert
+		}
+	}
+
 	val := strings.Compare(s[i].Name, s[j].Name)
 	switch val {
 	case -1:
@@ -58,6 +70,8 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 		case dag.HeaderMatchTypeExact:
 			// Exact matches are most specific so they sort first.
 			switch s[j].MatchType {
+			case dag.HeaderMatchTypeExact:
+				return sortValue(s[i], s[j])
 			case dag.HeaderMatchTypeContains:
 				return true
 			case dag.HeaderMatchTypePresent:
@@ -66,8 +80,16 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 		case dag.HeaderMatchTypeContains:
 			// Contains matches sort ahead of Present matches.
 			switch s[j].MatchType {
+			case dag.HeaderMatchTypeContains:
+				return sortValue(s[i], s[j])
 			case dag.HeaderMatchTypePresent:
 				return true
+			}
+		case dag.HeaderMatchTypePresent:
+			switch s[j].MatchType {
+			case dag.HeaderMatchTypePresent:
+				// The match that is not inverted sorts first.
+				return !s[i].Invert
 			}
 		}
 		return false
