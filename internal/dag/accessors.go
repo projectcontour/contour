@@ -81,7 +81,7 @@ func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString
 func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 	up := annotation.ParseUpstreamProtocols(svc.Annotations)
 	protocol := up[port.Name]
-	if protocol == "" {
+	if protocol ==       "" {
 		protocol = up[strconv.Itoa(int(port.Port))]
 	}
 	return protocol
