@@ -74,9 +74,9 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		for _, listener := range p.source.gateway.Spec.Listeners {
 
 			// Validate the Group on the selector is a supported type.
-			if listener.Routes.Group != "" && listener.Routes.Group != "networking.x-k8s.io" {
+			if listener.Routes.Group != "" && listener.Routes.Group != gatewayapi_v1alpha1.GroupName {
 				// TODO: Set the “ResolvedRefs” condition to false for this listener with the “InvalidRoutesRef” reason.
-				p.Errorf("Listener.Routes.Group %q is not supported.", listener.Routes.Kind)
+				p.Errorf("Listener.Routes.Group %q is not supported.", listener.Routes.Group)
 				continue
 			}
 
