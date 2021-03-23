@@ -20,11 +20,16 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	ratelimit_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
+	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
+	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	v1 "k8s.io/api/core/v1"
@@ -2910,6 +2915,391 @@ func TestListenerVisit(t *testing.T) {
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get()),
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}),
+		},
+		"insecure httpproxy with rate limit config": {
+			ListenerConfig: ListenerConfig{
+				RateLimitConfig: &RateLimitConfig{
+					ExtensionService:        types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+					Domain:                  "contour",
+					Timeout:                 timeout.DurationSetting(7 * time.Second),
+					FailOpen:                false,
+					EnableXRateLimitHeaders: true,
+				},
+			},
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+					RouteConfigName("ingress_http").
+					MetricsPrefix("ingress_http").
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout")).
+					DefaultFilters().
+					AddFilter(&http.HttpFilter{
+						Name: wellknown.HTTPRateLimit,
+						ConfigType: &http.HttpFilter_TypedConfig{
+							TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+								Domain:          "contour",
+								FailureModeDeny: true,
+								Timeout:         protobuf.Duration(7 * time.Second),
+								RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+									GrpcService: &envoy_core_v3.GrpcService{
+										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+											EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+												ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+											},
+										},
+									},
+									TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+								},
+								EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+							}),
+						},
+					}).Get()),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}),
+		},
+		"secure httpproxy with rate limit config": {
+			ListenerConfig: ListenerConfig{
+				RateLimitConfig: &RateLimitConfig{
+					ExtensionService:        types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+					Domain:                  "contour",
+					Timeout:                 timeout.DurationSetting(7 * time.Second),
+					FailOpen:                false,
+					EnableXRateLimitHeaders: true,
+				},
+			},
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_api_v1.TLS{
+								SecretName: "secret",
+							},
+						},
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+					RouteConfigName(ENVOY_HTTP_LISTENER).
+					MetricsPrefix(ENVOY_HTTP_LISTENER).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+					DefaultFilters().
+					AddFilter(&http.HttpFilter{
+						Name: wellknown.HTTPRateLimit,
+						ConfigType: &http.HttpFilter_TypedConfig{
+							TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+								Domain:          "contour",
+								FailureModeDeny: true,
+								Timeout:         protobuf.Duration(7 * time.Second),
+								RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+									GrpcService: &envoy_core_v3.GrpcService{
+										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+											EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+												ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+											},
+										},
+									},
+									TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+								},
+								EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+							}),
+						},
+					}).
+					Get(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}, &envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AddFilter(&http.HttpFilter{
+							Name: wellknown.HTTPRateLimit,
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+									Domain:          "contour",
+									FailureModeDeny: true,
+									Timeout:         protobuf.Duration(7 * time.Second),
+									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+										GrpcService: &envoy_core_v3.GrpcService{
+											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+													ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+												},
+											},
+										},
+										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+									},
+									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								}),
+							},
+						}).
+						Get()),
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}),
+		},
+		"secure httpproxy using fallback certificate with rate limit config": {
+			fallbackCertificate: &types.NamespacedName{
+				Name:      "fallbacksecret",
+				Namespace: "default",
+			},
+			ListenerConfig: ListenerConfig{
+				RateLimitConfig: &RateLimitConfig{
+					ExtensionService:        types.NamespacedName{Namespace: "projectcontour", Name: "ratelimit"},
+					Domain:                  "contour",
+					Timeout:                 timeout.DurationSetting(7 * time.Second),
+					FailOpen:                false,
+					EnableXRateLimitHeaders: true,
+				},
+			},
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+							TLS: &contour_api_v1.TLS{
+								SecretName:                "secret",
+								EnableFallbackCertificate: true,
+							},
+						},
+						Routes: []contour_api_v1.Route{
+							{
+								Services: []contour_api_v1.Service{
+									{
+										Name: "backend",
+										Port: 80,
+									},
+								},
+							},
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fallbacksecret",
+						Namespace: "default",
+					},
+					Type: "kubernetes.io/tls",
+					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Name:     "http",
+							Protocol: "TCP",
+							Port:     80,
+						}},
+					},
+				},
+			},
+			want: listenermap(&envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTP_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
+				FilterChains: envoy_v3.FilterChains(
+					envoy_v3.HTTPConnectionManagerBuilder().
+						RouteConfigName(ENVOY_HTTP_LISTENER).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						DefaultFilters().
+						AddFilter(&http.HttpFilter{
+							Name: wellknown.HTTPRateLimit,
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+									Domain:          "contour",
+									FailureModeDeny: true,
+									Timeout:         protobuf.Duration(7 * time.Second),
+									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+										GrpcService: &envoy_core_v3.GrpcService{
+											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+													ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+												},
+											},
+										},
+										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+									},
+									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								}),
+							},
+						}).
+						Get(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			}, &envoy_listener_v3.Listener{
+				Name:    ENVOY_HTTPS_LISTENER,
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"www.example.com"},
+					},
+					TransportSocket: transportSocket("secret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						AddFilter(envoy_v3.FilterMisdirectedRequests("www.example.com")).
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(path.Join("https", "www.example.com")).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AddFilter(&http.HttpFilter{
+							Name: wellknown.HTTPRateLimit,
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+									Domain:          "contour",
+									FailureModeDeny: true,
+									Timeout:         protobuf.Duration(7 * time.Second),
+									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+										GrpcService: &envoy_core_v3.GrpcService{
+											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+													ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+												},
+											},
+										},
+										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+									},
+									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								}),
+							},
+						}).
+						Get(),
+					),
+				}, {
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						TransportProtocol: "tls",
+					},
+					TransportSocket: transportSocket("fallbacksecret", envoy_tls_v3.TlsParameters_TLSv1_2, nil, "h2", "http/1.1"),
+					Filters: envoy_v3.Filters(envoy_v3.HTTPConnectionManagerBuilder().
+						DefaultFilters().
+						MetricsPrefix(ENVOY_HTTPS_LISTENER).
+						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
+						AddFilter(&http.HttpFilter{
+							Name: wellknown.HTTPRateLimit,
+							ConfigType: &http.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+									Domain:          "contour",
+									FailureModeDeny: true,
+									Timeout:         protobuf.Duration(7 * time.Second),
+									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+										GrpcService: &envoy_core_v3.GrpcService{
+											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+													ClusterName: dag.ExtensionClusterName(k8s.NamespacedNameFrom("projectcontour/ratelimit")),
+												},
+											},
+										},
+										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+									},
+									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								}),
+							},
+						}).
+						Get(),
+					),
+					Name: "fallback-certificate",
 				}},
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),

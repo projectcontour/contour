@@ -78,32 +78,32 @@ func mergeHeaderMatchConditions(conds []contour_api_v1.MatchCondition) []HeaderM
 		case cond.Header.Present:
 			hc = append(hc, HeaderMatchCondition{
 				Name:      cond.Header.Name,
-				MatchType: "present",
+				MatchType: HeaderMatchTypePresent,
 			})
 		case cond.Header.Contains != "":
 			hc = append(hc, HeaderMatchCondition{
 				Name:      cond.Header.Name,
 				Value:     cond.Header.Contains,
-				MatchType: "contains",
+				MatchType: HeaderMatchTypeContains,
 			})
 		case cond.Header.NotContains != "":
 			hc = append(hc, HeaderMatchCondition{
 				Name:      cond.Header.Name,
 				Value:     cond.Header.NotContains,
-				MatchType: "contains",
+				MatchType: HeaderMatchTypeContains,
 				Invert:    true,
 			})
 		case cond.Header.Exact != "":
 			hc = append(hc, HeaderMatchCondition{
 				Name:      cond.Header.Name,
 				Value:     cond.Header.Exact,
-				MatchType: "exact",
+				MatchType: HeaderMatchTypeExact,
 			})
 		case cond.Header.NotExact != "":
 			hc = append(hc, HeaderMatchCondition{
 				Name:      cond.Header.Name,
 				Value:     cond.Header.NotExact,
-				MatchType: "exact",
+				MatchType: HeaderMatchTypeExact,
 				Invert:    true,
 			})
 		}

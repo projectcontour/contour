@@ -129,6 +129,18 @@ func (rc *RegexMatchCondition) String() string {
 	return "regex: " + rc.Regex
 }
 
+const (
+	// HeaderMatchTypeExact matches a header value exactly.
+	HeaderMatchTypeExact = "exact"
+
+	// HeaderMatchTypeContains matches a header value if it contains the
+	// provided value.
+	HeaderMatchTypeContains = "contains"
+
+	// HeaderMatchTypePresent matches a header if it is present in a request.
+	HeaderMatchTypePresent = "present"
+)
+
 // HeaderMatchCondition matches request headers by MatchType
 type HeaderMatchCondition struct {
 	Name      string

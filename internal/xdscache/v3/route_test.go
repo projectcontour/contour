@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -2921,65 +2922,81 @@ func TestRouteVisit(t *testing.T) {
 
 func TestSortLongestRouteFirst(t *testing.T) {
 	tests := map[string]struct {
-		routes []*envoy_route_v3.Route
-		want   []*envoy_route_v3.Route
+		routes []*dag.Route
+		want   []*dag.Route
 	}{
 		"two prefixes": {
-			routes: []*envoy_route_v3.Route{{
-				Match: routePrefix("/"),
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
 			}, {
-				Match: routePrefix("/longer"),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/longer"},
 			}},
-			want: []*envoy_route_v3.Route{{
-				Match: routePrefix("/longer"),
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/longer"},
 			}, {
-				Match: routePrefix("/"),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
 			}},
 		},
 		"two regexes": {
-			routes: []*envoy_route_v3.Route{{
-				Match: routeRegex("/v2"),
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/v2"},
 			}, {
-				Match: routeRegex("/v1/.+"),
+				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/v1/.+"},
 			}},
-			want: []*envoy_route_v3.Route{{
-				Match: routeRegex("/v2"),
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/v2"},
 			}, {
-				Match: routeRegex("/v1/.+"),
+				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/v1/.+"},
 			}},
 		},
-		"regex sorts before prefix": {
-			routes: []*envoy_route_v3.Route{{
-				Match: routeRegex("/api/v?"),
+		"two exact matches": {
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.ExactMatchCondition{Path: "/foo"},
 			}, {
-				Match: routePrefix("/"),
-			}, {
-				Match: routeRegex(".*"),
+				PathMatchCondition: &dag.ExactMatchCondition{Path: "/foo/"},
 			}},
-			want: []*envoy_route_v3.Route{{
-				Match: routeRegex("/api/v?"),
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.ExactMatchCondition{Path: "/foo/"},
 			}, {
-				Match: routeRegex(".*"),
+				PathMatchCondition: &dag.ExactMatchCondition{Path: "/foo"},
+			}},
+		},
+		"exact sorts before regex sorts before prefix": {
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/api/v?"},
 			}, {
-				Match: routePrefix("/"),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+			}, {
+				PathMatchCondition: &dag.RegexMatchCondition{Regex: ".*"},
+			}, {
+				PathMatchCondition: &dag.ExactMatchCondition{Path: "/api/"},
+			}},
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.ExactMatchCondition{Path: "/api/"},
+			}, {
+				PathMatchCondition: &dag.RegexMatchCondition{Regex: "/api/v?"},
+			}, {
+				PathMatchCondition: &dag.RegexMatchCondition{Regex: ".*"},
+			}, {
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
 			}},
 		},
 		"more headers sort before less": {
-			routes: []*envoy_route_v3.Route{{
-				Match: routePrefix("/"),
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
 			}, {
-				Match: routePrefix("/", dag.HeaderMatchCondition{
-					Name:      "x-request-id",
-					MatchType: "present",
-				}),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "x-request-id", MatchType: "present"},
+				},
 			}},
-			want: []*envoy_route_v3.Route{{
-				Match: routePrefix("/", dag.HeaderMatchCondition{
-					Name:      "x-request-id",
-					MatchType: "present",
-				}),
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "x-request-id", MatchType: "present"},
+				},
 			}, {
-				Match: routePrefix("/"),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
 			}},
 		},
 
@@ -2991,71 +3008,77 @@ func TestSortLongestRouteFirst(t *testing.T) {
 		// allows us to avoid comparing the header matches
 		// unless necessary.
 		"longest path before longest headers": {
-			routes: []*envoy_route_v3.Route{{
-				Match: routePrefix("/", dag.HeaderMatchCondition{
-					Name:      "x-request-id",
-					MatchType: "present",
-				}),
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "x-request-id", MatchType: "present"},
+				},
 			}, {
-				Match: routePrefix("/longest/path/match"),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/longest/path/match"},
 			}},
-			want: []*envoy_route_v3.Route{{
-				Match: routePrefix("/longest/path/match"),
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/longest/path/match"},
 			}, {
-				Match: routePrefix("/", dag.HeaderMatchCondition{
-					Name:      "x-request-id",
-					MatchType: "present",
-				}),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "x-request-id", MatchType: "present"},
+				},
 			}},
 		},
 
 		// The path and the length of header condition list are equal,
 		// so we should order lexicographically by header name.
 		"headers sort stably by name": {
-			routes: []*envoy_route_v3.Route{{
-				Match: routePrefix("/",
-					dag.HeaderMatchCondition{Name: "zzz-2", MatchType: "present"},
-					dag.HeaderMatchCondition{Name: "zzz-1", MatchType: "present"},
-				),
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "zzz-2", MatchType: "present"},
+					{Name: "zzz-1", MatchType: "present"},
+				},
 			}, {
-				Match: routePrefix("/",
-					dag.HeaderMatchCondition{Name: "aaa-2", MatchType: "present"},
-					dag.HeaderMatchCondition{Name: "aaa-1", MatchType: "present"},
-				),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "aaa-2", MatchType: "present"},
+					{Name: "aaa-1", MatchType: "present"},
+				},
 			}},
-			want: []*envoy_route_v3.Route{{
-				Match: routePrefix("/",
-					dag.HeaderMatchCondition{Name: "aaa-1", MatchType: "present"},
-					dag.HeaderMatchCondition{Name: "aaa-2", MatchType: "present"},
-				),
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "aaa-1", MatchType: "present"},
+					{Name: "aaa-2", MatchType: "present"},
+				},
 			}, {
-				Match: routePrefix("/",
-					dag.HeaderMatchCondition{Name: "zzz-1", MatchType: "present"},
-					dag.HeaderMatchCondition{Name: "zzz-2", MatchType: "present"},
-				),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "zzz-1", MatchType: "present"},
+					{Name: "zzz-2", MatchType: "present"},
+				},
 			}},
 		},
 
 		// If we have multiple conditions on the same header, ensure
 		// that we order on the match type too.
 		"headers order by match type": {
-			routes: []*envoy_route_v3.Route{{
-				Match: routePrefix("/"),
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
 			}, {
-				Match: routePrefix("/",
-					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "present"},
-					dag.HeaderMatchCondition{Name: "x-request-2", MatchType: "present", Invert: true},
-					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
-				),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "x-request-1", MatchType: "present"},
+					{Name: "x-request-2", MatchType: "present", Invert: true},
+					{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+				},
 			}},
-			want: []*envoy_route_v3.Route{{
-				Match: routePrefix("/",
-					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
-					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "present"},
-					dag.HeaderMatchCondition{Name: "x-request-2", MatchType: "present", Invert: true},
-				),
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+					{Name: "x-request-1", MatchType: "present"},
+					{Name: "x-request-2", MatchType: "present", Invert: true},
+				},
 			}, {
-				Match: routePrefix("/"),
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
 			}},
 		},
 
@@ -3063,28 +3086,30 @@ func TestSortLongestRouteFirst(t *testing.T) {
 		// we don't need to compare the header conditions to
 		// order multiple routes with the same prefix.
 		"headers order in single route": {
-			routes: []*envoy_route_v3.Route{{
-				Match: routePrefix("/",
-					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "present"},
-					dag.HeaderMatchCondition{Name: "x-request-2", MatchType: "present", Invert: true},
-					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
-				),
+			routes: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "x-request-1", MatchType: "present"},
+					{Name: "x-request-2", MatchType: "present", Invert: true},
+					{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+				},
 			}},
-			want: []*envoy_route_v3.Route{{
-				Match: routePrefix("/",
-					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "exact", Value: "foo"},
-					dag.HeaderMatchCondition{Name: "x-request-1", MatchType: "present"},
-					dag.HeaderMatchCondition{Name: "x-request-2", MatchType: "present", Invert: true},
-				),
+			want: []*dag.Route{{
+				PathMatchCondition: &dag.PrefixMatchCondition{Prefix: "/"},
+				HeaderMatchConditions: []dag.HeaderMatchCondition{
+					{Name: "x-request-1", MatchType: "exact", Value: "foo"},
+					{Name: "x-request-1", MatchType: "present"},
+					{Name: "x-request-2", MatchType: "present", Invert: true},
+				},
 			}},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := append([]*envoy_route_v3.Route{}, tc.routes...) // shallow copy
+			got := append([]*dag.Route{}, tc.routes...) // shallow copy
 			sortRoutes(got)
-			protobuf.ExpectEqual(t, tc.want, got)
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }

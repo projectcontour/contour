@@ -234,11 +234,12 @@ func route(ingress *networking_v1.Ingress, path string, pathType networking_v1.P
 
 // rulesFromSpec merges the IngressSpec's Rules with a synthetic
 // rule representing the default backend.
+// Prepend the default backend so it can be overridden by later rules.
 func rulesFromSpec(spec networking_v1.IngressSpec) []networking_v1.IngressRule {
 	rules := spec.Rules
 	if backend := spec.DefaultBackend; backend != nil {
 		rule := defaultBackendRule(backend)
-		rules = append(rules, rule)
+		rules = append([]networking_v1.IngressRule{rule}, rules...)
 	}
 	return rules
 }

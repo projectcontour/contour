@@ -266,15 +266,9 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
 
 // VirtualHost creates a new route.VirtualHost.
 func VirtualHost(hostname string, routes ...*envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
-	domains := []string{hostname}
-	if hostname != "*" {
-		// NOTE(jpeach) see also envoy.FilterMisdirectedRequests().
-		domains = append(domains, hostname+":*")
-	}
-
 	return &envoy_route_v3.VirtualHost{
 		Name:    envoy.Hashname(60, hostname),
-		Domains: domains,
+		Domains: []string{hostname},
 		Routes:  routes,
 	}
 }
@@ -353,11 +347,11 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 		}
 
 		switch h.MatchType {
-		case "exact":
+		case dag.HeaderMatchTypeExact:
 			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_ExactMatch{ExactMatch: h.Value}
-		case "contains":
+		case dag.HeaderMatchTypeContains:
 			header.HeaderMatchSpecifier = containsMatch(h.Value)
-		case "present":
+		case dag.HeaderMatchTypePresent:
 			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_PresentMatch{PresentMatch: true}
 		}
 		envoyHeaders = append(envoyHeaders, header)

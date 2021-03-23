@@ -30,7 +30,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.16.0
+BUILD_BASE_IMAGE ?= golang:1.16.2
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -168,7 +168,7 @@ lint-codespell:
 .PHONY: check-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run --new
+	@./hack/golangci-lint run
 
 .PHONY: check-yamllint
 lint-yamllint:
@@ -337,8 +337,6 @@ integration: check-integration
 	./_integration/testsuite/make-kind-cluster.sh
 	./_integration/testsuite/install-gateway-api.sh
 	./_integration/testsuite/install-contour-working.sh
-	./_integration/testsuite/install-fallback-certificate.sh
-	./_integration/testsuite/install-ratelimit-service.sh
 	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/httpproxy/*.yaml ./_integration/testsuite/gatewayapi/*.yaml
 	./_integration/testsuite/cleanup.sh
 

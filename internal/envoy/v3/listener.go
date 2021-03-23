@@ -389,6 +389,14 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		UseRemoteAddress: protobuf.Bool(true),
 		NormalizePath:    protobuf.Bool(true),
 
+		// We can ignore any port number supplied in the Host/:authority header
+		// before processing by filters or routing.
+		// Note that the port a listener is bound to will already be selected
+		// and that the port is stripped from the header sent upstream as well.
+		StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+			StripAnyHostPort: true,
+		},
+
 		// issue #1487 pass through X-Request-Id if provided.
 		PreserveExternalRequestId: true,
 		MergeSlashes:              true,
@@ -568,17 +576,10 @@ function envoy_on_request(request_handle)
 	local target = "%s"
 
 	if host ~= target then
-		s, e = string.find(host, ":", 1, true)
-		if s ~= nil then
-			host = string.sub(host, 1, s - 1)
-		end
-
-		if host ~= target then
-			request_handle:respond(
-				{[":status"] = "421"},
-				string.format("misdirected request to %%q", headers:get(":authority"))
-			)
-		end
+		request_handle:respond(
+			{[":status"] = "421"},
+			string.format("misdirected request to %%q", host)
+		)
 	end
 end
 	`
