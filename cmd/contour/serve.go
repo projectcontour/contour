@@ -224,14 +224,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	}
 
-	var configuredSecretRefs []*types.NamespacedName
-	if fallbackCert != nil {
-		configuredSecretRefs = append(configuredSecretRefs, fallbackCert)
-	}
-	if clientCert != nil {
-		configuredSecretRefs = append(configuredSecretRefs, clientCert)
-	}
-
 	// Set up Prometheus registry and register base metrics.
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
@@ -277,30 +269,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	if ok := ctx.Config.Listener.ConnectionBalancer == "exact" || ctx.Config.Listener.ConnectionBalancer == ""; !ok {
 		log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", ctx.Config.Listener.ConnectionBalancer)
 		ctx.Config.Listener.ConnectionBalancer = ""
-	}
-
-	var requestHeadersPolicy dag.HeadersPolicy
-	if ctx.Config.Policy.RequestHeadersPolicy.Set != nil {
-		requestHeadersPolicy.Set = make(map[string]string)
-		for k, v := range ctx.Config.Policy.RequestHeadersPolicy.Set {
-			requestHeadersPolicy.Set[k] = v
-		}
-	}
-	if ctx.Config.Policy.RequestHeadersPolicy.Remove != nil {
-		requestHeadersPolicy.Remove = make([]string, 0, len(ctx.Config.Policy.RequestHeadersPolicy.Remove))
-		requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, ctx.Config.Policy.RequestHeadersPolicy.Remove...)
-	}
-
-	var responseHeadersPolicy dag.HeadersPolicy
-	if ctx.Config.Policy.ResponseHeadersPolicy.Set != nil {
-		responseHeadersPolicy.Set = make(map[string]string)
-		for k, v := range ctx.Config.Policy.ResponseHeadersPolicy.Set {
-			responseHeadersPolicy.Set[k] = v
-		}
-	}
-	if ctx.Config.Policy.ResponseHeadersPolicy.Remove != nil {
-		responseHeadersPolicy.Remove = make([]string, 0, len(ctx.Config.Policy.ResponseHeadersPolicy.Remove))
-		responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, ctx.Config.Policy.ResponseHeadersPolicy.Remove...)
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
@@ -388,69 +356,21 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// register observer for endpoints updates.
 	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
 
-	// Get the appropriate DAG processors.
-	dagProcessors := []dag.Processor{
-		&dag.IngressProcessor{
-			FieldLogger:       log.WithField("context", "IngressProcessor"),
-			ClientCertificate: clientCert,
-		},
-		&dag.ExtensionServiceProcessor{
-			FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
-			ClientCertificate: clientCert,
-		},
-		&dag.HTTPProxyProcessor{
-			DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
-			FallbackCertificate:   fallbackCert,
-			DNSLookupFamily:       ctx.Config.Cluster.DNSLookupFamily,
-			ClientCertificate:     clientCert,
-			RequestHeadersPolicy:  &requestHeadersPolicy,
-			ResponseHeadersPolicy: &responseHeadersPolicy,
-		},
-	}
-
 	// Log that we're using the fallback certificate if configured.
 	if fallbackCert != nil {
 		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
 	}
-
 	if clientCert != nil {
 		log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", clientCert)
 	}
-
-	if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
-		if ctx.Config.GatewayConfig != nil {
-			dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-				FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
-			})
-		}
-	}
-
-	// The listener processor has to go last since it looks at
-	// the output of the other processors.
-	dagProcessors = append(dagProcessors, &dag.ListenerProcessor{})
 
 	// Build the core Kubernetes event handler.
 	eventHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
-		Builder: dag.Builder{
-			Source: dag.KubernetesCache{
-				RootNamespaces:       ctx.proxyRootNamespaces(),
-				IngressClassName:     ctx.ingressClassName,
-				ConfiguredSecretRefs: configuredSecretRefs,
-				FieldLogger:          log.WithField("context", "KubernetesCache"),
-			},
-			Processors: dagProcessors,
-		},
-		FieldLogger: log.WithField("context", "contourEventHandler"),
-	}
-
-	if ctx.Config.GatewayConfig != nil {
-		eventHandler.Builder.Source.ConfiguredGateway = types.NamespacedName{
-			Name:      ctx.Config.GatewayConfig.Name,
-			Namespace: ctx.Config.GatewayConfig.Namespace,
-		}
+		Builder:         getDAGBuilder(ctx, clients, clientCert, fallbackCert, log),
+		FieldLogger:     log.WithField("context", "contourEventHandler"),
 	}
 
 	// Wrap eventHandler in a converter for objects from the dynamic client.
@@ -739,6 +659,92 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// GO!
 	return g.Run(context.Background())
+}
+
+func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallbackCert *types.NamespacedName, log logrus.FieldLogger) dag.Builder {
+	var requestHeadersPolicy dag.HeadersPolicy
+	if ctx.Config.Policy.RequestHeadersPolicy.Set != nil {
+		requestHeadersPolicy.Set = make(map[string]string)
+		for k, v := range ctx.Config.Policy.RequestHeadersPolicy.Set {
+			requestHeadersPolicy.Set[k] = v
+		}
+	}
+	if ctx.Config.Policy.RequestHeadersPolicy.Remove != nil {
+		requestHeadersPolicy.Remove = make([]string, 0, len(ctx.Config.Policy.RequestHeadersPolicy.Remove))
+		requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, ctx.Config.Policy.RequestHeadersPolicy.Remove...)
+	}
+
+	var responseHeadersPolicy dag.HeadersPolicy
+	if ctx.Config.Policy.ResponseHeadersPolicy.Set != nil {
+		responseHeadersPolicy.Set = make(map[string]string)
+		for k, v := range ctx.Config.Policy.ResponseHeadersPolicy.Set {
+			responseHeadersPolicy.Set[k] = v
+		}
+	}
+	if ctx.Config.Policy.ResponseHeadersPolicy.Remove != nil {
+		responseHeadersPolicy.Remove = make([]string, 0, len(ctx.Config.Policy.ResponseHeadersPolicy.Remove))
+		responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, ctx.Config.Policy.ResponseHeadersPolicy.Remove...)
+	}
+
+	// Get the appropriate DAG processors.
+	dagProcessors := []dag.Processor{
+		&dag.IngressProcessor{
+			FieldLogger:       log.WithField("context", "IngressProcessor"),
+			ClientCertificate: clientCert,
+		},
+		&dag.ExtensionServiceProcessor{
+			FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
+			ClientCertificate: clientCert,
+		},
+		&dag.HTTPProxyProcessor{
+			DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
+			FallbackCertificate:   fallbackCert,
+			DNSLookupFamily:       ctx.Config.Cluster.DNSLookupFamily,
+			ClientCertificate:     clientCert,
+			RequestHeadersPolicy:  &requestHeadersPolicy,
+			ResponseHeadersPolicy: &responseHeadersPolicy,
+		},
+	}
+
+	if ctx.Config.GatewayConfig != nil && clients.ResourcesExist(k8s.GatewayAPIResources()...) {
+		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
+			FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
+		})
+	}
+
+	// The listener processor has to go last since it looks at
+	// the output of the other processors.
+	dagProcessors = append(dagProcessors, &dag.ListenerProcessor{})
+
+	var configuredSecretRefs []*types.NamespacedName
+	if fallbackCert != nil {
+		configuredSecretRefs = append(configuredSecretRefs, fallbackCert)
+	}
+	if clientCert != nil {
+		configuredSecretRefs = append(configuredSecretRefs, clientCert)
+	}
+
+	builder := dag.Builder{
+		Source: dag.KubernetesCache{
+			RootNamespaces:       ctx.proxyRootNamespaces(),
+			IngressClassName:     ctx.ingressClassName,
+			ConfiguredSecretRefs: configuredSecretRefs,
+			FieldLogger:          log.WithField("context", "KubernetesCache"),
+		},
+		Processors: dagProcessors,
+	}
+
+	if ctx.Config.GatewayConfig != nil {
+		builder.Source.ConfiguredGateway = types.NamespacedName{
+			Name:      ctx.Config.GatewayConfig.Name,
+			Namespace: ctx.Config.GatewayConfig.Namespace,
+		}
+	}
+
+	// govet complains about copying the sync.Once that's in the dag.KubernetesCache
+	// but it's safe to ignore since this function is only called once.
+	// nolint:govet
+	return builder
 }
 
 func contains(namespaces []string, ns string) bool {
