@@ -660,7 +660,7 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("www.example.com",
 						&envoy_route_v3.Route{
-							Match:  routePrefixIngress("/ws1"),
+							Match:  routePrefix("/ws1"),
 							Action: websocketroute("default/kuard/8080/da39a3ee5e"),
 						},
 						&envoy_route_v3.Route{
@@ -817,6 +817,14 @@ func TestRouteVisit(t *testing.T) {
 											},
 										},
 										{
+											Path:     "/foo",
+											PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "kuard",
+												ServicePort: intstr.FromInt(8080),
+											},
+										},
+										{
 											Path:     "/foo2",
 											PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
 											Backend: v1beta1.IngressBackend{
@@ -825,7 +833,15 @@ func TestRouteVisit(t *testing.T) {
 											},
 										},
 										{
-											Path:     "/foo3",
+											Path:     "/foo3[a|b]?",
+											PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+											Backend: v1beta1.IngressBackend{
+												ServiceName: "kuard",
+												ServicePort: intstr.FromInt(8080),
+											},
+										},
+										{
+											Path:     "/foo4",
 											PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
 											Backend: v1beta1.IngressBackend{
 												ServiceName: "kuard",
@@ -856,15 +872,23 @@ func TestRouteVisit(t *testing.T) {
 				envoy_v3.RouteConfiguration("ingress_http",
 					envoy_v3.VirtualHost("*",
 						&envoy_route_v3.Route{
-							Match:  routeExact("/foo3"),
+							Match:  routeExact("/foo4"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
 						&envoy_route_v3.Route{
-							Match:  routeRegex("/foo2"),
+							Match:  routeRegex("/foo3[a|b]?"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
+						},
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/foo2"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
 						&envoy_route_v3.Route{
 							Match:  routePrefixIngress("/foo"),
+							Action: routecluster("default/kuard/8080/da39a3ee5e"),
+						},
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/foo"),
 							Action: routecluster("default/kuard/8080/da39a3ee5e"),
 						},
 						&envoy_route_v3.Route{

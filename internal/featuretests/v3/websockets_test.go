@@ -68,7 +68,7 @@ func TestWebsocketsIngress(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("websocket.hello.world",
 					&envoy_route_v3.Route{
-						Match:  routePrefixRegex("/ws2"),
+						Match:  routePrefix("/ws2"),
 						Action: withWebsocket(routeCluster("default/ws/80/da39a3ee5e")),
 					},
 				),

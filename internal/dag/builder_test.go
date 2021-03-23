@@ -15,7 +15,6 @@ package dag
 
 import (
 	"errors"
-	"regexp"
 	"testing"
 	"time"
 
@@ -1301,9 +1300,8 @@ func TestDAGInsert(t *testing.T) {
 						Paths: []networking_v1.HTTPIngressPath{{
 							Backend: *backendv1("kuard", intstr.FromString("http")),
 						}, {
-							Path:     "/kuarder",
-							PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
-							Backend:  *backendv1("kuarder", intstr.FromInt(8080)),
+							Path:    "/kuarder",
+							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
 						}},
 					},
 				},
@@ -1336,9 +1334,8 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
-							Path:     "/kuarder",
-							PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
-							Backend:  *backendv1("kuarder", intstr.FromInt(8080)),
+							Path:    "/kuarder",
+							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
 						}},
 					},
 				},
@@ -1373,9 +1370,8 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
-							Path:     "/kuarder",
-							PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
-							Backend:  *backendv1("kuarder", intstr.FromInt(8080)),
+							Path:    "/kuarder",
+							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
 						}},
 					},
 				},
@@ -1966,8 +1962,7 @@ func TestDAGInsert(t *testing.T) {
 								ServicePort: intstr.FromString("http"),
 							},
 						}, {
-							Path:     "/kuarder",
-							PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
+							Path: "/kuarder",
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "kuarder",
 								ServicePort: intstr.FromInt(8080),
@@ -2007,8 +2002,7 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Path:     "/kuarder",
-							PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
+							Path: "/kuarder",
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "kuarder",
 								ServicePort: intstr.FromInt(8080),
@@ -2050,8 +2044,7 @@ func TestDAGInsert(t *testing.T) {
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
-							Path:     "/kuarder",
-							PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
+							Path: "/kuarder",
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "kuarder",
 								ServicePort: intstr.FromInt(8080),
@@ -5329,7 +5322,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
-							exactroute("/kuarder", service(s2)),
+							prefixroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5345,7 +5338,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
-							exactroute("/kuarder", service(s2)),
+							prefixroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5369,7 +5362,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						securevirtualhost("b.example.com", sec1,
 							prefixroute("/", service(s1)),
-							exactroute("/kuarder", service(s2)),
+							prefixroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5664,7 +5657,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
-							exactroute("/kuarder", service(s2)),
+							prefixroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5680,7 +5673,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("b.example.com",
 							prefixroute("/", service(s1)),
-							exactroute("/kuarder", service(s2)),
+							prefixroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5704,7 +5697,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						securevirtualhost("b.example.com", sec1,
 							prefixroute("/", service(s1)),
-							exactroute("/kuarder", service(s2)),
+							prefixroute("/kuarder", service(s2)),
 						),
 					),
 				},
@@ -5909,11 +5902,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", service(s1)),
-							&Route{
-								PathMatchCondition: prefixIngress("/ws1"),
-								Clusters:           clustermap(s1),
-								Websocket:          true,
-							},
+							routeWebsocket("/ws1", service(s1)),
 						),
 					),
 				},
@@ -5929,7 +5918,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 						}),
 					),
@@ -5946,7 +5935,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 						}),
 					),
@@ -5993,11 +5982,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("*",
 							prefixroute("/", service(s1)),
-							&Route{
-								PathMatchCondition: prefixIngress("/ws1"),
-								Clusters:           clustermap(s1),
-								Websocket:          true,
-							},
+							routeWebsocket("/ws1", service(s1)),
 						),
 					),
 				},
@@ -6013,7 +5998,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 						}),
 					),
@@ -6030,7 +6015,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 						}),
 					),
@@ -6054,7 +6039,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -6074,7 +6059,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -6094,7 +6079,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -6114,7 +6099,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -6134,7 +6119,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -6154,7 +6139,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6174,7 +6159,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6194,7 +6179,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6214,7 +6199,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6234,7 +6219,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6260,7 +6245,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
@@ -6282,7 +6267,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
@@ -6304,7 +6289,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
@@ -6326,7 +6311,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
@@ -6378,19 +6363,19 @@ func TestDAGInsert(t *testing.T) {
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: regex("/exact_with_regex/.*"),
+								PathMatchCondition: exact("/exact_with_regex/.*"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: prefixIngress("/prefix"),
+								PathMatchCondition: prefixSegment("/prefix"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: regex("/prefix_with_regex/.*"),
+								PathMatchCondition: prefixSegment("/prefix_with_regex/.*"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: regex("/implementation_specific"),
+								PathMatchCondition: prefixString("/implementation_specific"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
@@ -6427,10 +6412,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeUpgrade("/", service(s13a)),
-							&Route{
-								PathMatchCondition: prefixIngress("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
-								Clusters:           clustermap(s13b),
-							},
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
 						),
 					),
 				}, &Listener{
@@ -6438,10 +6420,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						securevirtualhost("example.com", sec13,
 							routeUpgrade("/", service(s13a)),
-							&Route{
-								PathMatchCondition: prefixIngress("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
-								Clusters:           clustermap(s13b),
-							},
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
 						),
 					),
 				},
@@ -6577,7 +6556,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
@@ -6628,19 +6607,19 @@ func TestDAGInsert(t *testing.T) {
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: regex("/exact_with_regex/.*"),
+								PathMatchCondition: exact("/exact_with_regex/.*"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: prefixIngress("/prefix"),
+								PathMatchCondition: prefixSegment("/prefix"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: regex("/prefix_with_regex/.*"),
+								PathMatchCondition: prefixSegment("/prefix_with_regex/.*"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
-								PathMatchCondition: regex("/implementation_specific"),
+								PathMatchCondition: prefixString("/implementation_specific"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{
@@ -6677,10 +6656,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							routeUpgrade("/", service(s13a)),
-							&Route{
-								PathMatchCondition: prefixIngress("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
-								Clusters:           clustermap(s13b),
-							},
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
 						),
 					),
 				}, &Listener{
@@ -6688,10 +6664,7 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						securevirtualhost("example.com", sec13,
 							routeUpgrade("/", service(s13a)),
-							&Route{
-								PathMatchCondition: prefixIngress("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk"),
-								Clusters:           clustermap(s13b),
-							},
+							prefixroute("/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk", service(s13b)),
 						),
 					),
 				},
@@ -6924,7 +6897,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/kuard"},
+							PathMatchCondition: prefixString("/kuard"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "x-request-id", MatchType: "present"},
 								{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
@@ -6947,13 +6920,13 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							PathMatchCondition: prefixString("/"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "abc", MatchType: "contains"},
 							},
 							Clusters: clusters(service(s1)),
 						}, &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							PathMatchCondition: prefixString("/"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "def", MatchType: "contains"},
 							},
@@ -6972,13 +6945,13 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							PathMatchCondition: prefixString("/"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "abc", MatchType: "contains"},
 							},
 							Clusters: clusters(service(s1)),
 						}, &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							PathMatchCondition: prefixString("/"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "abc", MatchType: "contains", Invert: true},
 							},
@@ -6997,7 +6970,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/kuard"},
+							PathMatchCondition: prefixString("/kuard"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "x-request-id", MatchType: "present"},
 								{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
@@ -7421,7 +7394,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								PathMatchCondition: prefix("/blog/infotech"),
+								PathMatchCondition: prefixString("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Weighted: WeightedService{
@@ -7461,7 +7434,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								PathMatchCondition: prefix("/blog/infotech"),
+								PathMatchCondition: prefixString("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Weighted: WeightedService{
@@ -7486,7 +7459,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								PathMatchCondition: prefix("/blog/it/foo"),
+								PathMatchCondition: prefixString("/blog/it/foo"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Weighted: WeightedService{
@@ -8048,7 +8021,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
 									ExternalName: "externalservice.io",
@@ -8112,7 +8085,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: service(s9),
 								SNI:      "bar.com",
@@ -8135,7 +8108,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
 									ExternalName: "externalservice.io",
@@ -8194,7 +8167,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: service(s9),
 								SNI:      "bar.com",
@@ -8221,7 +8194,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s9),
 							RequestHeadersPolicy: &HeadersPolicy{
 								Set: map[string]string{
@@ -8243,7 +8216,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s9),
 							RequestHeadersPolicy: &HeadersPolicy{
 								Set: map[string]string{
@@ -8265,7 +8238,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{
 								{Upstream: service(s9), LoadBalancerPolicy: "Cookie"},
 							},
@@ -8293,7 +8266,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{
 								{Upstream: service(s9), LoadBalancerPolicy: "RequestHash"},
 							},
@@ -8325,7 +8298,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{
 								{Upstream: service(s9), LoadBalancerPolicy: "RoundRobin"},
 							},
@@ -9489,7 +9462,7 @@ func routes(routes ...*Route) map[string]*Route {
 func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
-		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
+		PathMatchCondition: prefixString(prefix),
 		Clusters:           clusters(services...),
 	}
 }
@@ -9497,7 +9470,7 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 func exactroute(path string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
-		PathMatchCondition: &ExactMatchCondition{Path: path},
+		PathMatchCondition: exact(path),
 		Clusters:           clusters(services...),
 	}
 }
@@ -9510,14 +9483,14 @@ func routeProtocol(prefix string, protocol string, first *Service, rest ...*Serv
 		c.Protocol = protocol
 	}
 	return &Route{
-		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
+		PathMatchCondition: prefixString(prefix),
 		Clusters:           cs,
 	}
 }
 
 func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
-		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
+		PathMatchCondition: prefixString(prefix),
 		Clusters:           append([]*Cluster{first}, rest...),
 	}
 }
@@ -9614,9 +9587,11 @@ func listeners(ls ...*Listener) []Vertex {
 	return v
 }
 
-func prefix(prefix string) MatchCondition { return &PrefixMatchCondition{Prefix: prefix} }
-func prefixIngress(prefix string) MatchCondition {
-	return &RegexMatchCondition{Regex: regexp.QuoteMeta(prefix) + `((\/).*)?`}
+func prefixString(prefix string) MatchCondition {
+	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchString}
+}
+func prefixSegment(prefix string) MatchCondition {
+	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchSegment}
 }
 func exact(path string) MatchCondition  { return &ExactMatchCondition{Path: path} }
 func regex(regex string) MatchCondition { return &RegexMatchCondition{Regex: regex} }

@@ -14,7 +14,6 @@
 package dag
 
 import (
-	"regexp"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -135,8 +134,8 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 
 	for _, httppath := range httppaths(rule) {
 		path := stringOrDefault(httppath.Path, "/")
-		// Default to Prefix path matching if not set.
-		pathType := derefPathTypeOr(httppath.PathType, networking_v1.PathTypePrefix)
+		// Default to implementation specific path matching if not set.
+		pathType := derefPathTypeOr(httppath.PathType, networking_v1.PathTypeImplementationSpecific)
 		be := httppath.Backend
 		m := types.NamespacedName{Name: be.Service.Name, Namespace: ing.Namespace}
 
@@ -182,10 +181,6 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 	}
 }
 
-const prefixPathEnsureSegmentOnlyMatchRegex = `((\/).*)?`
-
-var _ = regexp.MustCompile(prefixPathEnsureSegmentOnlyMatchRegex)
-
 // route builds a dag.Route for the supplied Ingress.
 func route(ingress *networking_v1.Ingress, path string, pathType networking_v1.PathType, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) (*Route, error) {
 	log = log.WithFields(logrus.Fields{
@@ -205,28 +200,29 @@ func route(ingress *networking_v1.Ingress, path string, pathType networking_v1.P
 		}},
 	}
 
-	if strings.ContainsAny(path, "^+*[]%") {
-		// validate the regex
-		if err := ValidateRegex(path); err != nil {
-			return nil, err
-		}
-
-		r.PathMatchCondition = &RegexMatchCondition{Regex: path}
-		return r, nil
-	}
-
 	switch pathType {
 	case networking_v1.PathTypePrefix:
+		prefixMatchType := PrefixMatchSegment
+		// An "all paths" prefix should be treated as a generic string prefix
+		// match.
 		if path == "/" {
-			r.PathMatchCondition = &PrefixMatchCondition{Prefix: path}
-		} else {
-			prefixRegex := regexp.QuoteMeta(strings.TrimRight(path, "/")) + prefixPathEnsureSegmentOnlyMatchRegex
-			r.PathMatchCondition = &RegexMatchCondition{Regex: prefixRegex}
+			prefixMatchType = PrefixMatchString
 		}
+		r.PathMatchCondition = &PrefixMatchCondition{Prefix: path, PrefixMatchType: prefixMatchType}
 	case networking_v1.PathTypeExact:
 		r.PathMatchCondition = &ExactMatchCondition{Path: path}
 	case networking_v1.PathTypeImplementationSpecific:
-		r.PathMatchCondition = &RegexMatchCondition{Regex: path}
+		// If a path "looks like" a regex we give a regex path match.
+		// Otherwise you get a string prefix match.
+		if strings.ContainsAny(path, "^+*[]%") {
+			// validate the regex
+			if err := ValidateRegex(path); err != nil {
+				return nil, err
+			}
+			r.PathMatchCondition = &RegexMatchCondition{Regex: path}
+		} else {
+			r.PathMatchCondition = &PrefixMatchCondition{Prefix: path, PrefixMatchType: PrefixMatchString}
+		}
 	}
 
 	return r, nil
