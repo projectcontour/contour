@@ -27,6 +27,10 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+const (
+	KindHTTPRoute = "HTTPRoute"
+)
+
 // GatewayAPIProcessor translates Gateway API types into DAG
 // objects and adds them to the DAG.
 type GatewayAPIProcessor struct {
@@ -69,20 +73,27 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		// are associated with the Gateway. An empty Selector matches all routes.
 		for _, listener := range p.source.gateway.Spec.Listeners {
 
-			nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route)
-			if err != nil {
-				p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
-			}
+			// Validate the Kind on the selector is a supported type.
+			switch listener.Routes.Kind {
+			case KindHTTPRoute:
+				nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route)
+				if err != nil {
+					p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
+				}
 
-			selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
-			if err != nil {
-				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
-			}
+				selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
+				if err != nil {
+					p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+				}
 
-			if selMatches && nsMatches {
-				// Empty Selector matches all routes.
-				matchingRoutes = append(matchingRoutes, route)
-				break
+				if selMatches && nsMatches {
+					// Empty Selector matches all routes.
+					matchingRoutes = append(matchingRoutes, route)
+					break
+				}
+			default:
+				// TODO: Set the “ResolvedRefs” condition to false for this listener with the “InvalidRoutesRef” reason.
+				p.Errorf("Listener.Routes.Kind %q is not supported.", listener.Routes.Kind)
 			}
 		}
 	}
