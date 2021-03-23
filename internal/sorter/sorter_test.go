@@ -24,13 +24,13 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 )
 
-func shuffleRoutes(routes []*envoy_route_v3.Route) []*envoy_route_v3.Route {
-	shuffled := make([]*envoy_route_v3.Route, len(routes))
+func shuffleRoutes(routes []*dag.Route) []*dag.Route {
+	shuffled := make([]*dag.Route, len(routes))
 
 	copy(shuffled, routes)
 
@@ -63,7 +63,7 @@ func TestSortRouteConfiguration(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortVirtualHosts(t *testing.T) {
@@ -84,101 +84,164 @@ func TestSortVirtualHosts(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
-func matchPrefix(str string) *envoy_route_v3.RouteMatch_Prefix {
-	return &envoy_route_v3.RouteMatch_Prefix{
+func matchPrefix(str string) *dag.PrefixMatchCondition {
+	return &dag.PrefixMatchCondition{
 		Prefix: str,
 	}
 }
 
-func matchRegex(str string) *envoy_route_v3.RouteMatch_SafeRegex {
-	return &envoy_route_v3.RouteMatch_SafeRegex{
-		SafeRegex: &matcher.RegexMatcher{
-			Regex: str,
-		},
+func matchRegex(str string) *dag.RegexMatchCondition {
+	return &dag.RegexMatchCondition{
+		Regex: str,
 	}
 }
 
-func exactHeader(name string, value string) *envoy_route_v3.HeaderMatcher {
-	return &envoy_route_v3.HeaderMatcher{
-		Name: name,
-		HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_ExactMatch{
-			ExactMatch: value,
-		},
+func matchExact(str string) *dag.ExactMatchCondition {
+	return &dag.ExactMatchCondition{
+		Path: str,
 	}
 }
 
-func presentHeader(name string) *envoy_route_v3.HeaderMatcher {
-	return &envoy_route_v3.HeaderMatcher{
-		Name: name,
-		HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_PresentMatch{
-			PresentMatch: true,
-		},
+func invertHeaderMatch(h dag.HeaderMatchCondition) dag.HeaderMatchCondition {
+	h.Invert = true
+	return h
+}
+
+func exactHeader(name string, value string) dag.HeaderMatchCondition {
+	return dag.HeaderMatchCondition{
+		Name:      name,
+		MatchType: dag.HeaderMatchTypeExact,
+		Value:     value,
 	}
 }
 
-func TestSortRoutesLongestPath(t *testing.T) {
-	want := []*envoy_route_v3.Route{
+func containsHeader(name string, value string) dag.HeaderMatchCondition {
+	return dag.HeaderMatchCondition{
+		Name:      name,
+		MatchType: dag.HeaderMatchTypeContains,
+		Value:     value,
+	}
+}
+
+func presentHeader(name string) dag.HeaderMatchCondition {
+	return dag.HeaderMatchCondition{
+		Name:      name,
+		MatchType: dag.HeaderMatchTypePresent,
+	}
+}
+
+func TestSortRoutesPathMatch(t *testing.T) {
+	want := []*dag.Route{
+		// Note that exact matches sort before regex matches.
 		{
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchRegex("/this/is/the/longest"),
-			}},
-
+			PathMatchCondition: matchExact("/aab/a"),
+		},
+		{
+			PathMatchCondition: matchExact("/aab"),
+		},
+		{
+			PathMatchCondition: matchExact("/aaa"),
+		},
 		// Note that regex matches sort before prefix matches.
 		{
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchRegex("."),
-			}},
-
+			PathMatchCondition: matchRegex("/this/is/the/longest"),
+		},
 		{
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path/prefix2"),
-			}},
-
+			PathMatchCondition: matchRegex(`/foo((\/).*)*`),
+		},
 		{
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path/prefix"),
-			}},
+			PathMatchCondition: matchRegex("/"),
+		},
+		{
+			PathMatchCondition: matchRegex("."),
+		},
+		{
+			PathMatchCondition: matchPrefix("/path/prefix2"),
+		},
+		{
+			PathMatchCondition: matchPrefix("/path/prefix/a"),
+		},
+		{
+			PathMatchCondition: matchPrefix("/path/prefix"),
+		},
 	}
 
 	have := shuffleRoutes(want)
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortRoutesLongestHeaders(t *testing.T) {
-	want := []*envoy_route_v3.Route{
+	want := []*dag.Route{
 		{
 			// Although the header names are the same, this value
 			// should sort before the next one because it is
 			// textually longer.
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path"),
-				Headers: []*envoy_route_v3.HeaderMatcher{
-					exactHeader("header-name", "header-value"),
-				},
+			PathMatchCondition: matchExact("/pathexact"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("header-name", "header-value"),
 			},
-		}, {
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path"),
-				Headers: []*envoy_route_v3.HeaderMatcher{
-					presentHeader("header-name"),
-				},
+		},
+		{
+			PathMatchCondition: matchExact("/pathexact"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("header-name"),
 			},
-		}, {
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path"),
-				Headers: []*envoy_route_v3.HeaderMatcher{
-					exactHeader("long-header-name", "long-header-value"),
-				},
+		},
+		{
+			PathMatchCondition: matchExact("/pathexact"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("long-header-name", "long-header-value"),
 			},
-		}, {
-			Match: &envoy_route_v3.RouteMatch{
-				PathSpecifier: matchPrefix("/path"),
+		},
+		{
+			PathMatchCondition: matchExact("/pathexact"),
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("header-name", "header-value"),
 			},
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("header-name"),
+			},
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("long-header-name", "long-header-value"),
+			},
+		},
+		{
+			PathMatchCondition: matchRegex("/pathregex"),
+		},
+		{
+			PathMatchCondition: matchPrefix("/path"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("header-name", "header-value"),
+			},
+		},
+		{
+			PathMatchCondition: matchPrefix("/path"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				presentHeader("header-name"),
+			},
+		},
+		{
+			PathMatchCondition: matchPrefix("/path"),
+			HeaderMatchConditions: []dag.HeaderMatchCondition{
+				exactHeader("long-header-name", "long-header-value"),
+			},
+		},
+		{
+			PathMatchCondition: matchPrefix("/path"),
 		},
 	}
 
@@ -200,27 +263,83 @@ func TestSortSecrets(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
-func TestSortHeaderMatchers(t *testing.T) {
-	want := []*envoy_route_v3.HeaderMatcher{
+func TestSortHeaderMatchConditions(t *testing.T) {
+	want := []dag.HeaderMatchCondition{
 		// Note that if the header names are the same, we
-		// order by the protobuf string, in which case "exact"
-		// is less than "present".
+		// order by the type, "exact" sorts before "contains"
+		// which sorts before "present" in terms of specificity.
+		presentHeader("ashort"),
 		exactHeader("header-name", "anything"),
+		containsHeader("header-name", "something"),
 		presentHeader("header-name"),
 		exactHeader("long-header-name", "long-header-value"),
 	}
 
-	have := []*envoy_route_v3.HeaderMatcher{
+	have := []dag.HeaderMatchCondition{
+		want[4],
+		want[3],
+		want[0],
+		want[2],
+		want[1],
+	}
+
+	sort.Stable(For(have))
+	assert.Equal(t, want, have)
+}
+
+func TestSortHeaderMatchConditionsInverted(t *testing.T) {
+	// Inverted matches sort after standard matches.
+	want := []dag.HeaderMatchCondition{
+		exactHeader("header-name", "anything"),
+		invertHeaderMatch(exactHeader("header-name", "anything")),
+		containsHeader("header-name", "something"),
+		invertHeaderMatch(containsHeader("header-name", "something")),
+		presentHeader("header-name"),
+		invertHeaderMatch(presentHeader("header-name")),
+	}
+
+	have := []dag.HeaderMatchCondition{
+		want[5],
+		want[4],
+		want[3],
 		want[2],
 		want[1],
 		want[0],
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
+}
+
+func TestSortHeaderMatchConditionsValue(t *testing.T) {
+	// Use string comparison to sort values.
+	want := []dag.HeaderMatchCondition{
+		exactHeader("header-name", "a"),
+		invertHeaderMatch(exactHeader("header-name", "a")),
+		exactHeader("header-name", "b"),
+		exactHeader("header-name", "c"),
+		containsHeader("header-name", "a"),
+		invertHeaderMatch(containsHeader("header-name", "a")),
+		containsHeader("header-name", "b"),
+		containsHeader("header-name", "c"),
+	}
+
+	have := []dag.HeaderMatchCondition{
+		want[6],
+		want[5],
+		want[4],
+		want[7],
+		want[2],
+		want[1],
+		want[0],
+		want[3],
+	}
+
+	sort.Stable(For(have))
+	assert.Equal(t, want, have)
 }
 
 func TestSortClusters(t *testing.T) {
@@ -235,7 +354,7 @@ func TestSortClusters(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortClusterLoadAssignments(t *testing.T) {
@@ -250,7 +369,7 @@ func TestSortClusterLoadAssignments(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortHTTPWeightedClusters(t *testing.T) {
@@ -276,7 +395,7 @@ func TestSortHTTPWeightedClusters(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortTCPWeightedClusters(t *testing.T) {
@@ -302,7 +421,7 @@ func TestSortTCPWeightedClusters(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortListeners(t *testing.T) {
@@ -317,7 +436,7 @@ func TestSortListeners(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }
 
 func TestSortFilterChains(t *testing.T) {
@@ -355,5 +474,5 @@ func TestSortFilterChains(t *testing.T) {
 	}
 
 	sort.Stable(For(have))
-	assert.Equal(t, have, want)
+	assert.Equal(t, want, have)
 }

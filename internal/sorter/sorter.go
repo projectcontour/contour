@@ -23,7 +23,7 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	"github.com/golang/protobuf/proto"
+	"github.com/projectcontour/contour/internal/dag"
 )
 
 // Sorts the given route configuration values by name.
@@ -40,58 +40,95 @@ func (s virtualHostSorter) Len() int           { return len(s) }
 func (s virtualHostSorter) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s virtualHostSorter) Less(i, j int) bool { return s[i].Name < s[j].Name }
 
-// Sorts HeaderMatcher objects, first by the header name,
-// then by their matcher conditions (textually).
-type headerMatcherSorter []*envoy_route_v3.HeaderMatcher
+// Sorts HeaderMatchCondition objects, first by the header name,
+// then by their matcher conditions type.
+type headerMatchConditionSorter []dag.HeaderMatchCondition
 
-func (s headerMatcherSorter) Len() int      { return len(s) }
-func (s headerMatcherSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s headerMatcherSorter) Less(i, j int) bool {
+func (s headerMatchConditionSorter) Len() int      { return len(s) }
+func (s headerMatchConditionSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s headerMatchConditionSorter) Less(i, j int) bool {
+	compareValue := func(a dag.HeaderMatchCondition, b dag.HeaderMatchCondition) bool {
+		switch strings.Compare(a.Value, b.Value) {
+		case -1:
+			return true
+		case 1:
+			return false
+		default:
+			// The match that is not inverted sorts first.
+			return !a.Invert
+		}
+	}
+
 	val := strings.Compare(s[i].Name, s[j].Name)
 	switch val {
 	case -1:
 		return true
 	case 1:
 		return false
-	case 0:
-		return proto.CompactTextString(s[i]) < proto.CompactTextString(s[j])
+	default:
+		switch s[i].MatchType {
+		case dag.HeaderMatchTypeExact:
+			// Exact matches are most specific so they sort first.
+			switch s[j].MatchType {
+			case dag.HeaderMatchTypeExact:
+				return compareValue(s[i], s[j])
+			case dag.HeaderMatchTypeContains:
+				return true
+			case dag.HeaderMatchTypePresent:
+				return true
+			}
+		case dag.HeaderMatchTypeContains:
+			// Contains matches sort ahead of Present matches.
+			switch s[j].MatchType {
+			case dag.HeaderMatchTypeContains:
+				return compareValue(s[i], s[j])
+			case dag.HeaderMatchTypePresent:
+				return true
+			}
+		case dag.HeaderMatchTypePresent:
+			switch s[j].MatchType {
+			case dag.HeaderMatchTypePresent:
+				// The match that is not inverted sorts first.
+				return !s[i].Invert
+			}
+		}
+		return false
 	}
-
-	panic("bad comparison")
 }
 
-// longestRouteByHeaders compares the HeaderMatcher slices for lhs and rhs and
-// returns true if lhs is longer.
-func longestRouteByHeaders(lhs, rhs *envoy_route_v3.Route) bool {
-	if len(lhs.Match.Headers) == len(rhs.Match.Headers) {
-		pair := make([]*envoy_route_v3.HeaderMatcher, 2)
+// longestRouteByHeaderConditions compares the HeaderMatchCondition slices for
+// lhs and rhs and returns true if lhs is longer.
+func longestRouteByHeaderConditions(lhs, rhs *dag.Route) bool {
+	if len(lhs.HeaderMatchConditions) == len(rhs.HeaderMatchConditions) {
+		pair := make([]dag.HeaderMatchCondition, 2)
 
-		for i := 0; i < len(lhs.Match.Headers); i++ {
-			pair[0] = lhs.Match.Headers[i]
-			pair[1] = rhs.Match.Headers[i]
+		for i := 0; i < len(lhs.HeaderMatchConditions); i++ {
+			pair[0] = lhs.HeaderMatchConditions[i]
+			pair[1] = rhs.HeaderMatchConditions[i]
 
-			if headerMatcherSorter(pair).Less(0, 1) {
+			if headerMatchConditionSorter(pair).Less(0, 1) {
 				return true
 			}
 		}
 	}
 
-	return len(lhs.Match.Headers) > len(rhs.Match.Headers)
+	return len(lhs.HeaderMatchConditions) > len(rhs.HeaderMatchConditions)
 }
 
 // Sorts the given Route slice in place. Routes are ordered first by
-// longest prefix (or regex), then by the length of the HeaderMatch
+// type (exact sorts before regex, sorts before prefix) and then
+// longest path match value, then by the length of the HeaderMatch
 // slice (if any). The HeaderMatch slice is also ordered by the matching
 // header name.
-type routeSorter []*envoy_route_v3.Route
+type routeSorter []*dag.Route
 
 func (s routeSorter) Len() int      { return len(s) }
 func (s routeSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s routeSorter) Less(i, j int) bool {
-	switch a := s[i].Match.PathSpecifier.(type) {
-	case *envoy_route_v3.RouteMatch_Prefix:
-		switch b := s[j].Match.PathSpecifier.(type) {
-		case *envoy_route_v3.RouteMatch_Prefix:
+	switch a := s[i].PathMatchCondition.(type) {
+	case *dag.PrefixMatchCondition:
+		switch b := s[j].PathMatchCondition.(type) {
+		case *dag.PrefixMatchCondition:
 			cmp := strings.Compare(a.Prefix, b.Prefix)
 			switch cmp {
 			case 1:
@@ -100,13 +137,13 @@ func (s routeSorter) Less(i, j int) bool {
 			case -1:
 				return false
 			default:
-				return longestRouteByHeaders(s[i], s[j])
+				return longestRouteByHeaderConditions(s[i], s[j])
 			}
 		}
-	case *envoy_route_v3.RouteMatch_SafeRegex:
-		switch b := s[j].Match.PathSpecifier.(type) {
-		case *envoy_route_v3.RouteMatch_SafeRegex:
-			cmp := strings.Compare(a.SafeRegex.Regex, b.SafeRegex.Regex)
+	case *dag.RegexMatchCondition:
+		switch b := s[j].PathMatchCondition.(type) {
+		case *dag.RegexMatchCondition:
+			cmp := strings.Compare(a.Regex, b.Regex)
 			switch cmp {
 			case 1:
 				// Sort longest regex first.
@@ -114,9 +151,27 @@ func (s routeSorter) Less(i, j int) bool {
 			case -1:
 				return false
 			default:
-				return longestRouteByHeaders(s[i], s[j])
+				return longestRouteByHeaderConditions(s[i], s[j])
 			}
-		case *envoy_route_v3.RouteMatch_Prefix:
+		case *dag.PrefixMatchCondition:
+			return true
+		}
+	case *dag.ExactMatchCondition:
+		switch b := s[j].PathMatchCondition.(type) {
+		case *dag.ExactMatchCondition:
+			cmp := strings.Compare(a.Path, b.Path)
+			switch cmp {
+			case 1:
+				// Sort longest path first.
+				return true
+			case -1:
+				return false
+			default:
+				return longestRouteByHeaderConditions(s[i], s[j])
+			}
+		case *dag.PrefixMatchCondition:
+			return true
+		case *dag.RegexMatchCondition:
 			return true
 		}
 	}
@@ -212,10 +267,10 @@ func For(v interface{}) sort.Interface {
 		return routeConfigurationSorter(v)
 	case []*envoy_route_v3.VirtualHost:
 		return virtualHostSorter(v)
-	case []*envoy_route_v3.Route:
+	case []*dag.Route:
 		return routeSorter(v)
-	case []*envoy_route_v3.HeaderMatcher:
-		return headerMatcherSorter(v)
+	case []dag.HeaderMatchCondition:
+		return headerMatchConditionSorter(v)
 	case []*envoy_cluster_v3.Cluster:
 		return clusterSorter(v)
 	case []*envoy_endpoint_v3.ClusterLoadAssignment:

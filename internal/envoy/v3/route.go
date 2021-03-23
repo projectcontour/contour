@@ -347,11 +347,11 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 		}
 
 		switch h.MatchType {
-		case "exact":
+		case dag.HeaderMatchTypeExact:
 			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_ExactMatch{ExactMatch: h.Value}
-		case "contains":
+		case dag.HeaderMatchTypeContains:
 			header.HeaderMatchSpecifier = containsMatch(h.Value)
-		case "present":
+		case dag.HeaderMatchTypePresent:
 			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_PresentMatch{PresentMatch: true}
 		}
 		envoyHeaders = append(envoyHeaders, header)
