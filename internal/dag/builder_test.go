@@ -1753,6 +1753,11 @@ func TestDAGInsert(t *testing.T) {
 							},
 							{
 								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix_trailing_slash/",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
 								Path:     "/prefix_with_regex/.*",
 								Backend:  *backendv1("kuard", intstr.FromString("http")),
 							},
@@ -2471,6 +2476,11 @@ func TestDAGInsert(t *testing.T) {
 							{
 								PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
 								Path:     "/prefix",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix_trailing_slash/",
 								Backend:  *backend("kuard", intstr.FromString("http")),
 							},
 							{
@@ -6371,6 +6381,11 @@ func TestDAGInsert(t *testing.T) {
 								Clusters:           clustermap(s1),
 							},
 							&Route{
+								// Trailing slash is stripped.
+								PathMatchCondition: prefixSegment("/prefix_trailing_slash"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
 								PathMatchCondition: prefixSegment("/prefix_with_regex/.*"),
 								Clusters:           clustermap(s1),
 							},
@@ -6612,6 +6627,11 @@ func TestDAGInsert(t *testing.T) {
 							},
 							&Route{
 								PathMatchCondition: prefixSegment("/prefix"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								// Trailing slash is stripped.
+								PathMatchCondition: prefixSegment("/prefix_trailing_slash"),
 								Clusters:           clustermap(s1),
 							},
 							&Route{

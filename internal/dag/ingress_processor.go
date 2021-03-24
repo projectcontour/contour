@@ -207,6 +207,9 @@ func route(ingress *networking_v1.Ingress, path string, pathType networking_v1.P
 		// match.
 		if path == "/" {
 			prefixMatchType = PrefixMatchString
+		} else {
+			// Strip trailing slashes. Ensures /foo matches prefix /foo/
+			path = strings.TrimRight(path, "/")
 		}
 		r.PathMatchCondition = &PrefixMatchCondition{Prefix: path, PrefixMatchType: prefixMatchType}
 	case networking_v1.PathTypeExact:
