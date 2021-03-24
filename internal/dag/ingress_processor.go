@@ -223,7 +223,7 @@ func route(ingress *networking_v1.Ingress, host string, path string, service *Se
 				// place of the HTTP/1 "host" header.
 				// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-headermatcher
 				Name:      ":authority",
-				MatchType: "regex",
+				MatchType: HeaderMatchTypeRegex,
 				Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(host[1:]),
 			},
 		}

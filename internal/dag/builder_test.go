@@ -6251,7 +6251,7 @@ func TestDAGInsert(t *testing.T) {
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{
 									Name:      ":authority",
-									MatchType: "regex",
+									MatchType: HeaderMatchTypeRegex,
 									Value:     "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com",
 								},
 							},
@@ -6466,7 +6466,7 @@ func TestDAGInsert(t *testing.T) {
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{
 									Name:      ":authority",
-									MatchType: "regex",
+									MatchType: HeaderMatchTypeRegex,
 									Value:     "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com",
 								},
 							},

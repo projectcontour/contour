@@ -139,6 +139,10 @@ const (
 
 	// HeaderMatchTypePresent matches a header if it is present in a request.
 	HeaderMatchTypePresent = "present"
+
+	// HeaderMatchTypeRegex matches a header if it matches the provided regular
+	// expression.
+	HeaderMatchTypeRegex = "regex"
 )
 
 // HeaderMatchCondition matches request headers by MatchType

@@ -1092,7 +1092,7 @@ func TestRouteMatch(t *testing.T) {
 				HeaderMatchConditions: []dag.HeaderMatchCondition{{
 					Name:      "x-regex-header",
 					Value:     "[a-z0-9][a-z0-9-]+someniceregex",
-					MatchType: "regex",
+					MatchType: dag.HeaderMatchTypeRegex,
 					Invert:    false,
 				}},
 			},
