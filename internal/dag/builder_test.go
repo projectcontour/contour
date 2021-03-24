@@ -9467,14 +9467,6 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	}
 }
 
-func exactroute(path string, first *Service, rest ...*Service) *Route {
-	services := append([]*Service{first}, rest...)
-	return &Route{
-		PathMatchCondition: exact(path),
-		Clusters:           clusters(services...),
-	}
-}
-
 func routeProtocol(prefix string, protocol string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 
