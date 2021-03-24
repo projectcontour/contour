@@ -93,6 +93,8 @@ spec:
       port: 80
       routes:
         kind: HTTPRoute
+        namespaces:
+          from: All
         selector:
           matchLabels:
             app: filter

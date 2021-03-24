@@ -397,14 +397,24 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			ResponseHeadersPolicy: &responseHeadersPolicy,
 		},
 	}
-	if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
-		log.Debug("Gateway API found, adding Gateway API processor")
-		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-			FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
-		})
-	} else {
-		log.Debug("Gateway API not found, not adding Gateway API processor")
+
+	// Log that we're using the fallback certificate if configured.
+	if fallbackCert != nil {
+		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
 	}
+
+	if clientCert != nil {
+		log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", clientCert)
+	}
+
+	if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
+		if ctx.Config.GatewayConfig != nil {
+			dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
+				FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
+			})
+		}
+	}
+
 	// The listener processor has to go last since it looks at
 	// the output of the other processors.
 	dagProcessors = append(dagProcessors, &dag.ListenerProcessor{})
@@ -416,12 +426,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
-				RootNamespaces: ctx.proxyRootNamespaces(),
-				IngressClass:   ctx.ingressClass,
-				Gateway: types.NamespacedName{
-					Name:      ctx.Config.GatewayConfig.Name,
-					Namespace: ctx.Config.GatewayConfig.Namespace,
-				},
+				RootNamespaces:       ctx.proxyRootNamespaces(),
+				IngressClass:         ctx.ingressClass,
 				ConfiguredSecretRefs: configuredSecretRefs,
 				FieldLogger:          log.WithField("context", "KubernetesCache"),
 			},
@@ -430,13 +436,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
-	// Log that we're using the fallback certificate if configured.
-	if fallbackCert != nil {
-		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
-	}
-
-	if clientCert != nil {
-		log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", clientCert)
+	if ctx.Config.GatewayConfig != nil {
+		eventHandler.Builder.Source.ConfiguredGateway = types.NamespacedName{
+			Name:      ctx.Config.GatewayConfig.Name,
+			Namespace: ctx.Config.GatewayConfig.Namespace,
+		}
 	}
 
 	// Wrap eventHandler in a converter for objects from the dynamic client.
@@ -479,23 +483,20 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log.Warn("DEPRECATED: The flag '--experimental-service-apis' is deprecated and should not be used. Please configure the gateway.name & gateway.namespace in the configuration file to specify which Gateway Contour will be watching.")
 	}
 
-	foundGatewayAPI := false
-	for _, r := range k8s.GatewayAPIResources() {
-		if !clients.ResourcesExist(r) {
-			log.WithField("resource", r).Warn("resource type not present on API server")
-			continue
-		}
-		foundGatewayAPI = true
-
-		if err := informOnResource(clients, r, &dynamicHandler); err != nil {
-			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
-		}
-	}
-
-	// Only watch namespaces if Gateway API is found.
-	if foundGatewayAPI {
-		if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler); err != nil {
-			log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
+	// Only inform on GatewayAPI resources if Gateway API is found.
+	if ctx.Config.GatewayConfig != nil {
+		if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
+			for _, r := range k8s.GatewayAPIResources() {
+				if err := informOnResource(clients, r, &dynamicHandler); err != nil {
+					log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
+				}
+			}
+			// Inform on Namespaces.
+			if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler); err != nil {
+				log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
+			}
+		} else {
+			log.Fatalf("GatewayAPI Gateway configured but APIs not installed in cluster.")
 		}
 	}
 

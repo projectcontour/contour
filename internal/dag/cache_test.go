@@ -727,7 +727,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				ConfiguredSecretRefs: []*types.NamespacedName{
 					{Name: "secretReferredByConfigFile", Namespace: "default"}},
 				FieldLogger: fixture.NewTestLogger(t),
-				Gateway: types.NamespacedName{
+				ConfiguredGateway: types.NamespacedName{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
@@ -745,7 +745,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 	cache := func(objs ...interface{}) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
-			Gateway: types.NamespacedName{
+			ConfiguredGateway: types.NamespacedName{
 				Name:      "contour",
 				Namespace: "projectcontour",
 			},
@@ -1351,7 +1351,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 	cache := func(objs ...interface{}) *KubernetesCache {
 		cache := KubernetesCache{
 			FieldLogger: fixture.NewTestLogger(t),
-			Gateway: types.NamespacedName{
+			ConfiguredGateway: types.NamespacedName{
 				Name:      "contour",
 				Namespace: "projectcontour",
 			},
