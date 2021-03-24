@@ -58,33 +58,35 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		return
 	}
 
-	var matchingRoutes []*gatewayapi_v1alpha1.HTTPRoute
+	for _, listener := range p.source.gateway.Spec.Listeners {
 
-	for _, route := range p.source.httproutes {
+		var matchingRoutes []*gatewayapi_v1alpha1.HTTPRoute
 
-		// Filter the HTTPRoutes that match the gateway which Contour is configured to watch.
-		// RouteBindingSelector defines a schema for associating routes with the Gateway.
-		// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
+		// Validate the Group on the selector is a supported type.
+		if listener.Routes.Group != "" && listener.Routes.Group != gatewayapi_v1alpha1.GroupName {
+			// TODO: Set the “ResolvedRefs” condition to false for this listener with the “InvalidRoutesRef” reason.
+			p.Errorf("Listener.Routes.Group %q is not supported.", listener.Routes.Group)
+			continue
+		}
 
-		// ## RouteBindingSelector ##
-		//
-		// Selector specifies a set of route labels used for selecting routes to associate
-		// with the Gateway. If this Selector is defined, only routes matching the Selector
-		// are associated with the Gateway. An empty Selector matches all routes.
-		for _, listener := range p.source.gateway.Spec.Listeners {
+		// Validate the Kind on the selector is a supported type.
+		if listener.Routes.Kind != KindHTTPRoute {
+			// TODO: Set the “ResolvedRefs” condition to false for this listener with the “InvalidRoutesRef” reason.
+			p.Errorf("Listener.Routes.Kind %q is not supported.", listener.Routes.Kind)
+			continue
+		}
 
-			// Validate the Group on the selector is a supported type.
-			if listener.Routes.Group != "" && listener.Routes.Group != gatewayapi_v1alpha1.GroupName {
-				// TODO: Set the “ResolvedRefs” condition to false for this listener with the “InvalidRoutesRef” reason.
-				p.Errorf("Listener.Routes.Group %q is not supported.", listener.Routes.Group)
-				continue
-			}
+		for _, route := range p.source.httproutes {
 
-			// Validate the Kind on the selector is a supported type.
-			if listener.Routes.Kind != KindHTTPRoute {
-				// TODO: Set the “ResolvedRefs” condition to false for this listener with the “InvalidRoutesRef” reason.
-				p.Errorf("Listener.Routes.Kind %q is not supported.", listener.Routes.Kind)
-			}
+			// Filter the HTTPRoutes that match the gateway which Contour is configured to watch.
+			// RouteBindingSelector defines a schema for associating routes with the Gateway.
+			// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
+
+			// ## RouteBindingSelector ##
+			//
+			// Selector specifies a set of route labels used for selecting routes to associate
+			// with the Gateway. If this Selector is defined, only routes matching the Selector
+			// are associated with the Gateway. An empty Selector matches all routes.
 
 			nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route)
 			if err != nil {
@@ -102,13 +104,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				break
 			}
 		}
-	}
 
-	// Process all the routes that match this Gateway.
-	for _, matchingRoute := range matchingRoutes {
-		p.computeHTTPRoute(matchingRoute)
+		// Process all the routes that match this Gateway.
+		for _, matchingRoute := range matchingRoutes {
+			p.computeHTTPRoute(matchingRoute)
+		}
 	}
-
 }
 
 // namespaceMatches returns true if the namespaces selector matches
