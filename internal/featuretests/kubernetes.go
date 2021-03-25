@@ -23,6 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// TODO: Use only v1 Ingress only as v1beta1 will be removed in a
+// kubernetes version soon.
 func IngressBackend(svc *v1.Service) *networking_v1.IngressBackend {
 	return &networking_v1.IngressBackend{
 		Service: &networking_v1.IngressServiceBackend{
