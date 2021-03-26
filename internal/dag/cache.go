@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -52,7 +53,7 @@ type KubernetesCache struct {
 	ConfiguredSecretRefs []*types.NamespacedName
 
 	ingresses                 map[types.NamespacedName]*networking_v1.Ingress
-	ingressclasses            map[string]*networking_v1.IngressClass
+	ingressclass              *networking_v1.IngressClass
 	httpproxies               map[types.NamespacedName]*contour_api_v1.HTTPProxy
 	secrets                   map[types.NamespacedName]*v1.Secret
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
@@ -72,7 +73,6 @@ type KubernetesCache struct {
 // init creates the internal cache storage. It is called implicitly from the public API.
 func (kc *KubernetesCache) init() {
 	kc.ingresses = make(map[types.NamespacedName]*networking_v1.Ingress)
-	kc.ingressclasses = make(map[string]*networking_v1.IngressClass)
 	kc.httpproxies = make(map[types.NamespacedName]*contour_api_v1.HTTPProxy)
 	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
 	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
@@ -84,10 +84,76 @@ func (kc *KubernetesCache) init() {
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
 
-// matchesIngressClass returns true if the given Kubernetes object
-// belongs to the Ingress class that this cache is using.
-func (kc *KubernetesCache) matchesIngressClass(obj metav1.Object) bool {
+// matchesIngressClass returns true if the given IngressClass
+// is the one this cache is using.
+func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) bool {
+	// If no ingress class name set, we allow an ingress class that is named
+	// with the default Contour accepted name.
+	if kc.IngressClassName == "" && obj.Name == "contour" {
+		return true
+	}
+	// Otherwise, the name of the ingress class must match what has been
+	// configured.
+	if obj.Name == kc.IngressClassName {
+		return true
+	}
+	return false
+}
 
+// ingressMatchesIngressClass returns true if the given Ingress object matches
+// the configured ingress class name via annotation or Spec.IngressClassName.
+// Annotation takes precendence over the Spec value.
+func (kc *KubernetesCache) ingressMatchesIngressClass(obj metav1.Object) bool {
+	annotationClass := annotation.IngressClass(obj)
+	var specClass string
+	switch obj := obj.(type) {
+	case *v1beta1.Ingress:
+		specClass = pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")
+	case *networking_v1.Ingress:
+		specClass = pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")
+	}
+
+	// If annotation is set or annotation is not set and spec is not set, we
+	// will try to match the annotation.
+	checkAnnotation := annotationClass != "" || specClass == ""
+
+	// If the annotation matches, return true.
+	if checkAnnotation && annotation.MatchesIngressClass(obj, kc.IngressClassName) {
+		return true
+	}
+
+	// Otherwise, we check that the annotation was not set to make sure we
+	// don't proceed if the annotation had a value and didn't match.
+	if !checkAnnotation {
+		var classToMatch string
+		switch kc.IngressClassName {
+		case "":
+			// If cache doesn't have an ingress class name set, match the
+			// default.
+			classToMatch = "contour"
+		default:
+			classToMatch = kc.IngressClassName
+		}
+		if specClass == classToMatch {
+			return true
+		}
+	}
+
+	// We didn't get a match so report this object is being ignored.
+	kind := k8s.KindOf(obj)
+	kc.WithField("name", obj.GetName()).
+		WithField("namespace", obj.GetNamespace()).
+		WithField("kind", kind).
+		WithField("ingress-class annotation", annotationClass).
+		WithField("ingress-class name", specClass).
+		WithField("target-ingress-class", kc.IngressClassName).
+		Debug("ignoring object with unmatched ingress class")
+	return false
+}
+
+// matchesIngressClassAnnotation returns true if the given Kubernetes object
+// belongs to the Ingress class that this cache is using.
+func (kc *KubernetesCache) matchesIngressClassAnnotation(obj metav1.Object) bool {
 	if !annotation.MatchesIngressClass(obj, kc.IngressClassName) {
 		kind := k8s.KindOf(obj)
 
@@ -101,7 +167,6 @@ func (kc *KubernetesCache) matchesIngressClass(obj metav1.Object) bool {
 	}
 
 	return true
-
 }
 
 // matchesGateway returns true if the given Kubernetes object
@@ -173,22 +238,24 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.namespaces[obj.Name] = obj
 		return true
 	case *v1beta1.Ingress:
-		if kc.matchesIngressClass(obj) {
+		if kc.ingressMatchesIngressClass(obj) {
 			// Convert the v1beta1 object to v1 before adding to the
 			// local ingress cache for easier processing later on.
 			kc.ingresses[k8s.NamespacedNameOf(obj)] = toV1Ingress(obj)
 			return true
 		}
 	case *networking_v1.Ingress:
-		if kc.matchesIngressClass(obj) {
+		if kc.ingressMatchesIngressClass(obj) {
 			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		}
 	case *networking_v1.IngressClass:
-		kc.ingressclasses[obj.Name] = obj
-		return true
-	case *contour_api_v1.HTTPProxy:
 		if kc.matchesIngressClass(obj) {
+			kc.ingressclass = obj
+			return true
+		}
+	case *contour_api_v1.HTTPProxy:
+		if kc.matchesIngressClassAnnotation(obj) {
 			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		}
@@ -308,9 +375,10 @@ func toV1Ingress(obj *v1beta1.Ingress) *networking_v1.Ingress {
 	return &networking_v1.Ingress{
 		ObjectMeta: obj.ObjectMeta,
 		Spec: networking_v1.IngressSpec{
-			DefaultBackend: convertedDefaultBackend,
-			TLS:            convertedTLS,
-			Rules:          convertedIngressRules,
+			IngressClassName: obj.Spec.IngressClassName,
+			DefaultBackend:   convertedDefaultBackend,
+			TLS:              convertedTLS,
+			Rules:            convertedIngressRules,
 		},
 	}
 }
@@ -366,9 +434,11 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		delete(kc.ingresses, m)
 		return ok
 	case *networking_v1.IngressClass:
-		_, ok := kc.ingressclasses[obj.Name]
-		delete(kc.ingressclasses, obj.Name)
-		return ok
+		if kc.matchesIngressClass(obj) {
+			kc.ingressclass = nil
+			return true
+		}
+		return false
 	case *contour_api_v1.HTTPProxy:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httpproxies[m]

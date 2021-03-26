@@ -411,17 +411,90 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert ingress empty ingress class": {
-			obj: &v1beta1.Ingress{
+		"insert ingress class correct name": {
+			obj: &networking_v1.IngressClass{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
+					Name: "contour",
+				},
+			},
+			want: true,
+		},
+		"insert ingress class incorrect name": {
+			obj: &networking_v1.IngressClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "notagoodclass",
+				},
+			},
+			want: false,
+		},
+		"insert ingressv1 empty ingress class": {
+			obj: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "correct",
 					Namespace: "default",
 				},
 			},
 			want: true,
 		},
-		"insert ingress incorrect kubernetes.io/ingress.class": {
+		"insert ingressv1beta1 empty ingress class": {
 			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "correct",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert ingressv1 incorrect ingress class name": {
+			obj: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+				},
+				Spec: networking_v1.IngressSpec{
+					IngressClassName: pointer.StringPtr("nginx"),
+				},
+			},
+			want: false,
+		},
+		"insert ingressv1 explicit ingress class name": {
+			obj: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "explicit",
+					Namespace: "default",
+				},
+				Spec: networking_v1.IngressSpec{
+					IngressClassName: pointer.StringPtr("contour"),
+				},
+			},
+			want: true,
+		},
+		"insert ingressv1beta1 incorrect ingress class name": {
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					IngressClassName: pointer.StringPtr("nginx"),
+				},
+			},
+			want: false,
+		},
+		"insert ingressv1beta1 explicit ingress class name": {
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "explicit",
+					Namespace: "default",
+				},
+				Spec: v1beta1.IngressSpec{
+					IngressClassName: pointer.StringPtr("contour"),
+				},
+			},
+			want: true,
+		},
+		"insert ingressv1 incorrect kubernetes.io/ingress.class": {
+			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
@@ -432,8 +505,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
-		"insert ingress incorrect projectcontour.io/ingress.class": {
-			obj: &v1beta1.Ingress{
+		"insert ingressv1 incorrect projectcontour.io/ingress.class": {
+			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
@@ -444,10 +517,34 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
-		"insert ingress explicit kubernetes.io/ingress.class": {
-			obj: &v1beta1.Ingress{
+		"insert ingressv1beta1 incorrect kubernetes.io/ingress.class": {
+			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": "nginx",
+					},
+				},
+			},
+			want: false,
+		},
+		"insert ingressv1beta1 incorrect projectcontour.io/ingress.class": {
+			obj: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "incorrect",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+					},
+				},
+			},
+			want: false,
+		},
+		"insert ingressv1 explicit kubernetes.io/ingress.class": {
+			obj: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
 						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
@@ -456,14 +553,150 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert ingress explicit projectcontour.io/ingress.class": {
-			obj: &v1beta1.Ingress{
+		"insert ingressv1 explicit projectcontour.io/ingress.class": {
+			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
+					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
 						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
 					},
+				},
+			},
+			want: true,
+		},
+		"insert ingressv1beta1 explicit kubernetes.io/ingress.class": {
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "explicit",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+					},
+				},
+			},
+			want: true,
+		},
+		"insert ingressv1beta1 explicit projectcontour.io/ingress.class": {
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "explicit",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+					},
+				},
+			},
+			want: true,
+		},
+		"insert ingressv1 projectcontour.io ingress class annotation overrides kubernetes.io incorrect": {
+			obj: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+						"kubernetes.io/ingress.class":     annotation.DEFAULT_INGRESS_CLASS_NAME,
+					},
+				},
+			},
+			want: false,
+		},
+		"insert ingressv1 projectcontour.io ingress class annotation overrides kubernetes.io correct": {
+			obj: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"kubernetes.io/ingress.class":     "nginx",
+					},
+				},
+			},
+			want: true,
+		},
+		"insert ingressv1beta1 projectcontour.io ingress class annotation overrides kubernetes.io incorrect": {
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+						"kubernetes.io/ingress.class":     annotation.DEFAULT_INGRESS_CLASS_NAME,
+					},
+				},
+			},
+			want: false,
+		},
+		"insert ingressv1beta1 projectcontour.io ingress class annotation overrides kubernetes.io correct": {
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"kubernetes.io/ingress.class":     "nginx",
+					},
+				},
+			},
+			want: true,
+		},
+		"insert ingressv1 ingress class annotation overrides spec incorrect": {
+			obj: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+					},
+				},
+				Spec: networking_v1.IngressSpec{
+					IngressClassName: pointer.StringPtr("contour"),
+				},
+			},
+			want: false,
+		},
+		"insert ingressv1 ingress class annotation overrides spec correct": {
+			obj: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+					},
+				},
+				Spec: networking_v1.IngressSpec{
+					IngressClassName: pointer.StringPtr("nginx"),
+				},
+			},
+			want: true,
+		},
+		"insert ingressv1beta1 ingress class annotation overrides spec incorrect": {
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					IngressClassName: pointer.StringPtr("contour"),
+				},
+			},
+			want: false,
+		},
+		"insert ingressv1beta1 ingress class annotation overrides spec correct": {
+			obj: &v1beta1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+					},
+				},
+				Spec: v1beta1.IngressSpec{
+					IngressClassName: pointer.StringPtr("nginx"),
 				},
 			},
 			want: true,
@@ -811,6 +1044,32 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			},
 			want: true,
+		},
+		"remove ingress class correct name": {
+			cache: cache(&networking_v1.IngressClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "contour",
+				},
+			}),
+			obj: &networking_v1.IngressClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "contour",
+				},
+			},
+			want: true,
+		},
+		"remove ingress class wrong name": {
+			cache: cache(&networking_v1.IngressClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "contour",
+				},
+			}),
+			obj: &networking_v1.IngressClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "somethingelse",
+				},
+			},
+			want: false,
 		},
 		"remove ingress": {
 			cache: cache(&v1beta1.Ingress{
