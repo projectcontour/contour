@@ -102,13 +102,31 @@ type MatchCondition interface {
 	fmt.Stringer
 }
 
-// PrefixMatchCondition matches the start of a URL.
-type PrefixMatchCondition struct {
-	Prefix string
+// PrefixMatchType represents different types of prefix matching alternatives.
+type PrefixMatchType int
+
+const (
+	// PrefixMatchString represents a prefix match that functions like a
+	// string prefix match, i.e. prefix /foo matches /foobar
+	PrefixMatchString PrefixMatchType = iota
+	// PrefixMatchSegment represents a prefix match that only matches full path
+	// segments, i.e. prefix /foo matches /foo/bar but not /foobar
+	PrefixMatchSegment
+)
+
+var prefixMatchTypeToName = map[PrefixMatchType]string{
+	PrefixMatchString:  "string",
+	PrefixMatchSegment: "segment",
 }
 
-func (pc *ExactMatchCondition) String() string {
-	return "exact: " + pc.Path
+// PrefixMatchCondition matches the start of a URL.
+type PrefixMatchCondition struct {
+	Prefix          string
+	PrefixMatchType PrefixMatchType
+}
+
+func (ec *ExactMatchCondition) String() string {
+	return "exact: " + ec.Path
 }
 
 // ExactMatchCondition matches the entire path of a URL.
@@ -117,7 +135,11 @@ type ExactMatchCondition struct {
 }
 
 func (pc *PrefixMatchCondition) String() string {
-	return "prefix: " + pc.Prefix
+	str := "prefix: " + pc.Prefix
+	if typeStr, ok := prefixMatchTypeToName[pc.PrefixMatchType]; ok {
+		str += " type: " + typeStr
+	}
+	return str
 }
 
 // RegexMatchCondition matches the URL by regular expression.

@@ -56,6 +56,10 @@ func RouteAuthzContext(settings map[string]string) *any.Any {
 	)
 }
 
+const prefixPathMatchSegmentRegex = `((\/).*)?`
+
+var _ = regexp.MustCompile(prefixPathMatchSegmentRegex)
+
 // RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	switch c := route.PathMatchCondition.(type) {
@@ -67,11 +71,23 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
 	case *dag.PrefixMatchCondition:
-		return &envoy_route_v3.RouteMatch{
-			PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
-				Prefix: c.Prefix,
-			},
-			Headers: headerMatcher(route.HeaderMatchConditions),
+		switch c.PrefixMatchType {
+		case dag.PrefixMatchSegment:
+			return &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
+					SafeRegex: SafeRegexMatch(regexp.QuoteMeta(c.Prefix) + prefixPathMatchSegmentRegex),
+				},
+				Headers: headerMatcher(route.HeaderMatchConditions),
+			}
+		case dag.PrefixMatchString:
+			fallthrough
+		default:
+			return &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
+					Prefix: c.Prefix,
+				},
+				Headers: headerMatcher(route.HeaderMatchConditions),
+			}
 		}
 	case *dag.ExactMatchCondition:
 		return &envoy_route_v3.RouteMatch{

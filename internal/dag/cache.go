@@ -329,7 +329,10 @@ func toV1Ingress(obj *v1beta1.Ingress) *networking_v1.Ingress {
 			var paths []networking_v1.HTTPIngressPath
 
 			for _, p := range r.HTTP.Paths {
-				var pathType networking_v1.PathType
+				// Default to implementation specific path type if not set.
+				// In practice this is mostly to ensure tests do not panic as a
+				// a real resource cannot be created without a path type set.
+				pathType := networking_v1.PathTypeImplementationSpecific
 				if p.PathType != nil {
 					switch *p.PathType {
 					case v1beta1.PathTypePrefix:

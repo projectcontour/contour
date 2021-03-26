@@ -94,6 +94,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectSame,
 					},
@@ -122,6 +123,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectSame,
 					},
@@ -140,6 +142,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectAll,
 					},
@@ -158,6 +161,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectSelector,
 						Selector: metav1.LabelSelector{
@@ -186,6 +190,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectSelector,
 						Selector: metav1.LabelSelector{
@@ -213,6 +218,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
 				Protocol: "HTTP",
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+				},
 			}},
 		},
 	}
@@ -519,6 +527,105 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		// Test that a gateway selector doesn't select routes that do not match.
 		"insert basic single route, single hostname which doesn't match gateway's selector": {
 			gateway: gatewaySelectorNotMatching,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// Test that a gateway selector kind that doesn't match.
+		"insert gateway with selector kind that doesn't match": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: "HTTP",
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: "INVALID",
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// Test that a gateway selector group that doesn't match.
+		"insert gateway with selector group that doesn't match": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: "HTTP",
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind:  "HTTPRoute",
+							Group: "INVALID",
+						},
+					}},
+				},
+			},
 			objs: []interface{}{
 				kuardService,
 				&gatewayapi_v1alpha1.HTTPRoute{
@@ -1726,6 +1833,58 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	iPathMatchTypesV1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pathmatchtypes",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+								Path:     "/exact",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+								Path:     "/exact_with_regex/.*",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix_trailing_slash/",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix_with_regex/.*",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								Path:     "/implementation_specific",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*networking_v1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								Path:     "/implementation_specific_with_regex/.*",
+								Backend:  *backendv1("kuard", intstr.FromString("http")),
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
 	i1 := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -2400,6 +2559,59 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	iPathMatchTypes := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pathmatchtypes",
+			Namespace: "default",
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{{
+				IngressRuleValue: v1beta1.IngressRuleValue{
+					HTTP: &v1beta1.HTTPIngressRuleValue{
+						Paths: []v1beta1.HTTPIngressPath{
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
+								Path:     "/exact",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
+								Path:     "/exact_with_regex/.*",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix_trailing_slash/",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
+								Path:     "/prefix_with_regex/.*",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								Path:     "/implementation_specific",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+							{
+								PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+								Path:     "/implementation_specific_with_regex/.*",
+								Backend:  *backend("kuard", intstr.FromString("http")),
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
 	// s3a and b have http/2 protocol annotations
 	s3a := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -5823,7 +6035,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 						}),
 					),
@@ -5840,7 +6052,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 						}),
 					),
@@ -5903,7 +6115,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 						}),
 					),
@@ -5920,7 +6132,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 						}),
 					),
@@ -5944,7 +6156,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -5964,7 +6176,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -5984,7 +6196,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -6004,7 +6216,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -6024,7 +6236,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
@@ -6044,7 +6256,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6064,7 +6276,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6084,7 +6296,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6104,7 +6316,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6124,7 +6336,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							TimeoutPolicy: TimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
@@ -6150,7 +6362,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
@@ -6172,7 +6384,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
@@ -6194,7 +6406,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "5xx",
@@ -6216,7 +6428,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
@@ -6252,6 +6464,50 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 			},
 			want: listeners(),
+		},
+		"insert ingress with various path match types": {
+			objs: []interface{}{
+				iPathMatchTypes,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							&Route{
+								PathMatchCondition: exact("/exact"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: exact("/exact_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: prefixSegment("/prefix"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								// Trailing slash is stripped.
+								PathMatchCondition: prefixSegment("/prefix_trailing_slash"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: prefixSegment("/prefix_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: prefixString("/implementation_specific"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/implementation_specific_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+						),
+					),
+				},
+			),
 		},
 		// issue 1234
 		"insert ingress with wildcard hostnames": {
@@ -6422,7 +6678,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
 							RetryPolicy: &RetryPolicy{
 								RetryOn:       "gateway-error",
@@ -6457,6 +6713,50 @@ func TestDAGInsert(t *testing.T) {
 				s1,
 			},
 			want: listeners(),
+		},
+		"ingressv1: insert ingress with various path match types": {
+			objs: []interface{}{
+				iPathMatchTypesV1,
+				s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*",
+							&Route{
+								PathMatchCondition: exact("/exact"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: exact("/exact_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: prefixSegment("/prefix"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								// Trailing slash is stripped.
+								PathMatchCondition: prefixSegment("/prefix_trailing_slash"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: prefixSegment("/prefix_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: prefixString("/implementation_specific"),
+								Clusters:           clustermap(s1),
+							},
+							&Route{
+								PathMatchCondition: regex("/implementation_specific_with_regex/.*"),
+								Clusters:           clustermap(s1),
+							},
+						),
+					),
+				},
+			),
 		},
 		// issue 1234
 		"ingressv1: insert ingress with wildcard hostnames": {
@@ -6724,7 +7024,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/kuard"},
+							PathMatchCondition: prefixString("/kuard"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "x-request-id", MatchType: "present"},
 								{Name: "e-tag", Value: "abcdef", MatchType: "contains"},
@@ -6747,13 +7047,13 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							PathMatchCondition: prefixString("/"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "abc", MatchType: "contains"},
 							},
 							Clusters: clusters(service(s1)),
 						}, &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							PathMatchCondition: prefixString("/"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "def", MatchType: "contains"},
 							},
@@ -6772,13 +7072,13 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							PathMatchCondition: prefixString("/"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "abc", MatchType: "contains"},
 							},
 							Clusters: clusters(service(s1)),
 						}, &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							PathMatchCondition: prefixString("/"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "e-tag", Value: "abc", MatchType: "contains", Invert: true},
 							},
@@ -6797,7 +7097,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: &PrefixMatchCondition{Prefix: "/kuard"},
+							PathMatchCondition: prefixString("/kuard"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "x-request-id", MatchType: "present"},
 								{Name: "x-timeout", Value: "infinity", MatchType: "contains", Invert: true},
@@ -7221,7 +7521,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								PathMatchCondition: prefix("/blog/infotech"),
+								PathMatchCondition: prefixString("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Weighted: WeightedService{
@@ -7261,7 +7561,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								PathMatchCondition: prefix("/blog/infotech"),
+								PathMatchCondition: prefixString("/blog/infotech"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Weighted: WeightedService{
@@ -7286,7 +7586,7 @@ func TestDAGInsert(t *testing.T) {
 								},
 							),
 							&Route{
-								PathMatchCondition: prefix("/blog/it/foo"),
+								PathMatchCondition: prefixString("/blog/it/foo"),
 								Clusters: []*Cluster{{
 									Upstream: &Service{
 										Weighted: WeightedService{
@@ -7848,7 +8148,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
 									ExternalName: "externalservice.io",
@@ -7912,7 +8212,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: service(s9),
 								SNI:      "bar.com",
@@ -7935,7 +8235,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: &Service{
 									ExternalName: "externalservice.io",
@@ -7994,7 +8294,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{{
 								Upstream: service(s9),
 								SNI:      "bar.com",
@@ -8021,7 +8321,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s9),
 							RequestHeadersPolicy: &HeadersPolicy{
 								Set: map[string]string{
@@ -8043,7 +8343,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s9),
 							RequestHeadersPolicy: &HeadersPolicy{
 								Set: map[string]string{
@@ -8065,7 +8365,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{
 								{Upstream: service(s9), LoadBalancerPolicy: "Cookie"},
 							},
@@ -8093,7 +8393,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{
 								{Upstream: service(s9), LoadBalancerPolicy: "RequestHash"},
 							},
@@ -8125,7 +8425,7 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", &Route{
-							PathMatchCondition: prefix("/"),
+							PathMatchCondition: prefixString("/"),
 							Clusters: []*Cluster{
 								{Upstream: service(s9), LoadBalancerPolicy: "RoundRobin"},
 							},
@@ -9289,7 +9589,7 @@ func routes(routes ...*Route) map[string]*Route {
 func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
-		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
+		PathMatchCondition: prefixString(prefix),
 		Clusters:           clusters(services...),
 	}
 }
@@ -9302,14 +9602,14 @@ func routeProtocol(prefix string, protocol string, first *Service, rest ...*Serv
 		c.Protocol = protocol
 	}
 	return &Route{
-		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
+		PathMatchCondition: prefixString(prefix),
 		Clusters:           cs,
 	}
 }
 
 func routeCluster(prefix string, first *Cluster, rest ...*Cluster) *Route {
 	return &Route{
-		PathMatchCondition: &PrefixMatchCondition{Prefix: prefix},
+		PathMatchCondition: prefixString(prefix),
 		Clusters:           append([]*Cluster{first}, rest...),
 	}
 }
@@ -9406,8 +9706,14 @@ func listeners(ls ...*Listener) []Vertex {
 	return v
 }
 
-func prefix(prefix string) MatchCondition { return &PrefixMatchCondition{Prefix: prefix} }
-func regex(regex string) MatchCondition   { return &RegexMatchCondition{Regex: regex} }
+func prefixString(prefix string) MatchCondition {
+	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchString}
+}
+func prefixSegment(prefix string) MatchCondition {
+	return &PrefixMatchCondition{Prefix: prefix, PrefixMatchType: PrefixMatchSegment}
+}
+func exact(path string) MatchCondition  { return &ExactMatchCondition{Path: path} }
+func regex(regex string) MatchCondition { return &RegexMatchCondition{Regex: regex} }
 
 func withMirror(r *Route, mirror *Service) *Route {
 	r.MirrorPolicy = &MirrorPolicy{
