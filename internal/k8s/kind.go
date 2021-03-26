@@ -43,14 +43,14 @@ func KindOf(obj interface{}) string {
 			return "Ingress"
 		case *contour_api_v1.HTTPProxy:
 			return "HTTPProxy"
+		case *gatewayapi_v1alpha1.HTTPRoute:
+			return "HTTPRoute"
 		case *contour_api_v1.TLSCertificateDelegation:
 			return "TLSCertificateDelegation"
 		case *v1alpha1.ExtensionService:
 			return "ExtensionService"
 		case *unstructured.Unstructured:
 			return obj.GetKind()
-		case *gatewayapi_v1alpha1.HTTPRoute:
-			return "HTTPRoute"
 		default:
 			return ""
 		}

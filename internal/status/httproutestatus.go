@@ -18,7 +18,6 @@ import (
 	"time"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,8 +32,8 @@ type HTTPRouteUpdate struct {
 }
 
 // ConditionFor returns a v1.Condition for a given ConditionType.
-func (pu *HTTPRouteUpdate) ConditionFor(cond ConditionType, reason string, message string) metav1.Condition {
-	newDc := v1.Condition{}
+func (routeUpdate *HTTPRouteUpdate) ConditionFor(cond ConditionType, reason string, message string) metav1.Condition {
+	newDc := contour_api_v1.Condition{}
 	newDc.Reason = reason
 	newDc.Status = contour_api_v1.ConditionTrue
 	newDc.Type = string(cond)
@@ -48,7 +47,7 @@ func (pu *HTTPRouteUpdate) ConditionFor(cond ConditionType, reason string, messa
 	}
 	newDc.Message = message
 	newDc.LastTransitionTime = metav1.NewTime(time.Now())
-	pu.Conditions = append(pu.Conditions, newDc)
+	routeUpdate.Conditions = append(routeUpdate.Conditions, newDc)
 	return newDc
 }
 
@@ -76,11 +75,11 @@ func (c *Cache) commitHTTPRoute(pu *HTTPRouteUpdate) {
 	c.httpRouteUpdates[pu.Fullname] = pu
 }
 
-func (pu *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
+func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	o, ok := obj.(*gatewayapi_v1alpha1.HTTPRoute)
 	if !ok {
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in HTTPRouteUpdate status mutator",
-			obj, pu.Fullname.Namespace, pu.Fullname.Name,
+			obj, routeUpdate.Fullname.Namespace, routeUpdate.Fullname.Name,
 		))
 	}
 
@@ -89,12 +88,12 @@ func (pu *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	var gatewayStatuses []gatewayapi_v1alpha1.RouteGatewayStatus
 	var conditionsToWrite []metav1.Condition
 
-	for _, cond := range pu.Conditions {
+	for _, cond := range routeUpdate.Conditions {
 
 		// Look through the newly calculated conditions, if they already exist
 		// on the object then leave them be, otherwise add them to the list
 		// to be written back to the API.
-		for _, existingCond := range pu.ExistingConditions {
+		for _, existingCond := range routeUpdate.ExistingConditions {
 			if cond.Status == existingCond.Status &&
 				cond.Reason == existingCond.Reason &&
 				cond.Message == existingCond.Message &&
@@ -110,8 +109,8 @@ func (pu *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 
 	gatewayStatuses = append(gatewayStatuses, gatewayapi_v1alpha1.RouteGatewayStatus{
 		GatewayRef: gatewayapi_v1alpha1.GatewayReference{
-			Name:      pu.GatewayRef.Name,
-			Namespace: pu.GatewayRef.Namespace,
+			Name:      routeUpdate.GatewayRef.Name,
+			Namespace: routeUpdate.GatewayRef.Namespace,
 		},
 		Conditions: conditionsToWrite,
 	})
@@ -119,7 +118,7 @@ func (pu *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	// Now that we have all the conditions, add them back to the object
 	// to get written out.
 	for _, rgs := range httpRoute.Status.Gateways {
-		if rgs.GatewayRef.Name == pu.GatewayRef.Name && rgs.GatewayRef.Namespace == pu.GatewayRef.Namespace {
+		if rgs.GatewayRef.Name == routeUpdate.GatewayRef.Name && rgs.GatewayRef.Namespace == routeUpdate.GatewayRef.Namespace {
 			continue
 		} else {
 			gatewayStatuses = append(gatewayStatuses, rgs)

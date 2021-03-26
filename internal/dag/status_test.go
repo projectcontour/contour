@@ -2477,6 +2477,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 							Listeners: []gatewayapi_v1alpha1.Listener{{
 								Port:     80,
 								Protocol: "HTTP",
+								Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+									Kind: KindHTTPRoute,
+								},
 							}},
 						},
 					},
@@ -2496,8 +2499,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				builder.Source.Insert(o)
 			}
 			dag := builder.Build()
-			t.Logf("%#v\n", dag.StatusCache)
-
 			updates := dag.StatusCache.GetHTTPRouteUpdates()
 
 			var gotConditions []metav1.Condition
