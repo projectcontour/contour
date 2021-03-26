@@ -94,6 +94,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectSame,
 					},
@@ -122,6 +123,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectSame,
 					},
@@ -140,6 +142,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectAll,
 					},
@@ -158,6 +161,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectSelector,
 						Selector: metav1.LabelSelector{
@@ -186,6 +190,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
 						From: gatewayapi_v1alpha1.RouteSelectSelector,
 						Selector: metav1.LabelSelector{
@@ -213,6 +218,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
 				Protocol: "HTTP",
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+				},
 			}},
 		},
 	}
@@ -519,6 +527,105 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		// Test that a gateway selector doesn't select routes that do not match.
 		"insert basic single route, single hostname which doesn't match gateway's selector": {
 			gateway: gatewaySelectorNotMatching,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// Test that a gateway selector kind that doesn't match.
+		"insert gateway with selector kind that doesn't match": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: "HTTP",
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: "INVALID",
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// Test that a gateway selector group that doesn't match.
+		"insert gateway with selector group that doesn't match": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: "HTTP",
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind:  "HTTPRoute",
+							Group: "INVALID",
+						},
+					}},
+				},
+			},
 			objs: []interface{}{
 				kuardService,
 				&gatewayapi_v1alpha1.HTTPRoute{
