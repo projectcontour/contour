@@ -132,7 +132,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("insecure", "Allow serving without TLS secured gRPC.").BoolVar(&ctx.PermitInsecureGRPC)
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").PlaceHolder("<ns,ns>").StringVar(&ctx.rootNamespaces)
 
-	serve.Flag("ingress-class-name", "Contour IngressClass name.").PlaceHolder("<name>").StringVar(&ctx.ingressClass)
+	serve.Flag("ingress-class-name", "Contour IngressClass name.").PlaceHolder("<name>").StringVar(&ctx.ingressClassName)
 	serve.Flag("ingress-status-address", "Address to set in Ingress object status.").PlaceHolder("<address>").StringVar(&ctx.Config.IngressStatusAddress)
 	serve.Flag("envoy-http-access-log", "Envoy HTTP access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpAccessLog)
 	serve.Flag("envoy-https-access-log", "Envoy HTTPS access log.").PlaceHolder("/path/to/file").StringVar(&ctx.httpsAccessLog)
@@ -427,7 +427,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		Builder: dag.Builder{
 			Source: dag.KubernetesCache{
 				RootNamespaces:       ctx.proxyRootNamespaces(),
-				IngressClass:         ctx.ingressClass,
+				IngressClassName:     ctx.ingressClassName,
 				ConfiguredSecretRefs: configuredSecretRefs,
 				FieldLogger:          log.WithField("context", "KubernetesCache"),
 			},
@@ -626,7 +626,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		clients:       clients,
 		isLeader:      eventHandler.IsLeader,
 		lbStatus:      make(chan corev1.LoadBalancerStatus, 1),
-		ingressClass:  ctx.ingressClass,
+		ingressClass:  ctx.ingressClassName,
 		statusUpdater: sh.Writer(),
 		Converter:     converter,
 	}

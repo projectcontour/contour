@@ -57,7 +57,7 @@ type serveContext struct {
 	rootNamespaces string
 
 	// ingress class
-	ingressClass string
+	ingressClassName string
 
 	// envoy's stats listener parameters
 	statsAddr string

@@ -37,7 +37,7 @@ const (
 
 func TestIngressClassAnnotation_Configured(t *testing.T) {
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "linkerd"
+		reh.Builder.Source.IngressClassName = "linkerd"
 	})
 	defer done()
 
@@ -502,7 +502,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 func TestIngressClassUpdate(t *testing.T) {
 	t.Skip("Test disabled, see issue #2964")
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "contour"
+		reh.Builder.Source.IngressClassName = "contour"
 	})
 	defer done()
 

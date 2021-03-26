@@ -41,9 +41,9 @@ type KubernetesCache struct {
 	// namespace.
 	RootNamespaces []string
 
-	// Contour's IngressClass.
+	// Contour's IngressClassName.
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
-	IngressClass string
+	IngressClassName string
 
 	// ConfiguredGateway defines the current Gateway which Contour is configured to watch.
 	ConfiguredGateway types.NamespacedName
@@ -88,14 +88,14 @@ func (kc *KubernetesCache) init() {
 // belongs to the Ingress class that this cache is using.
 func (kc *KubernetesCache) matchesIngressClass(obj metav1.Object) bool {
 
-	if !annotation.MatchesIngressClass(obj, kc.IngressClass) {
+	if !annotation.MatchesIngressClass(obj, kc.IngressClassName) {
 		kind := k8s.KindOf(obj)
 
 		kc.WithField("name", obj.GetName()).
 			WithField("namespace", obj.GetNamespace()).
 			WithField("kind", kind).
 			WithField("ingress-class", annotation.IngressClass(obj)).
-			WithField("target-ingress-class", kc.IngressClass).
+			WithField("target-ingress-class", kc.IngressClassName).
 			Debug("ignoring object with unmatched ingress class")
 		return false
 	}
