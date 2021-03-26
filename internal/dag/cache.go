@@ -102,7 +102,7 @@ func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) 
 
 // ingressMatchesIngressClass returns true if the given Ingress object matches
 // the configured ingress class name via annotation or Spec.IngressClassName.
-// Annotation takes precendence over the Spec value.
+// Annotation takes precedence over the Spec value.
 func (kc *KubernetesCache) ingressMatchesIngressClass(obj metav1.Object) bool {
 	annotationClass := annotation.IngressClass(obj)
 	var specClass string
