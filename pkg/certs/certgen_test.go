@@ -47,9 +47,11 @@ func TestGenerateCerts(t *testing.T) {
 				t.Errorf("wanted no error, got error %q", err)
 			}
 
+			// If using a custom lifetime, validate the certs
+			// as of an hour before the intended expiration.
 			currentTime := time.Now()
 			if tc.config.Lifetime != 0 {
-				currentTime = time.Now().Add(24 * time.Duration(tc.config.Lifetime) * time.Hour).Add(-5 * time.Second)
+				currentTime = currentTime.Add(24 * time.Hour * time.Duration(tc.config.Lifetime)).Add(-time.Hour)
 			}
 
 			roots := x509.NewCertPool()
@@ -92,7 +94,10 @@ func TestGenerateCerts(t *testing.T) {
 
 	run(t, "custom lifetime", testcase{
 		config: &Configuration{
-			Lifetime: 10,
+			// use a lifetime longer than the default so we
+			// can verify that it's taking effect by validating
+			// the certs as of a time after the default expiration.
+			Lifetime: DefaultCertificateLifetime * 2,
 		},
 		wantContourDNSName: "contour",
 		wantEnvoyDNSName:   "envoy",
