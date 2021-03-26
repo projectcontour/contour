@@ -1040,15 +1040,42 @@ func TestRouteMatch(t *testing.T) {
 				}},
 			},
 		},
-		"path prefix": {
+		"path prefix string prefix": {
 			route: &dag.Route{
 				PathMatchCondition: &dag.PrefixMatchCondition{
-					Prefix: "/foo",
+					Prefix:          "/foo",
+					PrefixMatchType: dag.PrefixMatchString,
 				},
 			},
 			want: &envoy_route_v3.RouteMatch{
 				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
 					Prefix: "/foo",
+				},
+			},
+		},
+		"path prefix match segment": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo",
+					PrefixMatchType: dag.PrefixMatchSegment,
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
+					SafeRegex: SafeRegexMatch(`/foo((\/).*)?`),
+				},
+			},
+		},
+		"path prefix match segment with regex meta char": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo.bar",
+					PrefixMatchType: dag.PrefixMatchSegment,
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
+					SafeRegex: SafeRegexMatch(`/foo\.bar((\/).*)?`),
 				},
 			},
 		},
