@@ -77,7 +77,7 @@ type ExtensionServiceSpec struct {
 	UpstreamValidation *contour_api_v1.UpstreamValidation `json:"validation,omitempty"`
 
 	// Protocol may be used to specify (or override) the protocol used to reach this Service.
-	// Values may be tls, h2, h2c. If omitted, protocol-selection falls back on Service annotations.
+	// Values may be h2 or h2c. If omitted, protocol-selection falls back on Service annotations.
 	//
 	// +optional
 	// +kubebuilder:validation:Enum=h2;h2c
