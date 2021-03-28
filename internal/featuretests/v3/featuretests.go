@@ -315,13 +315,6 @@ func (s *statusResult) Like(want contour_api_v1.HTTPProxyStatus) *Contour {
 		)
 	}
 
-	if len(want.Description) > 0 {
-		assert.Equal(s.T,
-			contour_api_v1.HTTPProxyStatus{Description: want.Description},
-			contour_api_v1.HTTPProxyStatus{Description: s.Have.Description},
-		)
-	}
-
 	return s.Contour
 }
 

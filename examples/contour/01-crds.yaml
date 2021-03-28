@@ -287,10 +287,6 @@ spec:
       jsonPath: .status.currentStatus
       name: Status
       type: string
-    - description: Description of the current status
-      jsonPath: .status.description
-      name: Status Description
-      type: string
     name: v1
     schema:
       openAPIV3Schema:

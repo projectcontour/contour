@@ -296,8 +296,8 @@ $ kubectl apply -f echo-proxy.yaml
 certificate.cert-manager.io/ingress-conformance-echo created
 httpproxy.projectcontour.io/echo created
 $ kubectl get proxies echo
-NAME   FQDN                      TLS SECRET                 STATUS   STATUS DESCRIPTION
-echo   local.projectcontour.io   ingress-conformance-echo   valid    valid HTTPProxy
+NAME   FQDN                      TLS SECRET                 STATUS
+echo   local.projectcontour.io   ingress-conformance-echo   valid
 ```
 
 We can verify that the application is working by requesting any path:
