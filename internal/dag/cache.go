@@ -113,18 +113,28 @@ func (kc *KubernetesCache) ingressMatchesIngressClass(obj metav1.Object) bool {
 		specClass = pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")
 	}
 
-	// If annotation is set or annotation is not set and spec is not set, we
-	// will try to match the annotation.
-	checkAnnotation := annotationClass != "" || specClass == ""
-
-	// If the annotation matches, return true.
-	if checkAnnotation && annotation.MatchesIngressClass(obj, kc.IngressClassName) {
-		return true
+	logIfNoMatch := func(matches bool) bool {
+		if !matches {
+			// We didn't get a match so report this object is being ignored.
+			kind := k8s.KindOf(obj)
+			kc.WithField("name", obj.GetName()).
+				WithField("namespace", obj.GetNamespace()).
+				WithField("kind", kind).
+				WithField("ingress-class annotation", annotationClass).
+				WithField("ingress-class name", specClass).
+				WithField("target-ingress-class", kc.IngressClassName).
+				Debug("ignoring object with unmatched ingress class")
+		}
+		return matches
 	}
 
-	// Otherwise, we check that the annotation was not set to make sure we
-	// don't proceed if the annotation had a value and didn't match.
-	if !checkAnnotation {
+	// If annotation is set, check if it matches.
+	if annotationClass != "" {
+		return logIfNoMatch(annotation.MatchesIngressClass(obj, kc.IngressClassName))
+	}
+
+	// If spec field is set, check if it matches.
+	if specClass != "" {
 		var classToMatch string
 		switch kc.IngressClassName {
 		case "":
@@ -134,21 +144,11 @@ func (kc *KubernetesCache) ingressMatchesIngressClass(obj metav1.Object) bool {
 		default:
 			classToMatch = kc.IngressClassName
 		}
-		if specClass == classToMatch {
-			return true
-		}
+		return logIfNoMatch(specClass == classToMatch)
 	}
 
-	// We didn't get a match so report this object is being ignored.
-	kind := k8s.KindOf(obj)
-	kc.WithField("name", obj.GetName()).
-		WithField("namespace", obj.GetNamespace()).
-		WithField("kind", kind).
-		WithField("ingress-class annotation", annotationClass).
-		WithField("ingress-class name", specClass).
-		WithField("target-ingress-class", kc.IngressClassName).
-		Debug("ignoring object with unmatched ingress class")
-	return false
+	// Matches if class is not set.
+	return logIfNoMatch(kc.IngressClassName == "")
 }
 
 // matchesIngressClassAnnotation returns true if the given Kubernetes object
