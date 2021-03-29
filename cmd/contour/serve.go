@@ -287,19 +287,19 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	}
 	if ctx.Config.Policy.RequestHeadersPolicy.Remove != nil {
-		requestHeadersPolicy.Remove = make([]string, len(ctx.Config.Policy.RequestHeadersPolicy.Remove))
+		requestHeadersPolicy.Remove = make([]string, 0, len(ctx.Config.Policy.RequestHeadersPolicy.Remove))
 		requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, ctx.Config.Policy.RequestHeadersPolicy.Remove...)
 	}
 
 	var responseHeadersPolicy dag.HeadersPolicy
 	if ctx.Config.Policy.ResponseHeadersPolicy.Set != nil {
 		responseHeadersPolicy.Set = make(map[string]string)
-		for k, v := range ctx.Config.Policy.RequestHeadersPolicy.Set {
+		for k, v := range ctx.Config.Policy.ResponseHeadersPolicy.Set {
 			responseHeadersPolicy.Set[k] = v
 		}
 	}
 	if ctx.Config.Policy.ResponseHeadersPolicy.Remove != nil {
-		responseHeadersPolicy.Remove = make([]string, len(ctx.Config.Policy.ResponseHeadersPolicy.Remove))
+		responseHeadersPolicy.Remove = make([]string, 0, len(ctx.Config.Policy.ResponseHeadersPolicy.Remove))
 		responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, ctx.Config.Policy.ResponseHeadersPolicy.Remove...)
 	}
 

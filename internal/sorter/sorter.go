@@ -137,7 +137,11 @@ func (s routeSorter) Less(i, j int) bool {
 			case -1:
 				return false
 			default:
-				return longestRouteByHeaderConditions(s[i], s[j])
+				if a.PrefixMatchType == b.PrefixMatchType {
+					return longestRouteByHeaderConditions(s[i], s[j])
+				}
+				// Segment prefixes sort first as they are more specific.
+				return a.PrefixMatchType == dag.PrefixMatchSegment
 			}
 		}
 	case *dag.RegexMatchCondition:
