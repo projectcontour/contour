@@ -65,14 +65,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 		// Validate the Group on the selector is a supported type.
 		if listener.Routes.Group != "" && listener.Routes.Group != gatewayapi_v1alpha1.GroupName {
-			// TODO: Set the “ResolvedRefs” condition to false for this listener with the “InvalidRoutesRef” reason.
 			p.Errorf("Listener.Routes.Group %q is not supported.", listener.Routes.Group)
 			continue
 		}
 
 		// Validate the Kind on the selector is a supported type.
 		if listener.Routes.Kind != KindHTTPRoute {
-			// TODO: Set the “ResolvedRefs” condition to false for this listener with the “InvalidRoutesRef” reason.
 			p.Errorf("Listener.Routes.Kind %q is not supported.", listener.Routes.Kind)
 			continue
 		}
@@ -173,7 +171,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 	// Validate TLS Configuration
 	if route.Spec.TLS != nil {
-		routeAccessor.ConditionFor(status.NotImplemented, "NotImplemented", "HTTPRoute.Spec.TLS: Not yet implemented.")
+		routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonNotImplemented, "HTTPRoute.Spec.TLS: Not yet implemented.")
 	}
 
 	// Determine the hosts on the route, if no hosts
@@ -215,13 +213,12 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			case gatewayapi_v1alpha1.PathMatchPrefix:
 				pathPrefixes = append(pathPrefixes, stringOrDefault(match.Path.Value, "/"))
 			default:
-				routeAccessor.ConditionFor(status.Invalid, "PathMatchType", "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.")
+				routeAccessor.AddCondition(status.ConditionInvalid, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.")
 			}
 		}
 
 		if len(rule.ForwardTo) == 0 {
-			// TODO: Raise `ResolvedRefs` condition on Gateway with `DegradedRoutes` reason (#3455).
-			routeAccessor.ConditionFor(status.Invalid, "ForwardTo", "At least one Spec.Rules.ForwardTo must be specified.")
+			routeAccessor.AddCondition(status.ConditionInvalid, metav1.ConditionTrue, status.ReasonForwardTo, "At least one Spec.Rules.ForwardTo must be specified.")
 			continue
 		}
 
@@ -229,13 +226,13 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		for _, forward := range rule.ForwardTo {
 			// Verify the service is valid
 			if forward.ServiceName == nil {
-				routeAccessor.ConditionFor(status.Invalid, "ForwardTo", "Spec.Rules.ForwardTo.ServiceName must be specified.")
+				routeAccessor.AddCondition(status.ConditionInvalid, metav1.ConditionTrue, status.ReasonForwardTo, "Spec.Rules.ForwardTo.ServiceName must be specified.")
 				continue
 			}
 
 			// TODO: Do not require port to be present (#3352).
 			if forward.Port == nil {
-				routeAccessor.ConditionFor(status.Invalid, "ForwardTo", "Spec.Rules.ForwardTo.ServicePort must be specified.")
+				routeAccessor.AddCondition(status.ConditionInvalid, metav1.ConditionTrue, status.ReasonForwardTo, "Spec.Rules.ForwardTo.ServicePort must be specified.")
 				continue
 			}
 
@@ -244,15 +241,14 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
 			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*forward.Port)), p.source)
 			if err != nil {
-				// TODO: Raise `ResolvedRefs` condition on Gateway with `DegradedRoutes` reason (#3455).
-				routeAccessor.ConditionFor(status.Invalid, "ForwardTo", fmt.Sprintf("Service %q does not exist in namespace %q", meta.Name, meta.Namespace))
+				routeAccessor.AddCondition(status.ConditionInvalid, metav1.ConditionTrue, status.ReasonForwardTo, fmt.Sprintf("Service %q does not exist in namespace %q", meta.Name, meta.Namespace))
 				continue
 			}
 			services = append(services, service)
 		}
 
 		if len(services) == 0 {
-			routeAccessor.ConditionFor(status.Invalid, "ForwardTo", "All Spec.Rules.ForwardTos are invalid.")
+			routeAccessor.AddCondition(status.ConditionInvalid, metav1.ConditionTrue, status.ReasonForwardTo, "All Spec.Rules.ForwardTos are invalid.")
 			continue
 		}
 
@@ -269,9 +265,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 	// condition accordingly.
 	switch len(routeAccessor.Conditions) {
 	case 0:
-		routeAccessor.ConditionFor(status.AdmittedConditionValid, "Valid", "Valid HTTPRoute")
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionTrue, status.ReasonValid, "Valid HTTPRoute")
 	default:
-		routeAccessor.ConditionFor(status.AdmittedConditionInvalid, "ErrorsExist", "Errors Found, check other Conditions for details.")
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors Found, check other Conditions for details.")
 	}
 }
 

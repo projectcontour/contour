@@ -80,7 +80,7 @@ func TestStatusMutator(t *testing.T) {
 			assert.Equal(t, tc.wantCurrentStatus, o.Status.CurrentStatus, desc)
 			assert.Equal(t, tc.wantDescription, o.Status.Description, desc)
 		default:
-			t.Fatal("Got a non-HTTPProxy object, wow, impressive.")
+			t.Fatal("Got a non-HTTPProxy object.")
 		}
 	}
 

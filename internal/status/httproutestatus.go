@@ -17,36 +17,43 @@ import (
 	"fmt"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
+
+const ConditionNotImplemented gatewayapi_v1alpha1.RouteConditionType = "NotImplemented"
+const ConditionInvalid gatewayapi_v1alpha1.RouteConditionType = "Invalid"
+
+type RouteReasonType string
+
+const ReasonNotImplemented RouteReasonType = "NotImplemented"
+const ReasonPathMatchType RouteReasonType = "PathMatchType"
+const ReasonForwardTo RouteReasonType = "ForwardTo"
+const ReasonValid RouteReasonType = "Valid"
+const ReasonErrorsExist RouteReasonType = "ErrorsExist"
 
 type HTTPRouteUpdate struct {
 	Fullname           types.NamespacedName
 	Conditions         []metav1.Condition
 	ExistingConditions []metav1.Condition
 	GatewayRef         types.NamespacedName
+	Generation         int64
+	TransitionTime     v1.Time
 }
 
-// ConditionFor returns a v1.Condition for a given ConditionType.
-func (routeUpdate *HTTPRouteUpdate) ConditionFor(cond ConditionType, reason string, message string) metav1.Condition {
-	newDc := contour_api_v1.Condition{}
-	newDc.Reason = reason
-	newDc.Status = contour_api_v1.ConditionTrue
-	newDc.Type = string(cond)
-
-	switch cond {
-	case AdmittedConditionValid:
-		newDc.Type = "Admitted"
-	case AdmittedConditionInvalid:
-		newDc.Status = contour_api_v1.ConditionFalse
-		newDc.Type = "Admitted"
+// AddCondition returns a metav1.Condition for a given ConditionType.
+func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteConditionType, status metav1.ConditionStatus, reason RouteReasonType, message string) metav1.Condition {
+	newDc := metav1.Condition{
+		Reason:             string(reason),
+		Status:             status,
+		Type:               string(cond),
+		Message:            message,
+		LastTransitionTime: metav1.NewTime(time.Now()),
+		ObservedGeneration: routeUpdate.Generation,
 	}
-	newDc.Message = message
-	newDc.LastTransitionTime = metav1.NewTime(time.Now())
 	routeUpdate.Conditions = append(routeUpdate.Conditions, newDc)
 	return newDc
 }
@@ -61,6 +68,7 @@ func (c *Cache) HTTPRouteAccessor(route *gatewayapi_v1alpha1.HTTPRoute) (*HTTPRo
 		Conditions:         []metav1.Condition{},
 		ExistingConditions: c.getGatewayConditions(route.Status.Gateways),
 		GatewayRef:         c.gatewayRef,
+		Generation:         route.Generation,
 	}
 
 	return pu, func() {

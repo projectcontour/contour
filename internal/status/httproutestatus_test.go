@@ -20,30 +20,37 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func TestHTTPRouteConditionFor(t *testing.T) {
+func TestHTTPRouteAddCondition(t *testing.T) {
+
+	var testGeneration int64 = 7
+
 	simpleValidCondition := metav1.Condition{
-		Type:    "Admitted",
-		Status:  projectcontour.ConditionTrue,
-		Reason:  "Valid",
-		Message: "Valid HTTPRoute",
+		Type:               string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+		Status:             projectcontour.ConditionTrue,
+		Reason:             "Valid",
+		Message:            "Valid HTTPRoute",
+		ObservedGeneration: testGeneration,
 	}
 
-	pu := HTTPRouteUpdate{
-		Fullname: k8s.NamespacedNameFrom("test/test"),
+	httpRouteUpdate := HTTPRouteUpdate{
+		Fullname:   k8s.NamespacedNameFrom("test/test"),
+		Generation: testGeneration,
 		Conditions: []metav1.Condition{{
-			Type:    "Admitted",
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  projectcontour.ConditionTrue,
 			Reason:  "Valid",
 			Message: "Valid HTTPRoute",
 		}},
 	}
 
-	got := pu.ConditionFor(AdmittedConditionValid, "Valid", "Valid HTTPRoute")
+	got := httpRouteUpdate.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionTrue, "Valid", "Valid HTTPRoute")
 
 	assert.Equal(t, simpleValidCondition.Message, got.Message)
 	assert.Equal(t, simpleValidCondition.Reason, got.Reason)
 	assert.Equal(t, simpleValidCondition.Type, got.Type)
 	assert.Equal(t, simpleValidCondition.Status, got.Status)
+	assert.Equal(t, simpleValidCondition.ObservedGeneration, got.ObservedGeneration)
 }

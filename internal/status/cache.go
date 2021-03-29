@@ -32,18 +32,6 @@ type ConditionType string
 // ValidCondition is the ConditionType for Valid.
 const ValidCondition ConditionType = "Valid"
 
-// AdmittedConditionValid is the valid ConditionType for Admitted.
-const AdmittedConditionValid ConditionType = "AdmittedValid"
-
-// AdmittedConditionInValid is the invalid ConditionType for Admitted.
-const AdmittedConditionInvalid ConditionType = "AdmittedInvalid"
-
-// NotImplemented is the ConditionType for NotImplemented.
-const NotImplemented ConditionType = "NotImplemented"
-
-// Invalid is the ConditionType for Invalid.
-const Invalid ConditionType = "Invalid"
-
 // NewCache creates a new Cache for holding status updates.
 func NewCache(gateway types.NamespacedName) Cache {
 	return Cache{

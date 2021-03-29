@@ -2585,9 +2585,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    "Admitted",
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionTrue,
-			Reason:  "Valid",
+			Reason:  string(status.ValidCondition),
 			Message: "Valid HTTPRoute",
 		}},
 	})
@@ -2623,14 +2623,14 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.Invalid),
+			Type:    string(status.ConditionInvalid),
 			Status:  contour_api_v1.ConditionTrue,
-			Reason:  "PathMatchType",
+			Reason:  string(status.ReasonPathMatchType),
 			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.",
 		}, {
-			Type:    "Admitted",
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
-			Reason:  "ErrorsExist",
+			Reason:  string(status.ReasonErrorsExist),
 			Message: "Errors Found, check other Conditions for details.",
 		}},
 	})
@@ -2666,14 +2666,14 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.Invalid),
+			Type:    string(status.ConditionInvalid),
 			Status:  contour_api_v1.ConditionTrue,
-			Reason:  "PathMatchType",
+			Reason:  string(status.ReasonPathMatchType),
 			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.",
 		}, {
-			Type:    "Admitted",
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
-			Reason:  "ErrorsExist",
+			Reason:  string(status.ReasonErrorsExist),
 			Message: "Errors Found, check other Conditions for details.",
 		}},
 	})
@@ -2716,14 +2716,14 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.NotImplemented),
+			Type:    string(status.ConditionNotImplemented),
 			Status:  contour_api_v1.ConditionTrue,
-			Reason:  "NotImplemented",
+			Reason:  string(status.ReasonNotImplemented),
 			Message: "HTTPRoute.Spec.TLS: Not yet implemented.",
 		}, {
-			Type:    "Admitted",
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
-			Reason:  "ErrorsExist",
+			Reason:  string(status.ReasonErrorsExist),
 			Message: "Errors Found, check other Conditions for details.",
 		}},
 	})
@@ -2759,14 +2759,14 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.Invalid),
+			Type:    string(status.ConditionInvalid),
 			Status:  contour_api_v1.ConditionTrue,
-			Reason:  "ForwardTo",
+			Reason:  string(status.ReasonForwardTo),
 			Message: "Spec.Rules.ForwardTo.ServiceName must be specified.",
 		}, {
-			Type:    string(status.Invalid),
+			Type:    string(status.ConditionInvalid),
 			Status:  contour_api_v1.ConditionTrue,
-			Reason:  "ForwardTo",
+			Reason:  string(status.ReasonForwardTo),
 			Message: "All Spec.Rules.ForwardTos are invalid.",
 		}, {
 			Type:    "Admitted",
@@ -2807,17 +2807,17 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.Invalid),
+			Type:    string(status.ConditionInvalid),
 			Status:  contour_api_v1.ConditionTrue,
-			Reason:  "ForwardTo",
+			Reason:  string(status.ReasonForwardTo),
 			Message: "Spec.Rules.ForwardTo.ServicePort must be specified.",
 		}, {
-			Type:    string(status.Invalid),
+			Type:    string(status.ConditionInvalid),
 			Status:  contour_api_v1.ConditionTrue,
-			Reason:  "ForwardTo",
+			Reason:  string(status.ReasonForwardTo),
 			Message: "All Spec.Rules.ForwardTos are invalid.",
 		}, {
-			Type:    "Admitted",
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  "ErrorsExist",
 			Message: "Errors Found, check other Conditions for details.",
@@ -2851,9 +2851,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.Invalid),
+			Type:    string(status.ConditionInvalid),
 			Status:  contour_api_v1.ConditionTrue,
-			Reason:  "ForwardTo",
+			Reason:  string(status.ReasonForwardTo),
 			Message: "At least one Spec.Rules.ForwardTo must be specified.",
 		}, {
 			Type:    "Admitted",
