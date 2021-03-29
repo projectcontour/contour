@@ -19,7 +19,6 @@ import (
 
 	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
@@ -36,12 +35,12 @@ const ReasonValid RouteReasonType = "Valid"
 const ReasonErrorsExist RouteReasonType = "ErrorsExist"
 
 type HTTPRouteUpdate struct {
-	Fullname           types.NamespacedName
+	FullName           types.NamespacedName
 	Conditions         []metav1.Condition
 	ExistingConditions []metav1.Condition
 	GatewayRef         types.NamespacedName
 	Generation         int64
-	TransitionTime     v1.Time
+	TransitionTime     metav1.Time
 }
 
 // AddCondition returns a metav1.Condition for a given ConditionType.
@@ -59,12 +58,12 @@ func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteC
 }
 
 // HTTPRouteAccessor returns a HTTPRouteUpdate that allows a client to build up a list of
-// v1.Conditions as well as a function to commit the change back to the cache when everything
+// metav1.Conditions as well as a function to commit the change back to the cache when everything
 // is done. The commit function pattern is used so that the HTTPRouteUpdate does not need
 // to know anything the cache internals.
 func (c *Cache) HTTPRouteAccessor(route *gatewayapi_v1alpha1.HTTPRoute) (*HTTPRouteUpdate, func()) {
 	pu := &HTTPRouteUpdate{
-		Fullname:           k8s.NamespacedNameOf(route),
+		FullName:           k8s.NamespacedNameOf(route),
 		Conditions:         []metav1.Condition{},
 		ExistingConditions: c.getGatewayConditions(route.Status.Gateways),
 		GatewayRef:         c.gatewayRef,
@@ -80,14 +79,14 @@ func (c *Cache) commitHTTPRoute(pu *HTTPRouteUpdate) {
 	if len(pu.Conditions) == 0 {
 		return
 	}
-	c.httpRouteUpdates[pu.Fullname] = pu
+	c.httpRouteUpdates[pu.FullName] = pu
 }
 
 func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	o, ok := obj.(*gatewayapi_v1alpha1.HTTPRoute)
 	if !ok {
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in HTTPRouteUpdate status mutator",
-			obj, routeUpdate.Fullname.Namespace, routeUpdate.Fullname.Name,
+			obj, routeUpdate.FullName.Namespace, routeUpdate.FullName.Name,
 		))
 	}
 

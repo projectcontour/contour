@@ -36,7 +36,7 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 	}
 
 	httpRouteUpdate := HTTPRouteUpdate{
-		Fullname:   k8s.NamespacedNameFrom("test/test"),
+		FullName:   k8s.NamespacedNameFrom("test/test"),
 		Generation: testGeneration,
 		Conditions: []metav1.Condition{{
 			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),

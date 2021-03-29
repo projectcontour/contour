@@ -2623,7 +2623,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.ConditionInvalid),
+			Type:    string(status.ConditionNotImplemented),
 			Status:  contour_api_v1.ConditionTrue,
 			Reason:  string(status.ReasonPathMatchType),
 			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.",
@@ -2631,7 +2631,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonErrorsExist),
-			Message: "Errors Found, check other Conditions for details.",
+			Message: "Errors found, check other Conditions for details.",
 		}},
 	})
 
@@ -2666,7 +2666,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.ConditionInvalid),
+			Type:    string(status.ConditionNotImplemented),
 			Status:  contour_api_v1.ConditionTrue,
 			Reason:  string(status.ReasonPathMatchType),
 			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.",
@@ -2674,7 +2674,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonErrorsExist),
-			Message: "Errors Found, check other Conditions for details.",
+			Message: "Errors found, check other Conditions for details.",
 		}},
 	})
 
@@ -2724,7 +2724,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonErrorsExist),
-			Message: "Errors Found, check other Conditions for details.",
+			Message: "Errors found, check other Conditions for details.",
 		}},
 	})
 
@@ -2772,7 +2772,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Type:    "Admitted",
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  "ErrorsExist",
-			Message: "Errors Found, check other Conditions for details.",
+			Message: "Errors found, check other Conditions for details.",
 		}},
 	})
 
@@ -2820,7 +2820,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  "ErrorsExist",
-			Message: "Errors Found, check other Conditions for details.",
+			Message: "Errors found, check other Conditions for details.",
 		}},
 	})
 
@@ -2859,7 +2859,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Type:    "Admitted",
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  "ErrorsExist",
-			Message: "Errors Found, check other Conditions for details.",
+			Message: "Errors found, check other Conditions for details.",
 		}},
 	})
 }
