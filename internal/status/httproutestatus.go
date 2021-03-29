@@ -99,13 +99,14 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	for _, cond := range routeUpdate.Conditions {
 
 		// Look through the newly calculated conditions, if they already exist
-		// on the object then leave them be, otherwise add them to the list
-		// to be written back to the API.
+		// on the object or if our obervation is stale, then leave them be,
+		// otherwise add them to the list to be written back to the API.
 		for _, existingCond := range routeUpdate.ExistingConditions {
-			if cond.Status == existingCond.Status &&
+			if (cond.Status == existingCond.Status &&
 				cond.Reason == existingCond.Reason &&
 				cond.Message == existingCond.Message &&
-				cond.Type == existingCond.Type {
+				cond.Type == existingCond.Type) ||
+				existingCond.ObservedGeneration > cond.ObservedGeneration {
 
 				cond.ObservedGeneration = existingCond.ObservedGeneration
 				cond.LastTransitionTime = existingCond.LastTransitionTime
