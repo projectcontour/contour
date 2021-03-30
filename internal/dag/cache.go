@@ -90,8 +90,8 @@ func (kc *KubernetesCache) init() {
 func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) bool {
 	// If no ingress class name set, we allow an ingress class that is named
 	// with the default Contour accepted name.
-	if kc.IngressClassName == "" && obj.Name == "contour" {
-		return true
+	if kc.IngressClassName == "" {
+		return obj.Name == ingress_validation.DefaultClassName
 	}
 	// Otherwise, the name of the ingress class must match what has been
 	// configured.
