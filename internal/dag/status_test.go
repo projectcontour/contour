@@ -2760,12 +2760,12 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			}},
 		want: []metav1.Condition{{
 			Type:    string(status.ConditionResolvedRefs),
-			Status:  contour_api_v1.ConditionTrue,
+			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonDegraded),
 			Message: "Spec.Rules.ForwardTo.ServiceName must be specified.",
 		}, {
 			Type:    string(status.ConditionResolvedRefs),
-			Status:  contour_api_v1.ConditionTrue,
+			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonDegraded),
 			Message: "All Spec.Rules.ForwardTos are invalid.",
 		}, {
@@ -2808,12 +2808,12 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			}},
 		want: []metav1.Condition{{
 			Type:    string(status.ConditionResolvedRefs),
-			Status:  contour_api_v1.ConditionTrue,
+			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonDegraded),
 			Message: "Spec.Rules.ForwardTo.ServicePort must be specified.",
 		}, {
 			Type:    string(status.ConditionResolvedRefs),
-			Status:  contour_api_v1.ConditionTrue,
+			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonDegraded),
 			Message: "All Spec.Rules.ForwardTos are invalid.",
 		}, {
@@ -2852,7 +2852,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			}},
 		want: []metav1.Condition{{
 			Type:    string(status.ConditionResolvedRefs),
-			Status:  contour_api_v1.ConditionTrue,
+			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonDegraded),
 			Message: "At least one Spec.Rules.ForwardTo must be specified.",
 		}, {
