@@ -22,7 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -45,13 +45,13 @@ import (
 // 5. If the worker is stopped, the informer continues but no further
 //    status updates are made.
 type loadBalancerStatusWriter struct {
-	log           logrus.FieldLogger
-	clients       *k8s.Clients
-	isLeader      chan struct{}
-	lbStatus      chan v1.LoadBalancerStatus
-	statusUpdater k8s.StatusUpdater
-	ingressClass  string
-	Converter     k8s.Converter
+	log              logrus.FieldLogger
+	clients          *k8s.Clients
+	isLeader         chan struct{}
+	lbStatus         chan v1.LoadBalancerStatus
+	statusUpdater    k8s.StatusUpdater
+	ingressClassName string
+	Converter        k8s.Converter
 }
 
 func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
@@ -69,22 +69,22 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 		Logger: func() logrus.FieldLogger {
 			// Configure the StatusAddressUpdater logger.
 			log := isw.log.WithField("context", "StatusAddressUpdater")
-			if isw.ingressClass != "" {
-				return log.WithField("target-ingress-class", isw.ingressClass)
+			if isw.ingressClassName != "" {
+				return log.WithField("target-ingress-class", isw.ingressClassName)
 			}
 
 			return log
 		}(),
-		IngressClass:  isw.ingressClass,
-		StatusUpdater: isw.statusUpdater,
-		Converter:     isw.Converter,
+		IngressClassName: isw.ingressClassName,
+		StatusUpdater:    isw.statusUpdater,
+		Converter:        isw.Converter,
 	}
 
 	// Create informers for the types that need load balancer
 	// address status. The client should have already started
 	// informers, so new informers will auto-start.
 	for _, r := range []schema.GroupVersionResource{
-		v1beta1.SchemeGroupVersion.WithResource("ingresses"),
+		networking_v1.SchemeGroupVersion.WithResource("ingresses"),
 		contour_api_v1.HTTPProxyGVR,
 	} {
 		inf, err := isw.clients.InformerForResource(r)
@@ -110,7 +110,7 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 
 			u.Set(lbs)
 
-			var ingressList v1beta1.IngressList
+			var ingressList networking_v1.IngressList
 			var proxyList contour_api_v1.HTTPProxyList
 
 			if err := isw.clients.Cache().List(context.Background(), &ingressList); err != nil {

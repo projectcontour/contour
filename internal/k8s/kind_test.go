@@ -20,6 +20,7 @@ import (
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -34,6 +35,7 @@ func TestKindOf(t *testing.T) {
 		{"Endpoints", &v1.Endpoints{}},
 		{"Pod", &v1.Pod{}},
 		{"Ingress", &v1beta1.Ingress{}},
+		{"Ingress", &networking_v1.Ingress{}},
 		{"HTTPProxy", &contour_api_v1.HTTPProxy{}},
 		{"TLSCertificateDelegation", &contour_api_v1.TLSCertificateDelegation{}},
 		{"ExtensionService", &v1alpha1.ExtensionService{}},

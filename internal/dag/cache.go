@@ -22,6 +22,7 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	ingress_validation "github.com/projectcontour/contour/internal/validation/ingress"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -101,65 +102,30 @@ func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) 
 }
 
 // ingressMatchesIngressClass returns true if the given Ingress object matches
-// the configured ingress class name via annotation or Spec.IngressClassName.
-// Annotation takes precedence over the Spec value.
-func (kc *KubernetesCache) ingressMatchesIngressClass(obj metav1.Object) bool {
-	annotationClass := annotation.IngressClass(obj)
-	var specClass string
-	switch obj := obj.(type) {
-	case *v1beta1.Ingress:
-		specClass = pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")
-	case *networking_v1.Ingress:
-		specClass = pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")
+// the configured ingress class name via annotation or Spec.IngressClassName
+// and emits a log message if there is no match.
+func (kc *KubernetesCache) ingressMatchesIngressClass(obj *networking_v1.Ingress) bool {
+	if !ingress_validation.MatchesIngressClassName(obj, kc.IngressClassName) {
+		// We didn't get a match so report this object is being ignored.
+		kc.WithField("name", obj.GetName()).
+			WithField("namespace", obj.GetNamespace()).
+			WithField("kind", k8s.KindOf(obj)).
+			WithField("ingress-class-annotation", annotation.IngressClass(obj)).
+			WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
+			WithField("target-ingress-class", kc.IngressClassName).
+			Debug("ignoring object with unmatched ingress class")
+		return false
 	}
-
-	logIfNoMatch := func(matches bool) bool {
-		if !matches {
-			// We didn't get a match so report this object is being ignored.
-			kind := k8s.KindOf(obj)
-			kc.WithField("name", obj.GetName()).
-				WithField("namespace", obj.GetNamespace()).
-				WithField("kind", kind).
-				WithField("ingress-class annotation", annotationClass).
-				WithField("ingress-class name", specClass).
-				WithField("target-ingress-class", kc.IngressClassName).
-				Debug("ignoring object with unmatched ingress class")
-		}
-		return matches
-	}
-
-	// If annotation is set, check if it matches.
-	if annotationClass != "" {
-		return logIfNoMatch(annotation.MatchesIngressClass(obj, kc.IngressClassName))
-	}
-
-	// If spec field is set, check if it matches.
-	if specClass != "" {
-		var classToMatch string
-		switch kc.IngressClassName {
-		case "":
-			// If cache doesn't have an ingress class name set, match the
-			// default.
-			classToMatch = "contour"
-		default:
-			classToMatch = kc.IngressClassName
-		}
-		return logIfNoMatch(specClass == classToMatch)
-	}
-
-	// Matches if class is not set.
-	return logIfNoMatch(kc.IngressClassName == "")
+	return true
 }
 
 // matchesIngressClassAnnotation returns true if the given Kubernetes object
 // belongs to the Ingress class that this cache is using.
 func (kc *KubernetesCache) matchesIngressClassAnnotation(obj metav1.Object) bool {
 	if !annotation.MatchesIngressClass(obj, kc.IngressClassName) {
-		kind := k8s.KindOf(obj)
-
 		kc.WithField("name", obj.GetName()).
 			WithField("namespace", obj.GetNamespace()).
-			WithField("kind", kind).
+			WithField("kind", k8s.KindOf(obj)).
 			WithField("ingress-class", annotation.IngressClass(obj)).
 			WithField("target-ingress-class", kc.IngressClassName).
 			Debug("ignoring object with unmatched ingress class")
@@ -238,10 +204,11 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.namespaces[obj.Name] = obj
 		return true
 	case *v1beta1.Ingress:
-		if kc.ingressMatchesIngressClass(obj) {
-			// Convert the v1beta1 object to v1 before adding to the
-			// local ingress cache for easier processing later on.
-			kc.ingresses[k8s.NamespacedNameOf(obj)] = toV1Ingress(obj)
+		// Convert the v1beta1 object to v1 before adding to the
+		// local ingress cache for easier processing later on.
+		objV1 := toV1Ingress(obj)
+		if kc.ingressMatchesIngressClass(objV1) {
+			kc.ingresses[k8s.NamespacedNameOf(objV1)] = objV1
 			return true
 		}
 	case *networking_v1.Ingress:

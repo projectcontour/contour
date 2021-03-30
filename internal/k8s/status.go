@@ -110,7 +110,7 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 
 		newObj := upd.Mutator.Mutate(obj)
 
-		if IsStatusEqual(obj, newObj) {
+		if isStatusEqual(obj, newObj) {
 			suh.Log.WithField("name", upd.NamespacedName.Name).
 				WithField("namespace", upd.NamespacedName.Namespace).
 				Debug("update was a no-op")
