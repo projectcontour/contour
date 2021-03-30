@@ -255,7 +255,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 		routes := p.routes(pathPrefixes, services)
 		for _, vhost := range hosts {
-			vhost := p.dag.EnsureVirtualHost(vhost)
+			vhost := p.dag.EnsureVirtualHost(ListenerName{Name: vhost, ListenerName: "ingress_http"})
 			for _, route := range routes {
 				vhost.addRoute(route)
 			}

@@ -112,8 +112,8 @@ func (s serviceGetter) visit(vertex Vertex) {
 }
 
 // GetSecureVirtualHosts returns all secure virtual hosts in the DAG.
-func (dag *DAG) GetSecureVirtualHosts() map[string]*SecureVirtualHost {
-	getter := svhostGetter(map[string]*SecureVirtualHost{})
+func (dag *DAG) GetSecureVirtualHosts() map[ListenerName]*SecureVirtualHost {
+	getter := svhostGetter(map[ListenerName]*SecureVirtualHost{})
 	dag.Visit(getter.visit)
 	return getter
 }
@@ -121,20 +121,21 @@ func (dag *DAG) GetSecureVirtualHosts() map[string]*SecureVirtualHost {
 // GetSecureVirtualHost returns the secure virtual host in the DAG that
 // matches the provided name, or nil if no matching secure virtual host
 // is found.
-func (dag *DAG) GetSecureVirtualHost(name string) *SecureVirtualHost {
-	return dag.GetSecureVirtualHosts()[name]
+func (dag *DAG) GetSecureVirtualHost(ln ListenerName) *SecureVirtualHost {
+	return dag.GetSecureVirtualHosts()[ln]
 }
 
 // EnsureSecureVirtualHost adds a secure virtual host with the provided
 // name to the DAG if it does not already exist, and returns it.
-func (dag *DAG) EnsureSecureVirtualHost(name string) *SecureVirtualHost {
-	if svh := dag.GetSecureVirtualHost(name); svh != nil {
+func (dag *DAG) EnsureSecureVirtualHost(ln ListenerName) *SecureVirtualHost {
+	if svh := dag.GetSecureVirtualHost(ln); svh != nil {
 		return svh
 	}
 
 	svh := &SecureVirtualHost{
 		VirtualHost: VirtualHost{
-			Name: name,
+			Name:         ln.Name,
+			ListenerName: ln.ListenerName,
 		},
 	}
 	dag.AddRoot(svh)
@@ -143,39 +144,40 @@ func (dag *DAG) EnsureSecureVirtualHost(name string) *SecureVirtualHost {
 
 // svhostGetter is a visitor that gets all secure virtual hosts
 // in the DAG.
-type svhostGetter map[string]*SecureVirtualHost
+type svhostGetter map[ListenerName]*SecureVirtualHost
 
 func (s svhostGetter) visit(vertex Vertex) {
 	switch obj := vertex.(type) {
 	case *SecureVirtualHost:
-		s[obj.Name] = obj
+		s[ListenerName{Name: obj.Name, ListenerName: obj.VirtualHost.ListenerName}] = obj
 	default:
 		vertex.Visit(s.visit)
 	}
 }
 
 // GetVirtualHosts returns all virtual hosts in the DAG.
-func (dag *DAG) GetVirtualHosts() map[string]*VirtualHost {
-	getter := vhostGetter(map[string]*VirtualHost{})
+func (dag *DAG) GetVirtualHosts() map[ListenerName]*VirtualHost {
+	getter := vhostGetter(map[ListenerName]*VirtualHost{})
 	dag.Visit(getter.visit)
 	return getter
 }
 
 // GetVirtualHost returns the virtual host in the DAG that matches the
 // provided name, or nil if no matching virtual host is found.
-func (dag *DAG) GetVirtualHost(name string) *VirtualHost {
-	return dag.GetVirtualHosts()[name]
+func (dag *DAG) GetVirtualHost(ln ListenerName) *VirtualHost {
+	return dag.GetVirtualHosts()[ln]
 }
 
 // EnsureVirtualHost adds a virtual host with the provided name to the
 // DAG if it does not already exist, and returns it.
-func (dag *DAG) EnsureVirtualHost(name string) *VirtualHost {
-	if vhost := dag.GetVirtualHost(name); vhost != nil {
+func (dag *DAG) EnsureVirtualHost(ln ListenerName) *VirtualHost {
+	if vhost := dag.GetVirtualHost(ln); vhost != nil {
 		return vhost
 	}
 
 	vhost := &VirtualHost{
-		Name: name,
+		Name:         ln.Name,
+		ListenerName: ln.ListenerName,
 	}
 	dag.AddRoot(vhost)
 	return vhost
@@ -183,12 +185,12 @@ func (dag *DAG) EnsureVirtualHost(name string) *VirtualHost {
 
 // vhostGetter is a visitor that gets all virtual hosts
 // in the DAG.
-type vhostGetter map[string]*VirtualHost
+type vhostGetter map[ListenerName]*VirtualHost
 
 func (v vhostGetter) visit(vertex Vertex) {
 	switch obj := vertex.(type) {
 	case *VirtualHost:
-		v[obj.Name] = obj
+		v[ListenerName{Name: obj.Name, ListenerName: obj.ListenerName}] = obj
 	default:
 		vertex.Visit(v.visit)
 	}

@@ -111,7 +111,8 @@ func TestVisitListeners(t *testing.T) {
 				VirtualHosts: virtualhosts(
 					&dag.SecureVirtualHost{
 						VirtualHost: dag.VirtualHost{
-							Name: "tcpproxy.example.com",
+							Name:         "tcpproxy.example.com",
+							ListenerName: "ingress_https",
 						},
 						TCPProxy: p1,
 						Secret: &dag.Secret{
