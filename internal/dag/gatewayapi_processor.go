@@ -218,7 +218,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		}
 
 		if len(rule.ForwardTo) == 0 {
-			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegradedRoutes, "At least one Spec.Rules.ForwardTo must be specified.")
+			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegraded, "At least one Spec.Rules.ForwardTo must be specified.")
 			continue
 		}
 
@@ -226,13 +226,13 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		for _, forward := range rule.ForwardTo {
 			// Verify the service is valid
 			if forward.ServiceName == nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegradedRoutes, "Spec.Rules.ForwardTo.ServiceName must be specified.")
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServiceName must be specified.")
 				continue
 			}
 
 			// TODO: Do not require port to be present (#3352).
 			if forward.Port == nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegradedRoutes, "Spec.Rules.ForwardTo.ServicePort must be specified.")
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServicePort must be specified.")
 				continue
 			}
 
@@ -241,14 +241,14 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
 			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*forward.Port)), p.source)
 			if err != nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegradedRoutes, fmt.Sprintf("Service %q does not exist in namespace %q", meta.Name, meta.Namespace))
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegraded, fmt.Sprintf("Service %q does not exist in namespace %q", meta.Name, meta.Namespace))
 				continue
 			}
 			services = append(services, service)
 		}
 
 		if len(services) == 0 {
-			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegradedRoutes, "All Spec.Rules.ForwardTos are invalid.")
+			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionTrue, status.ReasonDegraded, "All Spec.Rules.ForwardTos are invalid.")
 			continue
 		}
 
