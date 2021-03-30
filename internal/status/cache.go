@@ -100,7 +100,7 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 		flattened = append(flattened, update)
 	}
 
-	for fullname, pu := range c.httpRouteUpdates {
+	for fullname, routeUpdate := range c.httpRouteUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
 			Resource: schema.GroupVersionResource{
@@ -108,7 +108,7 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 				Version:  gatewayapi_v1alpha1.GroupVersion.Version,
 				Resource: "httproutes",
 			},
-			Mutator: pu,
+			Mutator: routeUpdate,
 		}
 
 		flattened = append(flattened, update)

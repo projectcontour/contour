@@ -24,13 +24,13 @@ import (
 )
 
 const ConditionNotImplemented gatewayapi_v1alpha1.RouteConditionType = "NotImplemented"
-const ConditionInvalid gatewayapi_v1alpha1.RouteConditionType = "Invalid"
+const ConditionResolvedRefs gatewayapi_v1alpha1.RouteConditionType = "ResolvedRefs"
 
 type RouteReasonType string
 
 const ReasonNotImplemented RouteReasonType = "NotImplemented"
 const ReasonPathMatchType RouteReasonType = "PathMatchType"
-const ReasonForwardTo RouteReasonType = "ForwardTo"
+const ReasonDegradedRoutes RouteReasonType = "DegradedRoute"
 const ReasonValid RouteReasonType = "Valid"
 const ReasonErrorsExist RouteReasonType = "ErrorsExist"
 
@@ -68,6 +68,7 @@ func (c *Cache) HTTPRouteAccessor(route *gatewayapi_v1alpha1.HTTPRoute) (*HTTPRo
 		ExistingConditions: c.getGatewayConditions(route.Status.Gateways),
 		GatewayRef:         c.gatewayRef,
 		Generation:         route.Generation,
+		TransitionTime:     metav1.NewTime(time.Now()),
 	}
 
 	return pu, func() {
@@ -97,22 +98,32 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 
 	for _, cond := range routeUpdate.Conditions {
 
-		// Look through the newly calculated conditions, if they already exist
-		// on the object or if our obervation is stale, then leave them be,
-		// otherwise add them to the list to be written back to the API.
-		for _, existingCond := range routeUpdate.ExistingConditions {
-			if (cond.Status == existingCond.Status &&
-				cond.Reason == existingCond.Reason &&
-				cond.Message == existingCond.Message &&
-				cond.Type == existingCond.Type) ||
-				existingCond.ObservedGeneration > cond.ObservedGeneration {
+		// set the Condition's observed generation based on
+		// the generation of the HTTPRoute we looked at.
+		cond.ObservedGeneration = routeUpdate.Generation
+		cond.LastTransitionTime = routeUpdate.TransitionTime
 
-				cond.ObservedGeneration = existingCond.ObservedGeneration
-				cond.LastTransitionTime = existingCond.LastTransitionTime
+		// is there a newer Condition on the HTTPRoute matching
+		// this condition's type? If so, our observation is stale,
+		// so don't write it, keep the newer one instead.
+		var newerConditionExists bool
+		for _, existingCond := range routeUpdate.ExistingConditions {
+			if existingCond.Type != cond.Type {
+				continue
+			}
+
+			if existingCond.ObservedGeneration > cond.ObservedGeneration {
+				conditionsToWrite = append(conditionsToWrite, existingCond)
+				newerConditionExists = true
+				break
 			}
 		}
 
-		conditionsToWrite = append(conditionsToWrite, cond)
+		// if we didn't find a newer version of the Condition on the
+		// HTTPRoute, then write the one we computed.
+		if !newerConditionExists {
+			conditionsToWrite = append(conditionsToWrite, cond)
+		}
 	}
 
 	gatewayStatuses = append(gatewayStatuses, gatewayapi_v1alpha1.RouteGatewayStatus{
