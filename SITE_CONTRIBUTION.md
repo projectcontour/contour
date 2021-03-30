@@ -109,10 +109,10 @@ Perform local tests before creating a PR to detect issues such as broken links.
 
 **Using docker:**
 
-The easiest way to run the site locally is by using the top-level [Makefile](/Makefile). This has a `site-devel` target and runs a [Jekyll][6] development server in Docker, which is useful for checking local documentation changes.
+The easiest way to run the site locally is by using the top-level [Makefile](./Makefile). This has a `site-devel` target and runs a [Jekyll][6] development server in Docker, which is useful for checking local documentation changes.
 By default, the site will be available on [port 4000](http://127.0.0.1:4000/).
 
-Note that the version of [Jekyll][6] used by the site is pinned in the [Gemfile](/site/Gemfile.lock). The `site-devel` target uses the matching versioned Docker image to ensure compatibility.
+Note that the version of [Jekyll][6] used by the site is pinned in the [Gemfile](./site/Gemfile.lock). The `site-devel` target uses the matching versioned Docker image to ensure compatibility.
 
 Once you are happy with your changes, commit them and push everything
 to your fork.  When you submit a PR, Netlify will automatically
