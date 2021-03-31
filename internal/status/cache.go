@@ -16,27 +16,29 @@
 package status
 
 import (
-	"time"
-
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-type ProxyStatus string
+// ConditionType is used to ensure we only use a limited set of possible values
+// for DetailedCondition types. It's cast back to a string before sending off to
+// HTTPProxy structs, as those use upstream types which we can't alias easily.
+type ConditionType string
 
-const (
-	ProxyStatusValid    ProxyStatus = "valid"
-	ProxyStatusInvalid  ProxyStatus = "invalid"
-	ProxyStatusOrphaned ProxyStatus = "orphaned"
-)
+// ValidCondition is the ConditionType for Valid.
+const ValidCondition ConditionType = "Valid"
 
 // NewCache creates a new Cache for holding status updates.
-func NewCache() Cache {
+func NewCache(gateway types.NamespacedName) Cache {
 	return Cache{
-		proxyUpdates: make(map[types.NamespacedName]*ProxyUpdate),
-		entries:      make(map[string]map[types.NamespacedName]CacheEntry),
+		proxyUpdates:     make(map[types.NamespacedName]*ProxyUpdate),
+		gatewayRef:       gateway,
+		httpRouteUpdates: make(map[types.NamespacedName]*HTTPRouteUpdate),
+		entries:          make(map[string]map[types.NamespacedName]CacheEntry),
 	}
 }
 
@@ -50,6 +52,9 @@ type CacheEntry interface {
 // KindAccessor.
 type Cache struct {
 	proxyUpdates map[types.NamespacedName]*ProxyUpdate
+
+	gatewayRef       types.NamespacedName
+	httpRouteUpdates map[types.NamespacedName]*HTTPRouteUpdate
 
 	// Map of cache entry maps, keyed on Kind.
 	entries map[string]map[types.NamespacedName]CacheEntry
@@ -79,45 +84,6 @@ func (c *Cache) Put(obj metav1.Object, e CacheEntry) {
 	c.entries[kind][k8s.NamespacedNameOf(obj)] = e
 }
 
-// ProxyAccessor returns a ProxyUpdate that allows a client to build up a list of
-// errors and warnings to go onto the proxy as conditions, and a function to commit the change
-// back to the cache when everything is done.
-// The commit function pattern is used so that the ProxyUpdate does not need to know anything
-// the cache internals.
-func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, func()) {
-	pu := &ProxyUpdate{
-		Fullname:       k8s.NamespacedNameOf(proxy),
-		Generation:     proxy.Generation,
-		TransitionTime: metav1.NewTime(time.Now()),
-		Conditions:     make(map[ConditionType]*contour_api_v1.DetailedCondition),
-	}
-
-	return pu, func() {
-		c.commitProxy(pu)
-	}
-}
-
-func (c *Cache) commitProxy(pu *ProxyUpdate) {
-	if len(pu.Conditions) == 0 {
-		return
-	}
-
-	_, ok := c.proxyUpdates[pu.Fullname]
-	if ok {
-		// When we're committing, if we already have a Valid Condition with an error, and we're trying to
-		// set the object back to Valid, skip the commit, as we've visited too far down.
-		// If this is removed, the status reporting for when a parent delegates to a child that delegates to itself
-		// will not work. Yes, I know, problems everywhere. I'm sorry.
-		// TODO(youngnick)#2968: This issue has more details.
-		if c.proxyUpdates[pu.Fullname].Conditions[ValidCondition].Status == contour_api_v1.ConditionFalse {
-			if pu.Conditions[ValidCondition].Status == contour_api_v1.ConditionTrue {
-				return
-			}
-		}
-	}
-	c.proxyUpdates[pu.Fullname] = pu
-}
-
 // GetStatusUpdates returns a slice of StatusUpdates, ready to be sent off
 // to the StatusUpdater by the event handler.
 // As more kinds are handled by Cache, we'll update this method.
@@ -129,6 +95,20 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 			NamespacedName: fullname,
 			Resource:       contour_api_v1.HTTPProxyGVR,
 			Mutator:        pu,
+		}
+
+		flattened = append(flattened, update)
+	}
+
+	for fullname, routeUpdate := range c.httpRouteUpdates {
+		update := k8s.StatusUpdate{
+			NamespacedName: fullname,
+			Resource: schema.GroupVersionResource{
+				Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+				Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+				Resource: "httproutes",
+			},
+			Mutator: routeUpdate,
 		}
 
 		flattened = append(flattened, update)
@@ -151,6 +131,16 @@ func (c *Cache) GetProxyUpdates() []*ProxyUpdate {
 	var allUpdates []*ProxyUpdate
 	for _, pu := range c.proxyUpdates {
 		allUpdates = append(allUpdates, pu)
+	}
+	return allUpdates
+}
+
+// GetHTTPRouteUpdates gets the underlying HTTPRouteUpdate objects
+// from the cache.
+func (c *Cache) GetHTTPRouteUpdates() []*HTTPRouteUpdate {
+	var allUpdates []*HTTPRouteUpdate
+	for _, httpRouteUpdate := range c.httpRouteUpdates {
+		allUpdates = append(allUpdates, httpRouteUpdate)
 	}
 	return allUpdates
 }

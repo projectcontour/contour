@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 type testCacheEntry struct {
@@ -48,24 +49,33 @@ func TestCacheAcquisition(t *testing.T) {
 	proxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: fixture.ObjectMeta("test/proxy"),
 	}
-	cache := NewCache()
+	httpRoute := &gatewayapi_v1alpha1.HTTPRoute{
+		ObjectMeta: fixture.ObjectMeta("test/httproute"),
+	}
+	cache := NewCache(types.NamespacedName{Name: "contour", Namespace: "projectcontour"})
 
 	// Initial acquisition should be nil.
 	assert.Nil(t, cache.Get(proxy))
+	assert.Nil(t, cache.Get(httpRoute))
 	assert.Nil(t, cache.Get(ext))
 
 	newEntry := testCacheEntry{ID: "AA483012-A14F-4644-A3C9-FDBAAFA958C0"}
 	cache.Put(proxy, &newEntry)
 	cache.Put(ext, &newEntry)
+	cache.Put(httpRoute, &newEntry)
 
 	cachedEntry := cache.Get(proxy)
 	assert.Equal(t, &newEntry, cachedEntry)
 
+	cachedEntry = cache.Get(httpRoute)
+	assert.Equal(t, &newEntry, cachedEntry)
+
 	updates := cache.GetStatusUpdates()
-	assert.Equal(t, 2, len(updates))
+	assert.Equal(t, 3, len(updates))
 	assert.Equal(t, newEntry.ID, updates[0].NamespacedName.Name)
 
-	assert.Equal(t, len(cache.entries), 2)
-	assert.Equal(t, len(cache.entries["HTTPProxy"]), 1)
-	assert.Equal(t, len(cache.entries["ExtensionService"]), 1)
+	assert.Equal(t, 3, len(cache.entries))
+	assert.Equal(t, 1, len(cache.entries["HTTPProxy"]))
+	assert.Equal(t, 1, len(cache.entries["ExtensionService"]))
+	assert.Equal(t, 1, len(cache.entries["HTTPRoute"]))
 }
