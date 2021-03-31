@@ -594,7 +594,7 @@ func TestLDSStreamEmpty(t *testing.T) {
 	defer done()
 
 	// assert that streaming LDS with no ingresses does not stall.
-	c.Request(listenerType, "HTTP").Equals(&envoy_discovery_v3.DiscoveryResponse{
+	c.Request(listenerType, "ingress_http").Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		TypeUrl:     listenerType,
 		Nonce:       "0",
@@ -743,10 +743,20 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 
 func TestLDSCustomAddressAndPort(t *testing.T) {
 	rh, c, done := setup(t, func(conf *xdscache_v3.ListenerConfig) {
-		conf.HTTPAddress = "127.0.0.100"
-		conf.HTTPPort = 9100
-		conf.HTTPSAddress = "127.0.0.200"
-		conf.HTTPSPort = 9200
+		conf.HTTPListeners = map[string]xdscache_v3.Listener{
+			"ingress_http": {
+				Name:    "ingress_http",
+				Address: "127.0.0.100",
+				Port:    9100,
+			},
+		}
+		conf.HTTPSListeners = map[string]xdscache_v3.Listener{
+			"ingress_https": {
+				Name:    "ingress_https",
+				Address: "127.0.0.200",
+				Port:    9200,
+			},
+		}
 	})
 	defer done()
 

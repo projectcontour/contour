@@ -304,12 +304,22 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
-		UseProxyProto:                 ctx.useProxyProto,
-		HTTPAddress:                   ctx.httpAddr,
-		HTTPPort:                      ctx.httpPort,
+		UseProxyProto: ctx.useProxyProto,
+		HTTPListeners: map[string]xdscache_v3.Listener{
+			"ingress_http": {
+				Name:    "ingress_http",
+				Address: ctx.httpAddr,
+				Port:    ctx.httpPort,
+			},
+		},
+		HTTPSListeners: map[string]xdscache_v3.Listener{
+			"ingress_https": {
+				Name:    "ingress_https",
+				Address: ctx.httpsAddr,
+				Port:    ctx.httpsPort,
+			},
+		},
 		HTTPAccessLog:                 ctx.httpAccessLog,
-		HTTPSAddress:                  ctx.httpsAddr,
-		HTTPSPort:                     ctx.httpsPort,
 		HTTPSAccessLog:                ctx.httpsAccessLog,
 		AccessLogType:                 ctx.Config.AccessLogFormat,
 		AccessLogFields:               ctx.Config.AccessLogFields,

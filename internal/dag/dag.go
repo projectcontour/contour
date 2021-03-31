@@ -425,6 +425,8 @@ type VirtualHost struct {
 	// as defined by RFC 3986.
 	Name string
 
+	ListenerName string
+
 	// CORSPolicy is the cross-origin policy to apply to the VirtualHost.
 	CORSPolicy *CORSPolicy
 
@@ -511,6 +513,11 @@ func (s *SecureVirtualHost) Valid() bool {
 	// 1. it has a secret and at least one route.
 	// 2. it has a tcpproxy, because the tcpproxy backend may negotiate TLS itself.
 	return (s.Secret != nil && len(s.routes) > 0) || s.TCPProxy != nil
+}
+
+type ListenerName struct {
+	Name         string
+	ListenerName string
 }
 
 // A Listener represents a TCP socket that accepts
