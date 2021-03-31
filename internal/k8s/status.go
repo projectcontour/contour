@@ -73,6 +73,7 @@ type StatusUpdateHandler struct {
 
 func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 	gvk, err := suh.Clients.KindFor(upd.Resource)
+
 	if err != nil {
 		suh.Log.WithError(err).
 			WithField("name", upd.NamespacedName.Name).
