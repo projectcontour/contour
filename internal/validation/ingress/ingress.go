@@ -16,6 +16,8 @@ package ingress
 import (
 	"github.com/projectcontour/contour/internal/annotation"
 	networking_v1 "k8s.io/api/networking/v1"
+	"k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
@@ -26,13 +28,19 @@ const DefaultClassName = "contour"
 // MatchesIngressClassName returns true if the passed in Ingress annotations
 // or spec ingress class name matche the passed in ingress class name.
 // Annotations take precedence over spec field if both are set.
-func MatchesIngressClassName(ing *networking_v1.Ingress, ingressClassName string) bool {
-	annotationClass := annotation.IngressClass(ing)
-	specClass := pointer.StringPtrDerefOr(ing.Spec.IngressClassName, "")
+func MatchesIngressClassName(obj metav1.Object, ingressClassName string) bool {
+	annotationClass := annotation.IngressClass(obj)
+	var specClass string
+	switch o := obj.(type) {
+	case *networking_v1.Ingress:
+		specClass = pointer.StringPtrDerefOr(o.Spec.IngressClassName, "")
+	case *v1beta1.Ingress:
+		specClass = pointer.StringPtrDerefOr(o.Spec.IngressClassName, "")
+	}
 
 	// If annotation is set, check if it matches.
 	if annotationClass != "" {
-		return annotation.MatchesIngressClass(ing, ingressClassName)
+		return annotation.MatchesIngressClass(obj, ingressClassName)
 	}
 
 	// If spec field is set, check if it matches.

@@ -18,11 +18,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	networking_v1 "k8s.io/api/networking/v1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
-func TestMatchesIngressClassName(t *testing.T) {
+func TestMatchesIngressClassNameIngressV1(t *testing.T) {
 	// No annotation, no spec field set, class not configured
 	assert.True(t, MatchesIngressClassName(&networking_v1.Ingress{}, ""))
 	// Annotation set to default, no spec field set, class not configured
@@ -102,6 +103,91 @@ func TestMatchesIngressClassName(t *testing.T) {
 			},
 		},
 		Spec: networking_v1.IngressSpec{
+			IngressClassName: pointer.StringPtr("something"),
+		},
+	}, "something"))
+}
+
+func TestMatchesIngressClassNameIngressV1Beta1(t *testing.T) {
+	// No annotation, no spec field set, class not configured
+	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{}, ""))
+	// Annotation set to default, no spec field set, class not configured
+	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "contour",
+			},
+		},
+	}, ""))
+	// No annotation set, spec field set to default, class not configured
+	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{
+		Spec: v1beta1.IngressSpec{
+			IngressClassName: pointer.StringPtr("contour"),
+		},
+	}, ""))
+	// Annotation set, no spec field set, class not configured
+	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
+			},
+		},
+	}, ""))
+	// No annotation set, spec field set, class not configured
+	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{
+		Spec: v1beta1.IngressSpec{
+			IngressClassName: pointer.StringPtr("aclass"),
+		},
+	}, ""))
+	// No annotation, no spec field set, class configured
+	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{}, "something"))
+	// Annotation set, no spec field set, class configured
+	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "something",
+			},
+		},
+	}, "something"))
+	// No annotation set, spec field set, class configured
+	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{
+		Spec: v1beta1.IngressSpec{
+			IngressClassName: pointer.StringPtr("something"),
+		},
+	}, "something"))
+	// Annotation set, no spec field set, class configured
+	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
+			},
+		},
+	}, "something"))
+	// No annotation set, spec field set, class configured
+	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{
+		Spec: v1beta1.IngressSpec{
+			IngressClassName: pointer.StringPtr("aclass"),
+		},
+	}, "something"))
+	// Annotation set, spec field set, class configured
+	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "something",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
+			IngressClassName: pointer.StringPtr("aclass"),
+		},
+	}, "something"))
+	// Annotation set, spec field set, class configured
+	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
+			},
+		},
+		Spec: v1beta1.IngressSpec{
 			IngressClassName: pointer.StringPtr("something"),
 		},
 	}, "something"))

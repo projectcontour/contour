@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/pointer"
@@ -327,6 +328,97 @@ func TestStatusAddressUpdater(t *testing.T) {
 			preop:            simpleIngressGenerator(objName, "phony", "notcorrect", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "phony", "notcorrect", ipLBStatus),
 		},
+		"ingress v1beta1: no-op update": {
+			status:           emptyLBStatus,
+			ingressClassName: "",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "", "", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "", "", emptyLBStatus),
+		},
+		"ingress v1beta1: add an IP should update": {
+			status:           ipLBStatus,
+			ingressClassName: "",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "", "", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "", "", ipLBStatus),
+		},
+		"ingress v1beta1: unset ingressclass should not update": {
+			status:           ipLBStatus,
+			ingressClassName: "phony",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "", "", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "", "", emptyLBStatus),
+		},
+		"ingress v1beta1: not-configured ingressclass, annotation set to default, should update": {
+			status:           ipLBStatus,
+			ingressClassName: "",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, annotation.DEFAULT_INGRESS_CLASS_NAME, "", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, annotation.DEFAULT_INGRESS_CLASS_NAME, "", ipLBStatus),
+		},
+		"ingress v1beta1: not-configured ingressclass, spec field set to default, should update": {
+			status:           ipLBStatus,
+			ingressClassName: "",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "", "contour", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "", "contour", ipLBStatus),
+		},
+		"ingress v1beta1: not-configured ingressclass, annotation set, should not update": {
+			status:           ipLBStatus,
+			ingressClassName: "",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "something", "", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "something", "", emptyLBStatus),
+		},
+		"ingress v1beta1: not-configured ingressclass, spec field set, should not update": {
+			status:           ipLBStatus,
+			ingressClassName: "",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "", "something", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "", "something", emptyLBStatus),
+		},
+		"ingress v1beta1: non-matching ingressclass annotation should not update": {
+			status:           ipLBStatus,
+			ingressClassName: "phony",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "other", "", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "other", "", emptyLBStatus),
+		},
+		"ingress v1beta1: non-matching ingressclass spec field should not update": {
+			status:           ipLBStatus,
+			ingressClassName: "phony",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "", "other", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "", "other", emptyLBStatus),
+		},
+		"ingress v1beta1: matching ingressclass annotation should update": {
+			status:           ipLBStatus,
+			ingressClassName: "phony",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "phony", "", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "phony", "", ipLBStatus),
+		},
+		"ingress v1beta1: matching ingressclass spec field should update": {
+			status:           ipLBStatus,
+			ingressClassName: "phony",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "", "phony", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "", "phony", ipLBStatus),
+		},
+		"ingress v1beta1: non-matching ingressclass annotation should not update, overrides spec field": {
+			status:           ipLBStatus,
+			ingressClassName: "phony",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "other", "phony", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "other", "phony", emptyLBStatus),
+		},
+		"ingress v1beta1: matching ingressclass spec field should update, overrides spec field": {
+			status:           ipLBStatus,
+			ingressClassName: "phony",
+			gvr:              ingressGVR,
+			preop:            simpleIngressV1Beta1Generator(objName, "phony", "notcorrect", emptyLBStatus),
+			postop:           simpleIngressV1Beta1Generator(objName, "phony", "notcorrect", ipLBStatus),
+		},
 	}
 
 	for name, tc := range testCases {
@@ -391,6 +483,34 @@ func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec strin
 			IngressClassName: ingressClassName,
 		},
 		Status: networking_v1.IngressStatus{
+			LoadBalancer: lbstatus,
+		},
+	}
+}
+
+func simpleIngressV1Beta1Generator(name, ingressClassAnnotation, ingressClassSpec string, lbstatus v1.LoadBalancerStatus) *v1beta1.Ingress {
+	annotations := make(map[string]string)
+	if ingressClassAnnotation != "" {
+		annotations["kubernetes.io/ingress.class"] = ingressClassAnnotation
+	}
+	var ingressClassName *string
+	if ingressClassSpec != "" {
+		ingressClassName = pointer.StringPtr(ingressClassSpec)
+	}
+	return &v1beta1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ingress",
+			APIVersion: "networking.k8s.io/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Namespace:   name,
+			Annotations: annotations,
+		},
+		Spec: v1beta1.IngressSpec{
+			IngressClassName: ingressClassName,
+		},
+		Status: v1beta1.IngressStatus{
 			LoadBalancer: lbstatus,
 		},
 	}
