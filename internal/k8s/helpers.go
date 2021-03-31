@@ -17,18 +17,27 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 )
 
-// IsStatusEqual checks that two objects of supported Kubernetes types
+// isStatusEqual checks that two objects of supported Kubernetes types
 // have equivalent Status structs.
 //
 // Currently supports:
+// networking.k8s.io/ingress/v1
 // networking.k8s.io/ingress/v1beta1
 // projectcontour.io/v1
-func IsStatusEqual(objA, objB interface{}) bool {
+func isStatusEqual(objA, objB interface{}) bool {
 
 	switch a := objA.(type) {
+	case *networking_v1.Ingress:
+		switch b := objB.(type) {
+		case *networking_v1.Ingress:
+			if cmp.Equal(a.Status, b.Status) {
+				return true
+			}
+		}
 	case *v1beta1.Ingress:
 		switch b := objB.(type) {
 		case *v1beta1.Ingress:

@@ -24,9 +24,11 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -37,7 +39,7 @@ const (
 
 func TestIngressClassAnnotation_Configured(t *testing.T) {
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "linkerd"
+		reh.Builder.Source.IngressClassName = "linkerd"
 	})
 	defer done()
 
@@ -496,13 +498,13 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 	}
 }
 
-// TestIngressClassUpdate verifies that if an object changes its ingress
-// class, we stop paying attention to it.
+// TestIngressClassAnnotationUpdate verifies that if an object changes its
+// ingress class annotation, we stop paying attention to it.
 // TODO(youngnick)#2964: Disabled as part of #2495 work.
-func TestIngressClassUpdate(t *testing.T) {
+func TestIngressClassAnnotationUpdate(t *testing.T) {
 	t.Skip("Test disabled, see issue #2964")
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClass = "contour"
+		reh.Builder.Source.IngressClassName = "contour"
 	})
 	defer done()
 
@@ -561,4 +563,249 @@ func TestIngressClassUpdate(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	}).NoStatus(vhost)
+}
+
+func TestIngressClassResource_Configured(t *testing.T) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {
+		reh.Builder.Source.IngressClassName = "testingressclass"
+	})
+	defer done()
+
+	svc := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(svc)
+
+	ingressClass := networking_v1.IngressClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "testingressclass",
+		},
+		Spec: networking_v1.IngressClassSpec{
+			Controller: "something",
+		},
+	}
+
+	rh.OnAdd(ingressClass)
+
+	// Spec.IngressClassName matches.
+	ingressValid := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      IngressName,
+			Namespace: Namespace,
+		},
+		Spec: networking_v1.IngressSpec{
+			IngressClassName: pointer.StringPtr("testingressclass"),
+			DefaultBackend:   featuretests.IngressBackend(svc),
+		},
+	}
+
+	rh.OnAdd(ingressValid)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("*",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	// Spec.IngressClassName does not match.
+	ingressWrongClass := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      IngressName,
+			Namespace: Namespace,
+		},
+		Spec: networking_v1.IngressSpec{
+			IngressClassName: pointer.StringPtr("wrongingressclass"),
+			DefaultBackend:   featuretests.IngressBackend(svc),
+		},
+	}
+
+	rh.OnUpdate(ingressValid, ingressWrongClass)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+
+	// No ingress class specified.
+	ingressNoClass := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      IngressName,
+			Namespace: Namespace,
+		},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(svc),
+		},
+	}
+	rh.OnUpdate(ingressWrongClass, ingressNoClass)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+
+	// Remove Ingress class.
+	rh.OnDelete(ingressClass)
+
+	// Insert valid ingress object
+	rh.OnAdd(ingressValid)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("*",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	rh.OnDelete(ingressValid)
+
+	// Verify ingress is gone.
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+}
+
+func TestIngressClassResource_NotConfigured(t *testing.T) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	defer done()
+
+	svc := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(svc)
+
+	ingressClass := networking_v1.IngressClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "contour",
+		},
+		Spec: networking_v1.IngressClassSpec{
+			Controller: "something",
+		},
+	}
+
+	rh.OnAdd(ingressClass)
+
+	// No class specified.
+	ingressNoClass := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      IngressName,
+			Namespace: Namespace,
+		},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(svc),
+		},
+	}
+
+	rh.OnAdd(ingressNoClass)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("*",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	// Spec.IngressClassName matches.
+	ingressMatchingClass := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      IngressName,
+			Namespace: Namespace,
+		},
+		Spec: networking_v1.IngressSpec{
+			IngressClassName: pointer.StringPtr("contour"),
+			DefaultBackend:   featuretests.IngressBackend(svc),
+		},
+	}
+
+	rh.OnUpdate(ingressNoClass, ingressMatchingClass)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("*",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	// Spec.IngressClassName does not match.
+	ingressNonMatchingClass := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      IngressName,
+			Namespace: Namespace,
+		},
+		Spec: networking_v1.IngressSpec{
+			IngressClassName: pointer.StringPtr("notcontour"),
+			DefaultBackend:   featuretests.IngressBackend(svc),
+		},
+	}
+	rh.OnUpdate(ingressMatchingClass, ingressNonMatchingClass)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+
+	// Remove Ingress class.
+	rh.OnDelete(ingressClass)
+
+	// Insert valid ingress object
+	rh.OnAdd(ingressMatchingClass)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("*",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	rh.OnDelete(ingressMatchingClass)
+
+	// Verify ingress is gone.
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
 }

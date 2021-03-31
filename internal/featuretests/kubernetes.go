@@ -17,10 +17,24 @@ package featuretests
 
 import (
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+// TODO: Use only v1 Ingress only as v1beta1 will be removed in a
+// kubernetes version soon.
+func IngressBackend(svc *v1.Service) *networking_v1.IngressBackend {
+	return &networking_v1.IngressBackend{
+		Service: &networking_v1.IngressServiceBackend{
+			Name: svc.Name,
+			Port: networking_v1.ServiceBackendPort{
+				Number: svc.Spec.Ports[0].Port,
+			},
+		},
+	}
+}
 
 func Backend(svc *v1.Service) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{

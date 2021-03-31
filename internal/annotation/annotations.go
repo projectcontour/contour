@@ -23,8 +23,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DEFAULT_INGRESS_CLASS is the Contour default.
-const DEFAULT_INGRESS_CLASS = "contour"
+// DEFAULT_INGRESS_CLASS_NAME is the Contour default.
+const DEFAULT_INGRESS_CLASS_NAME = "contour"
 
 // IsKnown checks if an annotation is one Contour knows about.
 func IsKnown(key string) bool {
@@ -187,7 +187,7 @@ func MatchesIngressClass(o metav1.Object, ic string) bool {
 	case ic:
 		// Handles ic == "" and ic == "custom".
 		return true
-	case DEFAULT_INGRESS_CLASS:
+	case DEFAULT_INGRESS_CLASS_NAME:
 		// ic == "" implicitly matches the default too.
 		if ic == "" {
 			return true

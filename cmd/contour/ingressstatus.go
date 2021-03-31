@@ -22,6 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -45,13 +46,13 @@ import (
 // 5. If the worker is stopped, the informer continues but no further
 //    status updates are made.
 type loadBalancerStatusWriter struct {
-	log           logrus.FieldLogger
-	clients       *k8s.Clients
-	isLeader      chan struct{}
-	lbStatus      chan v1.LoadBalancerStatus
-	statusUpdater k8s.StatusUpdater
-	ingressClass  string
-	Converter     k8s.Converter
+	log              logrus.FieldLogger
+	clients          *k8s.Clients
+	isLeader         chan struct{}
+	lbStatus         chan v1.LoadBalancerStatus
+	statusUpdater    k8s.StatusUpdater
+	ingressClassName string
+	Converter        k8s.Converter
 }
 
 func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
@@ -69,24 +70,32 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 		Logger: func() logrus.FieldLogger {
 			// Configure the StatusAddressUpdater logger.
 			log := isw.log.WithField("context", "StatusAddressUpdater")
-			if isw.ingressClass != "" {
-				return log.WithField("target-ingress-class", isw.ingressClass)
+			if isw.ingressClassName != "" {
+				return log.WithField("target-ingress-class", isw.ingressClassName)
 			}
 
 			return log
 		}(),
-		IngressClass:  isw.ingressClass,
-		StatusUpdater: isw.statusUpdater,
-		Converter:     isw.Converter,
+		IngressClassName: isw.ingressClassName,
+		StatusUpdater:    isw.statusUpdater,
+		Converter:        isw.Converter,
 	}
 
 	// Create informers for the types that need load balancer
 	// address status. The client should have already started
 	// informers, so new informers will auto-start.
-	for _, r := range []schema.GroupVersionResource{
-		v1beta1.SchemeGroupVersion.WithResource("ingresses"),
+	resources := []schema.GroupVersionResource{
 		contour_api_v1.HTTPProxyGVR,
-	} {
+	}
+	var useIngressV1 bool
+	if isw.clients.ResourcesExist(k8s.IngressV1Resources()...) {
+		resources = append(resources, networking_v1.SchemeGroupVersion.WithResource("ingresses"))
+		useIngressV1 = true
+	} else {
+		resources = append(resources, v1beta1.SchemeGroupVersion.WithResource("ingresses"))
+		useIngressV1 = false
+	}
+	for _, r := range resources {
 		inf, err := isw.clients.InformerForResource(r)
 		if err != nil {
 			isw.log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
@@ -110,17 +119,27 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 
 			u.Set(lbs)
 
-			var ingressList v1beta1.IngressList
-			var proxyList contour_api_v1.HTTPProxyList
-
-			if err := isw.clients.Cache().List(context.Background(), &ingressList); err != nil {
-				isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
+			if useIngressV1 {
+				var ingressV1List networking_v1.IngressList
+				if err := isw.clients.Cache().List(context.Background(), &ingressV1List); err != nil {
+					isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
+				} else {
+					for i := range ingressV1List.Items {
+						u.OnAdd(&ingressV1List.Items[i])
+					}
+				}
 			} else {
-				for i := range ingressList.Items {
-					u.OnAdd(&ingressList.Items[i])
+				var ingressV1Beta1List v1beta1.IngressList
+				if err := isw.clients.Cache().List(context.Background(), &ingressV1Beta1List); err != nil {
+					isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
+				} else {
+					for i := range ingressV1Beta1List.Items {
+						u.OnAdd(&ingressV1Beta1List.Items[i])
+					}
 				}
 			}
 
+			var proxyList contour_api_v1.HTTPProxyList
 			if err := isw.clients.Cache().List(context.Background(), &proxyList); err != nil {
 				isw.log.WithError(err).WithField("kind", "HTTPProxy").Error("failed to list objects")
 			} else {

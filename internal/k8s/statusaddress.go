@@ -19,11 +19,14 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
+	ingress_validation "github.com/projectcontour/contour/internal/validation/ingress"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/utils/pointer"
 )
 
 // StatusAddressUpdater observes informer OnAdd and OnUpdate events and
@@ -32,11 +35,11 @@ import (
 // Note that this is intended to handle updating the status.loadBalancer struct only,
 // not more general status updates. That's a job for the StatusUpdater.
 type StatusAddressUpdater struct {
-	Logger        logrus.FieldLogger
-	LBStatus      v1.LoadBalancerStatus
-	IngressClass  string
-	StatusUpdater StatusUpdater
-	Converter     Converter
+	Logger           logrus.FieldLogger
+	LBStatus         v1.LoadBalancerStatus
+	IngressClassName string
+	StatusUpdater    StatusUpdater
+	Converter        Converter
 
 	// mu guards the LBStatus field, which can be updated dynamically.
 	mu sync.Mutex
@@ -73,32 +76,43 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 
 	var typed metav1.Object
 	var gvr schema.GroupVersionResource
-	var kind string
+
+	logNoMatch := func(logger logrus.FieldLogger, obj metav1.Object) {
+		logger.WithField("name", obj.GetName()).
+			WithField("namespace", obj.GetNamespace()).
+			WithField("ingress-class-annotation", annotation.IngressClass(obj)).
+			WithField("kind", KindOf(obj)).
+			WithField("target-ingress-class", s.IngressClassName).
+			Debug("unmatched ingress class, skipping status address update")
+	}
 
 	switch o := obj.(type) {
+	case *networking_v1.Ingress:
+		if !ingress_validation.MatchesIngressClassName(o, s.IngressClassName) {
+			logNoMatch(s.Logger.WithField("ingress-class-name", pointer.StringPtrDerefOr(o.Spec.IngressClassName, "")), o)
+			return
+		}
+		o.GetObjectKind().SetGroupVersionKind(networking_v1.SchemeGroupVersion.WithKind("ingress"))
+		typed = o.DeepCopy()
+		gvr = networking_v1.SchemeGroupVersion.WithResource("ingresses")
 	case *v1beta1.Ingress:
+		if !ingress_validation.MatchesIngressClassName(o, s.IngressClassName) {
+			logNoMatch(s.Logger.WithField("ingress-class-name", pointer.StringPtrDerefOr(o.Spec.IngressClassName, "")), o)
+			return
+		}
 		o.GetObjectKind().SetGroupVersionKind(v1beta1.SchemeGroupVersion.WithKind("ingress"))
 		typed = o.DeepCopy()
 		gvr = v1beta1.SchemeGroupVersion.WithResource("ingresses")
-		kind = "ingress"
 	case *contour_api_v1.HTTPProxy:
+		if !annotation.MatchesIngressClass(o, s.IngressClassName) {
+			logNoMatch(s.Logger, o)
+			return
+		}
 		o.GetObjectKind().SetGroupVersionKind(contour_api_v1.SchemeGroupVersion.WithKind("httpproxy"))
 		typed = o.DeepCopy()
 		gvr = contour_api_v1.SchemeGroupVersion.WithResource("httpproxies")
-		kind = "httpproxy"
 	default:
 		s.Logger.Debugf("unsupported type %T received", o)
-		return
-	}
-
-	if !annotation.MatchesIngressClass(typed, s.IngressClass) {
-		s.Logger.
-			WithField("name", typed.GetName()).
-			WithField("namespace", typed.GetNamespace()).
-			WithField("ingress-class", annotation.IngressClass(typed)).
-			WithField("target-ingress-class", s.IngressClass).
-			WithField("kind", kind).
-			Debug("unmatched ingress class, skipping status address update")
 		return
 	}
 
@@ -106,8 +120,8 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		WithField("name", typed.GetName()).
 		WithField("namespace", typed.GetNamespace()).
 		WithField("ingress-class", annotation.IngressClass(typed)).
-		WithField("kind", kind).
-		WithField("defined-ingress-class", s.IngressClass).
+		WithField("kind", KindOf(obj)).
+		WithField("defined-ingress-class", s.IngressClassName).
 		Debug("received an object, sending status address update")
 
 	s.StatusUpdater.Send(NewStatusUpdate(
@@ -116,6 +130,10 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		gvr,
 		StatusMutatorFunc(func(obj interface{}) interface{} {
 			switch o := obj.(type) {
+			case *networking_v1.Ingress:
+				dco := o.DeepCopy()
+				dco.Status.LoadBalancer = loadBalancerStatus
+				return dco
 			case *v1beta1.Ingress:
 				dco := o.DeepCopy()
 				dco.Status.LoadBalancer = loadBalancerStatus
