@@ -412,11 +412,11 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname, gateway All namespace selector": {
 			gateway: gatewayWithAllNamespace,
 			objs: []interface{}{
-				kuardService,
+				kuardServiceCustomNs,
 				&gatewayapi_v1alpha1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
-						Namespace: "default",
+						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
@@ -437,7 +437,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 				},
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardServiceCustomNs))),
+					),
+				},
+			),
 		},
 		"insert basic single route, single hostname, gateway From namespace selector": {
 			gateway: gatewayWithNamespaceSelector,
@@ -528,11 +535,11 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		"insert basic single route, single hostname which doesn't match gateway's selector": {
 			gateway: gatewaySelectorNotMatching,
 			objs: []interface{}{
-				kuardService,
+				kuardServiceCustomNs,
 				&gatewayapi_v1alpha1.HTTPRoute{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "basic",
-						Namespace: "default",
+						Namespace: "custom",
 						Labels: map[string]string{
 							"app":  "contour",
 							"type": "controller",
