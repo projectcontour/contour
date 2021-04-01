@@ -11,6 +11,7 @@ Other combinations *may* work, but are not tested or supported.
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version |
 | --------------- | :------------------- | ------------------- | ---------------- |
+| 1.14.0          | [1.17.1][14]         | 1.20, 1.19, 1.18    | [1.14.0][54]     |
 | 1.13.1          | [1.17.1][14]         | 1.20, 1.19, 1.18    | [1.13.1][53]     |
 | 1.13.0          | [1.17.0][13]         | 1.20, 1.19, 1.18    | [1.13.0][52]     |
 | 1.12.0          | [1.17.0][13]         | 1.19, 1.18, 1.17    | [1.12.0][51]     |
@@ -113,6 +114,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [51]: https://github.com/projectcontour/contour-operator/releases/tag/v1.12.0
 [52]: https://github.com/projectcontour/contour-operator/releases/tag/v1.13.0
 [53]: https://github.com/projectcontour/contour-operator/releases/tag/v1.13.1
+[54]: https://github.com/projectcontour/contour-operator/releases/tag/v1.14.0
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix
