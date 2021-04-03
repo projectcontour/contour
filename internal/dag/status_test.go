@@ -2678,6 +2678,53 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 		}},
 	})
 
+	run(t, "RegularExpression header match not yet supported for httproute", testcase{
+		objs: []interface{}{
+			gateway,
+			kuardService,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/",
+							},
+							Headers: &gatewayapi_v1alpha1.HTTPHeaderMatch{
+								Type:   "RegularExpression", // <---- RegularExpression type not yet supported
+								Values: map[string]string{"foo": "bar"},
+							},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+							ServiceName: pointer.StringPtr("kuard"),
+							Port:        gatewayPort(8080),
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionNotImplemented),
+			Status:  contour_api_v1.ConditionTrue,
+			Reason:  string(status.ReasonHeaderMatchType),
+			Message: "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.",
+		}, {
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonErrorsExist),
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
 	run(t, "spec.tls not yet supported for httproute", testcase{
 		objs: []interface{}{
 			gateway,

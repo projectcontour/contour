@@ -1113,6 +1113,170 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"insert basic single route with single header match and path match": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+								Headers: &gatewayapi_v1alpha1.HTTPHeaderMatch{
+									Type:   "Exact",
+									Values: map[string]string{"foo": "bar"},
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "foo", Value: "bar", MatchType: "exact", Invert: false},
+							},
+							Clusters: clusters(service(kuardService)),
+						}),
+					),
+				},
+			),
+		},
+		"insert two routes with single header match, path match and header match": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{
+									{
+										Path: gatewayapi_v1alpha1.HTTPPathMatch{
+											Type:  "Prefix",
+											Value: "/blog",
+										},
+									}, {
+										Path: gatewayapi_v1alpha1.HTTPPathMatch{
+											Type:  "Prefix",
+											Value: "/tech",
+										},
+										Headers: &gatewayapi_v1alpha1.HTTPHeaderMatch{
+											Type:   "Exact",
+											Values: map[string]string{"foo": "bar"},
+										},
+									},
+								},
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/blog"),
+							Clusters:           clusters(service(kuardService)),
+						},
+						&Route{
+							PathMatchCondition: prefixString("/tech"),
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "foo", Value: "bar", MatchType: "exact", Invert: false},
+							},
+							Clusters: clusters(service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
+		"insert two routes with single header match without explicit path match": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{
+									{
+										Headers: &gatewayapi_v1alpha1.HTTPHeaderMatch{
+											Type:   "Exact",
+											Values: map[string]string{"foo": "bar"},
+										},
+									},
+								},
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: "foo", Value: "bar", MatchType: "exact", Invert: false},
+							},
+							Clusters: clusters(service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
