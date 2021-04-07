@@ -98,38 +98,41 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_api_v1.H
 	if err != nil {
 		return nil, err
 	}
-	if userPolicy != nil {
-		if userPolicy.Set == nil {
-			userPolicy.Set = make(map[string]string, len(defaultPolicy.Set))
+	if userPolicy == nil {
+		userPolicy = &HeadersPolicy{}
+	}
+
+	if userPolicy.Set == nil {
+		userPolicy.Set = make(map[string]string, len(defaultPolicy.Set))
+	}
+	for k, v := range defaultPolicy.Set {
+		key := http.CanonicalHeaderKey(k)
+		if key == "Host" {
+			return nil, fmt.Errorf("rewriting %q header is not supported", key)
 		}
-		for k, v := range defaultPolicy.Set {
-			key := http.CanonicalHeaderKey(k)
-			if key == "Host" {
-				return nil, fmt.Errorf("rewriting %q header is not supported", key)
-			}
-			if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
-				return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
-			}
-			// if the user policy set on the object does not contain this header then use the default
-			if _, exists := userPolicy.Set[key]; !exists {
-				userPolicy.Set[key] = escapeHeaderValue(v, dynamicHeaders)
-			}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
 		}
-		// add any default remove header policy if not already set
-		remove := sets.NewString()
-		for _, entry := range userPolicy.Remove {
-			remove.Insert(entry)
-		}
-		for _, entry := range defaultPolicy.Remove {
-			key := http.CanonicalHeaderKey(entry)
-			if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
-				return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
-			}
-			if !remove.Has(key) {
-				userPolicy.Remove = append(userPolicy.Remove, key)
-			}
+		// if the user policy set on the object does not contain this header then use the default
+		if _, exists := userPolicy.Set[key]; !exists {
+			userPolicy.Set[key] = escapeHeaderValue(v, dynamicHeaders)
 		}
 	}
+	// add any default remove header policy if not already set
+	remove := sets.NewString()
+	for _, entry := range userPolicy.Remove {
+		remove.Insert(entry)
+	}
+	for _, entry := range defaultPolicy.Remove {
+		key := http.CanonicalHeaderKey(entry)
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
+		}
+		if !remove.Has(key) {
+			userPolicy.Remove = append(userPolicy.Remove, key)
+		}
+	}
+
 	return userPolicy, nil
 }
 
