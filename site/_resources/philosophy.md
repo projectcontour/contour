@@ -82,8 +82,8 @@ When designing Kubernetes objects, we try to expose information as close as poss
 For example, we will ensure that HTTPProxy objects have status conditions that tell the user that created them if there is a problem, rather than just logging that information from Contour itself.
 
 ### We meet users where they are
-Contour currently supports Ingress v1beta1, and HTTPProxy.
-In the near future, we'll add support for Ingress v1 and after that the Gateway-API.
+Contour currently supports Ingress v1beta1, Ingress v1, and HTTPProxy.
+Work is under way to support Gateway API with initial support available in Contour 1.13.0.
 We don't ask users to choose which ingress API they want to use, instead we will consider providing support for any requested types to meet users wherever they are.
 
 This goal is in conflict with the goal of a minimum surface area, but we realize that channeling all our users to an API which is only implemented in Contour is bad for their interoperability and limits our total addressable market.
