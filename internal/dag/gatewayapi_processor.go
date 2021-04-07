@@ -205,15 +205,17 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 	for _, rule := range route.Spec.Rules {
 
-		var pathPrefixes []string
+		var pathMatchConditions []MatchCondition
 		var services []*Service
 
 		for _, match := range rule.Matches {
 			switch match.Path.Type {
 			case gatewayapi_v1alpha1.PathMatchPrefix:
-				pathPrefixes = append(pathPrefixes, stringOrDefault(match.Path.Value, "/"))
+				pathMatchConditions = append(pathMatchConditions, &PrefixMatchCondition{Prefix: stringOrDefault(match.Path.Value, "/")})
+			case gatewayapi_v1alpha1.PathMatchExact:
+				pathMatchConditions = append(pathMatchConditions, &ExactMatchCondition{Path: stringOrDefault(match.Path.Value, "/")})
 			default:
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.")
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
 			}
 		}
 
@@ -252,7 +254,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			continue
 		}
 
-		routes := p.routes(pathPrefixes, services)
+		routes := p.routes(pathMatchConditions, services)
 		for _, vhost := range hosts {
 			vhost := p.dag.EnsureVirtualHost(ListenerName{Name: vhost, ListenerName: "ingress_http"})
 			for _, route := range routes {
@@ -272,7 +274,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 }
 
 // routes builds a []*dag.Route for the supplied set of pathPrefixes & services.
-func (p *GatewayAPIProcessor) routes(pathPrefixes []string, services []*Service) []*Route {
+func (p *GatewayAPIProcessor) routes(pathMatchConditions []MatchCondition, services []*Service) []*Route {
 	var clusters []*Cluster
 	var routes []*Route
 
@@ -283,11 +285,11 @@ func (p *GatewayAPIProcessor) routes(pathPrefixes []string, services []*Service)
 		})
 	}
 
-	for _, prefix := range pathPrefixes {
+	for _, pathMatch := range pathMatchConditions {
 		r := &Route{
 			Clusters: clusters,
 		}
-		r.PathMatchCondition = &PrefixMatchCondition{Prefix: prefix}
+		r.PathMatchCondition = pathMatch
 		routes = append(routes, r)
 	}
 
