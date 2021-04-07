@@ -2626,7 +2626,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Type:    string(status.ConditionNotImplemented),
 			Status:  contour_api_v1.ConditionTrue,
 			Reason:  string(status.ReasonPathMatchType),
-			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.",
+			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
 		}, {
 			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
@@ -2635,7 +2635,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 		}},
 	})
 
-	run(t, "exact prefix match not yet supported for httproute", testcase{
+	run(t, "regular expression match not yet supported for httproute", testcase{
 		objs: []interface{}{
 			gateway,
 			kuardService,
@@ -2654,7 +2654,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
 							Path: gatewayapi_v1alpha1.HTTPPathMatch{
-								Type:  "Exact", // <---- exact type not yet supported
+								Type:  "RegularExpression", // <---- regular expression type not supported
 								Value: "/",
 							},
 						}},
@@ -2669,7 +2669,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Type:    string(status.ConditionNotImplemented),
 			Status:  contour_api_v1.ConditionTrue,
 			Reason:  string(status.ReasonPathMatchType),
-			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type is supported.",
+			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
 		}, {
 			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,

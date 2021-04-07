@@ -1016,6 +1016,48 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
+		"insert basic single route with exact path match": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Exact",
+									Value: "/blog",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							exactroute("/blog", service(kuardService))),
+					),
+				},
+			),
+		},
 		// Single host with single route containing multiple prefixes to the same service.
 		"insert basic single route with multiple prefixes, single hostname": {
 			gateway: gatewayWithSelector,
@@ -9621,6 +9663,14 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
 		PathMatchCondition: prefixString(prefix),
+		Clusters:           clusters(services...),
+	}
+}
+
+func exactroute(path string, first *Service, rest ...*Service) *Route {
+	services := append([]*Service{first}, rest...)
+	return &Route{
+		PathMatchCondition: &ExactMatchCondition{Path: path},
 		Clusters:           clusters(services...),
 	}
 }

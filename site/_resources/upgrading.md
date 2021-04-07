@@ -71,6 +71,12 @@ $ kubectl apply -f examples/contour/02-job-certgen.yaml
 
 If your version of Contour is older than v1.13, please upgrade to v1.13 first, then upgrade to v1.14.0.
 
+This release includes an update to the Envoy service ports. Upgrade your Envoy service with the following:
+
+```bash
+$ kubectl apply -f examples/contour/02-service-envoy.yaml
+```
+
 Upgrade your Contour deployment:
 
 ```bash
