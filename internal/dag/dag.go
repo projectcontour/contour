@@ -182,6 +182,13 @@ func (hc *HeaderMatchCondition) String() string {
 	return "header: " + details
 }
 
+// DirectResponse allows for a specific HTTP status code
+// to be the response to a route request vs routing to
+// an envoy cluster.
+type DirectResponse struct {
+	StatusCode uint32
+}
+
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 
@@ -235,6 +242,11 @@ type Route struct {
 	// RequestHashPolicies is a list of policies for configuring hashes on
 	// request attributes.
 	RequestHashPolicies []RequestHashPolicy
+
+	// DirectResponse allows for a specific HTTP status code
+	// to be the response to a route request vs routing to
+	// an envoy cluster.
+	DirectResponse *DirectResponse
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.

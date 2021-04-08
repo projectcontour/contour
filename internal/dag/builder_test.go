@@ -983,7 +983,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 				},
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", directResponseRoute("/", 503)),
+					),
+				},
+			),
 		},
 		// If port is not defined the route will be marked as invalid (#3352).
 		"missing port": {
@@ -9821,6 +9828,13 @@ func routes(routes ...*Route) map[string]*Route {
 		m[conditionsToString(r)] = r
 	}
 	return m
+}
+
+func directResponseRoute(prefix string, statusCode uint32) *Route {
+	return &Route{
+		PathMatchCondition: prefixString(prefix),
+		DirectResponse:     &DirectResponse{StatusCode: statusCode},
+	}
 }
 
 func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
