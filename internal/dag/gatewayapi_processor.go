@@ -41,6 +41,12 @@ type GatewayAPIProcessor struct {
 	source *KubernetesCache
 }
 
+// matchConditions holds match rules.
+type matchConditions struct {
+	pathMatchConditions  []MatchCondition
+	headerMatchCondition []HeaderMatchCondition
+}
+
 // Run translates Service APIs into DAG objects and
 // adds them to the DAG.
 func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
@@ -205,18 +211,36 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 	for _, rule := range route.Spec.Rules {
 
-		var pathMatchConditions []MatchCondition
+		matchconditions := []*matchConditions{}
 		var services []*Service
 
 		for _, match := range rule.Matches {
+			mc := &matchConditions{}
+			// TODO: Replace this with nil check when gateway-api includes this fix -
+			// https://github.com/kubernetes-sigs/gateway-api/commit/9d63656df8cc9e67da60d4fe3f6289aad22e72d3
+			if match.Path.Value == "" || match.Path.Type == "" {
+				match.Path = gatewayapi_v1alpha1.HTTPPathMatch{Type: gatewayapi_v1alpha1.PathMatchPrefix, Value: "/"}
+			}
 			switch match.Path.Type {
 			case gatewayapi_v1alpha1.PathMatchPrefix:
-				pathMatchConditions = append(pathMatchConditions, &PrefixMatchCondition{Prefix: stringOrDefault(match.Path.Value, "/")})
+				mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: stringOrDefault(match.Path.Value, "/")})
 			case gatewayapi_v1alpha1.PathMatchExact:
-				pathMatchConditions = append(pathMatchConditions, &ExactMatchCondition{Path: stringOrDefault(match.Path.Value, "/")})
+				mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: stringOrDefault(match.Path.Value, "/")})
 			default:
 				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
 			}
+
+			if match.Headers != nil {
+				switch match.Headers.Type {
+				case gatewayapi_v1alpha1.HeaderMatchExact:
+					for k, v := range match.Headers.Values {
+						mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: HeaderMatchTypeExact, Name: k, Value: v})
+					}
+				default:
+					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
+				}
+			}
+			matchconditions = append(matchconditions, mc)
 		}
 
 		if len(rule.ForwardTo) == 0 {
@@ -254,7 +278,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			continue
 		}
 
-		routes := p.routes(pathMatchConditions, services)
+		routes := p.routes(matchconditions, services)
 		for _, vhost := range hosts {
 			vhost := p.dag.EnsureVirtualHost(ListenerName{Name: vhost, ListenerName: "ingress_http"})
 			for _, route := range routes {
@@ -273,8 +297,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 	}
 }
 
-// routes builds a []*dag.Route for the supplied set of pathPrefixes & services.
-func (p *GatewayAPIProcessor) routes(pathMatchConditions []MatchCondition, services []*Service) []*Route {
+// routes builds a []*dag.Route for the supplied set of match conditions & services.
+func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, services []*Service) []*Route {
 	var clusters []*Cluster
 	var routes []*Route
 
@@ -285,12 +309,15 @@ func (p *GatewayAPIProcessor) routes(pathMatchConditions []MatchCondition, servi
 		})
 	}
 
-	for _, pathMatch := range pathMatchConditions {
-		r := &Route{
-			Clusters: clusters,
+	for _, mc := range matchConditions {
+		for _, pathMatch := range mc.pathMatchConditions {
+			r := &Route{
+				Clusters: clusters,
+			}
+			r.PathMatchCondition = pathMatch
+			r.HeaderMatchConditions = mc.headerMatchCondition
+			routes = append(routes, r)
 		}
-		r.PathMatchCondition = pathMatch
-		routes = append(routes, r)
 	}
 
 	return routes

@@ -30,6 +30,7 @@ type RouteReasonType string
 
 const ReasonNotImplemented RouteReasonType = "NotImplemented"
 const ReasonPathMatchType RouteReasonType = "PathMatchType"
+const ReasonHeaderMatchType RouteReasonType = "HeaderMatchType"
 const ReasonDegraded RouteReasonType = "Degraded"
 const ReasonValid RouteReasonType = "Valid"
 const ReasonErrorsExist RouteReasonType = "ErrorsExist"
