@@ -6,6 +6,36 @@ on: [push, pull_request]
 env:
   GOPROXY: https://proxy.golang.org/
 jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # use stable kubernetes_version values since they're included
+        # in the name of the GitHub Actions job, and we don't want to
+        # have to update branch protection rules every time we change
+        # a Kubernetes version number.
+        kubernetes_version: ["kubernetes:latest", "kubernetes:n-1", "kubernetes:n-2"]
+        # include defines an additional variable (the specific node
+        # image to use) for each kubernetes_version value.
+        include:
+            # TODO: Move to upstream image once available (#3610).
+          - kubernetes_version: "kubernetes:latest"
+            node_image: "stevesloka/kind-node:v1.21.0"
+          - kubernetes_version: "kubernetes:n-1"
+            node_image: "docker.io/kindest/node:v1.20.2"
+          - kubernetes_version: "kubernetes:n-2"
+            node_image: "docker.io/kindest/node:v1.19.7"
+    steps:
+      - uses: actions/checkout@v2
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: e2e tests
+        env:
+          NODEIMAGE: ${{ matrix.node_image }}
+        run: |
+          make e2e
   integration:
     runs-on: ubuntu-latest
     strategy:
