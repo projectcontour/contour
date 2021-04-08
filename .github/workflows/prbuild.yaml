@@ -6,6 +6,19 @@ on: [push, pull_request]
 env:
   GOPROXY: https://proxy.golang.org/
 jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: e2e tests
+        env:
+          NODEIMAGE: ${{ matrix.node_image }}
+        run: |
+          make e2e
   integration:
     runs-on: ubuntu-latest
     strategy:
