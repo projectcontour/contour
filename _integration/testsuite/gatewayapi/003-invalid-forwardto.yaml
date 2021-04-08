@@ -18,46 +18,6 @@ metadata:
   name: ingress-conformance-echo
 $apply:
   fixture:
-    as: echo-slash-prefix
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: ingress-conformance-echo
-$apply:
-  fixture:
-    as: echo-slash-prefix
-
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ingress-conformance-echo
-$apply:
-  fixture:
-    as: echo-slash-noprefix
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: ingress-conformance-echo
-$apply:
-  fixture:
-    as: echo-slash-noprefix
-
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ingress-conformance-echo
-$apply:
-  fixture:
     as: echo-slash-default
 
 ---
@@ -69,26 +29,6 @@ metadata:
 $apply:
   fixture:
     as: echo-slash-default
-
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ingress-conformance-echo
-$apply:
-  fixture:
-    as: echo-slash-exact
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: ingress-conformance-echo
-$apply:
-  fixture:
-    as: echo-slash-exact
 
 ---
 

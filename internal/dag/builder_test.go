@@ -15,6 +15,7 @@ package dag
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -954,7 +955,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(),
 		},
 		// If the ServiceName referenced from an HTTPRoute is missing,
-		// the route should not be added.
+		// the route should return an HTTP503.
 		"missing service": {
 			gateway: gatewayWithSelector,
 			objs: []interface{}{
@@ -987,7 +988,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", directResponseRoute("/", 503)),
+						virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
 					),
 				},
 			),

@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"strings"
 
 	"github.com/projectcontour/contour/internal/status"
@@ -283,7 +284,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 					// route still matches the configured conditions since the
 					// service is missing or invalid.
 					route.DirectResponse = &DirectResponse{
-						StatusCode: 503,
+						StatusCode: http.StatusServiceUnavailable,
 					}
 				}
 				vhost.addRoute(route)
