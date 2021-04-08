@@ -149,7 +149,7 @@ spec:
             type: Prefix
             value: /invalidservicename
       forwardTo:
-        - serviceName:
+        - serviceName: ""
           port: 80
     - matches:
       - path:
