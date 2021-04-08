@@ -33,6 +33,7 @@ Set environment variables for use in subsequent steps:
 export CONTOUR_RELEASE_VERSION=v1.11.0
 export CONTOUR_RELEASE_VERSION_MAJOR=1
 export CONTOUR_RELEASE_VERSION_MINOR=11
+export CONTOUR_PREVIOUS_VERSION=v1.10.0
 
 export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
 export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
@@ -49,7 +50,13 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
     ```
 
 1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
-1. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
+1. Run through upgrading from previous version and document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
+    1. Check the example deployment manifests for any significant diffs that may need a call out in upgrading instructions and release notes: `git log -p $CONTOUR_PREVIOUS_VERSION..HEAD examples/contour`
+    1. Deploy current release example deployment: `/integration/testsuite/install-contour-release.sh $CONTOUR_PREVIOUS_VERSION`
+    1. Deploy an example workload: `kubectl apply -f https://projectcontour.io/examples/kuard.yaml`
+    1. Ensure workload is reachable, check status of Contour components/Envoy daemonset
+    1. Deploy `main` branch (new release): `/integration/testsuite/install-contour-working.sh`
+    1. Ensure upgrade finishes, Contour/Envoy deployments healthy, and example workload is reachable as expected
 1. Commit all changes, push the branch, and PR it into `main`.
 
 _Note: the PR will probably fail the siteproof check due to [#2032](https://github.com/projectcontour/contour/issues/2032). It's a good idea to scan the CI log for any true issues._
@@ -134,6 +141,8 @@ _Note: the PR will probably fail the siteproof check due to [#2032](https://gith
 
 Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
 
+Be mindful of changes to the example deployment YAMLs that were documented in the upgrade instructions step above as these are likely very important to include in the release notes.
+
 _Note: Filter on the Github label "release note" and Github milestone which should include any PRs which should be called out in the release notes._ 
 
 ### Toot your horn
@@ -176,6 +185,7 @@ export CONTOUR_RELEASE_VERSION=v1.11.1
 export CONTOUR_RELEASE_VERSION_MAJOR=1
 export CONTOUR_RELEASE_VERSION_MINOR=11
 export CONTOUR_PREVIOUS_VERSION=v1.11.0
+export CONTOUR_PREVIOUS_MINOR_VERSION=v1.10.0
 
 export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
 export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
@@ -206,7 +216,13 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
     ```
 
 1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
-1. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
+1. Run through upgrading from previous version and document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
+    1. Check the example deployment manifests for any significant diffs that may need a call out in upgrading instructions and release notes: `git log -p $CONTOUR_PREVIOUS_MINOR_VERSION..HEAD examples/contour`
+    1. Deploy current release example deployment: `/integration/testsuite/install-contour-release.sh $CONTOUR_PREVIOUS_MINOR_VERSION`
+    1. Deploy an example workload: `kubectl apply -f https://projectcontour.io/examples/kuard.yaml`
+    1. Ensure workload is reachable, check status of Contour components/Envoy daemonset
+    1. Deploy `main` branch (new release): `/integration/testsuite/install-contour-working.sh`
+    1. Ensure upgrade finishes, Contour/Envoy deployments healthy, and example workload is reachable as expected
 1. Commit all changes, push the branch, and PR it into `main`.
 
 ### Update YAML and tag release
@@ -271,6 +287,9 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 ### Do the Github release and write release notes
 
 Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
+
+Be mindful of changes to the example deployment YAMLs that were documented in the upgrade instructions step above as these are likely very important to include in the release notes.
+These should be unlikely in a patch release.
 
 _Note: Filter on the Github label "release note" and Github milestone which should include any PRs which should be called out in the release notes._ 
 
