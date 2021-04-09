@@ -93,10 +93,7 @@ func TestPathConditionMatch(t *testing.T) {
 			},
 		},
 	}
-
-	fx.CreateHTTPProxy(p)
-
-	// TODO should wait until HTTPProxy has a status of valid
+	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
 	cases := map[string]string{
 		"/":                "echo-slash-default",

@@ -110,9 +110,7 @@ func TestDynamicHeaders(t *testing.T) {
 		p.Spec.Routes[0].ResponseHeadersPolicy.Set = append(p.Spec.Routes[0].ResponseHeadersPolicy.Set, hv)
 	}
 
-	fx.CreateHTTPProxy(p)
-
-	// TODO should wait until HTTPProxy has a status of valid
+	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
 	res, ok := fx.HTTPRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response")

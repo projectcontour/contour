@@ -65,10 +65,36 @@ func NewFramework(t *testing.T) *Framework {
 	}
 }
 
-// CreateHTTPProxy creates the provided HTTPProxy in the Kubernetes API
-// or fails the test if it encounters an error.
-func (f *Framework) CreateHTTPProxy(proxy *contourv1.HTTPProxy) {
+// CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condition func(*contourv1.HTTPProxy) bool) (*contourv1.HTTPProxy, bool) {
 	require.NoError(f.t, f.Client.Create(context.TODO(), proxy))
+
+	ticker := time.NewTicker(f.retryInterval)
+	defer ticker.Stop()
+
+	timeout := time.NewTimer(f.retryTimeout)
+	defer timeout.Stop()
+
+	var res *contourv1.HTTPProxy
+	for {
+		select {
+		case <-ticker.C:
+			err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(proxy), res)
+			if err == nil && condition(res) {
+				return res, true
+			}
+		case <-timeout.C:
+			// return the last response for logging/debugging purposes
+			return res, false
+		}
+	}
+}
+
+// HTTPProxyValid returns true if the proxy has a .status.currentStatus
+// of "valid".
+func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
+	return proxy != nil && proxy.Status.CurrentStatus == "valid"
 }
 
 // CreateEchoWorkload creates the ingress-conformance-echo fixture, specifically

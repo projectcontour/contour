@@ -16,10 +16,12 @@
 package e2e
 
 import (
+	"context"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -67,7 +69,7 @@ func TestIncludePrefixCondition(t *testing.T) {
 			},
 		},
 	}
-	fx.CreateHTTPProxy(appProxy)
+	require.NoError(t, fx.Client.Create(context.TODO(), appProxy))
 
 	adminProxy := &contourv1.HTTPProxy{
 		TypeMeta: metav1.TypeMeta{
@@ -91,7 +93,7 @@ func TestIncludePrefixCondition(t *testing.T) {
 			},
 		},
 	}
-	fx.CreateHTTPProxy(adminProxy)
+	require.NoError(t, fx.Client.Create(context.TODO(), adminProxy))
 
 	baseProxy := &contourv1.HTTPProxy{
 		TypeMeta: metav1.TypeMeta{
@@ -128,9 +130,9 @@ func TestIncludePrefixCondition(t *testing.T) {
 			},
 		},
 	}
-	fx.CreateHTTPProxy(baseProxy)
+	fx.CreateHTTPProxyAndWaitFor(baseProxy, HTTPProxyValid)
 
-	// TODO should wait until HTTPProxy has a status of valid
+	// TODO should check for appProxy/adminProxy valid too
 
 	cases := map[string]string{
 		"/":          "echo-app",

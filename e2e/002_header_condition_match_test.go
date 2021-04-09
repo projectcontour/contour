@@ -142,10 +142,7 @@ func TestHeaderConditionMatch(t *testing.T) {
 			},
 		},
 	}
-
-	fx.CreateHTTPProxy(p)
-
-	// TODO should wait until HTTPProxy has a status of valid
+	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
 	type scenario struct {
 		headers        map[string]string

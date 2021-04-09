@@ -71,10 +71,7 @@ func TestMergeSlash(t *testing.T) {
 			},
 		},
 	}
-
-	fx.CreateHTTPProxy(p)
-
-	// TODO should wait until HTTPProxy has a status of valid
+	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
 	res, ok := fx.HTTPRequestUntil(IsOK, "/anything/this//has//lots////of/slashes", p.Spec.VirtualHost.Fqdn)
 	require.Truef(t, ok, "did not receive 200 response")
