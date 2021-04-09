@@ -48,10 +48,6 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 
 	// GatewayClass
 	gatewayClass := &gatewayv1alpha1.GatewayClass{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "GatewayClass",
-			APIVersion: gatewayv1alpha1.GroupVersion.String(),
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "contour-class",
 		},
@@ -65,10 +61,6 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 
 	// Gateway
 	gateway := &gatewayv1alpha1.Gateway{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Gateway",
-			APIVersion: gatewayv1alpha1.GroupVersion.String(),
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "projectcontour", // TODO needs to be this to match default settings, but need to clean it up!
 			Name:      "contour",
@@ -98,10 +90,6 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 
 	// HTTPRoute
 	route := &gatewayv1alpha1.HTTPRoute{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "HTTPRoute",
-			APIVersion: gatewayv1alpha1.GroupVersion.String(),
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      "http-filter-1",

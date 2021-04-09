@@ -48,10 +48,6 @@ func TestIncludePrefixCondition(t *testing.T) {
 	fx.CreateEchoWorkload(adminNamespace, "echo-admin")
 
 	appProxy := &contourv1.HTTPProxy{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "HTTPProxy",
-			APIVersion: "projectcontour.io/v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: appNamespace,
 			Name:      "echo-app",
@@ -72,10 +68,6 @@ func TestIncludePrefixCondition(t *testing.T) {
 	require.NoError(t, fx.Client.Create(context.TODO(), appProxy))
 
 	adminProxy := &contourv1.HTTPProxy{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "HTTPProxy",
-			APIVersion: "projectcontour.io/v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: adminNamespace,
 			Name:      "echo-admin",
@@ -96,10 +88,6 @@ func TestIncludePrefixCondition(t *testing.T) {
 	require.NoError(t, fx.Client.Create(context.TODO(), adminProxy))
 
 	baseProxy := &contourv1.HTTPProxy{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "HTTPProxy",
-			APIVersion: "projectcontour.io/v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: baseNamespace,
 			Name:      "echo",

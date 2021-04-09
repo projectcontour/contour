@@ -42,10 +42,6 @@ func TestMergeSlash(t *testing.T) {
 	fx.CreateEchoWorkload(namespace, "ingress-conformance-echo")
 
 	p := &contourv1.HTTPProxy{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "HTTPProxy",
-			APIVersion: "projectcontour.io/v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      "echo",

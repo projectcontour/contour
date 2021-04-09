@@ -43,10 +43,6 @@ func TestExternalNameServiceInsecure(t *testing.T) {
 	fx.CreateEchoWorkload(namespace, "ingress-conformance-echo")
 
 	externalNameService := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      "external-name-service",
@@ -65,10 +61,6 @@ func TestExternalNameServiceInsecure(t *testing.T) {
 	require.NoError(t, fx.Client.Create(context.TODO(), externalNameService))
 
 	p := &contourv1.HTTPProxy{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "HTTPProxy",
-			APIVersion: "projectcontour.io/v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      "external-name-proxy",

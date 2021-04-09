@@ -46,10 +46,6 @@ func TestHeaderConditionMatch(t *testing.T) {
 	fx.CreateEchoWorkload(namespace, "echo-header-notexact")
 
 	p := &contourv1.HTTPProxy{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "HTTPProxy",
-			APIVersion: "projectcontour.io/v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      "header-conditions",

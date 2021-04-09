@@ -113,10 +113,6 @@ func (f *Framework) CreateEchoWorkload(ns, name string) {
 	name = valOrDefault(name, "ingress-conformance-echo")
 
 	deployment := &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
-			APIVersion: "apps/v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -183,10 +179,6 @@ func (f *Framework) CreateEchoWorkload(ns, name string) {
 	require.NoError(f.t, f.Client.Create(context.TODO(), deployment))
 
 	service := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
