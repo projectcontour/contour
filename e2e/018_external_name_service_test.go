@@ -62,8 +62,7 @@ func TestExternalNameServiceInsecure(t *testing.T) {
 			},
 		},
 	}
-	_, err := fx.Clients.ClientSet().CoreV1().Services(externalNameService.Namespace).Create(context.TODO(), externalNameService, metav1.CreateOptions{})
-	require.NoError(t, err)
+	require.NoError(t, fx.Client.Create(context.TODO(), externalNameService))
 
 	p := &contourv1.HTTPProxy{
 		TypeMeta: metav1.TypeMeta{

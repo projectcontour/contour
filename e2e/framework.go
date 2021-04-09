@@ -20,25 +20,25 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	kubescheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 type Framework struct {
-	Clients *k8s.Clients
+	Client client.Client
 
 	t             *testing.T
 	baseURL       string
@@ -47,14 +47,16 @@ type Framework struct {
 }
 
 func NewFramework(t *testing.T) *Framework {
-	homeDir, err := os.UserHomeDir()
-	require.NoError(t, err)
+	scheme := runtime.NewScheme()
+	kubescheme.AddToScheme(scheme)
+	contourv1.AddToScheme(scheme)
+	gatewayv1alpha1.AddToScheme(scheme)
 
-	clients, err := k8s.NewClients(filepath.Join(homeDir, ".kube", "config"), false)
+	crClient, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
 	require.NoError(t, err)
 
 	return &Framework{
-		Clients: clients,
+		Client: crClient,
 
 		t:             t,
 		baseURL:       "http://127.0.0.1:9080",
@@ -66,13 +68,7 @@ func NewFramework(t *testing.T) *Framework {
 // CreateHTTPProxy creates the provided HTTPProxy in the Kubernetes API
 // or fails the test if it encounters an error.
 func (f *Framework) CreateHTTPProxy(proxy *contourv1.HTTPProxy) {
-	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(proxy)
-	require.NoError(f.t, err)
-
-	client := f.Clients.DynamicClient().Resource(contourv1.HTTPProxyGVR).Namespace(proxy.Namespace)
-
-	_, err = client.Create(context.TODO(), &unstructured.Unstructured{Object: u}, metav1.CreateOptions{})
-	require.NoError(f.t, err)
+	require.NoError(f.t, f.Client.Create(context.TODO(), proxy))
 }
 
 // CreateEchoWorkload creates the ingress-conformance-echo fixture, specifically
@@ -158,9 +154,7 @@ func (f *Framework) CreateEchoWorkload(ns, name string) {
 			},
 		},
 	}
-
-	_, err := f.Clients.ClientSet().AppsV1().Deployments(deployment.Namespace).Create(context.TODO(), deployment, metav1.CreateOptions{})
-	require.NoError(f.t, err)
+	require.NoError(f.t, f.Client.Create(context.TODO(), deployment))
 
 	service := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -182,9 +176,7 @@ func (f *Framework) CreateEchoWorkload(ns, name string) {
 			Selector: map[string]string{"app.kubernetes.io/name": name},
 		},
 	}
-
-	_, err = f.Clients.ClientSet().CoreV1().Services(service.Namespace).Create(context.TODO(), service, metav1.CreateOptions{})
-	require.NoError(f.t, err)
+	require.NoError(f.t, f.Client.Create(context.TODO(), service))
 }
 
 // CreateNamespace creates a namespace with the given name in the
@@ -195,14 +187,18 @@ func (f *Framework) CreateNamespace(name string) {
 			Name: name,
 		},
 	}
-	_, err := f.Clients.ClientSet().CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
-	require.NoError(f.t, err)
+	require.NoError(f.t, f.Client.Create(context.TODO(), ns))
 }
 
 // DeleteNamespace deletes the namespace with the given name in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) DeleteNamespace(name string) {
-	require.NoError(f.t, f.Clients.ClientSet().CoreV1().Namespaces().Delete(context.TODO(), name, metav1.DeleteOptions{}))
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+	require.NoError(f.t, f.Client.Delete(context.TODO(), ns))
 }
 
 // HTTPRequestUntil repeatedly makes HTTP requests with the provided

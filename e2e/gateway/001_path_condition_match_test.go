@@ -23,9 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -50,7 +47,6 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 	fx.CreateEchoWorkload(namespace, "echo-slash-exact")
 
 	// GatewayClass
-	// TODO since this is cluster-scoped it doesn't get cleaned up after the test run
 	gatewayClass := &gatewayv1alpha1.GatewayClass{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "GatewayClass",
@@ -63,13 +59,9 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 			Controller: "projectcontour.io/ingress-controller",
 		},
 	}
-
-	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(gatewayClass)
-	require.NoError(t, err)
-
-	client := fx.Clients.DynamicClient().Resource(schema.GroupVersionResource{Group: gatewayv1alpha1.GroupVersion.Group, Version: gatewayv1alpha1.GroupVersion.Version, Resource: "gatewayclasses"})
-	_, err = client.Create(context.TODO(), &unstructured.Unstructured{Object: u}, metav1.CreateOptions{})
-	require.NoError(t, err)
+	require.NoError(t, fx.Client.Create(context.TODO(), gatewayClass))
+	// TODO it'd be nice to have this be automatic
+	defer fx.Client.Delete(context.TODO(), gatewayClass)
 
 	// Gateway
 	gateway := &gatewayv1alpha1.Gateway{
@@ -100,13 +92,9 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 			},
 		},
 	}
-
-	u, err = runtime.DefaultUnstructuredConverter.ToUnstructured(gateway)
-	require.NoError(t, err)
-
-	client = fx.Clients.DynamicClient().Resource(schema.GroupVersionResource{Group: gatewayv1alpha1.GroupVersion.Group, Version: gatewayv1alpha1.GroupVersion.Version, Resource: "gateways"})
-	_, err = client.Namespace(gateway.Namespace).Create(context.TODO(), &unstructured.Unstructured{Object: u}, metav1.CreateOptions{})
-	require.NoError(t, err)
+	require.NoError(t, fx.Client.Create(context.TODO(), gateway))
+	// TODO it'd be nice to have automatic object tracking
+	defer fx.Client.Delete(context.TODO(), gateway)
 
 	// HTTPRoute
 	route := &gatewayv1alpha1.HTTPRoute{
@@ -192,13 +180,7 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 			},
 		},
 	}
-
-	u, err = runtime.DefaultUnstructuredConverter.ToUnstructured(route)
-	require.NoError(t, err)
-
-	client = fx.Clients.DynamicClient().Resource(schema.GroupVersionResource{Group: gatewayv1alpha1.GroupVersion.Group, Version: gatewayv1alpha1.GroupVersion.Version, Resource: "httproutes"})
-	_, err = client.Namespace(route.Namespace).Create(context.TODO(), &unstructured.Unstructured{Object: u}, metav1.CreateOptions{})
-	require.NoError(t, err)
+	require.NoError(t, fx.Client.Create(context.TODO(), route))
 
 	// TODO should wait until HTTPRoute has a status of valid
 
