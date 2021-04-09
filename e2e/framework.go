@@ -17,6 +17,7 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,7 +43,8 @@ type Framework struct {
 	Client client.Client
 
 	t             *testing.T
-	baseURL       string
+	httpUrlBase   string
+	httpsUrlBase  string
 	retryInterval time.Duration
 	retryTimeout  time.Duration
 }
@@ -51,6 +54,7 @@ func NewFramework(t *testing.T) *Framework {
 	kubescheme.AddToScheme(scheme)
 	contourv1.AddToScheme(scheme)
 	gatewayv1alpha1.AddToScheme(scheme)
+	certmanagerv1.AddToScheme(scheme)
 
 	crClient, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
 	require.NoError(t, err)
@@ -59,7 +63,8 @@ func NewFramework(t *testing.T) *Framework {
 		Client: crClient,
 
 		t:             t,
-		baseURL:       "http://127.0.0.1:9080",
+		httpUrlBase:   "http://127.0.0.1:9080",
+		httpsUrlBase:  "https://127.0.0.1:9443",
 		retryInterval: time.Second,
 		retryTimeout:  30 * time.Second,
 	}
@@ -76,7 +81,7 @@ func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condit
 	timeout := time.NewTimer(f.retryTimeout)
 	defer timeout.Stop()
 
-	var res *contourv1.HTTPProxy
+	res := &contourv1.HTTPProxy{}
 	for {
 		select {
 		case <-ticker.C:
@@ -224,7 +229,7 @@ func (f *Framework) DeleteNamespace(name string) {
 // It always returns the last HTTP response received.
 func (f *Framework) HTTPRequestUntil(condition func(*http.Response) bool, url, host string, opts ...func(*http.Request)) (*http.Response, bool) {
 	makeRequest := func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", f.baseURL+url, nil)
+		req, err := http.NewRequest("GET", f.httpUrlBase+url, nil)
 		require.NoError(f.t, err, "error creating HTTP request")
 
 		req.Host = host
@@ -235,6 +240,39 @@ func (f *Framework) HTTPRequestUntil(condition func(*http.Response) bool, url, h
 		return http.DefaultClient.Do(req)
 	}
 
+	return f.requestUntil(makeRequest, condition)
+}
+
+// HTTPSRequestUntil repeatedly makes HTTPS requests with the provided
+// parameters until "condition" returns true or the timeout is reached.
+// It always returns the last HTTP response received.
+func (f *Framework) HTTPSRequestUntil(condition func(*http.Response) bool, url, host string, opts ...func(*http.Request)) (*http.Response, bool) {
+	makeRequest := func() (*http.Response, error) {
+		req, err := http.NewRequest("GET", f.httpsUrlBase+url, nil)
+		require.NoError(f.t, err, "error creating HTTP request")
+
+		req.Host = host
+		for _, opt := range opts {
+			opt(req)
+		}
+
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.TLSClientConfig = &tls.Config{
+			ServerName:         host,
+			InsecureSkipVerify: true,
+		}
+
+		client := &http.Client{
+			Transport: transport,
+		}
+
+		return client.Do(req)
+	}
+
+	return f.requestUntil(makeRequest, condition)
+}
+
+func (f *Framework) requestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*http.Response, bool) {
 	// make an immediate request and return if it succeeds
 	if res, err := makeRequest(); err == nil && condition(res) {
 		return res, true
