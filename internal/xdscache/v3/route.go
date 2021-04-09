@@ -143,6 +143,14 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 				Action: envoy_v3.UpgradeHTTPS(),
 			}
 		}
+
+		if route.DirectResponse != nil {
+			return &envoy_route_v3.Route{
+				Match:  envoy_v3.RouteMatch(route),
+				Action: envoy_v3.RouteDirectResponse(route.DirectResponse),
+			}
+		}
+
 		rt := &envoy_route_v3.Route{
 			Match:  envoy_v3.RouteMatch(route),
 			Action: envoy_v3.RouteRoute(route),
@@ -185,10 +193,18 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 	}
 
 	toEnvoyRoute := func(route *dag.Route) *envoy_route_v3.Route {
+		if route.DirectResponse != nil {
+			return &envoy_route_v3.Route{
+				Match:  envoy_v3.RouteMatch(route),
+				Action: envoy_v3.RouteDirectResponse(route.DirectResponse),
+			}
+		}
+
 		rt := &envoy_route_v3.Route{
 			Match:  envoy_v3.RouteMatch(route),
 			Action: envoy_v3.RouteRoute(route),
 		}
+
 		if route.RequestHeadersPolicy != nil {
 			rt.RequestHeadersToAdd = envoy_v3.HeaderValueList(route.RequestHeadersPolicy.Set, false)
 			rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove

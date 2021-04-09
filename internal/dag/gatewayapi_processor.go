@@ -16,6 +16,7 @@ package dag
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"strings"
 
 	"github.com/projectcontour/contour/internal/status"
@@ -250,6 +251,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 		// Validate the ForwardTos.
 		for _, forward := range rule.ForwardTo {
+
 			// Verify the service is valid
 			if forward.ServiceName == nil {
 				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServiceName must be specified.")
@@ -273,15 +275,18 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			services = append(services, service)
 		}
 
-		if len(services) == 0 {
-			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "All Spec.Rules.ForwardTos are invalid.")
-			continue
-		}
-
 		routes := p.routes(matchconditions, services)
 		for _, vhost := range hosts {
 			vhost := p.dag.EnsureVirtualHost(ListenerName{Name: vhost, ListenerName: "ingress_http"})
 			for _, route := range routes {
+				if len(services) == 0 {
+					// Configure a direct response HTTP status code of 503 so the
+					// route still matches the configured conditions since the
+					// service is missing or invalid.
+					route.DirectResponse = &DirectResponse{
+						StatusCode: http.StatusServiceUnavailable,
+					}
+				}
 				vhost.addRoute(route)
 			}
 		}

@@ -554,6 +554,37 @@ func TestRouteRoute(t *testing.T) {
 	}
 }
 
+func TestRouteDirectResponse(t *testing.T) {
+	tests := map[string]struct {
+		directResponse *dag.DirectResponse
+		want           *envoy_route_v3.Route_DirectResponse
+	}{
+		"503": {
+			directResponse: &dag.DirectResponse{StatusCode: 503},
+			want: &envoy_route_v3.Route_DirectResponse{
+				DirectResponse: &envoy_route_v3.DirectResponseAction{
+					Status: 503,
+				},
+			},
+		},
+		"402": {
+			directResponse: &dag.DirectResponse{StatusCode: 402},
+			want: &envoy_route_v3.Route_DirectResponse{
+				DirectResponse: &envoy_route_v3.DirectResponseAction{
+					Status: 402,
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := RouteDirectResponse(tc.directResponse)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
 func TestWeightedClusters(t *testing.T) {
 	tests := map[string]struct {
 		clusters []*dag.Cluster

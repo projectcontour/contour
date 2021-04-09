@@ -103,6 +103,17 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	}
 }
 
+// Route_DirectResponse creates a *envoy_route_v3.Route_DirectResponse for the
+// http status code supplied. This allows a direct response to a route request
+// with an HTTP status code without needing to route to a specific cluster.
+func RouteDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_DirectResponse {
+	return &envoy_route_v3.Route_DirectResponse{
+		DirectResponse: &envoy_route_v3.DirectResponseAction{
+			Status: response.StatusCode,
+		},
+	}
+}
+
 // RouteRoute creates a *envoy_route_v3.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
