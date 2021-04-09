@@ -83,7 +83,7 @@ spec:
           type: Prefix
           value: /invalidport
       forwardTo:
-      - serviceName: invalid
+      - serviceName: echo-slash-default
     - matches:
         - path:
             type: Prefix
