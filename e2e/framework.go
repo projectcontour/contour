@@ -26,10 +26,12 @@ import (
 	"time"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -225,6 +227,41 @@ func (f *Framework) DeleteNamespace(name string) {
 		},
 	}
 	require.NoError(f.t, f.Client.Delete(context.TODO(), ns))
+}
+
+// CreateSelfSignedCert creates a self-signed Issuer if it doesn't already exist
+// and uses it to create a self-signed Certificate.
+func (f *Framework) CreateSelfSignedCert(ns, name, secretName, dnsName string) {
+	issuer := &certmanagerv1.Issuer{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      "selfsigned",
+		},
+		Spec: certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
+				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
+			},
+		},
+	}
+
+	if err := f.Client.Create(context.TODO(), issuer); err != nil && !errors.IsAlreadyExists(err) {
+		require.FailNow(f.t, "error creating Issuer: %v", err)
+	}
+
+	cert := &certmanagerv1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: certmanagerv1.CertificateSpec{
+			DNSNames:   []string{dnsName},
+			SecretName: secretName,
+			IssuerRef: certmanagermetav1.ObjectReference{
+				Name: "selfsigned",
+			},
+		},
+	}
+	require.NoError(f.t, f.Client.Create(context.TODO(), cert))
 }
 
 // HTTPRequestUntil repeatedly makes HTTP requests with the provided

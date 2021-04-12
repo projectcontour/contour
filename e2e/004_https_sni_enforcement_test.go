@@ -16,13 +16,10 @@
 package e2e
 
 import (
-	"context"
 	"crypto/tls"
 	"net/http"
 	"testing"
 
-	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,35 +41,8 @@ func TestHTTPSSNIEnforcement(t *testing.T) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	issuer := &certmanagerv1.Issuer{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "selfsigned",
-		},
-		Spec: certmanagerv1.IssuerSpec{
-			IssuerConfig: certmanagerv1.IssuerConfig{
-				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), issuer))
-
 	fx.CreateEchoWorkload(namespace, "echo-one")
-
-	echoOneCert := &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "echo-one-cert",
-		},
-		Spec: certmanagerv1.CertificateSpec{
-			DNSNames:   []string{"sni-enforcement-echo-one.projectcontour.io"},
-			SecretName: "echo-one",
-			IssuerRef: certmanagermetav1.ObjectReference{
-				Name: "selfsigned",
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), echoOneCert))
+	fx.CreateSelfSignedCert(namespace, "echo-one-cert", "echo-one", "sni-enforcement-echo-one.projectcontour.io")
 
 	echoOneProxy := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -107,21 +77,7 @@ func TestHTTPSSNIEnforcement(t *testing.T) {
 
 	// echo-two
 	fx.CreateEchoWorkload(namespace, "echo-two")
-
-	echoTwoCert := &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "echo-two-cert",
-		},
-		Spec: certmanagerv1.CertificateSpec{
-			DNSNames:   []string{"sni-enforcement-echo-two.projectcontour.io"},
-			SecretName: "echo-two",
-			IssuerRef: certmanagermetav1.ObjectReference{
-				Name: "selfsigned",
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), echoTwoCert))
+	fx.CreateSelfSignedCert(namespace, "echo-two-cert", "echo-two", "sni-enforcement-echo-two.projectcontour.io")
 
 	echoTwoProxy := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

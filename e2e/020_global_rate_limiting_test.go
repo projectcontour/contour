@@ -20,8 +20,6 @@ import (
 	"net/http"
 	"testing"
 
-	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -220,34 +218,7 @@ func TestGlobalRateLimitingVirtualHostTLS(t *testing.T) {
 	defer fx.DeleteNamespace(namespace)
 
 	fx.CreateEchoWorkload(namespace, "echo")
-
-	issuer := &certmanagerv1.Issuer{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "selfsigned",
-		},
-		Spec: certmanagerv1.IssuerSpec{
-			IssuerConfig: certmanagerv1.IssuerConfig{
-				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), issuer))
-
-	cert := &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "echo-cert",
-		},
-		Spec: certmanagerv1.CertificateSpec{
-			DNSNames:   []string{"globalratelimitvhosttls.projectcontour.io"},
-			SecretName: "echo",
-			IssuerRef: certmanagermetav1.ObjectReference{
-				Name: "selfsigned",
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), cert))
+	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitvhosttls.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -258,7 +229,7 @@ func TestGlobalRateLimitingVirtualHostTLS(t *testing.T) {
 			VirtualHost: &contourv1.VirtualHost{
 				Fqdn: "globalratelimitvhosttls.projectcontour.io",
 				TLS: &contourv1.TLS{
-					SecretName: cert.Spec.SecretName,
+					SecretName: "echo",
 				},
 			},
 			Routes: []contourv1.Route{
@@ -329,34 +300,7 @@ func TestGlobalRateLimitingRouteTLS(t *testing.T) {
 	defer fx.DeleteNamespace(namespace)
 
 	fx.CreateEchoWorkload(namespace, "echo")
-
-	issuer := &certmanagerv1.Issuer{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "selfsigned",
-		},
-		Spec: certmanagerv1.IssuerSpec{
-			IssuerConfig: certmanagerv1.IssuerConfig{
-				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), issuer))
-
-	cert := &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "echo-cert",
-		},
-		Spec: certmanagerv1.CertificateSpec{
-			DNSNames:   []string{"globalratelimitroutetls.projectcontour.io"},
-			SecretName: "echo",
-			IssuerRef: certmanagermetav1.ObjectReference{
-				Name: "selfsigned",
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), cert))
+	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitroutetls.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -367,7 +311,7 @@ func TestGlobalRateLimitingRouteTLS(t *testing.T) {
 			VirtualHost: &contourv1.VirtualHost{
 				Fqdn: "globalratelimitroutetls.projectcontour.io",
 				TLS: &contourv1.TLS{
-					SecretName: cert.Spec.SecretName,
+					SecretName: "echo",
 				},
 			},
 			Routes: []contourv1.Route{
