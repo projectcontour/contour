@@ -28,10 +28,6 @@ import (
 func TestGlobalRateLimitingVirtualHostNonTLS(t *testing.T) {
 	t.Parallel()
 
-	// Start by assuming install-contour-working.sh has been run, so we
-	// have Contour running in a cluster. Later we may want to move part
-	// or all of that script into the E2E framework.
-
 	var (
 		fx        = NewFramework(t)
 		namespace = "020-global-rate-limiting-vhost-non-tls"
@@ -105,10 +101,6 @@ func TestGlobalRateLimitingVirtualHostNonTLS(t *testing.T) {
 
 func TestGlobalRateLimitingRouteNonTLS(t *testing.T) {
 	t.Parallel()
-
-	// Start by assuming install-contour-working.sh has been run, so we
-	// have Contour running in a cluster. Later we may want to move part
-	// or all of that script into the E2E framework.
 
 	var (
 		fx        = NewFramework(t)
@@ -205,10 +197,6 @@ func TestGlobalRateLimitingRouteNonTLS(t *testing.T) {
 func TestGlobalRateLimitingVirtualHostTLS(t *testing.T) {
 	t.Parallel()
 
-	// Start by assuming install-contour-working.sh has been run, so we
-	// have Contour running in a cluster. Later we may want to move part
-	// or all of that script into the E2E framework.
-
 	var (
 		fx        = NewFramework(t)
 		namespace = "020-global-rate-limiting-vhost-tls"
@@ -286,10 +274,6 @@ func TestGlobalRateLimitingVirtualHostTLS(t *testing.T) {
 
 func TestGlobalRateLimitingRouteTLS(t *testing.T) {
 	t.Parallel()
-
-	// Start by assuming install-contour-working.sh has been run, so we
-	// have Contour running in a cluster. Later we may want to move part
-	// or all of that script into the E2E framework.
 
 	var (
 		fx        = NewFramework(t)

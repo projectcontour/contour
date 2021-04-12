@@ -28,10 +28,6 @@ import (
 func TestLocalRateLimitingVirtualHost(t *testing.T) {
 	t.Parallel()
 
-	// Start by assuming install-contour-working.sh has been run, so we
-	// have Contour running in a cluster. Later we may want to move part
-	// or all of that script into the E2E framework.
-
 	var (
 		fx        = NewFramework(t)
 		namespace = "019-local-rate-limiting-vhost"
@@ -96,10 +92,6 @@ func TestLocalRateLimitingVirtualHost(t *testing.T) {
 
 func TestLocalRateLimitingRoute(t *testing.T) {
 	t.Parallel()
-
-	// Start by assuming install-contour-working.sh has been run, so we
-	// have Contour running in a cluster. Later we may want to move part
-	// or all of that script into the E2E framework.
 
 	var (
 		fx        = NewFramework(t)

@@ -29,10 +29,6 @@ import (
 func TestHTTPSMisdirectedRequest(t *testing.T) {
 	t.Parallel()
 
-	// Start by assuming install-contour-working.sh has been run, so we
-	// have Contour running in a cluster. Later we may want to move part
-	// or all of that script into the E2E framework.
-
 	var (
 		fx        = NewFramework(t)
 		namespace = "009-https-misdirected-request"
