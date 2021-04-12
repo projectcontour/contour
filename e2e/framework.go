@@ -39,6 +39,8 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+// Framework provides a collection of helpful functions for
+// writing end-to-end (E2E) tests for Contour.
 type Framework struct {
 	Client client.Client
 
@@ -207,7 +209,8 @@ func (f *Framework) CreateEchoWorkload(ns, name string) {
 func (f *Framework) CreateNamespace(name string) {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: map[string]string{"contour-e2e-ns": "true"},
 		},
 	}
 	require.NoError(f.t, f.Client.Create(context.TODO(), ns))
