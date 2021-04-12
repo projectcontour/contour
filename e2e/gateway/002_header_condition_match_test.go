@@ -17,6 +17,7 @@ package gateway
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/projectcontour/contour/e2e"
@@ -26,22 +27,19 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func TestGatewayPathConditionMatch(t *testing.T) {
+func TestGatewayHeaderConditionMatch(t *testing.T) {
 	// Not parallel because it defines a Gateway that lives in the projectcontour
 	// namespace, which may conflict with other Gateway API tests.
 
 	var (
 		fx        = e2e.NewFramework(t)
-		namespace = "gateway-001-path-condition-match"
+		namespace = "gateway-002-header-condition-match"
 	)
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo-slash-prefix")
-	fx.CreateEchoWorkload(namespace, "echo-slash-noprefix")
-	fx.CreateEchoWorkload(namespace, "echo-slash-default")
-	fx.CreateEchoWorkload(namespace, "echo-slash-exact")
+	fx.CreateEchoWorkload(namespace, "echo-header-exact")
 
 	// Gateway
 	gateway := &gatewayv1alpha1.Gateway{
@@ -80,59 +78,8 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 			Labels:    map[string]string{"app": "filter"},
 		},
 		Spec: gatewayv1alpha1.HTTPRouteSpec{
-			Hostnames: []gatewayv1alpha1.Hostname{"gatewaypathconditions.projectcontour.io"},
+			Hostnames: []gatewayv1alpha1.Hostname{"gatewayheaderconditions.projectcontour.io"},
 			Rules: []gatewayv1alpha1.HTTPRouteRule{
-				{
-					Matches: []gatewayv1alpha1.HTTPRouteMatch{
-						{
-							Path: gatewayv1alpha1.HTTPPathMatch{
-								Type:  gatewayv1alpha1.PathMatchPrefix,
-								Value: "/path/prefix/",
-							},
-						},
-					},
-					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-						{
-							ServiceName: stringPtr("echo-slash-prefix"),
-							Port:        portNumPtr(80),
-						},
-					},
-				},
-
-				{
-					Matches: []gatewayv1alpha1.HTTPRouteMatch{
-						{
-							Path: gatewayv1alpha1.HTTPPathMatch{
-								Type:  gatewayv1alpha1.PathMatchPrefix,
-								Value: "/path/prefix",
-							},
-						},
-					},
-					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-						{
-							ServiceName: stringPtr("echo-slash-noprefix"),
-							Port:        portNumPtr(80),
-						},
-					},
-				},
-
-				{
-					Matches: []gatewayv1alpha1.HTTPRouteMatch{
-						{
-							Path: gatewayv1alpha1.HTTPPathMatch{
-								Type:  gatewayv1alpha1.PathMatchExact,
-								Value: "/path/exact",
-							},
-						},
-					},
-					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-						{
-							ServiceName: stringPtr("echo-slash-exact"),
-							Port:        portNumPtr(80),
-						},
-					},
-				},
-
 				{
 					Matches: []gatewayv1alpha1.HTTPRouteMatch{
 						{
@@ -140,11 +87,17 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 								Type:  gatewayv1alpha1.PathMatchPrefix,
 								Value: "/",
 							},
+							Headers: &gatewayv1alpha1.HTTPHeaderMatch{
+								Type: gatewayv1alpha1.HeaderMatchExact,
+								Values: map[string]string{
+									"My-Header": "Foo",
+								},
+							},
 						},
 					},
 					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
 						{
-							ServiceName: stringPtr("echo-slash-default"),
+							ServiceName: stringPtr("echo-header-exact"),
 							Port:        portNumPtr(80),
 						},
 					},
@@ -156,38 +109,47 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 
 	// TODO should wait until HTTPRoute has a status of valid
 
-	cases := map[string]string{
-		"/":                "echo-slash-default",
-		"/foo":             "echo-slash-default",
-		"/path/prefix":     "echo-slash-noprefix",
-		"/path/prefixfoo":  "echo-slash-noprefix",
-		"/path/prefix/":    "echo-slash-prefix",
-		"/path/prefix/foo": "echo-slash-prefix",
-		"/path/exact":      "echo-slash-exact",
-		"/path/exactfoo":   "echo-slash-default",
-		"/path/exact/":     "echo-slash-default",
-		"/path/exact/foo":  "echo-slash-default",
+	type scenario struct {
+		headers        map[string]string
+		expectResponse int
+		expectService  string
 	}
 
-	for path, expectedService := range cases {
-		t.Logf("Querying %q, expecting service %q", path, expectedService)
+	cases := []scenario{
+		{
+			headers:        map[string]string{"My-Header": "Foo"},
+			expectResponse: 200,
+			expectService:  "echo-header-exact",
+		},
+		{
+			headers:        map[string]string{"My-Header": "NotFoo"},
+			expectResponse: 404,
+		},
+		{
+			headers:        map[string]string{"Other-Header": "Foo"},
+			expectResponse: 404,
+		},
+	}
 
-		res, ok := fx.HTTPRequestUntil(e2e.IsOK, path, string(route.Spec.Hostnames[0]))
-		if !assert.True(t, ok, "did not get 200 response") {
+	for _, tc := range cases {
+		setHeader := func(r *http.Request) {
+			for k, v := range tc.headers {
+				r.Header.Set(k, v)
+			}
+		}
+
+		res, ok := fx.HTTPRequestUntil(e2e.HasStatusCode(tc.expectResponse), "/", string(route.Spec.Hostnames[0]), setHeader)
+		if !assert.Truef(t, ok, "did not get %d response", tc.expectResponse) {
+			continue
+		}
+		if res.StatusCode != 200 {
+			// If we expected something other than a 200,
+			// then we don't need to check the body.
 			continue
 		}
 
 		body := fx.GetEchoResponseBody(res.Body)
 		assert.Equal(t, namespace, body.Namespace)
-		assert.Equal(t, expectedService, body.Service)
+		assert.Equal(t, tc.expectService, body.Service)
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-func portNumPtr(port int) *gatewayv1alpha1.PortNumber {
-	pn := gatewayv1alpha1.PortNumber(port)
-	return &pn
 }
