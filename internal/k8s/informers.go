@@ -54,6 +54,7 @@ func IngressV1Resources() []schema.GroupVersionResource {
 }
 
 // +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gateways;httproutes;backendpolicies;tlsroutes,verbs=get;list;watch
+// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=httproutes/status;backendpolicies/status;tlsroutes/status,verbs=update
 
 // GatewayAPIResources ...
 func GatewayAPIResources() []schema.GroupVersionResource {

@@ -1912,6 +1912,14 @@ rules:
   - list
   - watch
 - apiGroups:
+  - networking.x-k8s.io
+  resources:
+  - backendpolicies/status
+  - httproutes/status
+  - tlsroutes/status
+  verbs:
+  - update
+- apiGroups:
   - projectcontour.io
   resources:
   - extensionservices
