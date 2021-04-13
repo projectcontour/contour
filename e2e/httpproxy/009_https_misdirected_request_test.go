@@ -13,7 +13,7 @@
 
 // +build e2e
 
-package e2e
+package httpproxy
 
 import (
 	"crypto/tls"
@@ -21,18 +21,14 @@ import (
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestHTTPSMisdirectedRequest(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "009-https-misdirected-request"
-	)
+func testHTTPSMisdirectedRequest(t *testing.T, fx *e2e.Framework) {
+	namespace := "009-https-misdirected-request"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -66,7 +62,7 @@ func TestHTTPSMisdirectedRequest(t *testing.T) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
-	res, ok := fx.HTTPSRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	res, ok := fx.HTTPSRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.Truef(t, ok, "did not receive 200 response")
 
 	assert.Equal(t, "echo", fx.GetEchoResponseBody(res.Body).Service)
@@ -76,8 +72,8 @@ func TestHTTPSMisdirectedRequest(t *testing.T) {
 	// is returned.
 	//
 	// TODO can I make this a little cleaner?
-	res, ok = fx.requestUntil(func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", fx.httpsUrlBase, nil)
+	res, ok = fx.RequestUntil(func() (*http.Response, error) {
+		req, err := http.NewRequest("GET", fx.HTTPSURLBase, nil)
 		require.NoError(t, err, "error creating HTTP request")
 
 		// this Host value does not match the SNI name.
@@ -94,11 +90,11 @@ func TestHTTPSMisdirectedRequest(t *testing.T) {
 		}
 
 		return client.Do(req)
-	}, HasStatusCode(421))
+	}, e2e.HasStatusCode(421))
 	require.Truef(t, ok, "did not receive 421 (Misdirected Request) response")
 
-	res, ok = fx.requestUntil(func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", fx.httpsUrlBase, nil)
+	res, ok = fx.RequestUntil(func() (*http.Response, error) {
+		req, err := http.NewRequest("GET", fx.HTTPSURLBase, nil)
 		require.NoError(t, err, "error creating HTTP request")
 
 		// The virtual host name is port-insensitive, so verify that we can
@@ -116,14 +112,14 @@ func TestHTTPSMisdirectedRequest(t *testing.T) {
 		}
 
 		return client.Do(req)
-	}, IsOK)
+	}, e2e.IsOK)
 	require.Truef(t, ok, "did not receive 200 response")
 
 	// Verify that the hostname match is case-insensitive.
 	// The SNI server name match is still case sensitive,
 	// see https://github.com/envoyproxy/envoy/issues/6199.
-	res, ok = fx.requestUntil(func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", fx.httpsUrlBase, nil)
+	res, ok = fx.RequestUntil(func() (*http.Response, error) {
+		req, err := http.NewRequest("GET", fx.HTTPSURLBase, nil)
 		require.NoError(t, err, "error creating HTTP request")
 
 		req.Host = "HTTPS-Misdirected-reQUest.projectcontour.io"
@@ -139,6 +135,6 @@ func TestHTTPSMisdirectedRequest(t *testing.T) {
 		}
 
 		return client.Do(req)
-	}, IsOK)
+	}, e2e.IsOK)
 	require.Truef(t, ok, "did not receive 200 response")
 }

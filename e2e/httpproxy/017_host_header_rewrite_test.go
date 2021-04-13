@@ -13,63 +13,40 @@
 
 // +build e2e
 
-package e2e
+package httpproxy
 
 import (
-	"context"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/e2e"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestExternalNameServiceInsecure(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "018-external-name-service-insecure"
-	)
+func testHostHeaderRewrite(t *testing.T, fx *e2e.Framework) {
+	namespace := "017-host-header-rewrite"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
 	fx.CreateEchoWorkload(namespace, "ingress-conformance-echo")
 
-	externalNameService := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "external-name-service",
-		},
-		Spec: corev1.ServiceSpec{
-			Type:         corev1.ServiceTypeExternalName,
-			ExternalName: "ingress-conformance-echo." + namespace,
-			Ports: []corev1.ServicePort{
-				{
-					Name: "http",
-					Port: 80,
-				},
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), externalNameService))
-
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      "external-name-proxy",
+			Name:      "host-header-rewrite",
 		},
 		Spec: contourv1.HTTPProxySpec{
 			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "externalnameservice.projectcontour.io",
+				Fqdn: "hostheaderrewrite.projectcontour.io",
 			},
 			Routes: []contourv1.Route{
 				{
 					Services: []contourv1.Service{
 						{
-							Name: externalNameService.Name,
+							Name: "ingress-conformance-echo",
 							Port: 80,
 						},
 					},
@@ -77,7 +54,7 @@ func TestExternalNameServiceInsecure(t *testing.T) {
 						Set: []contourv1.HeaderValue{
 							{
 								Name:  "Host",
-								Value: externalNameService.Spec.ExternalName,
+								Value: "rewritten.com",
 							},
 						},
 					},
@@ -87,10 +64,8 @@ func TestExternalNameServiceInsecure(t *testing.T) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
-	_, ok := fx.HTTPRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	res, ok := fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response")
-}
 
-func TestExternalNameServiceTLS(t *testing.T) {
-	// TODO
+	assert.Equal(t, "rewritten.com", fx.GetEchoResponseBody(res.Body).Host)
 }

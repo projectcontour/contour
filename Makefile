@@ -343,7 +343,7 @@ integration: check-integration
 e2e:
 	./_integration/testsuite/make-kind-cluster.sh
 	./_integration/testsuite/install-contour-working.sh
-	go test -v -tags e2e ./e2e
+	go test -v -tags e2e ./e2e/httpproxy
 	go test -v -tags e2e ./e2e/gateway
 	./_integration/testsuite/cleanup.sh
 

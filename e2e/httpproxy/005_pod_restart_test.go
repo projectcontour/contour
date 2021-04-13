@@ -13,13 +13,14 @@
 
 // +build e2e
 
-package e2e
+package httpproxy
 
 import (
 	"context"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -28,13 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestPodRestart(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "005-pod-restart"
-	)
+func testPodRestart(t *testing.T, fx *e2e.Framework) {
+	namespace := "005-pod-restart"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -64,7 +60,7 @@ func TestPodRestart(t *testing.T) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
-	res, ok := fx.HTTPRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	res, ok := fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response")
 
 	body := fx.GetEchoResponseBody(res.Body)
@@ -85,10 +81,10 @@ func TestPodRestart(t *testing.T) {
 
 		// we want a non-nil, "not found" error to confirm the pod was deleted
 		return err != nil && errors.IsNotFound(err)
-	}, fx.retryTimeout, fx.retryInterval)
+	}, fx.RetryTimeout, fx.RetryInterval)
 
 	// now make HTTP requests again and confirm we eventually get a 200
-	res, ok = fx.HTTPRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	res, ok = fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response")
 
 	// should be a different pod than the original request

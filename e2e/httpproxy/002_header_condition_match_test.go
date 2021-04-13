@@ -13,24 +13,20 @@
 
 // +build e2e
 
-package e2e
+package httpproxy
 
 import (
 	"net/http"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestHeaderConditionMatch(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "002-header-condition-match"
-	)
+func testHeaderConditionMatch(t *testing.T, fx *e2e.Framework) {
+	namespace := "002-header-condition-match"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -211,7 +207,7 @@ func TestHeaderConditionMatch(t *testing.T) {
 			}
 		}
 
-		res, ok := fx.HTTPRequestUntil(HasStatusCode(tc.expectResponse), "/header-condition-match", p.Spec.VirtualHost.Fqdn, setHeader)
+		res, ok := fx.HTTPRequestUntil(e2e.HasStatusCode(tc.expectResponse), "/header-condition-match", p.Spec.VirtualHost.Fqdn, setHeader)
 		if !assert.Truef(t, ok, "did not get %d response", tc.expectResponse) {
 			continue
 		}

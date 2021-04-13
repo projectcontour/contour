@@ -13,25 +13,21 @@
 
 // +build e2e
 
-package e2e
+package httpproxy
 
 import (
 	"strings"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestDynamicHeaders(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "016-dynamic-headers"
-	)
+func testDynamicHeaders(t *testing.T, fx *e2e.Framework) {
+	namespace := "016-dynamic-headers"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -104,7 +100,7 @@ func TestDynamicHeaders(t *testing.T) {
 
 	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
-	res, ok := fx.HTTPRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	res, ok := fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response")
 
 	body := fx.GetEchoResponseBody(res.Body)

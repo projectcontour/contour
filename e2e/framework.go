@@ -44,13 +44,13 @@ import (
 // Framework provides a collection of helpful functions for
 // writing end-to-end (E2E) tests for Contour.
 type Framework struct {
-	Client client.Client
+	Client        client.Client
+	HTTPURLBase   string
+	HTTPSURLBase  string
+	RetryInterval time.Duration
+	RetryTimeout  time.Duration
 
-	t             *testing.T
-	httpUrlBase   string
-	httpsUrlBase  string
-	retryInterval time.Duration
-	retryTimeout  time.Duration
+	t *testing.T
 }
 
 func NewFramework(t *testing.T) *Framework {
@@ -64,13 +64,12 @@ func NewFramework(t *testing.T) *Framework {
 	require.NoError(t, err)
 
 	return &Framework{
-		Client: crClient,
-
+		Client:        crClient,
+		HTTPURLBase:   "http://127.0.0.1:9080",
+		HTTPSURLBase:  "https://127.0.0.1:9443",
+		RetryInterval: time.Second,
+		RetryTimeout:  30 * time.Second,
 		t:             t,
-		httpUrlBase:   "http://127.0.0.1:9080",
-		httpsUrlBase:  "https://127.0.0.1:9443",
-		retryInterval: time.Second,
-		retryTimeout:  30 * time.Second,
 	}
 }
 
@@ -93,10 +92,10 @@ func (f *Framework) RunParallel(name string, subtests map[string]func(t *testing
 func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condition func(*contourv1.HTTPProxy) bool) (*contourv1.HTTPProxy, bool) {
 	require.NoError(f.t, f.Client.Create(context.TODO(), proxy))
 
-	ticker := time.NewTicker(f.retryInterval)
+	ticker := time.NewTicker(f.RetryInterval)
 	defer ticker.Stop()
 
-	timeout := time.NewTimer(f.retryTimeout)
+	timeout := time.NewTimer(f.RetryTimeout)
 	defer timeout.Stop()
 
 	res := &contourv1.HTTPProxy{}
@@ -112,12 +111,6 @@ func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condit
 			return res, false
 		}
 	}
-}
-
-// HTTPProxyValid returns true if the proxy has a .status.currentStatus
-// of "valid".
-func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
-	return proxy != nil && proxy.Status.CurrentStatus == "valid"
 }
 
 // CreateEchoWorkload creates the ingress-conformance-echo fixture, specifically
@@ -283,7 +276,7 @@ func (f *Framework) CreateSelfSignedCert(ns, name, secretName, dnsName string) {
 // It always returns the last HTTP response received.
 func (f *Framework) HTTPRequestUntil(condition func(*http.Response) bool, url, host string, opts ...func(*http.Request)) (*http.Response, bool) {
 	makeRequest := func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", f.httpUrlBase+url, nil)
+		req, err := http.NewRequest("GET", f.HTTPURLBase+url, nil)
 		require.NoError(f.t, err, "error creating HTTP request")
 
 		req.Host = host
@@ -294,7 +287,7 @@ func (f *Framework) HTTPRequestUntil(condition func(*http.Response) bool, url, h
 		return http.DefaultClient.Do(req)
 	}
 
-	return f.requestUntil(makeRequest, condition)
+	return f.RequestUntil(makeRequest, condition)
 }
 
 // HTTPSRequestUntil repeatedly makes HTTPS requests with the provided
@@ -302,7 +295,7 @@ func (f *Framework) HTTPRequestUntil(condition func(*http.Response) bool, url, h
 // It always returns the last HTTP response received.
 func (f *Framework) HTTPSRequestUntil(condition func(*http.Response) bool, url, host string, opts ...func(*http.Request)) (*http.Response, bool) {
 	makeRequest := func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", f.httpsUrlBase+url, nil)
+		req, err := http.NewRequest("GET", f.HTTPSURLBase+url, nil)
 		require.NoError(f.t, err, "error creating HTTP request")
 
 		req.Host = host
@@ -323,20 +316,20 @@ func (f *Framework) HTTPSRequestUntil(condition func(*http.Response) bool, url, 
 		return client.Do(req)
 	}
 
-	return f.requestUntil(makeRequest, condition)
+	return f.RequestUntil(makeRequest, condition)
 }
 
-func (f *Framework) requestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*http.Response, bool) {
+func (f *Framework) RequestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*http.Response, bool) {
 	// make an immediate request and return if it succeeds
 	if res, err := makeRequest(); err == nil && condition(res) {
 		return res, true
 	}
 
 	// otherwise, enter a retry loop
-	ticker := time.NewTicker(f.retryInterval)
+	ticker := time.NewTicker(f.RetryInterval)
 	defer ticker.Stop()
 
-	timeout := time.NewTimer(f.retryTimeout)
+	timeout := time.NewTimer(f.RetryTimeout)
 	defer timeout.Stop()
 
 	var res *http.Response

@@ -13,23 +13,19 @@
 
 // +build e2e
 
-package e2e
+package httpproxy
 
 import (
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestPathConditionMatch(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "003-path-condition-match"
-	)
+func testPathConditionMatch(t *testing.T, fx *e2e.Framework) {
+	namespace := "003-path-condition-match"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -99,7 +95,7 @@ func TestPathConditionMatch(t *testing.T) {
 	for path, expectedService := range cases {
 		t.Logf("Querying %q, expecting service %q", path, expectedService)
 
-		res, ok := fx.HTTPRequestUntil(IsOK, path, p.Spec.VirtualHost.Fqdn)
+		res, ok := fx.HTTPRequestUntil(e2e.IsOK, path, p.Spec.VirtualHost.Fqdn)
 		if !assert.True(t, ok, "did not get 200 response") {
 			continue
 		}

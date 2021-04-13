@@ -13,25 +13,20 @@
 
 // +build e2e
 
-package e2e
+package httpproxy
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestLocalRateLimitingVirtualHost(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "019-local-rate-limiting-vhost"
-	)
+func testLocalRateLimitingVirtualHost(t *testing.T, fx *e2e.Framework) {
+	namespace := "019-local-rate-limiting-vhost"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -63,7 +58,7 @@ func TestLocalRateLimitingVirtualHost(t *testing.T) {
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
-	_, ok := fx.HTTPRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	_, ok := fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response")
 
 	// Add a local rate limit policy on the virtual host.
@@ -79,24 +74,19 @@ func TestLocalRateLimitingVirtualHost(t *testing.T) {
 	// is returned since we're allowed one request per hour.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	_, ok = fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response")
 
 	// Make another request against the proxy, confirm a 429 response
 	// is now gotten since we've exceeded the rate limit.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPRequestUntil(func(r *http.Response) bool { return r.StatusCode == 429 }, "/", p.Spec.VirtualHost.Fqdn)
+	_, ok = fx.HTTPRequestUntil(e2e.HasStatusCode(429), "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 429 response")
 }
 
-func TestLocalRateLimitingRoute(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "019-local-rate-limiting-route"
-	)
+func testLocalRateLimitingRoute(t *testing.T, fx *e2e.Framework) {
+	namespace := "019-local-rate-limiting-route"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -141,7 +131,7 @@ func TestLocalRateLimitingRoute(t *testing.T) {
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
-	_, ok := fx.HTTPRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	_, ok := fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response")
 
 	// Add a local rate limit policy on the first route.
@@ -157,18 +147,18 @@ func TestLocalRateLimitingRoute(t *testing.T) {
 	// is returned since we're allowed one request per hour.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPRequestUntil(IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	_, ok = fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response")
 
 	// Make another request against the proxy, confirm a 429 response
 	// is now gotten since we've exceeded the rate limit.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPRequestUntil(func(r *http.Response) bool { return r.StatusCode == 429 }, "/", p.Spec.VirtualHost.Fqdn)
+	_, ok = fx.HTTPRequestUntil(e2e.HasStatusCode(429), "/", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 429 response")
 
 	// Make a request against the route that doesn't have rate limiting
 	// to confirm we still get a 200 for that route.
-	_, ok = fx.HTTPRequestUntil(IsOK, "/unlimited", p.Spec.VirtualHost.Fqdn)
+	_, ok = fx.HTTPRequestUntil(e2e.IsOK, "/unlimited", p.Spec.VirtualHost.Fqdn)
 	require.True(t, ok, "did not get 200 response for non-rate-limited route")
 }

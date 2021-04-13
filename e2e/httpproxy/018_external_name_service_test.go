@@ -13,50 +13,68 @@
 
 // +build e2e
 
-package e2e
+package httpproxy
 
 import (
+	"context"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/stretchr/testify/assert"
+	"github.com/projectcontour/contour/e2e"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestMergeSlash(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "006-merge-slash"
-	)
+func testExternalNameServiceInsecure(t *testing.T, fx *e2e.Framework) {
+	namespace := "018-external-name-service-insecure"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
 	fx.CreateEchoWorkload(namespace, "ingress-conformance-echo")
 
+	externalNameService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      "external-name-service",
+		},
+		Spec: corev1.ServiceSpec{
+			Type:         corev1.ServiceTypeExternalName,
+			ExternalName: "ingress-conformance-echo." + namespace,
+			Ports: []corev1.ServicePort{
+				{
+					Name: "http",
+					Port: 80,
+				},
+			},
+		},
+	}
+	require.NoError(t, fx.Client.Create(context.TODO(), externalNameService))
+
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      "echo",
+			Name:      "external-name-proxy",
 		},
 		Spec: contourv1.HTTPProxySpec{
 			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "mergeslash.projectcontour.io",
+				Fqdn: "externalnameservice.projectcontour.io",
 			},
 			Routes: []contourv1.Route{
 				{
 					Services: []contourv1.Service{
 						{
-							Name: "ingress-conformance-echo",
+							Name: externalNameService.Name,
 							Port: 80,
 						},
 					},
-					Conditions: []contourv1.MatchCondition{
-						{
-							Prefix: "/",
+					RequestHeadersPolicy: &contourv1.HeadersPolicy{
+						Set: []contourv1.HeaderValue{
+							{
+								Name:  "Host",
+								Value: externalNameService.Spec.ExternalName,
+							},
 						},
 					},
 				},
@@ -65,8 +83,10 @@ func TestMergeSlash(t *testing.T) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
-	res, ok := fx.HTTPRequestUntil(IsOK, "/anything/this//has//lots////of/slashes", p.Spec.VirtualHost.Fqdn)
-	require.Truef(t, ok, "did not receive 200 response")
+	_, ok := fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	require.True(t, ok, "did not get 200 response")
+}
 
-	assert.Contains(t, fx.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")
+func TestExternalNameServiceTLS(t *testing.T) {
+	// TODO
 }

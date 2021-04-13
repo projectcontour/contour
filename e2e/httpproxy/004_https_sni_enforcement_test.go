@@ -13,7 +13,7 @@
 
 // +build e2e
 
-package e2e
+package httpproxy
 
 import (
 	"crypto/tls"
@@ -21,18 +21,14 @@ import (
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestHTTPSSNIEnforcement(t *testing.T) {
-	t.Parallel()
-
-	var (
-		fx        = NewFramework(t)
-		namespace = "004-https-sni-enforcement"
-	)
+func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
+	namespace := "004-https-sni-enforcement"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -66,7 +62,7 @@ func TestHTTPSSNIEnforcement(t *testing.T) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(echoOneProxy, HTTPProxyValid)
 
-	res, ok := fx.HTTPSRequestUntil(IsOK, "/https-sni-enforcement", echoOneProxy.Spec.VirtualHost.Fqdn)
+	res, ok := fx.HTTPSRequestUntil(e2e.IsOK, "/https-sni-enforcement", echoOneProxy.Spec.VirtualHost.Fqdn)
 	require.Truef(t, ok, "did not receive 200 response")
 
 	assert.Equal(t, "echo-one", fx.GetEchoResponseBody(res.Body).Service)
@@ -101,7 +97,7 @@ func TestHTTPSSNIEnforcement(t *testing.T) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(echoTwoProxy, HTTPProxyValid)
 
-	res, ok = fx.HTTPSRequestUntil(IsOK, "/https-sni-enforcement", echoTwoProxy.Spec.VirtualHost.Fqdn)
+	res, ok = fx.HTTPSRequestUntil(e2e.IsOK, "/https-sni-enforcement", echoTwoProxy.Spec.VirtualHost.Fqdn)
 	require.Truef(t, ok, "did not receive 200 response")
 
 	assert.Equal(t, "echo-two", fx.GetEchoResponseBody(res.Body).Service)
@@ -111,8 +107,8 @@ func TestHTTPSSNIEnforcement(t *testing.T) {
 	// is returned.
 	//
 	// TODO can I make this a little cleaner?
-	res, ok = fx.requestUntil(func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", fx.httpsUrlBase, nil)
+	res, ok = fx.RequestUntil(func() (*http.Response, error) {
+		req, err := http.NewRequest("GET", fx.HTTPSURLBase, nil)
 		require.NoError(t, err, "error creating HTTP request")
 
 		req.Host = echoTwoProxy.Spec.VirtualHost.Fqdn

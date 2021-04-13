@@ -25,6 +25,13 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+// subtests defines the tests to run as part of the Gateway API
+// suite.
+var subtests = map[string]func(t *testing.T, f *e2e.Framework){
+	"001-path-condition-match":   testGatewayPathConditionMatch,
+	"002-header-condition-match": testGatewayHeaderConditionMatch,
+}
+
 func TestGatewayAPI(t *testing.T) {
 	f := e2e.NewFramework(t)
 
@@ -57,12 +64,11 @@ func TestGatewayAPI(t *testing.T) {
 	// TODO it'd be nice to have automatic object tracking
 	defer f.Client.Delete(context.TODO(), gateway)
 
-	subtests := map[string]func(t *testing.T, f *e2e.Framework){
-		"001-path-condition-match":   testGatewayPathConditionMatch,
-		"002-header-condition-match": testGatewayHeaderConditionMatch,
+	for name, tc := range subtests {
+		t.Run(name, func(t *testing.T) {
+			tc(t, f)
+		})
 	}
-
-	f.RunParallel("match tests", subtests)
 }
 
 func stringPtr(s string) *string {
