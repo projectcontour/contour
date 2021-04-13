@@ -163,7 +163,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				Name:                 "contour",
 				AltStatName:          strings.Join([]string{c.Namespace, "contour", strconv.Itoa(c.GetXdsGRPCPort())}, "_"),
 				ConnectTimeout:       protobuf.Duration(5 * time.Second),
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
+				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetXdsAddress(), envoy_cluster_v3.Cluster_STRICT_DNS),
 				LbPolicy:             envoy_cluster_v3.Cluster_ROUND_ROBIN,
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "contour",
@@ -198,7 +198,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				Name:                 "service-stats",
 				AltStatName:          strings.Join([]string{c.Namespace, "service-stats", strconv.Itoa(c.GetAdminPort())}, "_"),
 				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
-				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_LOGICAL_DNS),
+				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetAdminAddress(), envoy_cluster_v3.Cluster_LOGICAL_DNS),
 				LbPolicy:             envoy_cluster_v3.Cluster_ROUND_ROBIN,
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "service-stats",
