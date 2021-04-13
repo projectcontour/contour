@@ -112,7 +112,7 @@ func testIncludePrefixCondition(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	fx.CreateHTTPProxyAndWaitFor(baseProxy, HTTPProxyValid)
+	fx.CreateHTTPProxyAndWaitFor(baseProxy, httpProxyValid)
 
 	// TODO should check for appProxy/adminProxy valid too
 

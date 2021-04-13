@@ -54,7 +54,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	p, _ = fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
+	p, _ = fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
@@ -145,7 +145,7 @@ func testGlobalRateLimitingRouteNonTLS(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	p, _ = fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
+	p, _ = fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
@@ -239,7 +239,7 @@ func testGlobalRateLimitingVirtualHostTLS(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	p, _ = fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
+	p, _ = fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
@@ -334,7 +334,7 @@ func testGlobalRateLimitingRouteTLS(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	p, _ = fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
+	p, _ = fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.

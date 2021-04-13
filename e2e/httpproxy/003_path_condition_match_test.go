@@ -81,7 +81,7 @@ func testPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
+	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
 	cases := map[string]string{
 		"/":                "echo-slash-default",

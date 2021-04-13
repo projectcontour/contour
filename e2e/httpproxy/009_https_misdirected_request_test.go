@@ -59,7 +59,7 @@ func testHTTPSMisdirectedRequest(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
+	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
 	res, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,

@@ -54,7 +54,7 @@ func testLocalRateLimitingVirtualHost(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	p, _ = fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
+	p, _ = fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
@@ -136,7 +136,7 @@ func testLocalRateLimitingRoute(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	p, _ = fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
+	p, _ = fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.

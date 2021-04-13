@@ -66,11 +66,6 @@ func TestGatewayAPI(t *testing.T) {
 	defer f.Client.Delete(context.TODO(), gateway)
 
 	f.RunParallel("group", subtests)
-	// for name, tc := range subtests {
-	// 	t.Run(name, func(t *testing.T) {
-	// 		tc(t, f)
-	// 	})
-	// }
 }
 
 func stringPtr(s string) *string {

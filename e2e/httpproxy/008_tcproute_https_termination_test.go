@@ -60,7 +60,7 @@ func testTCPRouteHTTPSTermination(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
+	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
 	certSecret := &corev1.Secret{}
 	key := client.ObjectKey{Namespace: namespace, Name: "echo-cert"}

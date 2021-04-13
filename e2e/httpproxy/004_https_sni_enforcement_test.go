@@ -59,7 +59,7 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	fx.CreateHTTPProxyAndWaitFor(echoOneProxy, HTTPProxyValid)
+	fx.CreateHTTPProxyAndWaitFor(echoOneProxy, httpProxyValid)
 
 	res, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      echoOneProxy.Spec.VirtualHost.Fqdn,
@@ -98,7 +98,7 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	fx.CreateHTTPProxyAndWaitFor(echoTwoProxy, HTTPProxyValid)
+	fx.CreateHTTPProxyAndWaitFor(echoTwoProxy, httpProxyValid)
 
 	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      echoTwoProxy.Spec.VirtualHost.Fqdn,
