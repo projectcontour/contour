@@ -30,6 +30,7 @@ import (
 var subtests = map[string]func(t *testing.T, f *e2e.Framework){
 	"001-path-condition-match":   testGatewayPathConditionMatch,
 	"002-header-condition-match": testGatewayHeaderConditionMatch,
+	"003-invalid-forward-to":     testInvalidForwardTo,
 }
 
 func TestGatewayAPI(t *testing.T) {
