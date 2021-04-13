@@ -277,16 +277,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -319,16 +311,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -357,16 +341,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -394,16 +370,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -424,16 +392,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -516,16 +476,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -551,16 +503,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -600,16 +544,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -650,16 +586,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -685,27 +613,11 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}, {
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/blog",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("blogsvc"),
-								Port:        gatewayPort(80),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/blog"),
+							ForwardTo: httpRouteForwardTo("blogsvc", 80),
 						}},
 					},
 				},
@@ -741,16 +653,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test4.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -782,16 +686,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -823,16 +719,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"*.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -863,20 +751,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"192.168.122.1",
 						},
-						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
-							{
-								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-									Path: gatewayapi_v1alpha1.HTTPPathMatch{
-										Type:  "Prefix",
-										Value: "/",
-									},
-								}},
-								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-									ServiceName: pointer.StringPtr("kuard"),
-									Port:        gatewayPort(8080),
-								}},
-							},
-						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
+						}},
 					},
 				},
 			},
@@ -899,20 +777,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io:80",
 						},
-						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
-							{
-								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-									Path: gatewayapi_v1alpha1.HTTPPathMatch{
-										Type:  "Prefix",
-										Value: "/",
-									},
-								}},
-								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-									ServiceName: pointer.StringPtr("kuard"),
-									Port:        gatewayPort(8080),
-								}},
-							},
-						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
+						}},
 					},
 				},
 			},
@@ -935,20 +803,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"*",
 						},
-						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
-							{
-								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-									Path: gatewayapi_v1alpha1.HTTPPathMatch{
-										Type:  "Prefix",
-										Value: "/",
-									},
-								}},
-								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-									ServiceName: pointer.StringPtr("kuard"),
-									Port:        gatewayPort(8080),
-								}},
-							},
-						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
+						}},
 					},
 				},
 			},
@@ -970,16 +828,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -1008,12 +858,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
+							Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
 							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("kuard"),
 								Port:        nil,
@@ -1042,16 +887,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Exact",
-									Value: "/blog",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchExact, "/blog"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -1101,10 +938,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Value: "/tech",
 								},
 							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -1149,10 +983,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Values: map[string]string{"foo": "bar"},
 								},
 							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
 						}},
 					},
 				},
@@ -1208,10 +1039,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										},
 									},
 								},
-								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-									ServiceName: pointer.StringPtr("kuard"),
-									Port:        gatewayPort(8080),
-								}},
+								ForwardTo: httpRouteForwardTo("kuard", 8080),
 							}},
 					},
 				},
@@ -1252,21 +1080,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
-						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
-							{
-								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{
-									{
-										Headers: &gatewayapi_v1alpha1.HTTPHeaderMatch{
-											Type:   "Exact",
-											Values: map[string]string{"foo": "bar"},
-										},
-									},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Headers: &gatewayapi_v1alpha1.HTTPHeaderMatch{
+									Type:   "Exact",
+									Values: map[string]string{"foo": "bar"},
 								},
-								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-									ServiceName: pointer.StringPtr("kuard"),
-									Port:        gatewayPort(8080),
-								}},
 							}},
+							ForwardTo: httpRouteForwardTo("kuard", 8080),
+						}},
 					},
 				},
 			},
@@ -9836,6 +9658,22 @@ func directResponseRoute(prefix string, statusCode uint32) *Route {
 		PathMatchCondition: prefixString(prefix),
 		DirectResponse:     &DirectResponse{StatusCode: statusCode},
 	}
+}
+
+func httpRouteMatch(pathType gatewayapi_v1alpha1.PathMatchType, value string) []gatewayapi_v1alpha1.HTTPRouteMatch {
+	return []gatewayapi_v1alpha1.HTTPRouteMatch{{
+		Path: gatewayapi_v1alpha1.HTTPPathMatch{
+			Type:  pathType,
+			Value: value,
+		},
+	}}
+}
+
+func httpRouteForwardTo(serviceName string, port int) []gatewayapi_v1alpha1.HTTPRouteForwardTo {
+	return []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+		ServiceName: pointer.StringPtr(serviceName),
+		Port:        gatewayPort(port),
+	}}
 }
 
 func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
