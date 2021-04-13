@@ -68,7 +68,7 @@ func NewFramework(t *testing.T) *Framework {
 		HTTPURLBase:   "http://127.0.0.1:9080",
 		HTTPSURLBase:  "https://127.0.0.1:9443",
 		RetryInterval: time.Second,
-		RetryTimeout:  30 * time.Second,
+		RetryTimeout:  60 * time.Second,
 		t:             t,
 	}
 }

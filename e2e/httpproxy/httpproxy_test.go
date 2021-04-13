@@ -46,11 +46,12 @@ var subtests = map[string]func(t *testing.T, f *e2e.Framework){
 func TestHTTPProxy(t *testing.T) {
 	f := e2e.NewFramework(t)
 
-	for name, tc := range subtests {
-		t.Run(name, func(t *testing.T) {
-			tc(t, f)
-		})
-	}
+	f.RunParallel("group", subtests)
+	// for name, tc := range subtests {
+	// 	t.Run(name, func(t *testing.T) {
+	// 		tc(t, f)
+	// 	})
+	// }
 }
 
 // HTTPProxyValid returns true if the proxy has a .status.currentStatus

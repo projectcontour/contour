@@ -64,11 +64,12 @@ func TestGatewayAPI(t *testing.T) {
 	// TODO it'd be nice to have automatic object tracking
 	defer f.Client.Delete(context.TODO(), gateway)
 
-	for name, tc := range subtests {
-		t.Run(name, func(t *testing.T) {
-			tc(t, f)
-		})
-	}
+	f.RunParallel("group", subtests)
+	// for name, tc := range subtests {
+	// 	t.Run(name, func(t *testing.T) {
+	// 		tc(t, f)
+	// 	})
+	// }
 }
 
 func stringPtr(s string) *string {
