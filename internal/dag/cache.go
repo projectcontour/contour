@@ -63,6 +63,8 @@ type KubernetesCache struct {
 	gateway                   *gatewayapi_v1alpha1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute
+	tcproutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.TCPRoute
+	udproutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.UDPRoute
 	backendpolicies           map[types.NamespacedName]*gatewayapi_v1alpha1.BackendPolicy
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
@@ -80,6 +82,8 @@ func (kc *KubernetesCache) init() {
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute)
+	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.TCPRoute)
+	kc.udproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.UDPRoute)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute)
 	kc.backendpolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha1.BackendPolicy)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
@@ -231,14 +235,17 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		return true
 	case *gatewayapi_v1alpha1.Gateway:
 		if kc.matchesGateway(obj) {
-			kc.WithField("experimental", "gateway-api").WithField("name", obj.Name).WithField("namespace", obj.Namespace).Debug("Adding Gateway")
 			kc.gateway = obj
 			return true
 		}
 	case *gatewayapi_v1alpha1.HTTPRoute:
-		m := k8s.NamespacedNameOf(obj)
-		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding HTTPRoute")
 		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
+		return true
+	case *gatewayapi_v1alpha1.TCPRoute:
+		kc.tcproutes[k8s.NamespacedNameOf(obj)] = obj
+		return true
+	case *gatewayapi_v1alpha1.UDPRoute:
+		kc.udproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *gatewayapi_v1alpha1.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
@@ -421,7 +428,6 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		return ok
 	case *gatewayapi_v1alpha1.Gateway:
 		if kc.matchesGateway(obj) {
-			kc.WithField("experimental", "gateway-api").WithField("name", obj.Name).WithField("namespace", obj.Namespace).Debug("Removing Gateway")
 			kc.gateway = nil
 			return true
 		}
@@ -429,8 +435,17 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 	case *gatewayapi_v1alpha1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httproutes[m]
-		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing HTTPRoute")
 		delete(kc.httproutes, m)
+		return ok
+	case *gatewayapi_v1alpha1.TCPRoute:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.tcproutes[m]
+		delete(kc.tcproutes, m)
+		return ok
+	case *gatewayapi_v1alpha1.UDPRoute:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.udproutes[m]
+		delete(kc.udproutes, m)
 		return ok
 	case *gatewayapi_v1alpha1.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
