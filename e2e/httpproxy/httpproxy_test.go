@@ -30,6 +30,7 @@ var subtests = map[string]func(t *testing.T, f *e2e.Framework){
 	"004-https-sni-enforcement":              testHTTPSSNIEnforcement,
 	"005-pod-restart":                        testPodRestart,
 	"006-merge-slash":                        testMergeSlash,
+	"008-tcp-route-https-termination":        testTCPRouteHTTPSTermination,
 	"009-https-misdirected-request":          testHTTPSMisdirectedRequest,
 	"010-include-prefix-condition":           testIncludePrefixCondition,
 	"016-dynamic-headers":                    testDynamicHeaders,
