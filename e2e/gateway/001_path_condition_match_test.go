@@ -26,14 +26,8 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func TestGatewayPathConditionMatch(t *testing.T) {
-	// Not parallel because it defines a Gateway that lives in the projectcontour
-	// namespace, which may conflict with other Gateway API tests.
-
-	var (
-		fx        = e2e.NewFramework(t)
-		namespace = "gateway-001-path-condition-match"
-	)
+func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
+	namespace := "gateway-001-path-condition-match"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -42,35 +36,6 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 	fx.CreateEchoWorkload(namespace, "echo-slash-noprefix")
 	fx.CreateEchoWorkload(namespace, "echo-slash-default")
 	fx.CreateEchoWorkload(namespace, "echo-slash-exact")
-
-	// Gateway
-	gateway := &gatewayv1alpha1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "projectcontour", // TODO needs to be this to match default settings, but need to clean it up!
-			Name:      "contour",
-		},
-		Spec: gatewayv1alpha1.GatewaySpec{
-			GatewayClassName: "contour-class",
-			Listeners: []gatewayv1alpha1.Listener{
-				{
-					Protocol: gatewayv1alpha1.HTTPProtocolType,
-					Port:     gatewayv1alpha1.PortNumber(80),
-					Routes: gatewayv1alpha1.RouteBindingSelector{
-						Kind: "HTTPRoute",
-						Namespaces: gatewayv1alpha1.RouteNamespaces{
-							From: gatewayv1alpha1.RouteSelectAll,
-						},
-						Selector: metav1.LabelSelector{
-							MatchLabels: map[string]string{"app": "filter"},
-						},
-					},
-				},
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), gateway))
-	// TODO it'd be nice to have automatic object tracking
-	defer fx.Client.Delete(context.TODO(), gateway)
 
 	// HTTPRoute
 	route := &gatewayv1alpha1.HTTPRoute{
@@ -181,13 +146,4 @@ func TestGatewayPathConditionMatch(t *testing.T) {
 		assert.Equal(t, namespace, body.Namespace)
 		assert.Equal(t, expectedService, body.Service)
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-func portNumPtr(port int) *gatewayv1alpha1.PortNumber {
-	pn := gatewayv1alpha1.PortNumber(port)
-	return &pn
 }

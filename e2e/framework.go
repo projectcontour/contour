@@ -74,6 +74,20 @@ func NewFramework(t *testing.T) *Framework {
 	}
 }
 
+// RunParallel runs the provided set of subtests in parallel and blocks
+// until they're all done running.
+func (f *Framework) RunParallel(name string, subtests map[string]func(t *testing.T, f *Framework)) {
+	f.t.Run(name, func(t *testing.T) {
+		for name, tc := range subtests {
+			tc := tc
+			t.Run(name, func(t *testing.T) {
+				t.Parallel()
+				tc(t, f)
+			})
+		}
+	})
+}
+
 // CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
 // and then waits for the specified condition to be true.
 func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condition func(*contourv1.HTTPProxy) bool) (*contourv1.HTTPProxy, bool) {

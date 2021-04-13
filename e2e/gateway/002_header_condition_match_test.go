@@ -27,48 +27,13 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func TestGatewayHeaderConditionMatch(t *testing.T) {
-	// Not parallel because it defines a Gateway that lives in the projectcontour
-	// namespace, which may conflict with other Gateway API tests.
-
-	var (
-		fx        = e2e.NewFramework(t)
-		namespace = "gateway-002-header-condition-match"
-	)
+func testGatewayHeaderConditionMatch(t *testing.T, fx *e2e.Framework) {
+	namespace := "gateway-002-header-condition-match"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
 	fx.CreateEchoWorkload(namespace, "echo-header-exact")
-
-	// Gateway
-	gateway := &gatewayv1alpha1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "projectcontour", // TODO needs to be this to match default settings, but need to clean it up!
-			Name:      "contour",
-		},
-		Spec: gatewayv1alpha1.GatewaySpec{
-			GatewayClassName: "contour-class",
-			Listeners: []gatewayv1alpha1.Listener{
-				{
-					Protocol: gatewayv1alpha1.HTTPProtocolType,
-					Port:     gatewayv1alpha1.PortNumber(80),
-					Routes: gatewayv1alpha1.RouteBindingSelector{
-						Kind: "HTTPRoute",
-						Namespaces: gatewayv1alpha1.RouteNamespaces{
-							From: gatewayv1alpha1.RouteSelectAll,
-						},
-						Selector: metav1.LabelSelector{
-							MatchLabels: map[string]string{"app": "filter"},
-						},
-					},
-				},
-			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), gateway))
-	// TODO it'd be nice to have automatic object tracking
-	defer fx.Client.Delete(context.TODO(), gateway)
 
 	// HTTPRoute
 	route := &gatewayv1alpha1.HTTPRoute{
