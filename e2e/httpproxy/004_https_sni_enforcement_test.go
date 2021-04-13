@@ -17,7 +17,6 @@ package httpproxy
 
 import (
 	"crypto/tls"
-	"net/http"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -62,7 +61,11 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(echoOneProxy, HTTPProxyValid)
 
-	res, ok := fx.HTTPSRequestUntil(e2e.IsOK, "/https-sni-enforcement", echoOneProxy.Spec.VirtualHost.Fqdn)
+	res, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+		Host:      echoOneProxy.Spec.VirtualHost.Fqdn,
+		Path:      "/https-sni-enforcement",
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.Truef(t, ok, "did not receive 200 response")
 
 	assert.Equal(t, "echo-one", fx.GetEchoResponseBody(res.Body).Service)
@@ -97,7 +100,11 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(echoTwoProxy, HTTPProxyValid)
 
-	res, ok = fx.HTTPSRequestUntil(e2e.IsOK, "/https-sni-enforcement", echoTwoProxy.Spec.VirtualHost.Fqdn)
+	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+		Host:      echoTwoProxy.Spec.VirtualHost.Fqdn,
+		Path:      "/https-sni-enforcement",
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.Truef(t, ok, "did not receive 200 response")
 
 	assert.Equal(t, "echo-two", fx.GetEchoResponseBody(res.Body).Service)
@@ -105,27 +112,12 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	// Send a request to sni-enforcement-echo-two.projectcontour.io that has an SNI of
 	// sni-enforcement-echo-one.projectcontour.io and ensure a 421 (Misdirected Request)
 	// is returned.
-	//
-	// TODO can I make this a little cleaner?
-	res, ok = fx.RequestUntil(func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", fx.HTTPSURLBase, nil)
-		require.NoError(t, err, "error creating HTTP request")
-
-		req.Host = echoTwoProxy.Spec.VirtualHost.Fqdn
-
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = &tls.Config{
-			ServerName:         echoOneProxy.Spec.VirtualHost.Fqdn, // this SNI does not match the Host
-			InsecureSkipVerify: true,
-		}
-
-		client := &http.Client{
-			Transport: transport,
-		}
-
-		return client.Do(req)
-	}, func(res *http.Response) bool {
-		return res.StatusCode == 421 // misdirected request
+	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+		Host: echoTwoProxy.Spec.VirtualHost.Fqdn,
+		TLSConfigOpts: []func(*tls.Config){
+			e2e.OptSetSNI(echoOneProxy.Spec.VirtualHost.Fqdn),
+		},
+		Condition: e2e.HasStatusCode(421),
 	})
 	require.Truef(t, ok, "did not receive 421 (Misdirected Request) response")
 }

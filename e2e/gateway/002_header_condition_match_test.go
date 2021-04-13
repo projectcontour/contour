@@ -97,13 +97,13 @@ func testGatewayHeaderConditionMatch(t *testing.T, fx *e2e.Framework) {
 	}
 
 	for _, tc := range cases {
-		setHeader := func(r *http.Request) {
-			for k, v := range tc.headers {
-				r.Header.Set(k, v)
-			}
-		}
-
-		res, ok := fx.HTTPRequestUntil(e2e.HasStatusCode(tc.expectResponse), "/", string(route.Spec.Hostnames[0]), setHeader)
+		res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+			Host: string(route.Spec.Hostnames[0]),
+			RequestOpts: []func(*http.Request){
+				e2e.OptSetHeaders(tc.headers),
+			},
+			Condition: e2e.HasStatusCode(tc.expectResponse),
+		})
 		if !assert.Truef(t, ok, "did not get %d response", tc.expectResponse) {
 			continue
 		}

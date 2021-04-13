@@ -137,7 +137,11 @@ func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 	for path, expectedService := range cases {
 		t.Logf("Querying %q, expecting service %q", path, expectedService)
 
-		res, ok := fx.HTTPRequestUntil(e2e.IsOK, path, string(route.Spec.Hostnames[0]))
+		res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+			Host:      string(route.Spec.Hostnames[0]),
+			Path:      path,
+			Condition: e2e.HasStatusCode(200),
+		})
 		if !assert.True(t, ok, "did not get 200 response") {
 			continue
 		}

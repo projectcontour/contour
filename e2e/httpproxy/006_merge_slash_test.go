@@ -61,7 +61,11 @@ func testMergeSlash(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
-	res, ok := fx.HTTPRequestUntil(e2e.IsOK, "/anything/this//has//lots////of/slashes", p.Spec.VirtualHost.Fqdn)
+	res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+		Host:      p.Spec.VirtualHost.Fqdn,
+		Path:      "/anything/this//has//lots////of/slashes",
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.Truef(t, ok, "did not receive 200 response")
 
 	assert.Contains(t, fx.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")

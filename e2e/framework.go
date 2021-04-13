@@ -271,55 +271,87 @@ func (f *Framework) CreateSelfSignedCert(ns, name, secretName, dnsName string) {
 	require.NoError(f.t, f.Client.Create(context.TODO(), cert))
 }
 
+type HTTPRequestOpts struct {
+	Path        string
+	Host        string
+	RequestOpts []func(*http.Request)
+	Condition   func(*http.Response) bool
+}
+
+func OptSetHeaders(headers map[string]string) func(*http.Request) {
+	return func(r *http.Request) {
+		for k, v := range headers {
+			r.Header.Set(k, v)
+		}
+	}
+}
+
 // HTTPRequestUntil repeatedly makes HTTP requests with the provided
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
-func (f *Framework) HTTPRequestUntil(condition func(*http.Response) bool, url, host string, opts ...func(*http.Request)) (*http.Response, bool) {
+func (f *Framework) HTTPRequestUntil(opts *HTTPRequestOpts) (*http.Response, bool) {
+	req, err := http.NewRequest("GET", f.HTTPURLBase+opts.Path, nil)
+	require.NoError(f.t, err, "error creating HTTP request")
+
+	req.Host = opts.Host
+	for _, opt := range opts.RequestOpts {
+		opt(req)
+	}
+
 	makeRequest := func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", f.HTTPURLBase+url, nil)
-		require.NoError(f.t, err, "error creating HTTP request")
-
-		req.Host = host
-		for _, opt := range opts {
-			opt(req)
-		}
-
 		return http.DefaultClient.Do(req)
 	}
 
-	return f.RequestUntil(makeRequest, condition)
+	return f.requestUntil(makeRequest, opts.Condition)
+}
+
+type HTTPSRequestOpts struct {
+	Path          string
+	Host          string
+	RequestOpts   []func(*http.Request)
+	TLSConfigOpts []func(*tls.Config)
+	Condition     func(*http.Response) bool
+}
+
+func OptSetSNI(name string) func(*tls.Config) {
+	return func(c *tls.Config) {
+		c.ServerName = name
+	}
 }
 
 // HTTPSRequestUntil repeatedly makes HTTPS requests with the provided
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
-func (f *Framework) HTTPSRequestUntil(condition func(*http.Response) bool, url, host string, opts ...func(*http.Request)) (*http.Response, bool) {
+func (f *Framework) HTTPSRequestUntil(opts *HTTPSRequestOpts) (*http.Response, bool) {
+	req, err := http.NewRequest("GET", f.HTTPSURLBase+opts.Path, nil)
+	require.NoError(f.t, err, "error creating HTTP request")
+
+	req.Host = opts.Host
+	for _, opt := range opts.RequestOpts {
+		opt(req)
+	}
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{
+		ServerName:         opts.Host,
+		InsecureSkipVerify: true,
+	}
+	for _, opt := range opts.TLSConfigOpts {
+		opt(transport.TLSClientConfig)
+	}
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
 	makeRequest := func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", f.HTTPSURLBase+url, nil)
-		require.NoError(f.t, err, "error creating HTTP request")
-
-		req.Host = host
-		for _, opt := range opts {
-			opt(req)
-		}
-
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = &tls.Config{
-			ServerName:         host,
-			InsecureSkipVerify: true,
-		}
-
-		client := &http.Client{
-			Transport: transport,
-		}
-
 		return client.Do(req)
 	}
 
-	return f.RequestUntil(makeRequest, condition)
+	return f.requestUntil(makeRequest, opts.Condition)
 }
 
-func (f *Framework) RequestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*http.Response, bool) {
+func (f *Framework) requestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*http.Response, bool) {
 	// make an immediate request and return if it succeeds
 	if res, err := makeRequest(); err == nil && condition(res) {
 		return res, true
@@ -346,12 +378,6 @@ func (f *Framework) RequestUntil(makeRequest func() (*http.Response, error), con
 			return res, false
 		}
 	}
-}
-
-// IsOK returns true if the response has a 200
-// status code, or false otherwise.
-func IsOK(res *http.Response) bool {
-	return HasStatusCode(200)(res)
 }
 
 // HasStatusCode returns a function that returns true

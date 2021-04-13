@@ -60,7 +60,10 @@ func testPodRestart(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
-	res, ok := fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+		Host:      p.Spec.VirtualHost.Fqdn,
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.True(t, ok, "did not get 200 response")
 
 	body := fx.GetEchoResponseBody(res.Body)
@@ -84,7 +87,10 @@ func testPodRestart(t *testing.T, fx *e2e.Framework) {
 	}, fx.RetryTimeout, fx.RetryInterval)
 
 	// now make HTTP requests again and confirm we eventually get a 200
-	res, ok = fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	res, ok = fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+		Host:      p.Spec.VirtualHost.Fqdn,
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.True(t, ok, "did not get 200 response")
 
 	// should be a different pod than the original request

@@ -83,7 +83,10 @@ func testExternalNameServiceInsecure(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
-	_, ok := fx.HTTPRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	_, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+		Host:      p.Spec.VirtualHost.Fqdn,
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.True(t, ok, "did not get 200 response")
 }
 

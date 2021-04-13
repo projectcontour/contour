@@ -17,7 +17,6 @@ package httpproxy
 
 import (
 	"crypto/tls"
-	"net/http"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -62,79 +61,45 @@ func testHTTPSMisdirectedRequest(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, HTTPProxyValid)
 
-	res, ok := fx.HTTPSRequestUntil(e2e.IsOK, "/", p.Spec.VirtualHost.Fqdn)
+	res, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+		Host:      p.Spec.VirtualHost.Fqdn,
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.Truef(t, ok, "did not receive 200 response")
 
 	assert.Equal(t, "echo", fx.GetEchoResponseBody(res.Body).Service)
 
-	// Send a request to sni-enforcement-echo-two.projectcontour.io that has an SNI of
-	// sni-enforcement-echo-one.projectcontour.io and ensure a 421 (Misdirected Request)
-	// is returned.
-	//
-	// TODO can I make this a little cleaner?
-	res, ok = fx.RequestUntil(func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", fx.HTTPSURLBase, nil)
-		require.NoError(t, err, "error creating HTTP request")
-
-		// this Host value does not match the SNI name.
-		req.Host = "non-matching-host.projectcontour.io"
-
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = &tls.Config{
-			ServerName:         p.Spec.VirtualHost.Fqdn,
-			InsecureSkipVerify: true,
-		}
-
-		client := &http.Client{
-			Transport: transport,
-		}
-
-		return client.Do(req)
-	}, e2e.HasStatusCode(421))
+	// Use a Host value that doesn't match the SNI value and verify
+	// a 421 (Misdirected Request) is returned.
+	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+		Host: "non-matching-host.projectcontour.io",
+		TLSConfigOpts: []func(*tls.Config){
+			e2e.OptSetSNI(p.Spec.VirtualHost.Fqdn),
+		},
+		Condition: e2e.HasStatusCode(421),
+	})
 	require.Truef(t, ok, "did not receive 421 (Misdirected Request) response")
 
-	res, ok = fx.RequestUntil(func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", fx.HTTPSURLBase, nil)
-		require.NoError(t, err, "error creating HTTP request")
-
-		// The virtual host name is port-insensitive, so verify that we can
-		// stuff any old port number is and still succeed.
-		req.Host = p.Spec.VirtualHost.Fqdn + ":9999"
-
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = &tls.Config{
-			ServerName:         p.Spec.VirtualHost.Fqdn,
-			InsecureSkipVerify: true,
-		}
-
-		client := &http.Client{
-			Transport: transport,
-		}
-
-		return client.Do(req)
-	}, e2e.IsOK)
+	// The virtual host name is port-insensitive, so verify that we can
+	// stuff any old port number in and still succeed.
+	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+		Host: p.Spec.VirtualHost.Fqdn + ":9999",
+		TLSConfigOpts: []func(*tls.Config){
+			e2e.OptSetSNI(p.Spec.VirtualHost.Fqdn),
+		},
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.Truef(t, ok, "did not receive 200 response")
 
 	// Verify that the hostname match is case-insensitive.
 	// The SNI server name match is still case sensitive,
 	// see https://github.com/envoyproxy/envoy/issues/6199.
-	res, ok = fx.RequestUntil(func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", fx.HTTPSURLBase, nil)
-		require.NoError(t, err, "error creating HTTP request")
-
-		req.Host = "HTTPS-Misdirected-reQUest.projectcontour.io"
-
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = &tls.Config{
-			ServerName:         p.Spec.VirtualHost.Fqdn,
-			InsecureSkipVerify: true,
-		}
-
-		client := &http.Client{
-			Transport: transport,
-		}
-
-		return client.Do(req)
-	}, e2e.IsOK)
+	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+		Host: "HTTPS-Misdirected-reQUest.projectcontour.io",
+		TLSConfigOpts: []func(*tls.Config){
+			e2e.OptSetSNI(p.Spec.VirtualHost.Fqdn),
+		},
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.Truef(t, ok, "did not receive 200 response")
 }

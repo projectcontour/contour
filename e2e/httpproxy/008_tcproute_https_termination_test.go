@@ -19,7 +19,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"net/http"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -67,25 +66,18 @@ func testTCPRouteHTTPSTermination(t *testing.T, fx *e2e.Framework) {
 	key := client.ObjectKey{Namespace: namespace, Name: "echo-cert"}
 	require.NoError(t, fx.Client.Get(context.TODO(), key, certSecret))
 
-	_, ok := fx.RequestUntil(func() (*http.Response, error) {
-		req, err := http.NewRequest("GET", fx.HTTPSURLBase, nil)
-		require.NoError(t, err, "error creating HTTP request")
-		req.Host = "tcp-route-https-termination.projectcontour.io"
+	_, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+		Host: p.Spec.VirtualHost.Fqdn,
+		TLSConfigOpts: []func(*tls.Config){
+			func(c *tls.Config) {
+				certPool := x509.NewCertPool()
+				certPool.AppendCertsFromPEM(certSecret.Data["ca.crt"])
 
-		certPool := x509.NewCertPool()
-		certPool.AppendCertsFromPEM(certSecret.Data["ca.crt"])
-
-		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = &tls.Config{
-			ServerName: p.Spec.VirtualHost.Fqdn,
-			RootCAs:    certPool,
-		}
-
-		client := &http.Client{
-			Transport: transport,
-		}
-
-		return client.Do(req)
-	}, e2e.IsOK)
+				c.RootCAs = certPool
+				c.InsecureSkipVerify = false
+			},
+		},
+		Condition: e2e.HasStatusCode(200),
+	})
 	require.Truef(t, ok, "did not receive 200 response")
 }

@@ -144,7 +144,11 @@ func testInvalidForwardTo(t *testing.T, fx *e2e.Framework) {
 	}
 
 	for _, tc := range cases {
-		res, ok := fx.HTTPRequestUntil(e2e.HasStatusCode(tc.expectResponse), tc.path, string(route.Spec.Hostnames[0]))
+		res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+			Host:      string(route.Spec.Hostnames[0]),
+			Path:      tc.path,
+			Condition: e2e.HasStatusCode(tc.expectResponse),
+		})
 		if !assert.Truef(t, ok, "did not get %d response", tc.expectResponse) {
 			continue
 		}
