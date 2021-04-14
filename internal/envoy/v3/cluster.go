@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"net"
 	"strings"
 	"time"
 
@@ -228,6 +229,17 @@ func ConfigSource(cluster string) *envoy_core_v3.ConfigSource {
 // ClusterDiscoveryType returns the type of a ClusterDiscovery as a Cluster_type.
 func ClusterDiscoveryType(t envoy_cluster_v3.Cluster_DiscoveryType) *envoy_cluster_v3.Cluster_Type {
 	return &envoy_cluster_v3.Cluster_Type{Type: t}
+}
+
+// ClusterDiscoveryTypeForAddress returns the type of a ClusterDiscovery as a Cluster_type.
+// If the provided address is an IP, overrides the type to STATIC, otherwise uses the
+// passed in type.
+func ClusterDiscoveryTypeForAddress(address string, t envoy_cluster_v3.Cluster_DiscoveryType) *envoy_cluster_v3.Cluster_Type {
+	clusterType := t
+	if net.ParseIP(address) != nil {
+		clusterType = envoy_cluster_v3.Cluster_STATIC
+	}
+	return &envoy_cluster_v3.Cluster_Type{Type: clusterType}
 }
 
 // parseDNSLookupFamily parses the dnsLookupFamily string into a envoy_cluster_v3.Cluster_DnsLookupFamily
