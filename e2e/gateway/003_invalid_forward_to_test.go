@@ -32,7 +32,7 @@ func testInvalidForwardTo(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo-slash-default")
+	fx.Fixtures.Echo.Create(namespace, "echo-slash-default")
 
 	// HTTPRoute
 	route := &gatewayv1alpha1.HTTPRoute{
@@ -144,7 +144,7 @@ func testInvalidForwardTo(t *testing.T, fx *e2e.Framework) {
 	}
 
 	for _, tc := range cases {
-		res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      string(route.Spec.Hostnames[0]),
 			Path:      tc.path,
 			Condition: e2e.HasStatusCode(tc.expectResponse),

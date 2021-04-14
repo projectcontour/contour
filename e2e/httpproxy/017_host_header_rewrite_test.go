@@ -31,7 +31,7 @@ func testHostHeaderRewrite(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "ingress-conformance-echo")
+	fx.Fixtures.Echo.Create(namespace, "ingress-conformance-echo")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -64,7 +64,7 @@ func testHostHeaderRewrite(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-	res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})

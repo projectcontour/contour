@@ -31,11 +31,11 @@ func testHeaderConditionMatch(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo-header-present")
-	fx.CreateEchoWorkload(namespace, "echo-header-contains")
-	fx.CreateEchoWorkload(namespace, "echo-header-notcontains")
-	fx.CreateEchoWorkload(namespace, "echo-header-exact")
-	fx.CreateEchoWorkload(namespace, "echo-header-notexact")
+	fx.Fixtures.Echo.Create(namespace, "echo-header-present")
+	fx.Fixtures.Echo.Create(namespace, "echo-header-contains")
+	fx.Fixtures.Echo.Create(namespace, "echo-header-notcontains")
+	fx.Fixtures.Echo.Create(namespace, "echo-header-exact")
+	fx.Fixtures.Echo.Create(namespace, "echo-header-notexact")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -201,7 +201,7 @@ func testHeaderConditionMatch(t *testing.T, fx *e2e.Framework) {
 	}
 
 	for _, tc := range cases {
-		res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host: p.Spec.VirtualHost.Fqdn,
 			Path: "/header-condition-match",
 			RequestOpts: []func(*http.Request){

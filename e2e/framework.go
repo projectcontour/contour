@@ -17,10 +17,8 @@ package e2e
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"io"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -29,12 +27,10 @@ import (
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	kubescheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -44,11 +40,22 @@ import (
 // Framework provides a collection of helpful functions for
 // writing end-to-end (E2E) tests for Contour.
 type Framework struct {
-	Client        client.Client
-	HTTPURLBase   string
-	HTTPSURLBase  string
+	// Client is a controller-runtime Kubernetes client.
+	Client client.Client
+
+	// RetryInterval is how often to retry polling operations.
 	RetryInterval time.Duration
-	RetryTimeout  time.Duration
+
+	// RetryTimeout is how long to continue trying polling
+	// operations before giving up.
+	RetryTimeout time.Duration
+
+	// Fixtures provides helpers for working with test fixtures,
+	// i.e. sample workloads that can be used as proxy targets.
+	Fixtures *Fixtures
+
+	// HTTP provides helpers for making HTTP/HTTPS requests.
+	HTTP *HTTP
 
 	t *testing.T
 }
@@ -65,11 +72,22 @@ func NewFramework(t *testing.T) *Framework {
 
 	return &Framework{
 		Client:        crClient,
-		HTTPURLBase:   "http://127.0.0.1:9080",
-		HTTPSURLBase:  "https://127.0.0.1:9443",
 		RetryInterval: time.Second,
 		RetryTimeout:  60 * time.Second,
-		t:             t,
+		Fixtures: &Fixtures{
+			Echo: &Echo{
+				client: crClient,
+				t:      t,
+			},
+		},
+		HTTP: &HTTP{
+			HTTPURLBase:   "http://127.0.0.1:9080",
+			HTTPSURLBase:  "https://127.0.0.1:9443",
+			RetryInterval: time.Second,
+			RetryTimeout:  60 * time.Second,
+			t:             t,
+		},
+		t: t,
 	}
 }
 
@@ -111,106 +129,6 @@ func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condit
 			return res, false
 		}
 	}
-}
-
-// CreateEchoWorkload creates the ingress-conformance-echo fixture, specifically
-// the deployment and service, in the given namespace and with the given name, or
-// fails the test if it encounters an error. Namespace is defaulted to "default"
-// and name is defaulted to "ingress-conformance-echo" if not provided.
-func (f *Framework) CreateEchoWorkload(ns, name string) {
-	valOrDefault := func(val, defaultVal string) string {
-		if val != "" {
-			return val
-		}
-		return defaultVal
-	}
-
-	ns = valOrDefault(ns, "default")
-	name = valOrDefault(name, "ingress-conformance-echo")
-
-	deployment := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{"app.kubernetes.io/name": name},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "conformance-echo",
-							Image: "k8s.gcr.io/ingressconformance/echoserver:v0.0.1",
-							Env: []corev1.EnvVar{
-								{
-									Name:  "INGRESS_NAME",
-									Value: name,
-								},
-								{
-									Name:  "SERVICE_NAME",
-									Value: name,
-								},
-								{
-									Name: "POD_NAME",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.name",
-										},
-									},
-								},
-								{
-									Name: "NAMESPACE",
-									ValueFrom: &corev1.EnvVarSource{
-										FieldRef: &corev1.ObjectFieldSelector{
-											FieldPath: "metadata.namespace",
-										},
-									},
-								},
-							},
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          "http-api",
-									ContainerPort: 3000,
-								},
-							},
-							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									HTTPGet: &corev1.HTTPGetAction{
-										Path: "/health",
-										Port: intstr.FromInt(3000),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	require.NoError(f.t, f.Client.Create(context.TODO(), deployment))
-
-	service := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:       "http",
-					Port:       80,
-					TargetPort: intstr.FromString("http-api"),
-				},
-			},
-			Selector: map[string]string{"app.kubernetes.io/name": name},
-		},
-	}
-	require.NoError(f.t, f.Client.Create(context.TODO(), service))
 }
 
 // CreateNamespace creates a namespace with the given name in the
@@ -269,124 +187,6 @@ func (f *Framework) CreateSelfSignedCert(ns, name, secretName, dnsName string) {
 		},
 	}
 	require.NoError(f.t, f.Client.Create(context.TODO(), cert))
-}
-
-type HTTPRequestOpts struct {
-	Path        string
-	Host        string
-	RequestOpts []func(*http.Request)
-	Condition   func(*http.Response) bool
-}
-
-func OptSetHeaders(headers map[string]string) func(*http.Request) {
-	return func(r *http.Request) {
-		for k, v := range headers {
-			r.Header.Set(k, v)
-		}
-	}
-}
-
-// HTTPRequestUntil repeatedly makes HTTP requests with the provided
-// parameters until "condition" returns true or the timeout is reached.
-// It always returns the last HTTP response received.
-func (f *Framework) HTTPRequestUntil(opts *HTTPRequestOpts) (*http.Response, bool) {
-	req, err := http.NewRequest("GET", f.HTTPURLBase+opts.Path, nil)
-	require.NoError(f.t, err, "error creating HTTP request")
-
-	req.Host = opts.Host
-	for _, opt := range opts.RequestOpts {
-		opt(req)
-	}
-
-	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
-	}
-
-	return f.requestUntil(makeRequest, opts.Condition)
-}
-
-type HTTPSRequestOpts struct {
-	Path          string
-	Host          string
-	RequestOpts   []func(*http.Request)
-	TLSConfigOpts []func(*tls.Config)
-	Condition     func(*http.Response) bool
-}
-
-func OptSetSNI(name string) func(*tls.Config) {
-	return func(c *tls.Config) {
-		c.ServerName = name
-	}
-}
-
-// HTTPSRequestUntil repeatedly makes HTTPS requests with the provided
-// parameters until "condition" returns true or the timeout is reached.
-// It always returns the last HTTP response received.
-func (f *Framework) HTTPSRequestUntil(opts *HTTPSRequestOpts) (*http.Response, bool) {
-	req, err := http.NewRequest("GET", f.HTTPSURLBase+opts.Path, nil)
-	require.NoError(f.t, err, "error creating HTTP request")
-
-	req.Host = opts.Host
-	for _, opt := range opts.RequestOpts {
-		opt(req)
-	}
-
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig = &tls.Config{
-		ServerName:         opts.Host,
-		InsecureSkipVerify: true,
-	}
-	for _, opt := range opts.TLSConfigOpts {
-		opt(transport.TLSClientConfig)
-	}
-
-	client := &http.Client{
-		Transport: transport,
-	}
-
-	makeRequest := func() (*http.Response, error) {
-		return client.Do(req)
-	}
-
-	return f.requestUntil(makeRequest, opts.Condition)
-}
-
-func (f *Framework) requestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*http.Response, bool) {
-	// make an immediate request and return if it succeeds
-	if res, err := makeRequest(); err == nil && condition(res) {
-		return res, true
-	}
-
-	// otherwise, enter a retry loop
-	ticker := time.NewTicker(f.RetryInterval)
-	defer ticker.Stop()
-
-	timeout := time.NewTimer(f.RetryTimeout)
-	defer timeout.Stop()
-
-	var res *http.Response
-	var err error
-	for {
-		select {
-		case <-ticker.C:
-			res, err = makeRequest()
-			if err == nil && condition(res) {
-				return res, true
-			}
-		case <-timeout.C:
-			// return the last response for logging/debugging purposes
-			return res, false
-		}
-	}
-}
-
-// HasStatusCode returns a function that returns true
-// if the response has the specified status code, or
-// false otherwise.
-func HasStatusCode(code int) func(*http.Response) bool {
-	return func(res *http.Response) bool {
-		return res != nil && res.StatusCode == code
-	}
 }
 
 // GetEchoResponseBody decodes an HTTP response body that is

@@ -32,10 +32,10 @@ func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo-slash-prefix")
-	fx.CreateEchoWorkload(namespace, "echo-slash-noprefix")
-	fx.CreateEchoWorkload(namespace, "echo-slash-default")
-	fx.CreateEchoWorkload(namespace, "echo-slash-exact")
+	fx.Fixtures.Echo.Create(namespace, "echo-slash-prefix")
+	fx.Fixtures.Echo.Create(namespace, "echo-slash-noprefix")
+	fx.Fixtures.Echo.Create(namespace, "echo-slash-default")
+	fx.Fixtures.Echo.Create(namespace, "echo-slash-exact")
 
 	// HTTPRoute
 	route := &gatewayv1alpha1.HTTPRoute{
@@ -137,7 +137,7 @@ func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 	for path, expectedService := range cases {
 		t.Logf("Querying %q, expecting service %q", path, expectedService)
 
-		res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      string(route.Spec.Hostnames[0]),
 			Path:      path,
 			Condition: e2e.HasStatusCode(200),

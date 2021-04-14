@@ -32,7 +32,7 @@ func testHTTPSMisdirectedRequest(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo")
+	fx.Fixtures.Echo.Create(namespace, "echo")
 	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo", "https-misdirected-request.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
@@ -61,7 +61,7 @@ func testHTTPSMisdirectedRequest(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-	res, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	res, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -71,7 +71,7 @@ func testHTTPSMisdirectedRequest(t *testing.T, fx *e2e.Framework) {
 
 	// Use a Host value that doesn't match the SNI value and verify
 	// a 421 (Misdirected Request) is returned.
-	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host: "non-matching-host.projectcontour.io",
 		TLSConfigOpts: []func(*tls.Config){
 			e2e.OptSetSNI(p.Spec.VirtualHost.Fqdn),
@@ -82,7 +82,7 @@ func testHTTPSMisdirectedRequest(t *testing.T, fx *e2e.Framework) {
 
 	// The virtual host name is port-insensitive, so verify that we can
 	// stuff any old port number in and still succeed.
-	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host: p.Spec.VirtualHost.Fqdn + ":9999",
 		TLSConfigOpts: []func(*tls.Config){
 			e2e.OptSetSNI(p.Spec.VirtualHost.Fqdn),
@@ -94,7 +94,7 @@ func testHTTPSMisdirectedRequest(t *testing.T, fx *e2e.Framework) {
 	// Verify that the hostname match is case-insensitive.
 	// The SNI server name match is still case sensitive,
 	// see https://github.com/envoyproxy/envoy/issues/6199.
-	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host: "HTTPS-Misdirected-reQUest.projectcontour.io",
 		TLSConfigOpts: []func(*tls.Config){
 			e2e.OptSetSNI(p.Spec.VirtualHost.Fqdn),

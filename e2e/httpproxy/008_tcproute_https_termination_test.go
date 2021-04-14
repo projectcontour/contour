@@ -35,7 +35,7 @@ func testTCPRouteHTTPSTermination(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "ingress-conformance-echo")
+	fx.Fixtures.Echo.Create(namespace, "ingress-conformance-echo")
 	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo-cert", "tcp-route-https-termination.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
@@ -66,7 +66,7 @@ func testTCPRouteHTTPSTermination(t *testing.T, fx *e2e.Framework) {
 	key := client.ObjectKey{Namespace: namespace, Name: "echo-cert"}
 	require.NoError(t, fx.Client.Get(context.TODO(), key, certSecret))
 
-	_, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	_, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host: p.Spec.VirtualHost.Fqdn,
 		TLSConfigOpts: []func(*tls.Config){
 			func(c *tls.Config) {

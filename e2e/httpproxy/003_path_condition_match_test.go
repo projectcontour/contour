@@ -30,9 +30,9 @@ func testPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo-slash-prefix")
-	fx.CreateEchoWorkload(namespace, "echo-slash-noprefix")
-	fx.CreateEchoWorkload(namespace, "echo-slash-default")
+	fx.Fixtures.Echo.Create(namespace, "echo-slash-prefix")
+	fx.Fixtures.Echo.Create(namespace, "echo-slash-noprefix")
+	fx.Fixtures.Echo.Create(namespace, "echo-slash-default")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -95,7 +95,7 @@ func testPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 	for path, expectedService := range cases {
 		t.Logf("Querying %q, expecting service %q", path, expectedService)
 
-		res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Path:      path,
 			Condition: e2e.HasStatusCode(200),

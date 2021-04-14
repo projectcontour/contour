@@ -38,8 +38,8 @@ func testIncludePrefixCondition(t *testing.T, fx *e2e.Framework) {
 		defer fx.DeleteNamespace(ns)
 	}
 
-	fx.CreateEchoWorkload(appNamespace, "echo-app")
-	fx.CreateEchoWorkload(adminNamespace, "echo-admin")
+	fx.Fixtures.Echo.Create(appNamespace, "echo-app")
+	fx.Fixtures.Echo.Create(adminNamespace, "echo-admin")
 
 	appProxy := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -127,7 +127,7 @@ func testIncludePrefixCondition(t *testing.T, fx *e2e.Framework) {
 	for path, expectedService := range cases {
 		t.Logf("Querying %q, expecting service %q", path, expectedService)
 
-		res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      baseProxy.Spec.VirtualHost.Fqdn,
 			Path:      path,
 			Condition: e2e.HasStatusCode(200),

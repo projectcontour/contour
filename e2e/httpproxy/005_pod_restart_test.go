@@ -35,7 +35,7 @@ func testPodRestart(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo")
+	fx.Fixtures.Echo.Create(namespace, "echo")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -60,7 +60,7 @@ func testPodRestart(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-	res, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -87,7 +87,7 @@ func testPodRestart(t *testing.T, fx *e2e.Framework) {
 	}, fx.RetryTimeout, fx.RetryInterval)
 
 	// now make HTTP requests again and confirm we eventually get a 200
-	res, ok = fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	res, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})

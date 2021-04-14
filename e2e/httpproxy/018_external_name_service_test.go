@@ -32,7 +32,7 @@ func testExternalNameServiceInsecure(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "ingress-conformance-echo")
+	fx.Fixtures.Echo.Create(namespace, "ingress-conformance-echo")
 
 	externalNameService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -83,7 +83,7 @@ func testExternalNameServiceInsecure(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-	_, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	_, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})

@@ -32,7 +32,7 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo-one")
+	fx.Fixtures.Echo.Create(namespace, "echo-one")
 	fx.CreateSelfSignedCert(namespace, "echo-one-cert", "echo-one", "sni-enforcement-echo-one.projectcontour.io")
 
 	echoOneProxy := &contourv1.HTTPProxy{
@@ -61,7 +61,7 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(echoOneProxy, httpProxyValid)
 
-	res, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	res, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      echoOneProxy.Spec.VirtualHost.Fqdn,
 		Path:      "/https-sni-enforcement",
 		Condition: e2e.HasStatusCode(200),
@@ -71,7 +71,7 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	assert.Equal(t, "echo-one", fx.GetEchoResponseBody(res.Body).Service)
 
 	// echo-two
-	fx.CreateEchoWorkload(namespace, "echo-two")
+	fx.Fixtures.Echo.Create(namespace, "echo-two")
 	fx.CreateSelfSignedCert(namespace, "echo-two-cert", "echo-two", "sni-enforcement-echo-two.projectcontour.io")
 
 	echoTwoProxy := &contourv1.HTTPProxy{
@@ -100,7 +100,7 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(echoTwoProxy, httpProxyValid)
 
-	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      echoTwoProxy.Spec.VirtualHost.Fqdn,
 		Path:      "/https-sni-enforcement",
 		Condition: e2e.HasStatusCode(200),
@@ -112,7 +112,7 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	// Send a request to sni-enforcement-echo-two.projectcontour.io that has an SNI of
 	// sni-enforcement-echo-one.projectcontour.io and ensure a 421 (Misdirected Request)
 	// is returned.
-	res, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host: echoTwoProxy.Spec.VirtualHost.Fqdn,
 		TLSConfigOpts: []func(*tls.Config){
 			e2e.OptSetSNI(echoOneProxy.Spec.VirtualHost.Fqdn),

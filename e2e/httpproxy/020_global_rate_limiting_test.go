@@ -31,7 +31,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo")
+	fx.Fixtures.Echo.Create(namespace, "echo")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -58,7 +58,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(t *testing.T, fx *e2e.Framework) {
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
-	_, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	_, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -86,7 +86,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(t *testing.T, fx *e2e.Framework) {
 	// is returned since we're allowed one request per hour.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	_, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -96,7 +96,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(t *testing.T, fx *e2e.Framework) {
 	// is now gotten since we've exceeded the rate limit.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	_, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(429),
 	})
@@ -109,7 +109,7 @@ func testGlobalRateLimitingRouteNonTLS(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo")
+	fx.Fixtures.Echo.Create(namespace, "echo")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -149,7 +149,7 @@ func testGlobalRateLimitingRouteNonTLS(t *testing.T, fx *e2e.Framework) {
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
-	_, ok := fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	_, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -178,7 +178,7 @@ func testGlobalRateLimitingRouteNonTLS(t *testing.T, fx *e2e.Framework) {
 	// is returned since we're allowed one request per hour.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	_, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -188,7 +188,7 @@ func testGlobalRateLimitingRouteNonTLS(t *testing.T, fx *e2e.Framework) {
 	// is now gotten since we've exceeded the rate limit.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	_, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(429),
 	})
@@ -196,7 +196,7 @@ func testGlobalRateLimitingRouteNonTLS(t *testing.T, fx *e2e.Framework) {
 
 	// Make a request against the route that doesn't have rate limiting
 	// to confirm we still get a 200 for that route.
-	_, ok = fx.HTTPRequestUntil(&e2e.HTTPRequestOpts{
+	_, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Path:      "/unlimited",
 		Condition: e2e.HasStatusCode(200),
@@ -212,7 +212,7 @@ func testGlobalRateLimitingVirtualHostTLS(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo")
+	fx.Fixtures.Echo.Create(namespace, "echo")
 	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitvhosttls.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
@@ -243,7 +243,7 @@ func testGlobalRateLimitingVirtualHostTLS(t *testing.T, fx *e2e.Framework) {
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
-	_, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	_, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -271,7 +271,7 @@ func testGlobalRateLimitingVirtualHostTLS(t *testing.T, fx *e2e.Framework) {
 	// is returned since we're allowed one request per hour.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	_, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -281,7 +281,7 @@ func testGlobalRateLimitingVirtualHostTLS(t *testing.T, fx *e2e.Framework) {
 	// is now gotten since we've exceeded the rate limit.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	_, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(429),
 	})
@@ -294,7 +294,7 @@ func testGlobalRateLimitingRouteTLS(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.CreateEchoWorkload(namespace, "echo")
+	fx.Fixtures.Echo.Create(namespace, "echo")
 	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitroutetls.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
@@ -338,7 +338,7 @@ func testGlobalRateLimitingRouteTLS(t *testing.T, fx *e2e.Framework) {
 
 	// Wait until we get a 200 from the proxy confirming
 	// the pods are up and serving traffic.
-	_, ok := fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	_, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -366,7 +366,7 @@ func testGlobalRateLimitingRouteTLS(t *testing.T, fx *e2e.Framework) {
 	// is returned since we're allowed one request per hour.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	_, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(200),
 	})
@@ -376,7 +376,7 @@ func testGlobalRateLimitingRouteTLS(t *testing.T, fx *e2e.Framework) {
 	// is now gotten since we've exceeded the rate limit.
 	//
 	// TODO it'd be better to just make a single request.
-	_, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	_, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Condition: e2e.HasStatusCode(429),
 	})
@@ -384,7 +384,7 @@ func testGlobalRateLimitingRouteTLS(t *testing.T, fx *e2e.Framework) {
 
 	// Make a request against the route that doesn't have rate limiting
 	// to confirm we still get a 200 for that route.
-	_, ok = fx.HTTPSRequestUntil(&e2e.HTTPSRequestOpts{
+	_, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
 		Path:      "/unlimited",
 		Condition: e2e.HasStatusCode(200),
