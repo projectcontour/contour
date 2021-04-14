@@ -33,6 +33,7 @@ var subtests = map[string]func(t *testing.T, f *e2e.Framework){
 	"008-tcp-route-https-termination":        testTCPRouteHTTPSTermination,
 	"009-https-misdirected-request":          testHTTPSMisdirectedRequest,
 	"010-include-prefix-condition":           testIncludePrefixCondition,
+	"012-https-fallback-certificate":         testHTTPSFallbackCertificate,
 	"016-dynamic-headers":                    testDynamicHeaders,
 	"017-host-header-rewrite":                testHostHeaderRewrite,
 	"018-external-name-service-insecure":     testExternalNameServiceInsecure,
