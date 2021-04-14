@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -35,6 +36,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+
+	// needed if tests are run against GCP
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 // Framework provides a collection of helpful functions for
@@ -70,6 +74,16 @@ func NewFramework(t *testing.T) *Framework {
 	crClient, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
 	require.NoError(t, err)
 
+	httpURLBase := os.Getenv("CONTOUR_E2E_HTTP_URL_BASE")
+	if httpURLBase == "" {
+		httpURLBase = "http://127.0.0.1:9080"
+	}
+
+	httpsURLBase := os.Getenv("CONTOUR_E2E_HTTPS_URL_BASE")
+	if httpsURLBase == "" {
+		httpsURLBase = "https://127.0.0.1:9443"
+	}
+
 	return &Framework{
 		Client:        crClient,
 		RetryInterval: time.Second,
@@ -81,8 +95,8 @@ func NewFramework(t *testing.T) *Framework {
 			},
 		},
 		HTTP: &HTTP{
-			HTTPURLBase:   "http://127.0.0.1:9080",
-			HTTPSURLBase:  "https://127.0.0.1:9443",
+			HTTPURLBase:   httpURLBase,
+			HTTPSURLBase:  httpsURLBase,
 			RetryInterval: time.Second,
 			RetryTimeout:  60 * time.Second,
 			t:             t,
