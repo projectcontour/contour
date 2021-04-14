@@ -16,45 +16,44 @@
 package httpproxy
 
 import (
-	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/e2e"
+	"github.com/projectcontour/contour/test/e2e"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func testTCPRouteHTTPSTermination(t *testing.T, fx *e2e.Framework) {
-	namespace := "008-tcp-route-https-termination"
+func testMergeSlash(t *testing.T, fx *e2e.Framework) {
+	namespace := "006-merge-slash"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
 	fx.Fixtures.Echo.Create(namespace, "ingress-conformance-echo")
-	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo-cert", "tcp-route-https-termination.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      "echo-tcpproxy",
+			Name:      "echo",
 		},
 		Spec: contourv1.HTTPProxySpec{
 			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "tcp-route-https-termination.projectcontour.io",
-				TLS: &contourv1.TLS{
-					SecretName: "echo-cert",
-				},
+				Fqdn: "mergeslash.projectcontour.io",
 			},
-			TCPProxy: &contourv1.TCPProxy{
-				Services: []contourv1.Service{
-					{
-						Name: "ingress-conformance-echo",
-						Port: 80,
+			Routes: []contourv1.Route{
+				{
+					Services: []contourv1.Service{
+						{
+							Name: "ingress-conformance-echo",
+							Port: 80,
+						},
+					},
+					Conditions: []contourv1.MatchCondition{
+						{
+							Prefix: "/",
+						},
 					},
 				},
 			},
@@ -62,22 +61,12 @@ func testTCPRouteHTTPSTermination(t *testing.T, fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-	certSecret := &corev1.Secret{}
-	key := client.ObjectKey{Namespace: namespace, Name: "echo-cert"}
-	require.NoError(t, fx.Client.Get(context.TODO(), key, certSecret))
-
-	_, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host: p.Spec.VirtualHost.Fqdn,
-		TLSConfigOpts: []func(*tls.Config){
-			func(c *tls.Config) {
-				certPool := x509.NewCertPool()
-				certPool.AppendCertsFromPEM(certSecret.Data["ca.crt"])
-
-				c.RootCAs = certPool
-				c.InsecureSkipVerify = false
-			},
-		},
+	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+		Host:      p.Spec.VirtualHost.Fqdn,
+		Path:      "/anything/this//has//lots////of/slashes",
 		Condition: e2e.HasStatusCode(200),
 	})
 	require.Truef(t, ok, "did not receive 200 response")
+
+	assert.Contains(t, fx.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")
 }

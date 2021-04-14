@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/e2e"
+	"github.com/projectcontour/contour/test/e2e"
 )
 
 // subtests defines the tests to run as part of the HTTPProxy

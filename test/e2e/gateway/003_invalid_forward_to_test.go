@@ -19,23 +19,20 @@ import (
 	"context"
 	"testing"
 
-	"github.com/projectcontour/contour/e2e"
+	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
-	namespace := "gateway-001-path-condition-match"
+func testInvalidForwardTo(t *testing.T, fx *e2e.Framework) {
+	namespace := "gateway-003-invalid-forward-to"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.Fixtures.Echo.Create(namespace, "echo-slash-prefix")
-	fx.Fixtures.Echo.Create(namespace, "echo-slash-noprefix")
 	fx.Fixtures.Echo.Create(namespace, "echo-slash-default")
-	fx.Fixtures.Echo.Create(namespace, "echo-slash-exact")
 
 	// HTTPRoute
 	route := &gatewayv1alpha1.HTTPRoute{
@@ -45,20 +42,20 @@ func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 			Labels:    map[string]string{"app": "filter"},
 		},
 		Spec: gatewayv1alpha1.HTTPRouteSpec{
-			Hostnames: []gatewayv1alpha1.Hostname{"gatewaypathconditions.projectcontour.io"},
+			Hostnames: []gatewayv1alpha1.Hostname{"invalidforwardto.projectcontour.io"},
 			Rules: []gatewayv1alpha1.HTTPRouteRule{
 				{
 					Matches: []gatewayv1alpha1.HTTPRouteMatch{
 						{
 							Path: gatewayv1alpha1.HTTPPathMatch{
 								Type:  gatewayv1alpha1.PathMatchPrefix,
-								Value: "/path/prefix/",
+								Value: "/invalidref",
 							},
 						},
 					},
 					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
 						{
-							ServiceName: stringPtr("echo-slash-prefix"),
+							ServiceName: stringPtr("invalid"),
 							Port:        portNumPtr(80),
 						},
 					},
@@ -69,14 +66,13 @@ func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 						{
 							Path: gatewayv1alpha1.HTTPPathMatch{
 								Type:  gatewayv1alpha1.PathMatchPrefix,
-								Value: "/path/prefix",
+								Value: "/invalidport",
 							},
 						},
 					},
 					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
 						{
-							ServiceName: stringPtr("echo-slash-noprefix"),
-							Port:        portNumPtr(80),
+							ServiceName: stringPtr("echo-slash-default"),
 						},
 					},
 				},
@@ -85,14 +81,14 @@ func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 					Matches: []gatewayv1alpha1.HTTPRouteMatch{
 						{
 							Path: gatewayv1alpha1.HTTPPathMatch{
-								Type:  gatewayv1alpha1.PathMatchExact,
-								Value: "/path/exact",
+								Type:  gatewayv1alpha1.PathMatchPrefix,
+								Value: "/invalidservicename",
 							},
 						},
 					},
 					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
 						{
-							ServiceName: stringPtr("echo-slash-exact"),
+							ServiceName: stringPtr(""),
 							Port:        portNumPtr(80),
 						},
 					},
@@ -121,33 +117,49 @@ func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 
 	// TODO should wait until HTTPRoute has a status of valid
 
-	cases := map[string]string{
-		"/":                "echo-slash-default",
-		"/foo":             "echo-slash-default",
-		"/path/prefix":     "echo-slash-noprefix",
-		"/path/prefixfoo":  "echo-slash-noprefix",
-		"/path/prefix/":    "echo-slash-prefix",
-		"/path/prefix/foo": "echo-slash-prefix",
-		"/path/exact":      "echo-slash-exact",
-		"/path/exactfoo":   "echo-slash-default",
-		"/path/exact/":     "echo-slash-default",
-		"/path/exact/foo":  "echo-slash-default",
+	type scenario struct {
+		path           string
+		expectResponse int
+		expectService  string
 	}
 
-	for path, expectedService := range cases {
-		t.Logf("Querying %q, expecting service %q", path, expectedService)
+	cases := []scenario{
+		{
+			path:           "/",
+			expectResponse: 200,
+			expectService:  "echo-slash-default",
+		},
+		{
+			path:           "/invalidref",
+			expectResponse: 503,
+		},
+		{
+			path:           "/invalidport",
+			expectResponse: 503,
+		},
+		{
+			path:           "/invalidservicename",
+			expectResponse: 503,
+		},
+	}
 
+	for _, tc := range cases {
 		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      string(route.Spec.Hostnames[0]),
-			Path:      path,
-			Condition: e2e.HasStatusCode(200),
+			Path:      tc.path,
+			Condition: e2e.HasStatusCode(tc.expectResponse),
 		})
-		if !assert.True(t, ok, "did not get 200 response") {
+		if !assert.Truef(t, ok, "did not get %d response", tc.expectResponse) {
+			continue
+		}
+		if res.StatusCode != 200 {
+			// If we expected something other than a 200,
+			// then we don't need to check the body.
 			continue
 		}
 
 		body := fx.GetEchoResponseBody(res.Body)
 		assert.Equal(t, namespace, body.Namespace)
-		assert.Equal(t, expectedService, body.Service)
+		assert.Equal(t, tc.expectService, body.Service)
 	}
 }

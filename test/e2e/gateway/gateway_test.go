@@ -19,7 +19,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/projectcontour/contour/e2e"
+	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"

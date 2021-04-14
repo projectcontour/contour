@@ -19,14 +19,14 @@ import (
 	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/e2e"
+	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testMergeSlash(t *testing.T, fx *e2e.Framework) {
-	namespace := "006-merge-slash"
+func testHostHeaderRewrite(t *testing.T, fx *e2e.Framework) {
+	namespace := "017-host-header-rewrite"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -36,11 +36,11 @@ func testMergeSlash(t *testing.T, fx *e2e.Framework) {
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      "echo",
+			Name:      "host-header-rewrite",
 		},
 		Spec: contourv1.HTTPProxySpec{
 			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "mergeslash.projectcontour.io",
+				Fqdn: "hostheaderrewrite.projectcontour.io",
 			},
 			Routes: []contourv1.Route{
 				{
@@ -50,9 +50,12 @@ func testMergeSlash(t *testing.T, fx *e2e.Framework) {
 							Port: 80,
 						},
 					},
-					Conditions: []contourv1.MatchCondition{
-						{
-							Prefix: "/",
+					RequestHeadersPolicy: &contourv1.HeadersPolicy{
+						Set: []contourv1.HeaderValue{
+							{
+								Name:  "Host",
+								Value: "rewritten.com",
+							},
 						},
 					},
 				},
@@ -63,10 +66,9 @@ func testMergeSlash(t *testing.T, fx *e2e.Framework) {
 
 	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
-		Path:      "/anything/this//has//lots////of/slashes",
 		Condition: e2e.HasStatusCode(200),
 	})
-	require.Truef(t, ok, "did not receive 200 response")
+	require.True(t, ok, "did not get 200 response")
 
-	assert.Contains(t, fx.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")
+	assert.Equal(t, "rewritten.com", fx.GetEchoResponseBody(res.Body).Host)
 }

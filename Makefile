@@ -343,7 +343,7 @@ integration: check-integration
 e2e:
 	./_integration/testsuite/make-kind-cluster.sh
 	./_integration/testsuite/install-contour-working.sh
-	go test -verbose -tags e2e -parallel 1 ./e2e/...
+	go test -v -tags e2e -parallel 1 ./test/e2e/...
 	./_integration/testsuite/cleanup.sh
 
 check-ingress-conformance: ## Run Ingress controller conformance
