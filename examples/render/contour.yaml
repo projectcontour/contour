@@ -1906,7 +1906,9 @@ rules:
   - backendpolicies
   - gateways
   - httproutes
+  - tcproutes
   - tlsroutes
+  - udproutes
   verbs:
   - get
   - list
@@ -1916,7 +1918,9 @@ rules:
   resources:
   - backendpolicies/status
   - httproutes/status
+  - tcproutes/status
   - tlsroutes/status
+  - udproutes/status
   verbs:
   - update
 - apiGroups:

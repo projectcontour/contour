@@ -917,6 +917,24 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert gateway-api TCPRoute": {
+			obj: &gatewayapi_v1alpha1.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert gateway-api UDPRoute": {
+			obj: &gatewayapi_v1alpha1.UDPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "udproute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
 		"insert gateway-api TLSRoute": {
 			obj: &gatewayapi_v1alpha1.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1183,6 +1201,36 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			obj: &gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httproute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove gateway-api TCPRoute": {
+			cache: cache(&gatewayapi_v1alpha1.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+			}),
+			obj: &gatewayapi_v1alpha1.TCPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tcproute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove gateway-api UDPRoute": {
+			cache: cache(&gatewayapi_v1alpha1.UDPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "udproute",
+					Namespace: "default",
+				},
+			}),
+			obj: &gatewayapi_v1alpha1.UDPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "udproute",
 					Namespace: "default",
 				},
 			},
