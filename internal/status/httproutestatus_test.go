@@ -38,12 +38,7 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 	httpRouteUpdate := HTTPRouteUpdate{
 		FullName:   k8s.NamespacedNameFrom("test/test"),
 		Generation: testGeneration,
-		Conditions: []metav1.Condition{{
-			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
-			Status:  projectcontour.ConditionTrue,
-			Reason:  "Valid",
-			Message: "Valid HTTPRoute",
-		}},
+		Conditions: make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition),
 	}
 
 	got := httpRouteUpdate.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionTrue, "Valid", "Valid HTTPRoute")
