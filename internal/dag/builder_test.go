@@ -133,6 +133,183 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlscert",
+			Namespace: "projectcontour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+	}
+
+	gatewayWithOnlyTLS := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     443,
+				Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+						Group: "core",
+						Kind:  "Secret",
+						Name:  sec1.Name,
+					},
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+				},
+			}},
+		},
+	}
+
+	gatewayWithTLSandHTTP := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+				},
+			}, {
+				Port:     443,
+				Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+						Group: "core",
+						Kind:  "Secret",
+						Name:  sec1.Name,
+					},
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+				},
+			}},
+		},
+	}
+
+	gatewaywithtlsDifferentselectors := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+					Selector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{{
+							Key:      "protocol",
+							Operator: "In",
+							Values:   []string{"http"},
+						}},
+					},
+				},
+			}, {
+				Port:     443,
+				Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+						Group: "core",
+						Kind:  "Secret",
+						Name:  sec1.Name,
+					},
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+					Selector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{{
+							Key:      "protocol",
+							Operator: "In",
+							Values:   []string{"https"},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	genericHTTPRoute := &gatewayapi_v1alpha1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "projectcontour",
+			Labels: map[string]string{
+				"app":      "contour",
+				"type":     "controller",
+				"protocol": "http",
+			},
+		},
+		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+			Hostnames: []gatewayapi_v1alpha1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+					Path: gatewayapi_v1alpha1.HTTPPathMatch{
+						Type:  "Prefix",
+						Value: "/",
+					},
+				}},
+				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+					ServiceName: pointer.StringPtr("kuard"),
+					Port:        gatewayPort(8080),
+				}},
+			}},
+		},
+	}
+
+	httpRouteProtocolHTTPS := &gatewayapi_v1alpha1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basictls",
+			Namespace: "projectcontour",
+			Labels: map[string]string{
+				"app":      "contour",
+				"type":     "controller",
+				"protocol": "https",
+			},
+		},
+		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+			Hostnames: []gatewayapi_v1alpha1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+					Path: gatewayapi_v1alpha1.HTTPPathMatch{
+						Type:  "Prefix",
+						Value: "/",
+					},
+				}},
+				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+					ServiceName: pointer.StringPtr("blogsvc"),
+					Port:        gatewayPort(80),
+				}},
+			}},
+		},
+	}
+
 	gatewayWithAllNamespace := &gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
@@ -236,6 +413,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Selector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"not": "matching",
@@ -263,25 +441,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway: gatewayWithSelector,
 			objs: []interface{}{
 				kuardService,
-				&gatewayapi_v1alpha1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-						Labels: map[string]string{
-							"app":  "contour",
-							"type": "controller",
-						},
-					},
-					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Hostnames: []gatewayapi_v1alpha1.Hostname{
-							"test.projectcontour.io",
-						},
-						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
-						}},
-					},
-				},
+				genericHTTPRoute,
 			},
 			want: listeners(
 				&Listener{
@@ -297,25 +457,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway: gatewayNoSelector,
 			objs: []interface{}{
 				kuardService,
-				&gatewayapi_v1alpha1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-						Labels: map[string]string{
-							"app":  "contour",
-							"type": "controller",
-						},
-					},
-					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Hostnames: []gatewayapi_v1alpha1.Hostname{
-							"test.projectcontour.io",
-						},
-						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
-						}},
-					},
-				},
+				genericHTTPRoute,
 			},
 			want: listeners(
 				&Listener{
@@ -951,6 +1093,240 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							prefixroute("/", service(kuardService)),
 							prefixroute("/blog", service(kuardService)),
 							prefixroute("/tech", service(kuardService))),
+					),
+				},
+			),
+		},
+		"insert basic single route, single hostname, gateway with TLS": {
+			gateway: gatewayWithOnlyTLS,
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+								routes:       routes(prefixroute("/", service(kuardService))),
+							},
+							Secret: secret(sec1),
+						},
+					),
+				},
+			),
+		},
+		"insert basic single route, single hostname, gateway with missing TLS certificate": {
+			gateway: gatewayWithOnlyTLS,
+			objs: []interface{}{
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(),
+		},
+		"insert basic single route, single hostname, gateway with invalid TLS certificate": {
+			gateway: gatewayWithOnlyTLS,
+			objs: []interface{}{
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlscert",
+						Namespace: "projectcontour",
+					},
+					Type: v1.SecretTypeTLS,
+					Data: secretdata("wrong", "wronger"),
+				},
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(),
+		},
+		"insert basic single route, single hostname, gateway with TLS & Insecure Listeners": {
+			gateway: gatewayWithTLSandHTTP,
+			objs: []interface{}{
+				sec1,
+				blogService,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+								routes:       routes(prefixroute("/", service(blogService))),
+							},
+							Secret: secret(sec1),
+						},
+					),
+				},
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixroute("/", service(blogService))),
+					),
+				},
+			),
+		},
+		"Only the Spec.Listener.Protocol: HTTPS should be valid for a TLS Listener Gateway": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
+						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+								Group: "core",
+								Kind:  "Secret",
+								Name:  sec1.Name,
+							},
+						},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				blogService,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(),
+		},
+		"TLS Listener Gateway CertificateRef must be type core.Secret": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+								Group: "custom",
+								Kind:  "shhhh",
+								Name:  sec1.Name,
+							},
+						},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				blogService,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(),
+		},
+		"TLS Listener Gateway CertificateRef must be specified": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+						TLS:      &gatewayapi_v1alpha1.GatewayTLSConfig{},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				blogService,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(),
+		},
+		"No valid hostnames defined": {
+			gateway: gatewayWithAllNamespace,
+			objs: []interface{}{
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":      "contour",
+							"type":     "controller",
+							"protocol": "https",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"*.*.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+								Path: gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  "Prefix",
+									Value: "/",
+								},
+							}},
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("blogsvc"),
+								Port:        gatewayPort(80),
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"insert basic single route, single hostname, gateway with TLS & Insecure Listeners, different selectors": {
+			gateway: gatewaywithtlsDifferentselectors,
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				blogService,
+				genericHTTPRoute,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+								routes:       routes(prefixroute("/", service(blogService))),
+							},
+							Secret: secret(sec1),
+						},
+					),
+				},
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardService))),
 					),
 				},
 			),
