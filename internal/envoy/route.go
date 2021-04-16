@@ -63,6 +63,7 @@ func SingleSimpleCluster(clusters []*dag.Cluster) bool {
 	if cluster.RequestHeadersPolicy == nil {
 		// no request headers policy
 	} else if len(cluster.RequestHeadersPolicy.Set) != 0 ||
+		len(cluster.RequestHeadersPolicy.Add) != 0 ||
 		len(cluster.RequestHeadersPolicy.Remove) != 0 {
 		return false
 	}

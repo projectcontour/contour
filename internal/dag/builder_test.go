@@ -1483,6 +1483,236 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"Route rule with request header modifier": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{
+									{
+										Path: gatewayapi_v1alpha1.HTTPPathMatch{
+											Type:  "Prefix",
+											Value: "/",
+										},
+									},
+								},
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+								}},
+								Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+									Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+										Set: map[string]string{"custom-header-set": "foo-bar", "Host": "bar.com"},
+										Add: map[string]string{"custom-header-add": "foo-bar"},
+									},
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusters(service(kuardService)),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{
+									"Custom-Header-Set": "foo-bar", // Verify the header key is canonicalized.
+								},
+								Add: map[string]string{
+									"Custom-Header-Add": "foo-bar", // Verify the header key is canonicalized.
+								},
+								HostRewrite: "bar.com",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTP forward with request header modifier": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{
+									{
+										Path: gatewayapi_v1alpha1.HTTPPathMatch{
+											Type:  "Prefix",
+											Value: "/",
+										},
+									},
+								},
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+									Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+										Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+										RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+											Set: map[string]string{"custom-header-set": "foo-bar", "Host": "bar.com"},
+											Add: map[string]string{"custom-header-add": "foo-bar"},
+										},
+									}},
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{"Custom-Header-Add": "foo-bar"}, nil, "bar.com", service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
+		"Route rule with invalid request header modifier": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{
+									{
+										Path: gatewayapi_v1alpha1.HTTPPathMatch{
+											Type:  "Prefix",
+											Value: "/",
+										},
+									},
+								},
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+								}},
+								Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+									Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+										Set: map[string]string{"custom-header-set": "foo-bar", "Host": "bar.com"},
+										Add: map[string]string{"!invalid-header-add": "foo-bar"},
+									},
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusters(service(kuardService)),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set:         map[string]string{"Custom-Header-Set": "foo-bar"},
+								Add:         map[string]string{}, // Invalid header should not be set.
+								HostRewrite: "bar.com",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTP forward with invalid request header modifier": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{
+									{
+										Path: gatewayapi_v1alpha1.HTTPPathMatch{
+											Type:  "Prefix",
+											Value: "/",
+										},
+									},
+								},
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+									Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+										Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+										RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+											Set: map[string]string{"custom-header-set": "foo-bar", "Host": "bar.com"},
+											Add: map[string]string{"!invalid-header-add": "foo-bar"},
+										},
+									}},
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{}, nil, "bar.com", service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {
@@ -10111,6 +10341,22 @@ func routeHeaders(prefix string, requestSet map[string]string, requestRemove []s
 		Remove: responseRemove,
 	}
 	return r
+}
+
+func clusterHeaders(requestSet map[string]string, requestAdd map[string]string, requestRemove []string, hostRewrite string, services ...*Service) (c []*Cluster) {
+	for _, s := range services {
+		c = append(c, &Cluster{
+			Upstream: s,
+			Protocol: s.Protocol,
+			RequestHeadersPolicy: &HeadersPolicy{
+				Set:         requestSet,
+				Add:         requestAdd,
+				Remove:      requestRemove,
+				HostRewrite: hostRewrite,
+			},
+		})
+	}
+	return c
 }
 
 func clusters(services ...*Service) (c []*Cluster) {

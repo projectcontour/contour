@@ -271,7 +271,6 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 	for _, rule := range route.Spec.Rules {
 
 		matchconditions := []*matchConditions{}
-		var services []*Service
 
 		for _, match := range rule.Matches {
 			mc := &matchConditions{}
@@ -307,6 +306,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			continue
 		}
 
+		var clusters []*Cluster
+
 		// Validate the ForwardTos.
 		for _, forward := range rule.ForwardTo {
 
@@ -330,14 +331,44 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("Service %q does not exist in namespace %q", meta.Name, meta.Namespace))
 				continue
 			}
-			services = append(services, service)
+
+			var headerPolicy *HeadersPolicy
+			for _, filter := range forward.Filters {
+				switch filter.Type {
+				case gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier:
+					var err error
+					headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
+					if err != nil {
+						routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+					}
+				default:
+					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.ForwardTo.Filters: Only RequestHeaderModifier type is supported.")
+				}
+			}
+
+			cluster := p.cluster(headerPolicy, service)
+			clusters = append(clusters, cluster)
 		}
 
-		routes := p.routes(matchconditions, services)
+		var headerPolicy *HeadersPolicy
+		for _, filter := range rule.Filters {
+			switch filter.Type {
+			case gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier:
+				var err error
+				headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
+				if err != nil {
+					routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+				}
+			default:
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.Filters: Only RequestHeaderModifier type is supported.")
+			}
+		}
+
+		routes := p.routes(matchconditions, headerPolicy, clusters)
 		for _, host := range hosts {
 			for _, route := range routes {
 
-				if len(services) == 0 {
+				if len(clusters) == 0 {
 					// Configure a direct response HTTP status code of 503 so the
 					// route still matches the configured conditions since the
 					// service is missing or invalid.
@@ -368,17 +399,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 	}
 }
 
-// routes builds a []*dag.Route for the supplied set of match conditions & services.
-func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, services []*Service) []*Route {
-	var clusters []*Cluster
+// routes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and clusters.
+func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, headerPolicy *HeadersPolicy, clusters []*Cluster) []*Route {
 	var routes []*Route
-
-	for _, service := range services {
-		clusters = append(clusters, &Cluster{
-			Upstream: service,
-			Protocol: service.Protocol,
-		})
-	}
 
 	for _, mc := range matchConditions {
 		for _, pathMatch := range mc.pathMatchConditions {
@@ -387,9 +410,19 @@ func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, service
 			}
 			r.PathMatchCondition = pathMatch
 			r.HeaderMatchConditions = mc.headerMatchCondition
+			r.RequestHeadersPolicy = headerPolicy
 			routes = append(routes, r)
 		}
 	}
 
 	return routes
+}
+
+// cluster builds a *dag.Cluster for the supplied set of headerPolicy and service.
+func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Service) *Cluster {
+	return &Cluster{
+		Upstream:             service,
+		Protocol:             service.Protocol,
+		RequestHeadersPolicy: headerPolicy,
+	}
 }
