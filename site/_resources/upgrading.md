@@ -53,7 +53,7 @@ You'll need to re-check where your DNS names are pointing as well, using [Get yo
 
 ### The less easy way
 
-This section contains information for administrators who wish to apply the Contour 1.14.1 to 1.14.0 changes manually.
+This section contains information for administrators who wish to apply the Contour 1.14.0 to 1.14.1 changes manually.
 The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.14.1` tag.
 
 Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
