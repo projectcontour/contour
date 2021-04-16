@@ -27,7 +27,6 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1187,80 +1186,6 @@ func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
 	), nil)
 }
 
-func TestRouteWithAServiceWeight(t *testing.T) {
-	rh, c, done := setup(t)
-	defer done()
-
-	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
-
-	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
-					Prefix: "/a",
-				}},
-				Services: []contour_api_v1.Service{{
-					Name:   "kuard",
-					Port:   80,
-					Weight: 90, // ignored
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(p1)
-	assertRDS(t, c, "1", virtualhosts(
-		envoy_v3.VirtualHost("test2.test.com",
-			&envoy_route_v3.Route{
-				Match:  routePrefix("/a"),
-				Action: routecluster("default/kuard/80/da39a3ee5e"),
-			},
-		),
-	), nil)
-
-	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
-					Prefix: "/a",
-				}},
-				Services: []contour_api_v1.Service{{
-					Name:   "kuard",
-					Port:   80,
-					Weight: 90,
-				}, {
-					Name:   "kuard",
-					Port:   80,
-					Weight: 60,
-				}},
-			}},
-		},
-	}
-
-	rh.OnUpdate(p1, p2)
-	assertRDS(t, c, "2", virtualhosts(
-		envoy_v3.VirtualHost("test2.test.com",
-			&envoy_route_v3.Route{
-				Match: routePrefix("/a"),
-				Action: routeweightedcluster(
-					weightedcluster{"default/kuard/80/da39a3ee5e", 60},
-					weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
-			},
-		),
-	), nil)
-}
-
 func TestRouteWithTLS(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
@@ -1632,11 +1557,6 @@ func assertRDS(t *testing.T, c *Contour, versioninfo string, ingressHTTP, ingres
 	})
 }
 
-type weightedcluster struct {
-	name   string
-	weight uint32
-}
-
 func routeRegex(regex string, headers ...dag.HeaderMatchCondition) *envoy_route_v3.RouteMatch {
 	return envoy_v3.RouteMatch(&dag.Route{
 		PathMatchCondition: &dag.RegexMatchCondition{
@@ -1654,100 +1574,6 @@ func routecluster(cluster string) *envoy_route_v3.Route_Route {
 			},
 		},
 	}
-}
-
-func routeweightedcluster(clusters ...weightedcluster) *envoy_route_v3.Route_Route {
-	return &envoy_route_v3.Route_Route{
-		Route: &envoy_route_v3.RouteAction{
-			ClusterSpecifier: &envoy_route_v3.RouteAction_WeightedClusters{
-				WeightedClusters: weightedclusters(clusters),
-			},
-		},
-	}
-}
-
-func weightedclusters(clusters []weightedcluster) *envoy_route_v3.WeightedCluster {
-	var wc envoy_route_v3.WeightedCluster
-	var total uint32
-	for _, c := range clusters {
-		total += c.weight
-		wc.Clusters = append(wc.Clusters, &envoy_route_v3.WeightedCluster_ClusterWeight{
-			Name:   c.name,
-			Weight: protobuf.UInt32(c.weight),
-		})
-	}
-	wc.TotalWeight = protobuf.UInt32(total)
-	return &wc
-}
-
-func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
-	rh, c, done := setup(t)
-	defer done()
-
-	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
-
-	proxy1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: conditions(prefixCondition("/a")),
-				Services: []contour_api_v1.Service{{
-					Name:   "kuard",
-					Port:   80,
-					Weight: 90, // ignored
-				}},
-			}},
-		},
-	}
-
-	rh.OnAdd(proxy1)
-	assertRDS(t, c, "1", virtualhosts(
-		envoy_v3.VirtualHost("test2.test.com",
-			&envoy_route_v3.Route{
-				Match:  routePrefix("/a"),
-				Action: routecluster("default/kuard/80/da39a3ee5e"),
-			},
-		),
-	), nil)
-
-	proxy2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: "default",
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: conditions(prefixCondition("/a")),
-				Services: []contour_api_v1.Service{{
-					Name:   "kuard",
-					Port:   80,
-					Weight: 90,
-				}, {
-					Name:   "kuard",
-					Port:   80,
-					Weight: 60,
-				}},
-			}},
-		},
-	}
-
-	rh.OnUpdate(proxy1, proxy2)
-	assertRDS(t, c, "2", virtualhosts(
-		envoy_v3.VirtualHost("test2.test.com",
-			&envoy_route_v3.Route{
-				Match: routePrefix("/a"),
-				Action: routeweightedcluster(
-					weightedcluster{"default/kuard/80/da39a3ee5e", 60},
-					weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
-			},
-		),
-	), nil)
 }
 
 func TestHTTPProxyRouteWithTLS(t *testing.T) {
