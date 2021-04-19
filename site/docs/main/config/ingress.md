@@ -40,11 +40,9 @@ See upstream [documentation][4] on Ingress rules.
 
 As with default backends, Contour only supports configuring a Service as a backend and does not support any other Kubernetes resource.
 
-<!-- TODO: swap with the below once https://github.com/projectcontour/contour/pull/3381 is merged -->
-<!-- Contour supports [wildcard hostnames][5] as documented by the upstream API as well as precise hostnames. -->
-<!-- Wildcard hostnames are limited to the whole first DNS label of the hostname, e.g. `*.foo.com` is valid but `*foo.com`, `foo*.com`, `foo.*.com` are not. -->
-<!-- `*` is also not a valid hostname. -->
-Contour currently only supports precise hostnames in the `Host` field of an Ingress rule and any rules with a wildcard hostname will be ignored.
+Contour supports [wildcard hostnames][5] as documented by the upstream API as well as precise hostnames.
+Wildcard hostnames are limited to the whole first DNS label of the hostname, e.g. `*.foo.com` is valid but `*foo.com`, `foo*.com`, `foo.*.com` are not.
+`*` is also not a valid hostname.
 The Ingress admission controller validation ensures valid hostnames are present when creating an Ingress resource.
 
 Contour supports all of the various [path matching][6] types described by the Ingress spec.
