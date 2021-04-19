@@ -761,12 +761,12 @@ func TestRateLimitPolicy(t *testing.T) {
 									RequestHeaderValueMatch: &contour_api_v1.RequestHeaderValueMatchDescriptor{
 										Headers: []contour_api_v1.HeaderMatchCondition{
 											{
-												Name:    "X-Header",
-												Present: true,
+												Name:       "X-Header",
+												NotPresent: true,
 											},
 										},
 										ExpectMatch: true,
-										Value:       "header-is-present",
+										Value:       "header-is-not-present",
 									},
 								},
 							},
@@ -785,10 +785,11 @@ func TestRateLimitPolicy(t *testing.T) {
 											{
 												Name:      "X-Header",
 												MatchType: "present",
+												Invert:    true,
 											},
 										},
 										ExpectMatch: true,
-										Value:       "header-is-present",
+										Value:       "header-is-not-present",
 									},
 								},
 							},

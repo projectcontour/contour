@@ -81,6 +81,12 @@ type HeaderMatchCondition struct {
 	// +optional
 	Present bool `json:"present,omitempty"`
 
+	// NotPresent specifies that condition is true when the named header
+	// is not present. Note that setting NotPresent to false does not
+	// make the condition true if the named header is present.
+	// +optional
+	NotPresent bool `json:"notpresent,omitempty"`
+
 	// Contains specifies a substring that must be present in
 	// the header value.
 	// +optional

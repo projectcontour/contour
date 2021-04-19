@@ -125,6 +125,19 @@ func TestHeaderMatchConditions(t *testing.T) {
 				MatchType: "present",
 			}},
 		},
+		"header not present": {
+			matchconditions: []contour_api_v1.MatchCondition{{
+				Header: &contour_api_v1.HeaderMatchCondition{
+					Name:       "x-request-id",
+					NotPresent: true,
+				},
+			}},
+			want: []HeaderMatchCondition{{
+				Name:      "x-request-id",
+				MatchType: "present",
+				Invert:    true,
+			}},
+		},
 		"header name but missing condition": {
 			matchconditions: []contour_api_v1.MatchCondition{{
 				Header: &contour_api_v1.HeaderMatchCondition{
@@ -483,6 +496,38 @@ func TestValidateHeaderMatchConditions(t *testing.T) {
 					Header: &contour_api_v1.HeaderMatchCondition{
 						Name:        "x-another-header",
 						NotContains: "abc",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		"'present' and 'notpresent' matchconditions for the same header are invalid": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:    "x-header",
+						Present: true,
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:       "x-header",
+						NotPresent: true,
+					},
+				},
+			},
+			wantErr: true,
+		},
+		"'present' and 'notpresent' matchconditions for different headers are valid": {
+			matchconditions: []contour_api_v1.MatchCondition{
+				{
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:    "x-header",
+						Present: true,
+					},
+				}, {
+					Header: &contour_api_v1.HeaderMatchCondition{
+						Name:       "x-different-header",
+						NotPresent: true,
 					},
 				},
 			},
