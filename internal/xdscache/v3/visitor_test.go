@@ -57,7 +57,7 @@ func TestVisitClusters(t *testing.T) {
 								},
 							}},
 						},
-						Secret: new(dag.Secret),
+						Secrets: []*dag.Secret{new(dag.Secret)},
 					},
 				),
 			},
@@ -115,7 +115,7 @@ func TestVisitListeners(t *testing.T) {
 							ListenerName: "ingress_https",
 						},
 						TCPProxy: p1,
-						Secret: &dag.Secret{
+						Secrets: []*dag.Secret{{
 							Object: &v1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									Name:      "secret",
@@ -123,7 +123,7 @@ func TestVisitListeners(t *testing.T) {
 								},
 								Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 							},
-						},
+						}},
 						MinTLSVersion: "1.2",
 					},
 				),
@@ -185,7 +185,7 @@ func TestVisitSecrets(t *testing.T) {
 								},
 							}},
 						},
-						Secret: &dag.Secret{
+						Secrets: []*dag.Secret{{
 							Object: &v1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									Name:      "secret",
@@ -193,7 +193,7 @@ func TestVisitSecrets(t *testing.T) {
 								},
 								Data: secretdata("certificate", "key"),
 							},
-						},
+						}},
 					},
 				),
 			},
