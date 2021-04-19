@@ -89,7 +89,8 @@ spec:
 
 ---
 
-apiVersion: networking.k8s.io/v1
+# TODO: Convert to v1 resource when we stop testing against k8s 1.18
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: wildcard-ingress
@@ -105,10 +106,8 @@ spec:
       - pathType: Prefix
         path: "/"
         backend:
-          service:
-            name: echo
-            port:
-              number: 80
+          serviceName: echo
+          servicePort: 80
 
 ---
 
