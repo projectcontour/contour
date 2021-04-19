@@ -534,8 +534,10 @@ func globalRateLimitPolicy(in *contour_api_v1.GlobalRateLimitPolicy) (*GlobalRat
 				set++
 
 				rld.Entries = append(rld.Entries, RateLimitDescriptorEntry{
-					GenericKeyKey:   entry.GenericKey.Key,
-					GenericKeyValue: entry.GenericKey.Value,
+					GenericKey: &GenericKeyDescriptorEntry{
+						Key:   entry.GenericKey.Key,
+						Value: entry.GenericKey.Value,
+					},
 				})
 			}
 
@@ -543,8 +545,10 @@ func globalRateLimitPolicy(in *contour_api_v1.GlobalRateLimitPolicy) (*GlobalRat
 				set++
 
 				rld.Entries = append(rld.Entries, RateLimitDescriptorEntry{
-					HeaderMatchHeaderName:    entry.RequestHeader.HeaderName,
-					HeaderMatchDescriptorKey: entry.RequestHeader.DescriptorKey,
+					HeaderMatch: &HeaderMatchDescriptorEntry{
+						HeaderName: entry.RequestHeader.HeaderName,
+						Key:        entry.RequestHeader.DescriptorKey,
+					},
 				})
 			}
 
@@ -552,7 +556,7 @@ func globalRateLimitPolicy(in *contour_api_v1.GlobalRateLimitPolicy) (*GlobalRat
 				set++
 
 				rld.Entries = append(rld.Entries, RateLimitDescriptorEntry{
-					RemoteAddress: true,
+					RemoteAddress: &RemoteAddressDescriptorEntry{},
 				})
 			}
 
