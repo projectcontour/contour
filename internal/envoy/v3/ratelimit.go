@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -90,6 +91,16 @@ func GlobalRateLimits(descriptors []*dag.RateLimitDescriptor) []*envoy_route_v3.
 						RequestHeaders: &envoy_route_v3.RateLimit_Action_RequestHeaders{
 							HeaderName:    entry.HeaderMatch.HeaderName,
 							DescriptorKey: entry.HeaderMatch.Key,
+						},
+					},
+				})
+			case entry.HeaderValueMatch != nil:
+				rl.Actions = append(rl.Actions, &envoy_route_v3.RateLimit_Action{
+					ActionSpecifier: &envoy_route_v3.RateLimit_Action_HeaderValueMatch_{
+						HeaderValueMatch: &envoy_route_v3.RateLimit_Action_HeaderValueMatch{
+							DescriptorValue: entry.HeaderValueMatch.Value,
+							ExpectMatch:     wrapperspb.Bool(entry.HeaderValueMatch.ExpectMatch),
+							Headers:         headerMatcher(entry.HeaderValueMatch.Headers),
 						},
 					},
 				})

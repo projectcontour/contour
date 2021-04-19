@@ -364,9 +364,10 @@ type RateLimitDescriptor struct {
 // RateLimitDescriptorEntry is an entry in a rate limit descriptor.
 // Exactly one field should be non-nil.
 type RateLimitDescriptorEntry struct {
-	GenericKey    *GenericKeyDescriptorEntry
-	HeaderMatch   *HeaderMatchDescriptorEntry
-	RemoteAddress *RemoteAddressDescriptorEntry
+	GenericKey       *GenericKeyDescriptorEntry
+	HeaderMatch      *HeaderMatchDescriptorEntry
+	HeaderValueMatch *HeaderValueMatchDescriptorEntry
+	RemoteAddress    *RemoteAddressDescriptorEntry
 }
 
 // GenericKeyDescriptorEntry  configures a descriptor entry
@@ -382,6 +383,12 @@ type GenericKeyDescriptorEntry struct {
 type HeaderMatchDescriptorEntry struct {
 	HeaderName string
 	Key        string
+}
+
+type HeaderValueMatchDescriptorEntry struct {
+	Headers     []HeaderMatchCondition
+	ExpectMatch bool
+	Value       string
 }
 
 // RemoteAddressDescriptorEntry configures a descriptor entry

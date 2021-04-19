@@ -411,6 +411,12 @@ type RateLimitDescriptorEntry struct {
 	// +optional
 	RequestHeader *RequestHeaderDescriptor `json:"requestHeader,omitempty"`
 
+	// RequestHeaderValueMatch defines a descriptor entry that's populated
+	// if the request's headers match a set of 1+ match criteria. The
+	// descriptor key is "header_match", and the descriptor value is static.
+	// +optional
+	RequestHeaderValueMatch *RequestHeaderValueMatchDescriptor `json:"requestHeaderValueMatch,omitempty"`
+
 	// RemoteAddress defines a descriptor entry with a key of "remote_address"
 	// and a value equal to the client's IP address (from x-forwarded-for).
 	// +optional
@@ -444,6 +450,28 @@ type RequestHeaderDescriptor struct {
 	// +required
 	// +kubebuilder:validation:MinLength=1
 	DescriptorKey string `json:"descriptorKey,omitempty"`
+}
+
+// RequestHeaderValueMatchDescriptor defines a descriptor entry that's populated
+// if the request's headers match a set of 1+ match criteria. The descriptor key
+// is "header_match", and the descriptor value is statically defined.
+type RequestHeaderValueMatchDescriptor struct {
+	// Headers is a list of 1+ match criteria to apply against the request
+	// to determine whether to populate the descriptor entry or not.
+	// +kubebuilder:validation:MinItems=1
+	Headers []HeaderMatchCondition `json:"headers,omitempty"`
+
+	// ExpectMatch defines whether the request must positively match the match
+	// criteria in order to generate a descriptor entry (i.e. true), or not
+	// match the match criteria in order to generate a descriptor entry (i.e. false).
+	// The default is true.
+	// +kubebuilder:default=true
+	ExpectMatch bool `json:"expectMatch,omitempty"`
+
+	// Value defines the value of the descriptor entry.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	Value string `json:"value,omitempty"`
 }
 
 // RemoteAddressDescriptor defines a descriptor entry with a key of
