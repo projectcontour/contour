@@ -72,6 +72,26 @@ $apply:
 
 ---
 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-exact
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-exact
+
+---
+
 apiVersion: networking.x-k8s.io/v1alpha1
 kind: GatewayClass
 metadata:
@@ -127,6 +147,13 @@ spec:
         port: 80
     - matches:
       - path:
+          type: Exact
+          value: /path/exact
+      forwardTo:
+      - serviceName: echo-slash-exact
+        port: 80
+    - matches:
+      - path:
           type: Prefix
           value: /
       forwardTo:
@@ -145,7 +172,11 @@ cases := [
   [ "/path/prefix", "echo-slash-noprefix" ],
   [ "/path/prefixfoo", "echo-slash-noprefix" ],
   [ "/path/prefix/", "echo-slash-prefix" ],
+  [ "/path/exact", "echo-slash-exact" ],
   [ "/path/prefix/foo", "echo-slash-prefix" ],
+  [ "/path/exactfoo", "echo-slash-default" ],
+  [ "/path/exact/", "echo-slash-default" ],
+  [ "/path/exact/foo", "echo-slash-default" ],
 ]
 
 # NOTE(jpeach): the path formatting matters in the request construction

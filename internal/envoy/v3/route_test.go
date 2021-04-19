@@ -554,6 +554,37 @@ func TestRouteRoute(t *testing.T) {
 	}
 }
 
+func TestRouteDirectResponse(t *testing.T) {
+	tests := map[string]struct {
+		directResponse *dag.DirectResponse
+		want           *envoy_route_v3.Route_DirectResponse
+	}{
+		"503": {
+			directResponse: &dag.DirectResponse{StatusCode: 503},
+			want: &envoy_route_v3.Route_DirectResponse{
+				DirectResponse: &envoy_route_v3.DirectResponseAction{
+					Status: 503,
+				},
+			},
+		},
+		"402": {
+			directResponse: &dag.DirectResponse{StatusCode: 402},
+			want: &envoy_route_v3.Route_DirectResponse{
+				DirectResponse: &envoy_route_v3.DirectResponseAction{
+					Status: 402,
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := RouteDirectResponse(tc.directResponse)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
 func TestWeightedClusters(t *testing.T) {
 	tests := map[string]struct {
 		clusters []*dag.Cluster
@@ -1048,15 +1079,42 @@ func TestRouteMatch(t *testing.T) {
 				}},
 			},
 		},
-		"path prefix": {
+		"path prefix string prefix": {
 			route: &dag.Route{
 				PathMatchCondition: &dag.PrefixMatchCondition{
-					Prefix: "/foo",
+					Prefix:          "/foo",
+					PrefixMatchType: dag.PrefixMatchString,
 				},
 			},
 			want: &envoy_route_v3.RouteMatch{
 				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
 					Prefix: "/foo",
+				},
+			},
+		},
+		"path prefix match segment": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo",
+					PrefixMatchType: dag.PrefixMatchSegment,
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
+					SafeRegex: SafeRegexMatch(`/foo((\/).*)?`),
+				},
+			},
+		},
+		"path prefix match segment with regex meta char": {
+			route: &dag.Route{
+				PathMatchCondition: &dag.PrefixMatchCondition{
+					Prefix:          "/foo.bar",
+					PrefixMatchType: dag.PrefixMatchSegment,
+				},
+			},
+			want: &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
+					SafeRegex: SafeRegexMatch(`/foo\.bar((\/).*)?`),
 				},
 			},
 		},

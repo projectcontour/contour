@@ -469,6 +469,16 @@ func TestHeadersPolicy(t *testing.T) {
 				Remove: []string{"X-Sensitive-Header"},
 			},
 		},
+		"default headers with nil object headers": {
+			hp: nil,
+			dhp: HeadersPolicy{
+				Remove: []string{"X-Sensitive-Header"},
+			},
+			want: HeadersPolicy{
+				Set:    map[string]string{},
+				Remove: []string{"X-Sensitive-Header"},
+			},
+		},
 	}
 
 	dynamicHeaders := map[string]string{

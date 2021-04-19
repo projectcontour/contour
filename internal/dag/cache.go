@@ -22,6 +22,7 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
+	ingress_validation "github.com/projectcontour/contour/internal/validation/ingress"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -30,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -41,9 +43,9 @@ type KubernetesCache struct {
 	// namespace.
 	RootNamespaces []string
 
-	// Contour's IngressClass.
+	// Contour's IngressClassName.
 	// If not set, defaults to DEFAULT_INGRESS_CLASS.
-	IngressClass string
+	IngressClassName string
 
 	// ConfiguredGateway defines the current Gateway which Contour is configured to watch.
 	ConfiguredGateway types.NamespacedName
@@ -52,7 +54,7 @@ type KubernetesCache struct {
 	ConfiguredSecretRefs []*types.NamespacedName
 
 	ingresses                 map[types.NamespacedName]*networking_v1.Ingress
-	ingressclasses            map[string]*networking_v1.IngressClass
+	ingressclass              *networking_v1.IngressClass
 	httpproxies               map[types.NamespacedName]*contour_api_v1.HTTPProxy
 	secrets                   map[types.NamespacedName]*v1.Secret
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
@@ -61,6 +63,8 @@ type KubernetesCache struct {
 	gateway                   *gatewayapi_v1alpha1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute
+	tcproutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.TCPRoute
+	udproutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.UDPRoute
 	backendpolicies           map[types.NamespacedName]*gatewayapi_v1alpha1.BackendPolicy
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
@@ -72,36 +76,67 @@ type KubernetesCache struct {
 // init creates the internal cache storage. It is called implicitly from the public API.
 func (kc *KubernetesCache) init() {
 	kc.ingresses = make(map[types.NamespacedName]*networking_v1.Ingress)
-	kc.ingressclasses = make(map[string]*networking_v1.IngressClass)
 	kc.httpproxies = make(map[types.NamespacedName]*contour_api_v1.HTTPProxy)
 	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
 	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute)
+	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.TCPRoute)
+	kc.udproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.UDPRoute)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute)
 	kc.backendpolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha1.BackendPolicy)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
 
-// matchesIngressClass returns true if the given Kubernetes object
-// belongs to the Ingress class that this cache is using.
-func (kc *KubernetesCache) matchesIngressClass(obj metav1.Object) bool {
+// matchesIngressClass returns true if the given IngressClass
+// is the one this cache is using.
+func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) bool {
+	// If no ingress class name set, we allow an ingress class that is named
+	// with the default Contour accepted name.
+	if kc.IngressClassName == "" {
+		return obj.Name == ingress_validation.DefaultClassName
+	}
+	// Otherwise, the name of the ingress class must match what has been
+	// configured.
+	if obj.Name == kc.IngressClassName {
+		return true
+	}
+	return false
+}
 
-	if !annotation.MatchesIngressClass(obj, kc.IngressClass) {
-		kind := k8s.KindOf(obj)
-
+// ingressMatchesIngressClass returns true if the given Ingress object matches
+// the configured ingress class name via annotation or Spec.IngressClassName
+// and emits a log message if there is no match.
+func (kc *KubernetesCache) ingressMatchesIngressClass(obj *networking_v1.Ingress) bool {
+	if !ingress_validation.MatchesIngressClassName(obj, kc.IngressClassName) {
+		// We didn't get a match so report this object is being ignored.
 		kc.WithField("name", obj.GetName()).
 			WithField("namespace", obj.GetNamespace()).
-			WithField("kind", kind).
+			WithField("kind", k8s.KindOf(obj)).
+			WithField("ingress-class-annotation", annotation.IngressClass(obj)).
+			WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
+			WithField("target-ingress-class", kc.IngressClassName).
+			Debug("ignoring object with unmatched ingress class")
+		return false
+	}
+	return true
+}
+
+// matchesIngressClassAnnotation returns true if the given Kubernetes object
+// belongs to the Ingress class that this cache is using.
+func (kc *KubernetesCache) matchesIngressClassAnnotation(obj metav1.Object) bool {
+	if !annotation.MatchesIngressClass(obj, kc.IngressClassName) {
+		kc.WithField("name", obj.GetName()).
+			WithField("namespace", obj.GetNamespace()).
+			WithField("kind", k8s.KindOf(obj)).
 			WithField("ingress-class", annotation.IngressClass(obj)).
-			WithField("target-ingress-class", kc.IngressClass).
+			WithField("target-ingress-class", kc.IngressClassName).
 			Debug("ignoring object with unmatched ingress class")
 		return false
 	}
 
 	return true
-
 }
 
 // matchesGateway returns true if the given Kubernetes object
@@ -173,22 +208,25 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.namespaces[obj.Name] = obj
 		return true
 	case *v1beta1.Ingress:
-		if kc.matchesIngressClass(obj) {
-			// Convert the v1beta1 object to v1 before adding to the
-			// local ingress cache for easier processing later on.
-			kc.ingresses[k8s.NamespacedNameOf(obj)] = toV1Ingress(obj)
+		// Convert the v1beta1 object to v1 before adding to the
+		// local ingress cache for easier processing later on.
+		objV1 := toV1Ingress(obj)
+		if kc.ingressMatchesIngressClass(objV1) {
+			kc.ingresses[k8s.NamespacedNameOf(objV1)] = objV1
 			return true
 		}
 	case *networking_v1.Ingress:
-		if kc.matchesIngressClass(obj) {
+		if kc.ingressMatchesIngressClass(obj) {
 			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		}
 	case *networking_v1.IngressClass:
-		kc.ingressclasses[obj.Name] = obj
-		return true
-	case *contour_api_v1.HTTPProxy:
 		if kc.matchesIngressClass(obj) {
+			kc.ingressclass = obj
+			return true
+		}
+	case *contour_api_v1.HTTPProxy:
+		if kc.matchesIngressClassAnnotation(obj) {
 			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		}
@@ -197,14 +235,17 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		return true
 	case *gatewayapi_v1alpha1.Gateway:
 		if kc.matchesGateway(obj) {
-			kc.WithField("experimental", "gateway-api").WithField("name", obj.Name).WithField("namespace", obj.Namespace).Debug("Adding Gateway")
 			kc.gateway = obj
 			return true
 		}
 	case *gatewayapi_v1alpha1.HTTPRoute:
-		m := k8s.NamespacedNameOf(obj)
-		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding HTTPRoute")
 		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
+		return true
+	case *gatewayapi_v1alpha1.TCPRoute:
+		kc.tcproutes[k8s.NamespacedNameOf(obj)] = obj
+		return true
+	case *gatewayapi_v1alpha1.UDPRoute:
+		kc.udproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *gatewayapi_v1alpha1.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
@@ -262,7 +303,10 @@ func toV1Ingress(obj *v1beta1.Ingress) *networking_v1.Ingress {
 			var paths []networking_v1.HTTPIngressPath
 
 			for _, p := range r.HTTP.Paths {
-				var pathType networking_v1.PathType
+				// Default to implementation specific path type if not set.
+				// In practice this is mostly to ensure tests do not panic as a
+				// a real resource cannot be created without a path type set.
+				pathType := networking_v1.PathTypeImplementationSpecific
 				if p.PathType != nil {
 					switch *p.PathType {
 					case v1beta1.PathTypePrefix:
@@ -308,9 +352,10 @@ func toV1Ingress(obj *v1beta1.Ingress) *networking_v1.Ingress {
 	return &networking_v1.Ingress{
 		ObjectMeta: obj.ObjectMeta,
 		Spec: networking_v1.IngressSpec{
-			DefaultBackend: convertedDefaultBackend,
-			TLS:            convertedTLS,
-			Rules:          convertedIngressRules,
+			IngressClassName: obj.Spec.IngressClassName,
+			DefaultBackend:   convertedDefaultBackend,
+			TLS:              convertedTLS,
+			Rules:            convertedIngressRules,
 		},
 	}
 }
@@ -366,9 +411,11 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		delete(kc.ingresses, m)
 		return ok
 	case *networking_v1.IngressClass:
-		_, ok := kc.ingressclasses[obj.Name]
-		delete(kc.ingressclasses, obj.Name)
-		return ok
+		if kc.matchesIngressClass(obj) {
+			kc.ingressclass = nil
+			return true
+		}
+		return false
 	case *contour_api_v1.HTTPProxy:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httpproxies[m]
@@ -381,7 +428,6 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		return ok
 	case *gatewayapi_v1alpha1.Gateway:
 		if kc.matchesGateway(obj) {
-			kc.WithField("experimental", "gateway-api").WithField("name", obj.Name).WithField("namespace", obj.Namespace).Debug("Removing Gateway")
 			kc.gateway = nil
 			return true
 		}
@@ -389,8 +435,17 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 	case *gatewayapi_v1alpha1.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httproutes[m]
-		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing HTTPRoute")
 		delete(kc.httproutes, m)
+		return ok
+	case *gatewayapi_v1alpha1.TCPRoute:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.tcproutes[m]
+		delete(kc.tcproutes, m)
+		return ok
+	case *gatewayapi_v1alpha1.UDPRoute:
+		m := k8s.NamespacedNameOf(obj)
+		_, ok := kc.udproutes[m]
+		delete(kc.udproutes, m)
 		return ok
 	case *gatewayapi_v1alpha1.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)

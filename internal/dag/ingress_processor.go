@@ -87,7 +87,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 			// ahead and create the SecureVirtualHost for this
 			// Ingress.
 			for _, host := range tls.Hosts {
-				svhost := p.dag.EnsureSecureVirtualHost(host)
+				svhost := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
 				svhost.Secret = sec
 				// default to a minimum TLS version of 1.2 if it's not specified
 				svhost.MinTLSVersion = annotation.MinTLSVersion(annotation.ContourAnnotation(ing, "tls-minimum-protocol-version"), "1.2")
@@ -132,6 +132,8 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 
 	for _, httppath := range httppaths(rule) {
 		path := stringOrDefault(httppath.Path, "/")
+		// Default to implementation specific path matching if not set.
+		pathType := derefPathTypeOr(httppath.PathType, networking_v1.PathTypeImplementationSpecific)
 		be := httppath.Backend
 		m := types.NamespacedName{Name: be.Service.Name, Namespace: ing.Namespace}
 
@@ -152,7 +154,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 			continue
 		}
 
-		r, err := route(ing, rule.Host, path, s, clientCertSecret, p.FieldLogger)
+		r, err := route(ing, rule.Host, path, pathType, s, clientCertSecret, p.FieldLogger)
 		if err != nil {
 			p.WithError(err).
 				WithField("name", ing.GetName()).
@@ -164,14 +166,14 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
-			vhost := p.dag.EnsureVirtualHost(host)
+			vhost := p.dag.EnsureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_http"})
 			vhost.addRoute(r)
 		}
 
 		// computeSecureVirtualhosts will have populated b.securevirtualhosts
 		// with the names of tls enabled ingress objects. If host exists then
 		// it is correctly configured for TLS.
-		if svh := p.dag.GetSecureVirtualHost(host); svh != nil && host != "*" {
+		if svh := p.dag.GetSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"}); svh != nil && host != "*" {
 			svh.addRoute(r)
 		}
 	}
@@ -182,7 +184,7 @@ const singleDNSLabelWildcardRegex = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?"
 var _ = regexp.MustCompile(singleDNSLabelWildcardRegex)
 
 // route builds a dag.Route for the supplied Ingress.
-func route(ingress *networking_v1.Ingress, host string, path string, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) (*Route, error) {
+func route(ingress *networking_v1.Ingress, host string, path string, pathType networking_v1.PathType, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) (*Route, error) {
 	log = log.WithFields(logrus.Fields{
 		"name":      ingress.Name,
 		"namespace": ingress.Namespace,
@@ -200,17 +202,33 @@ func route(ingress *networking_v1.Ingress, host string, path string, service *Se
 		}},
 	}
 
-	if strings.ContainsAny(path, "^+*[]%") {
-		// validate the regex
-		if err := ValidateRegex(path); err != nil {
-			return nil, err
+	switch pathType {
+	case networking_v1.PathTypePrefix:
+		prefixMatchType := PrefixMatchSegment
+		// An "all paths" prefix should be treated as a generic string prefix
+		// match.
+		if path == "/" {
+			prefixMatchType = PrefixMatchString
+		} else {
+			// Strip trailing slashes. Ensures /foo matches prefix /foo/
+			path = strings.TrimRight(path, "/")
 		}
-
-		r.PathMatchCondition = &RegexMatchCondition{Regex: path}
-		return r, nil
+		r.PathMatchCondition = &PrefixMatchCondition{Prefix: path, PrefixMatchType: prefixMatchType}
+	case networking_v1.PathTypeExact:
+		r.PathMatchCondition = &ExactMatchCondition{Path: path}
+	case networking_v1.PathTypeImplementationSpecific:
+		// If a path "looks like" a regex we give a regex path match.
+		// Otherwise you get a string prefix match.
+		if strings.ContainsAny(path, "^+*[]%") {
+			// validate the regex
+			if err := ValidateRegex(path); err != nil {
+				return nil, err
+			}
+			r.PathMatchCondition = &RegexMatchCondition{Regex: path}
+		} else {
+			r.PathMatchCondition = &PrefixMatchCondition{Prefix: path, PrefixMatchType: PrefixMatchString}
+		}
 	}
-
-	r.PathMatchCondition = &PrefixMatchCondition{Prefix: path}
 
 	// If we have a wildcard match, add a header match regex rule to match the
 	// hostname so we can be sure to only match one DNS label. This is required
@@ -267,6 +285,13 @@ func stringOrDefault(s, def string) string {
 		return def
 	}
 	return s
+}
+
+func derefPathTypeOr(ptr *networking_v1.PathType, def networking_v1.PathType) networking_v1.PathType {
+	if ptr != nil {
+		return *ptr
+	}
+	return def
 }
 
 // httppaths returns a slice of HTTPIngressPath values for a given IngressRule.

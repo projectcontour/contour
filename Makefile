@@ -7,7 +7,7 @@ SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.17.1
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.18.2
 
 # The version of Jekyll is pinned in site/Gemfile.lock.
 # https://docs.netlify.com/configure-builds/common-configurations/#jekyll
@@ -335,7 +335,6 @@ check-integration:
 .PHONY: integration ## Run integration tests against a real k8s cluster
 integration: check-integration
 	./_integration/testsuite/make-kind-cluster.sh
-	./_integration/testsuite/install-gateway-api.sh
 	./_integration/testsuite/install-contour-working.sh
 	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/ingress/*.yaml ./_integration/testsuite/httpproxy/*.yaml ./_integration/testsuite/gatewayapi/*.yaml
 	./_integration/testsuite/cleanup.sh

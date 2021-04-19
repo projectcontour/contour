@@ -111,3 +111,20 @@ response_header_has_prefix(response_object, header_name, header_prefix) = r {
     header_name, yaml.marshal(object.get(response.body(response_object), "Headers", {}))
   ])
 }
+
+# response_header_does_not_have(response_object, header_name)
+#
+# Checks whether the response body does not contain the matching header.
+response_header_does_not_have(response_object, header_name) = r {
+  # Pass if the header is there and contains the wanted value.
+  response_body := response.body(response_object)
+  response_headers := object.get(response_body, "headers", {})
+  values := response_headers[header_name]
+  r := result.Passf("value of response header %q was not removed", [header_name])
+} else  = r {
+  # Error if the header is present.
+  response_body := response.body(response_object)
+  response_headers := object.get(response_body, "headers", {})
+  values := response_headers[header_name]
+  r := result.Errorf("value of response header %q is %q, wanted removed", [header_name, values])
+}

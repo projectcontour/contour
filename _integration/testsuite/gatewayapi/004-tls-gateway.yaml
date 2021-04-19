@@ -1,0 +1,237 @@
+# Copyright Project Contour Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+import data.contour.resources
+
+# Ensure that cert-manager is installed.
+# Version check the certificates resource.
+
+Group := "cert-manager.io"
+Version := "v1"
+
+have_certmanager_version {
+  v := resources.versions["certificates"]
+  v[_].Group == Group
+  v[_].Version == Version
+}
+
+skip[msg] {
+  not resources.is_supported("certificates")
+  msg := "cert-manager is not installed"
+}
+
+skip[msg] {
+  not have_certmanager_version
+
+  avail := resources.versions["certificates"]
+
+  msg := concat("\n", [
+  sprintf("cert-manager version %s/%s is not installed", [Group, Version]),
+  "available versions:",
+  yaml.marshal(avail)
+  ])
+}
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tlscert
+  namespace: projectcontour
+spec:
+  dnsNames:
+  - secure.projectcontour.io
+  secretName: tlscert
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-default
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-default
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-secure
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-secure
+
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: GatewayClass
+metadata:
+  name: contour-class
+spec:
+  controller: projectcontour.io/ingress-controller
+
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: Gateway
+metadata:
+  name: contour
+  namespace: projectcontour
+spec:
+  gatewayClassName: contour-class
+  listeners:
+    - protocol: HTTP
+      port: 80
+      routes:
+        kind: HTTPRoute
+        namespaces:
+          from: "All"
+        selector:
+          matchLabels:
+            type: insecure
+    - protocol: HTTPS
+      port: 443
+      tls:
+        certificateRef:
+          kind: Secret
+          group: core
+          name: tlscert
+      routes:
+        kind: HTTPRoute
+        namespaces:
+          from: "All"
+        selector:
+          matchLabels:
+            type: secure
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: HTTPRoute
+metadata:
+  name: http-filter-1
+  labels:
+    type: insecure
+spec:
+  hostnames:
+    - secure.projectcontour.io
+  rules:
+    - matches:
+      - path:
+          type: Prefix
+          value: /
+      forwardTo:
+      - serviceName: echo-slash-default
+        port: 80
+
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: HTTPRoute
+metadata:
+  name: http-filter-2
+  labels:
+    type: secure
+spec:
+  hostnames:
+    - secure.projectcontour.io
+  rules:
+    - matches:
+      - path:
+          type: Prefix
+          value: /
+      forwardTo:
+      - serviceName: echo-slash-secure
+        port: 80
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+# Ensure http (insecure) request returns 200 status code.
+Response := client.Get({
+  "url": url.http("/"),
+    "headers": {
+      "Host": "secure.projectcontour.io",
+      "User-Agent": client.ua("insecure"),
+  },
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
+}
+
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, "echo-slash-default")
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+# Ensure https (secure) request returns 200 status code.
+Response := client.Get({
+  "url": url.https("/"),
+  "headers": {
+    "Host": "secure.projectcontour.io",
+    "User-Agent": client.ua("secure"),
+  },
+  "tls_insecure_skip_verify": true,
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
+}
+
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, "echo-slash-secure")
+}

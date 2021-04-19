@@ -56,6 +56,10 @@ func RouteAuthzContext(settings map[string]string) *any.Any {
 	)
 }
 
+const prefixPathMatchSegmentRegex = `((\/).*)?`
+
+var _ = regexp.MustCompile(prefixPathMatchSegmentRegex)
+
 // RouteMatch creates a *envoy_route_v3.RouteMatch for the supplied *dag.Route.
 func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	switch c := route.PathMatchCondition.(type) {
@@ -67,11 +71,23 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
 	case *dag.PrefixMatchCondition:
-		return &envoy_route_v3.RouteMatch{
-			PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
-				Prefix: c.Prefix,
-			},
-			Headers: headerMatcher(route.HeaderMatchConditions),
+		switch c.PrefixMatchType {
+		case dag.PrefixMatchSegment:
+			return &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
+					SafeRegex: SafeRegexMatch(regexp.QuoteMeta(c.Prefix) + prefixPathMatchSegmentRegex),
+				},
+				Headers: headerMatcher(route.HeaderMatchConditions),
+			}
+		case dag.PrefixMatchString:
+			fallthrough
+		default:
+			return &envoy_route_v3.RouteMatch{
+				PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
+					Prefix: c.Prefix,
+				},
+				Headers: headerMatcher(route.HeaderMatchConditions),
+			}
 		}
 	case *dag.ExactMatchCondition:
 		return &envoy_route_v3.RouteMatch{
@@ -84,6 +100,17 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 		return &envoy_route_v3.RouteMatch{
 			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
+	}
+}
+
+// Route_DirectResponse creates a *envoy_route_v3.Route_DirectResponse for the
+// http status code supplied. This allows a direct response to a route request
+// with an HTTP status code without needing to route to a specific cluster.
+func RouteDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_DirectResponse {
+	return &envoy_route_v3.Route_DirectResponse{
+		DirectResponse: &envoy_route_v3.DirectResponseAction{
+			Status: response.StatusCode,
+		},
 	}
 }
 
@@ -242,7 +269,7 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
 			Weight: protobuf.UInt32(cluster.Weight),
 		}
 		if cluster.RequestHeadersPolicy != nil {
-			c.RequestHeadersToAdd = HeaderValueList(cluster.RequestHeadersPolicy.Set, false)
+			c.RequestHeadersToAdd = append(HeaderValueList(cluster.RequestHeadersPolicy.Set, false), HeaderValueList(cluster.RequestHeadersPolicy.Add, true)...)
 			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
 		}
 		if cluster.ResponseHeadersPolicy != nil {

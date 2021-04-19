@@ -240,7 +240,7 @@ spec:
                     type: string
                 type: object
               protocol:
-                description: Protocol may be used to specify (or override) the protocol used to reach this Service. Values may be tls, h2, h2c. If omitted, protocol-selection falls back on Service annotations.
+                description: Protocol may be used to specify (or override) the protocol used to reach this Service. Values may be h2 or h2c. If omitted, protocol-selection falls back on Service annotations.
                 enum:
                 - h2
                 - h2c
@@ -1906,11 +1906,23 @@ rules:
   - backendpolicies
   - gateways
   - httproutes
+  - tcproutes
   - tlsroutes
+  - udproutes
   verbs:
   - get
   - list
   - watch
+- apiGroups:
+  - networking.x-k8s.io
+  resources:
+  - backendpolicies/status
+  - httproutes/status
+  - tcproutes/status
+  - tlsroutes/status
+  - udproutes/status
+  verbs:
+  - update
 - apiGroups:
   - projectcontour.io
   resources:
@@ -2150,7 +2162,7 @@ spec:
         - --log-level info
         command:
         - envoy
-        image: docker.io/envoyproxy/envoy:v1.17.1
+        image: docker.io/envoyproxy/envoy:v1.18.2
         imagePullPolicy: IfNotPresent
         name: envoy
         env:

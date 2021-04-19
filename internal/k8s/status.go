@@ -73,6 +73,7 @@ type StatusUpdateHandler struct {
 
 func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 	gvk, err := suh.Clients.KindFor(upd.Resource)
+
 	if err != nil {
 		suh.Log.WithError(err).
 			WithField("name", upd.NamespacedName.Name).
@@ -110,7 +111,7 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 
 		newObj := upd.Mutator.Mutate(obj)
 
-		if IsStatusEqual(obj, newObj) {
+		if isStatusEqual(obj, newObj) {
 			suh.Log.WithField("name", upd.NamespacedName.Name).
 				WithField("namespace", upd.NamespacedName.Namespace).
 				Debug("update was a no-op")

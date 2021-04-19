@@ -390,7 +390,7 @@ func TestMatchIngressClass(t *testing.T) {
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS,
+						"kubernetes.io/ingress.class": DEFAULT_INGRESS_CLASS_NAME,
 					},
 				},
 			},
@@ -402,7 +402,7 @@ func TestMatchIngressClass(t *testing.T) {
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": DEFAULT_INGRESS_CLASS,
+						"projectcontour.io/ingress.class": DEFAULT_INGRESS_CLASS_NAME,
 					},
 				},
 			},
@@ -421,7 +421,7 @@ func TestMatchIngressClass(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			cases := []string{"", DEFAULT_INGRESS_CLASS}
+			cases := []string{"", DEFAULT_INGRESS_CLASS_NAME}
 			for i := 0; i < len(cases); i++ {
 				got := MatchesIngressClass(tc.fixture, cases[i])
 				if tc.want[i] != got {

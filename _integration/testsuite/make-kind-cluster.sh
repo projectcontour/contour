@@ -27,6 +27,7 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.20.2"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
 readonly WAITTIME=${WAITTIME:-5m}
+readonly GATEWAY_API_VERSION=v0.2.0
 
 readonly HERE=$(cd "$(dirname "$0")" && pwd)
 readonly REPO=$(cd "${HERE}/../.." && pwd)
@@ -70,3 +71,6 @@ done
 ${KUBECTL} apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=cert-manager deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deployments --for=condition=Available
+
+# Install Gateway API CRDs.
+${KUBECTL} kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=${GATEWAY_API_VERSION}" | ${KUBECTL} apply -f -

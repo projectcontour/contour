@@ -17,10 +17,12 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 // KindOf returns the kind string for the given Kubernetes object.
@@ -40,8 +42,12 @@ func KindOf(obj interface{}) string {
 			return "Endpoints"
 		case *v1beta1.Ingress:
 			return "Ingress"
+		case *networking_v1.Ingress:
+			return "Ingress"
 		case *contour_api_v1.HTTPProxy:
 			return "HTTPProxy"
+		case *gatewayapi_v1alpha1.HTTPRoute:
+			return "HTTPRoute"
 		case *contour_api_v1.TLSCertificateDelegation:
 			return "TLSCertificateDelegation"
 		case *v1alpha1.ExtensionService:

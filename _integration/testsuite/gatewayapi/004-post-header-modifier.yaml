@@ -1,0 +1,180 @@
+# Copyright Project Contour Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-header-filter
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-header-filter
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-header-nofilter
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-header-nofilter
+
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: Gateway
+metadata:
+  name: contour
+  namespace: projectcontour
+spec:
+  gatewayClassName: contour-class
+  listeners:
+    - protocol: HTTP
+      port: 80
+      routes:
+        kind: HTTPRoute
+        namespaces:
+          from: All
+        selector:
+          matchLabels:
+            app: filter
+
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: HTTPRoute
+metadata:
+  name: http-filter-1
+  labels:
+    app: filter
+spec:
+  hostnames:
+    - postfilter.projectcontour.io
+  rules:
+    - matches:
+      - path:
+          type: Prefix
+          value: /filter
+      forwardTo:
+      - serviceName: echo-header-filter
+        port: 80
+        filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              My-Header: Foo
+            set:
+              Replace-Header: Bar
+            remove:
+              - Other-Header
+    - matches:
+      - path:
+          type: Prefix
+          value: /nofilter
+      forwardTo:
+      - serviceName: echo-header-nofilter
+        port: 80
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+import data.contour.http.response
+import data.builtin.result
+
+Response := client.Get({
+  "method": "GET",
+  "url": url.http("/filter"),
+  "headers": {
+    "Host": "postfilter.projectcontour.io",
+    "Other-Header": "Remove",
+    "Replace-Header": "Tobe-Replaced",
+    "User-Agent": client.ua("request-header-filter"),
+  }
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
+}
+
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, "echo-header-filter")
+}
+
+check_for_host_header_add [msg] {
+  msg := expect.response_header_is(Response, "My-Header", "Foo")
+}
+
+check_for_host_header_remove [msg] {
+  msg := expect.response_header_does_not_have(Response, "Other-Header")
+}
+
+check_for_host_header_set [msg] {
+  msg := expect.response_header_is(Response, "Replace-Header", "Bar")
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+import data.contour.http.response
+import data.builtin.result
+
+Response := client.Get({
+  "method": "GET",
+  "url": url.http("/nofilter"),
+  "headers": {
+    "Host": "postfilter.projectcontour.io",
+    "Other-Header": "Exist",
+    "User-Agent": client.ua("request-header-filter"),
+  }
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
+}
+
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, "echo-header-nofilter")
+}
+
+check_for_host_header_add [msg] {
+  msg := expect.response_header_is(Response, "Other-Header", "Exist")
+}
+
+check_for_host_header_remove [msg] {
+  msg := expect.response_header_does_not_have(Response, "My-Header")
+}

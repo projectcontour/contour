@@ -604,10 +604,20 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"http listener on non default port": { // issue 72
 			ListenerConfig: ListenerConfig{
-				HTTPAddress:  "127.0.0.100",
-				HTTPPort:     9100,
-				HTTPSAddress: "127.0.0.200",
-				HTTPSPort:    9200,
+				HTTPListeners: map[string]Listener{
+					ENVOY_HTTP_LISTENER: {
+						Name:    ENVOY_HTTP_LISTENER,
+						Address: "127.0.0.100",
+						Port:    9100,
+					},
+				},
+				HTTPSListeners: map[string]Listener{
+					ENVOY_HTTPS_LISTENER: {
+						Name:    ENVOY_HTTPS_LISTENER,
+						Address: "127.0.0.200",
+						Port:    9200,
+					},
+				},
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{

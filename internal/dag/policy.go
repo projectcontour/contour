@@ -22,11 +22,13 @@ import (
 	"time"
 
 	networking_v1 "k8s.io/api/networking/v1"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -98,38 +100,41 @@ func headersPolicyService(defaultPolicy *HeadersPolicy, policy *contour_api_v1.H
 	if err != nil {
 		return nil, err
 	}
-	if userPolicy != nil {
-		if userPolicy.Set == nil {
-			userPolicy.Set = make(map[string]string, len(defaultPolicy.Set))
+	if userPolicy == nil {
+		userPolicy = &HeadersPolicy{}
+	}
+
+	if userPolicy.Set == nil {
+		userPolicy.Set = make(map[string]string, len(defaultPolicy.Set))
+	}
+	for k, v := range defaultPolicy.Set {
+		key := http.CanonicalHeaderKey(k)
+		if key == "Host" {
+			return nil, fmt.Errorf("rewriting %q header is not supported", key)
 		}
-		for k, v := range defaultPolicy.Set {
-			key := http.CanonicalHeaderKey(k)
-			if key == "Host" {
-				return nil, fmt.Errorf("rewriting %q header is not supported", key)
-			}
-			if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
-				return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
-			}
-			// if the user policy set on the object does not contain this header then use the default
-			if _, exists := userPolicy.Set[key]; !exists {
-				userPolicy.Set[key] = escapeHeaderValue(v, dynamicHeaders)
-			}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
 		}
-		// add any default remove header policy if not already set
-		remove := sets.NewString()
-		for _, entry := range userPolicy.Remove {
-			remove.Insert(entry)
-		}
-		for _, entry := range defaultPolicy.Remove {
-			key := http.CanonicalHeaderKey(entry)
-			if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
-				return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
-			}
-			if !remove.Has(key) {
-				userPolicy.Remove = append(userPolicy.Remove, key)
-			}
+		// if the user policy set on the object does not contain this header then use the default
+		if _, exists := userPolicy.Set[key]; !exists {
+			userPolicy.Set[key] = escapeHeaderValue(v, dynamicHeaders)
 		}
 	}
+	// add any default remove header policy if not already set
+	remove := sets.NewString()
+	for _, entry := range userPolicy.Remove {
+		remove.Insert(entry)
+	}
+	for _, entry := range defaultPolicy.Remove {
+		key := http.CanonicalHeaderKey(entry)
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			return nil, fmt.Errorf("invalid set header %q: %v", key, msgs)
+		}
+		if !remove.Has(key) {
+			userPolicy.Remove = append(userPolicy.Remove, key)
+		}
+	}
+
 	return userPolicy, nil
 }
 
@@ -183,6 +188,75 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 		HostRewrite: hostRewrite,
 		Remove:      rl,
 	}, nil
+}
+
+// headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPRequestHeaderFilter.
+// TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
+func headersPolicyGatewayAPI(hf *gatewayapi_v1alpha1.HTTPRequestHeaderFilter) (*HeadersPolicy, error) {
+	set, add := make(map[string]string, len(hf.Set)), make(map[string]string, len(hf.Add))
+	hostRewrite := ""
+	errlist := []error{}
+	for k, v := range hf.Set {
+		key := http.CanonicalHeaderKey(k)
+		if _, ok := set[key]; ok {
+			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
+			continue
+		}
+		if key == "Host" {
+			hostRewrite = v
+			continue
+		}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			errlist = append(errlist, fmt.Errorf("invalid set header %q: %v", key, msgs))
+			continue
+		}
+		set[key] = escapeHeaderValue(v, nil)
+	}
+	for k, v := range hf.Add {
+		key := http.CanonicalHeaderKey(k)
+		if _, ok := add[key]; ok {
+			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
+			continue
+		}
+		if key == "Host" {
+			hostRewrite = v
+			continue
+		}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			errlist = append(errlist, fmt.Errorf("invalid add header %q: %v", key, msgs))
+			continue
+		}
+		add[key] = escapeHeaderValue(v, nil)
+	}
+
+	remove := sets.NewString()
+	for _, k := range hf.Remove {
+		key := http.CanonicalHeaderKey(k)
+		if remove.Has(key) {
+			errlist = append(errlist, fmt.Errorf("duplicate header removal: %q", key))
+			continue
+		}
+		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
+			errlist = append(errlist, fmt.Errorf("invalid remove header %q: %v", key, msgs))
+			continue
+		}
+		remove.Insert(key)
+	}
+	rl := remove.List()
+
+	if len(set) == 0 {
+		set = nil
+	}
+	if len(rl) == 0 {
+		rl = nil
+	}
+
+	return &HeadersPolicy{
+		Add:         add,
+		Set:         set,
+		HostRewrite: hostRewrite,
+		Remove:      rl,
+	}, utilerrors.NewAggregate(errlist)
 }
 
 func escapeHeaderValue(value string, dynamicHeaders map[string]string) string {

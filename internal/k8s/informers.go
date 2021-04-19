@@ -53,7 +53,8 @@ func IngressV1Resources() []schema.GroupVersionResource {
 	}
 }
 
-// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gateways;httproutes;backendpolicies;tlsroutes,verbs=get;list;watch
+// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gateways;httproutes;backendpolicies;tlsroutes;tcproutes;udproutes,verbs=get;list;watch
+// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=httproutes/status;backendpolicies/status;tlsroutes/status;tcproutes/status;udproutes/status,verbs=update
 
 // GatewayAPIResources ...
 func GatewayAPIResources() []schema.GroupVersionResource {
@@ -73,8 +74,15 @@ func GatewayAPIResources() []schema.GroupVersionResource {
 		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
 		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
 		Resource: "tlsroutes",
-	},
-	}
+	}, {
+		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Resource: "tcproutes",
+	}, {
+		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Resource: "udproutes",
+	}}
 }
 
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
