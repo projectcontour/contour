@@ -117,7 +117,6 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			if selMatches && nsMatches {
 				// Empty Selector matches all routes.
 				matchingRoutes = append(matchingRoutes, route)
-				break
 			}
 		}
 

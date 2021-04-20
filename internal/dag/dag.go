@@ -360,19 +360,37 @@ type GlobalRateLimitPolicy struct {
 	Descriptors []*RateLimitDescriptor
 }
 
+// RateLimitDescriptor is a list of rate limit descriptor entries.
 type RateLimitDescriptor struct {
 	Entries []RateLimitDescriptorEntry
 }
 
+// RateLimitDescriptorEntry is an entry in a rate limit descriptor.
+// Exactly one field should be non-nil.
 type RateLimitDescriptorEntry struct {
-	GenericKeyKey   string
-	GenericKeyValue string
-
-	HeaderMatchHeaderName    string
-	HeaderMatchDescriptorKey string
-
-	RemoteAddress bool
+	GenericKey    *GenericKeyDescriptorEntry
+	HeaderMatch   *HeaderMatchDescriptorEntry
+	RemoteAddress *RemoteAddressDescriptorEntry
 }
+
+// GenericKeyDescriptorEntry  configures a descriptor entry
+// that has a static key & value.
+type GenericKeyDescriptorEntry struct {
+	Key   string
+	Value string
+}
+
+// HeaderMatchDescriptorEntry configures a descriptor entry
+// that's populated only if the specified header is present
+// on the request.
+type HeaderMatchDescriptorEntry struct {
+	HeaderName string
+	Key        string
+}
+
+// RemoteAddressDescriptorEntry configures a descriptor entry
+// that contains the remote address (i.e. client IP).
+type RemoteAddressDescriptorEntry struct{}
 
 // CORSPolicy allows setting the CORS policy
 type CORSPolicy struct {

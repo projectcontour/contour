@@ -105,16 +105,38 @@ func TestGlobalRateLimits(t *testing.T) {
 			descriptors: []*dag.RateLimitDescriptor{
 				{
 					Entries: []dag.RateLimitDescriptorEntry{
-						{RemoteAddress: true},
-						{GenericKeyValue: "generic-key-val"},
-						{GenericKeyKey: "generic-key-custom-key", GenericKeyValue: "generic-key-val"},
+						{
+							RemoteAddress: &dag.RemoteAddressDescriptorEntry{},
+						},
+						{
+							GenericKey: &dag.GenericKeyDescriptorEntry{
+								Value: "generic-key-val",
+							},
+						},
+						{
+							GenericKey: &dag.GenericKeyDescriptorEntry{
+								Key:   "generic-key-custom-key",
+								Value: "generic-key-val",
+							},
+						},
 					},
 				},
 				{
 					Entries: []dag.RateLimitDescriptorEntry{
-						{HeaderMatchHeaderName: "X-Header-1", HeaderMatchDescriptorKey: "foo"},
-						{RemoteAddress: true},
-						{GenericKeyValue: "generic-key-val-2"},
+						{
+							HeaderMatch: &dag.HeaderMatchDescriptorEntry{
+								HeaderName: "X-Header-1",
+								Key:        "foo",
+							},
+						},
+						{
+							RemoteAddress: &dag.RemoteAddressDescriptorEntry{},
+						},
+						{
+							GenericKey: &dag.GenericKeyDescriptorEntry{
+								Value: "generic-key-val-2",
+							},
+						},
 					},
 				},
 			},
