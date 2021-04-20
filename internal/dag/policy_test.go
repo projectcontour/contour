@@ -687,26 +687,32 @@ func TestRateLimitPolicy(t *testing.T) {
 						{
 							Entries: []RateLimitDescriptorEntry{
 								{
-									GenericKeyKey:   "generic-key-key",
-									GenericKeyValue: "generic-key-value",
+									GenericKey: &GenericKeyDescriptorEntry{
+										Key:   "generic-key-key",
+										Value: "generic-key-value",
+									},
 								},
 								{
-									RemoteAddress: true,
+									RemoteAddress: &RemoteAddressDescriptorEntry{},
 								},
 								{
-									HeaderMatchHeaderName:    "X-Header",
-									HeaderMatchDescriptorKey: "request-header-key",
+									HeaderMatch: &HeaderMatchDescriptorEntry{
+										HeaderName: "X-Header",
+										Key:        "request-header-key",
+									},
 								},
 							},
 						},
 						{
 							Entries: []RateLimitDescriptorEntry{
 								{
-									RemoteAddress: true,
+									RemoteAddress: &RemoteAddressDescriptorEntry{},
 								},
 								{
-									GenericKeyKey:   "generic-key-key-2",
-									GenericKeyValue: "generic-key-value-2",
+									GenericKey: &GenericKeyDescriptorEntry{
+										Key:   "generic-key-key-2",
+										Value: "generic-key-value-2",
+									},
 								},
 							},
 						},
@@ -773,7 +779,9 @@ func TestRateLimitPolicy(t *testing.T) {
 					Descriptors: []*RateLimitDescriptor{
 						{
 							Entries: []RateLimitDescriptorEntry{
-								{RemoteAddress: true},
+								{
+									RemoteAddress: &RemoteAddressDescriptorEntry{},
+								},
 							},
 						},
 					},
