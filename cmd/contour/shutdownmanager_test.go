@@ -62,6 +62,13 @@ func TestShutdownManager_HealthzHandler(t *testing.T) {
 	}
 }
 
+func TestShutdownManager_NewShutDownContextCheckDefaultAdminPort(t *testing.T) {
+	shutdownContext := newShutdownContext()
+	if (*shutdownContext).adminPort != 9001 {
+		t.Errorf("TestShutdownManager_NewShutDownContextWithoutAdminPort failed: expected shutdown port %d, got %d", 9001, (*shutdownContext).adminPort)
+	}
+}
+
 func TestShutdownManager_ShutdownReadyHandler_Success(t *testing.T) {
 	// Create a request to pass to our handler
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*500)
