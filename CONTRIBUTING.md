@@ -97,6 +97,8 @@ kind create cluster --config=./examples/kind/kind-expose-port.yaml --name=contou
 kubectl apply -f examples/contour
 ```
 
+_Note: The Contour Deployment/Service can be deleted if desired since it's not used._
+
 3. Find IP of local machine (e.g. `ifconfig` or similar depending on your environment)
 
 4. Edit Envoy Daemonset & change the xds-server value to your local IP address
@@ -118,10 +120,12 @@ Change `initContainers:` to look like this updating the IP and removing the thre
 
 5. Change your Contour code.
 
-6. Test using the local kind cluster by deploying resources into that cluster. Envoy will connect to your local Contour instance and get it's updated configuration allowing for local testing.
+6. Build & start Contour allowing Envoy to connect and get its configuration. 
 ```shell
 make install && contour serve --kubeconfig=$HOME/.kube/config --xds-address=0.0.0.0 --insecure 
 ```
+
+8. Test using the local kind cluster by deploying resources into that cluster. Many of our examples use `local.projectcontour.io` which is configured to point to `127.0.0.1` which allows requests to route to the local kind cluster for easy testing.
 
 7. Make more changes and repeat step #6.
 
