@@ -267,6 +267,100 @@ spec:
       port: 80
 ```
 
+#### Descriptors & descriptor entries
+
+A descriptor is a list of key-value pairs, i.e. entries, that are generated for a request. The entries can be generated based on different criteria. If any entry in a descriptor cannot generate a key-value pair for a given request, then the entire descriptor is not generated (see the [Envoy documentation][8] for more information). When a global rate limit policy defines multiple descriptors, then *all* descriptors that can be generated will be generated and sent to the rate limit service for consideration.
+
+Below are the supported types of descriptor entries.
+
+##### GenericKey
+
+A `GenericKey` descriptor entry defines a static key-value pair. For example:
+
+```yaml
+rateLimitPolicy:
+  global:
+    descriptors:
+      - entries:
+          - genericKey:
+              key: virtual-host-name
+              value: foo.bar.com
+```
+
+Produces a descriptor entry of `virtual-host-name=foo.bar.com`.
+
+The `key` field is optional and defaults to a value of `generic_key` if not specified.
+
+See the [Envoy documentation][4] for more information and examples.
+
+##### RemoteAddress
+
+A `RemoteAddress` descriptor entry has a key of `remote_address` and a value of the client IP address (using the trusted address from `x-forwarded-for`). For example:
+
+```yaml
+rateLimitPolicy:
+  global:
+    descriptors:
+      - entries:
+          - remoteAddress: {}
+```
+
+Produces a descriptor entry of `remote_address=<client IP>`.
+
+See the [Envoy documentation][5] for more information and examples.
+
+##### RequestHeader
+
+A `RequestHeader` descriptor entry has a static key and a value equal to the value of a specified header on the client request. If the header is not present, the descriptor entry is not generated. For example:
+
+```yaml
+rateLimitPolicy:
+  global:
+    descriptors:
+      - entries:
+          - requestHeader:
+              headerName: My-Header
+              descriptorKey: my-header-value
+```
+
+Produces a descriptor entry of `my-header-value=<value of My-Header>`, for a client request that has the `My-Header` header.
+
+See the [Envoy documentation][6] for more information and examples.
+
+##### RequestHeaderValueMatch
+
+A `RequestHeaderValueMatch` descriptor entry has a key of `header_match` and a static value. The entry is only generated if the client request's headers match a specified set of criteria. For example:
+
+```yaml
+rateLimitPolicy:
+  global:
+    descriptors:
+      - entries:
+          - requestHeaderValueMatch:
+              headers:
+                - name: My-Header
+                  notpresent: true
+                - name: My-Other-Header
+                  contains: contour
+              expectMatch: true
+              value: foo
+```
+
+Produces a descriptor entry of `header_match=foo`, for a client request that does not have the `My-Header` header, and does have the `My-Other-Header` header, with a value containing the substring "contour".
+
+Contour supports `present`, `notpresent`, `contains`, `notcontains`, `exact`, and `notexact` header match operators.
+
+The `expectMatch` field defaults to true if not specified. If true, the client request's headers must positively match the specified criteria in order for the descriptor entry to be generated. If false, the client request's header must *not* match the specified criteria in order for the descriptor entry to be generated.
+
+See the [Envoy documentation][7] for more information and examples.
+
+
+
 [1]: https://www.envoyproxy.io/docs/envoy/v1.17.0/configuration/http/http_filters/local_rate_limit_filter#config-http-filters-local-rate-limit
 [2]: https://github.com/envoyproxy/ratelimit
 [3]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/ratelimit/v3/rls.proto
+[4]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-ratelimit-action-generickey
+[5]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-ratelimit-action-remoteaddress
+[6]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-ratelimit-action-requestheaders
+[7]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-ratelimit-action-headervaluematch
+[8]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/rate_limit_filter#composing-actions
