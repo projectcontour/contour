@@ -139,6 +139,23 @@ func TestGlobalRateLimits(t *testing.T) {
 						},
 					},
 				},
+				{
+					Entries: []dag.RateLimitDescriptorEntry{
+						{
+							HeaderValueMatch: &dag.HeaderValueMatchDescriptorEntry{
+								Headers: []dag.HeaderMatchCondition{
+									{
+										Name:      "A-Header",
+										Value:     "foo",
+										MatchType: dag.HeaderMatchTypeExact,
+									},
+								},
+								ExpectMatch: true,
+								Value:       "A-Header-Equals-Foo",
+							},
+						},
+					},
+				},
 			},
 			want: []*envoy_route_v3.RateLimit{
 				{
@@ -184,6 +201,26 @@ func TestGlobalRateLimits(t *testing.T) {
 							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
 								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
 									DescriptorValue: "generic-key-val-2",
+								},
+							},
+						},
+					},
+				},
+				{
+					Actions: []*envoy_route_v3.RateLimit_Action{
+						{
+							ActionSpecifier: &envoy_route_v3.RateLimit_Action_HeaderValueMatch_{
+								HeaderValueMatch: &envoy_route_v3.RateLimit_Action_HeaderValueMatch{
+									Headers: []*envoy_route_v3.HeaderMatcher{
+										{
+											Name: "A-Header",
+											HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_ExactMatch{
+												ExactMatch: "foo",
+											},
+										},
+									},
+									ExpectMatch:     wrapperspb.Bool(true),
+									DescriptorValue: "A-Header-Equals-Foo",
 								},
 							},
 						},

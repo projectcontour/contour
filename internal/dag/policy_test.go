@@ -751,6 +751,52 @@ func TestRateLimitPolicy(t *testing.T) {
 			},
 			wantErr: "rate limit descriptor entry must have exactly one field set",
 		},
+		"global - header value match": {
+			in: &contour_api_v1.RateLimitPolicy{
+				Global: &contour_api_v1.GlobalRateLimitPolicy{
+					Descriptors: []contour_api_v1.RateLimitDescriptor{
+						{
+							Entries: []contour_api_v1.RateLimitDescriptorEntry{
+								{
+									RequestHeaderValueMatch: &contour_api_v1.RequestHeaderValueMatchDescriptor{
+										Headers: []contour_api_v1.HeaderMatchCondition{
+											{
+												Name:    "X-Header",
+												Present: true,
+											},
+										},
+										ExpectMatch: true,
+										Value:       "header-is-present",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &RateLimitPolicy{
+				Global: &GlobalRateLimitPolicy{
+					Descriptors: []*RateLimitDescriptor{
+						{
+							Entries: []RateLimitDescriptorEntry{
+								{
+									HeaderValueMatch: &HeaderValueMatchDescriptorEntry{
+										Headers: []HeaderMatchCondition{
+											{
+												Name:      "X-Header",
+												MatchType: "present",
+											},
+										},
+										ExpectMatch: true,
+										Value:       "header-is-present",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"global and local": {
 			in: &contour_api_v1.RateLimitPolicy{
 				Local: &contour_api_v1.LocalRateLimitPolicy{

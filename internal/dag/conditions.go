@@ -70,39 +70,49 @@ func pathMatchConditionsValid(conds []contour_api_v1.MatchCondition) error {
 }
 
 func mergeHeaderMatchConditions(conds []contour_api_v1.MatchCondition) []HeaderMatchCondition {
-	var hc []HeaderMatchCondition
+	var headerConditions []contour_api_v1.HeaderMatchCondition
 	for _, cond := range conds {
+		if cond.Header != nil {
+			headerConditions = append(headerConditions, *cond.Header)
+		}
+	}
+
+	return headerMatchConditions(headerConditions)
+}
+
+func headerMatchConditions(conditions []contour_api_v1.HeaderMatchCondition) []HeaderMatchCondition {
+	var hc []HeaderMatchCondition
+
+	for _, cond := range conditions {
 		switch {
-		case cond.Header == nil:
-			// skip it
-		case cond.Header.Present:
+		case cond.Present:
 			hc = append(hc, HeaderMatchCondition{
-				Name:      cond.Header.Name,
+				Name:      cond.Name,
 				MatchType: HeaderMatchTypePresent,
 			})
-		case cond.Header.Contains != "":
+		case cond.Contains != "":
 			hc = append(hc, HeaderMatchCondition{
-				Name:      cond.Header.Name,
-				Value:     cond.Header.Contains,
+				Name:      cond.Name,
+				Value:     cond.Contains,
 				MatchType: HeaderMatchTypeContains,
 			})
-		case cond.Header.NotContains != "":
+		case cond.NotContains != "":
 			hc = append(hc, HeaderMatchCondition{
-				Name:      cond.Header.Name,
-				Value:     cond.Header.NotContains,
+				Name:      cond.Name,
+				Value:     cond.NotContains,
 				MatchType: HeaderMatchTypeContains,
 				Invert:    true,
 			})
-		case cond.Header.Exact != "":
+		case cond.Exact != "":
 			hc = append(hc, HeaderMatchCondition{
-				Name:      cond.Header.Name,
-				Value:     cond.Header.Exact,
+				Name:      cond.Name,
+				Value:     cond.Exact,
 				MatchType: HeaderMatchTypeExact,
 			})
-		case cond.Header.NotExact != "":
+		case cond.NotExact != "":
 			hc = append(hc, HeaderMatchCondition{
-				Name:      cond.Header.Name,
-				Value:     cond.Header.NotExact,
+				Name:      cond.Name,
+				Value:     cond.NotExact,
 				MatchType: HeaderMatchTypeExact,
 				Invert:    true,
 			})
