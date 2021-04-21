@@ -78,6 +78,56 @@ make lint
 
 Note: The lint tasks require the [codespell](https://github.com/codespell-project/codespell) application. Be sure to install version 2.0 or newer before running the lint tasks.
 
+### Local Development/Testing
+
+It's very helpful to be able to test out changes to Contour locally without building images and pushing into clusters.
+
+To accomplish this, Envoy can be run inside a Kubernetes cluster, typically a `kind` cluster.
+Then Contour is run on your local machine and Envoy will be configured to look for Contour running on your machine vs running in the cluster.
+
+1. Create a kind cluster
+
+```shell
+kind create cluster --config=./examples/kind/kind-expose-port.yaml --name=contour
+```
+
+2. Deploy Contour & Deps to cluster:
+
+```shell
+kubectl apply -f examples/contour
+```
+
+_Note: The Contour Deployment/Service can be deleted if desired since it's not used._
+
+3. Find IP of local machine (e.g. `ifconfig` or similar depending on your environment)
+
+4. Edit Envoy Daemonset & change the xds-server value to your local IP address
+```shell
+kubectl edit ds envoy -n projectcontour
+```
+
+Change `initContainers:` to look like this updating the IP and removing the three envoy cert flags:
+```shell
+ initContainers:
+  - args:
+    - bootstrap
+    - /config/envoy.json
+    - --xds-address=<YOUR_IP_ADDRESS>
+    - --xds-port=8001
+    - --xds-resource-version=v3
+    - --resources-dir=/config/resources
+```
+
+5. Change your Contour code.
+
+6. Build & start Contour allowing Envoy to connect and get its configuration. 
+```shell
+make install && contour serve --kubeconfig=$HOME/.kube/config --xds-address=0.0.0.0 --insecure 
+```
+
+8. Test using the local kind cluster by deploying resources into that cluster. Many of our examples use `local.projectcontour.io` which is configured to point to `127.0.0.1` which allows requests to route to the local kind cluster for easy testing.
+
+7. Make more changes and repeat step #6.
 
 ## Contribution workflow
 
