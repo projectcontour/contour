@@ -2824,7 +2824,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 	run(t, "spec.rules.forwardTo.serviceName invalid on two matches", testcase{
 		objs: []interface{}{
 			gateway,
-			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",

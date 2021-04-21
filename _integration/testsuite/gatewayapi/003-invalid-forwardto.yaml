@@ -116,58 +116,58 @@ Response := client.Get({
 check_for_status_code [msg] {
   msg := expect.response_status_is(Response, 200)
 }
-#
-#---
-#
-#import data.contour.http.client
-#import data.contour.http.client.url
-#import data.contour.http.expect
-#
-#Response := client.Get({
-#  "url": url.http("/invalidref"),
-#  "headers": {
-#    "Host": "forwardto.projectcontour.io",
-#    "User-Agent": client.ua("invalid-forwardto"),
-#  },
-#})
-#
-#check_for_status_code [msg] {
-#  msg := expect.response_status_is(Response, 503)
-#}
-#
-#---
-#
-#import data.contour.http.client
-#import data.contour.http.client.url
-#import data.contour.http.expect
-#
-#Response := client.Get({
-#  "url": url.http("/invalidport"),
-#  "headers": {
-#   "Host": "forwardto.projectcontour.io",
-#   "User-Agent": client.ua("invalid-forwardto"),
-#  },
-#})
-#
-#check_for_status_code [msg] {
-#  msg := expect.response_status_is(Response, 503)
-#}
-#
-#---
-#
-#import data.contour.http.client
-#import data.contour.http.client.url
-#import data.contour.http.expect
-#
-#Response := client.Get({
-#  "url": url.http("/invalidservicename"),
-#  "headers": {
-#    "Host": "forwardto.projectcontour.io",
-#    "User-Agent": client.ua("invalid-forwardto"),
-#  },
-#})
-#
-#check_for_status_code [msg] {
-#  msg := expect.response_status_is(Response, 503)
-#}
-#
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+Response := client.Get({
+  "url": url.http("/invalidref"),
+  "headers": {
+    "Host": "forwardto.projectcontour.io",
+    "User-Agent": client.ua("invalid-forwardto"),
+  },
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 503)
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+Response := client.Get({
+  "url": url.http("/invalidport"),
+  "headers": {
+   "Host": "forwardto.projectcontour.io",
+   "User-Agent": client.ua("invalid-forwardto"),
+  },
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 503)
+}
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+Response := client.Get({
+  "url": url.http("/invalidservicename"),
+  "headers": {
+    "Host": "forwardto.projectcontour.io",
+    "User-Agent": client.ua("invalid-forwardto"),
+  },
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 503)
+}
+
