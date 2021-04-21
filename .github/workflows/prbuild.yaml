@@ -19,11 +19,11 @@ jobs:
         # image to use) for each kubernetes_version value.
         include:
           - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.20.2"
+            node_image: "stevesloka/kind-node:v1.21.0"
           - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.19.7"
+            node_image: "docker.io/kindest/node:v1.20.2"
           - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.18.15"
+            node_image: "docker.io/kindest/node:v1.19.7"
     steps:
       - uses: actions/checkout@v2
       - name: add deps to path
