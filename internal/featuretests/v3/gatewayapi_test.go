@@ -17,11 +17,9 @@ import (
 	"testing"
 
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-
-	"github.com/projectcontour/contour/internal/dag"
-
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -31,6 +29,41 @@ import (
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
+
+var gateway = &gatewayapi_v1alpha1.Gateway{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "contour",
+		Namespace: "projectcontour",
+	},
+	Spec: gatewayapi_v1alpha1.GatewaySpec{
+		Listeners: []gatewayapi_v1alpha1.Listener{{
+			Port:     80,
+			Protocol: "HTTP",
+			Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+				Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+					From: gatewayapi_v1alpha1.RouteSelectAll,
+				},
+				Kind: dag.KindHTTPRoute,
+			},
+		}, {
+			Port:     443,
+			Protocol: "HTTPS",
+			TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+				CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+					Group: "core",
+					Kind:  "Secret",
+					Name:  "tlscert",
+				},
+			},
+			Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+				Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+					From: gatewayapi_v1alpha1.RouteSelectAll,
+				},
+				Kind: dag.KindHTTPRoute,
+			},
+		}},
+	},
+}
 
 func TestGateway_TLS(t *testing.T) {
 	rh, c, done := setup(t)
@@ -55,40 +88,7 @@ func TestGateway_TLS(t *testing.T) {
 
 	rh.OnAdd(sec1)
 
-	rh.OnAdd(&gatewayapi_v1alpha1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1alpha1.GatewaySpec{
-			Listeners: []gatewayapi_v1alpha1.Listener{{
-				Port:     80,
-				Protocol: "HTTP",
-				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectAll,
-					},
-					Kind: dag.KindHTTPRoute,
-				},
-			}, {
-				Port:     443,
-				Protocol: "HTTPS",
-				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
-					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
-						Group: "core",
-						Kind:  "Secret",
-						Name:  "tlscert",
-					},
-				},
-				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectAll,
-					},
-					Kind: dag.KindHTTPRoute,
-				},
-			}},
-		},
-	})
+	rh.OnAdd(gateway)
 
 	rh.OnAdd(&gatewayapi_v1alpha1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -113,6 +113,7 @@ func TestGateway_TLS(t *testing.T) {
 				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 					ServiceName: pointer.StringPtr("svc2"),
 					Port:        gatewayPort(80),
+					Weight:      1,
 				}},
 			}, {
 				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
@@ -124,6 +125,7 @@ func TestGateway_TLS(t *testing.T) {
 				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 					ServiceName: pointer.StringPtr("svc1"),
 					Port:        gatewayPort(80),
+					Weight:      10,
 				}},
 			}},
 		},

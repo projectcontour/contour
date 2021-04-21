@@ -308,6 +308,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		var clusters []*Cluster
 
 		// Validate the ForwardTos.
+		totalWeight := int32(0)
 		for _, forward := range rule.ForwardTo {
 
 			// Verify the service is valid
@@ -345,8 +346,13 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 				}
 			}
 
-			cluster := p.cluster(headerPolicy, service)
-			clusters = append(clusters, cluster)
+			// Keep track of all the weights for this set of forwardTos. This will be
+			// used later to understand if all the weights are set to zero.
+			totalWeight += forward.Weight
+
+			// https://github.com/projectcontour/contour/issues/3593
+			service.Weighted.Weight = uint32(forward.Weight)
+			clusters = append(clusters, p.cluster(headerPolicy, service, uint32(forward.Weight)))
 		}
 
 		var headerPolicy *HeadersPolicy
@@ -366,8 +372,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		routes := p.routes(matchconditions, headerPolicy, clusters)
 		for _, host := range hosts {
 			for _, route := range routes {
-
-				if len(clusters) == 0 {
+				// If there aren't any valid services, or the total weight of all of
+				// them equal zero, then return 503 responses to the caller.
+				if len(clusters) == 0 || totalWeight == 0 {
 					// Configure a direct response HTTP status code of 503 so the
 					// route still matches the configured conditions since the
 					// service is missing or invalid.
@@ -418,9 +425,10 @@ func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, headerP
 }
 
 // cluster builds a *dag.Cluster for the supplied set of headerPolicy and service.
-func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Service) *Cluster {
+func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Service, weight uint32) *Cluster {
 	return &Cluster{
 		Upstream:             service,
+		Weight:               weight,
 		Protocol:             service.Protocol,
 		RequestHeadersPolicy: headerPolicy,
 	}
