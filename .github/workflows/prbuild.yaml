@@ -18,7 +18,7 @@ jobs:
         # include defines an additional variable (the specific node
         # image to use) for each kubernetes_version value.
         include:
-            # TODO: Move to upstream image once available.
+            # TODO: Move to upstream image once available (#3610).
           - kubernetes_version: "kubernetes:latest"
             node_image: "stevesloka/kind-node:v1.21.0"
           - kubernetes_version: "kubernetes:n-1"

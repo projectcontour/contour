@@ -38,7 +38,7 @@ case "$#" in
     ;;
 esac
 
-
+# TODO: Remove once upstream images are available (#3610).
 # Install latest version of kind.
 go get sigs.k8s.io/kind@master
 
