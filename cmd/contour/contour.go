@@ -34,10 +34,11 @@ func main() {
 	envoyCmd := app.Command("envoy", "Sub-command for envoy actions.")
 	sdm, shutdownManagerCtx := registerShutdownManager(envoyCmd, log)
 
+	bootstrap, bootstrapCtx := registerBootstrap(app)
+
 	// Add a "shutdown" command which initiates an Envoy shutdown sequence.
 	sdmShutdown, sdmShutdownCtx := registerShutdown(envoyCmd, log)
 
-	bootstrap, bootstrapCtx := registerBootstrap(app)
 	certgenApp, certgenConfig := registerCertGen(app)
 
 	cli := app.Command("cli", "A CLI client for the Contour Kubernetes ingress controller.")

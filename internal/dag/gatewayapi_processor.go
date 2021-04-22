@@ -69,6 +69,16 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	for _, listener := range p.source.gateway.Spec.Listeners {
 
 		var matchingRoutes []*gatewayapi_v1alpha1.HTTPRoute
+		var listenerSecret *Secret
+
+		// Check for TLS on the Gateway.
+		if listener.TLS != nil {
+			if listenerSecret = p.validGatewayTLS(listener); listenerSecret == nil {
+				// If TLS was configured on the Listener, but it's invalid, don't allow any
+				// routes to be bound to this listener since it can't serve TLS traffic.
+				continue
+			}
+		}
 
 		// Validate the Group on the selector is a supported type.
 		if listener.Routes.Group != "" && listener.Routes.Group != gatewayapi_v1alpha1.GroupName {
@@ -107,15 +117,80 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			if selMatches && nsMatches {
 				// Empty Selector matches all routes.
 				matchingRoutes = append(matchingRoutes, route)
-				break
 			}
 		}
 
 		// Process all the routes that match this Gateway.
 		for _, matchingRoute := range matchingRoutes {
-			p.computeHTTPRoute(matchingRoute)
+			p.computeHTTPRoute(matchingRoute, listenerSecret)
 		}
 	}
+}
+
+func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha1.Listener) *Secret {
+
+	// Validate the CertificateRef is configured.
+	if listener.TLS.CertificateRef == nil {
+		p.Errorf("Spec.VirtualHost.TLS.CertificateRef is not configured.")
+		return nil
+	}
+
+	// Validate the correct protocol is specified.
+	if listener.Protocol != gatewayapi_v1alpha1.HTTPSProtocolType {
+		p.Errorf("Spec.VirtualHost.Protocol %q is not valid.", listener.Protocol)
+		return nil
+	}
+
+	// Validate a v1.Secret is referenced which can be kind: secret & group: core.
+	// ref: https://github.com/kubernetes-sigs/gateway-api/pull/562
+	if !isSecretRef(listener.TLS.CertificateRef) {
+		p.Error("Spec.VirtualHost.TLS Secret must be type core.Secret")
+		return nil
+	}
+
+	listenerSecret, err := p.source.LookupSecret(types.NamespacedName{Name: listener.TLS.CertificateRef.Name, Namespace: p.source.gateway.Namespace}, validSecret)
+	if err != nil {
+		p.Errorf("Spec.VirtualHost.TLS Secret %q is invalid: %s", listener.TLS.CertificateRef.Name, err)
+		return nil
+	}
+	return listenerSecret
+}
+
+func isSecretRef(certificateRef *gatewayapi_v1alpha1.LocalObjectReference) bool {
+	return strings.ToLower(certificateRef.Kind) == "secret" && strings.ToLower(certificateRef.Group) == "core"
+}
+
+func (p *GatewayAPIProcessor) computeHosts(route *gatewayapi_v1alpha1.HTTPRoute) ([]string, []error) {
+	// Determine the hosts on the route, if no hosts
+	// are defined, then set to "*".
+	var hosts []string
+	var errors []error
+	if len(route.Spec.Hostnames) == 0 {
+		hosts = append(hosts, "*")
+		return hosts, nil
+	}
+
+	for _, host := range route.Spec.Hostnames {
+
+		hostname := string(host)
+		if isIP := net.ParseIP(hostname) != nil; isIP {
+			errors = append(errors, fmt.Errorf("hostname %q must be a DNS name, not an IP address", hostname))
+			continue
+		}
+		if strings.Contains(hostname, "*") {
+			if errs := validation.IsWildcardDNS1123Subdomain(hostname); errs != nil {
+				errors = append(errors, fmt.Errorf("invalid hostname %q: %v", hostname, errs))
+				continue
+			}
+		} else {
+			if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
+				errors = append(errors, fmt.Errorf("invalid listener hostname %q: %v", hostname, errs))
+				continue
+			}
+		}
+		hosts = append(hosts, string(host))
+	}
+	return hosts, errors
 }
 
 // namespaceMatches returns true if the namespaces selector matches
@@ -172,48 +247,29 @@ func selectorMatches(selector metav1.LabelSelector, objLabels map[string]string)
 	return true, nil
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute) {
+func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute, listenerSecret *Secret) {
 	routeAccessor, commit := p.dag.StatusCache.HTTPRouteAccessor(route)
 	defer commit()
+
+	hosts, errs := p.computeHosts(route)
+	for _, err := range errs {
+		routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+	}
+
+	// Check if all the hostnames are invalid.
+	if len(hosts) == 0 {
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+		return
+	}
 
 	// Validate TLS Configuration
 	if route.Spec.TLS != nil {
 		routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonNotImplemented, "HTTPRoute.Spec.TLS: Not yet implemented.")
 	}
 
-	// Determine the hosts on the route, if no hosts
-	// are defined, then set to "*".
-	var hosts []string
-	if len(route.Spec.Hostnames) == 0 {
-		hosts = append(hosts, "*")
-	} else {
-		for _, host := range route.Spec.Hostnames {
-
-			hostname := string(host)
-			if isIP := net.ParseIP(hostname) != nil; isIP {
-				p.Errorf("hostname %q must be a DNS name, not an IP address", hostname)
-				continue
-			}
-			if strings.Contains(hostname, "*") {
-
-				if errs := validation.IsWildcardDNS1123Subdomain(hostname); errs != nil {
-					p.Errorf("invalid hostname %q: %v", hostname, errs)
-					continue
-				}
-			} else {
-				if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
-					p.Errorf("invalid listener hostname %q", hostname, errs)
-					continue
-				}
-			}
-			hosts = append(hosts, string(host))
-		}
-	}
-
 	for _, rule := range route.Spec.Rules {
 
 		matchconditions := []*matchConditions{}
-		var services []*Service
 
 		for _, match := range rule.Matches {
 			mc := &matchConditions{}
@@ -249,7 +305,10 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			continue
 		}
 
+		var clusters []*Cluster
+
 		// Validate the ForwardTos.
+		totalWeight := int32(0)
 		for _, forward := range rule.ForwardTo {
 
 			// Verify the service is valid
@@ -269,17 +328,53 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
 			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*forward.Port)), p.source)
 			if err != nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("Service %q does not exist in namespace %q", meta.Name, meta.Namespace))
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("Service %q does not exist", meta.Name))
 				continue
 			}
-			services = append(services, service)
+
+			var headerPolicy *HeadersPolicy
+			for _, filter := range forward.Filters {
+				switch filter.Type {
+				case gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier:
+					var err error
+					headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
+					if err != nil {
+						routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+					}
+				default:
+					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.ForwardTo.Filters: Only RequestHeaderModifier type is supported.")
+				}
+			}
+
+			// Keep track of all the weights for this set of forwardTos. This will be
+			// used later to understand if all the weights are set to zero.
+			totalWeight += forward.Weight
+
+			// https://github.com/projectcontour/contour/issues/3593
+			service.Weighted.Weight = uint32(forward.Weight)
+			clusters = append(clusters, p.cluster(headerPolicy, service, uint32(forward.Weight)))
 		}
 
-		routes := p.routes(matchconditions, services)
-		for _, vhost := range hosts {
-			vhost := p.dag.EnsureVirtualHost(ListenerName{Name: vhost, ListenerName: "ingress_http"})
+		var headerPolicy *HeadersPolicy
+		for _, filter := range rule.Filters {
+			switch filter.Type {
+			case gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier:
+				var err error
+				headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
+				if err != nil {
+					routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+				}
+			default:
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.Filters: Only RequestHeaderModifier type is supported.")
+			}
+		}
+
+		routes := p.routes(matchconditions, headerPolicy, clusters)
+		for _, host := range hosts {
 			for _, route := range routes {
-				if len(services) == 0 {
+				// If there aren't any valid services, or the total weight of all of
+				// them equal zero, then return 503 responses to the caller.
+				if len(clusters) == 0 || totalWeight == 0 {
 					// Configure a direct response HTTP status code of 503 so the
 					// route still matches the configured conditions since the
 					// service is missing or invalid.
@@ -287,7 +382,15 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 						StatusCode: http.StatusServiceUnavailable,
 					}
 				}
-				vhost.addRoute(route)
+
+				if listenerSecret != nil {
+					svhost := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
+					svhost.Secret = listenerSecret
+					svhost.addRoute(route)
+				} else {
+					vhost := p.dag.EnsureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_http"})
+					vhost.addRoute(route)
+				}
 			}
 		}
 	}
@@ -302,17 +405,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 	}
 }
 
-// routes builds a []*dag.Route for the supplied set of match conditions & services.
-func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, services []*Service) []*Route {
-	var clusters []*Cluster
+// routes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and clusters.
+func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, headerPolicy *HeadersPolicy, clusters []*Cluster) []*Route {
 	var routes []*Route
-
-	for _, service := range services {
-		clusters = append(clusters, &Cluster{
-			Upstream: service,
-			Protocol: service.Protocol,
-		})
-	}
 
 	for _, mc := range matchConditions {
 		for _, pathMatch := range mc.pathMatchConditions {
@@ -321,9 +416,20 @@ func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, service
 			}
 			r.PathMatchCondition = pathMatch
 			r.HeaderMatchConditions = mc.headerMatchCondition
+			r.RequestHeadersPolicy = headerPolicy
 			routes = append(routes, r)
 		}
 	}
 
 	return routes
+}
+
+// cluster builds a *dag.Cluster for the supplied set of headerPolicy and service.
+func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Service, weight uint32) *Cluster {
+	return &Cluster{
+		Upstream:             service,
+		Weight:               weight,
+		Protocol:             service.Protocol,
+		RequestHeadersPolicy: headerPolicy,
+	}
 }

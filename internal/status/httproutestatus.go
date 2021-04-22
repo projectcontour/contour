@@ -31,14 +31,15 @@ type RouteReasonType string
 const ReasonNotImplemented RouteReasonType = "NotImplemented"
 const ReasonPathMatchType RouteReasonType = "PathMatchType"
 const ReasonHeaderMatchType RouteReasonType = "HeaderMatchType"
+const ReasonHTTPRouteFilterType RouteReasonType = "HTTPRouteFilterType"
 const ReasonDegraded RouteReasonType = "Degraded"
 const ReasonValid RouteReasonType = "Valid"
 const ReasonErrorsExist RouteReasonType = "ErrorsExist"
 
 type HTTPRouteUpdate struct {
 	FullName           types.NamespacedName
-	Conditions         []metav1.Condition
-	ExistingConditions []metav1.Condition
+	Conditions         map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
+	ExistingConditions map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
 	GatewayRef         types.NamespacedName
 	Generation         int64
 	TransitionTime     metav1.Time
@@ -46,6 +47,11 @@ type HTTPRouteUpdate struct {
 
 // AddCondition returns a metav1.Condition for a given ConditionType.
 func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteConditionType, status metav1.ConditionStatus, reason RouteReasonType, message string) metav1.Condition {
+
+	if c, ok := routeUpdate.Conditions[cond]; ok {
+		message = fmt.Sprintf("%s, %s", c.Message, message)
+	}
+
 	newDc := metav1.Condition{
 		Reason:             string(reason),
 		Status:             status,
@@ -54,7 +60,7 @@ func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteC
 		LastTransitionTime: metav1.NewTime(time.Now()),
 		ObservedGeneration: routeUpdate.Generation,
 	}
-	routeUpdate.Conditions = append(routeUpdate.Conditions, newDc)
+	routeUpdate.Conditions[cond] = newDc
 	return newDc
 }
 
@@ -65,7 +71,7 @@ func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteC
 func (c *Cache) HTTPRouteAccessor(route *gatewayapi_v1alpha1.HTTPRoute) (*HTTPRouteUpdate, func()) {
 	pu := &HTTPRouteUpdate{
 		FullName:           k8s.NamespacedNameOf(route),
-		Conditions:         []metav1.Condition{},
+		Conditions:         make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition),
 		ExistingConditions: c.getGatewayConditions(route.Status.Gateways),
 		GatewayRef:         c.gatewayRef,
 		Generation:         route.Generation,
@@ -151,12 +157,19 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	return httpRoute
 }
 
-func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGatewayStatus) []metav1.Condition {
+func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGatewayStatus) map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition {
 	for _, gs := range gatewayStatus {
 		if c.gatewayRef.Name == gs.GatewayRef.Name &&
 			c.gatewayRef.Namespace == gs.GatewayRef.Namespace {
-			return gs.Conditions
+
+			conditions := make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition)
+			for _, gsCondition := range gs.Conditions {
+				if val, ok := conditions[gatewayapi_v1alpha1.RouteConditionType(gsCondition.Type)]; !ok {
+					conditions[gatewayapi_v1alpha1.RouteConditionType(gsCondition.Type)] = val
+				}
+			}
+			return conditions
 		}
 	}
-	return []metav1.Condition{}
+	return map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{}
 }

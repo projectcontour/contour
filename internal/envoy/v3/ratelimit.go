@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -75,25 +76,35 @@ func GlobalRateLimits(descriptors []*dag.RateLimitDescriptor) []*envoy_route_v3.
 
 		for _, entry := range descriptor.Entries {
 			switch {
-			case entry.GenericKeyValue != "":
+			case entry.GenericKey != nil:
 				rl.Actions = append(rl.Actions, &envoy_route_v3.RateLimit_Action{
 					ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
 						GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
-							DescriptorKey:   entry.GenericKeyKey,
-							DescriptorValue: entry.GenericKeyValue,
+							DescriptorKey:   entry.GenericKey.Key,
+							DescriptorValue: entry.GenericKey.Value,
 						},
 					},
 				})
-			case entry.HeaderMatchHeaderName != "":
+			case entry.HeaderMatch != nil:
 				rl.Actions = append(rl.Actions, &envoy_route_v3.RateLimit_Action{
 					ActionSpecifier: &envoy_route_v3.RateLimit_Action_RequestHeaders_{
 						RequestHeaders: &envoy_route_v3.RateLimit_Action_RequestHeaders{
-							HeaderName:    entry.HeaderMatchHeaderName,
-							DescriptorKey: entry.HeaderMatchDescriptorKey,
+							HeaderName:    entry.HeaderMatch.HeaderName,
+							DescriptorKey: entry.HeaderMatch.Key,
 						},
 					},
 				})
-			case entry.RemoteAddress:
+			case entry.HeaderValueMatch != nil:
+				rl.Actions = append(rl.Actions, &envoy_route_v3.RateLimit_Action{
+					ActionSpecifier: &envoy_route_v3.RateLimit_Action_HeaderValueMatch_{
+						HeaderValueMatch: &envoy_route_v3.RateLimit_Action_HeaderValueMatch{
+							DescriptorValue: entry.HeaderValueMatch.Value,
+							ExpectMatch:     wrapperspb.Bool(entry.HeaderValueMatch.ExpectMatch),
+							Headers:         headerMatcher(entry.HeaderValueMatch.Headers),
+						},
+					},
+				})
+			case entry.RemoteAddress != nil:
 				rl.Actions = append(rl.Actions, &envoy_route_v3.RateLimit_Action{
 					ActionSpecifier: &envoy_route_v3.RateLimit_Action_RemoteAddress_{
 						RemoteAddress: &envoy_route_v3.RateLimit_Action_RemoteAddress{},

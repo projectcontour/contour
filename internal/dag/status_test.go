@@ -2503,19 +2503,22 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 			var gotConditions []metav1.Condition
 			for _, u := range updates {
-				gotConditions = append(gotConditions, u.Conditions...)
+				for _, cond := range u.Conditions {
+					gotConditions = append(gotConditions, cond)
+				}
 			}
 
 			ops := []cmp.Option{
 				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"),
-				cmpopts.SortSlices(func(i, j int) bool {
-					return tc.want[i].Message < tc.want[j].Message
+				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
+					return i.Message < j.Message
 				}),
 			}
 
 			if diff := cmp.Diff(tc.want, gotConditions, ops...); diff != "" {
 				t.Fatalf("expected: %v, got %v", tc.want, diff)
 			}
+
 		})
 	}
 
@@ -2666,15 +2669,15 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.ConditionNotImplemented),
-			Status:  contour_api_v1.ConditionTrue,
-			Reason:  string(status.ReasonPathMatchType),
-			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
-		}, {
 			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonErrorsExist),
 			Message: "Errors found, check other Conditions for details.",
+		}, {
+			Type:    string(status.ConditionNotImplemented),
+			Status:  contour_api_v1.ConditionTrue,
+			Reason:  string(status.ReasonPathMatchType),
+			Message: "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.",
 		}},
 	})
 
@@ -2713,15 +2716,15 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				},
 			}},
 		want: []metav1.Condition{{
-			Type:    string(status.ConditionNotImplemented),
-			Status:  contour_api_v1.ConditionTrue,
-			Reason:  string(status.ReasonHeaderMatchType),
-			Message: "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.",
-		}, {
 			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonErrorsExist),
 			Message: "Errors found, check other Conditions for details.",
+		}, {
+			Type:    string(status.ConditionNotImplemented),
+			Status:  contour_api_v1.ConditionTrue,
+			Reason:  string(status.ReasonHeaderMatchType),
+			Message: "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.",
 		}},
 	})
 
@@ -2818,6 +2821,59 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 		}},
 	})
 
+	run(t, "spec.rules.forwardTo.serviceName invalid on two matches", testcase{
+		objs: []interface{}{
+			gateway,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/",
+							},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+							ServiceName: pointer.StringPtr("invalid-one"),
+							Port:        gatewayPort(8080),
+						}},
+					}, {
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/blog",
+							},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+							ServiceName: pointer.StringPtr("invalid-two"),
+							Port:        gatewayPort(8080),
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "Service \"invalid-one\" does not exist, Service \"invalid-two\" does not exist",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
 	run(t, "spec.rules.forwardTo.servicePort not specified", testcase{
 		objs: []interface{}{
 			gateway,
@@ -2896,6 +2952,313 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Type:    "Admitted",
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "spec.rules.hostname: invalid wildcard", testcase{
+		objs: []interface{}{
+			gateway,
+			kuardService,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"*.*.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/",
+							},
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "spec.rules.hostname: invalid hostname", testcase{
+		objs: []interface{}{
+			gateway,
+			kuardService,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"#projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/",
+							},
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "invalid listener hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "spec.rules.hostname: invalid hostname, ip address", testcase{
+		objs: []interface{}{
+			gateway,
+			kuardService,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"1.2.3.4",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/",
+							},
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "hostname \"1.2.3.4\" must be a DNS name, not an IP address",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute rule", testcase{
+		objs: []interface{}{
+			gateway,
+			kuardService,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/",
+							},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+							ServiceName: pointer.StringPtr("kuard"),
+							Port:        gatewayPort(8080),
+						}},
+						Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+							Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestMirror, // HTTPRouteFilterRequestMirror is not supported yet.
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonErrorsExist),
+			Message: "Errors found, check other Conditions for details.",
+		}, {
+			Type:    string(status.ConditionNotImplemented),
+			Status:  contour_api_v1.ConditionTrue,
+			Reason:  string(status.ReasonHTTPRouteFilterType),
+			Message: "HTTPRoute.Spec.Rules.Filters: Only RequestHeaderModifier type is supported.",
+		}},
+	})
+
+	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute forwardto", testcase{
+		objs: []interface{}{
+			gateway,
+			kuardService,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/",
+							},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+							ServiceName: pointer.StringPtr("kuard"),
+							Port:        gatewayPort(8080),
+							Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+								Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestMirror, // HTTPRouteFilterRequestMirror is not supported yet.
+							}},
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionNotImplemented),
+			Status:  contour_api_v1.ConditionTrue,
+			Reason:  string(status.ReasonHTTPRouteFilterType),
+			Message: "HTTPRoute.Spec.Rules.ForwardTo.Filters: Only RequestHeaderModifier type is supported.",
+		}, {
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonErrorsExist),
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "Invalid RequestHeaderModifier due to duplicated headers", testcase{
+		objs: []interface{}{
+			gateway,
+			kuardService,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/",
+							},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+							ServiceName: pointer.StringPtr("kuard"),
+							Port:        gatewayPort(8080),
+						}},
+						Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+							Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+							RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+								Set: map[string]string{"custom": "duplicated", "Custom": "duplicated"},
+							},
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "duplicate header addition: \"Custom\" on request headers",
+		}, {
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonErrorsExist),
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "Invalid RequestHeaderModifier after forward due to invalid headers", testcase{
+		objs: []interface{}{
+			gateway,
+			kuardService,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+							Path: gatewayapi_v1alpha1.HTTPPathMatch{
+								Type:  "Prefix",
+								Value: "/",
+							},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+							ServiceName: pointer.StringPtr("kuard"),
+							Port:        gatewayPort(8080),
+							Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+								Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+								RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+									Set: map[string]string{"!invalid-header": "foo"},
+								},
+							}},
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on request headers",
+		}, {
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonErrorsExist),
 			Message: "Errors found, check other Conditions for details.",
 		}},
 	})

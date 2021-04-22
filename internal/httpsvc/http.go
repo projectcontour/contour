@@ -17,8 +17,9 @@ package httpsvc
 
 import (
 	"context"
-	"fmt"
+	"net"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -45,7 +46,7 @@ func (svc *Service) Start(stop <-chan struct{}) (err error) {
 	}()
 
 	s := http.Server{
-		Addr:           fmt.Sprintf("%s:%d", svc.Addr, svc.Port),
+		Addr:           net.JoinHostPort(svc.Addr, strconv.Itoa(svc.Port)),
 		Handler:        &svc.ServeMux,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   5 * time.Minute, // allow for long trace requests

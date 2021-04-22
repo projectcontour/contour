@@ -105,16 +105,55 @@ func TestGlobalRateLimits(t *testing.T) {
 			descriptors: []*dag.RateLimitDescriptor{
 				{
 					Entries: []dag.RateLimitDescriptorEntry{
-						{RemoteAddress: true},
-						{GenericKeyValue: "generic-key-val"},
-						{GenericKeyKey: "generic-key-custom-key", GenericKeyValue: "generic-key-val"},
+						{
+							RemoteAddress: &dag.RemoteAddressDescriptorEntry{},
+						},
+						{
+							GenericKey: &dag.GenericKeyDescriptorEntry{
+								Value: "generic-key-val",
+							},
+						},
+						{
+							GenericKey: &dag.GenericKeyDescriptorEntry{
+								Key:   "generic-key-custom-key",
+								Value: "generic-key-val",
+							},
+						},
 					},
 				},
 				{
 					Entries: []dag.RateLimitDescriptorEntry{
-						{HeaderMatchHeaderName: "X-Header-1", HeaderMatchDescriptorKey: "foo"},
-						{RemoteAddress: true},
-						{GenericKeyValue: "generic-key-val-2"},
+						{
+							HeaderMatch: &dag.HeaderMatchDescriptorEntry{
+								HeaderName: "X-Header-1",
+								Key:        "foo",
+							},
+						},
+						{
+							RemoteAddress: &dag.RemoteAddressDescriptorEntry{},
+						},
+						{
+							GenericKey: &dag.GenericKeyDescriptorEntry{
+								Value: "generic-key-val-2",
+							},
+						},
+					},
+				},
+				{
+					Entries: []dag.RateLimitDescriptorEntry{
+						{
+							HeaderValueMatch: &dag.HeaderValueMatchDescriptorEntry{
+								Headers: []dag.HeaderMatchCondition{
+									{
+										Name:      "A-Header",
+										Value:     "foo",
+										MatchType: dag.HeaderMatchTypeExact,
+									},
+								},
+								ExpectMatch: true,
+								Value:       "A-Header-Equals-Foo",
+							},
+						},
 					},
 				},
 			},
@@ -162,6 +201,26 @@ func TestGlobalRateLimits(t *testing.T) {
 							ActionSpecifier: &envoy_route_v3.RateLimit_Action_GenericKey_{
 								GenericKey: &envoy_route_v3.RateLimit_Action_GenericKey{
 									DescriptorValue: "generic-key-val-2",
+								},
+							},
+						},
+					},
+				},
+				{
+					Actions: []*envoy_route_v3.RateLimit_Action{
+						{
+							ActionSpecifier: &envoy_route_v3.RateLimit_Action_HeaderValueMatch_{
+								HeaderValueMatch: &envoy_route_v3.RateLimit_Action_HeaderValueMatch{
+									Headers: []*envoy_route_v3.HeaderMatcher{
+										{
+											Name: "A-Header",
+											HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_ExactMatch{
+												ExactMatch: "foo",
+											},
+										},
+									},
+									ExpectMatch:     wrapperspb.Bool(true),
+									DescriptorValue: "A-Header-Equals-Foo",
 								},
 							},
 						},

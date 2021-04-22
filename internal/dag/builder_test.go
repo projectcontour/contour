@@ -55,6 +55,36 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	kuardService2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard2",
+			Namespace: "projectcontour",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	kuardService3 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard3",
+			Namespace: "projectcontour",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
 	kuardServiceCustomNs := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -129,6 +159,167 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						From: gatewayapi_v1alpha1.RouteSelectSame,
 					},
 				},
+			}},
+		},
+	}
+
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlscert",
+			Namespace: "projectcontour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+	}
+
+	gatewayWithOnlyTLS := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     443,
+				Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+						Group: "core",
+						Kind:  "Secret",
+						Name:  sec1.Name,
+					},
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+				},
+			}},
+		},
+	}
+
+	gatewayWithTLSandHTTP := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+				},
+			}, {
+				Port:     443,
+				Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+						Group: "core",
+						Kind:  "Secret",
+						Name:  sec1.Name,
+					},
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+				},
+			}},
+		},
+	}
+
+	gatewaywithtlsDifferentselectors := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+					Selector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{{
+							Key:      "protocol",
+							Operator: "In",
+							Values:   []string{"http"},
+						}},
+					},
+				},
+			}, {
+				Port:     443,
+				Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+						Group: "core",
+						Kind:  "Secret",
+						Name:  sec1.Name,
+					},
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+					Selector: metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{{
+							Key:      "protocol",
+							Operator: "In",
+							Values:   []string{"https"},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	genericHTTPRoute := &gatewayapi_v1alpha1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "projectcontour",
+			Labels: map[string]string{
+				"app":      "contour",
+				"type":     "controller",
+				"protocol": "http",
+			},
+		},
+		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+			Hostnames: []gatewayapi_v1alpha1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+				Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+				ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+			}},
+		},
+	}
+
+	httpRouteProtocolHTTPS := &gatewayapi_v1alpha1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basictls",
+			Namespace: "projectcontour",
+			Labels: map[string]string{
+				"app":      "contour",
+				"type":     "controller",
+				"protocol": "https",
+			},
+		},
+		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+			Hostnames: []gatewayapi_v1alpha1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+				Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+				ForwardTo: httpRouteForwardTo("blogsvc", 80, 1),
 			}},
 		},
 	}
@@ -236,6 +427,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Port:     80,
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindHTTPRoute,
 					Selector: metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"not": "matching",
@@ -263,31 +455,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway: gatewayWithSelector,
 			objs: []interface{}{
 				kuardService,
-				&gatewayapi_v1alpha1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-						Labels: map[string]string{
-							"app":  "contour",
-							"type": "controller",
-						},
-					},
-					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Hostnames: []gatewayapi_v1alpha1.Hostname{
-							"test.projectcontour.io",
-						},
-						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
-						}},
-					},
-				},
+				genericHTTPRoute,
 			},
 			want: listeners(
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
 				},
 			),
@@ -297,31 +471,13 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			gateway: gatewayNoSelector,
 			objs: []interface{}{
 				kuardService,
-				&gatewayapi_v1alpha1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-						Labels: map[string]string{
-							"app":  "contour",
-							"type": "controller",
-						},
-					},
-					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Hostnames: []gatewayapi_v1alpha1.Hostname{
-							"test.projectcontour.io",
-						},
-						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
-						}},
-					},
-				},
+				genericHTTPRoute,
 			},
 			want: listeners(
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
 				},
 			),
@@ -342,7 +498,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -351,7 +507,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
 				},
 			),
@@ -371,7 +527,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -393,7 +549,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -402,7 +558,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardServiceCustomNs))),
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardServiceCustomNs))),
 					),
 				},
 			),
@@ -430,16 +586,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"test.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
-								},
-							}},
-							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
-								ServiceName: pointer.StringPtr("kuard"),
-								Port:        gatewayPort(8080),
-							}},
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -448,7 +596,62 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardServiceCustomNs))),
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardServiceCustomNs))),
+					),
+				},
+			),
+		},
+		// Issue: https://github.com/projectcontour/contour/issues/3591
+		"one gateway with two httproutes, different hostnames": {
+			gateway: gatewayWithNamespaceSelector,
+			objs: []interface{}{
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "custom",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+				},
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "custom",
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+						}},
+					},
+				},
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic-two",
+						Namespace: "custom",
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"another.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("another.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardServiceCustomNs))),
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardServiceCustomNs))),
 					),
 				},
 			),
@@ -477,7 +680,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -504,7 +707,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -545,7 +748,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -587,7 +790,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -614,10 +817,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}, {
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/blog"),
-							ForwardTo: httpRouteForwardTo("blogsvc", 80),
+							ForwardTo: httpRouteForwardTo("blogsvc", 80, 1),
 						}},
 					},
 				},
@@ -627,7 +830,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
-							prefixroute("/", service(kuardService)), prefixroute("/blog", service(blogService))),
+							prefixrouteHTTPRoute("/", service(kuardService)), prefixrouteHTTPRoute("/blog", service(blogService))),
 					),
 				},
 			),
@@ -654,7 +857,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -663,10 +866,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", prefixroute("/", service(kuardService))),
-						virtualhost("test2.projectcontour.io", prefixroute("/", service(kuardService))),
-						virtualhost("test3.projectcontour.io", prefixroute("/", service(kuardService))),
-						virtualhost("test4.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
+						virtualhost("test2.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
+						virtualhost("test3.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
+						virtualhost("test4.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
 				},
 			),
@@ -687,7 +890,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -696,7 +899,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixroute("/", service(kuardService))),
+						virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
 				},
 			),
@@ -720,7 +923,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -729,7 +932,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*.projectcontour.io", prefixroute("/", service(kuardService))),
+						virtualhost("*.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
 				},
 			),
@@ -753,7 +956,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -779,7 +982,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -805,7 +1008,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -829,7 +1032,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -862,6 +1065,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("kuard"),
 								Port:        nil,
+								Weight:      1,
 							}},
 						}},
 					},
@@ -888,7 +1092,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchExact, "/blog"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -898,7 +1102,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
-							exactroute("/blog", service(kuardService))),
+							exactrouteHTTPRoute("/blog", service(kuardService))),
 					),
 				},
 			),
@@ -938,7 +1142,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Value: "/tech",
 								},
 							}},
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -948,9 +1152,235 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
-							prefixroute("/", service(kuardService)),
-							prefixroute("/blog", service(kuardService)),
-							prefixroute("/tech", service(kuardService))),
+							prefixrouteHTTPRoute("/", service(kuardService)),
+							prefixrouteHTTPRoute("/blog", service(kuardService)),
+							prefixrouteHTTPRoute("/tech", service(kuardService))),
+					),
+				},
+			),
+		},
+		"insert basic single route, single hostname, gateway with TLS": {
+			gateway: gatewayWithOnlyTLS,
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+								routes:       routes(prefixrouteHTTPRoute("/", service(kuardService))),
+							},
+							Secret: secret(sec1),
+						},
+					),
+				},
+			),
+		},
+		"insert basic single route, single hostname, gateway with missing TLS certificate": {
+			gateway: gatewayWithOnlyTLS,
+			objs: []interface{}{
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(),
+		},
+		"insert basic single route, single hostname, gateway with invalid TLS certificate": {
+			gateway: gatewayWithOnlyTLS,
+			objs: []interface{}{
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tlscert",
+						Namespace: "projectcontour",
+					},
+					Type: v1.SecretTypeTLS,
+					Data: secretdata("wrong", "wronger"),
+				},
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(),
+		},
+		"insert basic single route, single hostname, gateway with TLS & Insecure Listeners": {
+			gateway: gatewayWithTLSandHTTP,
+			objs: []interface{}{
+				sec1,
+				blogService,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+								routes:       routes(prefixrouteHTTPRoute("/", service(blogService))),
+							},
+							Secret: secret(sec1),
+						},
+					),
+				},
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(blogService))),
+					),
+				},
+			),
+		},
+		"Only the Spec.Listener.Protocol: HTTPS should be valid for a TLS Listener Gateway": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
+						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+								Group: "core",
+								Kind:  "Secret",
+								Name:  sec1.Name,
+							},
+						},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				blogService,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(),
+		},
+		"TLS Listener Gateway CertificateRef must be type core.Secret": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+								Group: "custom",
+								Kind:  "shhhh",
+								Name:  sec1.Name,
+							},
+						},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				blogService,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(),
+		},
+		"TLS Listener Gateway CertificateRef must be specified": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+						TLS:      &gatewayapi_v1alpha1.GatewayTLSConfig{},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				blogService,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(),
+		},
+		"No valid hostnames defined": {
+			gateway: gatewayWithAllNamespace,
+			objs: []interface{}{
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":      "contour",
+							"type":     "controller",
+							"protocol": "https",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"*.*.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("blogsvc", 80, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"insert basic single route, single hostname, gateway with TLS & Insecure Listeners, different selectors": {
+			gateway: gatewaywithtlsDifferentselectors,
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				blogService,
+				genericHTTPRoute,
+				httpRouteProtocolHTTPS,
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+								routes:       routes(prefixrouteHTTPRoute("/", service(blogService))),
+							},
+							Secret: secret(sec1),
+						},
+					),
+				},
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
 					),
 				},
 			),
@@ -983,7 +1413,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Values: map[string]string{"foo": "bar"},
 								},
 							}},
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -997,7 +1427,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "foo", Value: "bar", MatchType: "exact", Invert: false},
 							},
-							Clusters: clusters(service(kuardService)),
+							Clusters: clustersWeight(service(kuardService)),
 						}),
 					),
 				},
@@ -1039,7 +1469,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										},
 									},
 								},
-								ForwardTo: httpRouteForwardTo("kuard", 8080),
+								ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 							}},
 					},
 				},
@@ -1050,14 +1480,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/blog"),
-							Clusters:           clusters(service(kuardService)),
+							Clusters:           clustersWeight(service(kuardService)),
 						},
 						&Route{
 							PathMatchCondition: prefixString("/tech"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "foo", Value: "bar", MatchType: "exact", Invert: false},
 							},
-							Clusters: clusters(service(kuardService)),
+							Clusters: clustersWeight(service(kuardService)),
 						},
 					)),
 				},
@@ -1087,7 +1517,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Values: map[string]string{"foo": "bar"},
 								},
 							}},
-							ForwardTo: httpRouteForwardTo("kuard", 8080),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
 						}},
 					},
 				},
@@ -1101,9 +1531,366 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "foo", Value: "bar", MatchType: "exact", Invert: false},
 							},
-							Clusters: clusters(service(kuardService)),
+							Clusters: clustersWeight(service(kuardService)),
 						},
 					)),
+				},
+			),
+		},
+		"Route rule with request header modifier": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+							Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+								Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+								RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+									Set: map[string]string{"custom-header-set": "foo-bar", "Host": "bar.com"},
+									Add: map[string]string{"custom-header-add": "foo-bar"},
+								},
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clustersWeight(service(kuardService)),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set: map[string]string{
+									"Custom-Header-Set": "foo-bar", // Verify the header key is canonicalized.
+								},
+								Add: map[string]string{
+									"Custom-Header-Add": "foo-bar", // Verify the header key is canonicalized.
+								},
+								HostRewrite: "bar.com",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTP forward with request header modifier": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+								ServiceName: pointer.StringPtr("kuard"),
+								Port:        gatewayPort(8080),
+								Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+									Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+										Set: map[string]string{"custom-header-set": "foo-bar", "Host": "bar.com"},
+										Add: map[string]string{"custom-header-add": "foo-bar"},
+									},
+								}},
+								Weight: 1,
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{"Custom-Header-Add": "foo-bar"}, nil, "bar.com", service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
+		"Route rule with invalid request header modifier": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+								ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+								Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+									Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+									RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+										Set: map[string]string{"custom-header-set": "foo-bar", "Host": "bar.com"},
+										Add: map[string]string{"!invalid-header-add": "foo-bar"},
+									},
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clustersWeight(service(kuardService)),
+							RequestHeadersPolicy: &HeadersPolicy{
+								Set:         map[string]string{"Custom-Header-Set": "foo-bar"},
+								Add:         map[string]string{}, // Invalid header should not be set.
+								HostRewrite: "bar.com",
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTP forward with invalid request header modifier": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{
+							{
+								Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+									ServiceName: pointer.StringPtr("kuard"),
+									Port:        gatewayPort(8080),
+									Weight:      1,
+									Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
+										Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
+										RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
+											Set: map[string]string{"custom-header-set": "foo-bar", "Host": "bar.com"},
+											Add: map[string]string{"!invalid-header-add": "foo-bar"},
+										},
+									}},
+								}},
+							}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters:           clusterHeaders(map[string]string{"Custom-Header-Set": "foo-bar"}, map[string]string{}, nil, "bar.com", service(kuardService)),
+						},
+					)),
+				},
+			),
+		},
+		"different weights for multiple forwardTos": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwards(
+								httpRouteForwardTo("kuard", 8080, 5),
+								httpRouteForwardTo("kuard2", 8080, 10),
+								httpRouteForwardTo("kuard3", 8080, 15),
+							),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixrouteHTTPRoute("/",
+							&Service{
+								Weighted: WeightedService{
+									Weight:           5,
+									ServiceName:      kuardService.Name,
+									ServiceNamespace: kuardService.Namespace,
+									ServicePort:      kuardService.Spec.Ports[0],
+								},
+							},
+							&Service{
+								Weighted: WeightedService{
+									Weight:           10,
+									ServiceName:      kuardService2.Name,
+									ServiceNamespace: kuardService2.Namespace,
+									ServicePort:      kuardService2.Spec.Ports[0],
+								},
+							},
+							&Service{
+								Weighted: WeightedService{
+									Weight:           15,
+									ServiceName:      kuardService3.Name,
+									ServiceNamespace: kuardService3.Namespace,
+									ServicePort:      kuardService3.Spec.Ports[0],
+								},
+							},
+						)),
+					),
+				},
+			),
+		},
+		"one service weight zero w/weights for other forwardTos": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwards(
+								httpRouteForwardTo("kuard", 8080, 5),
+								httpRouteForwardTo("kuard2", 8080, 0),
+								httpRouteForwardTo("kuard3", 8080, 15),
+							),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", prefixrouteHTTPRoute("/",
+							&Service{
+								Weighted: WeightedService{
+									Weight:           5,
+									ServiceName:      kuardService.Name,
+									ServiceNamespace: kuardService.Namespace,
+									ServicePort:      kuardService.Spec.Ports[0],
+								},
+							},
+							&Service{
+								Weighted: WeightedService{
+									Weight:           0,
+									ServiceName:      kuardService2.Name,
+									ServiceNamespace: kuardService2.Namespace,
+									ServicePort:      kuardService2.Spec.Ports[0],
+								},
+							},
+							&Service{
+								Weighted: WeightedService{
+									Weight:           15,
+									ServiceName:      kuardService3.Name,
+									ServiceNamespace: kuardService3.Namespace,
+									ServicePort:      kuardService3.Spec.Ports[0],
+								},
+							},
+						)),
+					),
+				},
+			),
+		},
+		"weight of zero for a single forwardTo results in 503": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*", directResponseRouteService("/", http.StatusServiceUnavailable, &Service{
+							Weighted: WeightedService{
+								Weight:           0,
+								ServiceName:      kuardService.Name,
+								ServiceNamespace: kuardService.Namespace,
+								ServicePort:      kuardService.Spec.Ports[0],
+							},
+						})),
+					),
 				},
 			),
 		},
@@ -9660,6 +10447,15 @@ func directResponseRoute(prefix string, statusCode uint32) *Route {
 	}
 }
 
+func directResponseRouteService(prefix string, statusCode uint32, first *Service, rest ...*Service) *Route {
+	services := append([]*Service{first}, rest...)
+	return &Route{
+		PathMatchCondition: prefixString(prefix),
+		DirectResponse:     &DirectResponse{StatusCode: statusCode},
+		Clusters:           clustersWeight(services...),
+	}
+}
+
 func httpRouteMatch(pathType gatewayapi_v1alpha1.PathMatchType, value string) []gatewayapi_v1alpha1.HTTPRouteMatch {
 	return []gatewayapi_v1alpha1.HTTPRouteMatch{{
 		Path: gatewayapi_v1alpha1.HTTPPathMatch{
@@ -9669,10 +10465,20 @@ func httpRouteMatch(pathType gatewayapi_v1alpha1.PathMatchType, value string) []
 	}}
 }
 
-func httpRouteForwardTo(serviceName string, port int) []gatewayapi_v1alpha1.HTTPRouteForwardTo {
+func httpRouteForwards(forwards ...[]gatewayapi_v1alpha1.HTTPRouteForwardTo) []gatewayapi_v1alpha1.HTTPRouteForwardTo {
+	var fwds []gatewayapi_v1alpha1.HTTPRouteForwardTo
+
+	for _, f := range forwards {
+		fwds = append(fwds, f...)
+	}
+	return fwds
+}
+
+func httpRouteForwardTo(serviceName string, port int, weight int32) []gatewayapi_v1alpha1.HTTPRouteForwardTo {
 	return []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 		ServiceName: pointer.StringPtr(serviceName),
 		Port:        gatewayPort(port),
+		Weight:      weight,
 	}}
 }
 
@@ -9684,11 +10490,19 @@ func prefixroute(prefix string, first *Service, rest ...*Service) *Route {
 	}
 }
 
-func exactroute(path string, first *Service, rest ...*Service) *Route {
+func prefixrouteHTTPRoute(prefix string, first *Service, rest ...*Service) *Route {
+	services := append([]*Service{first}, rest...)
+	return &Route{
+		PathMatchCondition: prefixString(prefix),
+		Clusters:           clustersWeight(services...),
+	}
+}
+
+func exactrouteHTTPRoute(path string, first *Service, rest ...*Service) *Route {
 	services := append([]*Service{first}, rest...)
 	return &Route{
 		PathMatchCondition: &ExactMatchCondition{Path: path},
-		Clusters:           clusters(services...),
+		Clusters:           clustersWeight(services...),
 	}
 }
 
@@ -9737,11 +10551,39 @@ func routeHeaders(prefix string, requestSet map[string]string, requestRemove []s
 	return r
 }
 
+func clusterHeaders(requestSet map[string]string, requestAdd map[string]string, requestRemove []string, hostRewrite string, services ...*Service) (c []*Cluster) {
+	for _, s := range services {
+		c = append(c, &Cluster{
+			Upstream: s,
+			Protocol: s.Protocol,
+			RequestHeadersPolicy: &HeadersPolicy{
+				Set:         requestSet,
+				Add:         requestAdd,
+				Remove:      requestRemove,
+				HostRewrite: hostRewrite,
+			},
+			Weight: s.Weighted.Weight,
+		})
+	}
+	return c
+}
+
 func clusters(services ...*Service) (c []*Cluster) {
 	for _, s := range services {
 		c = append(c, &Cluster{
 			Upstream: s,
 			Protocol: s.Protocol,
+		})
+	}
+	return c
+}
+
+func clustersWeight(services ...*Service) (c []*Cluster) {
+	for _, s := range services {
+		c = append(c, &Cluster{
+			Upstream: s,
+			Protocol: s.Protocol,
+			Weight:   s.Weighted.Weight,
 		})
 	}
 	return c
