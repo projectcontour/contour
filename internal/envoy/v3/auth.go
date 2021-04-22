@@ -51,7 +51,7 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 		// directly into this field boxes the nil into the unexported
 		// type of this grpc OneOf field which causes proto marshaling
 		// to explode later on.
-		vc := validationContext(peerValidationContext.GetCACertificate(), peerValidationContext.GetSubjectName())
+		vc := validationContext(peerValidationContext.GetCACertificate(), peerValidationContext.GetSubjectName(), false)
 		if vc != nil {
 			context.CommonTlsContext.ValidationContextType = vc
 		}
@@ -60,16 +60,24 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 	return context
 }
 
-func validationContext(ca []byte, subjectName string) *envoy_v3_tls.CommonTlsContext_ValidationContext {
+func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool) *envoy_v3_tls.CommonTlsContext_ValidationContext {
 	vc := &envoy_v3_tls.CommonTlsContext_ValidationContext{
 		ValidationContext: &envoy_v3_tls.CertificateValidationContext{
-			TrustedCa: &envoy_api_v3_core.DataSource{
-				// TODO(dfc) update this for SDS
-				Specifier: &envoy_api_v3_core.DataSource_InlineBytes{
-					InlineBytes: ca,
-				},
-			},
+			TrustChainVerification: envoy_v3_tls.CertificateValidationContext_VERIFY_TRUST_CHAIN,
 		},
+	}
+
+	if skipVerifyPeerCert {
+		vc.ValidationContext.TrustChainVerification = envoy_v3_tls.CertificateValidationContext_ACCEPT_UNTRUSTED
+	}
+
+	if len(ca) > 0 {
+		vc.ValidationContext.TrustedCa = &envoy_api_v3_core.DataSource{
+			// TODO(dfc) update this for SDS
+			Specifier: &envoy_api_v3_core.DataSource_InlineBytes{
+				InlineBytes: ca,
+			},
+		}
 	}
 
 	if len(subjectName) > 0 {
@@ -99,9 +107,8 @@ func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion envoy_v3_
 			AlpnProtocols: alpnProtos,
 		},
 	}
-
-	if peerValidationContext.GetCACertificate() != nil {
-		vc := validationContext(peerValidationContext.GetCACertificate(), "")
+	if peerValidationContext != nil {
+		vc := validationContext(peerValidationContext.GetCACertificate(), "", peerValidationContext.SkipClientCertValidation)
 		if vc != nil {
 			context.CommonTlsContext.ValidationContextType = vc
 			context.RequireClientCertificate = protobuf.Bool(true)

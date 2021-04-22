@@ -198,7 +198,7 @@ type VirtualHost struct {
 	// authorization for this virtual host. Authorization can
 	// only be configured on virtual hosts that have TLS enabled.
 	// If the TLS configuration requires client certificate
-	///validation, the client certificate is always included in the
+	// validation, the client certificate is always included in the
 	// authentication check request.
 	//
 	// +optional
@@ -779,9 +779,16 @@ type UpstreamValidation struct {
 type DownstreamValidation struct {
 	// Name of a Kubernetes secret that contains a CA certificate bundle.
 	// The client certificate must validate against the certificates in the bundle.
-	// +kubebuilder:validation:Required
+	// +optional
 	// +kubebuilder:validation:MinLength=1
 	CACertificate string `json:"caSecret"`
+
+	// SkipClientCertValidation disables downstream client certificate
+	// validation. Defaults to false. When external authorization is in use
+	// and is set to true, the downstream certificate is still passed to the
+	// external authorization server.
+	// +optional
+	SkipClientCertValidation bool `json:"skipClientCertValidation"`
 }
 
 // HTTPProxyStatus reports the current state of the HTTPProxy.

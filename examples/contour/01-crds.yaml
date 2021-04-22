@@ -1455,7 +1455,7 @@ spec:
                     description: This field configures an extension service to perform
                       authorization for this virtual host. Authorization can only
                       be configured on virtual hosts that have TLS enabled. If the
-                      TLS configuration requires client certificate /validation, the
+                      TLS configuration requires client certificate validation, the
                       client certificate is always included in the authentication
                       check request.
                     properties:
@@ -1805,8 +1805,13 @@ spec:
                               validate against the certificates in the bundle.
                             minLength: 1
                             type: string
-                        required:
-                        - caSecret
+                          skipClientCertValidation:
+                            description: SkipClientCertValidation disables downstream
+                              client certificate validation. Defaults to false. When
+                              external authorization is in use and is set to true,
+                              the downstream certificate is still passed to the external
+                              authorization server.
+                            type: boolean
                         type: object
                       enableFallbackCertificate:
                         description: EnableFallbackCertificate defines if the vhost

@@ -675,8 +675,25 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Name of a Kubernetes secret that contains a CA certificate bundle.
 The client certificate must validate against the certificates in the bundle.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>skipClientCertValidation</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SkipClientCertValidation disables downstream client certificate
+validation. Defaults to false. When external authorization is in use
+and is set to true, the downstream certificate is still passed to the
+external authorization server.</p>
 </td>
 </tr>
 </tbody>
@@ -3099,7 +3116,7 @@ AuthorizationServer
 authorization for this virtual host. Authorization can
 only be configured on virtual hosts that have TLS enabled.
 If the TLS configuration requires client certificate
-/validation, the client certificate is always included in the
+validation, the client certificate is always included in the
 authentication check request.</p>
 </td>
 </tr>
