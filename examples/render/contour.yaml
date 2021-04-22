@@ -974,34 +974,72 @@ spec:
                                               type: string
                                           type: object
                                         requestHeaderValueMatch:
-                                          description: RequestHeaderValueMatch defines a descriptor entry that's populated if the request's headers match a set of 1+ match criteria. The descriptor key is "header_match", and the descriptor value is static.
+                                          description: RequestHeaderValueMatch defines
+                                            a descriptor entry that's populated if
+                                            the request's headers match a set of 1+
+                                            match criteria. The descriptor key is
+                                            "header_match", and the descriptor value
+                                            is static.
                                           properties:
                                             expectMatch:
                                               default: true
-                                              description: ExpectMatch defines whether the request must positively match the match criteria in order to generate a descriptor entry (i.e. true), or not match the match criteria in order to generate a descriptor entry (i.e. false). The default is true.
+                                              description: ExpectMatch defines whether
+                                                the request must positively match
+                                                the match criteria in order to generate
+                                                a descriptor entry (i.e. true), or
+                                                not match the match criteria in order
+                                                to generate a descriptor entry (i.e.
+                                                false). The default is true.
                                               type: boolean
                                             headers:
-                                              description: Headers is a list of 1+ match criteria to apply against the request to determine whether to populate the descriptor entry or not.
+                                              description: Headers is a list of 1+
+                                                match criteria to apply against the
+                                                request to determine whether to populate
+                                                the descriptor entry or not.
                                               items:
-                                                description: HeaderMatchCondition specifies how to conditionally match against HTTP headers. The Name field is required, but only one of the remaining fields should be be provided.
+                                                description: HeaderMatchCondition
+                                                  specifies how to conditionally match
+                                                  against HTTP headers. The Name field
+                                                  is required, but only one of the
+                                                  remaining fields should be be provided.
                                                 properties:
                                                   contains:
-                                                    description: Contains specifies a substring that must be present in the header value.
+                                                    description: Contains specifies
+                                                      a substring that must be present
+                                                      in the header value.
                                                     type: string
                                                   exact:
-                                                    description: Exact specifies a string that the header value must be equal to.
+                                                    description: Exact specifies a
+                                                      string that the header value
+                                                      must be equal to.
                                                     type: string
                                                   name:
-                                                    description: Name is the name of the header to match against. Name is required. Header names are case insensitive.
+                                                    description: Name is the name
+                                                      of the header to match against.
+                                                      Name is required. Header names
+                                                      are case insensitive.
                                                     type: string
                                                   notcontains:
-                                                    description: NotContains specifies a substring that must not be present in the header value.
+                                                    description: NotContains specifies
+                                                      a substring that must not be
+                                                      present in the header value.
                                                     type: string
                                                   notexact:
-                                                    description: NoExact specifies a string that the header value must not be equal to. The condition is true if the header has any other value.
+                                                    description: NoExact specifies
+                                                      a string that the header value
+                                                      must not be equal to. The condition
+                                                      is true if the header has any
+                                                      other value.
                                                     type: string
                                                   present:
-                                                    description: Present specifies that condition is true when the named header is present, regardless of its value. Note that setting Present to false does not make the condition true if the named header is absent.
+                                                    description: Present specifies
+                                                      that condition is true when
+                                                      the named header is present,
+                                                      regardless of its value. Note
+                                                      that setting Present to false
+                                                      does not make the condition
+                                                      true if the named header is
+                                                      absent.
                                                     type: boolean
                                                 required:
                                                 - name
@@ -1009,7 +1047,8 @@ spec:
                                               minItems: 1
                                               type: array
                                             value:
-                                              description: Value defines the value of the descriptor entry.
+                                              description: Value defines the value
+                                                of the descriptor entry.
                                               minLength: 1
                                               type: string
                                           type: object
@@ -1781,34 +1820,70 @@ spec:
                                             type: string
                                         type: object
                                       requestHeaderValueMatch:
-                                        description: RequestHeaderValueMatch defines a descriptor entry that's populated if the request's headers match a set of 1+ match criteria. The descriptor key is "header_match", and the descriptor value is static.
+                                        description: RequestHeaderValueMatch defines
+                                          a descriptor entry that's populated if the
+                                          request's headers match a set of 1+ match
+                                          criteria. The descriptor key is "header_match",
+                                          and the descriptor value is static.
                                         properties:
                                           expectMatch:
                                             default: true
-                                            description: ExpectMatch defines whether the request must positively match the match criteria in order to generate a descriptor entry (i.e. true), or not match the match criteria in order to generate a descriptor entry (i.e. false). The default is true.
+                                            description: ExpectMatch defines whether
+                                              the request must positively match the
+                                              match criteria in order to generate
+                                              a descriptor entry (i.e. true), or not
+                                              match the match criteria in order to
+                                              generate a descriptor entry (i.e. false).
+                                              The default is true.
                                             type: boolean
                                           headers:
-                                            description: Headers is a list of 1+ match criteria to apply against the request to determine whether to populate the descriptor entry or not.
+                                            description: Headers is a list of 1+ match
+                                              criteria to apply against the request
+                                              to determine whether to populate the
+                                              descriptor entry or not.
                                             items:
-                                              description: HeaderMatchCondition specifies how to conditionally match against HTTP headers. The Name field is required, but only one of the remaining fields should be be provided.
+                                              description: HeaderMatchCondition specifies
+                                                how to conditionally match against
+                                                HTTP headers. The Name field is required,
+                                                but only one of the remaining fields
+                                                should be be provided.
                                               properties:
                                                 contains:
-                                                  description: Contains specifies a substring that must be present in the header value.
+                                                  description: Contains specifies
+                                                    a substring that must be present
+                                                    in the header value.
                                                   type: string
                                                 exact:
-                                                  description: Exact specifies a string that the header value must be equal to.
+                                                  description: Exact specifies a string
+                                                    that the header value must be
+                                                    equal to.
                                                   type: string
                                                 name:
-                                                  description: Name is the name of the header to match against. Name is required. Header names are case insensitive.
+                                                  description: Name is the name of
+                                                    the header to match against. Name
+                                                    is required. Header names are
+                                                    case insensitive.
                                                   type: string
                                                 notcontains:
-                                                  description: NotContains specifies a substring that must not be present in the header value.
+                                                  description: NotContains specifies
+                                                    a substring that must not be present
+                                                    in the header value.
                                                   type: string
                                                 notexact:
-                                                  description: NoExact specifies a string that the header value must not be equal to. The condition is true if the header has any other value.
+                                                  description: NoExact specifies a
+                                                    string that the header value must
+                                                    not be equal to. The condition
+                                                    is true if the header has any
+                                                    other value.
                                                   type: string
                                                 present:
-                                                  description: Present specifies that condition is true when the named header is present, regardless of its value. Note that setting Present to false does not make the condition true if the named header is absent.
+                                                  description: Present specifies that
+                                                    condition is true when the named
+                                                    header is present, regardless
+                                                    of its value. Note that setting
+                                                    Present to false does not make
+                                                    the condition true if the named
+                                                    header is absent.
                                                   type: boolean
                                               required:
                                               - name
@@ -1816,7 +1891,8 @@ spec:
                                             minItems: 1
                                             type: array
                                           value:
-                                            description: Value defines the value of the descriptor entry.
+                                            description: Value defines the value of
+                                              the descriptor entry.
                                             minLength: 1
                                             type: string
                                         type: object
