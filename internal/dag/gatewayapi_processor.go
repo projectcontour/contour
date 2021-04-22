@@ -71,8 +71,23 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		var matchingRoutes []*gatewayapi_v1alpha1.HTTPRoute
 		var listenerSecret *Secret
 
+		// Validate the Kind on the selector is a supported type.
+		if listener.Protocol != gatewayapi_v1alpha1.HTTPProtocolType &&
+			listener.Protocol != gatewayapi_v1alpha1.HTTPSProtocolType &&
+			listener.Protocol != gatewayapi_v1alpha1.TLSProtocolType {
+			p.Errorf("Listener.Protocol %q is not supported.", listener.Protocol)
+			continue
+		}
+
 		// Check for TLS on the Gateway.
 		if listener.TLS != nil {
+			if listener.Protocol != gatewayapi_v1alpha1.HTTPSProtocolType &&
+				listener.Protocol != gatewayapi_v1alpha1.TLSProtocolType {
+				p.Errorf("Listener.Protocol type must be %q or %q if specifying \"tls\" on a Gateway.",
+					gatewayapi_v1alpha1.HTTPSProtocolType, gatewayapi_v1alpha1.TLSProtocolType)
+				continue
+			}
+
 			if listenerSecret = p.validGatewayTLS(listener); listenerSecret == nil {
 				// If TLS was configured on the Listener, but it's invalid, don't allow any
 				// routes to be bound to this listener since it can't serve TLS traffic.

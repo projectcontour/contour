@@ -1160,6 +1160,39 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			),
 		},
 		"insert basic single route, single hostname, gateway with TLS": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPProtocolType, // <--- invalid protocol, must be "HTTPS"
+						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+								Group: "core",
+								Kind:  "Secret",
+								Name:  sec1.Name,
+							},
+						},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(),
+		},
+		"insert basic single route, single hostname, gateway with TLS, invalid listener protocol": {
 			gateway: gatewayWithOnlyTLS,
 			objs: []interface{}{
 				sec1,
@@ -1352,6 +1385,50 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 				},
 			},
+			want: listeners(),
+		},
+		"Invalid listener protocol type (TCP)": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: gatewayapi_v1alpha1.TCPProtocolType,
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{genericHTTPRoute},
+			want: listeners(),
+		},
+		"Invalid listener protocol type (UDP)": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: gatewayapi_v1alpha1.UDPProtocolType,
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{genericHTTPRoute},
 			want: listeners(),
 		},
 		"insert basic single route, single hostname, gateway with TLS & Insecure Listeners, different selectors": {
