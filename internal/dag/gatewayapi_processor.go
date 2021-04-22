@@ -19,6 +19,8 @@ import (
 	"net/http"
 	"strings"
 
+	"k8s.io/utils/pointer"
+
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,9 +96,11 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 
 		// Validate the Group on the selector is a supported type.
-		if listener.Routes.Group != "" && listener.Routes.Group != gatewayapi_v1alpha1.GroupName {
-			p.Errorf("Listener.Routes.Group %q is not supported.", listener.Routes.Group)
-			continue
+		if listener.Routes.Group != nil {
+			if *listener.Routes.Group != gatewayapi_v1alpha1.GroupName {
+				p.Errorf("Listener.Routes.Group %q is not supported.", listener.Routes.Group)
+				continue
+			}
 		}
 
 		// Validate the Kind on the selector is a supported type.
@@ -117,14 +121,22 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			// with the Gateway. If this Selector is defined, only routes matching the Selector
 			// are associated with the Gateway. An empty Selector matches all routes.
 
-			nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route)
-			if err != nil {
-				p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
+			var err error
+			nsMatches := true
+			selMatches := true
+
+			if listener.Routes.Namespaces != nil {
+				nsMatches, err = p.namespaceMatches(*listener.Routes.Namespaces, route)
+				if err != nil {
+					p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
+				}
 			}
 
-			selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
-			if err != nil {
-				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+			if listener.Routes.Selector != nil {
+				selMatches, err = selectorMatches(*listener.Routes.Selector, route.Labels)
+				if err != nil {
+					p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+				}
 			}
 
 			if selMatches && nsMatches {
@@ -216,7 +228,11 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces gatewayapi_v1alpha1.Ro
 	//     this Gateway.
 	//   * Same: Only Routes in the same namespace may be used by this Gateway.
 
-	switch namespaces.From {
+	if namespaces.From == nil {
+		return true, nil
+	}
+
+	switch *namespaces.From {
 	case gatewayapi_v1alpha1.RouteSelectAll:
 		return true, nil
 	case gatewayapi_v1alpha1.RouteSelectSame:
@@ -231,7 +247,7 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces gatewayapi_v1alpha1.Ro
 
 			// Check that the route's namespace is included in the Gateway's
 			// namespace selector/expression.
-			l, err := metav1.LabelSelectorAsSelector(&namespaces.Selector)
+			l, err := metav1.LabelSelectorAsSelector(namespaces.Selector)
 			if err != nil {
 				return false, err
 			}
@@ -282,32 +298,34 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 	for _, rule := range route.Spec.Rules {
 
-		matchconditions := []*matchConditions{}
+		var matchconditions []*matchConditions
 
 		for _, match := range rule.Matches {
 			mc := &matchConditions{}
-			// TODO: Replace this with nil check when gateway-api includes this fix -
-			// https://github.com/kubernetes-sigs/gateway-api/commit/9d63656df8cc9e67da60d4fe3f6289aad22e72d3
-			if match.Path.Value == "" || match.Path.Type == "" {
-				match.Path = gatewayapi_v1alpha1.HTTPPathMatch{Type: gatewayapi_v1alpha1.PathMatchPrefix, Value: "/"}
+			if match.Path == nil || match.Path.Value == nil || match.Path.Type == nil {
+				match.Path = &gatewayapi_v1alpha1.HTTPPathMatch{Type: pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix), Value: pointer.StringPtr("/")}
 			}
-			switch match.Path.Type {
-			case gatewayapi_v1alpha1.PathMatchPrefix:
-				mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: stringOrDefault(match.Path.Value, "/")})
-			case gatewayapi_v1alpha1.PathMatchExact:
-				mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: stringOrDefault(match.Path.Value, "/")})
-			default:
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
+			if match.Path.Type != nil {
+				switch *match.Path.Type {
+				case gatewayapi_v1alpha1.PathMatchPrefix:
+					mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: stringOrDefaultFromPtr(match.Path.Value, "/")})
+				case gatewayapi_v1alpha1.PathMatchExact:
+					mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: stringOrDefaultFromPtr(match.Path.Value, "/")})
+				default:
+					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
+				}
 			}
 
 			if match.Headers != nil {
-				switch match.Headers.Type {
-				case gatewayapi_v1alpha1.HeaderMatchExact:
-					for k, v := range match.Headers.Values {
-						mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: HeaderMatchTypeExact, Name: k, Value: v})
+				if match.Headers.Type != nil {
+					switch *match.Headers.Type {
+					case gatewayapi_v1alpha1.HeaderMatchExact:
+						for k, v := range match.Headers.Values {
+							mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: HeaderMatchTypeExact, Name: k, Value: v})
+						}
+					default:
+						routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
 					}
-				default:
-					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
 				}
 			}
 			matchconditions = append(matchconditions, mc)
@@ -321,7 +339,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		var clusters []*Cluster
 
 		// Validate the ForwardTos.
-		totalWeight := int32(0)
+		totalWeight := uint32(0)
 		for _, forward := range rule.ForwardTo {
 
 			// Verify the service is valid
@@ -359,13 +377,19 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 				}
 			}
 
+			// Route defaults to a weight of "1" unless otherwise specified.
+			routeWeight := uint32(1)
+			if forward.Weight != nil {
+				routeWeight = uint32(*forward.Weight)
+			}
+
 			// Keep track of all the weights for this set of forwardTos. This will be
 			// used later to understand if all the weights are set to zero.
-			totalWeight += forward.Weight
+			totalWeight += routeWeight
 
 			// https://github.com/projectcontour/contour/issues/3593
-			service.Weighted.Weight = uint32(forward.Weight)
-			clusters = append(clusters, p.cluster(headerPolicy, service, uint32(forward.Weight)))
+			service.Weighted.Weight = routeWeight
+			clusters = append(clusters, p.cluster(headerPolicy, service, routeWeight))
 		}
 
 		var headerPolicy *HeadersPolicy
@@ -445,4 +469,19 @@ func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Serv
 		Protocol:             service.Protocol,
 		RequestHeadersPolicy: headerPolicy,
 	}
+}
+
+func pathMatchTypePtr(pmt gatewayapi_v1alpha1.PathMatchType) *gatewayapi_v1alpha1.PathMatchType {
+	return &pmt
+}
+
+func headerMatchTypePtr(hmt gatewayapi_v1alpha1.HeaderMatchType) *gatewayapi_v1alpha1.HeaderMatchType {
+	return &hmt
+}
+
+func stringOrDefaultFromPtr(s *string, def string) string {
+	if s == nil {
+		return def
+	}
+	return *s
 }

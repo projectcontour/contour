@@ -40,8 +40,8 @@ var gateway = &gatewayapi_v1alpha1.Gateway{
 			Port:     80,
 			Protocol: "HTTP",
 			Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-				Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-					From: gatewayapi_v1alpha1.RouteSelectAll,
+				Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+					From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 				},
 				Kind: dag.KindHTTPRoute,
 			},
@@ -56,8 +56,8 @@ var gateway = &gatewayapi_v1alpha1.Gateway{
 				},
 			},
 			Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-				Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-					From: gatewayapi_v1alpha1.RouteSelectAll,
+				Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+					From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 				},
 				Kind: dag.KindHTTPRoute,
 			},
@@ -105,27 +105,27 @@ func TestGateway_TLS(t *testing.T) {
 			},
 			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-					Path: gatewayapi_v1alpha1.HTTPPathMatch{
-						Type:  "Prefix",
-						Value: "/blog",
+					Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+						Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+						Value: pointer.StringPtr("/blog"),
 					},
 				}},
 				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 					ServiceName: pointer.StringPtr("svc2"),
 					Port:        gatewayPort(80),
-					Weight:      1,
+					Weight:      pointer.Int32Ptr(1),
 				}},
 			}, {
 				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-					Path: gatewayapi_v1alpha1.HTTPPathMatch{
-						Type:  "Prefix",
-						Value: "/",
+					Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+						Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+						Value: pointer.StringPtr("/"),
 					},
 				}},
 				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 					ServiceName: pointer.StringPtr("svc1"),
 					Port:        gatewayPort(80),
-					Weight:      10,
+					Weight:      pointer.Int32Ptr(10),
 				}},
 			}},
 		},
@@ -182,4 +182,12 @@ func TestGateway_TLS(t *testing.T) {
 func gatewayPort(port int) *gatewayapi_v1alpha1.PortNumber {
 	p := gatewayapi_v1alpha1.PortNumber(port)
 	return &p
+}
+
+func pathMatchTypePtr(pmt gatewayapi_v1alpha1.PathMatchType) *gatewayapi_v1alpha1.PathMatchType {
+	return &pmt
+}
+
+func routeSelectTypePtr(rst gatewayapi_v1alpha1.RouteSelectType) *gatewayapi_v1alpha1.RouteSelectType {
+	return &rst
 }
