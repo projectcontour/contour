@@ -15,7 +15,7 @@ package v1alpha1
 
 import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ExtensionProtocolVersion is the version of the GRPC protocol used
@@ -133,8 +133,8 @@ type ExtensionServiceStatus struct {
 // API so that Contour API features can be implemented by collaborating
 // components.
 type ExtensionService struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	meta_v1.TypeMeta   `json:",inline"`
+	meta_v1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   ExtensionServiceSpec   `json:"spec,omitempty"`
 	Status ExtensionServiceStatus `json:"status,omitempty"`
@@ -145,7 +145,7 @@ type ExtensionService struct {
 
 // ExtensionServiceList contains a list of ExtensionService resources.
 type ExtensionServiceList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ExtensionService `json:"items"`
+	meta_v1.TypeMeta `json:",inline"`
+	meta_v1.ListMeta `json:"metadata,omitempty"`
+	Items            []ExtensionService `json:"items"`
 }

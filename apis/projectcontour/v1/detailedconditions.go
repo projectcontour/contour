@@ -18,28 +18,28 @@
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ConditionStatus is a type alias for the k8s.io/apimachinery/pkg/apis/meta/v1
 // ConditionStatus type to maintain API compatibility.
 // +k8s:deepcopy-gen=false
-type ConditionStatus = metav1.ConditionStatus
+type ConditionStatus = meta_v1.ConditionStatus
 
 // These are valid condition statuses. "ConditionTrue" means a resource is in the condition.
 // "ConditionFalse" means a resource is not in the condition. "ConditionUnknown" means kubernetes
 // can't decide if a resource is in the condition or not. In the future, we could add other
 // intermediate conditions, e.g. ConditionDegraded. These are retained here for API compatibility.
 const (
-	ConditionTrue    ConditionStatus = metav1.ConditionTrue
-	ConditionFalse   ConditionStatus = metav1.ConditionFalse
-	ConditionUnknown ConditionStatus = metav1.ConditionUnknown
+	ConditionTrue    ConditionStatus = meta_v1.ConditionTrue
+	ConditionFalse   ConditionStatus = meta_v1.ConditionFalse
+	ConditionUnknown ConditionStatus = meta_v1.ConditionUnknown
 )
 
 // Condition is a type alias for the k8s.io/apimachinery/pkg/apis/meta/v1
 // Condition type to maintain API compatibility.
 // +k8s:deepcopy-gen=false
-type Condition = metav1.Condition
+type Condition = meta_v1.Condition
 
 // SubCondition is a Condition-like type intended for use as a subcondition inside a DetailedCondition.
 //

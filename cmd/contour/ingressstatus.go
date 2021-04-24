@@ -21,7 +21,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -49,7 +49,7 @@ type loadBalancerStatusWriter struct {
 	log              logrus.FieldLogger
 	clients          *k8s.Clients
 	isLeader         chan struct{}
-	lbStatus         chan v1.LoadBalancerStatus
+	lbStatus         chan core_v1.LoadBalancerStatus
 	statusUpdater    k8s.StatusUpdater
 	ingressClassName string
 	Converter        k8s.Converter
@@ -111,7 +111,7 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 			// informer from here. Clear the load balancer
 			// status so that subsequent informer events
 			// will have no effect.
-			u.Set(v1.LoadBalancerStatus{})
+			u.Set(core_v1.LoadBalancerStatus{})
 			return nil
 		case lbs := <-isw.lbStatus:
 			isw.log.WithField("loadbalancer-address", lbAddress(lbs)).
@@ -151,9 +151,9 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 	}
 }
 
-func parseStatusFlag(status string) v1.LoadBalancerStatus {
+func parseStatusFlag(status string) core_v1.LoadBalancerStatus {
 	// Support ','-separated lists.
-	var ingresses []v1.LoadBalancerIngress
+	var ingresses []core_v1.LoadBalancerIngress
 
 	for _, item := range strings.Split(status, ",") {
 		item = strings.TrimSpace(item)
@@ -164,23 +164,23 @@ func parseStatusFlag(status string) v1.LoadBalancerStatus {
 		// Use the parseability by net.ParseIP as a signal, since we need
 		// to pass a string into the v1.LoadBalancerIngress anyway.
 		if ip := net.ParseIP(item); ip != nil {
-			ingresses = append(ingresses, v1.LoadBalancerIngress{
+			ingresses = append(ingresses, core_v1.LoadBalancerIngress{
 				IP: item,
 			})
 		} else {
-			ingresses = append(ingresses, v1.LoadBalancerIngress{
+			ingresses = append(ingresses, core_v1.LoadBalancerIngress{
 				Hostname: item,
 			})
 		}
 	}
 
-	return v1.LoadBalancerStatus{
+	return core_v1.LoadBalancerStatus{
 		Ingress: ingresses,
 	}
 }
 
 // lbAddress gets the string representation of the first address, for logging.
-func lbAddress(lb v1.LoadBalancerStatus) string {
+func lbAddress(lb core_v1.LoadBalancerStatus) string {
 	if len(lb.Ingress) == 0 {
 		return ""
 	}

@@ -46,8 +46,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -159,7 +159,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 func validateCRDs(dynamicClient dynamic.Interface, log logrus.FieldLogger) {
 	client := dynamicClient.Resource(schema.GroupVersionResource{Group: "apiextensions.k8s.io", Version: "v1", Resource: "customresourcedefinitions"})
 
-	crds, err := client.List(context.TODO(), metav1.ListOptions{})
+	crds, err := client.List(context.TODO(), meta_v1.ListOptions{})
 	if err != nil {
 		log.Warnf("error listing v1 custom resource definitions: %v", err)
 		return
@@ -310,7 +310,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		client := clients.DynamicClient().Resource(contour_api_v1alpha1.ExtensionServiceGVR).Namespace(namespacedName.Namespace)
 
 		// ensure the specified ExtensionService exists
-		res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
+		res, err := client.Get(context.Background(), namespacedName.Name, meta_v1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("error getting rate limit extension service %s: %v", namespacedName, err)
 		}
@@ -555,7 +555,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log:              log.WithField("context", "loadBalancerStatusWriter"),
 		clients:          clients,
 		isLeader:         eventHandler.IsLeader,
-		lbStatus:         make(chan corev1.LoadBalancerStatus, 1),
+		lbStatus:         make(chan core_v1.LoadBalancerStatus, 1),
 		ingressClassName: ctx.ingressClassName,
 		statusUpdater:    sh.Writer(),
 		Converter:        converter,

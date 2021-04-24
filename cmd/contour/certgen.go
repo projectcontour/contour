@@ -24,7 +24,7 @@ import (
 	"github.com/projectcontour/contour/pkg/certs"
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -86,7 +86,7 @@ type certgenConfig struct {
 
 // OutputCerts outputs the certs in certs as directed by config.
 func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs *certs.Certificates) error {
-	secrets := []*corev1.Secret{}
+	secrets := []*core_v1.Secret{}
 	force := certgen.NoOverwrite
 	if config.Overwrite {
 		force = certgen.Overwrite

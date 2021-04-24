@@ -14,8 +14,8 @@
 package v1
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // HTTPProxySpec defines the spec of the CRD.
@@ -792,7 +792,7 @@ type HTTPProxyStatus struct {
 	Description string `json:"description,omitempty"`
 	// +optional
 	// LoadBalancer contains the current status of the load balancer.
-	LoadBalancer corev1.LoadBalancerStatus `json:"loadBalancer,omitempty"`
+	LoadBalancer core_v1.LoadBalancerStatus `json:"loadBalancer,omitempty"`
 	// +optional
 	// Conditions contains information about the current status of the HTTPProxy,
 	// in an upstream-friendly container.
@@ -825,8 +825,8 @@ type HTTPProxyStatus struct {
 // +kubebuilder:resource:scope=Namespaced,path=httpproxies,shortName=proxy;proxies,singular=httpproxy
 // +kubebuilder:subresource:status
 type HTTPProxy struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
+	meta_v1.TypeMeta   `json:",inline"`
+	meta_v1.ObjectMeta `json:"metadata"`
 
 	Spec HTTPProxySpec `json:"spec"`
 	// Status is a container for computed information about the HTTPProxy.
@@ -838,7 +838,7 @@ type HTTPProxy struct {
 
 // HTTPProxyList is a list of HTTPProxies.
 type HTTPProxyList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata"`
-	Items           []HTTPProxy `json:"items"`
+	meta_v1.TypeMeta `json:",inline"`
+	meta_v1.ListMeta `json:"metadata"`
+	Items            []HTTPProxy `json:"items"`
 }
