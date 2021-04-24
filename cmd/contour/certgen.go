@@ -23,14 +23,14 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/pkg/certs"
 	"github.com/sirupsen/logrus"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	kingpin_v2 "gopkg.in/alecthomas/kingpin.v2"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 // registercertgen registers the certgen subcommand and flags
 // with the Application provided.
-func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgenConfig) {
+func registerCertGen(app *kingpin_v2.Application) (*kingpin_v2.CmdClause, *certgenConfig) {
 	var certgenConfig certgenConfig
 	certgenApp := app.Command("certgen", "Generate new TLS certs for bootstrapping gRPC over TLS.")
 

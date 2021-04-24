@@ -28,7 +28,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	kingpin_v2 "gopkg.in/alecthomas/kingpin.v2"
 )
 
 // Client holds the details for the cli client to connect to.
@@ -47,20 +47,20 @@ func (c *Client) dial() *grpc.ClientConn {
 	case c.CAFile != "" || c.ClientCert != "" || c.ClientKey != "":
 		// If one of the three TLS commands is not empty, they all must be not empty
 		if !(c.CAFile != "" && c.ClientCert != "" && c.ClientKey != "") {
-			kingpin.Fatalf("you must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them")
+			kingpin_v2.Fatalf("you must supply all three TLS parameters - --cafile, --cert-file, --key-file, or none of them")
 		}
 		// Load the client certificates from disk
 		certificate, err := tls.LoadX509KeyPair(c.ClientCert, c.ClientKey)
-		kingpin.FatalIfError(err, "failed to load certificates from disk")
+		kingpin_v2.FatalIfError(err, "failed to load certificates from disk")
 		// Create a certificate pool from the certificate authority
 		certPool := x509.NewCertPool()
 		ca, err := ioutil.ReadFile(c.CAFile)
-		kingpin.FatalIfError(err, "failed to read CA cert")
+		kingpin_v2.FatalIfError(err, "failed to read CA cert")
 
 		// Append the certificates from the CA
 		if ok := certPool.AppendCertsFromPEM(ca); !ok {
 			// TODO(nyoung) OMG yuck, thanks for this, crypto/tls. Suggestions on alternates welcomed.
-			kingpin.Fatalf("failed to append CA certs")
+			kingpin_v2.Fatalf("failed to append CA certs")
 		}
 
 		creds := credentials.NewTLS(&tls.Config{
@@ -79,7 +79,7 @@ func (c *Client) dial() *grpc.ClientConn {
 	}
 
 	conn, err := grpc.Dial(c.ContourAddr, options...)
-	kingpin.FatalIfError(err, "failed connecting Contour Server")
+	kingpin_v2.FatalIfError(err, "failed connecting Contour Server")
 
 	return conn
 }
@@ -87,28 +87,28 @@ func (c *Client) dial() *grpc.ClientConn {
 // ClusterStream returns a stream of Clusters using the config in the Client.
 func (c *Client) ClusterStream() envoy_service_cluster_v3.ClusterDiscoveryService_StreamClustersClient {
 	stream, err := envoy_service_cluster_v3.NewClusterDiscoveryServiceClient(c.dial()).StreamClusters(context.Background())
-	kingpin.FatalIfError(err, "failed to fetch stream of Clusters")
+	kingpin_v2.FatalIfError(err, "failed to fetch stream of Clusters")
 	return stream
 }
 
 // EndpointStream returns a stream of Endpoints using the config in the Client.
 func (c *Client) EndpointStream() envoy_service_endpoint_v3.EndpointDiscoveryService_StreamEndpointsClient {
 	stream, err := envoy_service_endpoint_v3.NewEndpointDiscoveryServiceClient(c.dial()).StreamEndpoints(context.Background())
-	kingpin.FatalIfError(err, "failed to fetch stream of Endpoints")
+	kingpin_v2.FatalIfError(err, "failed to fetch stream of Endpoints")
 	return stream
 }
 
 // ListenerStream returns a stream of Listeners using the config in the Client.
 func (c *Client) ListenerStream() envoy_service_listener_v3.ListenerDiscoveryService_StreamListenersClient {
 	stream, err := envoy_service_listener_v3.NewListenerDiscoveryServiceClient(c.dial()).StreamListeners(context.Background())
-	kingpin.FatalIfError(err, "failed to fetch stream of Listeners")
+	kingpin_v2.FatalIfError(err, "failed to fetch stream of Listeners")
 	return stream
 }
 
 // RouteStream returns a stream of Routes using the config in the Client.
 func (c *Client) RouteStream() envoy_service_route_v3.RouteDiscoveryService_StreamRoutesClient {
 	stream, err := envoy_service_route_v3.NewRouteDiscoveryServiceClient(c.dial()).StreamRoutes(context.Background())
-	kingpin.FatalIfError(err, "failed to fetch stream of Routes")
+	kingpin_v2.FatalIfError(err, "failed to fetch stream of Routes")
 	return stream
 }
 
@@ -128,10 +128,10 @@ func watchstream(st stream, typeURL string, resources []string) {
 			ResourceNames: resources,
 		}
 		err := st.Send(req)
-		kingpin.FatalIfError(err, "failed to send Discover Request")
+		kingpin_v2.FatalIfError(err, "failed to send Discover Request")
 		resp, err := st.Recv()
-		kingpin.FatalIfError(err, "failed to receive response for Discover Request")
+		kingpin_v2.FatalIfError(err, "failed to receive response for Discover Request")
 		err = m.Marshal(os.Stdout, resp)
-		kingpin.FatalIfError(err, "failed to marshal Discovery Response")
+		kingpin_v2.FatalIfError(err, "failed to marshal Discovery Response")
 	}
 }

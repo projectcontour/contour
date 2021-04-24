@@ -15,12 +15,12 @@ package main
 
 import (
 	"github.com/projectcontour/contour/internal/envoy"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	kingpin_v2 "gopkg.in/alecthomas/kingpin.v2"
 )
 
 // registerBootstrap registers the bootstrap subcommand and flags
 // with the Application provided.
-func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *envoy.BootstrapConfig) {
+func registerBootstrap(app *kingpin_v2.Application) (*kingpin_v2.CmdClause, *envoy.BootstrapConfig) {
 	var config envoy.BootstrapConfig
 
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")

@@ -27,7 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/pkg/certs"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 )
 
 func TestGeneratedSecretsValid(t *testing.T) {
@@ -81,15 +81,15 @@ func TestGeneratedSecretsValid(t *testing.T) {
 		// Check the keys we want are present.
 		for _, key := range []string{
 			dag.CACertificateKey,
-			corev1.TLSCertKey,
-			corev1.TLSPrivateKeyKey,
+			core_v1.TLSCertKey,
+			core_v1.TLSPrivateKeyKey,
 		} {
 			if _, ok := s.Data[key]; !ok {
 				t.Errorf("missing data key %q", key)
 			}
 		}
 
-		pemBlock, _ := pem.Decode(s.Data[corev1.TLSCertKey])
+		pemBlock, _ := pem.Decode(s.Data[core_v1.TLSCertKey])
 		assert.Equal(t, pemBlock.Type, "CERTIFICATE")
 
 		cert, err := x509.ParseCertificate(pemBlock.Bytes)

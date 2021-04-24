@@ -21,14 +21,14 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	kingpin_v2 "gopkg.in/alecthomas/kingpin.v2"
 )
 
 func main() {
 	log := logrus.StandardLogger()
 	k8s.InitLogging(k8s.LogWriterOption(log.WithField("context", "kubernetes")))
 
-	app := kingpin.New("contour", "Contour Kubernetes ingress controller.")
+	app := kingpin_v2.New("contour", "Contour Kubernetes ingress controller.")
 	app.HelpFlag.Short('h')
 
 	envoyCmd := app.Command("envoy", "Sub-command for envoy actions.")
@@ -64,7 +64,7 @@ func main() {
 	version := app.Command("version", "Build information for Contour.")
 
 	args := os.Args[1:]
-	switch kingpin.MustParse(app.Parse(args)) {
+	switch kingpin_v2.MustParse(app.Parse(args)) {
 	case sdm.FullCommand():
 		doShutdownManager(shutdownManagerCtx)
 	case sdmShutdown.FullCommand():
@@ -97,7 +97,7 @@ func main() {
 	case serve.FullCommand():
 		// Parse args a second time so cli flags are applied
 		// on top of any values sourced from -c's config file.
-		kingpin.MustParse(app.Parse(args))
+		kingpin_v2.MustParse(app.Parse(args))
 
 		// Reinitialize with the target debug level.
 		k8s.InitLogging(
