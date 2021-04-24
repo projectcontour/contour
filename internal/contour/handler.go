@@ -25,7 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EventHandler implements cache.ResourceEventHandler, filters k8s events towards
@@ -178,8 +178,8 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 	case opUpdate:
 		if cmp.Equal(op.oldObj, op.newObj,
 			cmpopts.IgnoreFields(contour_api_v1.HTTPProxy{}, "Status"),
-			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ResourceVersion"),
-			cmpopts.IgnoreFields(metav1.ObjectMeta{}, "ManagedFields"),
+			cmpopts.IgnoreFields(meta_v1.ObjectMeta{}, "ResourceVersion"),
+			cmpopts.IgnoreFields(meta_v1.ObjectMeta{}, "ManagedFields"),
 		) {
 			e.WithField("op", "update").Debugf("%T skipping update, only status has changed", op.newObj)
 			return false

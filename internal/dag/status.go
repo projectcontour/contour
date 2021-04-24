@@ -18,13 +18,13 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/status"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 // Status contains the status for an HTTPProxy (valid / invalid / orphan, etc)
 type Status struct {
-	Object      metav1.Object
+	Object      meta_v1.Object
 	Status      string
 	Description string
 	Vhost       string
@@ -36,7 +36,7 @@ type StatusWriter struct {
 
 type ObjectStatusWriter struct {
 	sw     *StatusWriter
-	obj    metav1.Object
+	obj    meta_v1.Object
 	values map[string]string
 }
 
@@ -47,7 +47,7 @@ type ObjectStatusWriter struct {
 // but keep the commit function for itself. The commit function should be either called
 // via a defer, or directly if statuses are being set in a loop (as defers will not fire
 // until the end of the function).
-func (sw *StatusWriter) WithObject(obj metav1.Object) (_ *ObjectStatusWriter, commit func()) {
+func (sw *StatusWriter) WithObject(obj meta_v1.Object) (_ *ObjectStatusWriter, commit func()) {
 	osw := &ObjectStatusWriter{
 		sw:     sw,
 		obj:    obj,
@@ -100,7 +100,7 @@ func (osw *ObjectStatusWriter) SetValid() {
 // ObjectStatusWriter's values, including its status if set. This is convenient if
 // the object shares a relationship with its parent. The caller should arrange for
 // the commit function to be called to write the final status of the object.
-func (osw *ObjectStatusWriter) WithObject(obj metav1.Object) (_ *ObjectStatusWriter, commit func()) {
+func (osw *ObjectStatusWriter) WithObject(obj meta_v1.Object) (_ *ObjectStatusWriter, commit func()) {
 	m := make(map[string]string)
 	for k, v := range osw.values {
 		m[k] = v

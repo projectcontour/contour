@@ -28,7 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/sirupsen/logrus"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	util_errors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -256,7 +256,7 @@ func headersPolicyGatewayAPI(hf *gatewayapi_v1alpha1.HTTPRequestHeaderFilter) (*
 		Set:         set,
 		HostRewrite: hostRewrite,
 		Remove:      rl,
-	}, utilerrors.NewAggregate(errlist)
+	}, util_errors.NewAggregate(errlist)
 }
 
 func escapeHeaderValue(value string, dynamicHeaders map[string]string) string {

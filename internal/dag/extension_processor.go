@@ -23,7 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -179,7 +179,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		// TODO(jpeach): Add ExternalName support in https://github.com/projectcontour/contour/issues/2875.
 		if svc.Spec.ExternalName != "" {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeServiceError, "UnsupportedServiceType",
-				"Service %q is of unsupported type %q.", svcName, corev1.ServiceTypeExternalName)
+				"Service %q is of unsupported type %q.", svcName, core_v1.ServiceTypeExternalName)
 			continue
 		}
 

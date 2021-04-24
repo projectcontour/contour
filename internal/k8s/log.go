@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	klog "k8s.io/klog/v2"
+	klog_v2 "k8s.io/klog/v2"
 )
 
 type klogParams struct {
@@ -64,7 +64,7 @@ func InitLogging(options ...LogOption) {
 	}
 
 	// First, init the flags so that we can set specific values.
-	klog.InitFlags(p.flags)
+	klog_v2.InitFlags(p.flags)
 
 	for _, o := range options {
 		o(&p)
@@ -77,7 +77,7 @@ func InitLogging(options ...LogOption) {
 		must(p.flags.Set("logtostderr", "false"))
 		must(p.flags.Set("alsologtostderr", "false"))
 
-		klog.SetOutput(makeWriter(p.log))
+		klog_v2.SetOutput(makeWriter(p.log))
 	}
 }
 

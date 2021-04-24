@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -126,7 +126,7 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 		_, err = suh.Clients.DynamicClient().
 			Resource(upd.Resource).
 			Namespace(upd.NamespacedName.Namespace).
-			UpdateStatus(context.Background(), usNewObj, metav1.UpdateOptions{})
+			UpdateStatus(context.Background(), usNewObj, meta_v1.UpdateOptions{})
 		return err
 	}); err != nil {
 		suh.Log.WithError(err).

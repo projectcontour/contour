@@ -21,18 +21,18 @@ import (
 	"strings"
 	"time"
 
-	accesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_compressor_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/compressor/v3"
-	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
-	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
+	ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
+	lua_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	envoy_extensions_filters_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
-	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -43,13 +43,13 @@ import (
 	"github.com/projectcontour/contour/internal/timeout"
 )
 
-type HTTPVersionType = http.HttpConnectionManager_CodecType
+type HTTPVersionType = http_connection_manager_v3.HttpConnectionManager_CodecType
 
 const (
-	HTTPVersionAuto HTTPVersionType = http.HttpConnectionManager_AUTO
-	HTTPVersion1    HTTPVersionType = http.HttpConnectionManager_HTTP1
-	HTTPVersion2    HTTPVersionType = http.HttpConnectionManager_HTTP2
-	HTTPVersion3    HTTPVersionType = http.HttpConnectionManager_HTTP3
+	HTTPVersionAuto HTTPVersionType = http_connection_manager_v3.HttpConnectionManager_AUTO
+	HTTPVersion1    HTTPVersionType = http_connection_manager_v3.HttpConnectionManager_HTTP1
+	HTTPVersion2    HTTPVersionType = http_connection_manager_v3.HttpConnectionManager_HTTP2
+	HTTPVersion3    HTTPVersionType = http_connection_manager_v3.HttpConnectionManager_HTTP3
 
 	HTTPFilterRouter  = "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router"
 	HTTPFilterCORS    = "type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors"
@@ -143,14 +143,14 @@ func Listener(name, address string, port int, lf []*envoy_listener_v3.ListenerFi
 type httpConnectionManagerBuilder struct {
 	routeConfigName               string
 	metricsPrefix                 string
-	accessLoggers                 []*accesslog.AccessLog
+	accessLoggers                 []*accesslog_v3.AccessLog
 	requestTimeout                timeout.Setting
 	connectionIdleTimeout         timeout.Setting
 	streamIdleTimeout             timeout.Setting
 	delayedCloseTimeout           timeout.Setting
 	maxConnectionDuration         timeout.Setting
 	connectionShutdownGracePeriod timeout.Setting
-	filters                       []*http.HttpFilter
+	filters                       []*http_connection_manager_v3.HttpFilter
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 	allowChunkedLength            bool
 	numTrustedHops                uint32
@@ -180,7 +180,7 @@ func (b *httpConnectionManagerBuilder) Codec(codecType HTTPVersionType) *httpCon
 }
 
 // AccessLoggers sets the access logging configuration.
-func (b *httpConnectionManagerBuilder) AccessLoggers(loggers []*accesslog.AccessLog) *httpConnectionManagerBuilder {
+func (b *httpConnectionManagerBuilder) AccessLoggers(loggers []*accesslog_v3.AccessLog) *httpConnectionManagerBuilder {
 	b.accessLoggers = loggers
 	return b
 }
@@ -237,9 +237,9 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 	// The names are not required to match anything and are
 	// identified by the TypeURL of each filter.
 	b.filters = append(b.filters,
-		&http.HttpFilter{
+		&http_connection_manager_v3.HttpFilter{
 			Name: "compressor",
-			ConfigType: &http.HttpFilter_TypedConfig{
+			ConfigType: &http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(&envoy_compressor_v3.Compressor{
 					CompressorLibrary: &envoy_core_v3.TypedExtensionConfig{
 						Name: "gzip",
@@ -250,27 +250,27 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 				}),
 			},
 		},
-		&http.HttpFilter{
+		&http_connection_manager_v3.HttpFilter{
 			Name: "grpcweb",
-			ConfigType: &http.HttpFilter_TypedConfig{
+			ConfigType: &http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: &any.Any{
 					TypeUrl: HTTPFilterGrpcWeb,
 				},
 			},
 		},
-		&http.HttpFilter{
+		&http_connection_manager_v3.HttpFilter{
 			Name: "cors",
-			ConfigType: &http.HttpFilter_TypedConfig{
+			ConfigType: &http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: &any.Any{
 					TypeUrl: HTTPFilterCORS,
 				},
 			},
 		},
-		&http.HttpFilter{
+		&http_connection_manager_v3.HttpFilter{
 			Name: "local_ratelimit",
-			ConfigType: &http.HttpFilter_TypedConfig{
+			ConfigType: &http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(
-					&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+					&local_ratelimit_v3.LocalRateLimit{
 						StatPrefix: "http",
 						// since no token bucket is defined here, the filter is disabled
 						// globally but can be enabled on a per-vhost/route basis.
@@ -278,9 +278,9 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 				),
 			},
 		},
-		&http.HttpFilter{
+		&http_connection_manager_v3.HttpFilter{
 			Name: "router",
-			ConfigType: &http.HttpFilter_TypedConfig{
+			ConfigType: &http_connection_manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: &any.Any{
 					TypeUrl: HTTPFilterRouter,
 				},
@@ -297,7 +297,7 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 // are specially treated. There may only be one of these filters, and it must be the last.
 // AddFilter will ensure that the router filter, if present, is last, and will panic
 // if a second Router is added when one is already present.
-func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnectionManagerBuilder {
+func (b *httpConnectionManagerBuilder) AddFilter(f *http_connection_manager_v3.HttpFilter) *httpConnectionManagerBuilder {
 	if f == nil {
 		return b
 	}
@@ -368,10 +368,10 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		panic(err.Error())
 	}
 
-	cm := &http.HttpConnectionManager{
+	cm := &http_connection_manager_v3.HttpConnectionManager{
 		CodecType: b.codec,
-		RouteSpecifier: &http.HttpConnectionManager_Rds{
-			Rds: &http.Rds{
+		RouteSpecifier: &http_connection_manager_v3.HttpConnectionManager_Rds{
+			Rds: &http_connection_manager_v3.Rds{
 				RouteConfigName: b.routeConfigName,
 				ConfigSource:    ConfigSource("contour"),
 			},
@@ -393,7 +393,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		// before processing by filters or routing.
 		// Note that the port a listener is bound to will already be selected
 		// and that the port is stripped from the header sent upstream as well.
-		StripPortMode: &http.HttpConnectionManager_StripAnyHostPort{
+		StripPortMode: &http_connection_manager_v3.HttpConnectionManager_StripAnyHostPort{
 			StripAnyHostPort: true,
 		},
 
@@ -438,7 +438,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route, access log, and client request timeout.
-func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration, xffNumTrustedHops uint32) *envoy_listener_v3.Filter {
+func HTTPConnectionManager(routename string, accesslogger []*accesslog_v3.AccessLog, requestTimeout time.Duration, xffNumTrustedHops uint32) *envoy_listener_v3.Filter {
 	return HTTPConnectionManagerBuilder().
 		RouteConfigName(routename).
 		MetricsPrefix(routename).
@@ -455,7 +455,7 @@ func HTTPConnectionManagerBuilder() *httpConnectionManagerBuilder {
 }
 
 // TCPProxy creates a new TCPProxy filter.
-func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.AccessLog) *envoy_listener_v3.Filter {
+func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog_v3.AccessLog) *envoy_listener_v3.Filter {
 	// Set the idle timeout in seconds for connections through a TCP Proxy type filter.
 	// The value of two and a half hours for reasons documented at
 	// https://github.com/projectcontour/contour/issues/1074
@@ -467,9 +467,9 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 		return &envoy_listener_v3.Filter{
 			Name: wellknown.TCPProxy,
 			ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&tcp.TcpProxy{
+				TypedConfig: protobuf.MustMarshalAny(&tcp_proxy_v3.TcpProxy{
 					StatPrefix: statPrefix,
-					ClusterSpecifier: &tcp.TcpProxy_Cluster{
+					ClusterSpecifier: &tcp_proxy_v3.TcpProxy_Cluster{
 						Cluster: envoy.Clustername(proxy.Clusters[0]),
 					},
 					AccessLog:   accesslogger,
@@ -478,13 +478,13 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 			},
 		}
 	default:
-		var clusters []*tcp.TcpProxy_WeightedCluster_ClusterWeight
+		var clusters []*tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight
 		for _, c := range proxy.Clusters {
 			weight := c.Weight
 			if weight == 0 {
 				weight = 1
 			}
-			clusters = append(clusters, &tcp.TcpProxy_WeightedCluster_ClusterWeight{
+			clusters = append(clusters, &tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
 				Name:   envoy.Clustername(c),
 				Weight: weight,
 			})
@@ -493,10 +493,10 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 		return &envoy_listener_v3.Filter{
 			Name: wellknown.TCPProxy,
 			ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&tcp.TcpProxy{
+				TypedConfig: protobuf.MustMarshalAny(&tcp_proxy_v3.TcpProxy{
 					StatPrefix: statPrefix,
-					ClusterSpecifier: &tcp.TcpProxy_WeightedClusters{
-						WeightedClusters: &tcp.TcpProxy_WeightedCluster{
+					ClusterSpecifier: &tcp_proxy_v3.TcpProxy_WeightedClusters{
+						WeightedClusters: &tcp_proxy_v3.TcpProxy_WeightedCluster{
 							Clusters: clusters,
 						},
 					},
@@ -562,7 +562,7 @@ func FilterChains(filters ...*envoy_listener_v3.Filter) []*envoy_listener_v3.Fil
 	}
 }
 
-func FilterMisdirectedRequests(fqdn string) *http.HttpFilter {
+func FilterMisdirectedRequests(fqdn string) *http_connection_manager_v3.HttpFilter {
 	// When Envoy matches on the virtual host domain, we configure
 	// it to match any port specifier (see envoy.VirtualHost),
 	// so the Host header (authority) may contain a port that
@@ -584,10 +584,10 @@ function envoy_on_request(request_handle)
 end
 	`
 
-	return &http.HttpFilter{
+	return &http_connection_manager_v3.HttpFilter{
 		Name: "envoy.filters.http.lua",
-		ConfigType: &http.HttpFilter_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
+		ConfigType: &http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&lua_v3.Lua{
 				InlineCode: fmt.Sprintf(code, strings.ToLower(fqdn)),
 			}),
 		},
@@ -596,9 +596,9 @@ end
 
 // FilterExternalAuthz returns an `ext_authz` filter configured with the
 // requested parameters.
-func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting) *http.HttpFilter {
-	authConfig := envoy_config_filter_http_ext_authz_v3.ExtAuthz{
-		Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
+func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting) *http_connection_manager_v3.HttpFilter {
+	authConfig := ext_authz_v3.ExtAuthz{
+		Services: &ext_authz_v3.ExtAuthz_GrpcService{
 			GrpcService: &envoy_core_v3.GrpcService{
 				TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 					EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -617,8 +617,8 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 		// routing decisions?
 		ClearRouteCache:  true,
 		FailureModeAllow: failOpen,
-		StatusOnError: &envoy_type.HttpStatus{
-			Code: envoy_type.StatusCode_Forbidden,
+		StatusOnError: &type_v3.HttpStatus{
+			Code: type_v3.StatusCode_Forbidden,
 		},
 		MetadataContextNamespaces: []string{},
 		IncludePeerCertificate:    true,
@@ -627,9 +627,9 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 		TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 	}
 
-	return &http.HttpFilter{
+	return &http_connection_manager_v3.HttpFilter{
 		Name: "envoy.filters.http.ext_authz",
-		ConfigType: &http.HttpFilter_TypedConfig{
+		ConfigType: &http_connection_manager_v3.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&authConfig),
 		},
 	}

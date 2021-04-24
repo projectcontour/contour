@@ -19,7 +19,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/k8s"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -78,7 +78,7 @@ func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString
 	return dagSvc, nil
 }
 
-func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
+func upstreamProtocol(svc *core_v1.Service, port core_v1.ServicePort) string {
 	up := annotation.ParseUpstreamProtocols(svc.Annotations)
 	protocol := up[port.Name]
 	if protocol == "" {
@@ -87,8 +87,8 @@ func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {
 	return protocol
 }
 
-func externalName(svc *v1.Service) string {
-	if svc.Spec.Type != v1.ServiceTypeExternalName {
+func externalName(svc *core_v1.Service) string {
+	if svc.Spec.Type != core_v1.ServiceTypeExternalName {
 		return ""
 	}
 	return svc.Spec.ExternalName
@@ -224,17 +224,17 @@ func (v extensionClusterGetter) visit(vertex Vertex) {
 }
 
 // validSecret returns true if the Secret contains certificate and private key material.
-func validSecret(s *v1.Secret) error {
-	if s.Type != v1.SecretTypeTLS {
-		return fmt.Errorf("Secret type is not %q", v1.SecretTypeTLS)
+func validSecret(s *core_v1.Secret) error {
+	if s.Type != core_v1.SecretTypeTLS {
+		return fmt.Errorf("Secret type is not %q", core_v1.SecretTypeTLS)
 	}
 
-	if len(s.Data[v1.TLSCertKey]) == 0 {
-		return fmt.Errorf("empty %q key", v1.TLSCertKey)
+	if len(s.Data[core_v1.TLSCertKey]) == 0 {
+		return fmt.Errorf("empty %q key", core_v1.TLSCertKey)
 	}
 
-	if len(s.Data[v1.TLSPrivateKeyKey]) == 0 {
-		return fmt.Errorf("empty %q key", v1.TLSPrivateKeyKey)
+	if len(s.Data[core_v1.TLSPrivateKeyKey]) == 0 {
+		return fmt.Errorf("empty %q key", core_v1.TLSPrivateKeyKey)
 	}
 
 	return nil

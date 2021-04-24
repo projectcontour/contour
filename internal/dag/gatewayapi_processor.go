@@ -21,7 +21,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -218,7 +218,7 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces gatewayapi_v1alpha1.Ro
 
 			// Check that the route's namespace is included in the Gateway's
 			// namespace selector/expression.
-			l, err := metav1.LabelSelectorAsSelector(&namespaces.Selector)
+			l, err := meta_v1.LabelSelectorAsSelector(&namespaces.Selector)
 			if err != nil {
 				return false, err
 			}
@@ -231,11 +231,11 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces gatewayapi_v1alpha1.Ro
 }
 
 // selectorMatches returns true if the selector matches the labels on the object or is not defined.
-func selectorMatches(selector metav1.LabelSelector, objLabels map[string]string) (bool, error) {
+func selectorMatches(selector meta_v1.LabelSelector, objLabels map[string]string) (bool, error) {
 
 	// If a selector is defined then check that it matches the labels on the object.
 	if len(selector.MatchLabels) > 0 || len(selector.MatchExpressions) > 0 {
-		l, err := metav1.LabelSelectorAsSelector(&selector)
+		l, err := meta_v1.LabelSelectorAsSelector(&selector)
 		if err != nil {
 			return false, err
 		}
@@ -253,18 +253,18 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 	hosts, errs := p.computeHosts(route)
 	for _, err := range errs {
-		routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+		routeAccessor.AddCondition(status.ConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, err.Error())
 	}
 
 	// Check if all the hostnames are invalid.
 	if len(hosts) == 0 {
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, meta_v1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 		return
 	}
 
 	// Validate TLS Configuration
 	if route.Spec.TLS != nil {
-		routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonNotImplemented, "HTTPRoute.Spec.TLS: Not yet implemented.")
+		routeAccessor.AddCondition(status.ConditionNotImplemented, meta_v1.ConditionTrue, status.ReasonNotImplemented, "HTTPRoute.Spec.TLS: Not yet implemented.")
 	}
 
 	for _, rule := range route.Spec.Rules {
@@ -284,7 +284,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			case gatewayapi_v1alpha1.PathMatchExact:
 				mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: stringOrDefault(match.Path.Value, "/")})
 			default:
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
+				routeAccessor.AddCondition(status.ConditionNotImplemented, meta_v1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
 			}
 
 			if match.Headers != nil {
@@ -294,14 +294,14 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 						mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: HeaderMatchTypeExact, Name: k, Value: v})
 					}
 				default:
-					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
+					routeAccessor.AddCondition(status.ConditionNotImplemented, meta_v1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
 				}
 			}
 			matchconditions = append(matchconditions, mc)
 		}
 
 		if len(rule.ForwardTo) == 0 {
-			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.ForwardTo must be specified.")
+			routeAccessor.AddCondition(status.ConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.ForwardTo must be specified.")
 			continue
 		}
 
@@ -313,13 +313,13 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 			// Verify the service is valid
 			if forward.ServiceName == nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServiceName must be specified.")
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServiceName must be specified.")
 				continue
 			}
 
 			// TODO: Do not require port to be present (#3352).
 			if forward.Port == nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServicePort must be specified.")
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServicePort must be specified.")
 				continue
 			}
 
@@ -328,7 +328,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
 			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*forward.Port)), p.source)
 			if err != nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("Service %q does not exist", meta.Name))
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("Service %q does not exist", meta.Name))
 				continue
 			}
 
@@ -339,10 +339,10 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 					var err error
 					headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
 					if err != nil {
-						routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+						routeAccessor.AddCondition(status.ConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 					}
 				default:
-					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.ForwardTo.Filters: Only RequestHeaderModifier type is supported.")
+					routeAccessor.AddCondition(status.ConditionNotImplemented, meta_v1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.ForwardTo.Filters: Only RequestHeaderModifier type is supported.")
 				}
 			}
 
@@ -362,10 +362,10 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 				var err error
 				headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
 				if err != nil {
-					routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+					routeAccessor.AddCondition(status.ConditionResolvedRefs, meta_v1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
 			default:
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.Filters: Only RequestHeaderModifier type is supported.")
+				routeAccessor.AddCondition(status.ConditionNotImplemented, meta_v1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.Filters: Only RequestHeaderModifier type is supported.")
 			}
 		}
 
@@ -399,9 +399,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 	// condition accordingly.
 	switch len(routeAccessor.Conditions) {
 	case 0:
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionTrue, status.ReasonValid, "Valid HTTPRoute")
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, meta_v1.ConditionTrue, status.ReasonValid, "Valid HTTPRoute")
 	default:
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, meta_v1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 	}
 }
 

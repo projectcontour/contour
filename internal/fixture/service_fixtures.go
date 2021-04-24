@@ -14,14 +14,14 @@
 package fixture
 
 import (
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var ServiceRootsKuard = &v1.Service{
+var ServiceRootsKuard = &core_v1.Service{
 	ObjectMeta: ObjectMeta("roots/kuard"),
-	Spec: v1.ServiceSpec{
-		Ports: []v1.ServicePort{{
+	Spec: core_v1.ServiceSpec{
+		Ports: []core_v1.ServicePort{{
 			Name:       "http",
 			Protocol:   "TCP",
 			Port:       8080,
@@ -30,10 +30,10 @@ var ServiceRootsKuard = &v1.Service{
 	},
 }
 
-var ServiceRootsHome = &v1.Service{
+var ServiceRootsHome = &core_v1.Service{
 	ObjectMeta: ObjectMeta("roots/home"),
-	Spec: v1.ServiceSpec{
-		Ports: []v1.ServicePort{{
+	Spec: core_v1.ServiceSpec{
+		Ports: []core_v1.ServicePort{{
 			Name:     "http",
 			Protocol: "TCP",
 			Port:     8080,
@@ -41,10 +41,10 @@ var ServiceRootsHome = &v1.Service{
 	},
 }
 
-var ServiceRootsFoo2 = &v1.Service{
+var ServiceRootsFoo2 = &core_v1.Service{
 	ObjectMeta: ObjectMeta("roots/foo2"),
-	Spec: v1.ServiceSpec{
-		Ports: []v1.ServicePort{{
+	Spec: core_v1.ServiceSpec{
+		Ports: []core_v1.ServicePort{{
 			Name:     "http",
 			Protocol: "TCP",
 			Port:     8080,
@@ -52,10 +52,10 @@ var ServiceRootsFoo2 = &v1.Service{
 	},
 }
 
-var ServiceRootsFoo3InvalidPort = &v1.Service{
+var ServiceRootsFoo3InvalidPort = &core_v1.Service{
 	ObjectMeta: ObjectMeta("roots/foo3"),
-	Spec: v1.ServiceSpec{
-		Ports: []v1.ServicePort{{
+	Spec: core_v1.ServiceSpec{
+		Ports: []core_v1.ServicePort{{
 			Name:     "http",
 			Protocol: "TCP",
 			Port:     12345678,
@@ -63,10 +63,10 @@ var ServiceRootsFoo3InvalidPort = &v1.Service{
 	},
 }
 
-var ServiceMarketingGreen = &v1.Service{
+var ServiceMarketingGreen = &core_v1.Service{
 	ObjectMeta: ObjectMeta("marketing/green"),
-	Spec: v1.ServiceSpec{
-		Ports: []v1.ServicePort{{
+	Spec: core_v1.ServiceSpec{
+		Ports: []core_v1.ServicePort{{
 			Name:     "http",
 			Protocol: "TCP",
 			Port:     80,
@@ -74,20 +74,20 @@ var ServiceMarketingGreen = &v1.Service{
 	},
 }
 
-var ServiceRootsNginx = &v1.Service{
+var ServiceRootsNginx = &core_v1.Service{
 	ObjectMeta: ObjectMeta("roots/nginx"),
-	Spec: v1.ServiceSpec{
-		Ports: []v1.ServicePort{{
+	Spec: core_v1.ServiceSpec{
+		Ports: []core_v1.ServicePort{{
 			Protocol: "TCP",
 			Port:     80,
 		}},
 	},
 }
 
-var ServiceTeamAKuard = &v1.Service{
+var ServiceTeamAKuard = &core_v1.Service{
 	ObjectMeta: ObjectMeta("teama/kuard"),
-	Spec: v1.ServiceSpec{
-		Ports: []v1.ServicePort{{
+	Spec: core_v1.ServiceSpec{
+		Ports: []core_v1.ServicePort{{
 			Name:       "http",
 			Protocol:   "TCP",
 			Port:       8080,
@@ -96,10 +96,10 @@ var ServiceTeamAKuard = &v1.Service{
 	},
 }
 
-var ServiceTeamBKuard = &v1.Service{
+var ServiceTeamBKuard = &core_v1.Service{
 	ObjectMeta: ObjectMeta("teamb/kuard"),
-	Spec: v1.ServiceSpec{
-		Ports: []v1.ServicePort{{
+	Spec: core_v1.ServiceSpec{
+		Ports: []core_v1.ServicePort{{
 			Name:       "http",
 			Protocol:   "TCP",
 			Port:       8080,

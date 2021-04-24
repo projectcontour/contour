@@ -24,10 +24,10 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	ingress_validation "github.com/projectcontour/contour/internal/validation/ingress"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
@@ -56,10 +56,10 @@ type KubernetesCache struct {
 	ingresses                 map[types.NamespacedName]*networking_v1.Ingress
 	ingressclass              *networking_v1.IngressClass
 	httpproxies               map[types.NamespacedName]*contour_api_v1.HTTPProxy
-	secrets                   map[types.NamespacedName]*v1.Secret
+	secrets                   map[types.NamespacedName]*core_v1.Secret
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
-	services                  map[types.NamespacedName]*v1.Service
-	namespaces                map[string]*v1.Namespace
+	services                  map[types.NamespacedName]*core_v1.Service
+	namespaces                map[string]*core_v1.Namespace
 	gateway                   *gatewayapi_v1alpha1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute
@@ -77,10 +77,10 @@ type KubernetesCache struct {
 func (kc *KubernetesCache) init() {
 	kc.ingresses = make(map[types.NamespacedName]*networking_v1.Ingress)
 	kc.httpproxies = make(map[types.NamespacedName]*contour_api_v1.HTTPProxy)
-	kc.secrets = make(map[types.NamespacedName]*v1.Secret)
+	kc.secrets = make(map[types.NamespacedName]*core_v1.Secret)
 	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
-	kc.services = make(map[types.NamespacedName]*v1.Service)
-	kc.namespaces = make(map[string]*v1.Namespace)
+	kc.services = make(map[types.NamespacedName]*core_v1.Service)
+	kc.namespaces = make(map[string]*core_v1.Namespace)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute)
 	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.TCPRoute)
 	kc.udproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.UDPRoute)
@@ -125,7 +125,7 @@ func (kc *KubernetesCache) ingressMatchesIngressClass(obj *networking_v1.Ingress
 
 // matchesIngressClassAnnotation returns true if the given Kubernetes object
 // belongs to the Ingress class that this cache is using.
-func (kc *KubernetesCache) matchesIngressClassAnnotation(obj metav1.Object) bool {
+func (kc *KubernetesCache) matchesIngressClassAnnotation(obj meta_v1.Object) bool {
 	if !annotation.MatchesIngressClass(obj, kc.IngressClassName) {
 		kc.WithField("name", obj.GetName()).
 			WithField("namespace", obj.GetNamespace()).
@@ -164,7 +164,7 @@ func (kc *KubernetesCache) matchesGateway(obj *gatewayapi_v1alpha1.Gateway) bool
 func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	kc.initialize.Do(kc.init)
 
-	if obj, ok := obj.(metav1.Object); ok {
+	if obj, ok := obj.(meta_v1.Object); ok {
 		kind := k8s.KindOf(obj)
 		for key := range obj.GetAnnotations() {
 			// Emit a warning if this is a known annotation that has
@@ -186,7 +186,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	}
 
 	switch obj := obj.(type) {
-	case *v1.Secret:
+	case *core_v1.Secret:
 		valid, err := isValidSecret(obj)
 		if !valid {
 			if err != nil {
@@ -201,10 +201,10 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 
 		kc.secrets[k8s.NamespacedNameOf(obj)] = obj
 		return kc.secretTriggersRebuild(obj)
-	case *v1.Service:
+	case *core_v1.Service:
 		kc.services[k8s.NamespacedNameOf(obj)] = obj
 		return kc.serviceTriggersRebuild(obj)
-	case *v1.Namespace:
+	case *core_v1.Namespace:
 		kc.namespaces[obj.Name] = obj
 		return true
 	case *v1beta1.Ingress:
@@ -386,17 +386,17 @@ func (kc *KubernetesCache) Remove(obj interface{}) bool {
 
 func (kc *KubernetesCache) remove(obj interface{}) bool {
 	switch obj := obj.(type) {
-	case *v1.Secret:
+	case *core_v1.Secret:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.secrets[m]
 		delete(kc.secrets, m)
 		return ok
-	case *v1.Service:
+	case *core_v1.Service:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.services[m]
 		delete(kc.services, m)
 		return ok
-	case *v1.Namespace:
+	case *core_v1.Namespace:
 		_, ok := kc.namespaces[obj.Name]
 		delete(kc.namespaces, obj.Name)
 		return ok
@@ -478,7 +478,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 
 // serviceTriggersRebuild returns true if this service is referenced
 // by an Ingress or HTTPProxy in this cache.
-func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
+func (kc *KubernetesCache) serviceTriggersRebuild(service *core_v1.Service) bool {
 	for _, ingress := range kc.ingresses {
 		if ingress.Namespace != service.Namespace {
 			continue
@@ -543,7 +543,7 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 // secretTriggersRebuild returns true if this secret is referenced by an Ingress
 // or HTTPProxy object, or by the configuration file. If the secret is not in the same namespace
 // it must be mentioned by a TLSCertificateDelegation.
-func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
+func (kc *KubernetesCache) secretTriggersRebuild(secret *core_v1.Secret) bool {
 	if _, isCA := secret.Data[CACertificateKey]; isCA {
 		// locating a secret validation usage involves traversing each
 		// proxy object, determining if there is a valid delegation,
@@ -646,7 +646,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 
 // LookupSecret returns a Secret if present or nil if the underlying kubernetes
 // secret fails validation or is missing.
-func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func(*v1.Secret) error) (*Secret, error) {
+func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func(*core_v1.Secret) error) (*Secret, error) {
 	sec, ok := kc.secrets[name]
 	if !ok {
 		return nil, fmt.Errorf("Secret not found")
@@ -735,7 +735,7 @@ func (kc *KubernetesCache) DelegationPermitted(secret types.NamespacedName, targ
 	return false
 }
 
-func validCA(s *v1.Secret) error {
+func validCA(s *core_v1.Secret) error {
 	if len(s.Data[CACertificateKey]) == 0 {
 		return fmt.Errorf("empty %q key", CACertificateKey)
 	}
@@ -745,23 +745,23 @@ func validCA(s *v1.Secret) error {
 
 // LookupService returns the Kubernetes service and port matching the provided parameters,
 // or an error if a match can't be found.
-func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.IntOrString) (*v1.Service, v1.ServicePort, error) {
+func (kc *KubernetesCache) LookupService(meta types.NamespacedName, port intstr.IntOrString) (*core_v1.Service, core_v1.ServicePort, error) {
 	svc, ok := kc.services[meta]
 	if !ok {
-		return nil, v1.ServicePort{}, fmt.Errorf("service %q not found", meta)
+		return nil, core_v1.ServicePort{}, fmt.Errorf("service %q not found", meta)
 	}
 
 	for i := range svc.Spec.Ports {
 		p := svc.Spec.Ports[i]
 		if int(p.Port) == port.IntValue() || port.String() == p.Name {
 			switch p.Protocol {
-			case "", v1.ProtocolTCP:
+			case "", core_v1.ProtocolTCP:
 				return svc, p, nil
 			default:
-				return nil, v1.ServicePort{}, fmt.Errorf("unsupported service protocol %q", p.Protocol)
+				return nil, core_v1.ServicePort{}, fmt.Errorf("unsupported service protocol %q", p.Protocol)
 			}
 		}
 	}
 
-	return nil, v1.ServicePort{}, fmt.Errorf("port %q on service %q not matched", port.String(), meta)
+	return nil, core_v1.ServicePort{}, fmt.Errorf("port %q on service %q not matched", port.String(), meta)
 }

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 )
 
 // CACertificateKey is the key name for accessing TLS CA certificate bundles in Kubernetes Secrets.
@@ -31,11 +31,11 @@ const CACertificateKey = "ca.crt"
 // formed. TLS certificate/key pairs must be secrets of type
 // "kubernetes.io/tls". Certificate bundles may be "kubernetes.io/tls"
 // or generic (type "Opaque" or "") secrets.
-func isValidSecret(secret *v1.Secret) (bool, error) {
+func isValidSecret(secret *core_v1.Secret) (bool, error) {
 	switch secret.Type {
 	// We will accept TLS secrets that also have the 'ca.crt' payload.
-	case v1.SecretTypeTLS:
-		data, ok := secret.Data[v1.TLSCertKey]
+	case core_v1.SecretTypeTLS:
+		data, ok := secret.Data[core_v1.TLSCertKey]
 		if !ok {
 			return false, errors.New("missing TLS certificate")
 		}
@@ -44,7 +44,7 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 			return false, fmt.Errorf("invalid TLS certificate: %v", err)
 		}
 
-		data, ok = secret.Data[v1.TLSPrivateKeyKey]
+		data, ok = secret.Data[core_v1.TLSPrivateKeyKey]
 		if !ok {
 			return false, errors.New("missing TLS private key")
 		}
@@ -54,12 +54,12 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 		}
 
 	// Generic secrets may have a 'ca.crt' only.
-	case v1.SecretTypeOpaque, "":
-		if _, ok := secret.Data[v1.TLSCertKey]; ok {
+	case core_v1.SecretTypeOpaque, "":
+		if _, ok := secret.Data[core_v1.TLSCertKey]; ok {
 			return false, nil
 		}
 
-		if _, ok := secret.Data[v1.TLSPrivateKeyKey]; ok {
+		if _, ok := secret.Data[core_v1.TLSPrivateKeyKey]; ok {
 			return false, nil
 		}
 

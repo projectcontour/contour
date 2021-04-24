@@ -14,10 +14,10 @@
 package v3
 
 import (
-	envoy_api_v3_core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -27,17 +27,17 @@ import (
 // UpstreamTLSContext creates an envoy_v3_tls.UpstreamTlsContext. By default
 // UpstreamTLSContext returns a HTTP/1.1 TLS enabled context. A list of
 // additional ALPN protocols can be provided.
-func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni string, clientSecret *dag.Secret, alpnProtocols ...string) *envoy_v3_tls.UpstreamTlsContext {
-	var clientSecretConfigs []*envoy_v3_tls.SdsSecretConfig
+func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni string, clientSecret *dag.Secret, alpnProtocols ...string) *tls_v3.UpstreamTlsContext {
+	var clientSecretConfigs []*tls_v3.SdsSecretConfig
 	if clientSecret != nil {
-		clientSecretConfigs = []*envoy_v3_tls.SdsSecretConfig{{
+		clientSecretConfigs = []*tls_v3.SdsSecretConfig{{
 			Name:      envoy.Secretname(clientSecret),
 			SdsConfig: ConfigSource("contour"),
 		}}
 	}
 
-	context := &envoy_v3_tls.UpstreamTlsContext{
-		CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+	context := &tls_v3.UpstreamTlsContext{
+		CommonTlsContext: &tls_v3.CommonTlsContext{
 			AlpnProtocols:                  alpnProtocols,
 			TlsCertificateSdsSecretConfigs: clientSecretConfigs,
 		},
@@ -60,12 +60,12 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 	return context
 }
 
-func validationContext(ca []byte, subjectName string) *envoy_v3_tls.CommonTlsContext_ValidationContext {
-	vc := &envoy_v3_tls.CommonTlsContext_ValidationContext{
-		ValidationContext: &envoy_v3_tls.CertificateValidationContext{
-			TrustedCa: &envoy_api_v3_core.DataSource{
+func validationContext(ca []byte, subjectName string) *tls_v3.CommonTlsContext_ValidationContext {
+	vc := &tls_v3.CommonTlsContext_ValidationContext{
+		ValidationContext: &tls_v3.CertificateValidationContext{
+			TrustedCa: &core_v3.DataSource{
 				// TODO(dfc) update this for SDS
-				Specifier: &envoy_api_v3_core.DataSource_InlineBytes{
+				Specifier: &core_v3.DataSource_InlineBytes{
 					InlineBytes: ca,
 				},
 			},
@@ -73,8 +73,8 @@ func validationContext(ca []byte, subjectName string) *envoy_v3_tls.CommonTlsCon
 	}
 
 	if len(subjectName) > 0 {
-		vc.ValidationContext.MatchSubjectAltNames = []*matcher.StringMatcher{{
-			MatchPattern: &matcher.StringMatcher_Exact{
+		vc.ValidationContext.MatchSubjectAltNames = []*matcher_v3.StringMatcher{{
+			MatchPattern: &matcher_v3.StringMatcher_Exact{
 				Exact: subjectName,
 			}},
 		}
@@ -84,15 +84,15 @@ func validationContext(ca []byte, subjectName string) *envoy_v3_tls.CommonTlsCon
 }
 
 // DownstreamTLSContext creates a new DownstreamTlsContext.
-func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion envoy_v3_tls.TlsParameters_TlsProtocol, cipherSuites []string, peerValidationContext *dag.PeerValidationContext, alpnProtos ...string) *envoy_v3_tls.DownstreamTlsContext {
-	context := &envoy_v3_tls.DownstreamTlsContext{
-		CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
-			TlsParams: &envoy_v3_tls.TlsParameters{
+func DownstreamTLSContext(serverSecret *dag.Secret, tlsMinProtoVersion tls_v3.TlsParameters_TlsProtocol, cipherSuites []string, peerValidationContext *dag.PeerValidationContext, alpnProtos ...string) *tls_v3.DownstreamTlsContext {
+	context := &tls_v3.DownstreamTlsContext{
+		CommonTlsContext: &tls_v3.CommonTlsContext{
+			TlsParams: &tls_v3.TlsParameters{
 				TlsMinimumProtocolVersion: tlsMinProtoVersion,
-				TlsMaximumProtocolVersion: envoy_v3_tls.TlsParameters_TLSv1_3,
+				TlsMaximumProtocolVersion: tls_v3.TlsParameters_TLSv1_3,
 				CipherSuites:              cipherSuites,
 			},
-			TlsCertificateSdsSecretConfigs: []*envoy_v3_tls.SdsSecretConfig{{
+			TlsCertificateSdsSecretConfigs: []*tls_v3.SdsSecretConfig{{
 				Name:      envoy.Secretname(serverSecret),
 				SdsConfig: ConfigSource("contour"),
 			}},

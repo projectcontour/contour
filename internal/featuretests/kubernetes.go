@@ -16,16 +16,16 @@ package featuretests
 // kubernetes helpers
 
 import (
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // TODO: Use only v1 Ingress only as v1beta1 will be removed in a
 // kubernetes version soon.
-func IngressBackend(svc *v1.Service) *networking_v1.IngressBackend {
+func IngressBackend(svc *core_v1.Service) *networking_v1.IngressBackend {
 	return &networking_v1.IngressBackend{
 		Service: &networking_v1.IngressServiceBackend{
 			Name: svc.Name,
@@ -36,7 +36,7 @@ func IngressBackend(svc *v1.Service) *networking_v1.IngressBackend {
 	}
 }
 
-func Backend(svc *v1.Service) *v1beta1.IngressBackend {
+func Backend(svc *core_v1.Service) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{
 		ServiceName: svc.Name,
 		ServicePort: intstr.FromInt(int(svc.Spec.Ports[0].Port)),
@@ -96,14 +96,14 @@ dk98FvYdyAjjgNsxXCyx7vIgYU3OgVNgvFsFubX/Uk66fcfCpPBMLg==
 
 func Secretdata(cert, key string) map[string][]byte {
 	return map[string][]byte{
-		v1.TLSCertKey:       []byte(cert),
-		v1.TLSPrivateKeyKey: []byte(key),
+		core_v1.TLSCertKey:       []byte(cert),
+		core_v1.TLSPrivateKeyKey: []byte(key),
 	}
 }
 
-func Endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
-	return &v1.Endpoints{
-		ObjectMeta: metav1.ObjectMeta{
+func Endpoints(ns, name string, subsets ...core_v1.EndpointSubset) *core_v1.Endpoints {
+	return &core_v1.Endpoints{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
 		},
@@ -111,22 +111,22 @@ func Endpoints(ns, name string, subsets ...v1.EndpointSubset) *v1.Endpoints {
 	}
 }
 
-func Ports(eps ...v1.EndpointPort) []v1.EndpointPort {
+func Ports(eps ...core_v1.EndpointPort) []core_v1.EndpointPort {
 	return eps
 }
 
-func Port(name string, port int32) v1.EndpointPort {
-	return v1.EndpointPort{
+func Port(name string, port int32) core_v1.EndpointPort {
+	return core_v1.EndpointPort{
 		Name:     name,
 		Port:     port,
 		Protocol: "TCP",
 	}
 }
 
-func Addresses(ips ...string) []v1.EndpointAddress {
-	var addrs []v1.EndpointAddress
+func Addresses(ips ...string) []core_v1.EndpointAddress {
+	var addrs []core_v1.EndpointAddress
 	for _, ip := range ips {
-		addrs = append(addrs, v1.EndpointAddress{IP: ip})
+		addrs = append(addrs, core_v1.EndpointAddress{IP: ip})
 	}
 	return addrs
 }

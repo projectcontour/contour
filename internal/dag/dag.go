@@ -25,7 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -710,7 +710,7 @@ type WeightedService struct {
 	// ServiceNamespace is the v1.Service namespace.
 	ServiceNamespace string
 	// ServicePort is the port to which we forward traffic.
-	ServicePort v1.ServicePort
+	ServicePort core_v1.ServicePort
 }
 
 // ServiceCluster capture the set of Kubernetes Services that will
@@ -769,12 +769,12 @@ func (s *ServiceCluster) Visit(func(Vertex)) {
 }
 
 // AddService adds the given service with a default weight of 1.
-func (s *ServiceCluster) AddService(name types.NamespacedName, port v1.ServicePort) {
+func (s *ServiceCluster) AddService(name types.NamespacedName, port core_v1.ServicePort) {
 	s.AddWeightedService(1, name, port)
 }
 
 // AddWeightedService adds the given service with the given weight.
-func (s *ServiceCluster) AddWeightedService(weight uint32, name types.NamespacedName, port v1.ServicePort) {
+func (s *ServiceCluster) AddWeightedService(weight uint32, name types.NamespacedName, port core_v1.ServicePort) {
 	w := WeightedService{
 		Weight:           weight,
 		ServiceName:      name.Name,
@@ -806,7 +806,7 @@ func (s *ServiceCluster) Rebalance() {
 // Secret represents a K8s Secret for TLS usage as a DAG Vertex. A Secret is
 // a leaf in the DAG.
 type Secret struct {
-	Object *v1.Secret
+	Object *core_v1.Secret
 }
 
 func (s *Secret) Name() string       { return s.Object.Name }
@@ -820,12 +820,12 @@ func (s *Secret) Data() map[string][]byte {
 
 // Cert returns the secret's tls certificate
 func (s *Secret) Cert() []byte {
-	return s.Object.Data[v1.TLSCertKey]
+	return s.Object.Data[core_v1.TLSCertKey]
 }
 
 // PrivateKey returns the secret's tls private key
 func (s *Secret) PrivateKey() []byte {
-	return s.Object.Data[v1.TLSPrivateKeyKey]
+	return s.Object.Data[core_v1.TLSPrivateKeyKey]
 }
 
 // HTTPHealthCheckPolicy http health check policy

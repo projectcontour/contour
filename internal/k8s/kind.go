@@ -16,7 +16,7 @@ package k8s
 import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -34,11 +34,11 @@ func KindOf(obj interface{}) string {
 	gvk, _, err := scheme.Scheme.ObjectKinds(obj.(runtime.Object))
 	if err != nil {
 		switch obj := obj.(type) {
-		case *v1.Secret:
+		case *core_v1.Secret:
 			return "Secret"
-		case *v1.Service:
+		case *core_v1.Service:
 			return "Service"
-		case *v1.Endpoints:
+		case *core_v1.Endpoints:
 			return "Endpoints"
 		case *v1beta1.Ingress:
 			return "Ingress"
@@ -71,8 +71,8 @@ func VersionOf(obj interface{}) string {
 	gvk, _, err := scheme.Scheme.ObjectKinds(obj.(runtime.Object))
 	if err != nil {
 		switch obj := obj.(type) {
-		case *v1.Secret, *v1.Service, *v1.Endpoints:
-			return v1.SchemeGroupVersion.String()
+		case *core_v1.Secret, *core_v1.Service, *core_v1.Endpoints:
+			return core_v1.SchemeGroupVersion.String()
 		case *v1beta1.Ingress:
 			return v1beta1.SchemeGroupVersion.String()
 		case *contour_api_v1.HTTPProxy, *contour_api_v1.TLSCertificateDelegation:

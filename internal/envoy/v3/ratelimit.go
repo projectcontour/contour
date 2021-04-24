@@ -15,11 +15,11 @@ package v3
 
 import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	ratelimit_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
+	envoy_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
-	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
+	http_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
+	http_connection_manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/ptypes/any"
@@ -38,7 +38,7 @@ func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *
 		return nil
 	}
 
-	c := &envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+	c := &local_ratelimit_v3.LocalRateLimit{
 		StatPrefix: statPrefix,
 		TokenBucket: &envoy_type_v3.TokenBucket{
 			MaxTokens:     config.MaxTokens,
@@ -131,19 +131,19 @@ type GlobalRateLimitConfig struct {
 
 // GlobalRateLimitFilter returns a configured HTTP global rate limit filter,
 // or nil if config is nil.
-func GlobalRateLimitFilter(config *GlobalRateLimitConfig) *http.HttpFilter {
+func GlobalRateLimitFilter(config *GlobalRateLimitConfig) *http_connection_manager_v3.HttpFilter {
 	if config == nil {
 		return nil
 	}
 
-	return &http.HttpFilter{
+	return &http_connection_manager_v3.HttpFilter{
 		Name: wellknown.HTTPRateLimit,
-		ConfigType: &http.HttpFilter_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+		ConfigType: &http_connection_manager_v3.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&http_ratelimit_v3.RateLimit{
 				Domain:          config.Domain,
 				Timeout:         envoy.Timeout(config.Timeout),
 				FailureModeDeny: !config.FailOpen,
-				RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+				RateLimitService: &envoy_ratelimit_v3.RateLimitServiceConfig{
 					GrpcService: &envoy_core_v3.GrpcService{
 						TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 							EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -159,9 +159,9 @@ func GlobalRateLimitFilter(config *GlobalRateLimitConfig) *http.HttpFilter {
 	}
 }
 
-func enableXRateLimitHeaders(enable bool) ratelimit_filter_v3.RateLimit_XRateLimitHeadersRFCVersion {
+func enableXRateLimitHeaders(enable bool) http_ratelimit_v3.RateLimit_XRateLimitHeadersRFCVersion {
 	if enable {
-		return ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03
+		return http_ratelimit_v3.RateLimit_DRAFT_VERSION_03
 	}
-	return ratelimit_filter_v3.RateLimit_OFF
+	return http_ratelimit_v3.RateLimit_OFF
 }

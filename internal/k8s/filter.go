@@ -14,7 +14,7 @@
 package k8s
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -44,7 +44,7 @@ func NewNamespaceFilter(
 }
 
 func (e *namespaceFilter) allowed(obj interface{}) bool {
-	if obj, ok := obj.(metav1.Object); ok {
+	if obj, ok := obj.(meta_v1.Object); ok {
 		_, ok := e.index[obj.GetNamespace()]
 		return ok
 	}

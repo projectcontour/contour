@@ -21,8 +21,8 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/ptypes/any"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
@@ -34,8 +34,8 @@ import (
 // RouteAuthzDisabled returns a per-route config to disable authorization.
 func RouteAuthzDisabled() *any.Any {
 	return protobuf.MustMarshalAny(
-		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+		&ext_authz_v3.ExtAuthzPerRoute{
+			Override: &ext_authz_v3.ExtAuthzPerRoute_Disabled{
 				Disabled: true,
 			},
 		},
@@ -46,9 +46,9 @@ func RouteAuthzDisabled() *any.Any {
 // context entries in the check request.
 func RouteAuthzContext(settings map[string]string) *any.Any {
 	return protobuf.MustMarshalAny(
-		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
-				CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
+		&ext_authz_v3.ExtAuthzPerRoute{
+			Override: &ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
+				CheckSettings: &ext_authz_v3.CheckSettings{
 					ContextExtensions: settings,
 				},
 			},
@@ -336,12 +336,12 @@ func CORSPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 		rcp.MaxAge = fmt.Sprintf("%.0f", cp.MaxAge.Duration().Seconds())
 	}
 
-	rcp.AllowOriginStringMatch = []*matcher.StringMatcher{}
+	rcp.AllowOriginStringMatch = []*matcher_v3.StringMatcher{}
 	for _, ao := range cp.AllowOrigin {
-		rcp.AllowOriginStringMatch = append(rcp.AllowOriginStringMatch, &matcher.StringMatcher{
+		rcp.AllowOriginStringMatch = append(rcp.AllowOriginStringMatch, &matcher_v3.StringMatcher{
 			// Even though we use the exact matcher, Envoy always makes an exception for the `*` value
 			// https://github.com/envoyproxy/envoy/blob/d6e2fd0185ca620745479da2c43c0564eeaf35c5/source/extensions/filters/http/cors/cors_filter.cc#L142
-			MatchPattern: &matcher.StringMatcher_Exact{
+			MatchPattern: &matcher_v3.StringMatcher_Exact{
 				Exact: ao,
 			},
 			IgnoreCase: true,

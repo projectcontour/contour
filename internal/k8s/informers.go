@@ -16,7 +16,7 @@ package k8s
 import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	networking_v1beta1 "k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -38,7 +38,7 @@ func DefaultResources() []schema.GroupVersionResource {
 		contour_api_v1.HTTPProxyGVR,
 		contour_api_v1.TLSCertificateDelegationGVR,
 		contour_api_v1alpha1.ExtensionServiceGVR,
-		corev1.SchemeGroupVersion.WithResource("services"),
+		core_v1.SchemeGroupVersion.WithResource("services"),
 	}
 }
 
@@ -90,7 +90,7 @@ func GatewayAPIResources() []schema.GroupVersionResource {
 // SecretsResources ...
 func SecretsResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
-		corev1.SchemeGroupVersion.WithResource("secrets"),
+		core_v1.SchemeGroupVersion.WithResource("secrets"),
 	}
 }
 
@@ -99,7 +99,7 @@ func SecretsResources() []schema.GroupVersionResource {
 // EndpointsResources ...
 func EndpointsResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
-		corev1.SchemeGroupVersion.WithResource("endpoints"),
+		core_v1.SchemeGroupVersion.WithResource("endpoints"),
 	}
 }
 
@@ -108,7 +108,7 @@ func EndpointsResources() []schema.GroupVersionResource {
 // ServicesResources ...
 func ServicesResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{
-		corev1.SchemeGroupVersion.WithResource("services"),
+		core_v1.SchemeGroupVersion.WithResource("services"),
 	}
 }
 
@@ -116,5 +116,5 @@ func ServicesResources() []schema.GroupVersionResource {
 
 // NamespacesResource ...
 func NamespacesResource() schema.GroupVersionResource {
-	return corev1.SchemeGroupVersion.WithResource("namespaces")
+	return core_v1.SchemeGroupVersion.WithResource("namespaces")
 }

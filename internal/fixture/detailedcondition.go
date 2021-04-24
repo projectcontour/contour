@@ -14,17 +14,17 @@
 package fixture
 
 import (
-	v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	projectcontour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 )
 
 // DetailedConditionBuilder is a builder object to make creating HTTPProxy fixtures more succinct.
-type DetailedConditionBuilder v1.DetailedCondition
+type DetailedConditionBuilder projectcontour_v1.DetailedCondition
 
 // NewValidCondition creates a new DetailedConditionBuilder.
 func NewValidCondition() *DetailedConditionBuilder {
 	b := &DetailedConditionBuilder{
-		Condition: v1.Condition{
-			Type: v1.ValidConditionType,
+		Condition: projectcontour_v1.Condition{
+			Type: projectcontour_v1.ValidConditionType,
 		},
 	}
 
@@ -36,54 +36,54 @@ func (dcb *DetailedConditionBuilder) WithGeneration(gen int64) *DetailedConditio
 	return dcb
 }
 
-func (dcb *DetailedConditionBuilder) Valid() v1.DetailedCondition {
+func (dcb *DetailedConditionBuilder) Valid() projectcontour_v1.DetailedCondition {
 
-	dc := (*v1.DetailedCondition)(dcb)
-	dc.Status = v1.ConditionTrue
+	dc := (*projectcontour_v1.DetailedCondition)(dcb)
+	dc.Status = projectcontour_v1.ConditionTrue
 	dc.Reason = "Valid"
 	dc.Message = "Valid HTTPProxy"
 
 	return *dc
 }
 
-func (dcb *DetailedConditionBuilder) Orphaned() v1.DetailedCondition {
+func (dcb *DetailedConditionBuilder) Orphaned() projectcontour_v1.DetailedCondition {
 
-	dc := (*v1.DetailedCondition)(dcb)
-	dc.AddError(v1.ConditionTypeOrphanedError, "Orphaned", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
+	dc := (*projectcontour_v1.DetailedCondition)(dcb)
+	dc.AddError(projectcontour_v1.ConditionTypeOrphanedError, "Orphaned", "this HTTPProxy is not part of a delegation chain from a root HTTPProxy")
 
 	return *dc
 }
 
-func (dcb *DetailedConditionBuilder) WithError(errorType string, reason, message string) v1.DetailedCondition {
+func (dcb *DetailedConditionBuilder) WithError(errorType string, reason, message string) projectcontour_v1.DetailedCondition {
 
-	dc := (*v1.DetailedCondition)(dcb)
+	dc := (*projectcontour_v1.DetailedCondition)(dcb)
 	dc.AddError(errorType, reason, message)
 
 	return *dc
 
 }
 
-func (dcb *DetailedConditionBuilder) WithErrorf(errorType string, reason, formatmsg string, args ...interface{}) v1.DetailedCondition {
+func (dcb *DetailedConditionBuilder) WithErrorf(errorType string, reason, formatmsg string, args ...interface{}) projectcontour_v1.DetailedCondition {
 
-	dc := (*v1.DetailedCondition)(dcb)
+	dc := (*projectcontour_v1.DetailedCondition)(dcb)
 	dc.AddErrorf(errorType, reason, formatmsg, args...)
 
 	return *dc
 
 }
 
-func (dcb *DetailedConditionBuilder) WithWarning(errorType, reason, message string) v1.DetailedCondition {
+func (dcb *DetailedConditionBuilder) WithWarning(errorType, reason, message string) projectcontour_v1.DetailedCondition {
 
-	dc := (*v1.DetailedCondition)(dcb)
+	dc := (*projectcontour_v1.DetailedCondition)(dcb)
 	dc.AddWarning(errorType, reason, message)
 
 	return *dc
 
 }
 
-func (dcb *DetailedConditionBuilder) WithWarningf(warnType, reason, formatmsg string, args ...interface{}) v1.DetailedCondition {
+func (dcb *DetailedConditionBuilder) WithWarningf(warnType, reason, formatmsg string, args ...interface{}) projectcontour_v1.DetailedCondition {
 
-	dc := (*v1.DetailedCondition)(dcb)
+	dc := (*projectcontour_v1.DetailedCondition)(dcb)
 	dc.AddWarningf(warnType, reason, formatmsg, args...)
 
 	return *dc
