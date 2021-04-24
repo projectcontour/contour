@@ -20,7 +20,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/k8s"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -58,7 +58,7 @@ type ExtensionCacheEntry struct {
 
 	Name           types.NamespacedName
 	Generation     int64
-	TransitionTime v1.Time
+	TransitionTime meta_v1.Time
 }
 
 var _ CacheEntry = &ExtensionCacheEntry{}
@@ -111,7 +111,7 @@ func ExtensionAccessor(c *Cache, ext *contour_api_v1alpha1.ExtensionService) (*E
 		entry = &ExtensionCacheEntry{
 			Name:           k8s.NamespacedNameOf(ext),
 			Generation:     ext.GetGeneration(),
-			TransitionTime: v1.NewTime(time.Now()),
+			TransitionTime: meta_v1.NewTime(time.Now()),
 		}
 
 		// Populate the cache with the new entry

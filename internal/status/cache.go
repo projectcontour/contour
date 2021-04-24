@@ -18,7 +18,7 @@ package status
 import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
@@ -63,7 +63,7 @@ type Cache struct {
 // Get returns a pointer to a the cache entry if it exists, nil
 // otherwise. The return value is shared between all callers, who
 // should take care to cooperate.
-func (c *Cache) Get(obj metav1.Object) CacheEntry {
+func (c *Cache) Get(obj meta_v1.Object) CacheEntry {
 	kind := k8s.KindOf(obj)
 
 	if _, ok := c.entries[kind]; !ok {
@@ -74,7 +74,7 @@ func (c *Cache) Get(obj metav1.Object) CacheEntry {
 }
 
 // Put returns an entry to the cache.
-func (c *Cache) Put(obj metav1.Object, e CacheEntry) {
+func (c *Cache) Put(obj meta_v1.Object, e CacheEntry) {
 	kind := k8s.KindOf(obj)
 
 	if _, ok := c.entries[kind]; !ok {

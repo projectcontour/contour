@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/projectcontour/contour/internal/k8s"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
@@ -38,26 +38,26 @@ const ReasonErrorsExist RouteReasonType = "ErrorsExist"
 
 type HTTPRouteUpdate struct {
 	FullName           types.NamespacedName
-	Conditions         map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
-	ExistingConditions map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
+	Conditions         map[gatewayapi_v1alpha1.RouteConditionType]meta_v1.Condition
+	ExistingConditions map[gatewayapi_v1alpha1.RouteConditionType]meta_v1.Condition
 	GatewayRef         types.NamespacedName
 	Generation         int64
-	TransitionTime     metav1.Time
+	TransitionTime     meta_v1.Time
 }
 
 // AddCondition returns a metav1.Condition for a given ConditionType.
-func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteConditionType, status metav1.ConditionStatus, reason RouteReasonType, message string) metav1.Condition {
+func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteConditionType, status meta_v1.ConditionStatus, reason RouteReasonType, message string) meta_v1.Condition {
 
 	if c, ok := routeUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
 	}
 
-	newDc := metav1.Condition{
+	newDc := meta_v1.Condition{
 		Reason:             string(reason),
 		Status:             status,
 		Type:               string(cond),
 		Message:            message,
-		LastTransitionTime: metav1.NewTime(time.Now()),
+		LastTransitionTime: meta_v1.NewTime(time.Now()),
 		ObservedGeneration: routeUpdate.Generation,
 	}
 	routeUpdate.Conditions[cond] = newDc
@@ -71,11 +71,11 @@ func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteC
 func (c *Cache) HTTPRouteAccessor(route *gatewayapi_v1alpha1.HTTPRoute) (*HTTPRouteUpdate, func()) {
 	pu := &HTTPRouteUpdate{
 		FullName:           k8s.NamespacedNameOf(route),
-		Conditions:         make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition),
+		Conditions:         make(map[gatewayapi_v1alpha1.RouteConditionType]meta_v1.Condition),
 		ExistingConditions: c.getGatewayConditions(route.Status.Gateways),
 		GatewayRef:         c.gatewayRef,
 		Generation:         route.Generation,
-		TransitionTime:     metav1.NewTime(time.Now()),
+		TransitionTime:     meta_v1.NewTime(time.Now()),
 	}
 
 	return pu, func() {
@@ -101,7 +101,7 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	httpRoute := o.DeepCopy()
 
 	var gatewayStatuses []gatewayapi_v1alpha1.RouteGatewayStatus
-	var conditionsToWrite []metav1.Condition
+	var conditionsToWrite []meta_v1.Condition
 
 	for _, cond := range routeUpdate.Conditions {
 
@@ -157,12 +157,12 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	return httpRoute
 }
 
-func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGatewayStatus) map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition {
+func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGatewayStatus) map[gatewayapi_v1alpha1.RouteConditionType]meta_v1.Condition {
 	for _, gs := range gatewayStatus {
 		if c.gatewayRef.Name == gs.GatewayRef.Name &&
 			c.gatewayRef.Namespace == gs.GatewayRef.Namespace {
 
-			conditions := make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition)
+			conditions := make(map[gatewayapi_v1alpha1.RouteConditionType]meta_v1.Condition)
 			for _, gsCondition := range gs.Conditions {
 				if val, ok := conditions[gatewayapi_v1alpha1.RouteConditionType(gsCondition.Type)]; !ok {
 					conditions[gatewayapi_v1alpha1.RouteConditionType(gsCondition.Type)] = val
@@ -171,5 +171,5 @@ func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGa
 			return conditions
 		}
 	}
-	return map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{}
+	return map[gatewayapi_v1alpha1.RouteConditionType]meta_v1.Condition{}
 }

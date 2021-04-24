@@ -14,7 +14,7 @@
 package xds
 
 import (
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	gogrpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 )
@@ -22,11 +22,11 @@ import (
 // NewServer If registry is non-nil gRPC server metrics will be automatically
 // configured and enabled.
 func NewServer(registry *prometheus.Registry, opts ...grpc.ServerOption) *grpc.Server {
-	var metrics *grpc_prometheus.ServerMetrics
+	var metrics *gogrpcprometheus.ServerMetrics
 
 	// TODO: Decouple registry from this.
 	if registry != nil {
-		metrics = grpc_prometheus.NewServerMetrics()
+		metrics = gogrpcprometheus.NewServerMetrics()
 		registry.MustRegister(metrics)
 
 		opts = append(opts,

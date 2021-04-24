@@ -19,14 +19,14 @@ import (
 	"strconv"
 	"sync"
 
-	envoy_types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/sirupsen/logrus"
 )
 
 type Snapshotter interface {
-	Generate(version string, resources map[envoy_types.ResponseType][]envoy_types.Resource) error
+	Generate(version string, resources map[types.ResponseType][]types.Resource) error
 }
 
 // SnapshotHandler implements the xDS snapshot cache
@@ -34,7 +34,7 @@ type Snapshotter interface {
 // snapshot to be created.
 type SnapshotHandler struct {
 	// resources holds the cache of xDS contents.
-	resources map[envoy_types.ResponseType]ResourceCache
+	resources map[types.ResponseType]ResourceCache
 
 	// snapshotVersion holds the current version of the snapshot.
 	snapshotVersion int64
@@ -77,12 +77,12 @@ func (s *SnapshotHandler) generateNewSnapshot() {
 	// Generate new snapshot version.
 	version := s.newSnapshotVersion()
 
-	resources := map[envoy_types.ResponseType][]envoy_types.Resource{
-		envoy_types.Endpoint: asResources(s.resources[envoy_types.Endpoint].Contents()),
-		envoy_types.Cluster:  asResources(s.resources[envoy_types.Cluster].Contents()),
-		envoy_types.Route:    asResources(s.resources[envoy_types.Route].Contents()),
-		envoy_types.Listener: asResources(s.resources[envoy_types.Listener].Contents()),
-		envoy_types.Secret:   asResources(s.resources[envoy_types.Secret].Contents()),
+	resources := map[types.ResponseType][]types.Resource{
+		types.Endpoint: asResources(s.resources[types.Endpoint].Contents()),
+		types.Cluster:  asResources(s.resources[types.Cluster].Contents()),
+		types.Route:    asResources(s.resources[types.Route].Contents()),
+		types.Listener: asResources(s.resources[types.Listener].Contents()),
+		types.Secret:   asResources(s.resources[types.Secret].Contents()),
 	}
 
 	s.snapLock.Lock()
@@ -112,16 +112,16 @@ func (s *SnapshotHandler) newSnapshotVersion() string {
 // asResources casts the given slice of values (that implement the envoy_types.Resource
 // interface) to a slice of envoy_types.Resource. If the length of the slice is 0, it
 // returns nil.
-func asResources(messages interface{}) []envoy_types.Resource {
+func asResources(messages interface{}) []types.Resource {
 	v := reflect.ValueOf(messages)
 	if v.Len() == 0 {
 		return nil
 	}
 
-	protos := make([]envoy_types.Resource, v.Len())
+	protos := make([]types.Resource, v.Len())
 
 	for i := range protos {
-		protos[i] = v.Index(i).Interface().(envoy_types.Resource)
+		protos[i] = v.Index(i).Interface().(types.Resource)
 	}
 
 	return protos
@@ -129,21 +129,21 @@ func asResources(messages interface{}) []envoy_types.Resource {
 
 // parseResources converts an []ResourceCache to a map[envoy_types.ResponseType]ResourceCache
 // for faster indexing when creating new snapshots.
-func parseResources(resources []ResourceCache) map[envoy_types.ResponseType]ResourceCache {
-	resourceMap := make(map[envoy_types.ResponseType]ResourceCache, len(resources))
+func parseResources(resources []ResourceCache) map[types.ResponseType]ResourceCache {
+	resourceMap := make(map[types.ResponseType]ResourceCache, len(resources))
 
 	for _, r := range resources {
 		switch r.TypeURL() {
-		case resource.ClusterType:
-			resourceMap[envoy_types.Cluster] = r
-		case resource.RouteType:
-			resourceMap[envoy_types.Route] = r
-		case resource.ListenerType:
-			resourceMap[envoy_types.Listener] = r
-		case resource.SecretType:
-			resourceMap[envoy_types.Secret] = r
-		case resource.EndpointType:
-			resourceMap[envoy_types.Endpoint] = r
+		case resource_v3.ClusterType:
+			resourceMap[types.Cluster] = r
+		case resource_v3.RouteType:
+			resourceMap[types.Route] = r
+		case resource_v3.ListenerType:
+			resourceMap[types.Listener] = r
+		case resource_v3.SecretType:
+			resourceMap[types.Secret] = r
+		case resource_v3.EndpointType:
+			resourceMap[types.Endpoint] = r
 		}
 	}
 	return resourceMap
