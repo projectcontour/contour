@@ -20,7 +20,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/cache"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
@@ -61,7 +61,7 @@ func TestConvertUnstructured(t *testing.T) {
 	}
 
 	proxy1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
@@ -82,7 +82,7 @@ func TestConvertUnstructured(t *testing.T) {
 	}
 
 	proxyTLSCert1 := &contour_api_v1.TLSCertificateDelegation{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "delegation",
 			Namespace: "example",
 		},
@@ -191,7 +191,7 @@ func TestConvertUnstructured(t *testing.T) {
 	}
 
 	gatewayclass1 := &gatewayapi_v1alpha1.GatewayClass{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "gatewayclass",
 			Namespace: "default",
 		},
@@ -209,7 +209,7 @@ func TestConvertUnstructured(t *testing.T) {
 	}
 
 	gateway1 := &gatewayapi_v1alpha1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "gateway",
 			Namespace: "default",
 		},
@@ -227,7 +227,7 @@ func TestConvertUnstructured(t *testing.T) {
 	}
 
 	hpr1 := &gatewayapi_v1alpha1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "httproute",
 			Namespace: "default",
 		},
@@ -245,7 +245,7 @@ func TestConvertUnstructured(t *testing.T) {
 	}
 
 	tr1 := &gatewayapi_v1alpha1.TCPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "tcproute",
 			Namespace: "default",
 		},
@@ -317,7 +317,7 @@ func TestConvertUnstructured(t *testing.T) {
 			},
 		},
 		want: &contour_api_v1alpha1.ExtensionService{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "extension",
 				Namespace: "default",
 			},

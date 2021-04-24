@@ -22,7 +22,7 @@ import (
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -423,7 +423,7 @@ func TestSortHTTPWeightedClusters(t *testing.T) {
 }
 
 func TestSortTCPWeightedClusters(t *testing.T) {
-	want := []*tcp.TcpProxy_WeightedCluster_ClusterWeight{
+	want := []*proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
 		{
 			Name:   "first",
 			Weight: 10,
@@ -438,7 +438,7 @@ func TestSortTCPWeightedClusters(t *testing.T) {
 		},
 	}
 
-	have := []*tcp.TcpProxy_WeightedCluster_ClusterWeight{
+	have := []*proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
 		want[2],
 		want[1],
 		want[0],

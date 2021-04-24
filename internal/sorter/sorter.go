@@ -21,7 +21,7 @@ import (
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/projectcontour/contour/internal/dag"
 )
@@ -211,7 +211,7 @@ func (s httpWeightedClusterSorter) Less(i, j int) bool {
 }
 
 // Sorts the weighted clusters by name, then by weight.
-type tcpWeightedClusterSorter []*tcp.TcpProxy_WeightedCluster_ClusterWeight
+type tcpWeightedClusterSorter []*proxy_v3.TcpProxy_WeightedCluster_ClusterWeight
 
 func (s tcpWeightedClusterSorter) Len() int      { return len(s) }
 func (s tcpWeightedClusterSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -281,7 +281,7 @@ func For(v interface{}) sort.Interface {
 		return clusterLoadAssignmentSorter(v)
 	case []*envoy_route_v3.WeightedCluster_ClusterWeight:
 		return httpWeightedClusterSorter(v)
-	case []*tcp.TcpProxy_WeightedCluster_ClusterWeight:
+	case []*proxy_v3.TcpProxy_WeightedCluster_ClusterWeight:
 		return tcpWeightedClusterSorter(v)
 	case []*envoy_listener_v3.Listener:
 		return listenerSorter(v)

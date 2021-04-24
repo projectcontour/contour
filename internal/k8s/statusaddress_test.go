@@ -21,40 +21,40 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/pointer"
 )
 
 func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
-	lbstatus := make(chan v1.LoadBalancerStatus, 1)
+	lbstatus := make(chan core_v1.LoadBalancerStatus, 1)
 	sw := ServiceStatusLoadBalancerWatcher{
 		ServiceName: "envoy",
 		LBStatus:    lbstatus,
 		Log:         fixture.NewTestLogger(t),
 	}
 
-	recv := func() (v1.LoadBalancerStatus, bool) {
+	recv := func() (core_v1.LoadBalancerStatus, bool) {
 		select {
 		case lbs := <-sw.LBStatus:
 			return lbs, true
 		default:
-			return v1.LoadBalancerStatus{}, false
+			return core_v1.LoadBalancerStatus{}, false
 		}
 	}
 
 	// assert adding something other than a service generates no notification.
-	sw.OnAdd(&v1.Pod{})
+	sw.OnAdd(&core_v1.Pod{})
 	_, ok := recv()
 	if ok {
 		t.Fatalf("expected no result when adding")
 	}
 
 	// assert adding a service with an different name generates no notification
-	var svc v1.Service
+	var svc core_v1.Service
 	svc.Name = "potato"
 	sw.OnAdd(&svc)
 	_, ok = recv()
@@ -64,20 +64,20 @@ func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
 
 	// assert adding a service with the correct name generates a notification
 	svc.Name = sw.ServiceName
-	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
+	svc.Status.LoadBalancer.Ingress = []core_v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
 	sw.OnAdd(&svc)
 	got, ok := recv()
 	if !ok {
 		t.Fatalf("expected result when adding a service with the correct name")
 	}
-	want := v1.LoadBalancerStatus{
-		Ingress: []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}},
+	want := core_v1.LoadBalancerStatus{
+		Ingress: []core_v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}},
 	}
 	assert.Equal(t, got, want)
 }
 
 func TestServiceStatusLoadBalancerWatcherOnUpdate(t *testing.T) {
-	lbstatus := make(chan v1.LoadBalancerStatus, 1)
+	lbstatus := make(chan core_v1.LoadBalancerStatus, 1)
 
 	sw := ServiceStatusLoadBalancerWatcher{
 		ServiceName: "envoy",
@@ -85,24 +85,24 @@ func TestServiceStatusLoadBalancerWatcherOnUpdate(t *testing.T) {
 		Log:         fixture.NewTestLogger(t),
 	}
 
-	recv := func() (v1.LoadBalancerStatus, bool) {
+	recv := func() (core_v1.LoadBalancerStatus, bool) {
 		select {
 		case lbs := <-sw.LBStatus:
 			return lbs, true
 		default:
-			return v1.LoadBalancerStatus{}, false
+			return core_v1.LoadBalancerStatus{}, false
 		}
 	}
 
 	// assert updating something other than a service generates no notification.
-	sw.OnUpdate(&v1.Pod{}, &v1.Pod{})
+	sw.OnUpdate(&core_v1.Pod{}, &core_v1.Pod{})
 	_, ok := recv()
 	if ok {
 		t.Fatalf("expected no result when updating")
 	}
 
 	// assert updating a service with an different name generates no notification
-	var oldSvc, newSvc v1.Service
+	var oldSvc, newSvc core_v1.Service
 	oldSvc.Name = "potato"
 	newSvc.Name = "elephant"
 	sw.OnUpdate(&oldSvc, &newSvc)
@@ -112,22 +112,22 @@ func TestServiceStatusLoadBalancerWatcherOnUpdate(t *testing.T) {
 	}
 
 	// assert updating a service with the correct name generates a notification
-	var svc v1.Service
+	var svc core_v1.Service
 	svc.Name = sw.ServiceName
-	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
+	svc.Status.LoadBalancer.Ingress = []core_v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
 	sw.OnUpdate(&oldSvc, &svc)
 	got, ok := recv()
 	if !ok {
 		t.Fatalf("expected result when updating a service with the correct name")
 	}
-	want := v1.LoadBalancerStatus{
-		Ingress: []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}},
+	want := core_v1.LoadBalancerStatus{
+		Ingress: []core_v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}},
 	}
 	assert.Equal(t, got, want)
 }
 
 func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
-	lbstatus := make(chan v1.LoadBalancerStatus, 1)
+	lbstatus := make(chan core_v1.LoadBalancerStatus, 1)
 
 	sw := ServiceStatusLoadBalancerWatcher{
 		ServiceName: "envoy",
@@ -135,24 +135,24 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 		Log:         fixture.NewTestLogger(t),
 	}
 
-	recv := func() (v1.LoadBalancerStatus, bool) {
+	recv := func() (core_v1.LoadBalancerStatus, bool) {
 		select {
 		case lbs := <-sw.LBStatus:
 			return lbs, true
 		default:
-			return v1.LoadBalancerStatus{}, false
+			return core_v1.LoadBalancerStatus{}, false
 		}
 	}
 
 	// assert deleting something other than a service generates no notification.
-	sw.OnDelete(&v1.Pod{})
+	sw.OnDelete(&core_v1.Pod{})
 	_, ok := recv()
 	if ok {
 		t.Fatalf("expected no result when deleting")
 	}
 
 	// assert adding a service with an different name generates no notification
-	var svc v1.Service
+	var svc core_v1.Service
 	svc.Name = "potato"
 	sw.OnDelete(&svc)
 	_, ok = recv()
@@ -162,13 +162,13 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 
 	// assert deleting a service with the correct name generates a blank notification
 	svc.Name = sw.ServiceName
-	svc.Status.LoadBalancer.Ingress = []v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
+	svc.Status.LoadBalancer.Ingress = []core_v1.LoadBalancerIngress{{Hostname: "projectcontour.io"}}
 	sw.OnDelete(&svc)
 	got, ok := recv()
 	if !ok {
 		t.Fatalf("expected result when deleting a service with the correct name")
 	}
-	want := v1.LoadBalancerStatus{
+	want := core_v1.LoadBalancerStatus{
 		Ingress: nil,
 	}
 	assert.Equal(t, got, want)
@@ -181,14 +181,14 @@ func TestStatusAddressUpdater(t *testing.T) {
 
 	log := logrus.New()
 	log.SetLevel(logrus.DebugLevel)
-	emptyLBStatus := v1.LoadBalancerStatus{}
+	emptyLBStatus := core_v1.LoadBalancerStatus{}
 	converter, err := NewUnstructuredConverter()
 	if err != nil {
 		t.Error(err)
 	}
 
-	ipLBStatus := v1.LoadBalancerStatus{
-		Ingress: []v1.LoadBalancerIngress{
+	ipLBStatus := core_v1.LoadBalancerStatus{
+		Ingress: []core_v1.LoadBalancerIngress{
 			{
 				IP: "127.0.0.1",
 			},
@@ -196,7 +196,7 @@ func TestStatusAddressUpdater(t *testing.T) {
 	}
 
 	testCases := map[string]struct {
-		status           v1.LoadBalancerStatus
+		status           core_v1.LoadBalancerStatus
 		ingressClassName string
 		gvr              schema.GroupVersionResource
 		preop            interface{}
@@ -460,7 +460,7 @@ func TestStatusAddressUpdater(t *testing.T) {
 	}
 }
 
-func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec string, lbstatus v1.LoadBalancerStatus) *networking_v1.Ingress {
+func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec string, lbstatus core_v1.LoadBalancerStatus) *networking_v1.Ingress {
 	annotations := make(map[string]string)
 	if ingressClassAnnotation != "" {
 		annotations["kubernetes.io/ingress.class"] = ingressClassAnnotation
@@ -470,11 +470,11 @@ func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec strin
 		ingressClassName = pointer.StringPtr(ingressClassSpec)
 	}
 	return &networking_v1.Ingress{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: meta_v1.TypeMeta{
 			Kind:       "ingress",
 			APIVersion: "networking.k8s.io/v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        name,
 			Namespace:   name,
 			Annotations: annotations,
@@ -488,7 +488,7 @@ func simpleIngressGenerator(name, ingressClassAnnotation, ingressClassSpec strin
 	}
 }
 
-func simpleIngressV1Beta1Generator(name, ingressClassAnnotation, ingressClassSpec string, lbstatus v1.LoadBalancerStatus) *v1beta1.Ingress {
+func simpleIngressV1Beta1Generator(name, ingressClassAnnotation, ingressClassSpec string, lbstatus core_v1.LoadBalancerStatus) *v1beta1.Ingress {
 	annotations := make(map[string]string)
 	if ingressClassAnnotation != "" {
 		annotations["kubernetes.io/ingress.class"] = ingressClassAnnotation
@@ -498,11 +498,11 @@ func simpleIngressV1Beta1Generator(name, ingressClassAnnotation, ingressClassSpe
 		ingressClassName = pointer.StringPtr(ingressClassSpec)
 	}
 	return &v1beta1.Ingress{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: meta_v1.TypeMeta{
 			Kind:       "ingress",
 			APIVersion: "networking.k8s.io/v1beta1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        name,
 			Namespace:   name,
 			Annotations: annotations,
@@ -516,13 +516,13 @@ func simpleIngressV1Beta1Generator(name, ingressClassAnnotation, ingressClassSpe
 	}
 }
 
-func simpleProxyGenerator(name, ingressClass string, lbstatus v1.LoadBalancerStatus) *contour_api_v1.HTTPProxy {
+func simpleProxyGenerator(name, ingressClass string, lbstatus core_v1.LoadBalancerStatus) *contour_api_v1.HTTPProxy {
 	return &contour_api_v1.HTTPProxy{
-		TypeMeta: metav1.TypeMeta{
+		TypeMeta: meta_v1.TypeMeta{
 			Kind:       "httpproxy",
 			APIVersion: "projectcontour.io/v1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      name,
 			Namespace: name,
 			Annotations: map[string]string{

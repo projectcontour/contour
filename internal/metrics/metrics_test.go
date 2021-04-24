@@ -18,13 +18,13 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	io_prometheus_client "github.com/prometheus/client_model/go"
+	client_model "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 )
 
 type testMetric struct {
 	metric string
-	want   []*io_prometheus_client.Metric
+	want   []*client_model.Metric
 }
 
 func TestSetDAGLastRebuilt(t *testing.T) {
@@ -36,9 +36,9 @@ func TestSetDAGLastRebuilt(t *testing.T) {
 			value: time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC),
 			timestampMetric: testMetric{
 				metric: DAGRebuildGauge,
-				want: []*io_prometheus_client.Metric{
+				want: []*client_model.Metric{
 					{
-						Gauge: &io_prometheus_client.Gauge{
+						Gauge: &client_model.Gauge{
 							Value: func() *float64 { i := float64(1.258490098e+09); return &i }(),
 						},
 					},
@@ -63,7 +63,7 @@ func TestSetDAGLastRebuilt(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			gotTimestamp := []*io_prometheus_client.Metric{}
+			gotTimestamp := []*client_model.Metric{}
 			for _, mf := range gathering {
 				if mf.GetName() == tc.timestampMetric.metric {
 					gotTimestamp = mf.Metric
@@ -105,22 +105,22 @@ func TestWriteProxyMetric(t *testing.T) {
 			},
 			total: testMetric{
 				metric: HTTPProxyTotalGauge,
-				want: []*io_prometheus_client.Metric{
+				want: []*client_model.Metric{
 					{
-						Label: []*io_prometheus_client.LabelPair{{
+						Label: []*client_model.LabelPair{{
 							Name:  func() *string { i := "namespace"; return &i }(),
 							Value: func() *string { i := "foons"; return &i }(),
 						}},
-						Gauge: &io_prometheus_client.Gauge{
+						Gauge: &client_model.Gauge{
 							Value: func() *float64 { i := float64(3); return &i }(),
 						},
 					},
 					{
-						Label: []*io_prometheus_client.LabelPair{{
+						Label: []*client_model.LabelPair{{
 							Name:  func() *string { i := "namespace"; return &i }(),
 							Value: func() *string { i := "testns"; return &i }(),
 						}},
-						Gauge: &io_prometheus_client.Gauge{
+						Gauge: &client_model.Gauge{
 							Value: func() *float64 { i := float64(6); return &i }(),
 						},
 					},
@@ -128,13 +128,13 @@ func TestWriteProxyMetric(t *testing.T) {
 			},
 			orphaned: testMetric{
 				metric: HTTPProxyOrphanedGauge,
-				want: []*io_prometheus_client.Metric{
+				want: []*client_model.Metric{
 					{
-						Label: []*io_prometheus_client.LabelPair{{
+						Label: []*client_model.LabelPair{{
 							Name:  func() *string { i := "namespace"; return &i }(),
 							Value: func() *string { i := "testns"; return &i }(),
 						}},
-						Gauge: &io_prometheus_client.Gauge{
+						Gauge: &client_model.Gauge{
 							Value: func() *float64 { i := float64(1); return &i }(),
 						},
 					},
@@ -142,16 +142,16 @@ func TestWriteProxyMetric(t *testing.T) {
 			},
 			valid: testMetric{
 				metric: HTTPProxyValidGauge,
-				want: []*io_prometheus_client.Metric{
+				want: []*client_model.Metric{
 					{
-						Label: []*io_prometheus_client.LabelPair{{
+						Label: []*client_model.LabelPair{{
 							Name:  func() *string { i := "namespace"; return &i }(),
 							Value: func() *string { i := "testns"; return &i }(),
 						}, {
 							Name:  func() *string { i := "vhost"; return &i }(),
 							Value: func() *string { i := "foo.com"; return &i }(),
 						}},
-						Gauge: &io_prometheus_client.Gauge{
+						Gauge: &client_model.Gauge{
 							Value: func() *float64 { i := float64(3); return &i }(),
 						},
 					},
@@ -159,16 +159,16 @@ func TestWriteProxyMetric(t *testing.T) {
 			},
 			invalid: testMetric{
 				metric: HTTPProxyInvalidGauge,
-				want: []*io_prometheus_client.Metric{
+				want: []*client_model.Metric{
 					{
-						Label: []*io_prometheus_client.LabelPair{{
+						Label: []*client_model.LabelPair{{
 							Name:  func() *string { i := "namespace"; return &i }(),
 							Value: func() *string { i := "testns"; return &i }(),
 						}, {
 							Name:  func() *string { i := "vhost"; return &i }(),
 							Value: func() *string { i := "foo.com"; return &i }(),
 						}},
-						Gauge: &io_prometheus_client.Gauge{
+						Gauge: &client_model.Gauge{
 							Value: func() *float64 { i := float64(2); return &i }(),
 						},
 					},
@@ -176,13 +176,13 @@ func TestWriteProxyMetric(t *testing.T) {
 			},
 			root: testMetric{
 				metric: HTTPProxyRootTotalGauge,
-				want: []*io_prometheus_client.Metric{
+				want: []*client_model.Metric{
 					{
-						Label: []*io_prometheus_client.LabelPair{{
+						Label: []*client_model.LabelPair{{
 							Name:  func() *string { i := "namespace"; return &i }(),
 							Value: func() *string { i := "testns"; return &i }(),
 						}},
-						Gauge: &io_prometheus_client.Gauge{
+						Gauge: &client_model.Gauge{
 							Value: func() *float64 { i := float64(4); return &i }(),
 						},
 					},
@@ -207,11 +207,11 @@ func TestWriteProxyMetric(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			gotTotal := []*io_prometheus_client.Metric{}
-			gotValid := []*io_prometheus_client.Metric{}
-			gotInvalid := []*io_prometheus_client.Metric{}
-			gotOrphaned := []*io_prometheus_client.Metric{}
-			gotRoot := []*io_prometheus_client.Metric{}
+			gotTotal := []*client_model.Metric{}
+			gotValid := []*client_model.Metric{}
+			gotInvalid := []*client_model.Metric{}
+			gotOrphaned := []*client_model.Metric{}
+			gotRoot := []*client_model.Metric{}
 			for _, mf := range gathering {
 				switch mf.GetName() {
 				case tc.total.metric:
@@ -239,22 +239,22 @@ func TestWriteProxyMetric(t *testing.T) {
 func TestRemoveProxyMetric(t *testing.T) {
 	total := testMetric{
 		metric: HTTPProxyTotalGauge,
-		want: []*io_prometheus_client.Metric{
+		want: []*client_model.Metric{
 			{
-				Label: []*io_prometheus_client.LabelPair{{
+				Label: []*client_model.LabelPair{{
 					Name:  func() *string { i := "namespace"; return &i }(),
 					Value: func() *string { i := "foons"; return &i }(),
 				}},
-				Gauge: &io_prometheus_client.Gauge{
+				Gauge: &client_model.Gauge{
 					Value: func() *float64 { i := float64(3); return &i }(),
 				},
 			},
 			{
-				Label: []*io_prometheus_client.LabelPair{{
+				Label: []*client_model.LabelPair{{
 					Name:  func() *string { i := "namespace"; return &i }(),
 					Value: func() *string { i := "testns"; return &i }(),
 				}},
-				Gauge: &io_prometheus_client.Gauge{
+				Gauge: &client_model.Gauge{
 					Value: func() *float64 { i := float64(6); return &i }(),
 				},
 			},
@@ -263,13 +263,13 @@ func TestRemoveProxyMetric(t *testing.T) {
 
 	orphaned := testMetric{
 		metric: HTTPProxyOrphanedGauge,
-		want: []*io_prometheus_client.Metric{
+		want: []*client_model.Metric{
 			{
-				Label: []*io_prometheus_client.LabelPair{{
+				Label: []*client_model.LabelPair{{
 					Name:  func() *string { i := "namespace"; return &i }(),
 					Value: func() *string { i := "testns"; return &i }(),
 				}},
-				Gauge: &io_prometheus_client.Gauge{
+				Gauge: &client_model.Gauge{
 					Value: func() *float64 { i := float64(1); return &i }(),
 				},
 			},
@@ -278,16 +278,16 @@ func TestRemoveProxyMetric(t *testing.T) {
 
 	valid := testMetric{
 		metric: HTTPProxyValidGauge,
-		want: []*io_prometheus_client.Metric{
+		want: []*client_model.Metric{
 			{
-				Label: []*io_prometheus_client.LabelPair{{
+				Label: []*client_model.LabelPair{{
 					Name:  func() *string { i := "namespace"; return &i }(),
 					Value: func() *string { i := "testns"; return &i }(),
 				}, {
 					Name:  func() *string { i := "vhost"; return &i }(),
 					Value: func() *string { i := "foo.com"; return &i }(),
 				}},
-				Gauge: &io_prometheus_client.Gauge{
+				Gauge: &client_model.Gauge{
 					Value: func() *float64 { i := float64(3); return &i }(),
 				},
 			},
@@ -296,16 +296,16 @@ func TestRemoveProxyMetric(t *testing.T) {
 
 	invalid := testMetric{
 		metric: HTTPProxyInvalidGauge,
-		want: []*io_prometheus_client.Metric{
+		want: []*client_model.Metric{
 			{
-				Label: []*io_prometheus_client.LabelPair{{
+				Label: []*client_model.LabelPair{{
 					Name:  func() *string { i := "namespace"; return &i }(),
 					Value: func() *string { i := "testns"; return &i }(),
 				}, {
 					Name:  func() *string { i := "vhost"; return &i }(),
 					Value: func() *string { i := "foo.com"; return &i }(),
 				}},
-				Gauge: &io_prometheus_client.Gauge{
+				Gauge: &client_model.Gauge{
 					Value: func() *float64 { i := float64(2); return &i }(),
 				},
 			},
@@ -314,13 +314,13 @@ func TestRemoveProxyMetric(t *testing.T) {
 
 	root := testMetric{
 		metric: HTTPProxyRootTotalGauge,
-		want: []*io_prometheus_client.Metric{
+		want: []*client_model.Metric{
 			{
-				Label: []*io_prometheus_client.LabelPair{{
+				Label: []*client_model.LabelPair{{
 					Name:  func() *string { i := "namespace"; return &i }(),
 					Value: func() *string { i := "testns"; return &i }(),
 				}},
-				Gauge: &io_prometheus_client.Gauge{
+				Gauge: &client_model.Gauge{
 					Value: func() *float64 { i := float64(4); return &i }(),
 				},
 			},
@@ -330,11 +330,11 @@ func TestRemoveProxyMetric(t *testing.T) {
 	tests := map[string]struct {
 		irMetrics        RouteMetric
 		irMetricsUpdated RouteMetric
-		totalWant        []*io_prometheus_client.Metric
-		validWant        []*io_prometheus_client.Metric
-		invalidWant      []*io_prometheus_client.Metric
-		orphanedWant     []*io_prometheus_client.Metric
-		rootWant         []*io_prometheus_client.Metric
+		totalWant        []*client_model.Metric
+		validWant        []*client_model.Metric
+		invalidWant      []*client_model.Metric
+		orphanedWant     []*client_model.Metric
+		rootWant         []*client_model.Metric
 	}{
 		"orphan is resolved": {
 			irMetrics: RouteMetric{
@@ -371,62 +371,62 @@ func TestRemoveProxyMetric(t *testing.T) {
 					{Namespace: "testns"}: 4,
 				},
 			},
-			totalWant: []*io_prometheus_client.Metric{
+			totalWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "foons"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(3); return &i }(),
 					},
 				},
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(6); return &i }(),
 					},
 				},
 			},
-			orphanedWant: []*io_prometheus_client.Metric{},
-			validWant: []*io_prometheus_client.Metric{
+			orphanedWant: []*client_model.Metric{},
+			validWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}, {
 						Name:  func() *string { i := "vhost"; return &i }(),
 						Value: func() *string { i := "foo.com"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(3); return &i }(),
 					},
 				},
 			},
-			invalidWant: []*io_prometheus_client.Metric{
+			invalidWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}, {
 						Name:  func() *string { i := "vhost"; return &i }(),
 						Value: func() *string { i := "foo.com"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(2); return &i }(),
 					},
 				},
 			},
-			rootWant: []*io_prometheus_client.Metric{
+			rootWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(4); return &i }(),
 					},
 				},
@@ -466,53 +466,53 @@ func TestRemoveProxyMetric(t *testing.T) {
 					{Namespace: "testns"}: 4,
 				},
 			},
-			totalWant: []*io_prometheus_client.Metric{
+			totalWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(6); return &i }(),
 					},
 				},
 			},
-			orphanedWant: []*io_prometheus_client.Metric{},
-			validWant: []*io_prometheus_client.Metric{
+			orphanedWant: []*client_model.Metric{},
+			validWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}, {
 						Name:  func() *string { i := "vhost"; return &i }(),
 						Value: func() *string { i := "foo.com"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(3); return &i }(),
 					},
 				},
 			},
-			invalidWant: []*io_prometheus_client.Metric{
+			invalidWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}, {
 						Name:  func() *string { i := "vhost"; return &i }(),
 						Value: func() *string { i := "foo.com"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(2); return &i }(),
 					},
 				},
 			},
-			rootWant: []*io_prometheus_client.Metric{
+			rootWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(4); return &i }(),
 					},
 				},
@@ -552,53 +552,53 @@ func TestRemoveProxyMetric(t *testing.T) {
 					{Namespace: "testns"}: 4,
 				},
 			},
-			totalWant: []*io_prometheus_client.Metric{
+			totalWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(6); return &i }(),
 					},
 				},
 			},
-			orphanedWant: []*io_prometheus_client.Metric{},
-			validWant: []*io_prometheus_client.Metric{
+			orphanedWant: []*client_model.Metric{},
+			validWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}, {
 						Name:  func() *string { i := "vhost"; return &i }(),
 						Value: func() *string { i := "foo.com"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(3); return &i }(),
 					},
 				},
 			},
-			invalidWant: []*io_prometheus_client.Metric{
+			invalidWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}, {
 						Name:  func() *string { i := "vhost"; return &i }(),
 						Value: func() *string { i := "foo.com"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(2); return &i }(),
 					},
 				},
 			},
-			rootWant: []*io_prometheus_client.Metric{
+			rootWant: []*client_model.Metric{
 				{
-					Label: []*io_prometheus_client.LabelPair{{
+					Label: []*client_model.LabelPair{{
 						Name:  func() *string { i := "namespace"; return &i }(),
 						Value: func() *string { i := "testns"; return &i }(),
 					}},
-					Gauge: &io_prometheus_client.Gauge{
+					Gauge: &client_model.Gauge{
 						Value: func() *float64 { i := float64(4); return &i }(),
 					},
 				},
@@ -622,11 +622,11 @@ func TestRemoveProxyMetric(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			gotTotal := []*io_prometheus_client.Metric{}
-			gotValid := []*io_prometheus_client.Metric{}
-			gotInvalid := []*io_prometheus_client.Metric{}
-			gotOrphaned := []*io_prometheus_client.Metric{}
-			gotRoot := []*io_prometheus_client.Metric{}
+			gotTotal := []*client_model.Metric{}
+			gotValid := []*client_model.Metric{}
+			gotInvalid := []*client_model.Metric{}
+			gotOrphaned := []*client_model.Metric{}
+			gotRoot := []*client_model.Metric{}
 			for _, mf := range gathering {
 				switch mf.GetName() {
 				case total.metric:
@@ -661,11 +661,11 @@ func TestRemoveProxyMetric(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			gotTotal = []*io_prometheus_client.Metric{}
-			gotValid = []*io_prometheus_client.Metric{}
-			gotInvalid = []*io_prometheus_client.Metric{}
-			gotOrphaned = []*io_prometheus_client.Metric{}
-			gotRoot = []*io_prometheus_client.Metric{}
+			gotTotal = []*client_model.Metric{}
+			gotValid = []*client_model.Metric{}
+			gotInvalid = []*client_model.Metric{}
+			gotOrphaned = []*client_model.Metric{}
+			gotRoot = []*client_model.Metric{}
 			for _, mf := range gathering {
 				switch mf.GetName() {
 				case total.metric:

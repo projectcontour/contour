@@ -25,7 +25,7 @@ import (
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
-	klog "k8s.io/klog/v2"
+	klog_v2 "k8s.io/klog/v2"
 )
 
 func TestKlogOnlyLogsToLogrus(t *testing.T) {
@@ -78,8 +78,8 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	l := log.WithField("foo", "bar")
 	InitLogging(LogWriterOption(l))
 
-	klog.Info("some log")
-	klog.Flush()
+	klog_v2.Info("some log")
+	klog_v2.Flush()
 
 	// Should be a recorded logrus log with the correct fields.
 	// Wait for up to 5s (klog flush interval)
@@ -110,8 +110,8 @@ func TestMultipleLogWriterOptions(t *testing.T) {
 	logEntry3 := log.WithField("field", "data3")
 	InitLogging(LogWriterOption(logEntry1), LogWriterOption(logEntry2), LogWriterOption(logEntry3))
 
-	klog.Info("some log")
-	klog.Flush()
+	klog_v2.Info("some log")
+	klog_v2.Flush()
 	// Wait for up to 5s (klog flush interval)
 	assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, time.Second*5, time.Millisecond*10)
 	assert.Equal(t, "data3", logHook.AllEntries()[0].Data["field"])
@@ -125,7 +125,7 @@ func TestLogLevelOption(t *testing.T) {
 			InitLogging(LogWriterOption(l), LogLevelOption(logLevel))
 			// Make sure log verbosity is set properly.
 			for verbositylevel := 1; verbositylevel <= 10; verbositylevel++ {
-				enabled := klog.V(klog.Level(verbositylevel)).Enabled()
+				enabled := klog_v2.V(klog_v2.Level(verbositylevel)).Enabled()
 				if verbositylevel <= logLevel {
 					assert.True(t, enabled)
 				} else {
@@ -140,6 +140,6 @@ func TestMultipleLogLevelOptions(t *testing.T) {
 	log, _ := test.NewNullLogger()
 	l := log.WithField("some", "field")
 	InitLogging(LogWriterOption(l), LogLevelOption(1), LogLevelOption(10), LogLevelOption(4))
-	assert.True(t, klog.V(3).Enabled())
-	assert.False(t, klog.V(5).Enabled())
+	assert.True(t, klog_v2.V(3).Enabled())
+	assert.False(t, klog_v2.V(5).Enabled())
 }

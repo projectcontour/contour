@@ -19,7 +19,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,10 +30,10 @@ func TestKindOf(t *testing.T) {
 		Kind string
 		Obj  interface{}
 	}{
-		{"Secret", &v1.Secret{}},
-		{"Service", &v1.Service{}},
-		{"Endpoints", &v1.Endpoints{}},
-		{"Pod", &v1.Pod{}},
+		{"Secret", &core_v1.Secret{}},
+		{"Service", &core_v1.Service{}},
+		{"Endpoints", &core_v1.Endpoints{}},
+		{"Pod", &core_v1.Pod{}},
 		{"Ingress", &v1beta1.Ingress{}},
 		{"Ingress", &networking_v1.Ingress{}},
 		{"HTTPProxy", &contour_api_v1.HTTPProxy{}},
@@ -57,9 +57,9 @@ func TestVersionOf(t *testing.T) {
 		Version string
 		Obj     interface{}
 	}{
-		{"v1", &v1.Secret{}},
-		{"v1", &v1.Service{}},
-		{"v1", &v1.Endpoints{}},
+		{"v1", &core_v1.Secret{}},
+		{"v1", &core_v1.Service{}},
+		{"v1", &core_v1.Endpoints{}},
 		{"networking.k8s.io/v1beta1", &v1beta1.Ingress{}},
 		{"projectcontour.io/v1", &contour_api_v1.HTTPProxy{}},
 		{"projectcontour.io/v1", &contour_api_v1.TLSCertificateDelegation{}},
