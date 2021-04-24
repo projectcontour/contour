@@ -23,10 +23,10 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -40,38 +40,38 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		want bool
 	}{
 		"insert secret": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
 			want: false,
 		},
 		"insert secret w/ blank ca.crt": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: map[string][]byte{
-					CACertificateKey:    []byte(""),
-					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
-					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+					CACertificateKey:         []byte(""),
+					core_v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
 				},
 			},
 			want: true,
 		},
 		"insert CA secret w/ explanatory text": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeOpaque,
+				Type: core_v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					CACertificateKey: []byte(fixture.CERTIFICATE_WITH_TEXT),
 				},
@@ -79,23 +79,23 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert CA bundle secret w/ non-PEM data": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeOpaque,
+				Type: core_v1.SecretTypeOpaque,
 				Data: caBundleData(fixture.CERTIFICATE, fixture.CERTIFICATE, fixture.CERTIFICATE, fixture.CERTIFICATE),
 			},
 			want: true,
 		},
 		"insert CA bundle secret w/ non-PEM data and no certificates": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeOpaque,
+				Type: core_v1.SecretTypeOpaque,
 				Data: caBundleData(),
 			},
 			want: false,
@@ -104,7 +104,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert secret referenced by ingress": {
 			pre: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "www",
 						Namespace: "default",
 					},
@@ -115,12 +115,12 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
 			want: true,
@@ -128,7 +128,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert secret referenced by ingress with multiple pem blocks": {
 			pre: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "www",
 						Namespace: "default",
 					},
@@ -139,12 +139,12 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(fixture.EC_CERTIFICATE, fixture.EC_PRIVATE_KEY),
 			},
 			want: true,
@@ -152,7 +152,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert secret w/ wrong type referenced by ingress": {
 			pre: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "www",
 						Namespace: "default",
 					},
@@ -163,8 +163,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
@@ -175,7 +175,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert secret referenced by ingress via tls delegation": {
 			pre: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "www",
 						Namespace: "extra",
 					},
@@ -186,7 +186,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				&contour_api_v1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
@@ -200,12 +200,12 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
 			want: true,
@@ -213,7 +213,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert secret referenced by ingress via wildcard tls delegation": {
 			pre: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "www",
 						Namespace: "extra",
 					},
@@ -225,7 +225,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 				},
 
 				&contour_api_v1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
@@ -239,12 +239,12 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
 			want: true,
@@ -252,7 +252,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert secret referenced by httpproxy": {
 			pre: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -265,12 +265,12 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
 			want: true,
@@ -278,7 +278,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert secret referenced by httpproxy via tls delegation": {
 			pre: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "extra",
 					},
@@ -291,7 +291,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				&contour_api_v1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
@@ -305,12 +305,12 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
 			want: true,
@@ -318,7 +318,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert secret referenced by httpproxy via wildcard tls delegation": {
 			pre: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "extra",
 					},
@@ -331,7 +331,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				&contour_api_v1.TLSCertificateDelegation{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "delegation",
 						Namespace: "default",
 					},
@@ -345,23 +345,23 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
 			want: true,
 		},
 		"insert certificate secret": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ca",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeOpaque,
+				Type: core_v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					CACertificateKey: []byte(fixture.CERTIFICATE),
 				},
@@ -375,7 +375,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert certificate secret referenced by httpproxy": {
 			pre: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "example-com",
 						Namespace: "default",
 					},
@@ -399,12 +399,12 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ca",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeOpaque,
+				Type: core_v1.SecretTypeOpaque,
 				Data: map[string][]byte{
 					CACertificateKey: []byte(fixture.CERTIFICATE),
 				},
@@ -413,7 +413,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingress class correct name": {
 			obj: &networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "contour",
 				},
 			},
@@ -421,7 +421,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingress class incorrect name": {
 			obj: &networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "notagoodclass",
 				},
 			},
@@ -429,7 +429,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 empty ingress class": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "correct",
 					Namespace: "default",
 				},
@@ -438,7 +438,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 empty ingress class": {
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "correct",
 					Namespace: "default",
 				},
@@ -447,7 +447,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 incorrect ingress class name": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 				},
@@ -459,7 +459,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 explicit ingress class name": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "explicit",
 					Namespace: "default",
 				},
@@ -471,7 +471,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 incorrect ingress class name": {
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 				},
@@ -483,7 +483,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 explicit ingress class name": {
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "explicit",
 					Namespace: "default",
 				},
@@ -495,7 +495,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 incorrect kubernetes.io/ingress.class": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -507,7 +507,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 incorrect projectcontour.io/ingress.class": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -519,7 +519,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 incorrect kubernetes.io/ingress.class": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -531,7 +531,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 incorrect projectcontour.io/ingress.class": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -543,7 +543,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 explicit kubernetes.io/ingress.class": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -555,7 +555,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 explicit projectcontour.io/ingress.class": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -567,7 +567,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 explicit kubernetes.io/ingress.class": {
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -579,7 +579,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 explicit projectcontour.io/ingress.class": {
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -591,7 +591,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 projectcontour.io ingress class annotation overrides kubernetes.io incorrect": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -604,7 +604,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 projectcontour.io ingress class annotation overrides kubernetes.io correct": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -617,7 +617,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 projectcontour.io ingress class annotation overrides kubernetes.io incorrect": {
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -630,7 +630,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 projectcontour.io ingress class annotation overrides kubernetes.io correct": {
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -643,7 +643,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 ingress class annotation overrides spec incorrect": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -658,7 +658,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 ingress class annotation overrides spec correct": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -673,7 +673,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 ingress class annotation overrides spec incorrect": {
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -688,7 +688,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1beta1 ingress class annotation overrides spec correct": {
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -703,7 +703,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert httpproxy empty ingress annotation": {
 			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
 				},
@@ -712,7 +712,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert httpproxy incorrect kubernetes.io/ingress.class": {
 			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -724,7 +724,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert httpproxy incorrect projectcontour.io/ingress.class": {
 			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -736,7 +736,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert httpproxy explicit kubernetes.io/ingress.class": {
 			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -748,7 +748,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert httpproxy explicit projectcontour.io/ingress.class": {
 			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -760,7 +760,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert tls contour_api_v1/v1.certificatedelegation": {
 			obj: &contour_api_v1.TLSCertificateDelegation{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "delegate",
 					Namespace: "default",
 				},
@@ -769,7 +769,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert httpproxy": {
 			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
 				},
@@ -781,8 +781,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: false,
 		},
 		"insert service": {
-			obj: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "service",
 					Namespace: "default",
 				},
@@ -792,7 +792,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert service referenced by ingress backend": {
 			pre: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "www",
 						Namespace: "default",
 					},
@@ -803,8 +803,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "service",
 					Namespace: "default",
 				},
@@ -814,7 +814,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert service in different namespace": {
 			pre: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "www",
 						Namespace: "kube-system",
 					},
@@ -825,8 +825,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "service",
 					Namespace: "default",
 				},
@@ -836,7 +836,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert service referenced by httpproxy": {
 			pre: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -849,8 +849,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "service",
 					Namespace: "default",
 				},
@@ -860,7 +860,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert service referenced by httpproxy tcpproxy": {
 			pre: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -873,8 +873,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 			},
-			obj: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "service",
 					Namespace: "default",
 				},
@@ -882,8 +882,8 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert namespace": {
-			obj: &v1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Namespace{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "namespace",
 					Namespace: "default",
 				},
@@ -892,7 +892,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert gateway-api Gateway": {
 			obj: &gatewayapi_v1alpha1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
@@ -901,7 +901,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert invalid gateway-api Gateway": {
 			obj: &gatewayapi_v1alpha1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "another",
 					Namespace: "controller",
 				},
@@ -910,7 +910,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert gateway-api HTTPRoute": {
 			obj: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
 				},
@@ -919,7 +919,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert gateway-api TCPRoute": {
 			obj: &gatewayapi_v1alpha1.TCPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "tcproute",
 					Namespace: "default",
 				},
@@ -928,7 +928,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert gateway-api UDPRoute": {
 			obj: &gatewayapi_v1alpha1.UDPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "udproute",
 					Namespace: "default",
 				},
@@ -937,7 +937,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert gateway-api TLSRoute": {
 			obj: &gatewayapi_v1alpha1.TLSRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "tlsroute",
 					Namespace: "default",
 				},
@@ -946,7 +946,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert gateway-api BackendPolicy": {
 			obj: &gatewayapi_v1alpha1.BackendPolicy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "backendpolicy",
 					Namespace: "default",
 				},
@@ -960,12 +960,12 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			want: true,
 		},
 		"insert secret that is referred by configuration file": {
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secretReferredByConfigFile",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 			},
 			want: true,
@@ -1013,35 +1013,35 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		want  bool
 	}{
 		"remove secret": {
-			cache: cache(&v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			cache: cache(&core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: map[string][]byte{
-					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
-					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+					core_v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					core_v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
 				},
 			}),
-			obj: &v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Secret{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "secret",
 					Namespace: "default",
 				},
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 			},
 			want: true,
 		},
 		"remove service": {
-			cache: cache(&v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			cache: cache(&core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "service",
 					Namespace: "default",
 				},
 			}),
-			obj: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "service",
 					Namespace: "default",
 				},
@@ -1049,14 +1049,14 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: true,
 		},
 		"remove namespace": {
-			cache: cache(&v1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
+			cache: cache(&core_v1.Namespace{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "namespace",
 					Namespace: "default",
 				},
 			}),
-			obj: &v1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
+			obj: &core_v1.Namespace{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "namespace",
 					Namespace: "default",
 				},
@@ -1065,12 +1065,12 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove ingress class correct name": {
 			cache: cache(&networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "contour",
 				},
 			}),
 			obj: &networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "contour",
 				},
 			},
@@ -1078,12 +1078,12 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove ingress class wrong name": {
 			cache: cache(&networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "contour",
 				},
 			}),
 			obj: &networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name: "somethingelse",
 				},
 			},
@@ -1091,13 +1091,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove ingress": {
 			cache: cache(&v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
 				},
 			}),
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
 				},
@@ -1106,13 +1106,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove ingressv1": {
 			cache: cache(&networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
 				},
 			}),
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
 				},
@@ -1121,7 +1121,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove ingress incorrect ingressclass": {
 			cache: cache(&v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -1130,7 +1130,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			}),
 			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -1142,13 +1142,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove httpproxy": {
 			cache: cache(&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
 				},
 			}),
 			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
 				},
@@ -1157,7 +1157,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove httpproxy incorrect ingressclass": {
 			cache: cache(&contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -1166,7 +1166,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			}),
 			obj: &contour_api_v1.HTTPProxy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httpproxy",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -1178,13 +1178,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove gateway-api Gateway": {
 			cache: cache(&gatewayapi_v1alpha1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
 			}),
 			obj: &gatewayapi_v1alpha1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				},
@@ -1193,13 +1193,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove gateway-api HTTPRoute": {
 			cache: cache(&gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
 				},
 			}),
 			obj: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "httproute",
 					Namespace: "default",
 				},
@@ -1208,13 +1208,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove gateway-api TCPRoute": {
 			cache: cache(&gatewayapi_v1alpha1.TCPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "tcproute",
 					Namespace: "default",
 				},
 			}),
 			obj: &gatewayapi_v1alpha1.TCPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "tcproute",
 					Namespace: "default",
 				},
@@ -1223,13 +1223,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove gateway-api UDPRoute": {
 			cache: cache(&gatewayapi_v1alpha1.UDPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "udproute",
 					Namespace: "default",
 				},
 			}),
 			obj: &gatewayapi_v1alpha1.UDPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "udproute",
 					Namespace: "default",
 				},
@@ -1238,13 +1238,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove gateway-api TLSRoute": {
 			cache: cache(&gatewayapi_v1alpha1.TLSRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "tlsroute",
 					Namespace: "default",
 				},
 			}),
 			obj: &gatewayapi_v1alpha1.TLSRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "tlsroute",
 					Namespace: "default",
 				},
@@ -1253,13 +1253,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"remove gateway-api BackendPolicy": {
 			cache: cache(&gatewayapi_v1alpha1.BackendPolicy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "backendpolicy",
 					Namespace: "default",
 				},
 			}),
 			obj: &gatewayapi_v1alpha1.BackendPolicy{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "backendpolicy",
 					Namespace: "default",
 				},
@@ -1301,20 +1301,20 @@ func TestLookupService(t *testing.T) {
 		return &cache
 	}
 
-	service := func(ns, name string, ports ...v1.ServicePort) *v1.Service {
-		return &v1.Service{
-			ObjectMeta: metav1.ObjectMeta{
+	service := func(ns, name string, ports ...core_v1.ServicePort) *core_v1.Service {
+		return &core_v1.Service{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: ns,
 			},
-			Spec: v1.ServiceSpec{
+			Spec: core_v1.ServiceSpec{
 				Ports: ports,
 			},
 		}
 	}
 
-	port := func(name string, port int32, protocol v1.Protocol) v1.ServicePort {
-		return v1.ServicePort{
+	port := func(name string, port int32, protocol core_v1.Protocol) core_v1.ServicePort {
+		return core_v1.ServicePort{
 			Name:     name,
 			Port:     port,
 			Protocol: protocol,
@@ -1325,45 +1325,45 @@ func TestLookupService(t *testing.T) {
 		cache    *KubernetesCache
 		meta     types.NamespacedName
 		port     intstr.IntOrString
-		wantSvc  *v1.Service
-		wantPort v1.ServicePort
+		wantSvc  *core_v1.Service
+		wantPort core_v1.ServicePort
 		wantErr  error
 	}{
 		"service and port exist with valid service protocol, lookup by port num": {
-			cache:    cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:    cache(service("default", "service-1", port("http", 80, core_v1.ProtocolTCP))),
 			meta:     types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:     intstr.FromInt(80),
-			wantSvc:  service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
-			wantPort: port("http", 80, v1.ProtocolTCP),
+			wantSvc:  service("default", "service-1", port("http", 80, core_v1.ProtocolTCP)),
+			wantPort: port("http", 80, core_v1.ProtocolTCP),
 		},
 		"service and port exist with valid service protocol, lookup by port name": {
-			cache:    cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:    cache(service("default", "service-1", port("http", 80, core_v1.ProtocolTCP))),
 			meta:     types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:     intstr.FromString("http"),
-			wantSvc:  service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
-			wantPort: port("http", 80, v1.ProtocolTCP),
+			wantSvc:  service("default", "service-1", port("http", 80, core_v1.ProtocolTCP)),
+			wantPort: port("http", 80, core_v1.ProtocolTCP),
 		},
 		"service and port exist with valid service protocol, lookup by wrong port num": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:   cache(service("default", "service-1", port("http", 80, core_v1.ProtocolTCP))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:    intstr.FromInt(9999),
 			wantErr: errors.New(`port "9999" on service "default/service-1" not matched`),
 		},
 		"service and port exist with valid service protocol, lookup by wrong port name": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:   cache(service("default", "service-1", port("http", 80, core_v1.ProtocolTCP))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:    intstr.FromString("wrong-port-name"),
 			wantErr: errors.New(`port "wrong-port-name" on service "default/service-1" not matched`),
 		},
 		"service and port exist, invalid service protocol": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolUDP))),
+			cache:   cache(service("default", "service-1", port("http", 80, core_v1.ProtocolUDP))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "service-1"},
 			port:    intstr.FromString("http"),
-			wantSvc: service("default", "service-1", port("http", 80, v1.ProtocolTCP)),
+			wantSvc: service("default", "service-1", port("http", 80, core_v1.ProtocolTCP)),
 			wantErr: errors.New(`unsupported service protocol "UDP"`),
 		},
 		"service does not exist": {
-			cache:   cache(service("default", "service-1", port("http", 80, v1.ProtocolTCP))),
+			cache:   cache(service("default", "service-1", port("http", 80, core_v1.ProtocolTCP))),
 			meta:    types.NamespacedName{Namespace: "default", Name: "nonexistent-service"},
 			port:    intstr.FromInt(80),
 			wantErr: errors.New(`service "default/nonexistent-service" not found`),
@@ -1399,9 +1399,9 @@ func TestServiceTriggersRebuild(t *testing.T) {
 		return &cache
 	}
 
-	service := func(namespace, name string) *v1.Service {
-		return &v1.Service{
-			ObjectMeta: metav1.ObjectMeta{
+	service := func(namespace, name string) *core_v1.Service {
+		return &core_v1.Service{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -1410,7 +1410,7 @@ func TestServiceTriggersRebuild(t *testing.T) {
 
 	ingressBackendService := func(namespace, name string) *networking_v1.Ingress {
 		return &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -1438,7 +1438,7 @@ func TestServiceTriggersRebuild(t *testing.T) {
 
 	ingressDefaultBackend := func(namespace, name string) *networking_v1.Ingress {
 		return &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -1453,7 +1453,7 @@ func TestServiceTriggersRebuild(t *testing.T) {
 
 	httpProxy := func(namespace, name string) *contour_api_v1.HTTPProxy {
 		return &contour_api_v1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -1472,7 +1472,7 @@ func TestServiceTriggersRebuild(t *testing.T) {
 
 	tcpProxy := func(namespace, name string) *contour_api_v1.HTTPProxy {
 		return &contour_api_v1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -1490,7 +1490,7 @@ func TestServiceTriggersRebuild(t *testing.T) {
 
 	httpRoute := func(namespace, name string) *gatewayapi_v1alpha1.HTTPRoute {
 		return &gatewayapi_v1alpha1.HTTPRoute{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -1506,7 +1506,7 @@ func TestServiceTriggersRebuild(t *testing.T) {
 
 	tests := map[string]struct {
 		cache *KubernetesCache
-		svc   *v1.Service
+		svc   *core_v1.Service
 		want  bool
 	}{
 		"empty cache does not trigger rebuild": {
@@ -1605,19 +1605,19 @@ func TestServiceTriggersRebuild(t *testing.T) {
 
 func TestSecretTriggersRebuild(t *testing.T) {
 
-	secret := func(namespace, name string) *v1.Secret {
-		return &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+	secret := func(namespace, name string) *core_v1.Secret {
+		return &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
-			Type: v1.SecretTypeTLS,
+			Type: core_v1.SecretTypeTLS,
 			Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 		}
 	}
 
-	caSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	caSecret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "ca",
 			Namespace: "default",
 		},
@@ -1628,7 +1628,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 
 	tlsCertificateDelegation := func(namespace, name string, targetNamespaces ...string) *contour_api_v1.TLSCertificateDelegation {
 		return &contour_api_v1.TLSCertificateDelegation{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -1643,7 +1643,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 
 	ingress := func(namespace, name, secretName string) *networking_v1.Ingress {
 		return &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -1671,7 +1671,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 
 	httpProxy := func(namespace, name, secretName string) *contour_api_v1.HTTPProxy {
 		return &contour_api_v1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
@@ -1688,7 +1688,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 
 	tests := map[string]struct {
 		cache  *KubernetesCache
-		secret *v1.Secret
+		secret *core_v1.Secret
 		want   bool
 	}{
 		"empty cache does not trigger rebuild": {
@@ -1727,7 +1727,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		"httpproxy empty vhost does not trigger rebuild": {
 			cache: cache(
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "proxy",
 						Namespace: "default",
 					},
@@ -1740,7 +1740,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		"httpproxy empty TLS does not trigger rebuild": {
 			cache: cache(
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "proxy",
 						Namespace: "default",
 					},
@@ -1799,7 +1799,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		"gateway does not define TLS on listener, does not trigger rebuild": {
 			cache: cache(
 				&gatewayapi_v1alpha1.Gateway{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},
@@ -1816,7 +1816,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		"gateway does not define TLS.CertificateRef on listener, does not trigger rebuild": {
 			cache: cache(
 				&gatewayapi_v1alpha1.Gateway{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},
@@ -1835,7 +1835,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		"gateway listener references secret, triggers rebuild (core Group)": {
 			cache: cache(
 				&gatewayapi_v1alpha1.Gateway{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},
@@ -1858,7 +1858,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 		"gateway listener references secret, triggers rebuild (v1 Group)": {
 			cache: cache(
 				&gatewayapi_v1alpha1.Gateway{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "contour",
 						Namespace: "projectcontour",
 					},

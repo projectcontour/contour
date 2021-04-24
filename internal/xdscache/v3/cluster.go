@@ -18,7 +18,7 @@ import (
 	"sync"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -74,7 +74,7 @@ func (c *ClusterCache) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*ClusterCache) TypeURL() string { return resource.ClusterType }
+func (*ClusterCache) TypeURL() string { return resource_v3.ClusterType }
 
 func (c *ClusterCache) OnChange(root *dag.DAG) {
 	clusters := visitClusters(root)

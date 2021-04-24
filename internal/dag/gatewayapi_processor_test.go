@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +32,7 @@ func TestComputeHosts(t *testing.T) {
 	}{
 		"single host": {
 			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "projectcontour",
 					Labels: map[string]string{
@@ -51,7 +51,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"single DNS label hostname": {
 			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "projectcontour",
 					Labels: map[string]string{
@@ -70,7 +70,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"multiple hosts": {
 			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "projectcontour",
 					Labels: map[string]string{
@@ -92,7 +92,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"no host": {
 			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "projectcontour",
 					Labels: map[string]string{
@@ -107,7 +107,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"IP in host": {
 			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "projectcontour",
 					Labels: map[string]string{
@@ -128,7 +128,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"valid wildcard hostname": {
 			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "projectcontour",
 					Labels: map[string]string{
@@ -147,7 +147,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"invalid wildcard hostname": {
 			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "projectcontour",
 					Labels: map[string]string{
@@ -168,7 +168,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"invalid hostname": {
 			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "basic",
 					Namespace: "projectcontour",
 					Labels: map[string]string{

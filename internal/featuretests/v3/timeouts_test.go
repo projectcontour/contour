@@ -23,8 +23,8 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTimeoutsNotSpecified(t *testing.T) {
@@ -33,11 +33,11 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
@@ -86,11 +86,11 @@ func TestNonZeroTimeoutsSpecified(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},

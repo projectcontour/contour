@@ -22,8 +22,8 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -32,19 +32,19 @@ func TestConditions_ContainsHeader_HTTProxy(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("svc1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
 	rh.OnAdd(fixture.NewService("svc2").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
 	rh.OnAdd(fixture.NewService("svc3").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
 	proxy1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},

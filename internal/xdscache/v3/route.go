@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/contour"
@@ -86,7 +86,7 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 }
 
 // TypeURL returns the string type of RouteCache Resource.
-func (*RouteCache) TypeURL() string { return resource.RouteType }
+func (*RouteCache) TypeURL() string { return resource_v3.RouteType }
 
 func (c *RouteCache) OnChange(root *dag.DAG) {
 	routes := visitRoutes(root)

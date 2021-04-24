@@ -23,8 +23,8 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
@@ -40,10 +40,10 @@ func TestHTTPProxy_RouteWithAServiceWeight(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	proxy1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -71,7 +71,7 @@ func TestHTTPProxy_RouteWithAServiceWeight(t *testing.T) {
 	), nil)
 
 	proxy2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -110,13 +110,13 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("svc1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(fixture.NewService("svc2").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(&gatewayapi_v1alpha1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
@@ -136,7 +136,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 
 	// HTTPRoute with a single weight.
 	route1 := &gatewayapi_v1alpha1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 			Labels: map[string]string{
@@ -177,7 +177,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 
 	// HTTPRoute with multiple weights.
 	route2 := &gatewayapi_v1alpha1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 			Labels: map[string]string{

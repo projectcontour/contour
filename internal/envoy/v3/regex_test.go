@@ -16,37 +16,37 @@ package v3
 import (
 	"testing"
 
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
 
 func TestSafeRegexMatch(t *testing.T) {
 	tests := map[string]struct {
 		regex string
-		want  *matcher.RegexMatcher
+		want  *matcher_v3.RegexMatcher
 	}{
 		"blank regex": {
 			regex: "",
-			want: &matcher.RegexMatcher{
-				EngineType: &matcher.RegexMatcher_GoogleRe2{
-					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+			want: &matcher_v3.RegexMatcher{
+				EngineType: &matcher_v3.RegexMatcher_GoogleRe2{
+					GoogleRe2: &matcher_v3.RegexMatcher_GoogleRE2{},
 				},
 			},
 		},
 		"simple": {
 			regex: "chrome",
-			want: &matcher.RegexMatcher{
-				EngineType: &matcher.RegexMatcher_GoogleRe2{
-					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+			want: &matcher_v3.RegexMatcher{
+				EngineType: &matcher_v3.RegexMatcher_GoogleRe2{
+					GoogleRe2: &matcher_v3.RegexMatcher_GoogleRE2{},
 				},
 				Regex: "chrome",
 			},
 		},
 		"regex meta": {
 			regex: "[a-z]+$",
-			want: &matcher.RegexMatcher{
-				EngineType: &matcher.RegexMatcher_GoogleRe2{
-					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+			want: &matcher_v3.RegexMatcher{
+				EngineType: &matcher_v3.RegexMatcher_GoogleRe2{
+					GoogleRe2: &matcher_v3.RegexMatcher_GoogleRE2{},
 				},
 				Regex: "[a-z]+$", // meta characters are not escaped.
 			},

@@ -24,8 +24,8 @@ import (
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
@@ -36,8 +36,8 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DefaultCluster returns a copy of the default Cluster, with each
@@ -143,7 +143,7 @@ func cluster(name, servicename, statName string) *envoy_cluster_v3.Cluster {
 	})
 }
 
-func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni string, clientSecret *v1.Secret, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
+func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni string, clientSecret *core_v1.Secret, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
 	var secret *dag.Secret
 	if clientSecret != nil {
 		secret = &dag.Secret{Object: clientSecret}
@@ -152,8 +152,8 @@ func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni 
 	c.TransportSocket = envoy_v3.UpstreamTLSTransportSocket(
 		envoy_v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
-				CACertificate: &dag.Secret{Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				CACertificate: &dag.Secret{Object: &core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
@@ -169,7 +169,7 @@ func tlsCluster(c *envoy_cluster_v3.Cluster, ca []byte, subjectName string, sni 
 	return c
 }
 
-func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, clientSecret *v1.Secret, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
+func tlsClusterWithoutValidation(c *envoy_cluster_v3.Cluster, sni string, clientSecret *core_v1.Secret, alpnProtocols ...string) *envoy_cluster_v3.Cluster {
 	var secret *dag.Secret
 	if clientSecret != nil {
 		secret = &dag.Secret{Object: clientSecret}
@@ -327,7 +327,7 @@ func appendFilterChains(chains ...*envoy_listener_v3.FilterChain) []*envoy_liste
 }
 
 // filterchaintls returns a FilterChain wrapping the given virtual host.
-func filterchaintls(domain string, secret *v1.Secret, filter *envoy_listener_v3.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_listener_v3.FilterChain {
+func filterchaintls(domain string, secret *core_v1.Secret, filter *envoy_listener_v3.Filter, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_listener_v3.FilterChain {
 	return envoy_v3.FilterChainTLS(
 		domain,
 		envoy_v3.DownstreamTLSContext(
@@ -341,7 +341,7 @@ func filterchaintls(domain string, secret *v1.Secret, filter *envoy_listener_v3.
 }
 
 // filterchaintlsfallback returns a FilterChain for the given TLS fallback certificate.
-func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_listener_v3.FilterChain {
+func filterchaintlsfallback(fallbackSecret *core_v1.Secret, peerValidationContext *dag.PeerValidationContext, alpn ...string) *envoy_listener_v3.FilterChain {
 	return envoy_v3.FilterChainTLSFallback(
 		envoy_v3.DownstreamTLSContext(
 			&dag.Secret{Object: fallbackSecret},
@@ -375,14 +375,14 @@ func httpsFilterFor(vhost string) *envoy_listener_v3.Filter {
 // filter chain.
 func authzFilterFor(
 	vhost string,
-	authz *envoy_config_filter_http_ext_authz_v3.ExtAuthz,
+	authz *authz_v3.ExtAuthz,
 ) *envoy_listener_v3.Filter {
 	return envoy_v3.HTTPConnectionManagerBuilder().
 		AddFilter(envoy_v3.FilterMisdirectedRequests(vhost)).
 		DefaultFilters().
-		AddFilter(&http.HttpFilter{
+		AddFilter(&manager_v3.HttpFilter{
 			Name: "envoy.filters.http.ext_authz",
-			ConfigType: &http.HttpFilter_TypedConfig{
+			ConfigType: &manager_v3.HttpFilter_TypedConfig{
 				TypedConfig: protobuf.MustMarshalAny(authz),
 			},
 		}).

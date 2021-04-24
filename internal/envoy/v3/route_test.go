@@ -19,20 +19,20 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestRouteRoute(t *testing.T) {
 	s1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	c1 := &dag.Cluster{
 		Upstream: &dag.Service{
 			Weighted: dag.WeightedService{
@@ -597,7 +597,7 @@ func TestWeightedClusters(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "kuard",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Port: 8080,
 						},
 					},
@@ -608,7 +608,7 @@ func TestWeightedClusters(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "nginx",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Port: 8080,
 						},
 					},
@@ -632,7 +632,7 @@ func TestWeightedClusters(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "kuard",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Port: 8080,
 						},
 					},
@@ -644,7 +644,7 @@ func TestWeightedClusters(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "nginx",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Port: 8080,
 						},
 					},
@@ -669,7 +669,7 @@ func TestWeightedClusters(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "kuard",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Port: 8080,
 						},
 					},
@@ -681,7 +681,7 @@ func TestWeightedClusters(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "nginx",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Port: 8080,
 						},
 					},
@@ -693,7 +693,7 @@ func TestWeightedClusters(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "notraffic",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Port: 8080,
 						},
 					},
@@ -820,9 +820,9 @@ func TestCORSVirtualHost(t *testing.T) {
 		"cors policy": {
 			hostname: "www.example.com",
 			cp: &envoy_route_v3.CorsPolicy{
-				AllowOriginStringMatch: []*matcher.StringMatcher{
+				AllowOriginStringMatch: []*matcher_v3.StringMatcher{
 					{
-						MatchPattern: &matcher.StringMatcher_Exact{
+						MatchPattern: &matcher_v3.StringMatcher_Exact{
 							Exact: "*",
 						},
 						IgnoreCase: true,
@@ -833,9 +833,9 @@ func TestCORSVirtualHost(t *testing.T) {
 				Name:    "www.example.com",
 				Domains: []string{"www.example.com"},
 				Cors: &envoy_route_v3.CorsPolicy{
-					AllowOriginStringMatch: []*matcher.StringMatcher{
+					AllowOriginStringMatch: []*matcher_v3.StringMatcher{
 						{
-							MatchPattern: &matcher.StringMatcher_Exact{
+							MatchPattern: &matcher_v3.StringMatcher_Exact{
 								Exact: "*",
 							},
 							IgnoreCase: true,
@@ -864,9 +864,9 @@ func TestCORSPolicy(t *testing.T) {
 				AllowMethods: []string{"GET", "POST", "PUT"},
 			},
 			want: &envoy_route_v3.CorsPolicy{
-				AllowOriginStringMatch: []*matcher.StringMatcher{
+				AllowOriginStringMatch: []*matcher_v3.StringMatcher{
 					{
-						MatchPattern: &matcher.StringMatcher_Exact{
+						MatchPattern: &matcher_v3.StringMatcher_Exact{
 							Exact: "*",
 						},
 						IgnoreCase: true,
@@ -882,9 +882,9 @@ func TestCORSPolicy(t *testing.T) {
 				AllowCredentials: true,
 			},
 			want: &envoy_route_v3.CorsPolicy{
-				AllowOriginStringMatch: []*matcher.StringMatcher{
+				AllowOriginStringMatch: []*matcher_v3.StringMatcher{
 					{
-						MatchPattern: &matcher.StringMatcher_Exact{
+						MatchPattern: &matcher_v3.StringMatcher_Exact{
 							Exact: "*",
 						},
 						IgnoreCase: true,
@@ -900,9 +900,9 @@ func TestCORSPolicy(t *testing.T) {
 				AllowHeaders: []string{"header-1", "header-2"},
 			},
 			want: &envoy_route_v3.CorsPolicy{
-				AllowOriginStringMatch: []*matcher.StringMatcher{
+				AllowOriginStringMatch: []*matcher_v3.StringMatcher{
 					{
-						MatchPattern: &matcher.StringMatcher_Exact{
+						MatchPattern: &matcher_v3.StringMatcher_Exact{
 							Exact: "*",
 						},
 						IgnoreCase: true,
@@ -919,9 +919,9 @@ func TestCORSPolicy(t *testing.T) {
 				ExposeHeaders: []string{"header-1", "header-2"},
 			},
 			want: &envoy_route_v3.CorsPolicy{
-				AllowOriginStringMatch: []*matcher.StringMatcher{
+				AllowOriginStringMatch: []*matcher_v3.StringMatcher{
 					{
-						MatchPattern: &matcher.StringMatcher_Exact{
+						MatchPattern: &matcher_v3.StringMatcher_Exact{
 							Exact: "*",
 						},
 						IgnoreCase: true,
@@ -938,9 +938,9 @@ func TestCORSPolicy(t *testing.T) {
 				MaxAge:       timeout.DurationSetting(10 * time.Minute),
 			},
 			want: &envoy_route_v3.CorsPolicy{
-				AllowOriginStringMatch: []*matcher.StringMatcher{
+				AllowOriginStringMatch: []*matcher_v3.StringMatcher{
 					{
-						MatchPattern: &matcher.StringMatcher_Exact{
+						MatchPattern: &matcher_v3.StringMatcher_Exact{
 							Exact: "*",
 						},
 						IgnoreCase: true,
@@ -957,9 +957,9 @@ func TestCORSPolicy(t *testing.T) {
 				MaxAge:       timeout.DefaultSetting(),
 			},
 			want: &envoy_route_v3.CorsPolicy{
-				AllowOriginStringMatch: []*matcher.StringMatcher{
+				AllowOriginStringMatch: []*matcher_v3.StringMatcher{
 					{
-						MatchPattern: &matcher.StringMatcher_Exact{
+						MatchPattern: &matcher_v3.StringMatcher_Exact{
 							Exact: "*",
 						},
 						IgnoreCase: true,
@@ -975,9 +975,9 @@ func TestCORSPolicy(t *testing.T) {
 				MaxAge:       timeout.DisabledSetting(),
 			},
 			want: &envoy_route_v3.CorsPolicy{
-				AllowOriginStringMatch: []*matcher.StringMatcher{
+				AllowOriginStringMatch: []*matcher_v3.StringMatcher{
 					{
-						MatchPattern: &matcher.StringMatcher_Exact{
+						MatchPattern: &matcher_v3.StringMatcher_Exact{
 							Exact: "*",
 						},
 						IgnoreCase: true,

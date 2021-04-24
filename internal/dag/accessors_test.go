@@ -19,20 +19,20 @@ import (
 
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestBuilderLookupService(t *testing.T) {
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{{
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       8080,
@@ -40,7 +40,7 @@ func TestBuilderLookupService(t *testing.T) {
 			}},
 		},
 	}
-	services := map[types.NamespacedName]*v1.Service{
+	services := map[types.NamespacedName]*core_v1.Service{
 		{Name: "service1", Namespace: "default"}: s1,
 	}
 

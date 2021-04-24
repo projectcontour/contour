@@ -23,9 +23,9 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -121,13 +121,13 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"simple ingress with secret": {
 			objs: []interface{}{
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -136,7 +136,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -165,13 +165,13 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"multiple ingresses with shared secret": {
 			objs: []interface{}{
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -180,7 +180,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
@@ -202,7 +202,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
@@ -231,13 +231,13 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"multiple ingresses with different secrets": {
 			objs: []interface{}{
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       80,
@@ -246,7 +246,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
@@ -268,7 +268,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
@@ -299,13 +299,13 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"simple httpproxy with secret": {
 			objs: []interface{}{
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       80,
@@ -314,7 +314,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -341,13 +341,13 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"multiple httpproxies with shared secret": {
 			objs: []interface{}{
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       80,
@@ -356,7 +356,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
@@ -376,7 +376,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
@@ -403,13 +403,13 @@ func TestSecretVisit(t *testing.T) {
 		},
 		"multiple httpproxies with different secret": {
 			objs: []interface{}{
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       80,
@@ -418,7 +418,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
@@ -438,7 +438,7 @@ func TestSecretVisit(t *testing.T) {
 					},
 				},
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
@@ -534,12 +534,12 @@ func secret(name string, data map[string][]byte) *envoy_tls_v3.Secret {
 			TlsCertificate: &envoy_tls_v3.TlsCertificate{
 				CertificateChain: &envoy_core_v3.DataSource{
 					Specifier: &envoy_core_v3.DataSource_InlineBytes{
-						InlineBytes: data[v1.TLSCertKey],
+						InlineBytes: data[core_v1.TLSCertKey],
 					},
 				},
 				PrivateKey: &envoy_core_v3.DataSource{
 					Specifier: &envoy_core_v3.DataSource_InlineBytes{
-						InlineBytes: data[v1.TLSPrivateKeyKey],
+						InlineBytes: data[core_v1.TLSPrivateKeyKey],
 					},
 				},
 			},
@@ -548,13 +548,13 @@ func secret(name string, data map[string][]byte) *envoy_tls_v3.Secret {
 }
 
 // tlssecert creates a new v1.Secret object of type kubernetes.io/tls.
-func tlssecret(namespace, name string, data map[string][]byte) *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+func tlssecret(namespace, name string, data map[string][]byte) *core_v1.Secret {
+	return &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: data,
 	}
 }
@@ -667,7 +667,7 @@ s9pb3b/IYa6Tnxo6cPdhwZ3CrLlq/1IopES1SmvaS4dgMFmf/0vk
 
 func secretdata(cert, key string) map[string][]byte {
 	return map[string][]byte{
-		v1.TLSCertKey:       []byte(cert),
-		v1.TLSPrivateKeyKey: []byte(key),
+		core_v1.TLSCertKey:       []byte(cert),
+		core_v1.TLSPrivateKeyKey: []byte(key),
 	}
 }

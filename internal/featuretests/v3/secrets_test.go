@@ -23,9 +23,9 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -34,8 +34,8 @@ func TestSDSVisibility(t *testing.T) {
 	defer done()
 
 	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -56,7 +56,7 @@ func TestSDSVisibility(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -102,8 +102,8 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	}
 
 	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -115,7 +115,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -142,7 +142,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	rh.OnAdd(i1)
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	res := c.Request(secretType)
 	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -160,8 +160,8 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	assertEqualVersion(t, "2", res)
 
 	// s2 is not referenced by any active ingress object.
-	s2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s2 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "unrelated",
 			Namespace: "default",
 		},
@@ -183,8 +183,8 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 	defer done()
 
 	// s1 is NOT a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "invalid",
 			Namespace: "default",
 		},
@@ -198,7 +198,7 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -233,7 +233,7 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 	})
 }
 
-func secret(sec *v1.Secret) *envoy_tls_v3.Secret {
+func secret(sec *core_v1.Secret) *envoy_tls_v3.Secret {
 	return envoy_v3.Secret(&dag.Secret{
 		Object: sec,
 	})

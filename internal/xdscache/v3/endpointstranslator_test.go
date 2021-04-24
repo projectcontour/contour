@@ -24,7 +24,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 )
 
 func TestEndpointsTranslatorContents(t *testing.T) {
@@ -125,7 +125,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "a"},
+					ServicePort:      core_v1.ServicePort{Name: "a"},
 				},
 			},
 		},
@@ -136,7 +136,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "httpbin-org",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "b"},
+					ServicePort:      core_v1.ServicePort{Name: "b"},
 				},
 			},
 		},
@@ -147,18 +147,18 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
 	}
 
 	tests := map[string]struct {
-		ep   *v1.Endpoints
+		ep   *core_v1.Endpoints
 		want []proto.Message
 	}{
 		"simple": {
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
@@ -174,7 +174,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			},
 		},
 		"multiple addresses": {
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"50.17.192.147",
 					"50.17.206.192",
@@ -200,7 +200,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			},
 		},
 		"multiple ports": {
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"10.10.1.1",
 				),
@@ -223,7 +223,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			},
 		},
 		"cartesian product": {
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"10.10.2.2",
 					"10.10.1.1",
@@ -252,7 +252,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 			},
 		},
 		"not ready": {
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"10.10.1.1",
 				),
@@ -262,7 +262,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				Ports: ports(
 					port("a", 8675),
 				),
-			}, v1.EndpointSubset{
+			}, core_v1.EndpointSubset{
 				Addresses: addresses(
 					"10.10.2.2",
 					"10.10.1.1",
@@ -310,7 +310,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "simple",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -321,7 +321,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "what-a-descriptive-service-name-you-must-be-so-proud",
 					ServiceNamespace: "super-long-namespace-name-oh-boy",
-					ServicePort:      v1.ServicePort{Name: "http"},
+					ServicePort:      core_v1.ServicePort{Name: "http"},
 				},
 			},
 		},
@@ -332,7 +332,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "what-a-descriptive-service-name-you-must-be-so-proud",
 					ServiceNamespace: "super-long-namespace-name-oh-boy",
-					ServicePort:      v1.ServicePort{Name: "https"},
+					ServicePort:      core_v1.ServicePort{Name: "https"},
 				},
 			},
 		},
@@ -340,19 +340,19 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 
 	tests := map[string]struct {
 		setup func(*EndpointsTranslator)
-		ep    *v1.Endpoints
+		ep    *core_v1.Endpoints
 		want  []proto.Message
 	}{
 		"remove existing": {
 			setup: func(et *EndpointsTranslator) {
-				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
+				et.OnAdd(endpoints("default", "simple", core_v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports: ports(
 						port("", 8080),
 					),
 				}))
 			},
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
@@ -366,14 +366,14 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 		},
 		"remove different": {
 			setup: func(et *EndpointsTranslator) {
-				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
+				et.OnAdd(endpoints("default", "simple", core_v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
 					Ports: ports(
 						port("", 8080),
 					),
 				}))
 			},
-			ep: endpoints("default", "different", v1.EndpointSubset{
+			ep: endpoints("default", "different", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
@@ -390,7 +390,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 		},
 		"remove non existent": {
 			setup: func(*EndpointsTranslator) {},
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
@@ -407,7 +407,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				e1 := endpoints(
 					"super-long-namespace-name-oh-boy",
 					"what-a-descriptive-service-name-you-must-be-so-proud",
-					v1.EndpointSubset{
+					core_v1.EndpointSubset{
 						Addresses: addresses(
 							"172.16.0.2",
 							"172.16.0.1",
@@ -423,7 +423,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			ep: endpoints(
 				"super-long-namespace-name-oh-boy",
 				"what-a-descriptive-service-name-you-must-be-so-proud",
-				v1.EndpointSubset{
+				core_v1.EndpointSubset{
 					Addresses: addresses(
 						"172.16.0.2",
 						"172.16.0.1",
@@ -462,7 +462,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 	tests := map[string]struct {
 		cluster dag.ServiceCluster
-		ep      *v1.Endpoints
+		ep      *core_v1.Endpoints
 		want    []proto.Message
 	}{
 		"simple": {
@@ -474,7 +474,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					ServiceNamespace: "default",
 				}},
 			},
-			ep: endpoints("default", "simple", v1.EndpointSubset{
+			ep: endpoints("default", "simple", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("", 8080),
@@ -497,7 +497,7 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					ServiceNamespace: "default",
 				}},
 			},
-			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
+			ep: endpoints("default", "httpbin-org", core_v1.EndpointSubset{
 				Addresses: addresses(
 					"50.17.192.147",
 					"23.23.247.89",
@@ -527,10 +527,10 @@ func TestEndpointsTranslatorRecomputeClusterLoadAssignment(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "secure",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{Name: "https"},
+					ServicePort:      core_v1.ServicePort{Name: "https"},
 				}},
 			},
-			ep: endpoints("default", "secure", v1.EndpointSubset{
+			ep: endpoints("default", "secure", core_v1.EndpointSubset{
 				Addresses: addresses("192.168.183.24"),
 				Ports: ports(
 					port("https", 8443),
@@ -568,12 +568,12 @@ func TestEndpointsTranslatorScaleToZeroEndpoints(t *testing.T) {
 				Weight:           1,
 				ServiceName:      "simple",
 				ServiceNamespace: "default",
-				ServicePort:      v1.ServicePort{},
+				ServicePort:      core_v1.ServicePort{},
 			}},
 		},
 	}))
 
-	e1 := endpoints("default", "simple", v1.EndpointSubset{
+	e1 := endpoints("default", "simple", core_v1.EndpointSubset{
 		Addresses: addresses("192.168.183.24"),
 		Ports: ports(
 			port("", 8080),
@@ -614,19 +614,19 @@ func TestEndpointsTranslatorWeightedService(t *testing.T) {
 					Weight:           0,
 					ServiceName:      "weight0",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					Weight:           1,
 					ServiceName:      "weight1",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					Weight:           2,
 					ServiceName:      "weight2",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -634,7 +634,7 @@ func TestEndpointsTranslatorWeightedService(t *testing.T) {
 
 	require.NoError(t, et.cache.SetClusters(clusters))
 
-	epSubset := v1.EndpointSubset{
+	epSubset := core_v1.EndpointSubset{
 		Addresses: addresses("192.168.183.24"),
 		Ports:     ports(port("", 8080)),
 	}
@@ -674,17 +674,17 @@ func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 				{
 					ServiceName:      "weight0",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					ServiceName:      "weight1",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 				{
 					ServiceName:      "weight2",
 					ServiceNamespace: "default",
-					ServicePort:      v1.ServicePort{},
+					ServicePort:      core_v1.ServicePort{},
 				},
 			},
 		},
@@ -692,7 +692,7 @@ func TestEndpointsTranslatorDefaultWeightedService(t *testing.T) {
 
 	require.NoError(t, et.cache.SetClusters(clusters))
 
-	epSubset := v1.EndpointSubset{
+	epSubset := core_v1.EndpointSubset{
 		Addresses: addresses("192.168.183.24"),
 		Ports:     ports(port("", 8080)),
 	}
@@ -812,12 +812,12 @@ func TestEqual(t *testing.T) {
 	}
 }
 
-func ports(eps ...v1.EndpointPort) []v1.EndpointPort {
+func ports(eps ...core_v1.EndpointPort) []core_v1.EndpointPort {
 	return eps
 }
 
-func port(name string, port int32) v1.EndpointPort {
-	return v1.EndpointPort{
+func port(name string, port int32) core_v1.EndpointPort {
+	return core_v1.EndpointPort{
 		Name:     name,
 		Port:     port,
 		Protocol: "TCP",

@@ -23,10 +23,10 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
@@ -44,14 +44,14 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	// Ingress
 	{
 		// --- ingress class matches explicitly
 		ingressValid := &v1beta1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
 				Annotations: map[string]string{
@@ -81,7 +81,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 
 		// --- wrong ingress class specified
 		ingressWrongClass := &v1beta1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
 				Annotations: map[string]string{
@@ -104,7 +104,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 
 		// --- no ingress class specified
 		ingressNoClass := &v1beta1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
 			},
@@ -269,14 +269,14 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	// Ingress
 	{
 		// --- no ingress class specified
 		ingressNoClass := &v1beta1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
 			},
@@ -303,7 +303,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 
 		// --- matching ingress class specified
 		ingressMatchingClass := &v1beta1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
 				Annotations: map[string]string{
@@ -333,7 +333,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 
 		// --- non-matching ingress class specified
 		ingressNonMatchingClass := &v1beta1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
 				Annotations: map[string]string{
@@ -509,7 +509,7 @@ func TestIngressClassAnnotationUpdate(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	vhost := &contour_api_v1.HTTPProxy{
@@ -572,11 +572,11 @@ func TestIngressClassResource_Configured(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	ingressClass := networking_v1.IngressClass{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "testingressclass",
 		},
 		Spec: networking_v1.IngressClassSpec{
@@ -588,7 +588,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 
 	// Spec.IngressClassName matches.
 	ingressValid := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      IngressName,
 			Namespace: Namespace,
 		},
@@ -616,7 +616,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 
 	// Spec.IngressClassName does not match.
 	ingressWrongClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      IngressName,
 			Namespace: Namespace,
 		},
@@ -637,7 +637,7 @@ func TestIngressClassResource_Configured(t *testing.T) {
 
 	// No ingress class specified.
 	ingressNoClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      IngressName,
 			Namespace: Namespace,
 		},
@@ -690,11 +690,11 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	ingressClass := networking_v1.IngressClass{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name: "contour",
 		},
 		Spec: networking_v1.IngressClassSpec{
@@ -706,7 +706,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 
 	// No class specified.
 	ingressNoClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      IngressName,
 			Namespace: Namespace,
 		},
@@ -733,7 +733,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 
 	// Spec.IngressClassName matches.
 	ingressMatchingClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      IngressName,
 			Namespace: Namespace,
 		},
@@ -761,7 +761,7 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 
 	// Spec.IngressClassName does not match.
 	ingressNonMatchingClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      IngressName,
 			Namespace: Namespace,
 		},

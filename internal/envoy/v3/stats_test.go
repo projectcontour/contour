@@ -18,7 +18,7 @@ import (
 
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/projectcontour/contour/internal/protobuf"
 )
@@ -39,9 +39,9 @@ func TestStatsListener(t *testing.T) {
 					&envoy_listener_v3.Filter{
 						Name: wellknown.HTTPConnectionManager,
 						ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-							TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+							TypedConfig: protobuf.MustMarshalAny(&manager_v3.HttpConnectionManager{
 								StatPrefix: "stats",
-								RouteSpecifier: &http.HttpConnectionManager_RouteConfig{
+								RouteSpecifier: &manager_v3.HttpConnectionManager_RouteConfig{
 									RouteConfig: &envoy_route_v3.RouteConfiguration{
 										VirtualHosts: []*envoy_route_v3.VirtualHost{{
 											Name:    "backend",
@@ -77,7 +77,7 @@ func TestStatsListener(t *testing.T) {
 										}},
 									},
 								},
-								HttpFilters: []*http.HttpFilter{{
+								HttpFilters: []*manager_v3.HttpFilter{{
 									Name: wellknown.Router,
 								}},
 								NormalizePath: protobuf.Bool(true),

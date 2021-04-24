@@ -22,8 +22,8 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -35,12 +35,12 @@ func TestRootNamespaces(t *testing.T) {
 
 	// Not in root namespace set.
 	svc1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc1)
 
 	// Inside root namespace set.
 	svc2 := fixture.NewService("roots/kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc2)
 
 	// assert that there is only a static listener
@@ -59,7 +59,7 @@ func TestRootNamespaces(t *testing.T) {
 
 	// hp1 is not in the root namespace set.
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc1.Namespace,
 		},
@@ -96,7 +96,7 @@ func TestRootNamespaces(t *testing.T) {
 
 	// hp2 is in the root namespace set.
 	hp2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc2.Namespace,
 		},

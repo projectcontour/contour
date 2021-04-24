@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -28,7 +28,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 )
@@ -39,7 +39,7 @@ type LoadBalancingEndpoint = envoy_endpoint_v3.LbEndpoint
 // RecalculateEndpoints generates a slice of LoadBalancingEndpoint
 // resources by matching the given service port to the given v1.Endpoints.
 // ep may be nil, in which case, the result is also nil.
-func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancingEndpoint {
+func RecalculateEndpoints(port core_v1.ServicePort, ep *core_v1.Endpoints) []*LoadBalancingEndpoint {
 	if ep == nil {
 		return nil
 	}
@@ -52,7 +52,7 @@ func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancin
 		}
 
 		for _, p := range s.Ports {
-			if port.Protocol != p.Protocol && p.Protocol != v1.ProtocolTCP {
+			if port.Protocol != p.Protocol && p.Protocol != core_v1.ProtocolTCP {
 				// NOTE: we only support "TCP", which is the default.
 				continue
 			}
@@ -66,7 +66,7 @@ func RecalculateEndpoints(port v1.ServicePort, ep *v1.Endpoints) []*LoadBalancin
 			}
 
 			// If we matched this port, collect Envoy endpoints for all the ready addresses.
-			addresses := append([]v1.EndpointAddress{}, s.Addresses...) // Shallow copy.
+			addresses := append([]core_v1.EndpointAddress{}, s.Addresses...) // Shallow copy.
 			sort.Slice(addresses, func(i, j int) bool { return addresses[i].IP < addresses[j].IP })
 
 			for _, a := range addresses {
@@ -94,7 +94,7 @@ type EndpointsCache struct {
 	services map[types.NamespacedName][]*dag.ServiceCluster
 
 	// Cache of endpoints, indexed by name.
-	endpoints map[types.NamespacedName]*v1.Endpoints
+	endpoints map[types.NamespacedName]*core_v1.Endpoints
 }
 
 // Recalculate regenerates all the ClusterLoadAssignments from the
@@ -189,7 +189,7 @@ func (c *EndpointsCache) SetClusters(clusters []*dag.ServiceCluster) error {
 // UpdateEndpoint adds ep to the cache, or replaces it if it is
 // already cached. Any ServiceClusters that are backed by a Service
 // that ep belongs become stale.
-func (c *EndpointsCache) UpdateEndpoint(ep *v1.Endpoints) {
+func (c *EndpointsCache) UpdateEndpoint(ep *core_v1.Endpoints) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -205,7 +205,7 @@ func (c *EndpointsCache) UpdateEndpoint(ep *v1.Endpoints) {
 
 // DeleteEndpoint deletes ep from the cache. Any ServiceClusters
 // that are backed by a Service that ep belongs become stale.
-func (c *EndpointsCache) DeleteEndpoint(ep *v1.Endpoints) {
+func (c *EndpointsCache) DeleteEndpoint(ep *core_v1.Endpoints) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -228,7 +228,7 @@ func NewEndpointsTranslator(log logrus.FieldLogger) *EndpointsTranslator {
 		cache: EndpointsCache{
 			stale:     nil,
 			services:  map[types.NamespacedName][]*dag.ServiceCluster{},
-			endpoints: map[types.NamespacedName]*v1.Endpoints{},
+			endpoints: map[types.NamespacedName]*core_v1.Endpoints{},
 		},
 	}
 }
@@ -337,7 +337,7 @@ func equal(a, b map[string]*envoy_endpoint_v3.ClusterLoadAssignment) bool {
 
 func (e *EndpointsTranslator) OnAdd(obj interface{}) {
 	switch obj := obj.(type) {
-	case *v1.Endpoints:
+	case *core_v1.Endpoints:
 		e.cache.UpdateEndpoint(obj)
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
@@ -351,8 +351,8 @@ func (e *EndpointsTranslator) OnAdd(obj interface{}) {
 
 func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
 	switch newObj := newObj.(type) {
-	case *v1.Endpoints:
-		oldObj, ok := oldObj.(*v1.Endpoints)
+	case *core_v1.Endpoints:
+		oldObj, ok := oldObj.(*core_v1.Endpoints)
 		if !ok {
 			e.Errorf("OnUpdate endpoints %#v received invalid oldObj %T; %#v", newObj, oldObj, oldObj)
 			return
@@ -384,7 +384,7 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
 
 func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	switch obj := obj.(type) {
-	case *v1.Endpoints:
+	case *core_v1.Endpoints:
 		e.cache.DeleteEndpoint(obj)
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
@@ -432,4 +432,4 @@ func (e *EndpointsTranslator) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*EndpointsTranslator) TypeURL() string { return resource.EndpointType }
+func (*EndpointsTranslator) TypeURL() string { return resource_v3.EndpointType }

@@ -22,8 +22,8 @@ import (
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestSecret(t *testing.T) {
@@ -33,14 +33,14 @@ func TestSecret(t *testing.T) {
 	}{
 		"simple secret": {
 			secret: &dag.Secret{
-				Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				Object: &core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
 					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("cert"),
-						v1.TLSPrivateKeyKey: []byte("key"),
+						core_v1.TLSCertKey:       []byte("cert"),
+						core_v1.TLSPrivateKeyKey: []byte("key"),
 					},
 				},
 			},
@@ -79,14 +79,14 @@ func TestSecretname(t *testing.T) {
 	}{
 		"simple": {
 			secret: &dag.Secret{
-				Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				Object: &core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
 					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("cert"),
-						v1.TLSPrivateKeyKey: []byte("key"),
+						core_v1.TLSCertKey:       []byte("cert"),
+						core_v1.TLSPrivateKeyKey: []byte("key"),
 					},
 				},
 			},
@@ -94,14 +94,14 @@ func TestSecretname(t *testing.T) {
 		},
 		"far too long": {
 			secret: &dag.Secret{
-				Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				Object: &core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "must-be-in-want-of-a-wife",
 						Namespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
 					},
 					Data: map[string][]byte{
-						v1.TLSCertKey:       []byte("cert"),
-						v1.TLSPrivateKeyKey: []byte("key"),
+						core_v1.TLSCertKey:       []byte("cert"),
+						core_v1.TLSPrivateKeyKey: []byte("key"),
 					},
 				},
 			},

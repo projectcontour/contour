@@ -24,9 +24,9 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -35,11 +35,11 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
 			Annotations: map[string]string{
@@ -68,7 +68,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 
 	i2 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
 			Annotations: map[string]string{
@@ -95,7 +95,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 
 	i3 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
 			Annotations: map[string]string{
@@ -122,7 +122,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 
 	i4 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
 			Annotations: map[string]string{
@@ -151,7 +151,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	rh.OnDelete(i4)
 
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -251,11 +251,11 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},

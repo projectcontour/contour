@@ -17,7 +17,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -78,7 +78,7 @@ func TestSecureVirtualHostValid(t *testing.T) {
 func TestPeerValidationContext(t *testing.T) {
 	pvc1 := PeerValidationContext{
 		CACertificate: &Secret{
-			Object: &v1.Secret{
+			Object: &core_v1.Secret{
 				Data: map[string][]byte{
 					CACertificateKey: []byte("cacert"),
 				},
@@ -122,9 +122,9 @@ func TestServiceClusterValid(t *testing.T) {
 }
 
 func TestServiceClusterAdd(t *testing.T) {
-	port := v1.ServicePort{
+	port := core_v1.ServicePort{
 		Name:     "foo",
-		Protocol: v1.ProtocolTCP,
+		Protocol: core_v1.ProtocolTCP,
 		Port:     32,
 	}
 
@@ -165,9 +165,9 @@ func TestServiceClusterAdd(t *testing.T) {
 }
 
 func TestServiceClusterRebalance(t *testing.T) {
-	port := v1.ServicePort{
+	port := core_v1.ServicePort{
 		Name:     "foo",
-		Protocol: v1.ProtocolTCP,
+		Protocol: core_v1.ProtocolTCP,
 		Port:     32,
 	}
 

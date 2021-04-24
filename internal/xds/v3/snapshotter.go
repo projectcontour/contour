@@ -14,9 +14,9 @@
 package v3
 
 import (
-	envoy_types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	envoy_cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
-	envoy_log "github.com/envoyproxy/go-control-plane/pkg/log"
+	types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	log "github.com/envoyproxy/go-control-plane/pkg/log"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/projectcontour/contour/internal/xdscache"
 )
@@ -26,30 +26,30 @@ var Hash = xds.ConstantHashV3{}
 // Snapshotter is a v3 Snapshot cache that implements the xds.Snapshotter interface.
 type Snapshotter interface {
 	xdscache.Snapshotter
-	envoy_cache_v3.SnapshotCache
+	cache_v3.SnapshotCache
 }
 
 type snapshotter struct {
-	envoy_cache_v3.SnapshotCache
+	cache_v3.SnapshotCache
 }
 
-func (s *snapshotter) Generate(version string, resources map[envoy_types.ResponseType][]envoy_types.Resource) error {
+func (s *snapshotter) Generate(version string, resources map[types.ResponseType][]types.Resource) error {
 	// Create a snapshot with all xDS resources.
-	snapshot := envoy_cache_v3.NewSnapshot(
+	snapshot := cache_v3.NewSnapshot(
 		version,
-		resources[envoy_types.Endpoint],
-		resources[envoy_types.Cluster],
-		resources[envoy_types.Route],
-		resources[envoy_types.Listener],
+		resources[types.Endpoint],
+		resources[types.Cluster],
+		resources[types.Route],
+		resources[types.Listener],
 		nil,
-		resources[envoy_types.Secret],
+		resources[types.Secret],
 	)
 
 	return s.SetSnapshot(Hash.String(), snapshot)
 }
 
-func NewSnapshotCache(ads bool, logger envoy_log.Logger) Snapshotter {
+func NewSnapshotCache(ads bool, logger log.Logger) Snapshotter {
 	return &snapshotter{
-		SnapshotCache: envoy_cache_v3.NewSnapshotCache(ads, &Hash, logger),
+		SnapshotCache: cache_v3.NewSnapshotCache(ads, &Hash, logger),
 	}
 }

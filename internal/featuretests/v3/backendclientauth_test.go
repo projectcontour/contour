@@ -18,7 +18,7 @@ import (
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	projectcontour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -26,9 +26,9 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -61,9 +61,9 @@ func proxyClientCertificateOpt(t *testing.T) func(eh *contour.EventHandler) {
 	}
 }
 
-func clientSecret() *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+func clientSecret() *core_v1.Secret {
+	return &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "envoyclientsecret",
 			Namespace: "default",
 		},
@@ -72,9 +72,9 @@ func clientSecret() *v1.Secret {
 	}
 }
 
-func caSecret() *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+func caSecret() *core_v1.Secret {
+	return &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "backendcacert",
 			Namespace: "default",
 		},
@@ -94,20 +94,20 @@ func TestBackendClientAuthenticationWithHTTPProxy(t *testing.T) {
 	rh.OnAdd(sec2)
 
 	svc := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 443})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 443})
 	rh.OnAdd(svc)
 
 	proxy := fixture.NewProxy("authenticated").WithSpec(
-		projcontour.HTTPProxySpec{
-			VirtualHost: &projcontour.VirtualHost{
+		projectcontour_v1.HTTPProxySpec{
+			VirtualHost: &projectcontour_v1.VirtualHost{
 				Fqdn: "www.example.com",
 			},
-			Routes: []projcontour.Route{{
-				Services: []projcontour.Service{{
+			Routes: []projectcontour_v1.Route{{
+				Services: []projectcontour_v1.Service{{
 					Name:     svc.Name,
 					Port:     443,
 					Protocol: pointer.StringPtr("tls"),
-					UpstreamValidation: &projcontour.UpstreamValidation{
+					UpstreamValidation: &projectcontour_v1.UpstreamValidation{
 						CACertificate: sec2.Name,
 						SubjectName:   "subjname",
 					},
@@ -143,7 +143,7 @@ func TestBackendClientAuthenticationWithIngress(t *testing.T) {
 
 	svc := fixture.NewService("backend").
 		Annotate("projectcontour.io/upstream-protocol.tls", "443").
-		WithPorts(v1.ServicePort{Name: "http", Port: 443})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 443})
 	rh.OnAdd(svc)
 
 	ingress := &v1beta1.Ingress{
@@ -182,7 +182,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	rh.OnAdd(sec2)
 
 	svc := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "grpc", Port: 6001})
+		WithPorts(core_v1.ServicePort{Name: "grpc", Port: 6001})
 	rh.OnAdd(svc)
 
 	ext := &v1alpha1.ExtensionService{
@@ -191,7 +191,7 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 			Services: []v1alpha1.ExtensionServiceTarget{
 				{Name: svc.Name, Port: 6001},
 			},
-			UpstreamValidation: &projcontour.UpstreamValidation{
+			UpstreamValidation: &projectcontour_v1.UpstreamValidation{
 				CACertificate: sec2.Name,
 				SubjectName:   "subjname",
 			},
@@ -203,8 +203,8 @@ func TestBackendClientAuthenticationWithExtensionService(t *testing.T) {
 	tlsSocket := envoy_v3.UpstreamTLSTransportSocket(
 		envoy_v3.UpstreamTLSContext(
 			&dag.PeerValidationContext{
-				CACertificate: &dag.Secret{Object: &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				CACertificate: &dag.Secret{Object: &core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},

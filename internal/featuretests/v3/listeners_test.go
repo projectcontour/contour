@@ -25,9 +25,9 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -48,7 +48,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// i1 is a simple ingress, no hostname, no tls.
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -61,7 +61,7 @@ func TestNonTLSListener(t *testing.T) {
 	}
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// add it and assert that we now have a ingress_http listener
 	rh.OnAdd(i1)
@@ -75,7 +75,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -102,7 +102,7 @@ func TestNonTLSListener(t *testing.T) {
 	// i3 is similar to i2, but uses the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
 	// to force 80 -> 443 upgrade
 	i3 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -133,8 +133,8 @@ func TestTLSListener(t *testing.T) {
 	defer done()
 
 	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -144,7 +144,7 @@ func TestTLSListener(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -170,7 +170,7 @@ func TestTLSListener(t *testing.T) {
 	}
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// add secret
 	rh.OnAdd(s1)
@@ -208,7 +208,7 @@ func TestTLSListener(t *testing.T) {
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
 	i2 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 			Annotations: map[string]string{
@@ -273,8 +273,8 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	defer done()
 
 	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	secret1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -283,11 +283,11 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	}
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
 	// p1 is a tls httpproxy
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
@@ -313,7 +313,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 
 	// p2 is a tls httpproxy
 	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
@@ -430,8 +430,8 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 	defer done()
 
 	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	secret1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -440,11 +440,11 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 	}
 
 	svc1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 
 	// p1 is a tls httpproxy
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: secret1.Namespace,
 		},
@@ -512,8 +512,8 @@ func TestLDSFilter(t *testing.T) {
 	defer done()
 
 	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -523,7 +523,7 @@ func TestLDSFilter(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -549,7 +549,7 @@ func TestLDSFilter(t *testing.T) {
 	}
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// add secret
 	rh.OnAdd(s1)
@@ -620,7 +620,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 
 	// i1 is a simple ingress, no hostname, no tls.
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -633,7 +633,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 	}
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	rh.OnAdd(i1)
 
@@ -660,8 +660,8 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	defer done()
 
 	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -671,7 +671,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -708,7 +708,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	})
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	rh.OnAdd(i1)
 
@@ -761,8 +761,8 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	defer done()
 
 	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -772,7 +772,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -811,7 +811,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	})
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// add ingress and assert the existence of ingress_http and ingres_https
 	// using custom address and port
@@ -851,8 +851,8 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	defer done()
 
 	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -862,7 +862,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 	// i1 is a tls ingress
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -888,7 +888,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	}
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// add secret
 	rh.OnAdd(s1)
@@ -956,8 +956,8 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 	})
 
 	// s1 is a tls secret
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -967,7 +967,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 
 	// p1 is a httpproxy that has TLS
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -991,7 +991,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 	}
 
 	svc1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Name: "http", Port: 8080})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 8080})
 
 	// add secret
 	rh.OnAdd(s1)
@@ -1035,8 +1035,8 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	defer done()
 
 	// secret1 is a tls secret
-	secret1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	secret1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -1046,11 +1046,11 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 	rh.OnAdd(secret1)
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// p1 is a tls httpproxy
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -1108,7 +1108,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 
 	// p2 is a tls httpproxy
 	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
@@ -1171,10 +1171,10 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("marketing/green").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	child := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "blog",
 			Namespace: "marketing",
 		},
@@ -1196,7 +1196,7 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	rh.OnAdd(child)
 
 	root := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "root-blog",
 			Namespace: "default",
 		},
@@ -1234,11 +1234,11 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80}))
 
 	// p1 is a httpproxy
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},

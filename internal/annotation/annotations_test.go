@@ -19,9 +19,9 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -118,7 +118,7 @@ func TestWebsocketRoutes(t *testing.T) {
 	}{
 		"empty": {
 			a: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": "",
 					},
@@ -128,7 +128,7 @@ func TestWebsocketRoutes(t *testing.T) {
 		},
 		"empty with spaces": {
 			a: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": ", ,",
 					},
@@ -138,7 +138,7 @@ func TestWebsocketRoutes(t *testing.T) {
 		},
 		"single value": {
 			a: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": "/ws1",
 					},
@@ -150,7 +150,7 @@ func TestWebsocketRoutes(t *testing.T) {
 		},
 		"multiple values": {
 			a: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": "/ws1,/ws2",
 					},
@@ -163,7 +163,7 @@ func TestWebsocketRoutes(t *testing.T) {
 		},
 		"multiple values with spaces and invalid entries": {
 			a: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/websocket-routes": " /ws1, , /ws2 ",
 					},
@@ -191,7 +191,7 @@ func TestHttpAllowed(t *testing.T) {
 	}{
 		"basic ingress": {
 			i: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
 				},
@@ -207,7 +207,7 @@ func TestHttpAllowed(t *testing.T) {
 		},
 		"kubernetes.io/ingress.allow-http: \"false\"": {
 			i: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "simple",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -239,21 +239,21 @@ func TestHttpAllowed(t *testing.T) {
 
 func TestAnnotationCompat(t *testing.T) {
 	tests := map[string]struct {
-		svc   *v1.Service
+		svc   *core_v1.Service
 		value string
 	}{
 		"no annotations": {
 			value: "",
-			svc: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			svc: &core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{},
 				},
 			},
 		},
 		"projectcontour.io/annotation": {
 			value: "200",
-			svc: &v1.Service{
-				ObjectMeta: metav1.ObjectMeta{
+			svc: &core_v1.Service{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/annotation": "200",
 					},
@@ -279,11 +279,11 @@ func TestAnnotationKindValidation(t *testing.T) {
 		valid bool
 	}
 	tests := map[string]struct {
-		obj         metav1.Object
+		obj         meta_v1.Object
 		annotations map[string]status
 	}{
 		"service": {
-			obj: &v1.Service{},
+			obj: &core_v1.Service{},
 			annotations: map[string]status{
 				"foo.invalid.com/annotation": {
 					known: false, valid: false,
@@ -307,7 +307,7 @@ func TestAnnotationKindValidation(t *testing.T) {
 			},
 		},
 		"secrets": {
-			obj: &v1.Secret{},
+			obj: &core_v1.Secret{},
 			annotations: map[string]status{
 				// In our namespace but not valid on this kind.
 				"projectcontour.io/ingress.class": {
@@ -324,7 +324,7 @@ func TestAnnotationKindValidation(t *testing.T) {
 	// Trivially check that everything specified in the global
 	// table is valid.
 	for _, kind := range []string{
-		kindOf(&v1.Service{}),
+		kindOf(&core_v1.Service{}),
 		kindOf(&networking_v1.Ingress{}),
 		kindOf(&contour_api_v1.HTTPProxy{}),
 	} {
@@ -355,14 +355,14 @@ func TestMatchIngressClass(t *testing.T) {
 	// ingress class is empty
 	// ingress class is not empty.
 	tests := map[string]struct {
-		fixture metav1.Object
+		fixture meta_v1.Object
 		// these are results for empty and "contour" ingress class
 		// respectively.
 		want []bool
 	}{
 		"ingress nginx kubernetes.io/ingress.class": {
 			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -374,7 +374,7 @@ func TestMatchIngressClass(t *testing.T) {
 		},
 		"ingress nginx projectcontour.io/ingress.class": {
 			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -386,7 +386,7 @@ func TestMatchIngressClass(t *testing.T) {
 		},
 		"ingress contour kubernetes.io/ingress.class": {
 			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -398,7 +398,7 @@ func TestMatchIngressClass(t *testing.T) {
 		},
 		"ingress contour projectcontour.io/ingress.class": {
 			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "incorrect",
 					Namespace: "default",
 					Annotations: map[string]string{
@@ -410,7 +410,7 @@ func TestMatchIngressClass(t *testing.T) {
 		},
 		"no annotation": {
 			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      "noannotation",
 					Namespace: "default",
 				},
@@ -462,9 +462,9 @@ func backend(name string, port intstr.IntOrString) *networking_v1.IngressBackend
 // Needs to be moved to a separate module somewhere.
 func kindOf(obj interface{}) string {
 	switch obj.(type) {
-	case *v1.Secret:
+	case *core_v1.Secret:
 		return "Secret"
-	case *v1.Service:
+	case *core_v1.Service:
 		return "Service"
 	case *networking_v1.Ingress:
 		return "Ingress"

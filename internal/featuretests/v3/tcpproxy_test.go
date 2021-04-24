@@ -23,8 +23,8 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -32,8 +32,8 @@ func TestTCPProxy(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -42,13 +42,13 @@ func TestTCPProxy(t *testing.T) {
 	}
 
 	svc := fixture.NewService("correct-backend").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(s1)
 	rh.OnAdd(svc)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
@@ -107,8 +107,8 @@ func TestTCPProxyDelegation(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -117,13 +117,13 @@ func TestTCPProxyDelegation(t *testing.T) {
 	}
 
 	svc := fixture.NewService("app/backend").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(s1)
 	rh.OnAdd(svc)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -137,7 +137,7 @@ func TestTCPProxyDelegation(t *testing.T) {
 		},
 	}
 	hp2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "parent",
 			Namespace: s1.Namespace,
 		},
@@ -195,12 +195,12 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("correct-backend").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(svc)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -267,8 +267,8 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "k8s-tls",
 			Namespace: "default",
 		},
@@ -278,10 +278,10 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 
 	svc := fixture.NewService("kubernetes").
 		Annotate("projectcontour.io/upstream-protocol.tls", "https,443").
-		WithPorts(v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(6443)})
+		WithPorts(core_v1.ServicePort{Name: "https", Port: 443, TargetPort: intstr.FromInt(6443)})
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kubernetesb",
 			Namespace: s1.Namespace,
 		},
@@ -349,8 +349,8 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -359,10 +359,10 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 	}
 
 	svc := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -438,8 +438,8 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -448,10 +448,10 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 	}
 
 	svc := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -533,10 +533,10 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -619,10 +619,10 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 	defer done()
 
 	svc := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -709,8 +709,8 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -719,10 +719,10 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 	}
 
 	svc := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -820,8 +820,8 @@ func TestTCPProxyInvalidLoadBalancerPolicy(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	s1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -830,13 +830,13 @@ func TestTCPProxyInvalidLoadBalancerPolicy(t *testing.T) {
 	}
 
 	svc := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(s1)
 	rh.OnAdd(svc)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
@@ -874,7 +874,7 @@ func TestTCPProxyInvalidLoadBalancerPolicy(t *testing.T) {
 	})
 
 	rh.OnUpdate(hp1, &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},

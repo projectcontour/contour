@@ -22,7 +22,7 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 )
 
 // test that adding and removing endpoints don't leave objects
@@ -32,8 +32,8 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud").
-		WithPorts(v1.ServicePort{Name: "https", Port: 8443},
-			v1.ServicePort{Name: "http", Port: 8000}),
+		WithPorts(core_v1.ServicePort{Name: "https", Port: 8443},
+			core_v1.ServicePort{Name: "http", Port: 8000}),
 	)
 
 	rh.OnAdd(fixture.NewProxy("super-long-namespace-name-oh-boy/proxy").
@@ -57,7 +57,7 @@ func TestAddRemoveEndpoints(t *testing.T) {
 	e1 := featuretests.Endpoints(
 		"super-long-namespace-name-oh-boy",
 		"what-a-descriptive-service-name-you-must-be-so-proud",
-		v1.EndpointSubset{
+		core_v1.EndpointSubset{
 			Addresses: featuretests.Addresses(
 				"172.16.0.2",
 				"172.16.0.1",
@@ -109,8 +109,8 @@ func TestAddEndpointComplicated(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Name: "foo", Port: 8080},
-			v1.ServicePort{Name: "admin", Port: 9000}),
+		WithPorts(core_v1.ServicePort{Name: "foo", Port: 8080},
+			core_v1.ServicePort{Name: "admin", Port: 9000}),
 	)
 
 	rh.OnAdd(fixture.NewProxy("kuard").
@@ -139,7 +139,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 	e1 := featuretests.Endpoints(
 		"default",
 		"kuard",
-		v1.EndpointSubset{
+		core_v1.EndpointSubset{
 			Addresses: featuretests.Addresses(
 				"10.48.1.78",
 			),
@@ -150,7 +150,7 @@ func TestAddEndpointComplicated(t *testing.T) {
 				featuretests.Port("foo", 8080),
 			),
 		},
-		v1.EndpointSubset{
+		core_v1.EndpointSubset{
 			Addresses: featuretests.Addresses(
 				"10.48.1.78",
 				"10.48.1.77",
@@ -188,8 +188,8 @@ func TestEndpointFilter(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("default/kuard").WithPorts(
-		v1.ServicePort{Name: "foo", Port: 8080},
-		v1.ServicePort{Name: "admin", Port: 9000},
+		core_v1.ServicePort{Name: "foo", Port: 8080},
+		core_v1.ServicePort{Name: "admin", Port: 9000},
 	))
 
 	rh.OnAdd(fixture.NewProxy("default/kuard").
@@ -209,7 +209,7 @@ func TestEndpointFilter(t *testing.T) {
 	rh.OnAdd(featuretests.Endpoints(
 		"default",
 		"kuard",
-		v1.EndpointSubset{
+		core_v1.EndpointSubset{
 			Addresses: featuretests.Addresses(
 				"10.48.1.78",
 			),
@@ -220,7 +220,7 @@ func TestEndpointFilter(t *testing.T) {
 				featuretests.Port("foo", 8080),
 			),
 		},
-		v1.EndpointSubset{
+		core_v1.EndpointSubset{
 			Addresses: featuretests.Addresses(
 				"10.48.1.77",
 				"10.48.1.78",
@@ -256,7 +256,7 @@ func TestIssue602(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("simple").WithPorts(
-		v1.ServicePort{Port: 8080},
+		core_v1.ServicePort{Port: 8080},
 	))
 
 	rh.OnAdd(fixture.NewProxy("simple").
@@ -271,7 +271,7 @@ func TestIssue602(t *testing.T) {
 		}),
 	)
 
-	e1 := featuretests.Endpoints("default", "simple", v1.EndpointSubset{
+	e1 := featuretests.Endpoints("default", "simple", core_v1.EndpointSubset{
 		Addresses: featuretests.Addresses("192.168.183.24"),
 		Ports: featuretests.Ports(
 			featuretests.Port("", 8080),

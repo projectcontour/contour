@@ -22,12 +22,12 @@ import (
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil/promlint"
-	dto "github.com/prometheus/client_model/go"
+	client_model "github.com/prometheus/client_model/go"
 )
 
 // Collect all the label names for this metric and return them as
 // a comma-deparated string.
-func labels(mf *dto.MetricFamily) string {
+func labels(mf *client_model.MetricFamily) string {
 	var l []string
 
 	for _, m := range mf.GetMetric() {
@@ -41,10 +41,10 @@ func labels(mf *dto.MetricFamily) string {
 
 // Generate a string name for the metric type, linking to the
 // Prometheus docs if we know there is a suitable target.
-func typeof(mf *dto.MetricFamily) string {
+func typeof(mf *client_model.MetricFamily) string {
 	switch t := mf.GetType(); t {
-	case dto.MetricType_COUNTER, dto.MetricType_GAUGE,
-		dto.MetricType_SUMMARY, dto.MetricType_HISTOGRAM:
+	case client_model.MetricType_COUNTER, client_model.MetricType_GAUGE,
+		client_model.MetricType_SUMMARY, client_model.MetricType_HISTOGRAM:
 		return fmt.Sprintf(
 			"[%s](https://prometheus.io/docs/concepts/metric_types/#%s)",
 			t.String(), strings.ToLower(t.String()))
@@ -54,7 +54,7 @@ func typeof(mf *dto.MetricFamily) string {
 }
 
 // Executes promlint for metrics static analysis
-func runPromlint(family []*dto.MetricFamily) {
+func runPromlint(family []*client_model.MetricFamily) {
 	linter := promlint.NewWithMetricFamilies(family)
 	problems, err := linter.Lint()
 	if err != nil {

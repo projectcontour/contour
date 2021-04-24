@@ -24,8 +24,8 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -34,7 +34,7 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("svc1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
 	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
@@ -145,18 +145,18 @@ func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
 
 	rh.OnAdd(fixture.NewService("externalname").
 		Annotate("projectcontour.io/upstream-protocol.tls", "https,443").
-		WithSpec(v1.ServiceSpec{
+		WithSpec(core_v1.ServiceSpec{
 			ExternalName: "goodbye.planet",
-			Type:         v1.ServiceTypeExternalName,
-			Ports: []v1.ServicePort{{
+			Type:         core_v1.ServiceTypeExternalName,
+			Ports: []core_v1.ServicePort{{
 				Port: 443,
 				Name: "https",
 			}},
 		}),
 	)
 
-	rh.OnAdd(&v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	rh.OnAdd(&core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
 		},

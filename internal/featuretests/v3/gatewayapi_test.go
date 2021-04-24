@@ -23,15 +23,15 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 var gateway = &gatewayapi_v1alpha1.Gateway{
-	ObjectMeta: metav1.ObjectMeta{
+	ObjectMeta: meta_v1.ObjectMeta{
 		Name:      "contour",
 		Namespace: "projectcontour",
 	},
@@ -70,19 +70,19 @@ func TestGateway_TLS(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("svc1").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
 	rh.OnAdd(fixture.NewService("svc2").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "tlscert",
 			Namespace: "projectcontour",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
@@ -91,7 +91,7 @@ func TestGateway_TLS(t *testing.T) {
 	rh.OnAdd(gateway)
 
 	rh.OnAdd(&gatewayapi_v1alpha1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 			Labels: map[string]string{

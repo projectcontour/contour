@@ -16,23 +16,23 @@ package v3
 import (
 	"testing"
 
-	envoy_api_v3_core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestUpstreamTLSContext(t *testing.T) {
 	secret := &dag.Secret{
-		Object: &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		Object: &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "secret",
 				Namespace: "default",
 			},
-			Type: v1.SecretTypeTLS,
+			Type: core_v1.SecretTypeTLS,
 			Data: map[string][]byte{dag.CACertificateKey: []byte("ca")},
 		},
 	}
@@ -41,17 +41,17 @@ func TestUpstreamTLSContext(t *testing.T) {
 		validation    *dag.PeerValidationContext
 		alpnProtocols []string
 		externalName  string
-		want          *envoy_v3_tls.UpstreamTlsContext
+		want          *tls_v3.UpstreamTlsContext
 	}{
 		"no alpn, no validation": {
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+			want: &tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &tls_v3.CommonTlsContext{},
 			},
 		},
 		"h2, no validation": {
 			alpnProtocols: []string{"h2c"},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+			want: &tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &tls_v3.CommonTlsContext{
 					AlpnProtocols: []string{"h2c"},
 				},
 			},
@@ -60,16 +60,16 @@ func TestUpstreamTLSContext(t *testing.T) {
 			validation: &dag.PeerValidationContext{
 				CACertificate: secret,
 			},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+			want: &tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &tls_v3.CommonTlsContext{},
 			},
 		},
 		"no alpn, missing ca": {
 			validation: &dag.PeerValidationContext{
 				SubjectName: "www.example.com",
 			},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+			want: &tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &tls_v3.CommonTlsContext{},
 			},
 		},
 		"no alpn, ca and altname": {
@@ -77,17 +77,17 @@ func TestUpstreamTLSContext(t *testing.T) {
 				CACertificate: secret,
 				SubjectName:   "www.example.com",
 			},
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
-					ValidationContextType: &envoy_v3_tls.CommonTlsContext_ValidationContext{
-						ValidationContext: &envoy_v3_tls.CertificateValidationContext{
-							TrustedCa: &envoy_api_v3_core.DataSource{
-								Specifier: &envoy_api_v3_core.DataSource_InlineBytes{
+			want: &tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &tls_v3.CommonTlsContext{
+					ValidationContextType: &tls_v3.CommonTlsContext_ValidationContext{
+						ValidationContext: &tls_v3.CertificateValidationContext{
+							TrustedCa: &core_v3.DataSource{
+								Specifier: &core_v3.DataSource_InlineBytes{
 									InlineBytes: []byte("ca"),
 								},
 							},
-							MatchSubjectAltNames: []*matcher.StringMatcher{{
-								MatchPattern: &matcher.StringMatcher_Exact{
+							MatchSubjectAltNames: []*matcher_v3.StringMatcher{{
+								MatchPattern: &matcher_v3.StringMatcher_Exact{
 									Exact: "www.example.com",
 								}},
 							},
@@ -98,8 +98,8 @@ func TestUpstreamTLSContext(t *testing.T) {
 		},
 		"external name sni": {
 			externalName: "projectcontour.local",
-			want: &envoy_v3_tls.UpstreamTlsContext{
-				CommonTlsContext: &envoy_v3_tls.CommonTlsContext{},
+			want: &tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &tls_v3.CommonTlsContext{},
 				Sni:              "projectcontour.local",
 			},
 		},

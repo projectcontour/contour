@@ -20,7 +20,7 @@ import (
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_extensions_upstream_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
@@ -28,20 +28,20 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestCluster(t *testing.T) {
-	s1 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s1 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
+		Spec: core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{{
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       443,
@@ -50,14 +50,14 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
-	s2 := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	s2 := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
+		Spec: core_v1.ServiceSpec{
 			ExternalName: "foo.io",
-			Ports: []v1.ServicePort{{
+			Ports: []core_v1.ServicePort{{
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       443,
@@ -66,44 +66,44 @@ func TestCluster(t *testing.T) {
 		},
 	}
 
-	svcExternal := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+	svcExternal := &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1.ServiceSpec{
+		Spec: core_v1.ServiceSpec{
 			ExternalName: "projectcontour.local",
-			Ports: []v1.ServicePort{{
+			Ports: []core_v1.ServicePort{{
 				Name:       "http",
 				Protocol:   "TCP",
 				Port:       443,
 				TargetPort: intstr.FromInt(8080),
 			}},
-			Type: v1.ServiceTypeExternalName,
+			Type: core_v1.ServiceTypeExternalName,
 		},
 	}
 
 	secret := &dag.Secret{
-		Object: &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		Object: &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "secret",
 				Namespace: "default",
 			},
-			Type: v1.SecretTypeTLS,
+			Type: core_v1.SecretTypeTLS,
 			Data: map[string][]byte{dag.CACertificateKey: []byte("cacert")},
 		},
 	}
 
 	clientSecret := &dag.Secret{
-		Object: &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		Object: &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "clientcertsecret",
 				Namespace: "default",
 			},
-			Type: v1.SecretTypeTLS,
+			Type: core_v1.SecretTypeTLS,
 			Data: map[string][]byte{
-				v1.TLSCertKey:       []byte("cert"),
-				v1.TLSPrivateKeyKey: []byte("key"),
+				core_v1.TLSCertKey:       []byte("cert"),
+				core_v1.TLSPrivateKeyKey: []byte("key"),
 			},
 		},
 	}
@@ -540,7 +540,7 @@ func TestClustername(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "backend",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       80,
@@ -558,7 +558,7 @@ func TestClustername(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "must-be-in-want-of-a-wife",
 						ServiceNamespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       9999,
@@ -576,7 +576,7 @@ func TestClustername(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "backend",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       80,
@@ -602,7 +602,7 @@ func TestClustername(t *testing.T) {
 						Weight:           1,
 						ServiceName:      "backend",
 						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
+						ServicePort: core_v1.ServicePort{
 							Name:       "http",
 							Protocol:   "TCP",
 							Port:       80,
@@ -613,8 +613,8 @@ func TestClustername(t *testing.T) {
 				LoadBalancerPolicy: "Random",
 				UpstreamValidation: &dag.PeerValidationContext{
 					CACertificate: &dag.Secret{
-						Object: &v1.Secret{
-							ObjectMeta: metav1.ObjectMeta{
+						Object: &core_v1.Secret{
+							ObjectMeta: meta_v1.ObjectMeta{
 								Name:      "secret",
 								Namespace: "default",
 							},
@@ -665,14 +665,14 @@ func TestLBPolicy(t *testing.T) {
 func TestClusterCommonLBConfig(t *testing.T) {
 	got := ClusterCommonLBConfig()
 	want := &envoy_cluster_v3.Cluster_CommonLbConfig{
-		HealthyPanicThreshold: &envoy_type.Percent{ // Disable HealthyPanicThreshold
+		HealthyPanicThreshold: &type_v3.Percent{ // Disable HealthyPanicThreshold
 			Value: 0,
 		},
 	}
 	assert.Equal(t, want, got)
 }
 
-func service(s *v1.Service, protocols ...string) *dag.Service {
+func service(s *core_v1.Service, protocols ...string) *dag.Service {
 	protocol := ""
 	if len(protocols) > 0 {
 		protocol = protocols[0]

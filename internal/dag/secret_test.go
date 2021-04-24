@@ -20,7 +20,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 )
 
 func TestIsValidSecret(t *testing.T) {
@@ -58,9 +58,9 @@ func TestIsValidSecret(t *testing.T) {
 
 			want := Result{Valid: tc.valid, Err: tc.err}
 
-			valid, err := isValidSecret(&v1.Secret{
+			valid, err := isValidSecret(&core_v1.Secret{
 				// objectmeta omitted
-				Type: v1.SecretTypeTLS,
+				Type: core_v1.SecretTypeTLS,
 				Data: secretdata(tc.cert, tc.key),
 			})
 			got := Result{Valid: valid, Err: err}
@@ -72,8 +72,8 @@ func TestIsValidSecret(t *testing.T) {
 
 func secretdata(cert, key string) map[string][]byte {
 	return map[string][]byte{
-		v1.TLSCertKey:       []byte(cert),
-		v1.TLSPrivateKeyKey: []byte(key),
+		core_v1.TLSCertKey:       []byte(cert),
+		core_v1.TLSPrivateKeyKey: []byte(key),
 	}
 }
 

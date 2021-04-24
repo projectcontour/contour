@@ -20,9 +20,9 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	ratelimit_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
-	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	config_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
+	ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
+	manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
@@ -32,9 +32,9 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/timeout"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -168,7 +168,7 @@ func TestListenerVisit(t *testing.T) {
 		"one http only ingress": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -176,13 +176,13 @@ func TestListenerVisit(t *testing.T) {
 						Backend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -200,7 +200,7 @@ func TestListenerVisit(t *testing.T) {
 		"one http only httpproxy": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -219,13 +219,13 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -243,7 +243,7 @@ func TestListenerVisit(t *testing.T) {
 		"simple ingress with secret": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -264,21 +264,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -310,7 +310,7 @@ func TestListenerVisit(t *testing.T) {
 		"multiple tls ingress with secrets should be sorted": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "sortedsecond",
 						Namespace: "default",
 					},
@@ -332,7 +332,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "sortedfirst",
 						Namespace: "default",
 					},
@@ -353,21 +353,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -405,7 +405,7 @@ func TestListenerVisit(t *testing.T) {
 		"simple ingress with missing secret": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -426,21 +426,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -458,7 +458,7 @@ func TestListenerVisit(t *testing.T) {
 		"simple httpproxy with secret": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -477,21 +477,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -523,7 +523,7 @@ func TestListenerVisit(t *testing.T) {
 		"ingress with allow-http: false": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -540,7 +540,7 @@ func TestListenerVisit(t *testing.T) {
 		"simple tls ingress with allow-http:false": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -564,21 +564,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -621,7 +621,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -642,21 +642,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -691,7 +691,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -712,21 +712,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -766,7 +766,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -787,21 +787,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -842,7 +842,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -863,21 +863,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -912,7 +912,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -936,21 +936,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     8080,
@@ -985,7 +985,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1005,21 +1005,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -1057,7 +1057,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1076,21 +1076,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -1129,7 +1129,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1153,29 +1153,29 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -1243,7 +1243,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1267,29 +1267,29 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -1357,7 +1357,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1381,29 +1381,29 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -1471,7 +1471,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1495,29 +1495,29 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -1585,7 +1585,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1609,29 +1609,29 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -1699,7 +1699,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1723,29 +1723,29 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -1810,7 +1810,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1834,29 +1834,29 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -1899,7 +1899,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple2",
 						Namespace: "default",
 					},
@@ -1924,7 +1924,7 @@ func TestListenerVisit(t *testing.T) {
 					},
 				},
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1948,29 +1948,29 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2022,7 +2022,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2046,21 +2046,21 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2077,7 +2077,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2101,21 +2101,21 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2150,7 +2150,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2169,13 +2169,13 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2204,7 +2204,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2223,13 +2223,13 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2258,7 +2258,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2277,13 +2277,13 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2312,7 +2312,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2331,13 +2331,13 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2366,7 +2366,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2385,13 +2385,13 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2420,7 +2420,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2439,21 +2439,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2502,7 +2502,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2521,13 +2521,13 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2556,7 +2556,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2575,13 +2575,13 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2610,7 +2610,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2629,21 +2629,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2692,7 +2692,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2711,21 +2711,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2774,7 +2774,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2793,21 +2793,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2856,7 +2856,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2875,21 +2875,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2944,7 +2944,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2963,13 +2963,13 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -2985,14 +2985,14 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix("ingress_http").
 					AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout")).
 					DefaultFilters().
-					AddFilter(&http.HttpFilter{
+					AddFilter(&manager_v3.HttpFilter{
 						Name: wellknown.HTTPRateLimit,
-						ConfigType: &http.HttpFilter_TypedConfig{
-							TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+						ConfigType: &manager_v3.HttpFilter_TypedConfig{
+							TypedConfig: protobuf.MustMarshalAny(&ratelimit_v3.RateLimit{
 								Domain:          "contour",
 								FailureModeDeny: true,
 								Timeout:         protobuf.Duration(7 * time.Second),
-								RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+								RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 									GrpcService: &envoy_core_v3.GrpcService{
 										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 											EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -3002,7 +3002,7 @@ func TestListenerVisit(t *testing.T) {
 									},
 									TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 								},
-								EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								EnableXRatelimitHeaders: ratelimit_v3.RateLimit_DRAFT_VERSION_03,
 							}),
 						},
 					}).Get()),
@@ -3021,7 +3021,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -3040,21 +3040,21 @@ func TestListenerVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -3070,14 +3070,14 @@ func TestListenerVisit(t *testing.T) {
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
 					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 					DefaultFilters().
-					AddFilter(&http.HttpFilter{
+					AddFilter(&manager_v3.HttpFilter{
 						Name: wellknown.HTTPRateLimit,
-						ConfigType: &http.HttpFilter_TypedConfig{
-							TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+						ConfigType: &manager_v3.HttpFilter_TypedConfig{
+							TypedConfig: protobuf.MustMarshalAny(&ratelimit_v3.RateLimit{
 								Domain:          "contour",
 								FailureModeDeny: true,
 								Timeout:         protobuf.Duration(7 * time.Second),
-								RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+								RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 									GrpcService: &envoy_core_v3.GrpcService{
 										TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 											EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -3087,7 +3087,7 @@ func TestListenerVisit(t *testing.T) {
 									},
 									TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 								},
-								EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+								EnableXRatelimitHeaders: ratelimit_v3.RateLimit_DRAFT_VERSION_03,
 							}),
 						},
 					}).
@@ -3108,14 +3108,14 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
-						AddFilter(&http.HttpFilter{
+						AddFilter(&manager_v3.HttpFilter{
 							Name: wellknown.HTTPRateLimit,
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+							ConfigType: &manager_v3.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&ratelimit_v3.RateLimit{
 									Domain:          "contour",
 									FailureModeDeny: true,
 									Timeout:         protobuf.Duration(7 * time.Second),
-									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+									RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 										GrpcService: &envoy_core_v3.GrpcService{
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -3125,7 +3125,7 @@ func TestListenerVisit(t *testing.T) {
 										},
 										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 									},
-									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									EnableXRatelimitHeaders: ratelimit_v3.RateLimit_DRAFT_VERSION_03,
 								}),
 							},
 						}).
@@ -3153,7 +3153,7 @@ func TestListenerVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -3177,29 +3177,29 @@ func TestListenerVisit(t *testing.T) {
 						},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:     "http",
 							Protocol: "TCP",
 							Port:     80,
@@ -3215,14 +3215,14 @@ func TestListenerVisit(t *testing.T) {
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
 						DefaultFilters().
-						AddFilter(&http.HttpFilter{
+						AddFilter(&manager_v3.HttpFilter{
 							Name: wellknown.HTTPRateLimit,
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+							ConfigType: &manager_v3.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&ratelimit_v3.RateLimit{
 									Domain:          "contour",
 									FailureModeDeny: true,
 									Timeout:         protobuf.Duration(7 * time.Second),
-									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+									RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 										GrpcService: &envoy_core_v3.GrpcService{
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -3232,7 +3232,7 @@ func TestListenerVisit(t *testing.T) {
 										},
 										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 									},
-									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									EnableXRatelimitHeaders: ratelimit_v3.RateLimit_DRAFT_VERSION_03,
 								}),
 							},
 						}).
@@ -3253,14 +3253,14 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
-						AddFilter(&http.HttpFilter{
+						AddFilter(&manager_v3.HttpFilter{
 							Name: wellknown.HTTPRateLimit,
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+							ConfigType: &manager_v3.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&ratelimit_v3.RateLimit{
 									Domain:          "contour",
 									FailureModeDeny: true,
 									Timeout:         protobuf.Duration(7 * time.Second),
-									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+									RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 										GrpcService: &envoy_core_v3.GrpcService{
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -3270,7 +3270,7 @@ func TestListenerVisit(t *testing.T) {
 										},
 										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 									},
-									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									EnableXRatelimitHeaders: ratelimit_v3.RateLimit_DRAFT_VERSION_03,
 								}),
 							},
 						}).
@@ -3286,14 +3286,14 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG)).
-						AddFilter(&http.HttpFilter{
+						AddFilter(&manager_v3.HttpFilter{
 							Name: wellknown.HTTPRateLimit,
-							ConfigType: &http.HttpFilter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+							ConfigType: &manager_v3.HttpFilter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&ratelimit_v3.RateLimit{
 									Domain:          "contour",
 									FailureModeDeny: true,
 									Timeout:         protobuf.Duration(7 * time.Second),
-									RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+									RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 										GrpcService: &envoy_core_v3.GrpcService{
 											TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 												EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -3303,7 +3303,7 @@ func TestListenerVisit(t *testing.T) {
 										},
 										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 									},
-									EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+									EnableXRatelimitHeaders: ratelimit_v3.RateLimit_DRAFT_VERSION_03,
 								}),
 							},
 						}).
@@ -3330,12 +3330,12 @@ func TestListenerVisit(t *testing.T) {
 
 func transportSocket(secretname string, tlsMinProtoVersion envoy_tls_v3.TlsParameters_TlsProtocol, cipherSuites []string, alpnprotos ...string) *envoy_core_v3.TransportSocket {
 	secret := &dag.Secret{
-		Object: &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		Object: &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      secretname,
 				Namespace: "default",
 			},
-			Type: v1.SecretTypeTLS,
+			Type: core_v1.SecretTypeTLS,
 			Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 		},
 	}

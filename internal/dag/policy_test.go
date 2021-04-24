@@ -23,7 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	networking_v1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestRetryPolicyIngress(t *testing.T) {
@@ -37,7 +37,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 		},
 		"retry-on": {
 			i: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on": "5xx",
 					},
@@ -49,7 +49,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 		},
 		"explicitly zero retries": {
 			i: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":    "5xx",
 						"projectcontour.io/num-retries": "0",
@@ -63,7 +63,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 		},
 		"num-retries": {
 			i: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":    "5xx",
 						"projectcontour.io/num-retries": "7",
@@ -77,7 +77,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 		},
 		"no retry count, per try timeout": {
 			i: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":        "5xx",
 						"projectcontour.io/per-try-timeout": "10s",
@@ -92,7 +92,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 		},
 		"explicit 0s timeout": {
 			i: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
+				ObjectMeta: meta_v1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":        "5xx",
 						"projectcontour.io/per-try-timeout": "0s",

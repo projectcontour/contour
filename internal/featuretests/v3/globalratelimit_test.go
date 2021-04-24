@@ -17,10 +17,10 @@ import (
 	"testing"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	ratelimit_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
+	config_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
+	manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -32,15 +32,15 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/protobuf"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 )
 
 func globalRateLimitFilterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -71,13 +71,13 @@ func globalRateLimitFilterExists(t *testing.T, rh cache.ResourceEventHandler, c 
 		MetricsPrefix("ingress_http").
 		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout")).
 		DefaultFilters().
-		AddFilter(&http.HttpFilter{
+		AddFilter(&manager_v3.HttpFilter{
 			Name: wellknown.HTTPRateLimit,
-			ConfigType: &http.HttpFilter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+			ConfigType: &manager_v3.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&ratelimit_v3.RateLimit{
 					Domain:          "contour",
 					FailureModeDeny: true,
-					RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+					RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 						GrpcService: &envoy_core_v3.GrpcService{
 							TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 								EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -104,7 +104,7 @@ func globalRateLimitFilterExists(t *testing.T, rh cache.ResourceEventHandler, c 
 
 func globalRateLimitNoRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls tlsConfig) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -188,7 +188,7 @@ func globalRateLimitNoRateLimitsDefined(t *testing.T, rh cache.ResourceEventHand
 
 func globalRateLimitVhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls tlsConfig) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -280,7 +280,7 @@ func globalRateLimitVhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHa
 
 func globalRateLimitRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls tlsConfig) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -373,7 +373,7 @@ func globalRateLimitRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHa
 
 func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour, tls tlsConfig) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -498,7 +498,7 @@ func globalRateLimitVhostAndRouteRateLimitDefined(t *testing.T, rh cache.Resourc
 
 func globalRateLimitMultipleDescriptorsAndEntries(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -684,14 +684,14 @@ func TestGlobalRateLimiting(t *testing.T) {
 			defer done()
 
 			// Add common test fixtures.
-			rh.OnAdd(fixture.NewService("s1").WithPorts(corev1.ServicePort{Port: 80}))
-			rh.OnAdd(fixture.NewService("s2").WithPorts(corev1.ServicePort{Port: 80}))
-			rh.OnAdd(&corev1.Secret{
+			rh.OnAdd(fixture.NewService("s1").WithPorts(core_v1.ServicePort{Port: 80}))
+			rh.OnAdd(fixture.NewService("s2").WithPorts(core_v1.ServicePort{Port: 80}))
+			rh.OnAdd(&core_v1.Secret{
 				ObjectMeta: fixture.ObjectMeta("tls-cert"),
 				Type:       "kubernetes.io/tls",
 				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 			})
-			rh.OnAdd(&corev1.Secret{
+			rh.OnAdd(&core_v1.Secret{
 				ObjectMeta: fixture.ObjectMeta("fallback-cert"),
 				Type:       "kubernetes.io/tls",
 				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),

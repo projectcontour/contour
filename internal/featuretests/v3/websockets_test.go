@@ -21,9 +21,9 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -32,11 +32,11 @@ func TestWebsocketsIngress(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("ws").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "ws",
 			Namespace: s1.Namespace,
 			Annotations: map[string]string{
@@ -83,15 +83,15 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("ws").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
 	s2 := fixture.NewService("ws2").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s2)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
@@ -145,7 +145,7 @@ func TestWebsocketHTTPProxy(t *testing.T) {
 	})
 
 	hp2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},

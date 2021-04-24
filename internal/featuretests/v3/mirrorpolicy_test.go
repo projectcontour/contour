@@ -22,8 +22,8 @@ import (
 	"github.com/projectcontour/contour/internal/contour"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -32,14 +32,14 @@ func TestMirrorPolicy(t *testing.T) {
 	defer done()
 
 	svc1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	svc2 := fixture.NewService("mirror").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc1)
 	rh.OnAdd(svc2)
 
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc1.Namespace,
 		},

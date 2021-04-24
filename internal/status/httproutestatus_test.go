@@ -16,10 +16,10 @@ package status
 import (
 	"testing"
 
-	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
+	projectcontour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -27,9 +27,9 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 
 	var testGeneration int64 = 7
 
-	simpleValidCondition := metav1.Condition{
+	simpleValidCondition := meta_v1.Condition{
 		Type:               string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
-		Status:             projectcontour.ConditionTrue,
+		Status:             projectcontour_v1.ConditionTrue,
 		Reason:             "Valid",
 		Message:            "Valid HTTPRoute",
 		ObservedGeneration: testGeneration,
@@ -38,10 +38,10 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 	httpRouteUpdate := HTTPRouteUpdate{
 		FullName:   k8s.NamespacedNameFrom("test/test"),
 		Generation: testGeneration,
-		Conditions: make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition),
+		Conditions: make(map[gatewayapi_v1alpha1.RouteConditionType]meta_v1.Condition),
 	}
 
-	got := httpRouteUpdate.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionTrue, "Valid", "Valid HTTPRoute")
+	got := httpRouteUpdate.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, meta_v1.ConditionTrue, "Valid", "Valid HTTPRoute")
 
 	assert.Equal(t, simpleValidCondition.Message, got.Message)
 	assert.Equal(t, simpleValidCondition.Reason, got.Reason)

@@ -23,8 +23,8 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -48,7 +48,7 @@ func TestVisitClusters(t *testing.T) {
 										Weight:           1,
 										ServiceName:      "example",
 										ServiceNamespace: "default",
-										ServicePort: v1.ServicePort{
+										ServicePort: core_v1.ServicePort{
 											Protocol:   "TCP",
 											Port:       443,
 											TargetPort: intstr.FromInt(8443),
@@ -91,7 +91,7 @@ func TestVisitListeners(t *testing.T) {
 					Weight:           1,
 					ServiceName:      "example",
 					ServiceNamespace: "default",
-					ServicePort: v1.ServicePort{
+					ServicePort: core_v1.ServicePort{
 						Protocol:   "TCP",
 						Port:       443,
 						TargetPort: intstr.FromInt(8443),
@@ -116,8 +116,8 @@ func TestVisitListeners(t *testing.T) {
 						},
 						TCPProxy: p1,
 						Secret: &dag.Secret{
-							Object: &v1.Secret{
-								ObjectMeta: metav1.ObjectMeta{
+							Object: &core_v1.Secret{
+								ObjectMeta: meta_v1.ObjectMeta{
 									Name:      "secret",
 									Namespace: "default",
 								},
@@ -176,7 +176,7 @@ func TestVisitSecrets(t *testing.T) {
 										Weight:           1,
 										ServiceName:      "example",
 										ServiceNamespace: "default",
-										ServicePort: v1.ServicePort{
+										ServicePort: core_v1.ServicePort{
 											Protocol:   "TCP",
 											Port:       443,
 											TargetPort: intstr.FromInt(8443),
@@ -186,8 +186,8 @@ func TestVisitSecrets(t *testing.T) {
 							}},
 						},
 						Secret: &dag.Secret{
-							Object: &v1.Secret{
-								ObjectMeta: metav1.ObjectMeta{
+							Object: &core_v1.Secret{
+								ObjectMeta: meta_v1.ObjectMeta{
 									Name:      "secret",
 									Namespace: "default",
 								},

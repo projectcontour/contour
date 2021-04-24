@@ -20,7 +20,7 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -28,9 +28,9 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -150,7 +150,7 @@ func TestRouteVisit(t *testing.T) {
 		"one http only ingress with service": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -158,13 +158,13 @@ func TestRouteVisit(t *testing.T) {
 						Backend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -186,7 +186,7 @@ func TestRouteVisit(t *testing.T) {
 		"one http only ingress with regex match": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -206,13 +206,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -234,7 +234,7 @@ func TestRouteVisit(t *testing.T) {
 		"one http only httpproxy": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -250,13 +250,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -278,7 +278,7 @@ func TestRouteVisit(t *testing.T) {
 		"default backend ingress with secret": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -290,21 +290,21 @@ func TestRouteVisit(t *testing.T) {
 						Backend: backend("kuard", 8080),
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -326,7 +326,7 @@ func TestRouteVisit(t *testing.T) {
 		"vhost ingress with secret": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -350,21 +350,21 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -395,7 +395,7 @@ func TestRouteVisit(t *testing.T) {
 		"simple httpproxy with secret": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -417,21 +417,21 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -468,7 +468,7 @@ func TestRouteVisit(t *testing.T) {
 		"simple tls ingress with allow-http:false": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -495,21 +495,21 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -533,7 +533,7 @@ func TestRouteVisit(t *testing.T) {
 		"simple tls ingress with force-ssl-redirect": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -560,21 +560,21 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -611,7 +611,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress with websocket annotation": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -641,13 +641,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       8080,
@@ -674,7 +674,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress invalid timeout": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -685,13 +685,13 @@ func TestRouteVisit(t *testing.T) {
 						Backend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -713,7 +713,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress infinite timeout": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -724,13 +724,13 @@ func TestRouteVisit(t *testing.T) {
 						Backend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -752,7 +752,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress 90 second timeout": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -763,13 +763,13 @@ func TestRouteVisit(t *testing.T) {
 						Backend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -791,7 +791,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress different path matches": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -854,13 +854,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -902,7 +902,7 @@ func TestRouteVisit(t *testing.T) {
 		"vhost name exceeds 60 chars": { // projectcontour/contour#25
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "my-service-name",
 						Namespace: "default",
 					},
@@ -923,13 +923,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Name:       "www",
 							Protocol:   "TCP",
 							Port:       80,
@@ -952,7 +952,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress retry-on": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -963,13 +963,13 @@ func TestRouteVisit(t *testing.T) {
 						Backend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -991,7 +991,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress retry-on, num-retries": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -1003,13 +1003,13 @@ func TestRouteVisit(t *testing.T) {
 						Backend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -1032,7 +1032,7 @@ func TestRouteVisit(t *testing.T) {
 		"ingress retry-on, per-try-timeout": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -1044,13 +1044,13 @@ func TestRouteVisit(t *testing.T) {
 						Backend: backend("kuard", 8080),
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       8080,
 							TargetPort: intstr.FromInt(8080),
@@ -1073,7 +1073,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy no weights defined": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1095,26 +1095,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1148,7 +1148,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy one weight defined": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1171,26 +1171,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1224,7 +1224,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy all weights defined": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1248,26 +1248,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1301,7 +1301,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy w/ missing fqdn": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1315,13 +1315,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1336,7 +1336,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with pathPrefix": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1358,26 +1358,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1411,7 +1411,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with mirror policy": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1434,26 +1434,26 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1475,7 +1475,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with pathPrefix with tls": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1500,34 +1500,34 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1574,7 +1574,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with pathPrefix includes": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1604,7 +1604,7 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "child",
 						Namespace: "teama",
 					},
@@ -1620,39 +1620,39 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "teama",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1690,7 +1690,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with corsPolicy": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1710,13 +1710,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1729,8 +1729,8 @@ func TestRouteVisit(t *testing.T) {
 					envoy_v3.CORSVirtualHost("www.example.com",
 						&envoy_route_v3.CorsPolicy{
 							AllowCredentials: &wrappers.BoolValue{Value: false},
-							AllowOriginStringMatch: []*matcher.StringMatcher{{
-								MatchPattern: &matcher.StringMatcher_Exact{
+							AllowOriginStringMatch: []*matcher_v3.StringMatcher{{
+								MatchPattern: &matcher_v3.StringMatcher_Exact{
 									Exact: "*",
 								},
 								IgnoreCase: true,
@@ -1748,7 +1748,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with corsPolicy with tls": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1771,21 +1771,21 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1798,8 +1798,8 @@ func TestRouteVisit(t *testing.T) {
 					envoy_v3.CORSVirtualHost("www.example.com",
 						&envoy_route_v3.CorsPolicy{
 							AllowCredentials: &wrappers.BoolValue{Value: false},
-							AllowOriginStringMatch: []*matcher.StringMatcher{{
-								MatchPattern: &matcher.StringMatcher_Exact{
+							AllowOriginStringMatch: []*matcher_v3.StringMatcher{{
+								MatchPattern: &matcher_v3.StringMatcher_Exact{
 									Exact: "*",
 								},
 								IgnoreCase: true,
@@ -1822,8 +1822,8 @@ func TestRouteVisit(t *testing.T) {
 					envoy_v3.CORSVirtualHost("www.example.com",
 						&envoy_route_v3.CorsPolicy{
 							AllowCredentials: &wrappers.BoolValue{Value: false},
-							AllowOriginStringMatch: []*matcher.StringMatcher{{
-								MatchPattern: &matcher.StringMatcher_Exact{
+							AllowOriginStringMatch: []*matcher_v3.StringMatcher{{
+								MatchPattern: &matcher_v3.StringMatcher_Exact{
 									Exact: "*",
 								},
 								IgnoreCase: true,
@@ -1840,7 +1840,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with header contains conditions": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1864,13 +1864,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1895,7 +1895,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with header notcontains conditions": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1922,13 +1922,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -1954,7 +1954,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with header exact match conditions": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -1981,13 +1981,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2013,7 +2013,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with header exact not match conditions": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2040,13 +2040,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2072,7 +2072,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with header header present conditions": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2099,13 +2099,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2129,7 +2129,7 @@ func TestRouteVisit(t *testing.T) {
 		"httpproxy with route-level header manipulation": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2166,13 +2166,13 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2224,7 +2224,7 @@ func TestRouteVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2250,42 +2250,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2355,7 +2355,7 @@ func TestRouteVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2382,7 +2382,7 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-enabled",
 						Namespace: "default",
 					},
@@ -2408,42 +2408,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2544,7 +2544,7 @@ func TestRouteVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2571,7 +2571,7 @@ func TestRouteVisit(t *testing.T) {
 					},
 				},
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple-enabled",
 						Namespace: "default",
 					},
@@ -2597,42 +2597,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2750,7 +2750,7 @@ func TestRouteVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2776,42 +2776,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
@@ -2828,7 +2828,7 @@ func TestRouteVisit(t *testing.T) {
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -2854,42 +2854,42 @@ func TestRouteVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "secret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Secret{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "fallbacksecret",
 						Namespace: "default",
 					},
 					Type: "kubernetes.io/tls",
 					Data: secretdata(CERTIFICATE, RSA_PRIVATE_KEY),
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backend",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),
 						}},
 					},
 				},
-				&v1.Service{
-					ObjectMeta: metav1.ObjectMeta{
+				&core_v1.Service{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "backendtwo",
 						Namespace: "default",
 					},
-					Spec: v1.ServiceSpec{
-						Ports: []v1.ServicePort{{
+					Spec: core_v1.ServiceSpec{
+						Ports: []core_v1.ServicePort{{
 							Protocol:   "TCP",
 							Port:       80,
 							TargetPort: intstr.FromInt(8080),

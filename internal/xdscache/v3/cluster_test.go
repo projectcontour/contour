@@ -26,9 +26,9 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -168,7 +168,7 @@ func TestClusterVisit(t *testing.T) {
 		"single unnamed service": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -177,7 +177,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				},
 				service("default", "kuard",
-					v1.ServicePort{
+					core_v1.ServicePort{
 						Protocol:   "TCP",
 						Port:       443,
 						TargetPort: intstr.FromInt(8443),
@@ -198,7 +198,7 @@ func TestClusterVisit(t *testing.T) {
 		"single named service": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -210,7 +210,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				},
 				service("default", "kuard",
-					v1.ServicePort{
+					core_v1.ServicePort{
 						Name:       "https",
 						Protocol:   "TCP",
 						Port:       443,
@@ -232,7 +232,7 @@ func TestClusterVisit(t *testing.T) {
 		"h2c upstream": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -249,7 +249,7 @@ func TestClusterVisit(t *testing.T) {
 					map[string]string{
 						"projectcontour.io/upstream-protocol.h2c": "80,http",
 					},
-					v1.ServicePort{
+					core_v1.ServicePort{
 						Protocol: "TCP",
 						Name:     "http",
 						Port:     80,
@@ -281,7 +281,7 @@ func TestClusterVisit(t *testing.T) {
 		"long namespace and service name": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "webserver-1-unimatrix-zero-one",
 						Namespace: "beurocratic-company-test-domain-1",
 					},
@@ -290,7 +290,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				},
 				service("beurocratic-company-test-domain-1", "tiny-cog-department-test-instance",
-					v1.ServicePort{
+					core_v1.ServicePort{
 						Name:       "svc-0",
 						Protocol:   "TCP",
 						Port:       443,
@@ -312,7 +312,7 @@ func TestClusterVisit(t *testing.T) {
 		"two service ports": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -334,12 +334,12 @@ func TestClusterVisit(t *testing.T) {
 						}},
 					},
 				},
-				service("default", "backend", v1.ServicePort{
+				service("default", "backend", core_v1.ServicePort{
 					Name:       "http",
 					Protocol:   "TCP",
 					Port:       80,
 					TargetPort: intstr.FromInt(6502),
-				}, v1.ServicePort{
+				}, core_v1.ServicePort{
 					Name:       "alt",
 					Protocol:   "TCP",
 					Port:       8080,
@@ -370,7 +370,7 @@ func TestClusterVisit(t *testing.T) {
 		"httpproxy with simple path healthcheck": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -392,7 +392,7 @@ func TestClusterVisit(t *testing.T) {
 						}},
 					},
 				},
-				service("default", "backend", v1.ServicePort{
+				service("default", "backend", core_v1.ServicePort{
 					Name:       "http",
 					Protocol:   "TCP",
 					Port:       80,
@@ -427,7 +427,7 @@ func TestClusterVisit(t *testing.T) {
 		"httpproxy with custom healthcheck": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -454,7 +454,7 @@ func TestClusterVisit(t *testing.T) {
 						}},
 					},
 				},
-				service("default", "backend", v1.ServicePort{
+				service("default", "backend", core_v1.ServicePort{
 					Name:       "http",
 					Protocol:   "TCP",
 					Port:       80,
@@ -489,7 +489,7 @@ func TestClusterVisit(t *testing.T) {
 		"httpproxy with RoundRobin lb algorithm": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -511,7 +511,7 @@ func TestClusterVisit(t *testing.T) {
 						}},
 					},
 				},
-				service("default", "backend", v1.ServicePort{
+				service("default", "backend", core_v1.ServicePort{
 					Name:       "http",
 					Protocol:   "TCP",
 					Port:       80,
@@ -533,7 +533,7 @@ func TestClusterVisit(t *testing.T) {
 		"httpproxy with WeightedLeastRequest lb algorithm": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -555,7 +555,7 @@ func TestClusterVisit(t *testing.T) {
 						}},
 					},
 				},
-				service("default", "backend", v1.ServicePort{
+				service("default", "backend", core_v1.ServicePort{
 					Name:       "http",
 					Protocol:   "TCP",
 					Port:       80,
@@ -578,7 +578,7 @@ func TestClusterVisit(t *testing.T) {
 		"httpproxy with Random lb algorithm": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -600,7 +600,7 @@ func TestClusterVisit(t *testing.T) {
 						}},
 					},
 				},
-				service("default", "backend", v1.ServicePort{
+				service("default", "backend", core_v1.ServicePort{
 					Name:       "http",
 					Protocol:   "TCP",
 					Port:       80,
@@ -623,7 +623,7 @@ func TestClusterVisit(t *testing.T) {
 		"httpproxy with RequestHash lb algorithm and valid header hash option": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -652,7 +652,7 @@ func TestClusterVisit(t *testing.T) {
 						}},
 					},
 				},
-				service("default", "backend", v1.ServicePort{
+				service("default", "backend", core_v1.ServicePort{
 					Name:       "http",
 					Protocol:   "TCP",
 					Port:       80,
@@ -677,7 +677,7 @@ func TestClusterVisit(t *testing.T) {
 		"httpproxy with unknown lb algorithm": {
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
@@ -699,7 +699,7 @@ func TestClusterVisit(t *testing.T) {
 						}},
 					},
 				},
-				service("default", "backend", v1.ServicePort{
+				service("default", "backend", core_v1.ServicePort{
 					Name:       "http",
 					Protocol:   "TCP",
 					Port:       80,
@@ -721,7 +721,7 @@ func TestClusterVisit(t *testing.T) {
 		"circuitbreaker annotations": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
@@ -741,7 +741,7 @@ func TestClusterVisit(t *testing.T) {
 						"projectcontour.io/max-requests":         "404",
 						"projectcontour.io/max-retries":          "7",
 					},
-					v1.ServicePort{
+					core_v1.ServicePort{
 						Protocol: "TCP",
 						Name:     "http",
 						Port:     80,
@@ -771,7 +771,7 @@ func TestClusterVisit(t *testing.T) {
 		"projectcontour.io/num-retries annotation": {
 			objs: []interface{}{
 				&v1beta1.Ingress{
-					ObjectMeta: metav1.ObjectMeta{
+					ObjectMeta: meta_v1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 						Annotations: map[string]string{
@@ -787,7 +787,7 @@ func TestClusterVisit(t *testing.T) {
 					},
 				},
 				service("default", "kuard",
-					v1.ServicePort{
+					core_v1.ServicePort{
 						Name:       "https",
 						Protocol:   "TCP",
 						Port:       443,
@@ -817,18 +817,18 @@ func TestClusterVisit(t *testing.T) {
 	}
 }
 
-func service(ns, name string, ports ...v1.ServicePort) *v1.Service {
+func service(ns, name string, ports ...core_v1.ServicePort) *core_v1.Service {
 	return serviceWithAnnotations(ns, name, nil, ports...)
 }
 
-func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...v1.ServicePort) *v1.Service {
-	return &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
+func serviceWithAnnotations(ns, name string, annotations map[string]string, ports ...core_v1.ServicePort) *core_v1.Service {
+	return &core_v1.Service{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:        name,
 			Namespace:   ns,
 			Annotations: annotations,
 		},
-		Spec: v1.ServiceSpec{
+		Spec: core_v1.ServiceSpec{
 			Ports: ports,
 		},
 	}

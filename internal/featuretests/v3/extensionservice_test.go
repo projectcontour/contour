@@ -19,16 +19,16 @@ import (
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/pointer"
 )
@@ -51,8 +51,8 @@ func extBasic(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
 				&envoy_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
-						&envoy_v3_tls.UpstreamTlsContext{
-							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+						&tls_v3.UpstreamTlsContext{
+							CommonTlsContext: &tls_v3.CommonTlsContext{
 								AlpnProtocols: []string{"h2"},
 							},
 							// Note there's no SNI in this scenario.
@@ -115,19 +115,19 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 
 	// Enabling validation add SNI as well as CA and server altname validation.
 	tlsSocket := envoy_v3.UpstreamTLSTransportSocket(
-		&envoy_v3_tls.UpstreamTlsContext{
+		&tls_v3.UpstreamTlsContext{
 			Sni: "ext.projectcontour.io",
-			CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+			CommonTlsContext: &tls_v3.CommonTlsContext{
 				AlpnProtocols: []string{"h2"},
-				ValidationContextType: &envoy_v3_tls.CommonTlsContext_ValidationContext{
-					ValidationContext: &envoy_v3_tls.CertificateValidationContext{
+				ValidationContextType: &tls_v3.CommonTlsContext_ValidationContext{
+					ValidationContext: &tls_v3.CertificateValidationContext{
 						TrustedCa: &envoy_core_v3.DataSource{
 							Specifier: &envoy_core_v3.DataSource_InlineBytes{
 								InlineBytes: []byte(featuretests.CERTIFICATE),
 							},
 						},
-						MatchSubjectAltNames: []*matcher.StringMatcher{{
-							MatchPattern: &matcher.StringMatcher_Exact{
+						MatchSubjectAltNames: []*matcher_v3.StringMatcher{{
+							MatchPattern: &matcher_v3.StringMatcher_Exact{
 								Exact: "ext.projectcontour.io",
 							}},
 						},
@@ -169,12 +169,12 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 
 func extExternalName(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	rh.OnAdd(fixture.NewService("ns/external").
-		WithSpec(corev1.ServiceSpec{
-			Type:         corev1.ServiceTypeExternalName,
+		WithSpec(core_v1.ServiceSpec{
+			Type:         core_v1.ServiceTypeExternalName,
 			ExternalName: "external.projectcontour.io",
-			Ports: []corev1.ServicePort{{
+			Ports: []core_v1.ServicePort{{
 				Port:     443,
-				Protocol: corev1.ProtocolTCP,
+				Protocol: core_v1.ProtocolTCP,
 			}},
 		}),
 	)
@@ -275,8 +275,8 @@ func extInvalidLoadBalancerPolicy(t *testing.T, rh cache.ResourceEventHandler, c
 				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
 				&envoy_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
-						&envoy_v3_tls.UpstreamTlsContext{
-							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+						&tls_v3.UpstreamTlsContext{
+							CommonTlsContext: &tls_v3.CommonTlsContext{
 								AlpnProtocols: []string{"h2"},
 							},
 						},
@@ -308,8 +308,8 @@ func extInvalidLoadBalancerPolicy(t *testing.T, rh cache.ResourceEventHandler, c
 				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
 				&envoy_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
-						&envoy_v3_tls.UpstreamTlsContext{
-							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+						&tls_v3.UpstreamTlsContext{
+							CommonTlsContext: &tls_v3.CommonTlsContext{
 								AlpnProtocols: []string{"h2"},
 							},
 						},
@@ -340,22 +340,22 @@ func TestExtensionService(t *testing.T) {
 
 			// Add common test fixtures.
 
-			rh.OnAdd(&corev1.Secret{
+			rh.OnAdd(&core_v1.Secret{
 				ObjectMeta: fixture.ObjectMeta("ns/cacert"),
 				Data: map[string][]byte{
 					dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
 				},
 			})
 
-			rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(corev1.ServicePort{Port: 8081}))
-			rh.OnAdd(fixture.NewService("ns/svc2").WithPorts(corev1.ServicePort{Port: 8082}))
+			rh.OnAdd(fixture.NewService("ns/svc1").WithPorts(core_v1.ServicePort{Port: 8081}))
+			rh.OnAdd(fixture.NewService("ns/svc2").WithPorts(core_v1.ServicePort{Port: 8082}))
 
-			rh.OnAdd(featuretests.Endpoints("ns", "svc1", corev1.EndpointSubset{
+			rh.OnAdd(featuretests.Endpoints("ns", "svc1", core_v1.EndpointSubset{
 				Addresses: featuretests.Addresses("192.168.183.20"),
 				Ports:     featuretests.Ports(featuretests.Port("", 8081)),
 			}))
 
-			rh.OnAdd(featuretests.Endpoints("ns", "svc2", corev1.EndpointSubset{
+			rh.OnAdd(featuretests.Endpoints("ns", "svc2", core_v1.EndpointSubset{
 				Addresses: featuretests.Addresses("192.168.183.21"),
 				Ports:     featuretests.Ports(featuretests.Port("", 8082)),
 			}))

@@ -23,8 +23,8 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -32,18 +32,18 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	serverTLSSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	serverTLSSecret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "serverTLSSecret",
 			Namespace: "default",
 		},
-		Type: v1.SecretTypeTLS,
+		Type: core_v1.SecretTypeTLS,
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 	rh.OnAdd(serverTLSSecret)
 
-	clientCASecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	clientCASecret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "clientCASecret",
 			Namespace: "default",
 		},
@@ -54,7 +54,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 	rh.OnAdd(clientCASecret)
 
 	service := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(service)
 
 	proxy := fixture.NewProxy("example.com").

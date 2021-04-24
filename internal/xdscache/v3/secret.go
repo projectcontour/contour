@@ -18,7 +18,7 @@ import (
 	"sync"
 
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -72,7 +72,7 @@ func (c *SecretCache) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*SecretCache) TypeURL() string { return resource.SecretType }
+func (*SecretCache) TypeURL() string { return resource_v3.SecretType }
 
 func (c *SecretCache) OnChange(root *dag.DAG) {
 	secrets := visitSecrets(root)

@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
+	server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,8 +25,8 @@ import (
 // callbacks for use when Contour is run in Envoy xDS server mode to provide
 // request detail logging. Currently only the xDS State of the World callback
 // OnStreamRequest is implemented.
-func NewRequestLoggingCallbacks(log logrus.FieldLogger) envoy_server_v3.Callbacks {
-	return &envoy_server_v3.CallbackFuncs{
+func NewRequestLoggingCallbacks(log logrus.FieldLogger) server_v3.Callbacks {
+	return &server_v3.CallbackFuncs{
 		StreamRequestFunc: func(streamID int64, req *envoy_service_discovery_v3.DiscoveryRequest) error {
 			logDiscoveryRequestDetails(log, req)
 			return nil

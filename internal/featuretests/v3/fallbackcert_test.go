@@ -26,8 +26,8 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -46,8 +46,8 @@ func TestFallbackCertificate(t *testing.T) {
 	})
 	defer done()
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -56,8 +56,8 @@ func TestFallbackCertificate(t *testing.T) {
 	}
 	rh.OnAdd(sec1)
 
-	fallbackSecret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	fallbackSecret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "fallbacksecret",
 			Namespace: "admin",
 		},
@@ -68,7 +68,7 @@ func TestFallbackCertificate(t *testing.T) {
 	rh.OnAdd(fallbackSecret)
 
 	s1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
 	// Valid HTTPProxy without FallbackCertificate enabled
@@ -138,7 +138,7 @@ func TestFallbackCertificate(t *testing.T) {
 	})
 
 	certDelegationAll := &contour_api_v1.TLSCertificateDelegation{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "fallbackcertdelegation",
 			Namespace: "admin",
 		},
@@ -182,7 +182,7 @@ func TestFallbackCertificate(t *testing.T) {
 	})
 
 	certDelegationSingle := &contour_api_v1.TLSCertificateDelegation{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "fallbackcertdelegation",
 			Namespace: "admin",
 		},
@@ -299,12 +299,12 @@ func TestFallbackCertificate(t *testing.T) {
 					TlsCertificate: &envoy_tls_v3.TlsCertificate{
 						CertificateChain: &envoy_core_v3.DataSource{
 							Specifier: &envoy_core_v3.DataSource_InlineBytes{
-								InlineBytes: fallbackSecret.Data[v1.TLSCertKey],
+								InlineBytes: fallbackSecret.Data[core_v1.TLSCertKey],
 							},
 						},
 						PrivateKey: &envoy_core_v3.DataSource{
 							Specifier: &envoy_core_v3.DataSource_InlineBytes{
-								InlineBytes: fallbackSecret.Data[v1.TLSPrivateKeyKey],
+								InlineBytes: fallbackSecret.Data[core_v1.TLSPrivateKeyKey],
 							},
 						},
 					},
@@ -316,12 +316,12 @@ func TestFallbackCertificate(t *testing.T) {
 					TlsCertificate: &envoy_tls_v3.TlsCertificate{
 						CertificateChain: &envoy_core_v3.DataSource{
 							Specifier: &envoy_core_v3.DataSource_InlineBytes{
-								InlineBytes: sec1.Data[v1.TLSCertKey],
+								InlineBytes: sec1.Data[core_v1.TLSCertKey],
 							},
 						},
 						PrivateKey: &envoy_core_v3.DataSource{
 							Specifier: &envoy_core_v3.DataSource_InlineBytes{
-								InlineBytes: sec1.Data[v1.TLSPrivateKeyKey],
+								InlineBytes: sec1.Data[core_v1.TLSPrivateKeyKey],
 							},
 						},
 					},

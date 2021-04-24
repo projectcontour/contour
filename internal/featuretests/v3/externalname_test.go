@@ -27,9 +27,9 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
@@ -41,17 +41,17 @@ func TestExternalNameService(t *testing.T) {
 	defer done()
 
 	s1 := fixture.NewService("kuard").
-		WithSpec(v1.ServiceSpec{
-			Ports: []v1.ServicePort{{
+		WithSpec(core_v1.ServiceSpec{
+			Ports: []core_v1.ServicePort{{
 				Port:       80,
 				TargetPort: intstr.FromInt(8080),
 			}},
 			ExternalName: "foo.io",
-			Type:         v1.ServiceTypeExternalName,
+			Type:         core_v1.ServiceTypeExternalName,
 		})
 
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: s1.Namespace,
 		},
@@ -279,8 +279,8 @@ func TestExternalNameService(t *testing.T) {
 		),
 	})
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},

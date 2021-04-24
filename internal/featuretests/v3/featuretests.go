@@ -32,7 +32,7 @@ import (
 	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -54,16 +54,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
 const (
-	endpointType = resource.EndpointType // nolint:varcheck,deadcode
-	clusterType  = resource.ClusterType
-	routeType    = resource.RouteType
-	listenerType = resource.ListenerType
-	secretType   = resource.SecretType
+	endpointType = resource_v3.EndpointType // nolint:varcheck,deadcode
+	clusterType  = resource_v3.ClusterType
+	routeType    = resource_v3.RouteType
+	listenerType = resource_v3.ListenerType
+	secretType   = resource_v3.SecretType
 	statsAddress = "0.0.0.0"
 	statsPort    = 8002
 )
@@ -211,7 +211,7 @@ func (r *resourceEventHandler) OnAdd(obj interface{}) {
 	}
 
 	switch obj.(type) {
-	case *v1.Endpoints:
+	case *core_v1.Endpoints:
 		r.EndpointsHandler.OnAdd(obj)
 	default:
 		r.EventHandler.OnAdd(obj)
@@ -233,7 +233,7 @@ func (r *resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	}
 
 	switch newObj.(type) {
-	case *v1.Endpoints:
+	case *core_v1.Endpoints:
 		r.EndpointsHandler.OnUpdate(oldObj, newObj)
 	default:
 		r.EventHandler.OnUpdate(oldObj, newObj)
@@ -252,7 +252,7 @@ func (r *resourceEventHandler) OnDelete(obj interface{}) {
 	}
 
 	switch obj.(type) {
-	case *v1.Endpoints:
+	case *core_v1.Endpoints:
 		r.EndpointsHandler.OnDelete(obj)
 	default:
 		r.EventHandler.OnDelete(obj)

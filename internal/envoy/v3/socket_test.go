@@ -20,8 +20,8 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/protobuf"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestUpstreamTLSTransportSocket(t *testing.T) {
@@ -50,14 +50,14 @@ func TestUpstreamTLSTransportSocket(t *testing.T) {
 
 func TestDownstreamTLSTransportSocket(t *testing.T) {
 	serverSecret := &dag.Secret{
-		Object: &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
+		Object: &core_v1.Secret{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:      "tls-cert",
 				Namespace: "default",
 			},
 			Data: map[string][]byte{
-				v1.TLSCertKey:       []byte("cert"),
-				v1.TLSPrivateKeyKey: []byte("key"),
+				core_v1.TLSCertKey:       []byte("cert"),
+				core_v1.TLSPrivateKeyKey: []byte("key"),
 			},
 		},
 	}

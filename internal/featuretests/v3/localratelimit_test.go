@@ -19,7 +19,7 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
+	ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -27,14 +27,14 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
 func filterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -66,7 +66,7 @@ func filterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 
 func noRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -106,7 +106,7 @@ func noRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour
 
 func vhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -141,7 +141,7 @@ func vhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			Action: routeCluster("default/s1/80/da39a3ee5e"),
 		})
 	vhost.TypedPerFilterConfig = withFilterConfig("envoy.filters.http.local_ratelimit",
-		&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+		&ratelimit_v3.LocalRateLimit{
 			StatPrefix: "vhost.foo.com",
 			TokenBucket: &envoy_type_v3.TokenBucket{
 				MaxTokens:     150,
@@ -171,7 +171,7 @@ func vhostRateLimitDefined(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 
 func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -232,7 +232,7 @@ func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 			Match:  routePrefix("/s2"),
 			Action: routeCluster("default/s2/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
-				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+				&ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     6,
@@ -257,7 +257,7 @@ func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 			Match:  routePrefix("/s1"),
 			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
-				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+				&ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
@@ -289,7 +289,7 @@ func routeRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 
 func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -357,7 +357,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 			Match:  routePrefix("/s2"),
 			Action: routeCluster("default/s2/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
-				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+				&ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     6,
@@ -382,7 +382,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 			Match:  routePrefix("/s1"),
 			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
-				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+				&ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
@@ -406,7 +406,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 	)
 
 	vhost.TypedPerFilterConfig = withFilterConfig("envoy.filters.http.local_ratelimit",
-		&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+		&ratelimit_v3.LocalRateLimit{
 			StatPrefix: "vhost.foo.com",
 			TokenBucket: &envoy_type_v3.TokenBucket{
 				MaxTokens:     150,
@@ -436,7 +436,7 @@ func vhostAndRouteRateLimitsDefined(t *testing.T, rh cache.ResourceEventHandler,
 
 func customResponseCode(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -476,7 +476,7 @@ func customResponseCode(t *testing.T, rh cache.ResourceEventHandler, c *Contour)
 			Match:  routePrefix("/s1"),
 			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
-				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+				&ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
@@ -509,7 +509,7 @@ func customResponseCode(t *testing.T, rh cache.ResourceEventHandler, c *Contour)
 
 func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	p := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Namespace: "default",
 			Name:      "proxy1",
 		},
@@ -562,7 +562,7 @@ func customResponseHeaders(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 			Match:  routePrefix("/s1"),
 			Action: routeCluster("default/s1/80/da39a3ee5e"),
 			TypedPerFilterConfig: withFilterConfig("envoy.filters.http.local_ratelimit",
-				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+				&ratelimit_v3.LocalRateLimit{
 					StatPrefix: "vhost.foo.com",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     150,
@@ -637,8 +637,8 @@ func TestLocalRateLimiting(t *testing.T) {
 			defer done()
 
 			// Add common test fixtures.
-			rh.OnAdd(fixture.NewService("s1").WithPorts(corev1.ServicePort{Port: 80}))
-			rh.OnAdd(fixture.NewService("s2").WithPorts(corev1.ServicePort{Port: 80}))
+			rh.OnAdd(fixture.NewService("s1").WithPorts(core_v1.ServicePort{Port: 80}))
+			rh.OnAdd(fixture.NewService("s2").WithPorts(core_v1.ServicePort{Port: 80}))
 
 			f(t, rh, c)
 		})

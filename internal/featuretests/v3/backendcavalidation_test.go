@@ -21,8 +21,8 @@ import (
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -30,8 +30,8 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	secret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	secret := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
 		},
@@ -42,10 +42,10 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 
 	svc := fixture.NewService("default/kuard").
 		Annotate("projectcontour.io/upstream-protocol.tls", "securebackend,443").
-		WithPorts(v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8080)})
+		WithPorts(core_v1.ServicePort{Name: "securebackend", Port: 443, TargetPort: intstr.FromInt(8080)})
 
 	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -84,7 +84,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	})
 
 	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},
@@ -136,7 +136,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	rh.OnDelete(p2)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: svc.Namespace,
 		},

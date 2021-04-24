@@ -21,23 +21,23 @@ import (
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
-	corev1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
 const defaultResponseTimeout = time.Minute * 60
 
-func grpcCluster(name string) *envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService {
-	return &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
+func grpcCluster(name string) *authz_v3.ExtAuthz_GrpcService {
+	return &authz_v3.ExtAuthz_GrpcService{
 		GrpcService: &envoy_core_v3.GrpcService{
 			TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 				EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -86,19 +86,19 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
 					filterchaintls(fqdn,
-						&corev1.Secret{
+						&core_v1.Secret{
 							ObjectMeta: fixture.ObjectMeta("certificate"),
 							Type:       "kubernetes.io/tls",
 							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 						},
 						authzFilterFor(
 							fqdn,
-							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
+							&authz_v3.ExtAuthz{
 								Services:               cluster,
 								ClearRouteCache:        true,
 								IncludePeerCertificate: true,
-								StatusOnError: &envoy_type.HttpStatus{
-									Code: envoy_type.StatusCode_Forbidden,
+								StatusOnError: &type_v3.HttpStatus{
+									Code: type_v3.StatusCode_Forbidden,
 								},
 								TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 							},
@@ -172,20 +172,20 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
 					filterchaintls(fqdn,
-						&corev1.Secret{
+						&core_v1.Secret{
 							ObjectMeta: fixture.ObjectMeta("certificate"),
 							Type:       "kubernetes.io/tls",
 							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 						},
 						authzFilterFor(
 							fqdn,
-							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
+							&authz_v3.ExtAuthz{
 								Services:               grpcCluster("extension/auth/extension"),
 								ClearRouteCache:        true,
 								FailureModeAllow:       true,
 								IncludePeerCertificate: true,
-								StatusOnError: &envoy_type.HttpStatus{
-									Code: envoy_type.StatusCode_Forbidden,
+								StatusOnError: &type_v3.HttpStatus{
+									Code: type_v3.StatusCode_Forbidden,
 								},
 								TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 							},
@@ -276,8 +276,8 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	// the ' other path should have the opposite enablement.
 
 	disabledConfig := withFilterConfig("envoy.filters.http.ext_authz",
-		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
+		&authz_v3.ExtAuthzPerRoute{
+			Override: &authz_v3.ExtAuthzPerRoute_Disabled{
 				Disabled: true,
 			},
 		})
@@ -400,9 +400,9 @@ func authzMergeRouteContext(t *testing.T, rh cache.ResourceEventHandler, c *Cont
 						Match:  routePrefix("/"),
 						Action: routeCluster("default/app-server/80/da39a3ee5e"),
 						TypedPerFilterConfig: withFilterConfig("envoy.filters.http.ext_authz",
-							&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
-								Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
-									CheckSettings: &envoy_config_filter_http_ext_authz_v3.CheckSettings{
+							&authz_v3.ExtAuthzPerRoute{
+								Override: &authz_v3.ExtAuthzPerRoute_CheckSettings{
+									CheckSettings: &authz_v3.CheckSettings{
 										ContextExtensions: context,
 									},
 								},
@@ -487,20 +487,20 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 				),
 				FilterChains: []*envoy_listener_v3.FilterChain{
 					filterchaintls(fqdn,
-						&corev1.Secret{
+						&core_v1.Secret{
 							ObjectMeta: fixture.ObjectMeta("certificate"),
 							Type:       "kubernetes.io/tls",
 							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 						},
 						authzFilterFor(
 							fqdn,
-							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
+							&authz_v3.ExtAuthz{
 								Services:               grpcCluster("extension/auth/extension"),
 								ClearRouteCache:        true,
 								FailureModeAllow:       false,
 								IncludePeerCertificate: true,
-								StatusOnError: &envoy_type.HttpStatus{
-									Code: envoy_type.StatusCode_Forbidden,
+								StatusOnError: &type_v3.HttpStatus{
+									Code: type_v3.StatusCode_Forbidden,
 								},
 								TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 							},
@@ -533,9 +533,9 @@ func TestAuthorization(t *testing.T) {
 			// Add common test fixtures.
 
 			rh.OnAdd(fixture.NewService("auth/oidc-server").
-				WithPorts(corev1.ServicePort{Port: 8081}))
+				WithPorts(core_v1.ServicePort{Port: 8081}))
 
-			rh.OnAdd(featuretests.Endpoints("auth", "oidc-server", corev1.EndpointSubset{
+			rh.OnAdd(featuretests.Endpoints("auth", "oidc-server", core_v1.EndpointSubset{
 				Addresses: featuretests.Addresses("192.168.183.21"),
 				Ports:     featuretests.Ports(featuretests.Port("", 8081)),
 			}))
@@ -553,14 +553,14 @@ func TestAuthorization(t *testing.T) {
 			})
 
 			rh.OnAdd(fixture.NewService("app-server").
-				WithPorts(corev1.ServicePort{Port: 80}))
+				WithPorts(core_v1.ServicePort{Port: 80}))
 
-			rh.OnAdd(featuretests.Endpoints("auth", "app-server", corev1.EndpointSubset{
+			rh.OnAdd(featuretests.Endpoints("auth", "app-server", core_v1.EndpointSubset{
 				Addresses: featuretests.Addresses("192.168.183.21"),
 				Ports:     featuretests.Ports(featuretests.Port("", 80)),
 			}))
 
-			rh.OnAdd(&corev1.Secret{
+			rh.OnAdd(&core_v1.Secret{
 				ObjectMeta: fixture.ObjectMeta("certificate"),
 				Type:       "kubernetes.io/tls",
 				Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),

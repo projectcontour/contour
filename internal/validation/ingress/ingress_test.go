@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
@@ -28,7 +28,7 @@ func TestMatchesIngressClassNameIngressV1(t *testing.T) {
 	assert.True(t, MatchesIngressClassName(&networking_v1.Ingress{}, ""))
 	// Annotation set to default, no spec field set, class not configured
 	assert.True(t, MatchesIngressClassName(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "contour",
 			},
@@ -42,7 +42,7 @@ func TestMatchesIngressClassNameIngressV1(t *testing.T) {
 	}, ""))
 	// Annotation set, no spec field set, class not configured
 	assert.False(t, MatchesIngressClassName(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -58,7 +58,7 @@ func TestMatchesIngressClassNameIngressV1(t *testing.T) {
 	assert.False(t, MatchesIngressClassName(&networking_v1.Ingress{}, "something"))
 	// Annotation set, no spec field set, class configured
 	assert.True(t, MatchesIngressClassName(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
@@ -72,7 +72,7 @@ func TestMatchesIngressClassNameIngressV1(t *testing.T) {
 	}, "something"))
 	// Annotation set, no spec field set, class configured
 	assert.False(t, MatchesIngressClassName(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -86,7 +86,7 @@ func TestMatchesIngressClassNameIngressV1(t *testing.T) {
 	}, "something"))
 	// Annotation set, spec field set, class configured
 	assert.True(t, MatchesIngressClassName(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
@@ -97,7 +97,7 @@ func TestMatchesIngressClassNameIngressV1(t *testing.T) {
 	}, "something"))
 	// Annotation set, spec field set, class configured
 	assert.False(t, MatchesIngressClassName(&networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -113,7 +113,7 @@ func TestMatchesIngressClassNameIngressV1Beta1(t *testing.T) {
 	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{}, ""))
 	// Annotation set to default, no spec field set, class not configured
 	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "contour",
 			},
@@ -127,7 +127,7 @@ func TestMatchesIngressClassNameIngressV1Beta1(t *testing.T) {
 	}, ""))
 	// Annotation set, no spec field set, class not configured
 	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -143,7 +143,7 @@ func TestMatchesIngressClassNameIngressV1Beta1(t *testing.T) {
 	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{}, "something"))
 	// Annotation set, no spec field set, class configured
 	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
@@ -157,7 +157,7 @@ func TestMatchesIngressClassNameIngressV1Beta1(t *testing.T) {
 	}, "something"))
 	// Annotation set, no spec field set, class configured
 	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},
@@ -171,7 +171,7 @@ func TestMatchesIngressClassNameIngressV1Beta1(t *testing.T) {
 	}, "something"))
 	// Annotation set, spec field set, class configured
 	assert.True(t, MatchesIngressClassName(&v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "something",
 			},
@@ -182,7 +182,7 @@ func TestMatchesIngressClassNameIngressV1Beta1(t *testing.T) {
 	}, "something"))
 	// Annotation set, spec field set, class configured
 	assert.False(t, MatchesIngressClassName(&v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Annotations: map[string]string{
 				"kubernetes.io/ingress.class": "foo",
 			},

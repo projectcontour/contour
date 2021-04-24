@@ -20,9 +20,9 @@ import (
 
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
@@ -340,7 +340,7 @@ func (c *ListenerCache) Query(names []string) []proto.Message {
 	return protobuf.AsMessages(values)
 }
 
-func (*ListenerCache) TypeURL() string { return resource.ListenerType }
+func (*ListenerCache) TypeURL() string { return resource_v3.ListenerType }
 
 func (c *ListenerCache) OnChange(root *dag.DAG) {
 	listeners := visitListeners(root, &c.Config)
@@ -463,7 +463,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		var filters []*envoy_listener_v3.Filter
 
 		if vh.TCPProxy == nil {
-			var authFilter *http.HttpFilter
+			var authFilter *manager_v3.HttpFilter
 
 			if vh.AuthorizationService != nil {
 				authFilter = envoy_v3.FilterExternalAuthz(

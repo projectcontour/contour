@@ -21,7 +21,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
 )
@@ -41,7 +41,7 @@ func basic(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	vhost := fixture.NewProxy("kuard").WithSpec(
 		contour_api_v1.HTTPProxySpec{
@@ -203,7 +203,7 @@ func multiInclude(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	vhost1 := fixture.NewProxy("host1").WithSpec(
 		contour_api_v1.HTTPProxySpec{
@@ -316,7 +316,7 @@ func replaceWithSlash(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	vhost1 := fixture.NewProxy("host1").WithSpec(
 		contour_api_v1.HTTPProxySpec{
@@ -439,7 +439,7 @@ func artifactoryDocker(t *testing.T) {
 	defer done()
 
 	rh.OnAdd(fixture.NewService("artifactory/service").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
+		WithPorts(core_v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
 
 	rh.OnAdd(fixture.NewProxy("artifactory/routes").WithSpec(
 		contour_api_v1.HTTPProxySpec{

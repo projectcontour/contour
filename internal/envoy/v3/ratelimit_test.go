@@ -18,11 +18,11 @@ import (
 	"time"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	ratelimit_config_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
+	config_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
-	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
-	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
+	http_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
+	manager_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/projectcontour/contour/internal/dag"
@@ -57,7 +57,7 @@ func TestLocalRateLimitConfig(t *testing.T) {
 			},
 			statPrefix: "stat-prefix",
 			want: protobuf.MustMarshalAny(
-				&envoy_config_filter_http_local_ratelimit_v3.LocalRateLimit{
+				&local_ratelimit_v3.LocalRateLimit{
 					StatPrefix: "stat-prefix",
 					TokenBucket: &envoy_type_v3.TokenBucket{
 						MaxTokens:     100,
@@ -241,7 +241,7 @@ func TestGlobalRateLimits(t *testing.T) {
 func TestGlobalRateLimitFilter(t *testing.T) {
 	tests := map[string]struct {
 		cfg  *GlobalRateLimitConfig
-		want *http.HttpFilter
+		want *manager_v3.HttpFilter
 	}{
 		"nil config produces nil filter": {
 			cfg:  nil,
@@ -254,14 +254,14 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				Domain:           "domain",
 				FailOpen:         false,
 			},
-			want: &http.HttpFilter{
+			want: &manager_v3.HttpFilter{
 				Name: wellknown.HTTPRateLimit,
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+				ConfigType: &manager_v3.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http_ratelimit_v3.RateLimit{
 						Domain:          "domain",
 						Timeout:         protobuf.Duration(7 * time.Second),
 						FailureModeDeny: true,
-						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+						RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 							GrpcService: &envoy_core_v3.GrpcService{
 								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -282,14 +282,14 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				Domain:           "domain",
 				FailOpen:         true,
 			},
-			want: &http.HttpFilter{
+			want: &manager_v3.HttpFilter{
 				Name: wellknown.HTTPRateLimit,
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+				ConfigType: &manager_v3.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http_ratelimit_v3.RateLimit{
 						Domain:          "domain",
 						Timeout:         protobuf.Duration(7 * time.Second),
 						FailureModeDeny: false,
-						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+						RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 							GrpcService: &envoy_core_v3.GrpcService{
 								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -311,14 +311,14 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 				FailOpen:                true,
 				EnableXRateLimitHeaders: true,
 			},
-			want: &http.HttpFilter{
+			want: &manager_v3.HttpFilter{
 				Name: wellknown.HTTPRateLimit,
-				ConfigType: &http.HttpFilter_TypedConfig{
-					TypedConfig: protobuf.MustMarshalAny(&ratelimit_filter_v3.RateLimit{
+				ConfigType: &manager_v3.HttpFilter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http_ratelimit_v3.RateLimit{
 						Domain:          "domain",
 						Timeout:         protobuf.Duration(7 * time.Second),
 						FailureModeDeny: false,
-						RateLimitService: &ratelimit_config_v3.RateLimitServiceConfig{
+						RateLimitService: &config_ratelimit_v3.RateLimitServiceConfig{
 							GrpcService: &envoy_core_v3.GrpcService{
 								TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
 									EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
@@ -328,7 +328,7 @@ func TestGlobalRateLimitFilter(t *testing.T) {
 							},
 							TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 						},
-						EnableXRatelimitHeaders: ratelimit_filter_v3.RateLimit_DRAFT_VERSION_03,
+						EnableXRatelimitHeaders: http_ratelimit_v3.RateLimit_DRAFT_VERSION_03,
 					}),
 				},
 			},

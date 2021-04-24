@@ -24,17 +24,17 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
-	v1 "k8s.io/api/core/v1"
+	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestTLSMinimumProtocolVersion(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
+	sec1 := &core_v1.Secret{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "secret",
 			Namespace: "default",
 		},
@@ -44,11 +44,11 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	rh.OnAdd(sec1)
 
 	s1 := fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+		WithPorts(core_v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
 	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
@@ -91,7 +91,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	})
 
 	i2 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: sec1.Namespace,
 			Annotations: map[string]string{
@@ -148,7 +148,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 	rh.OnDelete(i2)
 
 	hp1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
+		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},

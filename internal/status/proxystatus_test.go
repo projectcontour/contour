@@ -20,7 +20,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestConditionFor(t *testing.T) {
@@ -68,7 +68,7 @@ func TestStatusMutator(t *testing.T) {
 		wantDescription   string
 	}
 
-	testTransitionTime := v1.NewTime(time.Now())
+	testTransitionTime := meta_v1.NewTime(time.Now())
 	var testGeneration int64 = 7
 
 	run := func(desc string, tc testcase) {
@@ -86,7 +86,7 @@ func TestStatusMutator(t *testing.T) {
 
 	validConditionWarning := testcase{
 		testProxy: contour_api_v1.HTTPProxy{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:       "test",
 				Namespace:  "test",
 				Generation: testGeneration,
@@ -140,7 +140,7 @@ func TestStatusMutator(t *testing.T) {
 
 	inValidConditionError := testcase{
 		testProxy: contour_api_v1.HTTPProxy{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:       "test",
 				Namespace:  "test",
 				Generation: 6,
@@ -194,7 +194,7 @@ func TestStatusMutator(t *testing.T) {
 
 	orphanedCondition := testcase{
 		testProxy: contour_api_v1.HTTPProxy{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:       "test",
 				Namespace:  "test",
 				Generation: testGeneration,
@@ -249,7 +249,7 @@ func TestStatusMutator(t *testing.T) {
 
 	updateExistingValidCond := testcase{
 		testProxy: contour_api_v1.HTTPProxy{
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: meta_v1.ObjectMeta{
 				Name:       "test",
 				Namespace:  "test",
 				Generation: testGeneration,

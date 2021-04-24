@@ -17,7 +17,7 @@ import (
 	"github.com/projectcontour/contour/internal/annotation"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
@@ -28,7 +28,7 @@ const DefaultClassName = "contour"
 // MatchesIngressClassName returns true if the passed in Ingress annotations
 // or spec ingress class name matche the passed in ingress class name.
 // Annotations take precedence over spec field if both are set.
-func MatchesIngressClassName(obj metav1.Object, ingressClassName string) bool {
+func MatchesIngressClassName(obj meta_v1.Object, ingressClassName string) bool {
 	annotationClass := annotation.IngressClass(obj)
 	var specClass string
 	switch o := obj.(type) {
