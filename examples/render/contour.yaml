@@ -680,6 +680,12 @@ spec:
                                   value must not be equal to. The condition is true
                                   if the header has any other value.
                                 type: string
+                              notpresent:
+                                description: NotPresent specifies that condition is
+                                  true when the named header is not present. Note
+                                  that setting NotPresent to false does not make the
+                                  condition true if the named header is present.
+                                type: boolean
                               present:
                                 description: Present specifies that condition is true
                                   when the named header is present, regardless of
@@ -767,6 +773,12 @@ spec:
                                   value must not be equal to. The condition is true
                                   if the header has any other value.
                                 type: string
+                              notpresent:
+                                description: NotPresent specifies that condition is
+                                  true when the named header is not present. Note
+                                  that setting NotPresent to false does not make the
+                                  condition true if the named header is present.
+                                type: boolean
                               present:
                                 description: Present specifies that condition is true
                                   when the named header is present, regardless of
@@ -1031,6 +1043,15 @@ spec:
                                                       is true if the header has any
                                                       other value.
                                                     type: string
+                                                  notpresent:
+                                                    description: NotPresent specifies
+                                                      that condition is true when
+                                                      the named header is not present.
+                                                      Note that setting NotPresent
+                                                      to false does not make the condition
+                                                      true if the named header is
+                                                      present.
+                                                    type: boolean
                                                   present:
                                                     description: Present specifies
                                                       that condition is true when
@@ -1876,6 +1897,14 @@ spec:
                                                     is true if the header has any
                                                     other value.
                                                   type: string
+                                                notpresent:
+                                                  description: NotPresent specifies
+                                                    that condition is true when the
+                                                    named header is not present. Note
+                                                    that setting NotPresent to false
+                                                    does not make the condition true
+                                                    if the named header is present.
+                                                  type: boolean
                                                 present:
                                                   description: Present specifies that
                                                     condition is true when the named
