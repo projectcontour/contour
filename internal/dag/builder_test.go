@@ -1168,7 +1168,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Spec: gatewayapi_v1alpha1.GatewaySpec{
 					Listeners: []gatewayapi_v1alpha1.Listener{{
 						Port:     443,
-						Protocol: gatewayapi_v1alpha1.HTTPProtocolType, // <--- invalid protocol, must be "HTTPS"
+						Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
 						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
 							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
 								Group: "core",
