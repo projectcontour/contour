@@ -19,12 +19,15 @@ import (
 
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 type weightedcluster struct {
@@ -32,7 +35,7 @@ type weightedcluster struct {
 	weight uint32
 }
 
-func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
+func TestHTTPProxy_RouteWithAServiceWeight(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
@@ -97,6 +100,123 @@ func TestHTTPProxyRouteWithAServiceWeight(t *testing.T) {
 				Action: routeweightedcluster(
 					weightedcluster{"default/kuard/80/da39a3ee5e", 60},
 					weightedcluster{"default/kuard/80/da39a3ee5e", 90}),
+			},
+		),
+	), nil)
+}
+
+func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
+
+	rh.OnAdd(fixture.NewService("svc2").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
+
+	rh.OnAdd(&gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: "HTTP",
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+						From: gatewayapi_v1alpha1.RouteSelectAll,
+					},
+					Kind: dag.KindHTTPRoute,
+				},
+			}},
+		},
+	})
+
+	// HTTPRoute with a single weight.
+	route1 := &gatewayapi_v1alpha1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+			Labels: map[string]string{
+				"app":  "contour",
+				"type": "controller",
+			},
+		},
+		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+			Hostnames: []gatewayapi_v1alpha1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+					Path: gatewayapi_v1alpha1.HTTPPathMatch{
+						Type:  "Prefix",
+						Value: "/blog",
+					},
+				}},
+				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+					ServiceName: pointer.StringPtr("svc1"),
+					Port:        gatewayPort(80),
+					Weight:      1,
+				}},
+			}},
+		},
+	}
+
+	rh.OnAdd(route1)
+
+	assertRDS(t, c, "1", virtualhosts(
+		envoy_v3.VirtualHost("test.projectcontour.io",
+			&envoy_route_v3.Route{
+				Match:  routePrefix("/blog"),
+				Action: routecluster("default/svc1/80/da39a3ee5e"),
+			},
+		),
+	), nil)
+
+	// HTTPRoute with multiple weights.
+	route2 := &gatewayapi_v1alpha1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+			Labels: map[string]string{
+				"app":  "contour",
+				"type": "controller",
+			},
+		},
+		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+			Hostnames: []gatewayapi_v1alpha1.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
+					Path: gatewayapi_v1alpha1.HTTPPathMatch{
+						Type:  "Prefix",
+						Value: "/blog",
+					},
+				}},
+				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+					ServiceName: pointer.StringPtr("svc1"),
+					Port:        gatewayPort(80),
+					Weight:      60,
+				}, {
+					ServiceName: pointer.StringPtr("svc2"),
+					Port:        gatewayPort(80),
+					Weight:      90,
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(route1, route2)
+	assertRDS(t, c, "2", virtualhosts(
+		envoy_v3.VirtualHost("test.projectcontour.io",
+			&envoy_route_v3.Route{
+				Match: routePrefix("/blog"),
+				Action: routeweightedcluster(
+					weightedcluster{"default/svc1/80/da39a3ee5e", 60},
+					weightedcluster{"default/svc2/80/da39a3ee5e", 90}),
 			},
 		),
 	), nil)

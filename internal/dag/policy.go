@@ -552,6 +552,18 @@ func globalRateLimitPolicy(in *contour_api_v1.GlobalRateLimitPolicy) (*GlobalRat
 				})
 			}
 
+			if entry.RequestHeaderValueMatch != nil {
+				set++
+
+				rld.Entries = append(rld.Entries, RateLimitDescriptorEntry{
+					HeaderValueMatch: &HeaderValueMatchDescriptorEntry{
+						Headers:     headerMatchConditions(entry.RequestHeaderValueMatch.Headers),
+						ExpectMatch: entry.RequestHeaderValueMatch.ExpectMatch,
+						Value:       entry.RequestHeaderValueMatch.Value,
+					},
+				})
+			}
+
 			if entry.RemoteAddress != nil {
 				set++
 

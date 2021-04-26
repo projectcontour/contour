@@ -58,6 +58,9 @@ fi
 # Create a fresh kind cluster.
 if ! kind::cluster::exists "$CLUSTERNAME" ; then
   kind::cluster::create
+
+  # Print the k8s version for verification
+  ${KUBECTL} version
 fi
 
 # Push test images into the cluster.

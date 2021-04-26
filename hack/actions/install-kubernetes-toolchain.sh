@@ -38,12 +38,20 @@ case "$#" in
     ;;
 esac
 
+# TODO: Remove once upstream images are available (#3610).
+# Install latest version of kind.
+go get sigs.k8s.io/kind@master
 
-download \
-    "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERS}/kind-${OS}-amd64" \
-    "${DESTDIR}/kind"
+# Move the $GOPATH/bin/kind binary to local since Github actions
+# have their own version installed.
+mv /home/runner/go/bin/kind ${DESTDIR}/kind
 
-chmod +x  "${DESTDIR}/kind"
+# Uncomment this once v0.11 of Kind is released.
+#download \
+#    "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERS}/kind-${OS}-amd64" \
+#    "${DESTDIR}/kind"
+#
+#chmod +x  "${DESTDIR}/kind"
 
 download \
     "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERS}/bin/${OS}/amd64/kubectl" \
