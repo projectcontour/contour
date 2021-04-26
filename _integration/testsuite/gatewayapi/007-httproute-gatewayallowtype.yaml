@@ -176,7 +176,7 @@ check_for_status_code [msg] {
 }
 
 check_for_service_routing [msg] {
-  msg := expect.response_service_is(Response, "echo-slash-default")
+  msg := expect.response_service_is(Response, "echo-slash-blue")
 }
 
 ---
