@@ -293,6 +293,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 		},
 		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+			Gateways: gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+			},
 			Hostnames: []gatewayapi_v1alpha1.Hostname{
 				"test.projectcontour.io",
 			},
@@ -314,6 +317,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 		},
 		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+			Gateways: gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+			},
 			Hostnames: []gatewayapi_v1alpha1.Hostname{
 				"test.projectcontour.io",
 			},
@@ -493,6 +499,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -544,6 +553,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -582,6 +594,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -600,6 +615,206 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 			),
+		},
+		// HTTPRoute is in a different namespace than the Gateway,
+		// but will be allowed since "All" is set.
+		"RouteGateways with GatewayAllowType: All": {
+			gateway: gatewayNoSelector,
+			objs: []interface{}{
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "custom",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+				},
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "custom",
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						},
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardServiceCustomNs))),
+					),
+				},
+			),
+		},
+		// HTTPRoute is in a different namespace than the Gateway,
+		// and is rejected since "SameNamespace" is set.
+		"HTTPRoute doesn't match with RouteGateways.GatewayAllowType: SameNamespace": {
+			gateway: gatewayNoSelector,
+			objs: []interface{}{
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "custom",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+				},
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "custom",
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// HTTPRoute is in the same namespace of the Gateway,
+		// and is allowed since "SameNamespace" is set.
+		"HTTPRoute matches with RouteGateways.GatewayAllowType: SameNamespace": {
+			gateway: gatewayNoSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						},
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
+					),
+				},
+			),
+		},
+		// HTTPRoute references same Gateway is configured with
+		// in the FromList.
+		"HTTPRoute matches with RouteGateways.GatewayAllowType: FromList": {
+			gateway: gatewayNoSelector,
+			objs: []interface{}{
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "custom",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+				},
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "custom",
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowFromList,
+							GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
+								Name:      "contour",
+								Namespace: "projectcontour",
+							}},
+						},
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardServiceCustomNs))),
+					),
+				},
+			),
+		},
+		// HTTPRoute references different Gateway is configured with
+		// in the FromList.
+		"HTTPRoute doesn't match with RouteGateways.GatewayAllowType: FromList": {
+			gateway: gatewayNoSelector,
+			objs: []interface{}{
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "custom",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+				},
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "custom",
+					},
+					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowFromList,
+							GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
+								Name:      "wrong",
+								Namespace: "reference",
+							}},
+						},
+						Hostnames: []gatewayapi_v1alpha1.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(),
 		},
 		// Issue: https://github.com/projectcontour/contour/issues/3591
 		"one gateway with two httproutes, different hostnames": {
@@ -621,6 +836,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -636,6 +854,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"another.projectcontour.io",
 						},
@@ -812,6 +1033,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -849,6 +1073,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 							"test2.projectcontour.io",
@@ -888,6 +1115,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
 							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
@@ -918,6 +1148,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"*.projectcontour.io",
 						},
@@ -1030,6 +1263,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
 							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
@@ -1086,6 +1322,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -1121,6 +1360,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -1498,6 +1740,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -1546,6 +1791,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -1606,6 +1854,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -1650,6 +1901,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -1702,6 +1956,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -1748,6 +2005,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -1797,6 +2057,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
 						},
@@ -1846,6 +2109,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
 							ForwardTo: httpRouteForwards(
@@ -1907,6 +2173,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
 							ForwardTo: httpRouteForwards(
@@ -1968,6 +2237,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
 							ForwardTo: httpRouteForwardTo("kuard", 8080, 0),

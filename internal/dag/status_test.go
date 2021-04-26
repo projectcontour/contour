@@ -2570,6 +2570,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2603,6 +2606,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2646,6 +2652,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2684,6 +2693,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2731,6 +2743,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2776,6 +2791,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2813,6 +2831,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2867,6 +2888,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2905,6 +2929,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2939,6 +2966,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"*.*.projectcontour.io",
 					},
@@ -2973,6 +3003,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"#projectcontour.io",
 					},
@@ -3007,6 +3040,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"1.2.3.4",
 					},
@@ -3041,6 +3077,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -3082,6 +3121,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -3123,6 +3165,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -3167,6 +3212,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},

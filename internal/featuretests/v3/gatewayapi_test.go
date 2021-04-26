@@ -100,6 +100,9 @@ func TestGateway_TLS(t *testing.T) {
 			},
 		},
 		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+			Gateways: gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+			},
 			Hostnames: []gatewayapi_v1alpha1.Hostname{
 				"test.projectcontour.io",
 			},
