@@ -235,8 +235,8 @@ type TLS struct {
 	// This setting:
 	//
 	// 1. Enables TLS client certificate validation.
-	// 2. Requires clients to present a TLS certificate (i.e. not optional validation).
-	// 3. Specifies how the client certificate will be validated.
+	// 2. Specifies how the client certificate will be validated (i.e.
+	//    validation required or optional).
 	// +optional
 	ClientValidation *DownstreamValidation `json:"clientValidation,omitempty"`
 
