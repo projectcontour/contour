@@ -1824,9 +1824,8 @@ spec:
                         description: "ClientValidation defines how to verify the client
                           certificate when an external client establishes a TLS connection
                           to Envoy. \n This setting: \n 1. Enables TLS client certificate
-                          validation. 2. Requires clients to present a TLS certificate
-                          (i.e. not optional validation). 3. Specifies how the client
-                          certificate will be validated."
+                          validation. 2. Specifies how the client certificate will
+                          be validated (i.e.    validation required or optional)."
                         properties:
                           caSecret:
                             description: Name of a Kubernetes secret that contains
