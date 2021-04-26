@@ -121,16 +121,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			// with the Gateway. If this Selector is defined, only routes matching the Selector
 			// are associated with the Gateway. An empty Selector matches all routes.
 
-			var err error
-			nsMatches := true
-			selMatches := true
-
-			nsMatches, err = p.namespaceMatches(listener.Routes.Namespaces, route)
+			nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route)
 			if err != nil {
 				p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
 			}
 
-			selMatches, err = selectorMatches(listener.Routes.Selector, route.Labels)
+			selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
 			if err != nil {
 				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
 			}
