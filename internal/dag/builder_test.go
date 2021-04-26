@@ -1177,8 +1177,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1211,8 +1211,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1399,8 +1399,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1alpha1.TCPProtocolType,
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1421,8 +1421,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1alpha1.UDPProtocolType,
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1443,8 +1443,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: "projectcontour.io/HTTPUDP",
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
