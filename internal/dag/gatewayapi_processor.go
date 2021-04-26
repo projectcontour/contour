@@ -125,18 +125,14 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			nsMatches := true
 			selMatches := true
 
-			if listener.Routes.Namespaces != nil {
-				nsMatches, err = p.namespaceMatches(*listener.Routes.Namespaces, route)
-				if err != nil {
-					p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
-				}
+			nsMatches, err = p.namespaceMatches(listener.Routes.Namespaces, route)
+			if err != nil {
+				p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
 			}
 
-			if listener.Routes.Selector != nil {
-				selMatches, err = selectorMatches(*listener.Routes.Selector, route.Labels)
-				if err != nil {
-					p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
-				}
+			selMatches, err = selectorMatches(listener.Routes.Selector, route.Labels)
+			if err != nil {
+				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
 			}
 
 			if selMatches && nsMatches {
@@ -220,13 +216,17 @@ func (p *GatewayAPIProcessor) computeHosts(route *gatewayapi_v1alpha1.HTTPRoute)
 
 // namespaceMatches returns true if the namespaces selector matches
 // the HTTPRoute that is being processed.
-func (p *GatewayAPIProcessor) namespaceMatches(namespaces gatewayapi_v1alpha1.RouteNamespaces, route *gatewayapi_v1alpha1.HTTPRoute) (bool, error) {
+func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.RouteNamespaces, route *gatewayapi_v1alpha1.HTTPRoute) (bool, error) {
 	// From indicates where Routes will be selected for this Gateway.
 	// Possible values are:
 	//   * All: Routes in all namespaces may be used by this Gateway.
 	//   * Selector: Routes in namespaces selected by the selector may be used by
 	//     this Gateway.
 	//   * Same: Only Routes in the same namespace may be used by this Gateway.
+
+	if namespaces == nil {
+		return true, nil
+	}
 
 	if namespaces.From == nil {
 		return true, nil
@@ -260,11 +260,15 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces gatewayapi_v1alpha1.Ro
 }
 
 // selectorMatches returns true if the selector matches the labels on the object or is not defined.
-func selectorMatches(selector metav1.LabelSelector, objLabels map[string]string) (bool, error) {
+func selectorMatches(selector *metav1.LabelSelector, objLabels map[string]string) (bool, error) {
+
+	if selector == nil {
+		return true, nil
+	}
 
 	// If a selector is defined then check that it matches the labels on the object.
 	if len(selector.MatchLabels) > 0 || len(selector.MatchExpressions) > 0 {
-		l, err := metav1.LabelSelectorAsSelector(&selector)
+		l, err := metav1.LabelSelectorAsSelector(selector)
 		if err != nil {
 			return false, err
 		}
@@ -302,31 +306,19 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 		for _, match := range rule.Matches {
 			mc := &matchConditions{}
-			if match.Path == nil || match.Path.Value == nil || match.Path.Type == nil {
+			if match.Path == nil && match.Headers == nil {
+				// No match conditions are defined, so default to 'PrefixMatch' with a value of '/'.
 				match.Path = &gatewayapi_v1alpha1.HTTPPathMatch{Type: pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix), Value: pointer.StringPtr("/")}
-			}
-			if match.Path.Type != nil {
-				switch *match.Path.Type {
-				case gatewayapi_v1alpha1.PathMatchPrefix:
-					mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: stringOrDefaultFromPtr(match.Path.Value, "/")})
-				case gatewayapi_v1alpha1.PathMatchExact:
-					mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: stringOrDefaultFromPtr(match.Path.Value, "/")})
-				default:
-					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
-				}
+				matchconditions = append(matchconditions, mc)
+				continue
 			}
 
-			if match.Headers != nil {
-				if match.Headers.Type != nil {
-					switch *match.Headers.Type {
-					case gatewayapi_v1alpha1.HeaderMatchExact:
-						for k, v := range match.Headers.Values {
-							mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: HeaderMatchTypeExact, Name: k, Value: v})
-						}
-					default:
-						routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
-					}
-				}
+			if err := pathMatchCondition(mc, match.Path); err != nil {
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
+			}
+
+			if err := headerMatchCondition(mc, match.Headers); err != nil {
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
 			}
 			matchconditions = append(matchconditions, mc)
 		}
@@ -442,6 +434,47 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 	}
 }
 
+func pathMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPPathMatch) error {
+
+	if match == nil {
+		mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: "/"})
+		return nil
+	}
+
+	if match.Type == nil {
+		// If path match type is not defined, default to 'PrefixMatch'.
+		mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: pointer.StringDeref(match.Value, "/")})
+	} else {
+		switch *match.Type {
+		case gatewayapi_v1alpha1.PathMatchPrefix:
+			mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: pointer.StringDeref(match.Value, "/")})
+		case gatewayapi_v1alpha1.PathMatchExact:
+			mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: pointer.StringDeref(match.Value, "/")})
+		default:
+			return fmt.Errorf("HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported")
+		}
+	}
+	return nil
+}
+
+func headerMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPHeaderMatch) error {
+	if match == nil {
+		return nil
+	}
+
+	if match.Type != nil {
+		switch *match.Type {
+		case gatewayapi_v1alpha1.HeaderMatchExact:
+			for k, v := range match.Values {
+				mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: HeaderMatchTypeExact, Name: k, Value: v})
+			}
+		default:
+			return fmt.Errorf("HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported")
+		}
+	}
+	return nil
+}
+
 // routes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and clusters.
 func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, headerPolicy *HeadersPolicy, clusters []*Cluster) []*Route {
 	var routes []*Route
@@ -477,11 +510,4 @@ func pathMatchTypePtr(pmt gatewayapi_v1alpha1.PathMatchType) *gatewayapi_v1alpha
 
 func headerMatchTypePtr(hmt gatewayapi_v1alpha1.HeaderMatchType) *gatewayapi_v1alpha1.HeaderMatchType {
 	return &hmt
-}
-
-func stringOrDefaultFromPtr(s *string, def string) string {
-	if s == nil {
-		return def
-	}
-	return *s
 }
