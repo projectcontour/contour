@@ -18,7 +18,7 @@ metadata:
   name: ingress-conformance-echo
 $apply:
   fixture:
-    as: echo-slash-default
+    as: echo-slash-blue
 
 ---
 
@@ -28,7 +28,28 @@ metadata:
   name: ingress-conformance-echo
 $apply:
   fixture:
-    as: echo-slash-default
+    as: echo-slash-blue
+
+---
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-green
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-green
 
 ---
 
@@ -129,9 +150,9 @@ spec:
     - matches:
       - path:
           type: Prefix
-          value: /
+          value: /blue
       forwardTo:
-      - serviceName: echo-slash-default
+      - serviceName: echo-slash-blue
         port: 80
 
 ---
@@ -143,7 +164,7 @@ import data.contour.http.expect
 # Ensure / request returns 200 status code since
 # it matches the gatewayRef.
 Response := client.Get({
-  "url": url.http("/"),
+  "url": url.http("/blue"),
     "headers": {
       "Host": "http.projectcontour.io",
       "User-Agent": client.ua("insecure"),
@@ -176,9 +197,9 @@ spec:
     - matches:
         - path:
             type: Prefix
-            value: /
+            value: /green
       forwardTo:
-        - serviceName: echo-slash-default
+        - serviceName: echo-slash-green
           port: 80
 
 ---
@@ -190,7 +211,7 @@ import data.contour.http.expect
 # Ensure / request returns 404 status code since
 # the HTTPRoute does not match the gatewayRef.
 Response := client.Get({
-  "url": url.http("/"),
+  "url": url.http("/green"),
   "headers": {
     "Host": "http.projectcontour.io",
     "User-Agent": client.ua("insecure"),
