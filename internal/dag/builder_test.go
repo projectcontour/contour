@@ -1406,6 +1406,28 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			objs: []interface{}{genericHTTPRoute},
 			want: listeners(),
 		},
+		"Invalid listener protocol type (custom)": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: "projectcontour.io/HTTPUDP",
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{genericHTTPRoute},
+			want: listeners(),
+		},
 		"insert basic single route, single hostname, gateway with TLS & Insecure Listeners, different selectors": {
 			gateway: gatewaywithtlsDifferentselectors,
 			objs: []interface{}{
