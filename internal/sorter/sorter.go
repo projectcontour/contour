@@ -72,6 +72,18 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 			switch s[j].MatchType {
 			case dag.HeaderMatchTypeExact:
 				return compareValue(s[i], s[j])
+			case dag.HeaderMatchTypeRegex:
+				return true
+			case dag.HeaderMatchTypeContains:
+				return true
+			case dag.HeaderMatchTypePresent:
+				return true
+			}
+		case dag.HeaderMatchTypeRegex:
+			// Regex matches sort ahead of Contains matches.
+			switch s[j].MatchType {
+			case dag.HeaderMatchTypeRegex:
+				return compareValue(s[i], s[j])
 			case dag.HeaderMatchTypeContains:
 				return true
 			case dag.HeaderMatchTypePresent:

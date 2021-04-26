@@ -36,7 +36,7 @@ func IngressBackend(svc *v1.Service) *networking_v1.IngressBackend {
 	}
 }
 
-func Backend(svc *v1.Service) *v1beta1.IngressBackend {
+func IngressV1Beta1Backend(svc *v1.Service) *v1beta1.IngressBackend {
 	return &v1beta1.IngressBackend{
 		ServiceName: svc.Name,
 		ServicePort: intstr.FromInt(int(svc.Spec.Ports[0].Port)),

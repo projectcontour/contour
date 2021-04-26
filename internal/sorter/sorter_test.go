@@ -118,6 +118,14 @@ func invertHeaderMatch(h dag.HeaderMatchCondition) dag.HeaderMatchCondition {
 	return h
 }
 
+func regexHeader(name string, value string) dag.HeaderMatchCondition {
+	return dag.HeaderMatchCondition{
+		Name:      name,
+		MatchType: dag.HeaderMatchTypeRegex,
+		Value:     value,
+	}
+}
+
 func exactHeader(name string, value string) dag.HeaderMatchCondition {
 	return dag.HeaderMatchCondition{
 		Name:      name,
@@ -293,16 +301,18 @@ func TestSortSecrets(t *testing.T) {
 func TestSortHeaderMatchConditions(t *testing.T) {
 	want := []dag.HeaderMatchCondition{
 		// Note that if the header names are the same, we
-		// order by the type, "exact" sorts before "contains"
-		// which sorts before "present" in terms of specificity.
+		// order by the type (in order: "exact", "regex", "contains",
+		// "present").
 		presentHeader("ashort"),
 		exactHeader("header-name", "anything"),
+		regexHeader("header-name", "a.*regex"),
 		containsHeader("header-name", "something"),
 		presentHeader("header-name"),
 		exactHeader("long-header-name", "long-header-value"),
 	}
 
 	have := []dag.HeaderMatchCondition{
+		want[5],
 		want[4],
 		want[3],
 		want[0],

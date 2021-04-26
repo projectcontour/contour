@@ -1,0 +1,165 @@
+# Copyright Project Contour Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+import data.contour.resources
+
+# Ensure that cert-manager is installed.
+# Version check the certificates resource.
+
+Group := "cert-manager.io"
+Version := "v1"
+
+have_certmanager_version {
+  v := resources.versions["certificates"]
+  v[_].Group == Group
+  v[_].Version == Version
+}
+
+skip[msg] {
+  not resources.is_supported("certificates")
+  msg := "cert-manager is not installed"
+}
+
+skip[msg] {
+  not have_certmanager_version
+
+  avail := resources.versions["certificates"]
+
+  msg := concat("\n", [
+    sprintf("cert-manager version %s/%s is not installed", [Group, Version]),
+    "available versions:",
+    yaml.marshal(avail)
+  ])
+}
+
+---
+
+# Create a self-signed issuer to give us secrets.
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-cert
+spec:
+  dnsNames:
+  - "*.projectcontour.io"
+  secretName: wildcard
+  issuerRef:
+    name: selfsigned
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wildcard-ingress
+spec:
+  tls:
+  - hosts:
+    - "*.projectcontour.io"
+    secretName: wildcard
+  rules:
+  - host: "*.projectcontour.io"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: echo
+            port:
+              number: 80
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+import data.builtin.result
+
+# Hostname, SNI, expected status code.
+cases := [
+  [ "random1.projectcontour.io", "", 200 ],
+  [ "random2.projectcontour.io", "random2.projectcontour.io", 200 ],
+  [ "a.random3.projectcontour.io", "a.random3.projectcontour.io", 404 ],
+  [ "random4.projectcontour.io", "other-random4.projectcontour.io", 421 ],
+  [ "random5.projectcontour.io", "a.random5.projectcontour.io", 421 ],
+  [ "random6.projectcontour.io:9999", "random6.projectcontour.io", 200 ],
+]
+
+request_for_host[host] = request {
+  c := cases[_]
+  host := c[0]
+  sni := c[1]
+  request := {
+    "method": "GET",
+    "url": url.https("/echo"),
+    "headers": {
+      "Host": host,
+      "User-Agent": client.ua("ingress-tls-wildcard"),
+    },
+    "tls_server_name": sni,
+    "tls_insecure_skip_verify": true,
+  }
+}
+
+response_for_host[host] = resp {
+  c := cases[_]
+  host := c[0]
+  request := request_for_host[host]
+  resp := http.send(request)
+}
+
+# Ensure that we get a response for each test case.
+error_missing_responses {
+  count(cases) != count(response_for_host)
+}
+
+check_for_status_code [msg] {
+  c := cases[_]
+  host := c[0]
+  status := c[2]
+  resp := response_for_host[host]
+  msg := expect.response_status_is(resp, status)
+}

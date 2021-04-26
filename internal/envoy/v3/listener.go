@@ -563,17 +563,25 @@ func FilterChains(filters ...*envoy_listener_v3.Filter) []*envoy_listener_v3.Fil
 }
 
 func FilterMisdirectedRequests(fqdn string) *http.HttpFilter {
-	// When Envoy matches on the virtual host domain, we configure
-	// it to match any port specifier (see envoy.VirtualHost),
-	// so the Host header (authority) may contain a port that
-	// should be ignored. This means that if we don't have a match,
-	// we should try again after stripping the port specifier.
+	var target string
+
+	if strings.HasPrefix(fqdn, "*.") {
+		// When we have a wildcard hostname, we will have already matched
+		// the filter chain on an SNI that falls under the wildcard so we
+		// retrieve that and make sure the :authority header matches.
+		// See: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/lua_filter#requestedservername
+		target = "request_handle:streamInfo():requestedServerName()"
+	} else {
+		// For specific hostnames we know the SNI we need to match the
+		// :authority header against so we can simplify the code.
+		target = `"` + strings.ToLower(fqdn) + `"`
+	}
 
 	code := `
 function envoy_on_request(request_handle)
 	local headers = request_handle:headers()
 	local host = string.lower(headers:get(":authority"))
-	local target = "%s"
+	local target = %s
 
 	if host ~= target then
 		request_handle:respond(
@@ -588,7 +596,7 @@ end
 		Name: "envoy.filters.http.lua",
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
-				InlineCode: fmt.Sprintf(code, strings.ToLower(fqdn)),
+				InlineCode: fmt.Sprintf(code, target),
 			}),
 		},
 	}

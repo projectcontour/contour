@@ -48,7 +48,7 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: featuretests.Backend(s1),
+			Backend: featuretests.IngressV1Beta1Backend(s1),
 		},
 	}
 	rh.OnAdd(i1)
@@ -77,7 +77,7 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: featuretests.Backend(s1),
+			Backend: featuretests.IngressV1Beta1Backend(s1),
 		},
 	}
 	rh.OnUpdate(i1, i2)
@@ -106,7 +106,7 @@ func TestRetryPolicy(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: featuretests.Backend(s1),
+			Backend: featuretests.IngressV1Beta1Backend(s1),
 		},
 	}
 	rh.OnUpdate(i2, i3)
