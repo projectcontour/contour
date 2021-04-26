@@ -1276,39 +1276,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		//"Only the Spec.Listener.Protocol: HTTPS should be valid for a TLS Listener Gateway": {
-		//	gateway: &gatewayapi_v1alpha1.Gateway{
-		//		ObjectMeta: metav1.ObjectMeta{
-		//			Name:      "contour",
-		//			Namespace: "projectcontour",
-		//		},
-		//		Spec: gatewayapi_v1alpha1.GatewaySpec{
-		//			Listeners: []gatewayapi_v1alpha1.Listener{{
-		//				Port:     443,
-		//				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
-		//				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
-		//					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
-		//						Group: "core",
-		//						Kind:  "Secret",
-		//						Name:  sec1.Name,
-		//					},
-		//				},
-		//				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-		//					Kind: KindHTTPRoute,
-		//					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-		//						From: gatewayapi_v1alpha1.RouteSelectAll,
-		//					},
-		//				},
-		//			}},
-		//		},
-		//	},
-		//	objs: []interface{}{
-		//		sec1,
-		//		blogService,
-		//		httpRouteProtocolHTTPS,
-		//	},
-		//	want: listeners(),
-		//},
 		"TLS Listener Gateway CertificateRef must be type core.Secret": {
 			gateway: &gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
