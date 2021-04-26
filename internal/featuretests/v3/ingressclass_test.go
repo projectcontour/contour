@@ -59,7 +59,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.Backend(svc),
+				Backend: featuretests.IngressV1Beta1Backend(svc),
 			},
 		}
 
@@ -89,7 +89,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.Backend(svc),
+				Backend: featuretests.IngressV1Beta1Backend(svc),
 			},
 		}
 
@@ -109,7 +109,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 				Namespace: Namespace,
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.Backend(svc),
+				Backend: featuretests.IngressV1Beta1Backend(svc),
 			},
 		}
 		rh.OnUpdate(ingressWrongClass, ingressNoClass)
@@ -281,7 +281,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 				Namespace: Namespace,
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.Backend(svc),
+				Backend: featuretests.IngressV1Beta1Backend(svc),
 			},
 		}
 
@@ -311,7 +311,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.Backend(svc),
+				Backend: featuretests.IngressV1Beta1Backend(svc),
 			},
 		}
 
@@ -341,7 +341,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 				},
 			},
 			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.Backend(svc),
+				Backend: featuretests.IngressV1Beta1Backend(svc),
 			},
 		}
 		rh.OnUpdate(ingressMatchingClass, ingressNonMatchingClass)

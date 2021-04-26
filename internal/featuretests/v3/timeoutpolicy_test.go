@@ -47,7 +47,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 			},
 		},
 		Spec: v1beta1.IngressSpec{
-			Backend: featuretests.Backend(svc),
+			Backend: featuretests.IngressV1Beta1Backend(svc),
 		},
 	}
 	rh.OnAdd(i1)

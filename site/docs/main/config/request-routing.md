@@ -74,9 +74,9 @@ Prefix conditions **must** start with a `/` if they are present.
 
 #### Header conditions
 
-For `header` conditions there is one required field, `name`, and five operator fields: `present`, `contains`, `notcontains`, `exact`, and `notexact`.
+For `header` conditions there is one required field, `name`, and six operator fields: `present`, `notpresent`, `contains`, `notcontains`, `exact`, and `notexact`.
 
-- `present` is a boolean and checks that the header is present. The value will not be checked.
+- `present` is a boolean and checks that the header is present. The value will not be checked. `notpresent` similarly checks that the header is *not* present.
 
 - `contains` is a string, and checks that the header contains the string. `notcontains` similarly checks that the header does *not* contain the string.
 

@@ -380,6 +380,10 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 			header.HeaderMatchSpecifier = containsMatch(h.Value)
 		case dag.HeaderMatchTypePresent:
 			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_PresentMatch{PresentMatch: true}
+		case dag.HeaderMatchTypeRegex:
+			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
+				SafeRegexMatch: SafeRegexMatch(h.Value),
+			}
 		}
 		envoyHeaders = append(envoyHeaders, header)
 	}

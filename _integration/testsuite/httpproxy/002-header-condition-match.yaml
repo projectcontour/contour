@@ -38,6 +38,26 @@ metadata:
   name: ingress-conformance-echo
 $apply:
   fixture:
+    as: echo-header-notpresent
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-header-notpresent
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
     as: echo-header-contains
 
 ---
@@ -128,6 +148,13 @@ spec:
         name: Target-Present
         present: true
   - services:
+    - name: echo-header-notpresent
+      port: 80
+    conditions:
+    - header:
+        name: Target-Present
+        notpresent: true
+  - services:
     - name: echo-header-contains
       port: 80
     conditions:
@@ -200,6 +227,8 @@ random := sprintf("%d", [time.now_ns()])
 
 cases := {
   { "header": "Target-Present", "value": random, "status": 200, "service": "echo-header-present" },
+  
+  { "status": 200, "service": "echo-header-notpresent" },
 
   { "header": "Target-Contains", "value": random, "status": 404 },
   { "header": "Target-Contains", "value": "ContainsValue", "status": 200, "service": "echo-header-contains" },

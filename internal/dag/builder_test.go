@@ -1159,6 +1159,73 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"insert basic single route, single hostname, gateway with TLS, HTTP protocol is ignored": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
+						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+								Group: "core",
+								Kind:  "Secret",
+								Name:  sec1.Name,
+							},
+						},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("test.projectcontour.io",
+							prefixrouteHTTPRoute("/", service(kuardService)),
+						)),
+				},
+			),
+		},
+		"insert basic single route, single hostname, gateway with TLS, HTTPS protocol missing certificateRef": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(),
+		},
 		"insert basic single route, single hostname, gateway with TLS": {
 			gateway: gatewayWithOnlyTLS,
 			objs: []interface{}{
@@ -1234,39 +1301,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 			),
-		},
-		"Only the Spec.Listener.Protocol: HTTPS should be valid for a TLS Listener Gateway": {
-			gateway: &gatewayapi_v1alpha1.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "contour",
-					Namespace: "projectcontour",
-				},
-				Spec: gatewayapi_v1alpha1.GatewaySpec{
-					Listeners: []gatewayapi_v1alpha1.Listener{{
-						Port:     443,
-						Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
-						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
-							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
-								Group: "core",
-								Kind:  "Secret",
-								Name:  sec1.Name,
-							},
-						},
-						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
-							},
-						},
-					}},
-				},
-			},
-			objs: []interface{}{
-				sec1,
-				blogService,
-				httpRouteProtocolHTTPS,
-			},
-			want: listeners(),
 		},
 		"TLS Listener Gateway CertificateRef must be type core.Secret": {
 			gateway: &gatewayapi_v1alpha1.Gateway{
@@ -1352,6 +1386,72 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					},
 				},
 			},
+			want: listeners(),
+		},
+		"Invalid listener protocol type (TCP)": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: gatewayapi_v1alpha1.TCPProtocolType,
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{genericHTTPRoute},
+			want: listeners(),
+		},
+		"Invalid listener protocol type (UDP)": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: gatewayapi_v1alpha1.UDPProtocolType,
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{genericHTTPRoute},
+			want: listeners(),
+		},
+		"Invalid listener protocol type (custom)": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: "projectcontour.io/HTTPUDP",
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{genericHTTPRoute},
 			want: listeners(),
 		},
 		"insert basic single route, single hostname, gateway with TLS & Insecure Listeners, different selectors": {
@@ -2620,7 +2720,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: networking_v1.IngressSpec{
 			Rules: []networking_v1.IngressRule{{
-				// no hostname
+				// No hostname.
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
@@ -2629,20 +2729,13 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			}, {
-				Host: "*",
-				IngressRuleValue: networking_v1.IngressRuleValue{
-					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Backend: *backendv1("kuard", intstr.FromString("http")),
-						}},
-					},
-				},
-			}, {
+				// Allow wildcard as first label.
+				// K8s will only allow hostnames with wildcards of this form.
 				Host: "*.example.com",
 				IngressRuleValue: networking_v1.IngressRuleValue{
 					HTTP: &networking_v1.HTTPIngressRuleValue{
 						Paths: []networking_v1.HTTPIngressPath{{
-							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
+							Backend: *backendv1("kuard", intstr.FromString("http")),
 						}},
 					},
 				},
@@ -3339,7 +3432,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: v1beta1.IngressSpec{
 			Rules: []v1beta1.IngressRule{{
-				// no hostname
+				// No hostname.
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
@@ -3350,25 +3443,15 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			}, {
-				Host: "*",
+				// Allow wildcard as first label.
+				// K8s will only allow hostnames with wildcards of this form.
+				Host: "*.example.com",
 				IngressRuleValue: v1beta1.IngressRuleValue{
 					HTTP: &v1beta1.HTTPIngressRuleValue{
 						Paths: []v1beta1.HTTPIngressPath{{
 							Backend: v1beta1.IngressBackend{
 								ServiceName: "kuard",
 								ServicePort: intstr.FromString("http"),
-							},
-						}},
-					},
-				},
-			}, {
-				Host: "*.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuarder",
-								ServicePort: intstr.FromInt(8080),
 							},
 						}},
 					},
@@ -7371,7 +7454,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		// issue 1234
 		"insert ingress with wildcard hostnames": {
 			objs: []interface{}{
 				s1,
@@ -7382,6 +7464,17 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*.example.com", &Route{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{
+									Name:      ":authority",
+									MatchType: HeaderMatchTypeRegex,
+									Value:     "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com",
+								},
+							},
+							Clusters: clusters(service(s1)),
+						}),
 					),
 				},
 			),
@@ -7620,7 +7713,6 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		// issue 1234
 		"ingressv1: insert ingress with wildcard hostnames": {
 			objs: []interface{}{
 				s1,
@@ -7631,6 +7723,17 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("*", prefixroute("/", service(s1))),
+						virtualhost("*.example.com", &Route{
+							PathMatchCondition: &PrefixMatchCondition{Prefix: "/"},
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{
+									Name:      ":authority",
+									MatchType: HeaderMatchTypeRegex,
+									Value:     "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.example\\.com",
+								},
+							},
+							Clusters: clusters(service(s1)),
+						}),
 					),
 				},
 			),
