@@ -302,13 +302,6 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 		for _, match := range rule.Matches {
 			mc := &matchConditions{}
-			if match.Path == nil && match.Headers == nil {
-				// No match conditions are defined, so default to 'PrefixMatch' with a value of '/'.
-				match.Path = &gatewayapi_v1alpha1.HTTPPathMatch{Type: pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix), Value: pointer.StringPtr("/")}
-				matchconditions = append(matchconditions, mc)
-				continue
-			}
-
 			if err := pathMatchCondition(mc, match.Path); err != nil {
 				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
 			}
@@ -437,15 +430,17 @@ func pathMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPPath
 		return nil
 	}
 
+	path := pointer.StringDeref(match.Value, "/")
+
 	if match.Type == nil {
 		// If path match type is not defined, default to 'PrefixMatch'.
-		mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: pointer.StringDeref(match.Value, "/")})
+		mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: path})
 	} else {
 		switch *match.Type {
 		case gatewayapi_v1alpha1.PathMatchPrefix:
-			mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: pointer.StringDeref(match.Value, "/")})
+			mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: path})
 		case gatewayapi_v1alpha1.PathMatchExact:
-			mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: pointer.StringDeref(match.Value, "/")})
+			mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: path})
 		default:
 			return fmt.Errorf("HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported")
 		}
@@ -458,16 +453,21 @@ func headerMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPHe
 		return nil
 	}
 
+	// HeaderMatchTypeExact is the default if not defined in the object.
+	headerMatchType := HeaderMatchTypeExact
 	if match.Type != nil {
 		switch *match.Type {
 		case gatewayapi_v1alpha1.HeaderMatchExact:
-			for k, v := range match.Values {
-				mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: HeaderMatchTypeExact, Name: k, Value: v})
-			}
+			headerMatchType = HeaderMatchTypeExact
 		default:
 			return fmt.Errorf("HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported")
 		}
 	}
+
+	for k, v := range match.Values {
+		mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: headerMatchType, Name: k, Value: v})
+	}
+
 	return nil
 }
 
