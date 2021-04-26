@@ -1200,6 +1200,32 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"insert basic single route, single hostname, gateway with TLS, HTTPS protocol missing certificateRef": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindHTTPRoute,
+							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
+								From: gatewayapi_v1alpha1.RouteSelectAll,
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				sec1,
+				kuardService,
+				genericHTTPRoute,
+			},
+			want: listeners(),
+		},
 		"insert basic single route, single hostname, gateway with TLS": {
 			gateway: gatewayWithOnlyTLS,
 			objs: []interface{}{

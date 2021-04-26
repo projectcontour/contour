@@ -77,6 +77,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			// Validate that if protocol is type HTTPS or TLS that TLS is defined.
 			if listener.TLS == nil {
 				p.Errorf("Listener.TLS is required when protocol is %q.", listener.Protocol)
+				continue
 			}
 
 			// Check for TLS on the Gateway.
