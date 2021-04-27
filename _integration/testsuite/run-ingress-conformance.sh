@@ -26,7 +26,7 @@ readonly SONOBUOY=${SONOBUOY:-sonobuoy}
 
 readonly INGRESS_CLASS=${INGRESS_CLASS:-contour}
 # Latest images can be found here: https://console.cloud.google.com/gcr/images/k8s-staging-ingressconformance/GLOBAL/ingress-controller-conformance
-readonly INGRESS_CONFORMANCE_IMAGE=${INGRESS_CONFORMANCE_IMAGE:-gcr.io/k8s-staging-ingressconformance/ingress-controller-conformance@sha256:148a649b7d009e8544e2631950b0c05a41cf9a50ede39e20b76bdaaf2ffb873b}
+readonly INGRESS_CONFORMANCE_IMAGE=${INGRESS_CONFORMANCE_IMAGE:-gcr.io/k8s-staging-ingressconformance/ingress-controller-conformance@sha256:fdf74a066dd6ce01863a107d0afe51068796b56eac3433ad530745d2db7875db}
 
 # Set the Ingress Status Address so conformance test pods are reachable in tests
 # This multiline sed command is for compatibility across MacOS and GNU sed
