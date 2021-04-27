@@ -125,8 +125,8 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 				Port:     80,
 				Protocol: "HTTP",
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectAll,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 					},
 					Kind: dag.KindHTTPRoute,
 				},
@@ -150,15 +150,15 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 			},
 			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-					Path: gatewayapi_v1alpha1.HTTPPathMatch{
-						Type:  "Prefix",
-						Value: "/blog",
+					Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+						Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+						Value: pointer.StringPtr("/blog"),
 					},
 				}},
 				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 					ServiceName: pointer.StringPtr("svc1"),
 					Port:        gatewayPort(80),
-					Weight:      1,
+					Weight:      pointer.Int32Ptr(1),
 				}},
 			}},
 		},
@@ -191,19 +191,19 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 			},
 			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-					Path: gatewayapi_v1alpha1.HTTPPathMatch{
-						Type:  "Prefix",
-						Value: "/blog",
+					Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+						Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+						Value: pointer.StringPtr("/blog"),
 					},
 				}},
 				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 					ServiceName: pointer.StringPtr("svc1"),
 					Port:        gatewayPort(80),
-					Weight:      60,
+					Weight:      pointer.Int32Ptr(60),
 				}, {
 					ServiceName: pointer.StringPtr("svc2"),
 					Port:        gatewayPort(80),
-					Weight:      90,
+					Weight:      pointer.Int32Ptr(90),
 				}},
 			}},
 		},

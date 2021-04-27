@@ -126,10 +126,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectSame,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
 					},
-					Selector: metav1.LabelSelector{
+					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"app": "contour",
 						},
@@ -155,8 +155,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectSame,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
 					},
 				},
 			}},
@@ -190,8 +190,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectAll,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 					},
 				},
 			}},
@@ -209,8 +209,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectAll,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 					},
 				},
 			}, {
@@ -225,8 +225,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectAll,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 					},
 				},
 			}},
@@ -244,10 +244,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectAll,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 					},
-					Selector: metav1.LabelSelector{
+					Selector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{{
 							Key:      "protocol",
 							Operator: "In",
@@ -267,10 +267,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectAll,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 					},
-					Selector: metav1.LabelSelector{
+					Selector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{{
 							Key:      "protocol",
 							Operator: "In",
@@ -335,8 +335,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectAll,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 					},
 				},
 			}},
@@ -354,9 +354,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectSelector,
-						Selector: metav1.LabelSelector{
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app": "contour",
 							},
@@ -383,9 +383,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-						From: gatewayapi_v1alpha1.RouteSelectSelector,
-						Selector: metav1.LabelSelector{
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
 								"app": "contour",
 							},
@@ -428,7 +428,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindHTTPRoute,
-					Selector: metav1.LabelSelector{
+					Selector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"not": "matching",
 						},
@@ -768,7 +768,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind:  "HTTPRoute",
-							Group: "INVALID",
+							Group: pointer.StringPtr("INVALID"),
 						},
 					}},
 				},
@@ -1065,7 +1065,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 								ServiceName: pointer.StringPtr("kuard"),
 								Port:        nil,
-								Weight:      1,
 							}},
 						}},
 					},
@@ -1127,19 +1126,19 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
+								Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+									Value: pointer.StringPtr("/"),
 								},
 							}, {
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/blog",
+								Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+									Value: pointer.StringPtr("/blog"),
 								},
 							}, {
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/tech",
+								Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+									Value: pointer.StringPtr("/tech"),
 								},
 							}},
 							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
@@ -1178,8 +1177,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1212,8 +1211,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1alpha1.HTTPSProtocolType,
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1321,8 +1320,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1348,8 +1347,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						TLS:      &gatewayapi_v1alpha1.GatewayTLSConfig{},
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1400,8 +1399,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1alpha1.TCPProtocolType,
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1422,8 +1421,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: gatewayapi_v1alpha1.UDPProtocolType,
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1444,8 +1443,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Protocol: "projectcontour.io/HTTPUDP",
 						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 							Kind: KindHTTPRoute,
-							Namespaces: gatewayapi_v1alpha1.RouteNamespaces{
-								From: gatewayapi_v1alpha1.RouteSelectAll,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
 							},
 						},
 					}},
@@ -1504,12 +1503,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-								Path: gatewayapi_v1alpha1.HTTPPathMatch{
-									Type:  "Prefix",
-									Value: "/",
+								Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+									Value: pointer.StringPtr("/"),
 								},
 								Headers: &gatewayapi_v1alpha1.HTTPHeaderMatch{
-									Type:   "Exact",
+									Type:   headerMatchTypePtr(gatewayapi_v1alpha1.HeaderMatchExact),
 									Values: map[string]string{"foo": "bar"},
 								},
 							}},
@@ -1554,17 +1553,17 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							{
 								Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{
 									{
-										Path: gatewayapi_v1alpha1.HTTPPathMatch{
-											Type:  "Prefix",
-											Value: "/blog",
+										Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+											Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+											Value: pointer.StringPtr("/blog"),
 										},
 									}, {
-										Path: gatewayapi_v1alpha1.HTTPPathMatch{
-											Type:  "Prefix",
-											Value: "/tech",
+										Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+											Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+											Value: pointer.StringPtr("/tech"),
 										},
 										Headers: &gatewayapi_v1alpha1.HTTPHeaderMatch{
-											Type:   "Exact",
+											Type:   headerMatchTypePtr(gatewayapi_v1alpha1.HeaderMatchExact),
 											Values: map[string]string{"foo": "bar"},
 										},
 									},
@@ -1613,7 +1612,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
 								Headers: &gatewayapi_v1alpha1.HTTPHeaderMatch{
-									Type:   "Exact",
+									Type:   headerMatchTypePtr(gatewayapi_v1alpha1.HeaderMatchExact),
 									Values: map[string]string{"foo": "bar"},
 								},
 							}},
@@ -1718,7 +1717,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 										Add: map[string]string{"custom-header-add": "foo-bar"},
 									},
 								}},
-								Weight: 1,
 							}},
 						}},
 					},
@@ -1808,7 +1806,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 									ServiceName: pointer.StringPtr("kuard"),
 									Port:        gatewayPort(8080),
-									Weight:      1,
 									Filters: []gatewayapi_v1alpha1.HTTPRouteFilter{{
 										Type: gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier,
 										RequestHeaderModifier: &gatewayapi_v1alpha1.HTTPRequestHeaderFilter{
@@ -10619,9 +10616,9 @@ func directResponseRouteService(prefix string, statusCode uint32, first *Service
 
 func httpRouteMatch(pathType gatewayapi_v1alpha1.PathMatchType, value string) []gatewayapi_v1alpha1.HTTPRouteMatch {
 	return []gatewayapi_v1alpha1.HTTPRouteMatch{{
-		Path: gatewayapi_v1alpha1.HTTPPathMatch{
-			Type:  pathType,
-			Value: value,
+		Path: &gatewayapi_v1alpha1.HTTPPathMatch{
+			Type:  pathMatchTypePtr(pathType),
+			Value: pointer.StringPtr(value),
 		},
 	}}
 }
@@ -10639,7 +10636,7 @@ func httpRouteForwardTo(serviceName string, port int, weight int32) []gatewayapi
 	return []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
 		ServiceName: pointer.StringPtr(serviceName),
 		Port:        gatewayPort(port),
-		Weight:      weight,
+		Weight:      pointer.Int32Ptr(weight),
 	}}
 }
 
@@ -10825,5 +10822,8 @@ func withMirror(r *Route, mirror *Service) *Route {
 		},
 	}
 	return r
+}
 
+func routeSelectTypePtr(rst gatewayapi_v1alpha1.RouteSelectType) *gatewayapi_v1alpha1.RouteSelectType {
+	return &rst
 }
