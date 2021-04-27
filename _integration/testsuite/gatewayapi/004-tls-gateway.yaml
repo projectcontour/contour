@@ -158,6 +158,8 @@ metadata:
   labels:
     type: insecure
 spec:
+  gateways:
+    allow: All
   hostnames:
     - secure.projectcontour.io
   rules:
@@ -178,6 +180,8 @@ metadata:
   labels:
     type: secure
 spec:
+  gateways:
+    allow: All
   hostnames:
     - secure.projectcontour.io
   rules:

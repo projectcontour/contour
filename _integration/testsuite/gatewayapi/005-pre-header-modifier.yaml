@@ -59,6 +59,8 @@ metadata:
   labels:
     app: filter
 spec:
+  gateways:
+    allow: All
   hostnames:
     - prefilter.projectcontour.io
   rules:
