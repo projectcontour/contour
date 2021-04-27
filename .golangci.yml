@@ -59,3 +59,6 @@ issues:
   - linters:
     - golint
     text: "don't use ALL_CAPS in Go names; use CamelCase"
+  - path: test/e2e
+    linters:
+      - bodyclose
