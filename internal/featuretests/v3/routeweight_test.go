@@ -145,8 +145,8 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 			},
 		},
 		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-			Gateways: gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+			Gateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
 			},
 			Hostnames: []gatewayapi_v1alpha1.Hostname{
 				"test.projectcontour.io",
@@ -189,8 +189,8 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 			},
 		},
 		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-			Gateways: gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+			Gateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
 			},
 			Hostnames: []gatewayapi_v1alpha1.Hostname{
 				"test.projectcontour.io",

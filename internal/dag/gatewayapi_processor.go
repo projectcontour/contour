@@ -133,9 +133,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 			// If all the match criteria for this HTTPRoute match the Gateway, then add
 			// the route to the set of matchingRoutes.
-			if selMatches && nsMatches && p.gatewayMatches(route) {
-				// Empty Selector matches all routes.
-				matchingRoutes = append(matchingRoutes, route)
+			if selMatches && nsMatches {
+
+				if p.gatewayMatches(route) {
+					// Empty Selector matches all routes.
+					matchingRoutes = append(matchingRoutes, route)
+				}
 			}
 		}
 
@@ -262,7 +265,7 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.R
 // matches one from the list.
 func (p *GatewayAPIProcessor) gatewayMatches(route *gatewayapi_v1alpha1.HTTPRoute) bool {
 
-	switch route.Spec.Gateways.Allow {
+	switch *route.Spec.Gateways.Allow {
 	case gatewayapi_v1alpha1.GatewayAllowAll:
 		return true
 	case gatewayapi_v1alpha1.GatewayAllowFromList:
@@ -529,4 +532,8 @@ func pathMatchTypePtr(pmt gatewayapi_v1alpha1.PathMatchType) *gatewayapi_v1alpha
 
 func headerMatchTypePtr(hmt gatewayapi_v1alpha1.HeaderMatchType) *gatewayapi_v1alpha1.HeaderMatchType {
 	return &hmt
+}
+
+func gatewayAllowTypePtr(gwType gatewayapi_v1alpha1.GatewayAllowType) *gatewayapi_v1alpha1.GatewayAllowType {
+	return &gwType
 }

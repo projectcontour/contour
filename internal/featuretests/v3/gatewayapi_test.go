@@ -100,8 +100,8 @@ func TestGateway_TLS(t *testing.T) {
 			},
 		},
 		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-			Gateways: gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+			Gateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
 			},
 			Hostnames: []gatewayapi_v1alpha1.Hostname{
 				"test.projectcontour.io",
@@ -193,4 +193,8 @@ func pathMatchTypePtr(pmt gatewayapi_v1alpha1.PathMatchType) *gatewayapi_v1alpha
 
 func routeSelectTypePtr(rst gatewayapi_v1alpha1.RouteSelectType) *gatewayapi_v1alpha1.RouteSelectType {
 	return &rst
+}
+
+func gatewayAllowTypePtr(gwType gatewayapi_v1alpha1.GatewayAllowType) *gatewayapi_v1alpha1.GatewayAllowType {
+	return &gwType
 }

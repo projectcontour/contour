@@ -293,8 +293,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 		},
 		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-			Gateways: gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+			Gateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 			},
 			Hostnames: []gatewayapi_v1alpha1.Hostname{
 				"test.projectcontour.io",
@@ -317,8 +317,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 		},
 		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-			Gateways: gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+			Gateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 			},
 			Hostnames: []gatewayapi_v1alpha1.Hostname{
 				"test.projectcontour.io",
@@ -499,8 +499,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -553,8 +553,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -594,8 +594,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -637,8 +637,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -680,8 +680,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -707,8 +707,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "projectcontour",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -750,8 +750,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowFromList,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
 							GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
 								Name:      "contour",
 								Namespace: "projectcontour",
@@ -797,8 +797,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowFromList,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
 							GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
 								Name:      "wrong",
 								Namespace: "reference",
@@ -836,8 +836,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -854,8 +854,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						Namespace: "custom",
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowAll,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"another.projectcontour.io",
@@ -1033,8 +1033,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -1073,8 +1073,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -1115,8 +1115,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
@@ -1148,8 +1148,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"*.projectcontour.io",
@@ -1263,8 +1263,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
@@ -1322,8 +1322,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -1360,8 +1360,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -1617,6 +1617,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
+						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"*.*.projectcontour.io",
 						},
@@ -1740,8 +1743,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -1791,8 +1794,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -1854,8 +1857,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -1901,8 +1904,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -1956,8 +1959,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -2005,8 +2008,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -2057,8 +2060,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Hostnames: []gatewayapi_v1alpha1.Hostname{
 							"test.projectcontour.io",
@@ -2109,8 +2112,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
@@ -2173,8 +2176,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
@@ -2237,8 +2240,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayapi_v1alpha1.GatewayAllowSameNamespace,
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
 						},
 						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
 							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
