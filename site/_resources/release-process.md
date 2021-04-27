@@ -52,10 +52,10 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
 1. Run through upgrading from previous version and document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
     1. Check the example deployment manifests for any significant diffs that may need a call out in upgrading instructions and release notes: `git log -p $CONTOUR_PREVIOUS_VERSION..HEAD examples/contour`
-    1. Deploy current release example deployment: `/integration/testsuite/install-contour-release.sh $CONTOUR_PREVIOUS_VERSION`
+    1. Deploy current release example deployment: `./_integration/testsuite/install-contour-release.sh $CONTOUR_PREVIOUS_VERSION`
     1. Deploy an example workload: `kubectl apply -f https://projectcontour.io/examples/kuard.yaml`
     1. Ensure workload is reachable, check status of Contour components/Envoy daemonset
-    1. Deploy `main` branch (new release): `/integration/testsuite/install-contour-working.sh`
+    1. Deploy `main` branch (new release): `./_integration/testsuite/install-contour-working.sh`
     1. Ensure upgrade finishes, Contour/Envoy deployments healthy, and example workload is reachable as expected
 1. Commit all changes, push the branch, and PR it into `main`.
 
@@ -218,10 +218,10 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
 1. Run through upgrading from previous version and document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
     1. Check the example deployment manifests for any significant diffs that may need a call out in upgrading instructions and release notes: `git log -p $CONTOUR_PREVIOUS_MINOR_VERSION..HEAD examples/contour`
-    1. Deploy current release example deployment: `./integration/testsuite/install-contour-release.sh $CONTOUR_PREVIOUS_MINOR_VERSION`
+    1. Deploy current release example deployment: `./_integration/testsuite/install-contour-release.sh $CONTOUR_PREVIOUS_MINOR_VERSION`
     1. Deploy an example workload: `kubectl apply -f https://projectcontour.io/examples/kuard.yaml`
     1. Ensure workload is reachable, check status of Contour components/Envoy daemonset
-    1. Deploy `main` branch (new release): `./integration/testsuite/install-contour-working.sh`
+    1. Deploy `main` branch (new release): `./_integration/testsuite/install-contour-working.sh`
     1. Ensure upgrade finishes, Contour/Envoy deployments healthy, and example workload is reachable as expected
 1. Commit all changes, push the branch, and PR it into `main`.
 
