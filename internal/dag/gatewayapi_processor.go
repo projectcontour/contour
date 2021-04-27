@@ -135,7 +135,18 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			// the route to the set of matchingRoutes.
 			if selMatches && nsMatches {
 
-				if p.gatewayMatches(route) {
+				gatewayAllowMatches := p.gatewayMatches(route)
+				if (listener.Routes.Selector != nil || listener.Routes.Namespaces != nil) && !gatewayAllowMatches {
+
+					// If a label selector or namespace selector matches, but the gateway Allow doesn't
+					// then set the "Admitted: false" for the route.
+					routeAccessor, commit := p.dag.StatusCache.HTTPRouteAccessor(route)
+					routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+					commit()
+					continue
+				}
+
+				if gatewayAllowMatches {
 					// Empty Selector matches all routes.
 					matchingRoutes = append(matchingRoutes, route)
 				}
