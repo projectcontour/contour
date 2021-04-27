@@ -242,7 +242,13 @@ type TLS struct {
 	//
 	// 1. Enables TLS client certificate validation.
 	// 2. Specifies how the client certificate will be validated (i.e.
-	//    validation required or optional).
+	//    validation required or skipped).
+	//
+	// Note: Setting client certificate validation to be skipped should
+	// be only used in conjunction with an external authorization server that
+	// performs client validation as Contour will ensure client certificates
+	// are passed along.
+	//
 	// +optional
 	ClientValidation *DownstreamValidation `json:"clientValidation,omitempty"`
 
@@ -790,8 +796,11 @@ type DownstreamValidation struct {
 	CACertificate string `json:"caSecret"`
 
 	// SkipClientCertValidation disables downstream client certificate
-	// validation. Defaults to false. When external authorization is in use
-	// and is set to true, the downstream certificate is still passed to the
+	// validation. Defaults to false. This field is intended to be used in
+	// conjunction with external authorization in order to enable the external
+	// authorization server to validate client certificates. When this field
+	// is set to true, client certificates are requested but not verified by
+	// Envoy. If external authorization is in use, they are presented to the
 	// external authorization server.
 	// +optional
 	SkipClientCertValidation bool `json:"skipClientCertValidation"`
