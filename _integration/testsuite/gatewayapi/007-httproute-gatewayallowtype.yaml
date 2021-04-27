@@ -161,7 +161,7 @@ import data.contour.http.client
 import data.contour.http.client.url
 import data.contour.http.expect
 
-# Ensure / request returns 200 status code since
+# Ensure /blue request returns 200 status code since
 # it matches the gatewayRef.
 Response := client.Get({
   "url": url.http("/blue"),
@@ -208,7 +208,7 @@ import data.contour.http.client
 import data.contour.http.client.url
 import data.contour.http.expect
 
-# Ensure / request returns 404 status code since
+# Ensure /green request returns 404 status code since
 # the HTTPRoute does not match the gatewayRef.
 Response := client.Get({
   "url": url.http("/green"),
