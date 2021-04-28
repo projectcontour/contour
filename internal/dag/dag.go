@@ -430,6 +430,9 @@ type PeerValidationContext struct {
 	// SubjectName holds an optional subject name which Envoy will check against the
 	// certificate presented by the upstream.
 	SubjectName string
+	// SkipClientCertValidation when set to true will ensure Envoy requests but
+	// does not verify peer certificates.
+	SkipClientCertValidation bool
 }
 
 // GetCACertificate returns the CA certificate from PeerValidationContext.

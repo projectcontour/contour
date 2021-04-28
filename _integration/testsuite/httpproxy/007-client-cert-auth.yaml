@@ -94,6 +94,45 @@ spec:
 
 ---
 
+# Using the selfsigned issuer, create a CA signing certificate for another
+# test issuer.
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca-notprojectcontour-io
+  namespace: 007-client-cert-auth
+spec:
+  isCA: true
+  usages:
+  - signing
+  - cert sign
+  subject:
+    organizationalUnits:
+    - io
+    - notprojectcontour
+    - testsuite
+  commonName: issuer
+  secretName: ca-notprojectcontour-io
+  issuerRef:
+    name: selfsigned
+
+---
+
+# Create a local CA issuer with the CA certificate that the selfsigned
+# issuer gave us.
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: ca-notprojectcontour-io
+  namespace: 007-client-cert-auth
+spec:
+  ca:
+    secretName: ca-notprojectcontour-io
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -202,6 +241,60 @@ fatal [msg] {
 
 ---
 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: 007-client-cert-auth/echo-with-auth-skip-verify
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: 007-client-cert-auth/echo-with-auth-skip-verify
+
+---
+
+# Get a server certificate for echo-with-auth-skip-verify.
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: echo-with-auth-skip-verify-cert
+  namespace: 007-client-cert-auth
+spec:
+  usages:
+  - server auth
+  dnsNames:
+  - echo-with-auth-skip-verify.projectcontour.io
+  secretName: echo-with-auth-skip-verify
+  issuerRef:
+    name: ca-projectcontour-io
+
+---
+
+import data.contour.resources
+
+Name := "007-client-cert-auth/echo-with-auth-skip-verify"
+
+fatal [msg] {
+  not resources.is_present("secrets", Name)
+  msg := sprintf("Secret %q is not present", [ Name ])
+}
+
+fatal [msg] {
+  not resources.is_present("secrets", Name)
+  msg := json.marshal(data.resources)
+}
+
+---
+
 # Get a client certificate.
 
 apiVersion: cert-manager.io/v1
@@ -237,29 +330,28 @@ fatal [msg] {
 
 ---
 
-# Get a self-signed client certificate. We will use this to ensure that
-# the server is validating the signing CA correctly.
+# Get another client certificate.
 
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: echo-client-cert-selfsigned
+  name: echo-client-cert-invalid
   namespace: 007-client-cert-auth
 spec:
   usages:
   - client auth
   emailSANs:
-  - selfsigned-client@projectcontour.io
-  commonName: selfsigned-client
-  secretName: echo-client-selfsigned
+  - badclient@projectcontour.io
+  commonName: badclient
+  secretName: echo-client-invalid
   issuerRef:
-    name: selfsigned
+    name: ca-notprojectcontour-io
 
 ---
 
 import data.contour.resources
 
-Name := "007-client-cert-auth/echo-client-selfsigned"
+Name := "007-client-cert-auth/echo-client-invalid"
 
 fatal [msg] {
   not resources.is_present("secrets", Name)
@@ -313,10 +405,32 @@ spec:
 
 ---
 
+# This proxy requires a client certificate but does not verify it.
+
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: echo-with-auth-skip-verify
+  namespace: 007-client-cert-auth
+spec:
+  virtualhost:
+    fqdn: echo-with-auth-skip-verify.projectcontour.io
+    tls:
+      secretName: echo-with-auth-skip-verify
+      clientValidation:
+        skipClientCertValidation: true
+  routes:
+  - services:
+    - name: echo-with-auth-skip-verify
+      port: 80
+
+---
+
 import data.contour.resources
 
 Names := [
   "007-client-cert-auth/echo-with-auth",
+  "007-client-cert-auth/echo-with-auth-skip-verify",
   "007-client-cert-auth/echo-no-auth",
 ]
 
@@ -338,6 +452,7 @@ import data.contour.resources
 
 Names := [
   "007-client-cert-auth/echo-with-auth",
+  "007-client-cert-auth/echo-with-auth-skip-verify",
   "007-client-cert-auth/echo-no-auth",
 ]
 
@@ -414,6 +529,39 @@ check_for_service_routing [msg] {
   msg := expect.response_service_is(Response, "echo-with-auth")
 }
 
+---
+
+# Using some random client-cert certificate to echo-with-auth-skip-verify should still succeed.
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+import data.contour.resources
+
+ServerSecret := resources.get("secrets", "007-client-cert-auth/echo-with-auth-skip-verify")
+ClientSecret := resources.get("secrets", "007-client-cert-auth/echo-client-invalid")
+
+Response := client.Get({
+  "url": url.https(sprintf("/echo-client/%d", [time.now_ns()])),
+  "headers": {
+    "Host": "echo-with-auth-skip-verify.projectcontour.io",
+    "User-Agent": client.ua("client-cert-auth"),
+  },
+  "tls_ca_cert": base64.decode(ServerSecret.data["ca.crt"]),
+  "tls_client_cert": base64.decode(ClientSecret.data["tls.crt"]),
+  "tls_client_key": base64.decode(ClientSecret.data["tls.key"]),
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
+}
+
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, "echo-with-auth-skip-verify")
+}
+
 # TODO(jpeach): Need to test that requests without a client certificate
 # are rejected. This requires in-band handling of HTTP errors, see
 # https://github.com/open-policy-agent/opa/issues/2187
+# This should be done for the client cert validated and skip-validation
+# cases.

@@ -204,7 +204,7 @@ type VirtualHost struct {
 	// authorization for this virtual host. Authorization can
 	// only be configured on virtual hosts that have TLS enabled.
 	// If the TLS configuration requires client certificate
-	///validation, the client certificate is always included in the
+	// validation, the client certificate is always included in the
 	// authentication check request.
 	//
 	// +optional
@@ -241,8 +241,14 @@ type TLS struct {
 	// This setting:
 	//
 	// 1. Enables TLS client certificate validation.
-	// 2. Requires clients to present a TLS certificate (i.e. not optional validation).
-	// 3. Specifies how the client certificate will be validated.
+	// 2. Specifies how the client certificate will be validated (i.e.
+	//    validation required or skipped).
+	//
+	// Note: Setting client certificate validation to be skipped should
+	// be only used in conjunction with an external authorization server that
+	// performs client validation as Contour will ensure client certificates
+	// are passed along.
+	//
 	// +optional
 	ClientValidation *DownstreamValidation `json:"clientValidation,omitempty"`
 
@@ -785,9 +791,19 @@ type UpstreamValidation struct {
 type DownstreamValidation struct {
 	// Name of a Kubernetes secret that contains a CA certificate bundle.
 	// The client certificate must validate against the certificates in the bundle.
-	// +kubebuilder:validation:Required
+	// +optional
 	// +kubebuilder:validation:MinLength=1
 	CACertificate string `json:"caSecret"`
+
+	// SkipClientCertValidation disables downstream client certificate
+	// validation. Defaults to false. This field is intended to be used in
+	// conjunction with external authorization in order to enable the external
+	// authorization server to validate client certificates. When this field
+	// is set to true, client certificates are requested but not verified by
+	// Envoy. If external authorization is in use, they are presented to the
+	// external authorization server.
+	// +optional
+	SkipClientCertValidation bool `json:"skipClientCertValidation"`
 }
 
 // HTTPProxyStatus reports the current state of the HTTPProxy.

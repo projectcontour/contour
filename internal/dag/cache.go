@@ -687,19 +687,6 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 	}, nil
 }
 
-func (kc *KubernetesCache) LookupDownstreamValidation(vc *contour_api_v1.DownstreamValidation, namespace string) (*PeerValidationContext, error) {
-	secretName := types.NamespacedName{Name: vc.CACertificate, Namespace: namespace}
-	cacert, err := kc.LookupSecret(secretName, validCA)
-	if err != nil {
-		// PeerValidationContext is requested, but cert is missing or not configured.
-		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
-	}
-
-	return &PeerValidationContext{
-		CACertificate: cacert,
-	}, nil
-}
-
 // DelegationPermitted returns true if the referenced secret has been delegated
 // to the namespace where the ingress object is located.
 func (kc *KubernetesCache) DelegationPermitted(secret types.NamespacedName, targetNamespace string) bool {

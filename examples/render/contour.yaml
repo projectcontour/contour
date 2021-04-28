@@ -1655,7 +1655,7 @@ spec:
                     description: This field configures an extension service to perform
                       authorization for this virtual host. Authorization can only
                       be configured on virtual hosts that have TLS enabled. If the
-                      TLS configuration requires client certificate /validation, the
+                      TLS configuration requires client certificate validation, the
                       client certificate is always included in the authentication
                       check request.
                     properties:
@@ -2003,9 +2003,12 @@ spec:
                         description: "ClientValidation defines how to verify the client
                           certificate when an external client establishes a TLS connection
                           to Envoy. \n This setting: \n 1. Enables TLS client certificate
-                          validation. 2. Requires clients to present a TLS certificate
-                          (i.e. not optional validation). 3. Specifies how the client
-                          certificate will be validated."
+                          validation. 2. Specifies how the client certificate will
+                          be validated (i.e.    validation required or skipped). \n
+                          Note: Setting client certificate validation to be skipped
+                          should be only used in conjunction with an external authorization
+                          server that performs client validation as Contour will ensure
+                          client certificates are passed along."
                         properties:
                           caSecret:
                             description: Name of a Kubernetes secret that contains
@@ -2013,8 +2016,17 @@ spec:
                               validate against the certificates in the bundle.
                             minLength: 1
                             type: string
-                        required:
-                        - caSecret
+                          skipClientCertValidation:
+                            description: SkipClientCertValidation disables downstream
+                              client certificate validation. Defaults to false. This
+                              field is intended to be used in conjunction with external
+                              authorization in order to enable the external authorization
+                              server to validate client certificates. When this field
+                              is set to true, client certificates are requested but
+                              not verified by Envoy. If external authorization is
+                              in use, they are presented to the external authorization
+                              server.
+                            type: boolean
                         type: object
                       enableFallbackCertificate:
                         description: EnableFallbackCertificate defines if the vhost

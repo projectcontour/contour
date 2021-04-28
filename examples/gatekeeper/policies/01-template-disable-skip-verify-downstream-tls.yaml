@@ -1,0 +1,27 @@
+# httpproxydisableskipverifydownstreamtls is a ConstraintTemplate that enforces
+# TLS certificates on downstream clients must be validated.
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: httpproxydisableskipverifydownstreamtls
+  labels:
+    app: contour
+spec:
+  crd:
+    spec:
+      names:
+        kind: HTTPProxyDisableSkipVerifyDownstreamTLS
+        listKind: HTTPProxyDisableSkipVerifyDownstreamTLSList
+        plural: HTTPProxyDisableSkipVerifyDownstreamTLSes
+        singular: HTTPProxyDisableSkipVerifyDownstreamTLS
+      scope: Namespaced
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package httpproxy.disableskipverifydownstreamtls
+
+        violation[{"msg": msg}] {
+          input.review.object.spec.virtualhost.tls.clientValidation.skipClientCertValidation
+
+          msg := "TLS client cert validation must not be skipped"
+        }

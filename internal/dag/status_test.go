@@ -2036,6 +2036,40 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	fallbackCertificateWithClientValidationNoCA := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName:       "ssl-cert",
+					ClientValidation: &contour_api_v1.DownstreamValidation{},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "clientValidation missing CA", testcase{
+		objs: []interface{}{fallbackCertificateWithClientValidationNoCA, fixture.SecretRootsFallback, fixture.SecretRootsCert, fixture.ServiceRootsHome},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: fallbackCertificateWithClientValidationNoCA.Name,
+				Namespace: fallbackCertificateWithClientValidationNoCA.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid", "Spec.VirtualHost.TLS client validation is invalid: CA Secret must be specified"),
+		},
+	})
+
 	fallbackCertificateWithClientValidation := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
