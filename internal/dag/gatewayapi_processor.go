@@ -35,6 +35,7 @@ import (
 
 const (
 	KindHTTPRoute = "HTTPRoute"
+	KindTLSRoute  = "TLSRoute"
 )
 
 // GatewayAPIProcessor translates Gateway API types into DAG
@@ -72,12 +73,13 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 	for _, listener := range p.source.gateway.Spec.Listeners {
 
-		var matchingRoutes []*gatewayapi_v1alpha1.HTTPRoute
+		var matchingHTTPRoutes []*gatewayapi_v1alpha1.HTTPRoute
+		var matchingTLSRoutes []*gatewayapi_v1alpha1.TLSRoute
 		var listenerSecret *Secret
 
 		// Validate the Kind on the selector is a supported type.
 		switch listener.Protocol {
-		case gatewayapi_v1alpha1.HTTPSProtocolType, gatewayapi_v1alpha1.TLSProtocolType:
+		case gatewayapi_v1alpha1.HTTPSProtocolType:
 			// Validate that if protocol is type HTTPS or TLS that TLS is defined.
 			if listener.TLS == nil {
 				p.Errorf("Listener.TLS is required when protocol is %q.", listener.Protocol)
@@ -90,7 +92,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				// routes to be bound to this listener since it can't serve TLS traffic.
 				continue
 			}
-		case gatewayapi_v1alpha1.HTTPProtocolType:
+		case gatewayapi_v1alpha1.HTTPProtocolType, gatewayapi_v1alpha1.TLSProtocolType:
 			break
 		default:
 			p.Errorf("Listener.Protocol %q is not supported.", listener.Protocol)
@@ -106,7 +108,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 
 		// Validate the Kind on the selector is a supported type.
-		if listener.Routes.Kind != KindHTTPRoute {
+		if listener.Routes.Kind != KindHTTPRoute && listener.Routes.Kind != KindTLSRoute {
 			p.Errorf("Listener.Routes.Kind %q is not supported.", listener.Routes.Kind)
 			continue
 		}
@@ -150,14 +152,46 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 				if gatewayAllowMatches {
 					// Empty Selector matches all routes.
-					matchingRoutes = append(matchingRoutes, route)
+					matchingHTTPRoutes = append(matchingHTTPRoutes, route)
 				}
 			}
 		}
 
-		// Process all the routes that match this Gateway.
-		for _, matchingRoute := range matchingRoutes {
+		for _, route := range p.source.tlsroutes {
+			// Filter the TLSRoutes that match the gateway which Contour is configured to watch.
+			// RouteBindingSelector defines a schema for associating routes with the Gateway.
+			// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
+
+			// ## RouteBindingSelector ##
+			//
+			// Selector specifies a set of route labels used for selecting routes to associate
+			// with the Gateway. If this Selector is defined, only routes matching the Selector
+			// are associated with the Gateway. An empty Selector matches all routes.
+
+			nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route.Namespace)
+			if err != nil {
+				p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
+			}
+
+			selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
+			if err != nil {
+				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+			}
+
+			if selMatches && nsMatches {
+				// Empty Selector matches all routes.
+				matchingTLSRoutes = append(matchingTLSRoutes, route)
+			}
+		}
+
+		// Process all the HTTPRoutes that match this Gateway.
+		for _, matchingRoute := range matchingHTTPRoutes {
 			p.computeHTTPRoute(matchingRoute, listenerSecret)
+		}
+
+		// Process all the routes that match this Gateway.
+		for _, matchingRoute := range matchingTLSRoutes {
+			p.computeTLSRoute(matchingRoute)
 		}
 	}
 }
@@ -195,37 +229,42 @@ func isSecretRef(certificateRef *gatewayapi_v1alpha1.LocalObjectReference) bool 
 	return strings.ToLower(certificateRef.Kind) == "secret" && strings.ToLower(certificateRef.Group) == "core"
 }
 
-func (p *GatewayAPIProcessor) computeHosts(route *gatewayapi_v1alpha1.HTTPRoute) ([]string, []error) {
+func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostname) ([]string, []error) {
 	// Determine the hosts on the route, if no hosts
 	// are defined, then set to "*".
 	var hosts []string
 	var errors []error
-	if len(route.Spec.Hostnames) == 0 {
+	if len(hostnames) == 0 {
 		hosts = append(hosts, "*")
 		return hosts, nil
 	}
 
-	for _, host := range route.Spec.Hostnames {
+	for _, host := range hostnames {
 
 		hostname := string(host)
-		if isIP := net.ParseIP(hostname) != nil; isIP {
-			errors = append(errors, fmt.Errorf("hostname %q must be a DNS name, not an IP address", hostname))
+		if err := validHostName(hostname); err != nil {
+			errors = append(errors, err)
 			continue
-		}
-		if strings.Contains(hostname, "*") {
-			if errs := validation.IsWildcardDNS1123Subdomain(hostname); errs != nil {
-				errors = append(errors, fmt.Errorf("invalid hostname %q: %v", hostname, errs))
-				continue
-			}
-		} else {
-			if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
-				errors = append(errors, fmt.Errorf("invalid listener hostname %q: %v", hostname, errs))
-				continue
-			}
 		}
 		hosts = append(hosts, string(host))
 	}
 	return hosts, errors
+}
+
+func validHostName(hostname string) error {
+	if isIP := net.ParseIP(hostname) != nil; isIP {
+		return fmt.Errorf("hostname %q must be a DNS name, not an IP address", hostname)
+	}
+	if strings.Contains(hostname, "*") {
+		if errs := validation.IsWildcardDNS1123Subdomain(hostname); errs != nil {
+			return fmt.Errorf("invalid hostname %q: %v", hostname, errs)
+		}
+	} else {
+		if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
+			return fmt.Errorf("invalid listener hostname %q: %v", hostname, errs)
+		}
+	}
+	return nil
 }
 
 // namespaceMatches returns true if the namespaces selector matches
@@ -315,11 +354,106 @@ func selectorMatches(selector *metav1.LabelSelector, objLabels map[string]string
 	return true, nil
 }
 
+func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRoute) {
+
+	routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
+	defer commit()
+
+	for _, rule := range route.Spec.Rules {
+		var hosts []string
+		var matchErrors []error
+		totalSnis := 0
+
+		// Build the set of SNIs that are applied to this TLSRoute.
+		for _, match := range rule.Matches {
+			for _, snis := range match.SNIs {
+				totalSnis++
+				if err := validHostName(string(snis)); err != nil {
+					matchErrors = append(matchErrors, err)
+					continue
+				}
+				hosts = append(hosts, string(snis))
+			}
+		}
+
+		// If there are any errors with the supplied hostnames, then
+		// add a condition to the route.
+		for _, err := range matchErrors {
+			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+		}
+
+		// If all the supplied SNIs are invalid, then this route is invalid
+		// and should be dropped.
+		if len(matchErrors) != 0 && len(matchErrors) == totalSnis {
+			continue
+		}
+
+		// If SNIs is unspecified, then all
+		// requests associated with the gateway TLS listener will match.
+		// This can be used to define a default backend for a TLS listener.
+		if len(hosts) == 0 {
+			hosts = []string{"*"}
+		}
+
+		if len(rule.ForwardTo) == 0 {
+			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.ForwardTo must be specified.")
+			continue
+		}
+
+		var proxy TCPProxy
+		for _, forward := range rule.ForwardTo {
+			// Verify the service is valid
+			if forward.ServiceName == nil {
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServiceName must be specified.")
+				continue
+			}
+
+			// TODO: Do not require port to be present (#3352).
+			if forward.Port == nil {
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServicePort must be specified.")
+				continue
+			}
+
+			meta := types.NamespacedName{Name: *forward.ServiceName, Namespace: route.Namespace}
+
+			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
+			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*forward.Port)), p.source)
+			if err != nil {
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("Service %q does not exist", meta.Name))
+				continue
+			}
+			proxy.Clusters = append(proxy.Clusters, &Cluster{
+				Upstream: service,
+				SNI:      service.ExternalName,
+			})
+		}
+
+		if len(proxy.Clusters) == 0 {
+			// No valid clusters so the route should get rejected.
+			continue
+		}
+
+		for _, host := range hosts {
+			secure := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
+			secure.TCPProxy = &proxy
+		}
+	}
+
+	// Determine if any errors exist in conditions and set the "Admitted"
+	// condition accordingly.
+	switch len(routeAccessor.Conditions) {
+	case 0:
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionTrue, status.ReasonValid, "Valid TLSRoute")
+	default:
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+	}
+}
+
 func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute, listenerSecret *Secret) {
 	routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
 	defer commit()
 
-	hosts, errs := p.computeHosts(route)
+	hosts, errs := p.computeHosts(route.Spec.Hostnames)
 	for _, err := range errs {
 		routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 	}

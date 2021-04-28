@@ -239,10 +239,6 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.udproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *gatewayapi_v1alpha1.TLSRoute:
-		m := k8s.NamespacedNameOf(obj)
-		// TODO(youngnick): Remove this once gateway-api actually have behavior
-		// other than being added to the cache.
-		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Adding TLSRoute")
 		kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *gatewayapi_v1alpha1.BackendPolicy:
@@ -339,9 +335,6 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 	case *gatewayapi_v1alpha1.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.tlsroutes[m]
-		// TODO(youngnick): Remove this once gateway-api actually have behavior
-		// other than being removed from the cache.
-		kc.WithField("experimental", "gateway-api").WithField("name", m.Name).WithField("namespace", m.Namespace).Debug("Removing TLSRoute")
 		delete(kc.tlsroutes, m)
 		return ok
 	case *gatewayapi_v1alpha1.BackendPolicy:

@@ -3378,4 +3378,280 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			},
 		}},
 	})
+
+	run(t, "TLSRoute: spec.rules.forwardTo.serviceName not specified", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha1.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
+					Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+						Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+							SNIs: []gatewayapi_v1alpha1.Hostname{"test.projectcontour.io"},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+							ServiceName: nil,
+							Port:        gatewayPort(8080),
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "Spec.Rules.ForwardTo.ServiceName must be specified.",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "TLSRoute: spec.rules.forwardTo.serviceName invalid on two matches", testcase{
+		objs: []interface{}{
+			&gatewayapi_v1alpha1.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
+					Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+						Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+							SNIs: []gatewayapi_v1alpha1.Hostname{"test.projectcontour.io"},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+							ServiceName: pointer.StringPtr("invalid-one"),
+							Port:        gatewayPort(8080),
+						}},
+					}, {
+						Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+							SNIs: []gatewayapi_v1alpha1.Hostname{"another.projectcontour.io"},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+							ServiceName: pointer.StringPtr("invalid-two"),
+							Port:        gatewayPort(8080),
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "Service \"invalid-one\" does not exist, Service \"invalid-two\" does not exist",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "TLSRoute: spec.rules.forwardTo.servicePort not specified", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha1.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
+					Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+						Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+							SNIs: []gatewayapi_v1alpha1.Hostname{"test.projectcontour.io"},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+							ServiceName: pointer.StringPtr("kuard"),
+							Port:        nil,
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "Spec.Rules.ForwardTo.ServicePort must be specified.",
+		}, {
+			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "TLSRoute: spec.rules.forwardTo not specified", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha1.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
+					Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+						Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+							SNIs: []gatewayapi_v1alpha1.Hostname{"test.projectcontour.io"},
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "At least one Spec.Rules.ForwardTo must be specified.",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "TLSRoute: spec.rules.hostname: invalid wildcard", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha1.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
+					Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+						Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+							SNIs: []gatewayapi_v1alpha1.Hostname{"*.*.projectcontour.io"},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+							ServiceName: pointer.StringPtr("kuard"),
+							Port:        gatewayPort(8080),
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "TLSRoute: spec.rules.hostname: invalid hostname", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha1.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
+					Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+						Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+							SNIs: []gatewayapi_v1alpha1.Hostname{"#projectcontour.io"},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+							ServiceName: pointer.StringPtr("kuard"),
+							Port:        gatewayPort(8080),
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "invalid listener hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "TLSRoute: spec.rules.hostname: invalid hostname, ip address", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha1.TLSRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
+					Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+						Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+							SNIs: []gatewayapi_v1alpha1.Hostname{"1.2.3.4"},
+						}},
+						ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+							ServiceName: pointer.StringPtr("kuard"),
+							Port:        gatewayPort(8080),
+						}},
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    string(status.ConditionResolvedRefs),
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  string(status.ReasonDegraded),
+			Message: "hostname \"1.2.3.4\" must be a DNS name, not an IP address",
+		}, {
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "ErrorsExist",
+			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
 }

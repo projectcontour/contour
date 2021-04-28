@@ -197,7 +197,7 @@ func TestComputeHosts(t *testing.T) {
 				FieldLogger: fixture.NewTestLogger(t),
 			}
 
-			got, gotError := processor.computeHosts(tc.route)
+			got, gotError := processor.computeHosts(tc.route.Spec.Hostnames)
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantError, gotError)
 		})

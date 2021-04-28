@@ -647,10 +647,21 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 func FilterChainTLS(domain string, downstream *envoy_tls_v3.DownstreamTlsContext, filters []*envoy_listener_v3.Filter) *envoy_listener_v3.FilterChain {
 	fc := &envoy_listener_v3.FilterChain{
 		Filters: filters,
-		FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
-			ServerNames: []string{domain},
-		},
 	}
+
+	// If the domain doesn't have a specific SNI, Envoy can't filter
+	// on that, so change the Match to be on TransportProtocol which would
+	// match any request over TLS to this listener.
+	if domain == "*" {
+		fc.FilterChainMatch = &envoy_listener_v3.FilterChainMatch{
+			TransportProtocol: "tls",
+		}
+	} else {
+		fc.FilterChainMatch = &envoy_listener_v3.FilterChainMatch{
+			ServerNames: []string{domain},
+		}
+	}
+
 	// Attach TLS data to this listener if provided.
 	if downstream != nil {
 		fc.TransportSocket = DownstreamTLSTransportSocket(downstream)

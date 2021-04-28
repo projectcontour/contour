@@ -95,6 +95,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: INGRESS_NAME
+          value: *name
+        - name: SERVICE_NAME
+          value: *name
         - name: TLS_SERVER_CERT
           value: /run/secrets/certs/tls.crt
         - name: TLS_SERVER_PRIVKEY
