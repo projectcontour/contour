@@ -131,9 +131,25 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
 			}
 
+			// If all the match criteria for this HTTPRoute match the Gateway, then add
+			// the route to the set of matchingRoutes.
 			if selMatches && nsMatches {
-				// Empty Selector matches all routes.
-				matchingRoutes = append(matchingRoutes, route)
+
+				gatewayAllowMatches := p.gatewayMatches(route)
+				if (listener.Routes.Selector != nil || listener.Routes.Namespaces != nil) && !gatewayAllowMatches {
+
+					// If a label selector or namespace selector matches, but the gateway Allow doesn't
+					// then set the "Admitted: false" for the route.
+					routeAccessor, commit := p.dag.StatusCache.HTTPRouteAccessor(route)
+					routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+					commit()
+					continue
+				}
+
+				if gatewayAllowMatches {
+					// Empty Selector matches all routes.
+					matchingRoutes = append(matchingRoutes, route)
+				}
 			}
 		}
 
@@ -253,6 +269,27 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.R
 		}
 	}
 	return true, nil
+}
+
+// gatewayMatches returns true if "AllowAll" is set, the "SameNamespace" is set and the HTTPRoute
+// matches the Gateway's namespace, or the "FromList" is set and the gateway Contour is watching
+// matches one from the list.
+func (p *GatewayAPIProcessor) gatewayMatches(route *gatewayapi_v1alpha1.HTTPRoute) bool {
+
+	switch *route.Spec.Gateways.Allow {
+	case gatewayapi_v1alpha1.GatewayAllowAll:
+		return true
+	case gatewayapi_v1alpha1.GatewayAllowFromList:
+		for _, gateway := range route.Spec.Gateways.GatewayRefs {
+			if gateway.Name == p.source.ConfiguredGateway.Name && gateway.Namespace == p.source.ConfiguredGateway.Namespace {
+				return true
+			}
+		}
+	case gatewayapi_v1alpha1.GatewayAllowSameNamespace:
+		return p.source.ConfiguredGateway.Namespace == route.Namespace
+	}
+
+	return false
 }
 
 // selectorMatches returns true if the selector matches the labels on the object or is not defined.
@@ -506,4 +543,8 @@ func pathMatchTypePtr(pmt gatewayapi_v1alpha1.PathMatchType) *gatewayapi_v1alpha
 
 func headerMatchTypePtr(hmt gatewayapi_v1alpha1.HeaderMatchType) *gatewayapi_v1alpha1.HeaderMatchType {
 	return &hmt
+}
+
+func gatewayAllowTypePtr(gwType gatewayapi_v1alpha1.GatewayAllowType) *gatewayapi_v1alpha1.GatewayAllowType {
+	return &gwType
 }

@@ -2512,6 +2512,11 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 								Port:     80,
 								Protocol: "HTTP",
 								Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+									Selector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											"app": "contour",
+										},
+									},
 									Kind: KindHTTPRoute,
 								},
 							}},
@@ -2556,26 +2561,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 		})
 	}
 
-	gateway := &gatewayapi_v1alpha1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1alpha1.GatewaySpec{
-			Listeners: []gatewayapi_v1alpha1.Listener{{
-				Port:     80,
-				Protocol: "HTTP",
-				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"app": "contour",
-						},
-					},
-				},
-			}},
-		},
-	}
-
 	kuardService := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -2593,7 +2578,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "simple httproute", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2604,6 +2588,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2626,7 +2613,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "invalid prefix match for httproute", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2637,6 +2623,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2669,7 +2658,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "regular expression match not yet supported for httproute", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2680,6 +2668,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2707,7 +2698,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "RegularExpression header match not yet supported for httproute", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2718,6 +2708,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2754,7 +2747,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "spec.tls not yet supported for httproute", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2765,6 +2757,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2799,7 +2794,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "spec.rules.forwardTo.serviceName not specified", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2810,6 +2804,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2837,7 +2834,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "spec.rules.forwardTo.serviceName invalid on two matches", testcase{
 		objs: []interface{}{
-			gateway,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "basic",
@@ -2847,6 +2843,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2890,7 +2889,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "spec.rules.forwardTo.servicePort not specified", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2901,6 +2899,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2928,7 +2929,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "spec.rules.forwardTo not specified", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2939,6 +2939,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -2962,7 +2965,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "spec.rules.hostname: invalid wildcard", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2973,6 +2975,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"*.*.projectcontour.io",
 					},
@@ -2996,7 +3001,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "spec.rules.hostname: invalid hostname", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3007,6 +3011,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"#projectcontour.io",
 					},
@@ -3030,7 +3037,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "spec.rules.hostname: invalid hostname, ip address", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3041,6 +3047,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"1.2.3.4",
 					},
@@ -3064,7 +3073,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute rule", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3075,6 +3083,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -3105,7 +3116,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute forwardto", testcase{
 		objs: []interface{}{
-			gateway,
+
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3116,6 +3127,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -3146,7 +3160,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "Invalid RequestHeaderModifier due to duplicated headers", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3157,6 +3170,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -3190,7 +3206,6 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 
 	run(t, "Invalid RequestHeaderModifier after forward due to invalid headers", testcase{
 		objs: []interface{}{
-			gateway,
 			kuardService,
 			&gatewayapi_v1alpha1.HTTPRoute{
 				ObjectMeta: metav1.ObjectMeta{
@@ -3201,6 +3216,9 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					},
 				},
 				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+					},
 					Hostnames: []gatewayapi_v1alpha1.Hostname{
 						"test.projectcontour.io",
 					},
@@ -3229,6 +3247,37 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			Status:  contour_api_v1.ConditionFalse,
 			Reason:  string(status.ReasonErrorsExist),
 			Message: "Errors found, check other Conditions for details.",
+		}},
+	})
+
+	run(t, "gateway selectors match but spec.gateways.allowtype doesn't", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
+					Gateways: &gatewayapi_v1alpha1.RouteGateways{
+						Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
+					},
+					Hostnames: []gatewayapi_v1alpha1.Hostname{
+						"projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
+						Matches: httpRouteMatch(gatewayapi_v1alpha1.PathMatchPrefix, "/"),
+					}},
+				},
+			}},
+		want: []metav1.Condition{{
+			Type:    "Admitted",
+			Status:  contour_api_v1.ConditionFalse,
+			Reason:  "GatewayAllowMismatch",
+			Message: "Gateway RouteSelector matches, but GatewayAllow has mismatch.",
 		}},
 	})
 }

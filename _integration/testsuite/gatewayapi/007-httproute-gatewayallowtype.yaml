@@ -1,0 +1,268 @@
+# Copyright Project Contour Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.  You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-blue
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-blue
+
+---
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-green
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+$apply:
+  fixture:
+    as: echo-slash-green
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress-conformance-echo
+  namespace: projectcontour
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ingress-conformance-echo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ingress-conformance-echo
+    spec:
+      containers:
+        - name: conformance-echo
+          image: k8s.gcr.io/ingressconformance/echoserver:v0.0.1
+          env:
+            - name: INGRESS_NAME
+              value: ingress-conformance-echo
+            - name: SERVICE_NAME
+              value: ingress-conformance-echo
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: http-api
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-conformance-echo
+  namespace: projectcontour
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: http-api
+  selector:
+    app.kubernetes.io/name: ingress-conformance-echo
+
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: GatewayClass
+metadata:
+  name: contour-class
+spec:
+  controller: projectcontour.io/ingress-controller
+
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: Gateway
+metadata:
+  name: contour
+  namespace: projectcontour
+spec:
+  gatewayClassName: contour-class
+  listeners:
+    - protocol: HTTP
+      port: 80
+      routes:
+        kind: HTTPRoute
+        namespaces:
+          from: "All"
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: HTTPRoute
+metadata:
+  name: http-filter-1
+spec:
+  gateways:
+    allow: FromList
+    gatewayRefs:
+      - name: contour
+        namespace: projectcontour
+  hostnames:
+    - http.projectcontour.io
+  rules:
+    - matches:
+      - path:
+          type: Prefix
+          value: /blue
+      forwardTo:
+      - serviceName: echo-slash-blue
+        port: 80
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+# Ensure /blue request returns 200 status code since
+# it matches the gatewayRef.
+Response := client.Get({
+  "url": url.http("/blue"),
+    "headers": {
+      "Host": "http.projectcontour.io",
+      "User-Agent": client.ua("insecure"),
+  },
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
+}
+
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, "echo-slash-blue")
+}
+
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: HTTPRoute
+metadata:
+  name: http-filter-1
+spec:
+  gateways:
+    allow: FromList
+    gatewayRefs:
+      - name: wrong
+        namespace: reference
+  hostnames:
+    - http.projectcontour.io
+  rules:
+    - matches:
+        - path:
+            type: Prefix
+            value: /green
+      forwardTo:
+        - serviceName: echo-slash-green
+          port: 80
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+# Ensure /green request returns 404 status code since
+# the HTTPRoute does not match the gatewayRef.
+Response := client.Get({
+  "url": url.http("/green"),
+  "headers": {
+    "Host": "http.projectcontour.io",
+    "User-Agent": client.ua("insecure"),
+  },
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 404)
+}
+
+---
+
+apiVersion: networking.x-k8s.io/v1alpha1
+kind: HTTPRoute
+metadata:
+  name: http-filter-2
+  namespace: projectcontour
+spec:
+  gateways:
+    allow: SameNamespace
+  hostnames:
+    - http.projectcontour.io
+  rules:
+    - matches:
+        - path:
+            type: Prefix
+            value: /same
+      forwardTo:
+        - serviceName: ingress-conformance-echo
+          port: 80
+
+---
+
+import data.contour.http.client
+import data.contour.http.client.url
+import data.contour.http.expect
+
+# Ensure /same request returns 200 status code since
+# it matches the SameNamespace.
+Response := client.Get({
+"url": url.http("/same"),
+  "headers": {
+    "Host": "http.projectcontour.io",
+    "User-Agent": client.ua("insecure"),
+  },
+})
+
+check_for_status_code [msg] {
+  msg := expect.response_status_is(Response, 200)
+}
+
+check_for_service_routing [msg] {
+  msg := expect.response_service_is(Response, "ingress-conformance-echo")
+}

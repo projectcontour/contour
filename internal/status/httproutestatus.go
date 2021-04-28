@@ -35,6 +35,7 @@ const ReasonHTTPRouteFilterType RouteReasonType = "HTTPRouteFilterType"
 const ReasonDegraded RouteReasonType = "Degraded"
 const ReasonValid RouteReasonType = "Valid"
 const ReasonErrorsExist RouteReasonType = "ErrorsExist"
+const ReasonGatewayAllowMismatch RouteReasonType = "GatewayAllowMismatch"
 
 type HTTPRouteUpdate struct {
 	FullName           types.NamespacedName
