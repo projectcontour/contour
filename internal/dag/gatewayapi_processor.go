@@ -19,6 +19,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/projectcontour/contour/internal/k8s"
+
 	"k8s.io/utils/pointer"
 
 	"github.com/projectcontour/contour/internal/status"
@@ -140,7 +142,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 					// If a label selector or namespace selector matches, but the gateway Allow doesn't
 					// then set the "Admitted: false" for the route.
-					routeAccessor, commit := p.dag.StatusCache.HTTPRouteAccessor(route)
+					routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
 					routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
 					commit()
 					continue
@@ -314,7 +316,7 @@ func selectorMatches(selector *metav1.LabelSelector, objLabels map[string]string
 }
 
 func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute, listenerSecret *Secret) {
-	routeAccessor, commit := p.dag.StatusCache.HTTPRouteAccessor(route)
+	routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
 	defer commit()
 
 	hosts, errs := p.computeHosts(route)
