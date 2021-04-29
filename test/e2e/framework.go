@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	kubescheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -124,25 +125,23 @@ func (f *Framework) RunParallel(name string, subtests map[string]func(t *testing
 func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condition func(*contourv1.HTTPProxy) bool) (*contourv1.HTTPProxy, bool) {
 	require.NoError(f.t, f.Client.Create(context.TODO(), proxy))
 
-	ticker := time.NewTicker(f.RetryInterval)
-	defer ticker.Stop()
-
-	timeout := time.NewTimer(f.RetryTimeout)
-	defer timeout.Stop()
-
 	res := &contourv1.HTTPProxy{}
-	for {
-		select {
-		case <-ticker.C:
-			err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(proxy), res)
-			if err == nil && condition(res) {
-				return res, true
-			}
-		case <-timeout.C:
-			// return the last response for logging/debugging purposes
-			return res, false
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(proxy), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
 		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
 	}
+
+	return res, true
 }
 
 // CreateNamespace creates a namespace with the given name in the

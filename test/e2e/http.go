@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // HTTP provides helpers for making HTTP/HTTPS requests.
@@ -125,32 +126,24 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*http.Response, bool)
 }
 
 func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*http.Response, bool) {
-	// make an immediate request and return if it succeeds
-	if res, err := makeRequest(); err == nil && condition(res) {
-		return res, true
-	}
-
-	// otherwise, enter a retry loop
-	ticker := time.NewTicker(h.RetryInterval)
-	defer ticker.Stop()
-
-	timeout := time.NewTimer(h.RetryTimeout)
-	defer timeout.Stop()
-
 	var res *http.Response
 	var err error
-	for {
-		select {
-		case <-ticker.C:
-			res, err = makeRequest()
-			if err == nil && condition(res) {
-				return res, true
-			}
-		case <-timeout.C:
-			// return the last response for logging/debugging purposes
-			return res, false
+
+	if err := wait.PollImmediate(h.RetryInterval, h.RetryTimeout, func() (bool, error) {
+		res, err = makeRequest()
+		if err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
 		}
+
+		return condition(res), nil
+	}); err != nil {
+		return res, false
 	}
+
+	return res, true
 }
 
 // HasStatusCode returns a function that returns true
