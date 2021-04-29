@@ -32,7 +32,7 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.Fixtures.Echo.Create(namespace, "echo-one")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-one")
 	fx.CreateSelfSignedCert(namespace, "echo-one-cert", "echo-one", "sni-enforcement-echo-one.projectcontour.io")
 
 	echoOneProxy := &contourv1.HTTPProxy{
@@ -71,7 +71,7 @@ func testHTTPSSNIEnforcement(t *testing.T, fx *e2e.Framework) {
 	assert.Equal(t, "echo-one", fx.GetEchoResponseBody(res.Body).Service)
 
 	// echo-two
-	fx.Fixtures.Echo.Create(namespace, "echo-two")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-two")
 	fx.CreateSelfSignedCert(namespace, "echo-two-cert", "echo-two", "sni-enforcement-echo-two.projectcontour.io")
 
 	echoTwoProxy := &contourv1.HTTPProxy{

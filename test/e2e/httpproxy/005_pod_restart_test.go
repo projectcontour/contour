@@ -35,7 +35,7 @@ func testPodRestart(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.Fixtures.Echo.Create(namespace, "echo")
+	fx.Fixtures.Echo.Deploy(namespace, "echo")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

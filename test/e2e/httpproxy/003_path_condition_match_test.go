@@ -30,9 +30,9 @@ func testPathConditionMatch(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.Fixtures.Echo.Create(namespace, "echo-slash-prefix")
-	fx.Fixtures.Echo.Create(namespace, "echo-slash-noprefix")
-	fx.Fixtures.Echo.Create(namespace, "echo-slash-default")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-slash-prefix")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-slash-noprefix")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-slash-default")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

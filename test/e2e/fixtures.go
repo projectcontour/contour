@@ -40,11 +40,11 @@ type Echo struct {
 	t      *testing.T
 }
 
-// Create creates the ingress-conformance-echo fixture, specifically
+// Deploy creates the ingress-conformance-echo fixture, specifically
 // the deployment and service, in the given namespace and with the given name, or
 // fails the test if it encounters an error. Namespace is defaulted to "default"
 // and name is defaulted to "ingress-conformance-echo" if not provided.
-func (e *Echo) Create(ns, name string) {
+func (e *Echo) Deploy(ns, name string) {
 	valOrDefault := func(val, defaultVal string) string {
 		if val != "" {
 			return val

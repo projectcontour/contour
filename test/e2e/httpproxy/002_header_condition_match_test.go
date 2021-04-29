@@ -34,12 +34,12 @@ func testHeaderConditionMatch(t *testing.T, fx *e2e.Framework) {
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
-	fx.Fixtures.Echo.Create(namespace, "echo-header-present")
-	fx.Fixtures.Echo.Create(namespace, "echo-header-notpresent")
-	fx.Fixtures.Echo.Create(namespace, "echo-header-contains")
-	fx.Fixtures.Echo.Create(namespace, "echo-header-notcontains")
-	fx.Fixtures.Echo.Create(namespace, "echo-header-exact")
-	fx.Fixtures.Echo.Create(namespace, "echo-header-notexact")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-header-present")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-header-notpresent")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-header-contains")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-header-notexact")
 
 	// This HTTPProxy tests everything except the "notpresent" match type,
 	// which is tested separately below.
