@@ -27,9 +27,7 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.20.2"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
 readonly WAITTIME=${WAITTIME:-5m}
-
-# TODO: Replace with v0.3.0 once release from upstream.
-readonly GATEWAY_API_VERSION=
+readonly GATEWAY_API_VERSION=v0.3.0
 
 readonly HERE=$(cd "$(dirname "$0")" && pwd)
 readonly REPO=$(cd "${HERE}/../.." && pwd)

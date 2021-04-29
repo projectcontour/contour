@@ -27,6 +27,6 @@ require (
 	k8s.io/utils v0.0.0-20210305010621-2afb4311ab10
 	sigs.k8s.io/controller-runtime v0.8.3
 	sigs.k8s.io/controller-tools v0.5.0
-	sigs.k8s.io/gateway-api v0.2.1-0.20210420174433-f0ffd5968e05
+	sigs.k8s.io/gateway-api v0.3.0
 	sigs.k8s.io/kustomize/kyaml v0.1.1
 )
