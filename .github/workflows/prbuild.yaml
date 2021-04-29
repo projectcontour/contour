@@ -112,6 +112,7 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.38
+          args: --build-tags=e2e
   codespell:
     name: Codespell
     runs-on: ubuntu-latest

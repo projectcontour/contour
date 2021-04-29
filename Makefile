@@ -168,7 +168,7 @@ lint-codespell:
 .PHONY: check-golint
 lint-golint:
 	@echo Running Go linter ...
-	@./hack/golangci-lint run
+	@./hack/golangci-lint run --build-tags=e2e
 
 .PHONY: check-yamllint
 lint-yamllint:
