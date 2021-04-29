@@ -18,7 +18,6 @@ package e2e
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"os"
 	"strings"
 	"testing"
@@ -67,10 +66,10 @@ type Framework struct {
 
 func NewFramework(t *testing.T) *Framework {
 	scheme := runtime.NewScheme()
-	kubescheme.AddToScheme(scheme)
-	contourv1.AddToScheme(scheme)
-	gatewayv1alpha1.AddToScheme(scheme)
-	certmanagerv1.AddToScheme(scheme)
+	require.NoError(t, kubescheme.AddToScheme(scheme))
+	require.NoError(t, contourv1.AddToScheme(scheme))
+	require.NoError(t, gatewayv1alpha1.AddToScheme(scheme))
+	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 
 	crClient, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
 	require.NoError(t, err)
@@ -202,17 +201,18 @@ func (f *Framework) CreateSelfSignedCert(ns, name, secretName, dnsName string) f
 	require.NoError(f.t, f.Client.Create(context.TODO(), cert))
 
 	return func() {
-		f.Client.Delete(context.TODO(), cert)
-		f.Client.Delete(context.TODO(), issuer)
+		require.NoError(f.t, f.Client.Delete(context.TODO(), cert))
+		require.NoError(f.t, f.Client.Delete(context.TODO(), issuer))
 	}
 }
 
 // GetEchoResponseBody decodes an HTTP response body that is
 // expected to have come from ingress-conformance-echo into an
 // EchoResponseBody, or fails the test if it encounters an error.
-func (f *Framework) GetEchoResponseBody(body io.Reader) EchoResponseBody {
+func (f *Framework) GetEchoResponseBody(body []byte) EchoResponseBody {
 	var echoBody EchoResponseBody
-	require.NoError(f.t, json.NewDecoder(body).Decode(&echoBody))
+
+	require.NoError(f.t, json.Unmarshal(body, &echoBody))
 
 	return echoBody
 }

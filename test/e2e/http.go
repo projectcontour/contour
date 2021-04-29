@@ -17,6 +17,7 @@ package e2e
 
 import (
 	"crypto/tls"
+	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -63,7 +64,7 @@ func OptSetHeaders(headers map[string]string) func(*http.Request) {
 // RequestUntil repeatedly makes HTTP requests with the provided
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
-func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*http.Response, bool) {
+func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 	req, err := http.NewRequest("GET", h.HTTPURLBase+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
@@ -96,7 +97,7 @@ func OptSetSNI(name string) func(*tls.Config) {
 // SecureRequestUntil repeatedly makes HTTPS requests with the provided
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
-func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*http.Response, bool) {
+func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) {
 	req, err := http.NewRequest("GET", h.HTTPSURLBase+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
@@ -107,7 +108,8 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*http.Response, bool)
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.TLSClientConfig = &tls.Config{
-		ServerName:         opts.Host,
+		ServerName: opts.Host,
+		//nolint:gosec
 		InsecureSkipVerify: true,
 	}
 	for _, opt := range opts.TLSConfigOpts {
@@ -125,25 +127,40 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*http.Response, bool)
 	return h.requestUntil(makeRequest, opts.Condition)
 }
 
-func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*http.Response, bool) {
-	var res *http.Response
-	var err error
+func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*HTTPResponse, bool) {
+	var res *HTTPResponse
 
 	if err := wait.PollImmediate(h.RetryInterval, h.RetryTimeout, func() (bool, error) {
-		res, err = makeRequest()
+		r, err := makeRequest()
 		if err != nil {
 			// if there was an error, we want to keep
 			// retrying, so just return false, not an
 			// error.
 			return false, nil
 		}
+		defer r.Body.Close()
 
-		return condition(res), nil
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		require.NoError(h.t, err)
+
+		res = &HTTPResponse{
+			StatusCode: r.StatusCode,
+			Headers:    r.Header,
+			Body:       bodyBytes,
+		}
+
+		return condition(r), nil
 	}); err != nil {
 		return res, false
 	}
 
 	return res, true
+}
+
+type HTTPResponse struct {
+	StatusCode int
+	Headers    http.Header
+	Body       []byte
 }
 
 // HasStatusCode returns a function that returns true

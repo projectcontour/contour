@@ -212,7 +212,7 @@ func testHeaderConditionMatch(t *testing.T, fx *e2e.Framework) {
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(tc.headers),
 			},
-			Condition: e2e.HasStatusCode(tc.expectResponse),
+			Condition: e2e.HasStatusCode(tc.expectResponse), // nolint:bodyclose
 		})
 		if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
 			continue
@@ -284,7 +284,7 @@ func testHeaderConditionMatch(t *testing.T, fx *e2e.Framework) {
 			RequestOpts: []func(*http.Request){
 				e2e.OptSetHeaders(tc.headers),
 			},
-			Condition: e2e.HasStatusCode(tc.expectResponse),
+			Condition: e2e.HasStatusCode(tc.expectResponse), // nolint:bodyclose
 		})
 		if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
 			continue
