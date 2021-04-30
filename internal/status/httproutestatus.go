@@ -135,7 +135,7 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	}
 
 	gatewayStatuses = append(gatewayStatuses, gatewayapi_v1alpha1.RouteGatewayStatus{
-		GatewayRef: gatewayapi_v1alpha1.GatewayReference{
+		GatewayRef: gatewayapi_v1alpha1.RouteStatusGatewayReference{
 			Name:      routeUpdate.GatewayRef.Name,
 			Namespace: routeUpdate.GatewayRef.Namespace,
 		},
