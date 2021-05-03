@@ -18,6 +18,7 @@ package gateway
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,10 +114,27 @@ func testInvalidForwardTo(t *testing.T, fx *e2e.Framework) {
 			},
 		},
 	}
-	// The HTTPRoute won't be fully valid, so just wait for it to have any Gateway
-	// status.
+
 	fx.CreateHTTPRouteAndWaitFor(route, func(route *gatewayv1alpha1.HTTPRoute) bool {
-		return len(route.Status.Gateways) > 0
+		if len(route.Status.Gateways) != 1 {
+			return false
+		}
+
+		if len(route.Status.Gateways[0].Conditions) != 2 {
+			return false
+		}
+
+		var hasAdmitted, hasResolvedRefs bool
+		for _, cond := range route.Status.Gateways[0].Conditions {
+			if cond.Type == string(gatewayv1alpha1.ConditionRouteAdmitted) && cond.Status == metav1.ConditionFalse {
+				hasAdmitted = true
+			}
+			if cond.Type == string(status.ConditionResolvedRefs) && cond.Status == metav1.ConditionFalse {
+				hasResolvedRefs = true
+			}
+		}
+
+		return hasAdmitted && hasResolvedRefs
 	})
 
 	type scenario struct {
