@@ -91,7 +91,7 @@ func (c *Cache) commitRoute(pu *ConditionsUpdate) {
 	if len(pu.Conditions) == 0 {
 		return
 	}
-	c.xRouteUpdates[pu.FullName] = pu
+	c.routeUpdates[pu.FullName] = pu
 }
 
 func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {

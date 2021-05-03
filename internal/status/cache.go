@@ -35,10 +35,10 @@ const ValidCondition ConditionType = "Valid"
 // NewCache creates a new Cache for holding status updates.
 func NewCache(gateway types.NamespacedName) Cache {
 	return Cache{
-		proxyUpdates:  make(map[types.NamespacedName]*ProxyUpdate),
-		gatewayRef:    gateway,
-		xRouteUpdates: make(map[types.NamespacedName]*ConditionsUpdate),
-		entries:       make(map[string]map[types.NamespacedName]CacheEntry),
+		proxyUpdates: make(map[types.NamespacedName]*ProxyUpdate),
+		gatewayRef:   gateway,
+		routeUpdates: make(map[types.NamespacedName]*ConditionsUpdate),
+		entries:      make(map[string]map[types.NamespacedName]CacheEntry),
 	}
 }
 
@@ -53,8 +53,8 @@ type CacheEntry interface {
 type Cache struct {
 	proxyUpdates map[types.NamespacedName]*ProxyUpdate
 
-	gatewayRef    types.NamespacedName
-	xRouteUpdates map[types.NamespacedName]*ConditionsUpdate
+	gatewayRef   types.NamespacedName
+	routeUpdates map[types.NamespacedName]*ConditionsUpdate
 
 	// Map of cache entry maps, keyed on Kind.
 	entries map[string]map[types.NamespacedName]CacheEntry
@@ -100,7 +100,7 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 		flattened = append(flattened, update)
 	}
 
-	for fullname, routeUpdate := range c.xRouteUpdates {
+	for fullname, routeUpdate := range c.routeUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
 			Resource: schema.GroupVersionResource{
@@ -135,10 +135,10 @@ func (c *Cache) GetProxyUpdates() []*ProxyUpdate {
 	return allUpdates
 }
 
-// GetXRouteUpdates gets the underlying ConditionsUpdate objects from the cache.
-func (c *Cache) GetXRouteUpdates() []*ConditionsUpdate {
+// GetRouteUpdates gets the underlying ConditionsUpdate objects from the cache.
+func (c *Cache) GetRouteUpdates() []*ConditionsUpdate {
 	var allUpdates []*ConditionsUpdate
-	for _, conditionsUpdate := range c.xRouteUpdates {
+	for _, conditionsUpdate := range c.routeUpdates {
 		allUpdates = append(allUpdates, conditionsUpdate)
 	}
 	return allUpdates
