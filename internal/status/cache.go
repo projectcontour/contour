@@ -35,10 +35,10 @@ const ValidCondition ConditionType = "Valid"
 // NewCache creates a new Cache for holding status updates.
 func NewCache(gateway types.NamespacedName) Cache {
 	return Cache{
-		proxyUpdates:     make(map[types.NamespacedName]*ProxyUpdate),
-		gatewayRef:       gateway,
-		httpRouteUpdates: make(map[types.NamespacedName]*HTTPRouteUpdate),
-		entries:          make(map[string]map[types.NamespacedName]CacheEntry),
+		proxyUpdates: make(map[types.NamespacedName]*ProxyUpdate),
+		gatewayRef:   gateway,
+		routeUpdates: make(map[types.NamespacedName]*ConditionsUpdate),
+		entries:      make(map[string]map[types.NamespacedName]CacheEntry),
 	}
 }
 
@@ -53,8 +53,8 @@ type CacheEntry interface {
 type Cache struct {
 	proxyUpdates map[types.NamespacedName]*ProxyUpdate
 
-	gatewayRef       types.NamespacedName
-	httpRouteUpdates map[types.NamespacedName]*HTTPRouteUpdate
+	gatewayRef   types.NamespacedName
+	routeUpdates map[types.NamespacedName]*ConditionsUpdate
 
 	// Map of cache entry maps, keyed on Kind.
 	entries map[string]map[types.NamespacedName]CacheEntry
@@ -100,13 +100,13 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 		flattened = append(flattened, update)
 	}
 
-	for fullname, routeUpdate := range c.httpRouteUpdates {
+	for fullname, routeUpdate := range c.routeUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
 			Resource: schema.GroupVersionResource{
 				Group:    gatewayapi_v1alpha1.GroupVersion.Group,
 				Version:  gatewayapi_v1alpha1.GroupVersion.Version,
-				Resource: "httproutes",
+				Resource: routeUpdate.Resource,
 			},
 			Mutator: routeUpdate,
 		}
@@ -135,12 +135,11 @@ func (c *Cache) GetProxyUpdates() []*ProxyUpdate {
 	return allUpdates
 }
 
-// GetHTTPRouteUpdates gets the underlying HTTPRouteUpdate objects
-// from the cache.
-func (c *Cache) GetHTTPRouteUpdates() []*HTTPRouteUpdate {
-	var allUpdates []*HTTPRouteUpdate
-	for _, httpRouteUpdate := range c.httpRouteUpdates {
-		allUpdates = append(allUpdates, httpRouteUpdate)
+// GetRouteUpdates gets the underlying ConditionsUpdate objects from the cache.
+func (c *Cache) GetRouteUpdates() []*ConditionsUpdate {
+	var allUpdates []*ConditionsUpdate
+	for _, conditionsUpdate := range c.routeUpdates {
+		allUpdates = append(allUpdates, conditionsUpdate)
 	}
 	return allUpdates
 }

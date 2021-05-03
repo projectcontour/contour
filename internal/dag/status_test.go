@@ -2538,7 +2538,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 				builder.Source.Insert(o)
 			}
 			dag := builder.Build()
-			updates := dag.StatusCache.GetHTTPRouteUpdates()
+			updates := dag.StatusCache.GetRouteUpdates()
 
 			var gotConditions []metav1.Condition
 			for _, u := range updates {

@@ -17,11 +17,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
+
+const ResourceHTTPRoute = "httproutes"
 
 const ConditionNotImplemented gatewayapi_v1alpha1.RouteConditionType = "NotImplemented"
 const ConditionResolvedRefs gatewayapi_v1alpha1.RouteConditionType = "ResolvedRefs"
@@ -37,17 +38,18 @@ const ReasonValid RouteReasonType = "Valid"
 const ReasonErrorsExist RouteReasonType = "ErrorsExist"
 const ReasonGatewayAllowMismatch RouteReasonType = "GatewayAllowMismatch"
 
-type HTTPRouteUpdate struct {
+type ConditionsUpdate struct {
 	FullName           types.NamespacedName
 	Conditions         map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
 	ExistingConditions map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
 	GatewayRef         types.NamespacedName
+	Resource           string
 	Generation         int64
 	TransitionTime     metav1.Time
 }
 
 // AddCondition returns a metav1.Condition for a given ConditionType.
-func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteConditionType, status metav1.ConditionStatus, reason RouteReasonType, message string) metav1.Condition {
+func (routeUpdate *ConditionsUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteConditionType, status metav1.ConditionStatus, reason RouteReasonType, message string) metav1.Condition {
 
 	if c, ok := routeUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
@@ -65,41 +67,42 @@ func (routeUpdate *HTTPRouteUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteC
 	return newDc
 }
 
-// HTTPRouteAccessor returns a HTTPRouteUpdate that allows a client to build up a list of
+// ConditionsAccessor returns a ConditionsUpdate that allows a client to build up a list of
 // metav1.Conditions as well as a function to commit the change back to the cache when everything
-// is done. The commit function pattern is used so that the HTTPRouteUpdate does not need
+// is done. The commit function pattern is used so that the ConditionsUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) HTTPRouteAccessor(route *gatewayapi_v1alpha1.HTTPRoute) (*HTTPRouteUpdate, func()) {
-	pu := &HTTPRouteUpdate{
-		FullName:           k8s.NamespacedNameOf(route),
+func (c *Cache) ConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gateways []gatewayapi_v1alpha1.RouteGatewayStatus) (*ConditionsUpdate, func()) {
+	pu := &ConditionsUpdate{
+		FullName:           nsName,
 		Conditions:         make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition),
-		ExistingConditions: c.getGatewayConditions(route.Status.Gateways),
+		ExistingConditions: c.getGatewayConditions(gateways),
 		GatewayRef:         c.gatewayRef,
-		Generation:         route.Generation,
+		Generation:         generation,
 		TransitionTime:     metav1.NewTime(time.Now()),
+		Resource:           resource,
 	}
 
 	return pu, func() {
-		c.commitHTTPRoute(pu)
+		c.commitRoute(pu)
 	}
 }
 
-func (c *Cache) commitHTTPRoute(pu *HTTPRouteUpdate) {
+func (c *Cache) commitRoute(pu *ConditionsUpdate) {
 	if len(pu.Conditions) == 0 {
 		return
 	}
-	c.httpRouteUpdates[pu.FullName] = pu
+	c.routeUpdates[pu.FullName] = pu
 }
 
-func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
+func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 	o, ok := obj.(*gatewayapi_v1alpha1.HTTPRoute)
 	if !ok {
-		panic(fmt.Sprintf("Unsupported %T object %s/%s in HTTPRouteUpdate status mutator",
+		panic(fmt.Sprintf("Unsupported %T object %s/%s in ConditionsUpdate status mutator",
 			obj, routeUpdate.FullName.Namespace, routeUpdate.FullName.Name,
 		))
 	}
 
-	httpRoute := o.DeepCopy()
+	route := o.DeepCopy()
 
 	var gatewayStatuses []gatewayapi_v1alpha1.RouteGatewayStatus
 	var conditionsToWrite []metav1.Condition
@@ -107,11 +110,11 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	for _, cond := range routeUpdate.Conditions {
 
 		// set the Condition's observed generation based on
-		// the generation of the HTTPRoute we looked at.
+		// the generation of the route we looked at.
 		cond.ObservedGeneration = routeUpdate.Generation
 		cond.LastTransitionTime = routeUpdate.TransitionTime
 
-		// is there a newer Condition on the HTTPRoute matching
+		// is there a newer Condition on the route matching
 		// this condition's type? If so, our observation is stale,
 		// so don't write it, keep the newer one instead.
 		var newerConditionExists bool
@@ -128,7 +131,7 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 		}
 
 		// if we didn't find a newer version of the Condition on the
-		// HTTPRoute, then write the one we computed.
+		// route, then write the one we computed.
 		if !newerConditionExists {
 			conditionsToWrite = append(conditionsToWrite, cond)
 		}
@@ -144,7 +147,7 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 
 	// Now that we have all the conditions, add them back to the object
 	// to get written out.
-	for _, rgs := range httpRoute.Status.Gateways {
+	for _, rgs := range route.Status.Gateways {
 		if rgs.GatewayRef.Name == routeUpdate.GatewayRef.Name && rgs.GatewayRef.Namespace == routeUpdate.GatewayRef.Namespace {
 			continue
 		} else {
@@ -153,9 +156,9 @@ func (routeUpdate *HTTPRouteUpdate) Mutate(obj interface{}) interface{} {
 	}
 
 	// Set the GatewayStatuses.
-	httpRoute.Status.RouteStatus.Gateways = gatewayStatuses
+	route.Status.RouteStatus.Gateways = gatewayStatuses
 
-	return httpRoute
+	return route
 }
 
 func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGatewayStatus) map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition {
