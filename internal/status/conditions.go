@@ -102,7 +102,7 @@ func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 		))
 	}
 
-	xRoute := o.DeepCopy()
+	route := o.DeepCopy()
 
 	var gatewayStatuses []gatewayapi_v1alpha1.RouteGatewayStatus
 	var conditionsToWrite []metav1.Condition
@@ -110,11 +110,11 @@ func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 	for _, cond := range routeUpdate.Conditions {
 
 		// set the Condition's observed generation based on
-		// the generation of the xRoute we looked at.
+		// the generation of the route we looked at.
 		cond.ObservedGeneration = routeUpdate.Generation
 		cond.LastTransitionTime = routeUpdate.TransitionTime
 
-		// is there a newer Condition on the xRoute matching
+		// is there a newer Condition on the route matching
 		// this condition's type? If so, our observation is stale,
 		// so don't write it, keep the newer one instead.
 		var newerConditionExists bool
@@ -131,7 +131,7 @@ func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 		}
 
 		// if we didn't find a newer version of the Condition on the
-		// xRoute, then write the one we computed.
+		// route, then write the one we computed.
 		if !newerConditionExists {
 			conditionsToWrite = append(conditionsToWrite, cond)
 		}
@@ -147,7 +147,7 @@ func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 
 	// Now that we have all the conditions, add them back to the object
 	// to get written out.
-	for _, rgs := range xRoute.Status.Gateways {
+	for _, rgs := range route.Status.Gateways {
 		if rgs.GatewayRef.Name == routeUpdate.GatewayRef.Name && rgs.GatewayRef.Namespace == routeUpdate.GatewayRef.Namespace {
 			continue
 		} else {
@@ -156,9 +156,9 @@ func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 	}
 
 	// Set the GatewayStatuses.
-	xRoute.Status.RouteStatus.Gateways = gatewayStatuses
+	route.Status.RouteStatus.Gateways = gatewayStatuses
 
-	return xRoute
+	return route
 }
 
 func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGatewayStatus) map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition {
