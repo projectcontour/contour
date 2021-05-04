@@ -15,6 +15,7 @@ package k8s
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -25,6 +26,7 @@ import (
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	klog "k8s.io/klog/v2"
 )
 
@@ -40,9 +42,9 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 
 	// Create pipes.
 	seReader, seWriter, err := os.Pipe()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	soReader, soWriter, err := os.Pipe()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Set stderr/out to pipe write end.
 	os.Stderr = seWriter
@@ -78,12 +80,23 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	l := log.WithField("foo", "bar")
 	InitLogging(LogWriterOption(l))
 
-	klog.Info("some log")
+	infoLog := "some log"
+	errorLog := "some error log"
+	errorLogged := errors.New("some error")
+
+	// Keep these lines together.
+	_, file, line, ok := runtime.Caller(0)
+	require.True(t, ok)
+	klog.Info(infoLog)
+	klog.ErrorS(errorLogged, errorLog)
 	klog.Flush()
+	sourceFile := filepath.Base(file)
+	infoLine := line + 2
+	errorLine := line + 3
 
 	// Should be a recorded logrus log with the correct fields.
 	// Wait for up to 5s (klog flush interval)
-	assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, time.Second*5, time.Millisecond*10)
+	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 2 }, time.Second*5, time.Millisecond*10)
 
 	// Close write end of pipes.
 	seWriter.Close()
@@ -92,14 +105,18 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	// Stderr/out should be empty.
 	assert.Empty(t, <-outC)
 
-	entry := logHook.AllEntries()[0]
-	assert.Equal(t, "some log\n", entry.Message)
-	assert.Len(t, entry.Data, 2)
-	assert.Equal(t, "bar", entry.Data["foo"])
-	_, file, _, ok := runtime.Caller(0)
-	assert.True(t, ok)
-	// Assert this file name and some line number as location.
-	assert.Regexp(t, filepath.Base(file)+":[1-9][0-9]*$", entry.Data["location"])
+	infoEntry := logHook.AllEntries()[0]
+	assert.Equal(t, infoLog+"\n", infoEntry.Message)
+	assert.Len(t, infoEntry.Data, 2)
+	assert.Equal(t, "bar", infoEntry.Data["foo"])
+	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, infoLine), infoEntry.Data["location"])
+
+	errorEntry := logHook.AllEntries()[1]
+	assert.Equal(t, errorLog, errorEntry.Message)
+	assert.Len(t, errorEntry.Data, 3)
+	assert.Equal(t, "bar", errorEntry.Data["foo"])
+	assert.Equal(t, errorLogged, errorEntry.Data["error"])
+	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, errorLine), errorEntry.Data["location"])
 }
 
 // Last LogWriterOption passed in should be used.
