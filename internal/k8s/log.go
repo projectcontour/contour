@@ -110,3 +110,9 @@ func (l *callDepthLogr) Error(err error, msg string, keysAndValues ...interface{
 	}
 	l.Logger.Error(err, msg, keysAndValues...)
 }
+
+// Override V and just pass through l since we can rely on klog itself to do log
+// level filtering.
+func (l *callDepthLogr) V(level int) logr.Logger {
+	return l
+}
