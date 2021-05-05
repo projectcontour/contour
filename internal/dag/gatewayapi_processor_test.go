@@ -27,166 +27,261 @@ import (
 
 func TestComputeHosts(t *testing.T) {
 	tests := map[string]struct {
-		route     *gatewayapi_v1alpha1.HTTPRoute
-		want      []string
-		wantError []error
+		listenerHost *gatewayapi_v1alpha1.Hostname
+		hostnames    []gatewayapi_v1alpha1.Hostname
+		want         map[string]struct{}
+		wantError    []error
 	}{
 		"single host": {
-			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "projectcontour",
-					Labels: map[string]string{
-						"app":  "contour",
-						"type": "controller",
-					},
-				},
-				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-					Hostnames: []gatewayapi_v1alpha1.Hostname{
-						"test.projectcontour.io",
-					},
-				},
+			listenerHost: nil,
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"test.projectcontour.io",
 			},
-			want:      []string{"test.projectcontour.io"},
+			want: map[string]struct{}{
+				"test.projectcontour.io": {},
+			},
 			wantError: []error(nil),
 		},
 		"single DNS label hostname": {
-			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "projectcontour",
-					Labels: map[string]string{
-						"app":  "contour",
-						"type": "controller",
-					},
-				},
-				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-					Hostnames: []gatewayapi_v1alpha1.Hostname{
-						"projectcontour",
-					},
-				},
+			listenerHost: nil,
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"projectcontour",
 			},
-			want:      []string{"projectcontour"},
+			want: map[string]struct{}{
+				"projectcontour": {},
+			},
 			wantError: []error(nil),
 		},
 		"multiple hosts": {
-			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "projectcontour",
-					Labels: map[string]string{
-						"app":  "contour",
-						"type": "controller",
-					},
-				},
-				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-					Hostnames: []gatewayapi_v1alpha1.Hostname{
-						"test.projectcontour.io",
-						"test1.projectcontour.io",
-						"test2.projectcontour.io",
-						"test3.projectcontour.io",
-					},
-				},
+			listenerHost: nil,
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"test.projectcontour.io",
+				"test1.projectcontour.io",
+				"test2.projectcontour.io",
+				"test3.projectcontour.io",
 			},
-			want:      []string{"test.projectcontour.io", "test1.projectcontour.io", "test2.projectcontour.io", "test3.projectcontour.io"},
+			want: map[string]struct{}{
+				"test.projectcontour.io":  {},
+				"test1.projectcontour.io": {},
+				"test2.projectcontour.io": {},
+				"test3.projectcontour.io": {},
+			},
 			wantError: []error(nil),
 		},
 		"no host": {
-			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "projectcontour",
-					Labels: map[string]string{
-						"app":  "contour",
-						"type": "controller",
-					},
-				},
-				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{},
+			listenerHost: nil,
+			hostnames:    []gatewayapi_v1alpha1.Hostname{},
+			want: map[string]struct{}{
+				"*": {},
 			},
-			want:      []string{"*"},
 			wantError: []error(nil),
 		},
 		"IP in host": {
-			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "projectcontour",
-					Labels: map[string]string{
-						"app":  "contour",
-						"type": "controller",
-					},
-				},
-				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-					Hostnames: []gatewayapi_v1alpha1.Hostname{
-						"1.2.3.4",
-					},
-				},
+			listenerHost: nil,
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"1.2.3.4",
 			},
-			want: []string(nil),
+			want: map[string]struct{}{},
 			wantError: []error{
 				fmt.Errorf("hostname \"1.2.3.4\" must be a DNS name, not an IP address"),
 			},
 		},
 		"valid wildcard hostname": {
-			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "projectcontour",
-					Labels: map[string]string{
-						"app":  "contour",
-						"type": "controller",
-					},
-				},
-				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-					Hostnames: []gatewayapi_v1alpha1.Hostname{
-						"*.projectcontour.io",
-					},
-				},
+			listenerHost: nil,
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"*.projectcontour.io",
 			},
-			want:      []string{"*.projectcontour.io"},
+			want: map[string]struct{}{
+				"*.projectcontour.io": {},
+			},
 			wantError: []error(nil),
 		},
 		"invalid wildcard hostname": {
-			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "projectcontour",
-					Labels: map[string]string{
-						"app":  "contour",
-						"type": "controller",
-					},
-				},
-				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-					Hostnames: []gatewayapi_v1alpha1.Hostname{
-						"*.*.projectcontour.io",
-					},
-				},
+			listenerHost: nil,
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"*.*.projectcontour.io",
 			},
-			want: []string(nil),
+			want: map[string]struct{}{},
 			wantError: []error{
 				fmt.Errorf("invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
 			},
 		},
 		"invalid hostname": {
-			route: &gatewayapi_v1alpha1.HTTPRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "basic",
-					Namespace: "projectcontour",
-					Labels: map[string]string{
-						"app":  "contour",
-						"type": "controller",
-					},
-				},
-				Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-					Hostnames: []gatewayapi_v1alpha1.Hostname{
-						"#projectcontour.io",
-					},
-				},
+			listenerHost: nil,
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"#projectcontour.io",
 			},
-			want: []string(nil),
+			want: map[string]struct{}{},
 			wantError: []error{
-				fmt.Errorf("invalid listener hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
+				fmt.Errorf("invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
 			},
+		},
+		"invalid listener hostname": {
+			listenerHost: listenerHostname("#projectcontour.io"),
+			hostnames:    []gatewayapi_v1alpha1.Hostname{},
+			want:         map[string]struct{}{},
+			wantError: []error{
+				fmt.Errorf("invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
+			},
+		},
+		"invalid listener wildcard hostname": {
+			listenerHost: listenerHostname("*.*.projectcontour.io"),
+			hostnames:    []gatewayapi_v1alpha1.Hostname{},
+			want:         map[string]struct{}{},
+			wantError: []error{
+				fmt.Errorf("invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
+			},
+		},
+		"listener host & hostnames host do not exactly match": {
+			listenerHost: listenerHostname("listener.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"http.projectcontour.io",
+			},
+			want:      map[string]struct{}{},
+			wantError: []error{fmt.Errorf("gateway hostname \"listener.projectcontour.io\" does not match hostnames hostname \"http.projectcontour.io\"")},
+		},
+		"listener host & hostnames host exactly match": {
+			listenerHost: listenerHostname("http.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"http.projectcontour.io",
+			},
+			want: map[string]struct{}{
+				"http.projectcontour.io": {},
+			},
+			wantError: nil,
+		},
+		"listener host & multi hostnames host exactly match one host": {
+			listenerHost: listenerHostname("http.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"http.projectcontour.io",
+				"http2.projectcontour.io",
+				"http3.projectcontour.io",
+			},
+			want: map[string]struct{}{
+				"http.projectcontour.io": {},
+			},
+			wantError: []error{
+				fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match hostnames hostname \"http2.projectcontour.io\""),
+				fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match hostnames hostname \"http3.projectcontour.io\""),
+			},
+		},
+		"listener host & hostnames host match wildcard host": {
+			listenerHost: listenerHostname("*.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"http.projectcontour.io",
+			},
+			want: map[string]struct{}{
+				"http.projectcontour.io": {},
+			},
+			wantError: nil,
+		},
+		"listener host & hostnames host do not match wildcard host": {
+			listenerHost: listenerHostname("*.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"http.example.com",
+			},
+			want:      map[string]struct{}{},
+			wantError: []error{fmt.Errorf("gateway hostname \"*.projectcontour.io\" does not match hostnames hostname \"http.example.com\"")},
+		},
+		"listener host & wildcard hostnames host match": {
+			listenerHost: listenerHostname("http.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"*.projectcontour.io",
+			},
+			want: map[string]struct{}{
+				"http.projectcontour.io": {},
+			},
+			wantError: nil,
+		},
+		"listener host & wildcard hostname and matching hostname match": {
+			listenerHost: listenerHostname("http.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"*.projectcontour.io",
+				"http.projectcontour.io",
+			},
+			want: map[string]struct{}{
+				"http.projectcontour.io": {},
+			},
+			wantError: nil,
+		},
+		"listener host & wildcard hostname and non-matching hostname don't match": {
+			listenerHost: listenerHostname("http.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"*.projectcontour.io",
+				"not.matching.io",
+			},
+			want: map[string]struct{}{
+				"http.projectcontour.io": {},
+			},
+			wantError: []error{fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match hostnames hostname \"not.matching.io\"")},
+		},
+		"listener host wildcard & wildcard hostnames host match": {
+			listenerHost: listenerHostname("*.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"*.projectcontour.io",
+			},
+			want: map[string]struct{}{
+				"*.projectcontour.io": {},
+			},
+			wantError: nil,
+		},
+		"listener wildcard matchall host & host match": {
+			listenerHost: listenerHostname("*"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"http.projectcontour.io",
+			},
+			want: map[string]struct{}{
+				"http.projectcontour.io": {},
+			},
+			wantError: nil,
+		},
+		"listener wildcard matchall host & multiple host match": {
+			listenerHost: listenerHostname("*"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"http.projectcontour.io",
+				"http2.projectcontour.io",
+				"http3.projectcontour.io",
+			},
+			want: map[string]struct{}{
+				"http.projectcontour.io":  {},
+				"http2.projectcontour.io": {},
+				"http3.projectcontour.io": {},
+			},
+			wantError: nil,
+		},
+		"listener host & hostname not defined match": {
+			listenerHost: listenerHostname("http.projectcontour.io"),
+			hostnames:    []gatewayapi_v1alpha1.Hostname{},
+			want: map[string]struct{}{
+				"http.projectcontour.io": {},
+			},
+			wantError: nil,
+		},
+		"listener host with many labels doesn't match hostnames wildcard host": {
+			listenerHost: listenerHostname("too.many.labels.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"*.projectcontour.io",
+			},
+			want:      map[string]struct{}{},
+			wantError: []error{fmt.Errorf("hostnames hostname \"*.projectcontour.io\" does not match gateway hostname \"too.many.labels.projectcontour.io\"")},
+		},
+		"listener wildcard host doesn't match hostnames with many labels host": {
+			listenerHost: listenerHostname("*.projectcontour.io"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"too.many.labels.projectcontour.io",
+			},
+			want:      map[string]struct{}{},
+			wantError: []error{fmt.Errorf("gateway hostname \"*.projectcontour.io\" does not match hostnames hostname \"too.many.labels.projectcontour.io\"")},
+		},
+		"listener wildcard host with wildcard hostnames": {
+			listenerHost: listenerHostname("*"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"*.projectcontour.io",
+			},
+			want: map[string]struct{}{
+				"*.projectcontour.io": {},
+			},
+			wantError: nil,
 		},
 	}
 
@@ -197,11 +292,16 @@ func TestComputeHosts(t *testing.T) {
 				FieldLogger: fixture.NewTestLogger(t),
 			}
 
-			got, gotError := processor.computeHosts(tc.route.Spec.Hostnames)
+			got, gotError := processor.computeHosts(tc.hostnames, tc.listenerHost)
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantError, gotError)
 		})
 	}
+}
+
+func listenerHostname(host string) *gatewayapi_v1alpha1.Hostname {
+	h := gatewayapi_v1alpha1.Hostname(host)
+	return &h
 }
 
 func TestNamespaceMatches(t *testing.T) {

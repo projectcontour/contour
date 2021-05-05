@@ -198,7 +198,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 		// Process all the HTTPRoutes that match this Gateway.
 		for _, matchingRoute := range matchingHTTPRoutes {
-			p.computeHTTPRoute(matchingRoute, listenerSecret)
+			p.computeHTTPRoute(matchingRoute, listenerSecret, listener.Hostname)
 		}
 
 		// Process all the routes that match this Gateway.
@@ -241,24 +241,98 @@ func isSecretRef(certificateRef *gatewayapi_v1alpha1.LocalObjectReference) bool 
 	return strings.ToLower(certificateRef.Kind) == "secret" && strings.ToLower(certificateRef.Group) == "core"
 }
 
-func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostname) ([]string, []error) {
-	// Determine the hosts on the route, if no hosts
-	// are defined, then set to "*".
-	var hosts []string
+// computeHosts validates the hostnames for a HTTPRoute as well as validating
+// that the hostname on the HTTPRoute matches what is optionally defined on the
+// listener.hostname.
+func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostname, listenerHostname *gatewayapi_v1alpha1.Hostname) (map[string]struct{}, []error) {
+
+	hosts := make(map[string]struct{})
 	var errors []error
-	if len(hostnames) == 0 {
-		hosts = append(hosts, "*")
+
+	// Determine the hosts on the hostnames, if no hosts
+	// are defined, then set to "*". If the listenerHostname is defined,
+	// then the route must match the Gateway hostname.
+	if len(hostnames) == 0 && listenerHostname == nil {
+		hosts["*"] = struct{}{}
 		return hosts, nil
+	}
+
+	if listenerHostname != nil {
+		if string(*listenerHostname) != "*" {
+
+			// Validate listener hostname.
+			if err := validHostName(string(*listenerHostname)); err != nil {
+				return hosts, []error{err}
+			}
+
+			if len(hostnames) == 0 {
+				hosts[string(*listenerHostname)] = struct{}{}
+				return hosts, nil
+			}
+		}
 	}
 
 	for _, host := range hostnames {
 
 		hostname := string(host)
+
+		// A "*" hostname matches anything.
+		if hostname == "*" {
+			hosts[hostname] = struct{}{}
+			continue
+		}
+
+		// Validate the hostname.
 		if err := validHostName(hostname); err != nil {
 			errors = append(errors, err)
 			continue
 		}
-		hosts = append(hosts, string(host))
+
+		if listenerHostname != nil {
+			const wildcardString string = "[a-z0-9]([-a-z0-9]*[a-z0-9])*."
+			lhn := string(*listenerHostname)
+
+			// A "*" hostname matches anything.
+			if lhn == "*" {
+				hosts[hostname] = struct{}{}
+				continue
+			} else if lhn == hostname {
+				// If the listener.hostname matches then no need to
+				// do any other validation.
+				hosts[hostname] = struct{}{}
+				continue
+			} else if strings.Contains(lhn, "*") {
+
+				// Build a regex to match the hostname against the wildcard listener hostname.
+				wildcardDNS1123SubdomainRegexp := regexp.MustCompile("^" + strings.Replace(lhn, "*", wildcardString, 1) + "$")
+
+				// Validate the wildcard gateway listener hostname matches the hostnames hostname.
+				if !wildcardDNS1123SubdomainRegexp.MatchString(hostname) {
+					errors = append(errors, fmt.Errorf("gateway hostname %q does not match hostnames hostname %q", lhn, hostname))
+					continue
+				}
+			} else if strings.Contains(hostname, "*") {
+
+				// Build a regex to match the hostname against the wildcard hostnames hostname.
+				wildcardDNS1123SubdomainRegexp := regexp.MustCompile("^" + strings.Replace(hostname, "*", wildcardString, 1) + "$")
+
+				// Validate the wildcard hostnames hostname matches gateway listener hostname.
+				if !wildcardDNS1123SubdomainRegexp.MatchString(lhn) {
+					errors = append(errors, fmt.Errorf("hostnames hostname %q does not match gateway hostname %q", hostname, lhn))
+					continue
+				}
+
+				// The Listener hostname is not a wildcard, but the route is a wildcard.
+				// Since the gateway is more specific, use that to match the route against.
+				hosts[lhn] = struct{}{}
+				continue
+			} else {
+				// Validate the gateway listener hostname matches the hostnames hostname.
+				errors = append(errors, fmt.Errorf("gateway hostname %q does not match hostnames hostname %q", lhn, hostname))
+				continue
+			}
+		}
+		hosts[hostname] = struct{}{}
 	}
 	return hosts, errors
 }
@@ -273,7 +347,7 @@ func validHostName(hostname string) error {
 		}
 	} else {
 		if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
-			return fmt.Errorf("invalid listener hostname %q: %v", hostname, errs)
+			return fmt.Errorf("invalid hostname %q: %v", hostname, errs)
 		}
 	}
 	return nil
@@ -451,11 +525,11 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 	}
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute, listenerSecret *Secret) {
+func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha1.Hostname) {
 	routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
 	defer commit()
 
-	hosts, errs := p.computeHosts(route.Spec.Hostnames)
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, listenerHostname)
 	for _, err := range errs {
 		routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 	}
@@ -548,7 +622,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		}
 
 		routes := p.routes(matchconditions, headerPolicy, clusters)
-		for _, host := range hosts {
+		for host := range hosts {
 			for _, route := range routes {
 				// If there aren't any valid services, or the total weight of all of
 				// them equal zero, then return 503 responses to the caller.
