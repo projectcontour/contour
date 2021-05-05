@@ -77,8 +77,7 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	}()
 
 	log, logHook := test.NewNullLogger()
-	l := log.WithField("foo", "bar")
-	InitLogging(LogWriterOption(l))
+	InitLogging(LogWriterOption(log.WithField("foo", "bar")))
 
 	infoLog := "some log"
 	errorLog := "some error log"
@@ -95,8 +94,9 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	errorLine := line + 3
 
 	// Should be a recorded logrus log with the correct fields.
-	// Wait for up to 5s (klog flush interval)
-	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 2 }, time.Second*5, time.Millisecond*10)
+	// Wait for up to 1s (klog automatic flush interval is 5s
+	// but we call klog.Flush() above).
+	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 2 }, time.Second*1, time.Millisecond*10)
 
 	// Close write end of pipes.
 	seWriter.Close()
@@ -135,19 +135,26 @@ func TestMultipleLogWriterOptions(t *testing.T) {
 }
 
 func TestLogLevelOption(t *testing.T) {
-	log, _ := test.NewNullLogger()
+	log, logHook := test.NewNullLogger()
 	l := log.WithField("some", "field")
 	for logLevel := 1; logLevel <= 10; logLevel++ {
 		t.Run(fmt.Sprintf("log level %d", logLevel), func(t *testing.T) {
 			InitLogging(LogWriterOption(l), LogLevelOption(logLevel))
 			// Make sure log verbosity is set properly.
-			for verbositylevel := 1; verbositylevel <= 10; verbositylevel++ {
-				enabled := klog.V(klog.Level(verbositylevel)).Enabled()
-				if verbositylevel <= logLevel {
+			for verbosityLevel := 1; verbosityLevel <= 10; verbosityLevel++ {
+				enabled := klog.V(klog.Level(verbosityLevel)).Enabled()
+				if verbosityLevel <= logLevel {
 					assert.True(t, enabled)
+					klog.V(klog.Level(verbosityLevel)).Info("something")
+					klog.Flush()
+					assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, time.Second*1, time.Millisecond*10)
 				} else {
 					assert.False(t, enabled)
+					klog.V(klog.Level(verbosityLevel)).Info("something")
+					klog.Flush()
+					assert.Never(t, func() bool { return len(logHook.AllEntries()) > 0 }, time.Second*1, time.Millisecond*10)
 				}
+				logHook.Reset()
 			}
 		})
 	}
