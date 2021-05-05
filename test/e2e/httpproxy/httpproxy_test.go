@@ -25,11 +25,15 @@ import (
 // subtests defines the tests to run as part of the HTTPProxy
 // suite.
 var subtests = map[string]func(t *testing.T, f *e2e.Framework){
-	"002-header-condition-match": testHeaderConditionMatch,
-	"003-path-condition-match":   testPathConditionMatch,
-	"004-https-sni-enforcement":  testHTTPSSNIEnforcement,
-	"005-pod-restart":            testPodRestart,
-	"006-merge-slash":            testMergeSlash,
+	"002-header-condition-match":     testHeaderConditionMatch,
+	"003-path-condition-match":       testPathConditionMatch,
+	"004-https-sni-enforcement":      testHTTPSSNIEnforcement,
+	"005-pod-restart":                testPodRestart,
+	"006-merge-slash":                testMergeSlash,
+	"008-tcproute-https-termination": testTCPRouteHTTPSTermination,
+	"009-https-misdirected-request":  testHTTPSMisdirectedRequest,
+	"010-include-prefix-condition":   testIncludePrefixCondition,
+	"012-https-fallback-certificate": testHTTPSFallbackCertificate,
 }
 
 func TestHTTPProxy(t *testing.T) {

@@ -1,0 +1,120 @@
+// Copyright Project Contour Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// +build e2e
+
+package gateway
+
+import (
+	"testing"
+
+	"github.com/projectcontour/contour/test/e2e"
+	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+)
+
+func testTLSGateway(t *testing.T, fx *e2e.Framework) {
+	namespace := "gateway-004-tls-gateway"
+
+	fx.CreateNamespace(namespace)
+	defer fx.DeleteNamespace(namespace)
+
+	fx.Fixtures.Echo.Deploy(namespace, "echo-insecure")
+	fx.Fixtures.Echo.Deploy(namespace, "echo-secure")
+
+	cleanup := fx.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "tls-gateway.projectcontour.io")
+	defer cleanup()
+
+	route := &gatewayv1alpha1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      "http-route-1",
+			Labels:    map[string]string{"type": "insecure"},
+		},
+		Spec: gatewayv1alpha1.HTTPRouteSpec{
+			Hostnames: []gatewayv1alpha1.Hostname{"tls-gateway.projectcontour.io"},
+			Gateways: &gatewayv1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			},
+			Rules: []gatewayv1alpha1.HTTPRouteRule{
+				{
+					Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						{
+							Path: &gatewayv1alpha1.HTTPPathMatch{
+								Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+								Value: stringPtr("/"),
+							},
+						},
+					},
+					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						{
+							ServiceName: stringPtr("echo-insecure"),
+							Port:        portNumPtr(80),
+						},
+					},
+				},
+			},
+		},
+	}
+	fx.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+
+	route = &gatewayv1alpha1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      "http-route-2",
+			Labels:    map[string]string{"type": "secure"},
+		},
+		Spec: gatewayv1alpha1.HTTPRouteSpec{
+			Hostnames: []gatewayv1alpha1.Hostname{"tls-gateway.projectcontour.io"},
+			Gateways: &gatewayv1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			},
+			Rules: []gatewayv1alpha1.HTTPRouteRule{
+				{
+					Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						{
+							Path: &gatewayv1alpha1.HTTPPathMatch{
+								Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+								Value: stringPtr("/"),
+							},
+						},
+					},
+					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						{
+							ServiceName: stringPtr("echo-secure"),
+							Port:        portNumPtr(80),
+						},
+					},
+				},
+			},
+		},
+	}
+	fx.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+
+	// Ensure http (insecure) request routes to echo-insecure.
+	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+		Host:      "tls-gateway.projectcontour.io",
+		Condition: e2e.HasStatusCode(200),
+	})
+	assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+	assert.Equal(t, "echo-insecure", fx.GetEchoResponseBody(res.Body).Service)
+
+	// Ensure https (secure) request routes to echo-secure.
+	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		Host:      "tls-gateway.projectcontour.io",
+		Condition: e2e.HasStatusCode(200),
+	})
+	assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+	assert.Equal(t, "echo-secure", fx.GetEchoResponseBody(res.Body).Service)
+}

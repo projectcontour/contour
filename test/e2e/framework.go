@@ -18,6 +18,7 @@ package e2e
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -143,6 +144,30 @@ func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condit
 	return res, true
 }
 
+// CreateHTTPRouteAndWaitFor creates the provided HTTPRoute in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayv1alpha1.HTTPRoute, condition func(*gatewayv1alpha1.HTTPRoute) bool) (*gatewayv1alpha1.HTTPRoute, bool) {
+	require.NoError(f.t, f.Client.Create(context.TODO(), route))
+
+	res := &gatewayv1alpha1.HTTPRoute{}
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
+	}
+
+	return res, true
+}
+
 // CreateNamespace creates a namespace with the given name in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) CreateNamespace(name string) {
@@ -218,13 +243,13 @@ func (f *Framework) GetEchoResponseBody(body []byte) EchoResponseBody {
 }
 
 type EchoResponseBody struct {
-	Path      string              `json:"path"`
-	Host      string              `json:"host"`
-	Headers   map[string][]string `json:"headers"`
-	Namespace string              `json:"namespace"`
-	Ingress   string              `json:"ingress"`
-	Service   string              `json:"service"`
-	Pod       string              `json:"pod"`
+	Path      string      `json:"path"`
+	Host      string      `json:"host"`
+	Headers   http.Header `json:"headers"`
+	Namespace string      `json:"namespace"`
+	Ingress   string      `json:"ingress"`
+	Service   string      `json:"service"`
+	Pod       string      `json:"pod"`
 }
 
 func (erb *EchoResponseBody) GetHeader(name string) string {
