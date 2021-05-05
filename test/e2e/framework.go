@@ -21,11 +21,11 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"testing"
 	"time"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
+	"github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -62,10 +62,10 @@ type Framework struct {
 	// HTTP provides helpers for making HTTP/HTTPS requests.
 	HTTP *HTTP
 
-	t *testing.T
+	t ginkgo.GinkgoTInterface
 }
 
-func NewFramework(t *testing.T) *Framework {
+func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 	scheme := runtime.NewScheme()
 	require.NoError(t, kubescheme.AddToScheme(scheme))
 	require.NoError(t, contourv1.AddToScheme(scheme))
@@ -106,18 +106,10 @@ func NewFramework(t *testing.T) *Framework {
 	}
 }
 
-// RunParallel runs the provided set of subtests in parallel and blocks
-// until they're all done running.
-func (f *Framework) RunParallel(name string, subtests map[string]func(t *testing.T, f *Framework)) {
-	f.t.Run(name, func(t *testing.T) {
-		for name, tc := range subtests {
-			tc := tc
-			t.Run(name, func(t *testing.T) {
-				t.Parallel()
-				tc(t, f)
-			})
-		}
-	})
+// T exposes a GinkgoTInterface which exposes many of the same methods
+// as a *testing.T, for use in tests that previously required a *testing.T.
+func (f *Framework) T() ginkgo.GinkgoTInterface {
+	return f.t
 }
 
 // CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API

@@ -17,7 +17,6 @@ package httpproxy
 
 import (
 	"crypto/tls"
-	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
@@ -26,7 +25,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testHTTPSMisdirectedRequest(t *testing.T, fx *e2e.Framework) {
+func testHTTPSMisdirectedRequest(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "009-https-misdirected-request"
 
 	fx.CreateNamespace(namespace)

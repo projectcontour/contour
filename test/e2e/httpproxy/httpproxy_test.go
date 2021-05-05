@@ -18,27 +18,52 @@ package httpproxy
 import (
 	"testing"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
-// subtests defines the tests to run as part of the HTTPProxy
-// suite.
-var subtests = map[string]func(t *testing.T, f *e2e.Framework){
-	"002-header-condition-match":     testHeaderConditionMatch,
-	"003-path-condition-match":       testPathConditionMatch,
-	"004-https-sni-enforcement":      testHTTPSSNIEnforcement,
-	"005-pod-restart":                testPodRestart,
-	"006-merge-slash":                testMergeSlash,
-	"008-tcproute-https-termination": testTCPRouteHTTPSTermination,
-	"009-https-misdirected-request":  testHTTPSMisdirectedRequest,
-	"010-include-prefix-condition":   testIncludePrefixCondition,
-	"012-https-fallback-certificate": testHTTPSFallbackCertificate,
+func TestHTTPProxy(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "HTTPProxy tests")
 }
 
-func TestHTTPProxy(t *testing.T) {
-	e2e.NewFramework(t).RunParallel("group", subtests)
-}
+var _ = Describe("HTTPProxy", func() {
+	var f *e2e.Framework
+
+	BeforeEach(func() {
+		f = e2e.NewFramework(GinkgoT())
+	})
+
+	It("002-header-condition-match", func() {
+		testHeaderConditionMatch(f)
+	})
+	It("003-path-condition-match", func() {
+		testPathConditionMatch(f)
+	})
+	It("004-https-sni-enforcement", func() {
+		testHTTPSSNIEnforcement(f)
+	})
+	It("005-pod-restart", func() {
+		testPodRestart(f)
+	})
+	It("006-merge-slash", func() {
+		testMergeSlash(f)
+	})
+	It("008-tcproute-https-termination", func() {
+		testTCPRouteHTTPSTermination(f)
+	})
+	It("009-https-misdirected-request", func() {
+		testHTTPSMisdirectedRequest(f)
+	})
+	It("010-include-prefix-condition", func() {
+		testIncludePrefixCondition(f)
+	})
+	It("012-https-fallback-certificate", func() {
+		testHTTPSFallbackCertificate(f)
+	})
+})
 
 // httpProxyValid returns true if the proxy has a .status.currentStatus
 // of "valid".

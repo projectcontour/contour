@@ -19,7 +19,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
@@ -29,7 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func testTCPRouteHTTPSTermination(t *testing.T, fx *e2e.Framework) {
+func testTCPRouteHTTPSTermination(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "008-tcp-route-https-termination"
 
 	fx.CreateNamespace(namespace)

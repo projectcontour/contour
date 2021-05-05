@@ -17,7 +17,6 @@ package httpproxy
 
 import (
 	"context"
-	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
@@ -29,7 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func testPodRestart(t *testing.T, fx *e2e.Framework) {
+func testPodRestart(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "005-pod-restart"
 
 	fx.CreateNamespace(namespace)

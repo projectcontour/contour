@@ -16,8 +16,6 @@
 package httpproxy
 
 import (
-	"testing"
-
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +23,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testMergeSlash(t *testing.T, fx *e2e.Framework) {
+func testMergeSlash(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "006-merge-slash"
 
 	fx.CreateNamespace(namespace)
