@@ -17,7 +17,6 @@ package gateway
 
 import (
 	"net/http"
-	"testing"
 
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +25,8 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func testRequestHeaderModifierForwardTo(t *testing.T, fx *e2e.Framework) {
+func testRequestHeaderModifierForwardTo(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "gateway-005-request-header-modifier-forward-to"
 
 	fx.CreateNamespace(namespace)
@@ -141,7 +141,8 @@ func testRequestHeaderModifierForwardTo(t *testing.T, fx *e2e.Framework) {
 	assert.False(t, found, "My-Header was found on the response")
 }
 
-func testRequestHeaderModifierRule(t *testing.T, fx *e2e.Framework) {
+func testRequestHeaderModifierRule(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "gateway-005-request-header-modifier-rule"
 
 	fx.CreateNamespace(namespace)

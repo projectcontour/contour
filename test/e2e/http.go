@@ -19,9 +19,9 @@ import (
 	"crypto/tls"
 	"io/ioutil"
 	"net/http"
-	"testing"
 	"time"
 
+	"github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -43,7 +43,7 @@ type HTTP struct {
 	// operations before giving up.
 	RetryTimeout time.Duration
 
-	t *testing.T
+	t ginkgo.GinkgoTInterface
 }
 
 type HTTPRequestOpts struct {

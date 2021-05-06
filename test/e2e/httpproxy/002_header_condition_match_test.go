@@ -18,7 +18,6 @@ package httpproxy
 import (
 	"context"
 	"net/http"
-	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
@@ -28,7 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func testHeaderConditionMatch(t *testing.T, fx *e2e.Framework) {
+func testHeaderConditionMatch(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "002-header-condition-match"
 
 	fx.CreateNamespace(namespace)

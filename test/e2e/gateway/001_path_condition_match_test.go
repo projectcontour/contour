@@ -16,15 +16,14 @@
 package gateway
 
 import (
-	"testing"
-
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func testGatewayPathConditionMatch(t *testing.T, fx *e2e.Framework) {
+func testGatewayPathConditionMatch(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "gateway-001-path-condition-match"
 
 	fx.CreateNamespace(namespace)
