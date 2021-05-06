@@ -24,7 +24,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -135,21 +135,21 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Rules: []v1beta1.IngressRule{{
+						Rules: []networking_v1.IngressRule{{
 							Host: "whatever.example.com",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
 										Backend: *backend("kuard", 8080),
 									}},
 								},
@@ -179,21 +179,21 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Rules: []v1beta1.IngressRule{{
+						Rules: []networking_v1.IngressRule{{
 							Host: "whatever.example.com",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
 										Backend: *backend("kuard", 8080),
 									}},
 								},
@@ -201,21 +201,21 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"omg.example.com"},
 							SecretName: "secret",
 						}},
-						Rules: []v1beta1.IngressRule{{
+						Rules: []networking_v1.IngressRule{{
 							Host: "omg.example.com",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
 										Backend: *backend("kuard", 8080),
 									}},
 								},
@@ -245,21 +245,21 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-a",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret-a",
 						}},
-						Rules: []v1beta1.IngressRule{{
+						Rules: []networking_v1.IngressRule{{
 							Host: "whatever.example.com",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
 										Backend: *backend("kuard", 80),
 									}},
 								},
@@ -267,21 +267,21 @@ func TestSecretVisit(t *testing.T) {
 						}},
 					},
 				},
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple-b",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"omg.example.com"},
 							SecretName: "secret-b",
 						}},
-						Rules: []v1beta1.IngressRule{{
+						Rules: []networking_v1.IngressRule{{
 							Host: "omg.example.com",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
 										Backend: *backend("kuard", 80),
 									}},
 								},
@@ -559,10 +559,12 @@ func tlssecret(namespace, name string, data map[string][]byte) *v1.Secret {
 	}
 }
 
-func backend(name string, port int) *v1beta1.IngressBackend {
-	return &v1beta1.IngressBackend{
-		ServiceName: name,
-		ServicePort: intstr.FromInt(port),
+func backend(name string, port int32) *networking_v1.IngressBackend {
+	return &networking_v1.IngressBackend{
+		Service: &networking_v1.IngressServiceBackend{
+			Name: name,
+			Port: networking_v1.ServiceBackendPort{Number: port},
+		},
 	}
 }
 
