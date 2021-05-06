@@ -23,7 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -242,19 +242,19 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	ingressSharedService := &v1beta1.Ingress{
+	ingressSharedService := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "nginx",
 			Namespace: fixture.ServiceRootsNginx.Namespace,
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"example.com"},
 				SecretName: fixture.SecretRootsCert.Name,
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host:             "example.com",
-				IngressRuleValue: ingressrulevalue(backend(fixture.ServiceRootsNginx.Name, intstr.FromInt(80))),
+				IngressRuleValue: ingressrulev1value(backendv1(fixture.ServiceRootsNginx.Name, intstr.FromInt(80))),
 			}},
 		},
 	}
