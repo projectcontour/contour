@@ -27,10 +27,9 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
 
@@ -146,13 +145,10 @@ func TestBackendClientAuthenticationWithIngress(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 443})
 	rh.OnAdd(svc)
 
-	ingress := &v1beta1.Ingress{
+	ingress := &networking_v1.Ingress{
 		ObjectMeta: fixture.ObjectMeta("authenticated"),
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "backend",
-				ServicePort: intstr.FromInt(443),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(svc),
 		},
 	}
 	rh.OnAdd(ingress)

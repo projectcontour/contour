@@ -25,14 +25,13 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // Note: Wildcard hostnames are only supported on Ingress resources for now.
 
-// Test that Ingress v1 and v1beta1 without TLS secrets generate the
+// Test that Ingress without TLS secrets generate the
 // appropriate route config.
 func TestIngressWildcardHostHTTP(t *testing.T) {
 	rh, c, done := setup(t)
@@ -65,26 +64,7 @@ func TestIngressWildcardHostHTTP(t *testing.T) {
 			}},
 		},
 	}
-	wildcardIngressV1Beta1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "wildcard-v1beta1",
-			Namespace: "default",
-		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
-				Host: "*.bar.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *featuretests.IngressV1Beta1Backend(svc),
-						}},
-					},
-				},
-			}},
-		},
-	}
 	rh.OnAdd(wildcardIngressV1)
-	rh.OnAdd(wildcardIngressV1Beta1)
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
@@ -101,27 +81,6 @@ func TestIngressWildcardHostHTTP(t *testing.T) {
 					Match:  routePrefix("/"),
 					Action: routecluster("default/default/80/da39a3ee5e"),
 				}),
-				envoy_v3.VirtualHost("*.bar.com",
-					&envoy_route_v3.Route{
-						Match: &envoy_route_v3.RouteMatch{
-							PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
-								Prefix: "/",
-							},
-							Headers: []*envoy_route_v3.HeaderMatcher{{
-								Name: ":authority",
-								HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-									SafeRegexMatch: &matcher.RegexMatcher{
-										EngineType: &matcher.RegexMatcher_GoogleRe2{
-											GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
-										},
-										Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.bar\\.com",
-									},
-								},
-							}},
-						},
-						Action: routeCluster("default/svc/80/da39a3ee5e"),
-					},
-				),
 				envoy_v3.VirtualHost("*.foo.com",
 					&envoy_route_v3.Route{
 						Match: &envoy_route_v3.RouteMatch{
