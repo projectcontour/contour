@@ -18,15 +18,22 @@ package ingress
 import (
 	"testing"
 
+	. "github.com/onsi/ginkgo"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
-// subtests defines the tests to run as part of the Ingress
-// suite.
-var subtests = map[string]func(t *testing.T, f *e2e.Framework){
-	"002-ingress-ensure-v1beta1": testEnsureV1Beta1,
+func TestHTTPProxy(t *testing.T) {
+	RunSpecs(t, "Ingress tests")
 }
 
-func TestIngress(t *testing.T) {
-	e2e.NewFramework(t).RunParallel("group", subtests)
-}
+var _ = Describe("HTTPProxy", func() {
+	var f *e2e.Framework
+
+	BeforeEach(func() {
+		f = e2e.NewFramework(GinkgoT())
+	})
+
+	It("002-ingress-ensure-v1beta1", func() {
+		testEnsureV1Beta1(f)
+	})
+})

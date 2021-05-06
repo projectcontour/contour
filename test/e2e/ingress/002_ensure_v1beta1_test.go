@@ -17,7 +17,6 @@ package ingress
 
 import (
 	"context"
-	"testing"
 
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
@@ -27,7 +26,8 @@ import (
 )
 
 // Explicitly ensure v1beta1 resources continue to work.
-func testEnsureV1Beta1(t *testing.T, fx *e2e.Framework) {
+func testEnsureV1Beta1(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "002-ingress-ensure-v1beta1"
 
 	fx.CreateNamespace(namespace)
