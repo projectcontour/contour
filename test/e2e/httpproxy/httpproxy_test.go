@@ -19,13 +19,11 @@ import (
 	"testing"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 )
 
 func TestHTTPProxy(t *testing.T) {
-	RegisterFailHandler(Fail)
 	RunSpecs(t, "HTTPProxy tests")
 }
 

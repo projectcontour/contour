@@ -20,14 +20,13 @@ import (
 	"testing"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/projectcontour/contour/test/e2e"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 func TestGatewayAPI(t *testing.T) {
-	RegisterFailHandler(Fail)
 	RunSpecs(t, "Gateway API tests")
 }
 
@@ -41,6 +40,12 @@ var _ = Describe("Gateway API", func() {
 	Describe("Insecure (Non-TLS) Gateway", func() {
 		var gateway *gatewayv1alpha1.Gateway
 
+		// Note, this ends up creating the Gateway before each spec
+		// case (and deleting it after) which is not really necessary
+		// since all of these specs use the same Gateway. Consider
+		// moving each unique Gateway into its own test suite and using
+		// BeforeSuite/AfterSuit to create/delete the Gateway once, or
+		// some other similar structure.
 		BeforeEach(func() {
 			gateway = &gatewayv1alpha1.Gateway{
 				// Namespace and name need to match what's
@@ -69,11 +74,11 @@ var _ = Describe("Gateway API", func() {
 				},
 			}
 
-			Expect(f.Client.Create(context.TODO(), gateway)).To(Succeed())
+			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
 		})
 
 		AfterEach(func() {
-			Expect(f.Client.Delete(context.TODO(), gateway)).To(Succeed())
+			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
 		})
 
 		It("001-path-condition-match", func() {
@@ -149,12 +154,12 @@ var _ = Describe("Gateway API", func() {
 				},
 			}
 
-			Expect(f.Client.Create(context.TODO(), gateway)).To(Succeed())
+			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
 			cleanupCert = f.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "tls-gateway.projectcontour.io")
 		})
 
 		AfterEach(func() {
-			Expect(f.Client.Delete(context.TODO(), gateway)).To(Succeed())
+			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
 			cleanupCert()
 		})
 
