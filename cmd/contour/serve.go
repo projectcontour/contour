@@ -35,6 +35,7 @@ import (
 	"github.com/projectcontour/contour/internal/health"
 	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/projectcontour/contour/internal/k8s"
+	contour_cache "github.com/projectcontour/contour/internal/k8s/cache"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/workgroup"
@@ -54,6 +55,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
+	controller_config "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 // Add RBAC policy to support leader election.
@@ -407,6 +411,34 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 					log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 				}
 			}
+
+			// Setup a Manager
+			mgr, err := manager.New(controller_config.GetConfigOrDie(), manager.Options{})
+			if err != nil {
+				log.Fatal(err, "unable to set up controller manager")
+			}
+
+			err = gatewayapi_v1alpha1.AddToScheme(mgr.GetScheme())
+			if err != nil {
+				log.Error(err, "unable to add GatewayAPI to scheme.")
+				os.Exit(1)
+			}
+
+			// Create and register the NewGatewayController controller with the manager.
+			if _, err := contour_cache.NewGatewayController(mgr, &dynamicHandler, log.WithField("context", "gateway-controller")); err != nil {
+				log.WithError(err).Fatal("failed to create gateway-controller")
+			}
+
+			// Create and register the NewHTTPRouteController controller with the manager.
+			if _, err := contour_cache.NewHTTPRouteController(mgr, &dynamicHandler, log.WithField("context", "httproute-controller")); err != nil {
+				log.WithError(err).Fatal("failed to create httproute-controller")
+			}
+
+			// Create and register the NewTLSRouteController controller with the manager.
+			if _, err := contour_cache.NewTLSRouteController(mgr, &dynamicHandler, log.WithField("context", "tlsroute-controller")); err != nil {
+				log.WithError(err).Fatal("failed to create tlsroute-controller")
+			}
+
 			// Inform on Namespaces.
 			if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler); err != nil {
 				log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
