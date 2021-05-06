@@ -22,11 +22,11 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 )
 
-func TestHTTPProxy(t *testing.T) {
+func TestIngress(t *testing.T) {
 	RunSpecs(t, "Ingress tests")
 }
 
-var _ = Describe("HTTPProxy", func() {
+var _ = Describe("Ingress", func() {
 	var f *e2e.Framework
 
 	BeforeEach(func() {
