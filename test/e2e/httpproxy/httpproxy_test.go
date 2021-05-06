@@ -61,6 +61,30 @@ var _ = Describe("HTTPProxy", func() {
 	It("012-https-fallback-certificate", func() {
 		testHTTPSFallbackCertificate(f)
 	})
+	It("016-dynamic-headers", func() {
+		testDynamicHeaders(f)
+	})
+	It("017-host-header-rewrite", func() {
+		testHostHeaderRewrite(f)
+	})
+	It("019-local-rate-limiting-vhost", func() {
+		testLocalRateLimitingVirtualHost(f)
+	})
+	It("019-local-rate-limiting-route", func() {
+		testLocalRateLimitingRoute(f)
+	})
+	It("020-global-rate-limiting-vhost-non-tls", func() {
+		testGlobalRateLimitingVirtualHostNonTLS(f)
+	})
+	It("020-global-rate-limiting-route-non-tls", func() {
+		testGlobalRateLimitingRouteNonTLS(f)
+	})
+	It("020-global-rate-limiting-vhost-tls", func() {
+		testGlobalRateLimitingVirtualHostTLS(f)
+	})
+	It("020-global-rate-limiting-route-tls", func() {
+		testGlobalRateLimitingRouteTLS(f)
+	})
 })
 
 // httpProxyValid returns true if the proxy has a .status.currentStatus
