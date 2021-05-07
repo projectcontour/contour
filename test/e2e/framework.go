@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,7 +73,28 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 	require.NoError(t, gatewayv1alpha1.AddToScheme(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 
-	crClient, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
+	config := config.GetConfigOrDie()
+
+	configQPS := os.Getenv("K8S_CLIENT_QPS")
+	if configQPS == "" {
+		configQPS = "100"
+	}
+
+	configBurst := os.Getenv("K8S_CLIENT_BURST")
+	if configBurst == "" {
+		configBurst = "100"
+	}
+
+	qps, err := strconv.ParseFloat(configQPS, 32)
+	require.NoError(t, err)
+
+	burst, err := strconv.Atoi(configBurst)
+	require.NoError(t, err)
+
+	config.QPS = float32(qps)
+	config.Burst = burst
+
+	crClient, err := client.New(config, client.Options{Scheme: scheme})
 	require.NoError(t, err)
 
 	httpURLBase := os.Getenv("CONTOUR_E2E_HTTP_URL_BASE")
