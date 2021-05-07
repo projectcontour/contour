@@ -70,6 +70,8 @@ func VersionOf(obj interface{}) string {
 		switch obj := obj.(type) {
 		case *v1.Secret, *v1.Service, *v1.Endpoints:
 			return v1.SchemeGroupVersion.String()
+		case *networking_v1.Ingress:
+			return networking_v1.SchemeGroupVersion.String()
 		case *contour_api_v1.HTTPProxy, *contour_api_v1.TLSCertificateDelegation:
 			return contour_api_v1.GroupVersion.String()
 		case *v1alpha1.ExtensionService:

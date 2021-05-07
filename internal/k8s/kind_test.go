@@ -58,6 +58,7 @@ func TestVersionOf(t *testing.T) {
 		{"v1", &v1.Secret{}},
 		{"v1", &v1.Service{}},
 		{"v1", &v1.Endpoints{}},
+		{"networking.k8s.io/v1", &networking_v1.Ingress{}},
 		{"projectcontour.io/v1", &contour_api_v1.HTTPProxy{}},
 		{"projectcontour.io/v1", &contour_api_v1.TLSCertificateDelegation{}},
 		{"projectcontour.io/v1alpha1", &v1alpha1.ExtensionService{}},
