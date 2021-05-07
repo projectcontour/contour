@@ -25,6 +25,8 @@ import (
 	"syscall"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -403,6 +405,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	}
 
+	// Set up workgroup runner and register informers.
+	var g workgroup.Group
+
 	// Only inform on GatewayAPI resources if Gateway API is found.
 	if ctx.Config.GatewayConfig != nil {
 		if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
@@ -443,6 +448,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler); err != nil {
 				log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
 			}
+
+			// Start Manager
+			g.AddContext(func(taskCtx context.Context) error {
+				return mgr.Start(signals.SetupSignalHandler())
+			})
 		} else {
 			log.Fatalf("GatewayAPI Gateway configured but APIs not installed in cluster.")
 		}
@@ -475,9 +485,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
-
-	// Set up workgroup runner and register informers.
-	var g workgroup.Group
 
 	// Register a task to start all the informers.
 	g.AddContext(func(taskCtx context.Context) error {
