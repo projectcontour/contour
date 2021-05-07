@@ -114,10 +114,10 @@ func testRequestHeaderModifierForwardTo(fx *e2e.Framework) {
 	body := fx.GetEchoResponseBody(res.Body)
 	assert.Equal(t, "echo-header-filter", body.Service)
 
-	assert.Equal(t, "Foo", body.Headers.Get("My-Header"))
-	assert.Equal(t, "Bar", body.Headers.Get("Replace-Header"))
+	assert.Equal(t, "Foo", body.RequestHeaders.Get("My-Header"))
+	assert.Equal(t, "Bar", body.RequestHeaders.Get("Replace-Header"))
 
-	_, found := body.Headers["Other-Header"]
+	_, found := body.RequestHeaders["Other-Header"]
 	assert.False(t, found, "Other-Header was found on the response")
 
 	// Check the route without any filters.
@@ -135,9 +135,9 @@ func testRequestHeaderModifierForwardTo(fx *e2e.Framework) {
 	body = fx.GetEchoResponseBody(res.Body)
 	assert.Equal(t, "echo-header-nofilter", body.Service)
 
-	assert.Equal(t, "Exist", body.Headers.Get("Other-Header"))
+	assert.Equal(t, "Exist", body.RequestHeaders.Get("Other-Header"))
 
-	_, found = body.Headers["My-Header"]
+	_, found = body.RequestHeaders["My-Header"]
 	assert.False(t, found, "My-Header was found on the response")
 }
 
@@ -230,10 +230,10 @@ func testRequestHeaderModifierRule(fx *e2e.Framework) {
 	body := fx.GetEchoResponseBody(res.Body)
 	assert.Equal(t, "echo-header-filter", body.Service)
 
-	assert.Equal(t, "Foo", body.Headers.Get("My-Header"))
-	assert.Equal(t, "Bar", body.Headers.Get("Replace-Header"))
+	assert.Equal(t, "Foo", body.RequestHeaders.Get("My-Header"))
+	assert.Equal(t, "Bar", body.RequestHeaders.Get("Replace-Header"))
 
-	_, found := body.Headers["Other-Header"]
+	_, found := body.RequestHeaders["Other-Header"]
 	assert.False(t, found, "Other-Header was found on the response")
 
 	// Check the route without any filters.
@@ -251,8 +251,8 @@ func testRequestHeaderModifierRule(fx *e2e.Framework) {
 	body = fx.GetEchoResponseBody(res.Body)
 	assert.Equal(t, "echo-header-nofilter", body.Service)
 
-	assert.Equal(t, "Exist", body.Headers.Get("Other-Header"))
+	assert.Equal(t, "Exist", body.RequestHeaders.Get("Other-Header"))
 
-	_, found = body.Headers["My-Header"]
+	_, found = body.RequestHeaders["My-Header"]
 	assert.False(t, found, "My-Header was found on the response")
 }

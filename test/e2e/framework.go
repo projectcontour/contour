@@ -21,7 +21,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
@@ -257,15 +256,11 @@ func (f *Framework) GetEchoResponseBody(body []byte) EchoResponseBody {
 }
 
 type EchoResponseBody struct {
-	Path      string      `json:"path"`
-	Host      string      `json:"host"`
-	Headers   http.Header `json:"headers"`
-	Namespace string      `json:"namespace"`
-	Ingress   string      `json:"ingress"`
-	Service   string      `json:"service"`
-	Pod       string      `json:"pod"`
-}
-
-func (erb *EchoResponseBody) GetHeader(name string) string {
-	return strings.Join(erb.Headers[name], ",")
+	Path           string      `json:"path"`
+	Host           string      `json:"host"`
+	RequestHeaders http.Header `json:"headers"`
+	Namespace      string      `json:"namespace"`
+	Ingress        string      `json:"ingress"`
+	Service        string      `json:"service"`
+	Pod            string      `json:"pod"`
 }
