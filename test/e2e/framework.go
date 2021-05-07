@@ -27,6 +27,7 @@ import (
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	"github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -69,6 +70,7 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 	scheme := runtime.NewScheme()
 	require.NoError(t, kubescheme.AddToScheme(scheme))
 	require.NoError(t, contourv1.AddToScheme(scheme))
+	require.NoError(t, contourv1alpha1.AddToScheme(scheme))
 	require.NoError(t, gatewayv1alpha1.AddToScheme(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 
@@ -112,6 +114,10 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 		RetryTimeout:  60 * time.Second,
 		Fixtures: &Fixtures{
 			Echo: &Echo{
+				client: crClient,
+				t:      t,
+			},
+			HTTPBin: &HTTPBin{
 				client: crClient,
 				t:      t,
 			},
