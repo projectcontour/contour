@@ -100,6 +100,14 @@ var _ = Describe("Gateway API", func() {
 		It("005-request-header-modifier-rule", func() {
 			testRequestHeaderModifierRule(f)
 		})
+
+		It("006-host-rewrite", func() {
+			testHostRewrite(f)
+		})
+
+		It("007-gateway-allow-type", func() {
+			testGatewayAllowType(f)
+		})
 	})
 
 	Describe("TLS Gateway", func() {
