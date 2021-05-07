@@ -15,7 +15,7 @@ As an example, this Ingress object:
 
 ```yaml
 # ingress-name.yaml
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: name-example
@@ -25,14 +25,18 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: s1
-          servicePort: 80
+          service:
+            name: s1
+            port:
+              number: 80
   - host: bar1.bar.com
     http:
       paths:
       - backend:
-          serviceName: s2
-          servicePort: 80
+          service:
+            name: s2
+            port:
+              number: 80
 ```
 
 must be represented by two different HTTPProxy objects:
