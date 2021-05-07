@@ -10,8 +10,7 @@ As the Ingress specification has evolved between v1beta1 and v1, any differences
 ## Kubernetes Versions
 
 Contour is [validated against Kubernetes release versions N through N-2][1] (with N being the latest release).
-As Ingress v1 was introduced in Kubernetes version 1.18, Contour running in an older Kubernetes version will watch Ingress v1beta1 objects and reconcile them.
-For Kubernetes version 1.18+, the API serve translates any Ingress v1beta1 resources to Ingress v1 and Contour watches Ingress v1 resources.
+For Kubernetes version 1.19+, the API server translates any Ingress v1beta1 resources to Ingress v1 and Contour watches Ingress v1 resources.
 
 ## IngressClass and IngressClass Name
 

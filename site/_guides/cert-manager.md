@@ -282,7 +282,7 @@ Expose the Service to the world with Contour and an Ingress object. Create a fil
 the following contents:
 
 ```yaml
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: httpbin
@@ -292,8 +292,10 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: httpbin
-          servicePort: 8080
+          service:
+            name: httpbin
+            port:
+              number: 8080
 ```
 
 The host name, `httpbin.davecheney.com` is a `CNAME` to the `gke.davecheney.com` record that was created in the first section, and must be created in the same place as the `gke.davecheney.com` record was.
@@ -353,7 +355,7 @@ We need to add the following annotations:
 Using `kubectl edit ingress httpbin`:
 
 ```yaml
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: httpbin
@@ -372,8 +374,10 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: httpbin
-          servicePort: 8080
+          service:
+            name: httpbin
+            port:
+              number: 8080
 ```
 
 The certificate is issued in the name of the hosts listed in the `tls:` section, `httpbin.davecheney.com` and stored in the secret `httpbin`.
@@ -470,7 +474,7 @@ clusterissuer "letsencrypt-prod" created
 Now we use `kubectl edit ingress httpbin` to edit our Ingress to ask for a real certificate from `letsencrypt-prod`:
 
 ```yaml
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: httpbin

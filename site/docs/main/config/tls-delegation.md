@@ -2,7 +2,7 @@
 
 In order to support wildcard certificates, TLS certificates for a `*.somedomain.com`, which are stored in a namespace controlled by the cluster administrator, Contour supports a facility known as TLS Certificate Delegation.
 This facility allows the owner of a TLS certificate to delegate, for the purposes of referencing the TLS certificate, permission to Contour to read the Secret object from another namespace.
-Delegation works for both HTTPProxy and Ingress v1beta1 resources.
+Delegation works for both HTTPProxy and Ingress v1beta1 resources (however it does not work with Ingress v1).
 TLS Certificate Delegation is not currently supported on Ingress v1 resources due to changes in the spec that make this impossible.
 See [this issue][0] for details.
 

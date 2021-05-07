@@ -19,7 +19,7 @@ A minimal Ingress object might look like:
 
 ```yaml
 # ingress.yaml
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: basic
@@ -29,8 +29,10 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: s1
-          servicePort: 80
+          service:
+            name: s1
+            port:
+              number: 80
 ```
 
 This Ingress object, named `basic`, will route incoming HTTP traffic with a `Host:` header for `foo-basic.bar.com` to a Service named `s1` on port `80`.
