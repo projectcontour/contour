@@ -24,7 +24,7 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -37,7 +37,7 @@ func TestRetryPolicy(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(s1)
 
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hello",
 			Namespace: s1.Namespace,
@@ -47,8 +47,8 @@ func TestRetryPolicy(t *testing.T) {
 				"projectcontour.io/per-try-timeout": "120ms",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: featuretests.IngressV1Beta1Backend(s1),
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnAdd(i1)
@@ -67,7 +67,7 @@ func TestRetryPolicy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hello", Namespace: "default",
 			Annotations: map[string]string{
@@ -76,8 +76,8 @@ func TestRetryPolicy(t *testing.T) {
 				"projectcontour.io/per-try-timeout": "120ms",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: featuretests.IngressV1Beta1Backend(s1),
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnUpdate(i1, i2)
@@ -96,7 +96,7 @@ func TestRetryPolicy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	i3 := &v1beta1.Ingress{
+	i3 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hello", Namespace: "default",
 			Annotations: map[string]string{
@@ -105,8 +105,8 @@ func TestRetryPolicy(t *testing.T) {
 				"projectcontour.io/per-try-timeout": "120ms",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: featuretests.IngressV1Beta1Backend(s1),
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnUpdate(i2, i3)

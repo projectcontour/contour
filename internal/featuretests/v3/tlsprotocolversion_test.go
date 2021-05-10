@@ -25,7 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,22 +47,22 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80})
 	rh.OnAdd(s1)
 
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: s1.Namespace,
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: sec1.Name,
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *featuretests.IngressV1Beta1Backend(s1),
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
@@ -90,7 +90,7 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: sec1.Namespace,
@@ -98,17 +98,17 @@ func TestTLSMinimumProtocolVersion(t *testing.T) {
 				"projectcontour.io/tls-minimum-protocol-version": "1.3",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: sec1.Name,
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: *featuretests.IngressV1Beta1Backend(s1),
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
