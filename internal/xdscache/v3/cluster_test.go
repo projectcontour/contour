@@ -27,7 +27,7 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -167,13 +167,13 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"single unnamed service": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 443),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("kuard", 443),
 					},
 				},
 				service("default", "kuard",
@@ -197,15 +197,17 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"single named service": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromString("https"),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: &networking_v1.IngressBackend{
+							Service: &networking_v1.IngressServiceBackend{
+								Name: "kuard",
+								Port: networking_v1.ServiceBackendPort{Name: "https"},
+							},
 						},
 					},
 				},
@@ -231,15 +233,17 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"h2c upstream": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromString("http"),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: &networking_v1.IngressBackend{
+							Service: &networking_v1.IngressServiceBackend{
+								Name: "kuard",
+								Port: networking_v1.ServiceBackendPort{Name: "http"},
+							},
 						},
 					},
 				},
@@ -280,13 +284,13 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"long namespace and service name": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "webserver-1-unimatrix-zero-one",
 						Namespace: "beurocratic-company-test-domain-1",
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("tiny-cog-department-test-instance", 443),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("tiny-cog-department-test-instance", 443),
 					},
 				},
 				service("beurocratic-company-test-domain-1", "tiny-cog-department-test-instance",
@@ -720,15 +724,17 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"circuitbreaker annotations": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromString("http"),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: &networking_v1.IngressBackend{
+							Service: &networking_v1.IngressServiceBackend{
+								Name: "kuard",
+								Port: networking_v1.ServiceBackendPort{Name: "http"},
+							},
 						},
 					},
 				},
@@ -770,7 +776,7 @@ func TestClusterVisit(t *testing.T) {
 		},
 		"projectcontour.io/num-retries annotation": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
@@ -779,10 +785,12 @@ func TestClusterVisit(t *testing.T) {
 							"projectcontour.io/retry-on":    "gateway-error",
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "kuard",
-							ServicePort: intstr.FromString("https"),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: &networking_v1.IngressBackend{
+							Service: &networking_v1.IngressServiceBackend{
+								Name: "kuard",
+								Port: networking_v1.ServiceBackendPort{Name: "https"},
+							},
 						},
 					},
 				},
