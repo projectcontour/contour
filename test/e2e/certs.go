@@ -17,11 +17,13 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	"github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,4 +74,16 @@ func (c *Certs) CreateSelfSignedCert(ns, name, secretName, dnsName string) func(
 		require.NoError(c.t, c.client.Delete(context.TODO(), cert))
 		require.NoError(c.t, c.client.Delete(context.TODO(), issuer))
 	}
+}
+
+// GetTLSCertificate returns a tls.Certificate containing the data in the specified
+// secret. The secret must have the "tls.crt" and "tls.key" keys.
+func (c *Certs) GetTLSCertificate(secretNamespace, secretName string) tls.Certificate {
+	secret := &corev1.Secret{}
+	require.NoError(c.t, c.client.Get(context.TODO(), client.ObjectKey{Namespace: secretNamespace, Name: secretName}, secret))
+
+	cert, err := tls.X509KeyPair(secret.Data["tls.crt"], secret.Data["tls.key"])
+	require.NoError(c.t, err)
+
+	return cert
 }

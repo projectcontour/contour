@@ -52,6 +52,9 @@ var _ = Describe("HTTPProxy", func() {
 	It("006-merge-slash", func() {
 		testMergeSlash(f)
 	})
+	It("007-client-cert-auth", func() {
+		testClientCertAuth(f)
+	})
 	It("008-tcproute-https-termination", func() {
 		testTCPRouteHTTPSTermination(f)
 	})
@@ -78,6 +81,12 @@ var _ = Describe("HTTPProxy", func() {
 	})
 	It("017-host-header-rewrite", func() {
 		testHostHeaderRewrite(f)
+	})
+	It("018-external-name-service-insecure", func() {
+		testExternalNameServiceInsecure(f)
+	})
+	It("018-external-name-service-tls", func() {
+		testExternalNameServiceTLS(f)
 	})
 	It("019-local-rate-limiting-vhost", func() {
 		testLocalRateLimitingVirtualHost(f)

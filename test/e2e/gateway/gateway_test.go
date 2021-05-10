@@ -163,7 +163,7 @@ var _ = Describe("Gateway API", func() {
 			}
 
 			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
-			cleanupCert = f.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "tls-gateway.projectcontour.io")
+			cleanupCert = f.Certs.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "tls-gateway.projectcontour.io")
 		})
 
 		AfterEach(func() {

@@ -119,6 +119,10 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 				client: crClient,
 				t:      t,
 			},
+			EchoSecure: &EchoSecure{
+				client: crClient,
+				t:      t,
+			},
 			HTTPBin: &HTTPBin{
 				client: crClient,
 				t:      t,
