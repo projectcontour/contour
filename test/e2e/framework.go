@@ -24,13 +24,11 @@ import (
 	"time"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	"github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -62,6 +60,10 @@ type Framework struct {
 
 	// HTTP provides helpers for making HTTP/HTTPS requests.
 	HTTP *HTTP
+
+	// Certs provides helpers for creating cert-manager certificates
+	// and related resources.
+	Certs *Certs
 
 	t ginkgo.GinkgoTInterface
 }
@@ -128,6 +130,10 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 			RetryInterval: time.Second,
 			RetryTimeout:  60 * time.Second,
 			t:             t,
+		},
+		Certs: &Certs{
+			client: crClient,
+			t:      t,
 		},
 		t: t,
 	}
@@ -208,46 +214,6 @@ func (f *Framework) DeleteNamespace(name string) {
 		},
 	}
 	require.NoError(f.t, f.Client.Delete(context.TODO(), ns))
-}
-
-// CreateSelfSignedCert creates a self-signed Issuer if it doesn't already exist
-// and uses it to create a self-signed Certificate. It returns a cleanup function.
-func (f *Framework) CreateSelfSignedCert(ns, name, secretName, dnsName string) func() {
-	issuer := &certmanagerv1.Issuer{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      "selfsigned",
-		},
-		Spec: certmanagerv1.IssuerSpec{
-			IssuerConfig: certmanagerv1.IssuerConfig{
-				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
-			},
-		},
-	}
-
-	if err := f.Client.Create(context.TODO(), issuer); err != nil && !errors.IsAlreadyExists(err) {
-		require.FailNow(f.t, "error creating Issuer: %v", err)
-	}
-
-	cert := &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-		},
-		Spec: certmanagerv1.CertificateSpec{
-			DNSNames:   []string{dnsName},
-			SecretName: secretName,
-			IssuerRef: certmanagermetav1.ObjectReference{
-				Name: "selfsigned",
-			},
-		},
-	}
-	require.NoError(f.t, f.Client.Create(context.TODO(), cert))
-
-	return func() {
-		require.NoError(f.t, f.Client.Delete(context.TODO(), cert))
-		require.NoError(f.t, f.Client.Delete(context.TODO(), issuer))
-	}
 }
 
 // GetEchoResponseBody decodes an HTTP response body that is
