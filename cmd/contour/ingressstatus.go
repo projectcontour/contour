@@ -23,7 +23,6 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -86,15 +85,9 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 	// informers, so new informers will auto-start.
 	resources := []schema.GroupVersionResource{
 		contour_api_v1.HTTPProxyGVR,
+		networking_v1.SchemeGroupVersion.WithResource("ingresses"),
 	}
-	var useIngressV1 bool
-	if isw.clients.ResourcesExist(k8s.IngressV1Resources()...) {
-		resources = append(resources, networking_v1.SchemeGroupVersion.WithResource("ingresses"))
-		useIngressV1 = true
-	} else {
-		resources = append(resources, v1beta1.SchemeGroupVersion.WithResource("ingresses"))
-		useIngressV1 = false
-	}
+
 	for _, r := range resources {
 		inf, err := isw.clients.InformerForResource(r)
 		if err != nil {
@@ -119,23 +112,12 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 
 			u.Set(lbs)
 
-			if useIngressV1 {
-				var ingressV1List networking_v1.IngressList
-				if err := isw.clients.Cache().List(context.Background(), &ingressV1List); err != nil {
-					isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
-				} else {
-					for i := range ingressV1List.Items {
-						u.OnAdd(&ingressV1List.Items[i])
-					}
-				}
+			var ingressList networking_v1.IngressList
+			if err := isw.clients.Cache().List(context.Background(), &ingressList); err != nil {
+				isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
 			} else {
-				var ingressV1Beta1List v1beta1.IngressList
-				if err := isw.clients.Cache().List(context.Background(), &ingressV1Beta1List); err != nil {
-					isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
-				} else {
-					for i := range ingressV1Beta1List.Items {
-						u.OnAdd(&ingressV1Beta1List.Items[i])
-					}
+				for i := range ingressList.Items {
+					u.OnAdd(&ingressList.Items[i])
 				}
 			}
 

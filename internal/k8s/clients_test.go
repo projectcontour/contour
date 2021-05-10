@@ -31,17 +31,13 @@ func TestResourceKindExists(t *testing.T) {
 			Name: "networking.k8s.io",
 			Versions: []metav1.GroupVersionForDiscovery{
 				{
-					GroupVersion: "networking.k8s.io/v1beta1",
-					Version:      "v1beta1",
+					GroupVersion: "networking.k8s.io/v1",
+					Version:      "v1",
 				},
-			},
-			PreferredVersion: metav1.GroupVersionForDiscovery{
-				GroupVersion: "networking.k8s.io/v1",
-				Version:      "v1",
 			},
 		},
 		VersionedResources: map[string][]metav1.APIResource{
-			"v1beta1": {
+			"v1": {
 				{
 					Name:               "ingressclasses",
 					Namespaced:         false,
@@ -53,7 +49,7 @@ func TestResourceKindExists(t *testing.T) {
 					Name:               "ingresses",
 					Namespaced:         true,
 					Kind:               "Ingress",
-					Verbs:              metav1.Verbs{"create", "delete", "deletecolrection", "get", "list", "patch", "update", "watch"},
+					Verbs:              metav1.Verbs{"create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"},
 					ShortNames:         []string{"ing"},
 					StorageVersionHash: "ZOAfGflaKd0=",
 				},
@@ -75,17 +71,17 @@ func TestResourceKindExists(t *testing.T) {
 
 	valid := schema.GroupVersionResource{
 		Group:    "networking.k8s.io",
-		Version:  "v1beta1",
+		Version:  "v1",
 		Resource: "ingress",
 	}
 
 	invalid := schema.GroupVersionResource{
 		Group:    "networking.k8s.io",
-		Version:  "v1beta1",
+		Version:  "v1",
 		Resource: "phony",
 	}
 
-	assert.True(t, clients.ResourcesExist(valid), "v1beta1 ingress exists")
-	assert.False(t, clients.ResourcesExist(invalid), "v1beta1 phony exists")
-	assert.False(t, clients.ResourcesExist(valid, valid, invalid), "v1beta1 phony exists")
+	assert.True(t, clients.ResourcesExist(valid), "v1 ingress exists")
+	assert.False(t, clients.ResourcesExist(invalid), "v1 phony exists")
+	assert.False(t, clients.ResourcesExist(valid, valid, invalid), "v1 phony exists")
 }

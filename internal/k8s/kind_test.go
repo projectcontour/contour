@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -34,7 +33,6 @@ func TestKindOf(t *testing.T) {
 		{"Service", &v1.Service{}},
 		{"Endpoints", &v1.Endpoints{}},
 		{"Pod", &v1.Pod{}},
-		{"Ingress", &v1beta1.Ingress{}},
 		{"Ingress", &networking_v1.Ingress{}},
 		{"HTTPProxy", &contour_api_v1.HTTPProxy{}},
 		{"TLSCertificateDelegation", &contour_api_v1.TLSCertificateDelegation{}},
@@ -60,7 +58,7 @@ func TestVersionOf(t *testing.T) {
 		{"v1", &v1.Secret{}},
 		{"v1", &v1.Service{}},
 		{"v1", &v1.Endpoints{}},
-		{"networking.k8s.io/v1beta1", &v1beta1.Ingress{}},
+		{"networking.k8s.io/v1", &networking_v1.Ingress{}},
 		{"projectcontour.io/v1", &contour_api_v1.HTTPProxy{}},
 		{"projectcontour.io/v1", &contour_api_v1.TLSCertificateDelegation{}},
 		{"projectcontour.io/v1alpha1", &v1alpha1.ExtensionService{}},

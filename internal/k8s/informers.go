@@ -18,7 +18,6 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	networking_v1beta1 "k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
@@ -40,10 +39,6 @@ func DefaultResources() []schema.GroupVersionResource {
 		contour_api_v1alpha1.ExtensionServiceGVR,
 		corev1.SchemeGroupVersion.WithResource("services"),
 	}
-}
-
-func IngressV1Beta1Resource() schema.GroupVersionResource {
-	return networking_v1beta1.SchemeGroupVersion.WithResource("ingresses")
 }
 
 func IngressV1Resources() []schema.GroupVersionResource {
