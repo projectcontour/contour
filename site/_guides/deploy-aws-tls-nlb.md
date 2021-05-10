@@ -5,7 +5,7 @@ layout: page
 
 ## Motivation
 
-![diagram illustrating connection between network load balancer and contour](fig.jpg)
+![diagram illustrating connection between network load balancer and contour](/img/aws-nlb-tls/fig.jpg){:class="img-fluid"}
 
 Managing TLS certificates (and related configuration) for production cluster workloads is both time consuming, and high risk. For example, storing multiple copies of a certificate secret key in the cluster may increases the chances of it being compromised. Additionally, TLS can be complicated to configure and implement properly. 
 
@@ -47,7 +47,7 @@ The domain name on the TLS certificate must correspond to the planned domain nam
 
 Note the ARN of the certificate, which uniquely identifies it in kubernetes config files. 
 
-![screenshot indicating location of ARN value in web console](certv3.mp4)
+![screenshot indicating location of ARN value in web console](/img/aws-nlb-tls/acm-arn.png){:class="img-fluid"}
 
 2. Create Envoy Service with new NLB
 
@@ -109,7 +109,7 @@ Use the "A" record type, and enable the ["alias" option.](https://docs.aws.amazo
 
 Select the NLB resource. Double check the region, and use the last 4 digits (noted earlier) to select the proper resource. 
 
-![screenshot of Route 53 New Record Console](record.png)
+![screenshot of Route 53 New Record Console](/img/aws-nlb-tls/record.png){:class="img-fluid"}
 
 ### Verify
 
