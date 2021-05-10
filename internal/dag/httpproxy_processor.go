@@ -242,21 +242,19 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				dv := &PeerValidationContext{
 					SkipClientCertValidation: tls.ClientValidation.SkipClientCertValidation,
 				}
-				if !tls.ClientValidation.SkipClientCertValidation {
-					if tls.ClientValidation.CACertificate != "" {
-						secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
-						cacert, err := p.source.LookupSecret(secretName, validCA)
-						if err != nil {
-							// PeerValidationContext is requested, but cert is missing or not configured.
-							validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
-								"Spec.VirtualHost.TLS client validation is invalid: invalid CA Secret %q: %s", secretName, err)
-							return
-						}
-						dv.CACertificate = cacert
-					} else {
+				if tls.ClientValidation.CACertificate != "" {
+					secretName := k8s.NamespacedNameFrom(tls.ClientValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
+					cacert, err := p.source.LookupSecret(secretName, validCA)
+					if err != nil {
+						// PeerValidationContext is requested, but cert is missing or not configured.
 						validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
-							"Spec.VirtualHost.TLS client validation is invalid: CA Secret must be specified")
+							"Spec.VirtualHost.TLS client validation is invalid: invalid CA Secret %q: %s", secretName, err)
+						return
 					}
+					dv.CACertificate = cacert
+				} else if !tls.ClientValidation.SkipClientCertValidation {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "ClientValidationInvalid",
+						"Spec.VirtualHost.TLS client validation is invalid: CA Secret must be specified")
 				}
 				svhost.DownstreamValidation = dv
 			}

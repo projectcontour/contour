@@ -4948,6 +4948,35 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy21 is downstream validation, skip cert validation
+	proxy21 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						SkipClientCertValidation: true,
+						CACertificate:            cert1.Name,
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	// proxy10 has a websocket route
 	proxy10 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -8621,6 +8650,37 @@ func TestDAGInsert(t *testing.T) {
 							Secret:        secret(sec1),
 							DownstreamValidation: &PeerValidationContext{
 								SkipClientCertValidation: true,
+							},
+						},
+					),
+				},
+			),
+		},
+		"insert httpproxy w/ tls termination mode w/ skip cert verification and a ca": {
+			objs: []interface{}{
+				proxy21, s1, sec1, cert1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", routeUpgrade("/", service(s1))),
+					),
+				}, &Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+								routes: routes(
+									routeUpgrade("/", service(s1))),
+							},
+							MinTLSVersion: "1.2",
+							Secret:        secret(sec1),
+							DownstreamValidation: &PeerValidationContext{
+								SkipClientCertValidation: true,
+								CACertificate:            &Secret{Object: cert1},
 							},
 						},
 					),
