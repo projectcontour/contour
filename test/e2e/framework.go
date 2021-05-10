@@ -20,12 +20,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	"strings"
-	"testing"
+	"strconv"
 	"time"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
+	"github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -62,17 +62,38 @@ type Framework struct {
 	// HTTP provides helpers for making HTTP/HTTPS requests.
 	HTTP *HTTP
 
-	t *testing.T
+	t ginkgo.GinkgoTInterface
 }
 
-func NewFramework(t *testing.T) *Framework {
+func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 	scheme := runtime.NewScheme()
 	require.NoError(t, kubescheme.AddToScheme(scheme))
 	require.NoError(t, contourv1.AddToScheme(scheme))
 	require.NoError(t, gatewayv1alpha1.AddToScheme(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
 
-	crClient, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
+	config := config.GetConfigOrDie()
+
+	configQPS := os.Getenv("K8S_CLIENT_QPS")
+	if configQPS == "" {
+		configQPS = "100"
+	}
+
+	configBurst := os.Getenv("K8S_CLIENT_BURST")
+	if configBurst == "" {
+		configBurst = "100"
+	}
+
+	qps, err := strconv.ParseFloat(configQPS, 32)
+	require.NoError(t, err)
+
+	burst, err := strconv.Atoi(configBurst)
+	require.NoError(t, err)
+
+	config.QPS = float32(qps)
+	config.Burst = burst
+
+	crClient, err := client.New(config, client.Options{Scheme: scheme})
 	require.NoError(t, err)
 
 	httpURLBase := os.Getenv("CONTOUR_E2E_HTTP_URL_BASE")
@@ -106,18 +127,10 @@ func NewFramework(t *testing.T) *Framework {
 	}
 }
 
-// RunParallel runs the provided set of subtests in parallel and blocks
-// until they're all done running.
-func (f *Framework) RunParallel(name string, subtests map[string]func(t *testing.T, f *Framework)) {
-	f.t.Run(name, func(t *testing.T) {
-		for name, tc := range subtests {
-			tc := tc
-			t.Run(name, func(t *testing.T) {
-				t.Parallel()
-				tc(t, f)
-			})
-		}
-	})
+// T exposes a GinkgoTInterface which exposes many of the same methods
+// as a *testing.T, for use in tests that previously required a *testing.T.
+func (f *Framework) T() ginkgo.GinkgoTInterface {
+	return f.t
 }
 
 // CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
@@ -243,15 +256,11 @@ func (f *Framework) GetEchoResponseBody(body []byte) EchoResponseBody {
 }
 
 type EchoResponseBody struct {
-	Path      string      `json:"path"`
-	Host      string      `json:"host"`
-	Headers   http.Header `json:"headers"`
-	Namespace string      `json:"namespace"`
-	Ingress   string      `json:"ingress"`
-	Service   string      `json:"service"`
-	Pod       string      `json:"pod"`
-}
-
-func (erb *EchoResponseBody) GetHeader(name string) string {
-	return strings.Join(erb.Headers[name], ",")
+	Path           string      `json:"path"`
+	Host           string      `json:"host"`
+	RequestHeaders http.Header `json:"headers"`
+	Namespace      string      `json:"namespace"`
+	Ingress        string      `json:"ingress"`
+	Service        string      `json:"service"`
+	Pod            string      `json:"pod"`
 }

@@ -25,7 +25,6 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -50,7 +49,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 	// Ingress
 	{
 		// --- ingress class matches explicitly
-		ingressValid := &v1beta1.Ingress{
+		ingressValid := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
@@ -58,8 +57,8 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 					"kubernetes.io/ingress.class": "linkerd",
 				},
 			},
-			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.IngressV1Beta1Backend(svc),
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: featuretests.IngressBackend(svc),
 			},
 		}
 
@@ -80,7 +79,7 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		})
 
 		// --- wrong ingress class specified
-		ingressWrongClass := &v1beta1.Ingress{
+		ingressWrongClass := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
@@ -88,8 +87,8 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 					"kubernetes.io/ingress.class": "invalid",
 				},
 			},
-			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.IngressV1Beta1Backend(svc),
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: featuretests.IngressBackend(svc),
 			},
 		}
 
@@ -103,13 +102,13 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 		})
 
 		// --- no ingress class specified
-		ingressNoClass := &v1beta1.Ingress{
+		ingressNoClass := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
 			},
-			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.IngressV1Beta1Backend(svc),
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: featuretests.IngressBackend(svc),
 			},
 		}
 		rh.OnUpdate(ingressWrongClass, ingressNoClass)
@@ -275,13 +274,13 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 	// Ingress
 	{
 		// --- no ingress class specified
-		ingressNoClass := &v1beta1.Ingress{
+		ingressNoClass := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
 			},
-			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.IngressV1Beta1Backend(svc),
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: featuretests.IngressBackend(svc),
 			},
 		}
 
@@ -302,7 +301,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		})
 
 		// --- matching ingress class specified
-		ingressMatchingClass := &v1beta1.Ingress{
+		ingressMatchingClass := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
@@ -310,8 +309,8 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 					"kubernetes.io/ingress.class": "contour",
 				},
 			},
-			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.IngressV1Beta1Backend(svc),
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: featuretests.IngressBackend(svc),
 			},
 		}
 
@@ -332,7 +331,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 		})
 
 		// --- non-matching ingress class specified
-		ingressNonMatchingClass := &v1beta1.Ingress{
+		ingressNonMatchingClass := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      IngressName,
 				Namespace: Namespace,
@@ -340,8 +339,8 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 					"kubernetes.io/ingress.class": "invalid",
 				},
 			},
-			Spec: v1beta1.IngressSpec{
-				Backend: featuretests.IngressV1Beta1Backend(svc),
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: featuretests.IngressBackend(svc),
 			},
 		}
 		rh.OnUpdate(ingressMatchingClass, ingressNonMatchingClass)

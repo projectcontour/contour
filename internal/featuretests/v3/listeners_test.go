@@ -26,9 +26,8 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestNonTLSListener(t *testing.T) {
@@ -46,22 +45,20 @@ func TestNonTLSListener(t *testing.T) {
 		Nonce:   "0",
 	})
 
+	svc1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+	rh.OnAdd(svc1)
+
 	// i1 is a simple ingress, no hostname, no tls.
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "backend",
-				ServicePort: intstr.FromInt(80),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
 	}
-
-	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// add it and assert that we now have a ingress_http listener
 	rh.OnAdd(i1)
@@ -74,7 +71,7 @@ func TestNonTLSListener(t *testing.T) {
 	})
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
@@ -82,11 +79,8 @@ func TestNonTLSListener(t *testing.T) {
 				"kubernetes.io/ingress.allow-http": "false",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "backend",
-				ServicePort: intstr.FromInt(80),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
 	}
 
@@ -101,7 +95,7 @@ func TestNonTLSListener(t *testing.T) {
 
 	// i3 is similar to i2, but uses the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
 	// to force 80 -> 443 upgrade
-	i3 := &v1beta1.Ingress{
+	i3 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
@@ -109,11 +103,8 @@ func TestNonTLSListener(t *testing.T) {
 				"ingress.kubernetes.io/force-ssl-redirect": "true",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "backend",
-				ServicePort: intstr.FromInt(80),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(svc1),
 		},
 	}
 
@@ -142,26 +133,26 @@ func TestTLSListener(t *testing.T) {
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
+	svc1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+
 	// i1 is a tls ingress
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "backend",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(svc1),
 						}},
 					},
 				},
@@ -169,8 +160,7 @@ func TestTLSListener(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+	rh.OnAdd(svc1)
 
 	// add secret
 	rh.OnAdd(s1)
@@ -207,7 +197,7 @@ func TestTLSListener(t *testing.T) {
 	})
 
 	// i2 is the same as i1 but has the kubernetes.io/ingress.allow-http: "false" annotation
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
@@ -215,20 +205,17 @@ func TestTLSListener(t *testing.T) {
 				"kubernetes.io/ingress.allow-http": "false",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "backend",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(svc1),
 						}},
 					},
 				},
@@ -521,26 +508,26 @@ func TestLDSFilter(t *testing.T) {
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
+	svc1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+
 	// i1 is a tls ingress
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "backend",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(svc1),
 						}},
 					},
 				},
@@ -548,8 +535,7 @@ func TestLDSFilter(t *testing.T) {
 		},
 	}
 
-	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+	rh.OnAdd(svc1)
 
 	// add secret
 	rh.OnAdd(s1)
@@ -618,22 +604,21 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 		Nonce:   "0",
 	})
 
+	s1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+
 	// i1 is a simple ingress, no hostname, no tls.
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "backend",
-				ServicePort: intstr.FromInt(80),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 
-	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+	rh.OnAdd(s1)
 
 	rh.OnAdd(i1)
 
@@ -669,26 +654,26 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
+	svc1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+
 	// i1 is a tls ingress
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "backend",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(svc1),
 						}},
 					},
 				},
@@ -707,8 +692,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 		TypeUrl: listenerType,
 	})
 
-	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+	rh.OnAdd(svc1)
 
 	rh.OnAdd(i1)
 
@@ -770,26 +754,26 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
+	svc1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+
 	// i1 is a tls ingress
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "backend",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(svc1),
 						}},
 					},
 				},
@@ -810,8 +794,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		Nonce:   "0",
 	})
 
-	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+	rh.OnAdd(svc1)
 
 	// add ingress and assert the existence of ingress_http and ingres_https
 	// using custom address and port
@@ -860,35 +843,33 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	}
 
+	svc1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+	rh.OnAdd(svc1)
+
 	// i1 is a tls ingress
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "backend",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(svc1),
 						}},
 					},
 				},
 			}},
 		},
 	}
-
-	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
 
 	// add secret
 	rh.OnAdd(s1)

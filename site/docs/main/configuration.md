@@ -51,7 +51,6 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--disable-leader-election` | Disable leader election mechanism |
 | `-d, --debug`   |                  Enable debug logging |
 | `--kubernetes-debug=<log level>`  | Enable Kubernetes client debug logging |
-| `--experimental-service-apis` | DEPRECATED: Please configure the gateway.name & gateway.namespace in the configuration file. | 
 {: class="table thead-dark table-bordered"}
 <br>
 

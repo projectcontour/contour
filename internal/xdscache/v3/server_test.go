@@ -39,7 +39,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -106,21 +106,18 @@ func TestGRPC(t *testing.T) {
 		},
 		"StreamListeners": func(t *testing.T, cc *grpc.ClientConn) {
 			// add an ingress, which will create a non tls listener
-			eh.OnAdd(&v1beta1.Ingress{
+			eh.OnAdd(&networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
 				},
-				Spec: v1beta1.IngressSpec{
-					Rules: []v1beta1.IngressRule{{
+				Spec: networking_v1.IngressSpec{
+					Rules: []networking_v1.IngressRule{{
 						Host: "httpbin.org",
-						IngressRuleValue: v1beta1.IngressRuleValue{
-							HTTP: &v1beta1.HTTPIngressRuleValue{
-								Paths: []v1beta1.HTTPIngressPath{{
-									Backend: v1beta1.IngressBackend{
-										ServiceName: "httpbin-org",
-										ServicePort: intstr.FromInt(80),
-									},
+						IngressRuleValue: networking_v1.IngressRuleValue{
+							HTTP: &networking_v1.HTTPIngressRuleValue{
+								Paths: []networking_v1.HTTPIngressPath{{
+									Backend: *backend("httpbin-org", 80),
 								}},
 							},
 						},
@@ -138,21 +135,18 @@ func TestGRPC(t *testing.T) {
 			checktimeout(t, stream)                   // check that the second receive times out
 		},
 		"StreamRoutes": func(t *testing.T, cc *grpc.ClientConn) {
-			eh.OnAdd(&v1beta1.Ingress{
+			eh.OnAdd(&networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "httpbin-org",
 					Namespace: "default",
 				},
-				Spec: v1beta1.IngressSpec{
-					Rules: []v1beta1.IngressRule{{
+				Spec: networking_v1.IngressSpec{
+					Rules: []networking_v1.IngressRule{{
 						Host: "httpbin.org",
-						IngressRuleValue: v1beta1.IngressRuleValue{
-							HTTP: &v1beta1.HTTPIngressRuleValue{
-								Paths: []v1beta1.HTTPIngressPath{{
-									Backend: v1beta1.IngressBackend{
-										ServiceName: "httpbin-org",
-										ServicePort: intstr.FromInt(80),
-									},
+						IngressRuleValue: networking_v1.IngressRuleValue{
+							HTTP: &networking_v1.HTTPIngressRuleValue{
+								Paths: []networking_v1.HTTPIngressPath{{
+									Backend: *backend("httpbin-org", 80),
 								}},
 							},
 						},

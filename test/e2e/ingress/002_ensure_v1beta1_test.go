@@ -13,59 +13,60 @@
 
 // +build e2e
 
-package httpproxy
+package ingress
 
 import (
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"context"
+
 	"github.com/projectcontour/contour/test/e2e"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func testMergeSlash(fx *e2e.Framework) {
+// Explicitly ensure v1beta1 resources continue to work.
+func testEnsureV1Beta1(fx *e2e.Framework) {
 	t := fx.T()
-	namespace := "006-merge-slash"
+	namespace := "002-ingress-ensure-v1beta1"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
 
 	fx.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
 
-	p := &contourv1.HTTPProxy{
+	ingressHost := "v1beta1.projectcontour.io"
+	i := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      "echo",
 		},
-		Spec: contourv1.HTTPProxySpec{
-			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "mergeslash.projectcontour.io",
-			},
-			Routes: []contourv1.Route{
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{
 				{
-					Services: []contourv1.Service{
-						{
-							Name: "ingress-conformance-echo",
-							Port: 80,
-						},
-					},
-					Conditions: []contourv1.MatchCondition{
-						{
-							Prefix: "/",
+					Host: ingressHost,
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: []v1beta1.HTTPIngressPath{
+								{
+									Backend: v1beta1.IngressBackend{
+										ServiceName: "ingress-conformance-echo",
+										ServicePort: intstr.FromInt(80),
+									},
+								},
+							},
 						},
 					},
 				},
 			},
 		},
 	}
-	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+	require.NoError(t, fx.Client.Create(context.TODO(), i))
 
 	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Path:      "/anything/this//has//lots////of/slashes",
+		Host:      ingressHost,
+		Path:      "/echo",
 		Condition: e2e.HasStatusCode(200),
 	})
 	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-	assert.Contains(t, fx.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")
 }

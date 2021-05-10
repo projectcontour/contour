@@ -25,7 +25,7 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -38,7 +38,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
 
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
@@ -46,8 +46,8 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 				"projectcontour.io/response-timeout": "1m20s",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: featuretests.IngressV1Beta1Backend(svc),
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(svc),
 		},
 	}
 	rh.OnAdd(i1)
@@ -67,7 +67,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
@@ -94,7 +94,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	i3 := &v1beta1.Ingress{
+	i3 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,
@@ -121,7 +121,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	i4 := &v1beta1.Ingress{
+	i4 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: svc.Namespace,

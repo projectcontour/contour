@@ -17,7 +17,6 @@ package httpproxy
 
 import (
 	"context"
-	"testing"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
@@ -26,8 +25,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testIncludePrefixCondition(t *testing.T, fx *e2e.Framework) {
+func testIncludePrefixCondition(fx *e2e.Framework) {
 	var (
+		t              = fx.T()
 		baseNamespace  = "010-include-prefix-condition"
 		appNamespace   = "010-include-prefix-condition-app"
 		adminNamespace = "010-include-prefix-condition-admin"

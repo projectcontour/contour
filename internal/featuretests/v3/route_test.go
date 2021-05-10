@@ -28,25 +28,27 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // projectcontour/contour#172. Updating an object from
 //
-// apiVersion: networking/v1beta1
+// apiVersion: networking/v1
 // kind: Ingress
 // metadata:
 //   name: kuard
 // spec:
-//   backend:
-//     serviceName: kuard
-//     servicePort: 80
+//   defaultBackend:
+//     service:
+//       name: kuard
+//       port:
+//         number: 80
 //
 // to
 //
-// apiVersion: networking/v1beta1
+// apiVersion: networking/v1
 // kind: Ingress
 // metadata:
 //   name: kuard
@@ -56,8 +58,10 @@ import (
 //       paths:
 //       - path: /testing
 //         backend:
-//           serviceName: kuard
-//           servicePort: 80
+//           service:
+//             name: kuard
+//             port:
+//               number: 80
 //
 // fails to update the virtualhost cache.
 func TestEditIngress(t *testing.T) {
@@ -71,13 +75,10 @@ func TestEditIngress(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// add default/kuard to translator.
-	old := &v1beta1.Ingress{
+	old := &networking_v1.Ingress{
 		ObjectMeta: meta,
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(80),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnAdd(old)
@@ -98,18 +99,15 @@ func TestEditIngress(t *testing.T) {
 	})
 
 	// update old to new
-	rh.OnUpdate(old, &v1beta1.Ingress{
+	rh.OnUpdate(old, &networking_v1.Ingress{
 		ObjectMeta: meta,
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/testing",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromInt(80),
-							},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/testing",
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
@@ -136,7 +134,7 @@ func TestEditIngress(t *testing.T) {
 // projectcontour/contour#101
 // The path /hello should point to default/hello/80 on "*"
 //
-// apiVersion: networking/v1beta1
+// apiVersion: networking/v1
 // kind: Ingress
 // metadata:
 //   name: hello
@@ -146,35 +144,34 @@ func TestEditIngress(t *testing.T) {
 // 	 paths:
 //       - path: /hello
 //         backend:
-//           serviceName: hello
-//           servicePort: 80
+//           service:
+//             name: hello
+//             port:
+//               number: 80
 func TestIngressPathRouteWithoutHost(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
+	s1 := fixture.NewService("hello").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s1)
+
 	// add default/hello to translator.
-	rh.OnAdd(&v1beta1.Ingress{
+	rh.OnAdd(&networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default"},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/hello",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "hello",
-								ServicePort: intstr.FromInt(80),
-							},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/hello",
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
 			}},
 		},
 	})
-
-	s1 := fixture.NewService("hello").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
-	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -198,18 +195,20 @@ func TestEditIngressInPlace(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default"},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "hello.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
 							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "wowie",
-								ServicePort: intstr.FromString("http"),
+							Backend: networking_v1.IngressBackend{
+								Service: &networking_v1.IngressServiceBackend{
+									Name: "wowie",
+									Port: networking_v1.ServiceBackendPort{Name: "http"},
+								},
 							},
 						}},
 					},
@@ -244,25 +243,19 @@ func TestEditIngressInPlace(t *testing.T) {
 	})
 
 	// i2 is like i1 but adds a second route
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{Name: "hello", Namespace: "default"},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "hello.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "wowie",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *featuretests.IngressBackend(s1),
 						}, {
-							Path: "/whoop",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kerpow",
-								ServicePort: intstr.FromInt(9000),
-							},
+							Path:    "/whoop",
+							Backend: *featuretests.IngressBackend(s2),
 						}},
 					},
 				},
@@ -291,30 +284,24 @@ func TestEditIngressInPlace(t *testing.T) {
 	})
 
 	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
-	i3 := &v1beta1.Ingress{
+	i3 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hello",
 			Namespace: "default",
 			Annotations: map[string]string{
 				"ingress.kubernetes.io/force-ssl-redirect": "true"},
 		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "hello.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "wowie",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *featuretests.IngressBackend(s1),
 						}, {
-							Path: "/whoop",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kerpow",
-								ServicePort: intstr.FromInt(9000),
-							},
+							Path:    "/whoop",
+							Backend: *featuretests.IngressBackend(s2),
 						}},
 					},
 				},
@@ -353,34 +340,28 @@ func TestEditIngressInPlace(t *testing.T) {
 
 	// i4 is the same as i3, and includes a TLS spec object to enable ingress_https routes
 	// i3 is like i2, but adds the ingress.kubernetes.io/force-ssl-redirect: "true" annotation
-	i4 := &v1beta1.Ingress{
+	i4 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hello",
 			Namespace: "default",
 			Annotations: map[string]string{
 				"ingress.kubernetes.io/force-ssl-redirect": "true"},
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"hello.example.com"},
 				SecretName: "hello-kitty",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "hello.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "wowie",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *featuretests.IngressBackend(s1),
 						}, {
-							Path: "/whoop",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kerpow",
-								ServicePort: intstr.FromInt(9000),
-							},
+							Path:    "/whoop",
+							Backend: *featuretests.IngressBackend(s2),
 						}},
 					},
 				},
@@ -427,8 +408,12 @@ func TestSSLRedirectOverlay(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
+	s1 := fixture.NewService("app-service").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s1)
+
 	// i1 is a stock ingress with force-ssl-redirect on the / route
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "app",
 			Namespace: "default",
@@ -436,21 +421,18 @@ func TestSSLRedirectOverlay(t *testing.T) {
 				"ingress.kubernetes.io/force-ssl-redirect": "true",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"example.com"},
 				SecretName: "example-tls",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "app-service",
-								ServicePort: intstr.FromInt(8080),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
@@ -468,23 +450,21 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
-	rh.OnAdd(fixture.NewService("app-service").
-		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)}))
+	s2 := fixture.NewService("nginx-ingress/challenge-service").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8009, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s2)
 
 	// i2 is an overlay to add the let's encrypt handler.
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "challenge-service",
-								ServicePort: intstr.FromInt(8009),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
+							Backend: *featuretests.IngressBackend(s2),
 						}},
 					},
 				},
@@ -492,9 +472,6 @@ func TestSSLRedirectOverlay(t *testing.T) {
 		},
 	}
 	rh.OnAdd(i2)
-
-	rh.OnAdd(fixture.NewService("nginx-ingress/challenge-service").
-		WithPorts(v1.ServicePort{Name: "http", Port: 8009, TargetPort: intstr.FromInt(8080)}))
 
 	assertRDS(t, c, "5", virtualhosts(
 		envoy_v3.VirtualHost("example.com",
@@ -537,26 +514,24 @@ func TestInvalidCertInIngress(t *testing.T) {
 	rh.OnAdd(secret)
 
 	// Create a service
-	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}))
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s1)
 
 	// Create an ingress that uses the invalid secret
-	rh.OnAdd(&v1beta1.Ingress{
+	rh.OnAdd(&networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{Name: "kuard-ing", Namespace: "default"},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.io"},
 				SecretName: "example-tls",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.io",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
@@ -605,7 +580,11 @@ func TestIssue257(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	// apiVersion: networking/v1beta1
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s1)
+
+	// apiVersion: networking/v1
 	// kind: Ingress
 	// metadata:
 	//   name: kuard-ing
@@ -614,10 +593,12 @@ func TestIssue257(t *testing.T) {
 	//   annotations:
 	//     kubernetes.io/ingress.class: contour
 	// spec:
-	//   backend:
-	//     serviceName: kuard
-	//     servicePort: 80
-	i1 := &v1beta1.Ingress{
+	//   defaultBackend:
+	//     service:
+	//       name: kuard
+	//       port:
+	//         number: 80
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: "default",
@@ -625,18 +606,11 @@ func TestIssue257(t *testing.T) {
 				"kubernetes.io/ingress.class": "contour",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(80),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnAdd(i1)
-
-	s1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
-	rh.OnAdd(s1)
 
 	assertRDS(t, c, "2", virtualhosts(
 		envoy_v3.VirtualHost("*",
@@ -647,7 +621,7 @@ func TestIssue257(t *testing.T) {
 		),
 	), nil)
 
-	// apiVersion: networking/v1beta1
+	// apiVersion: networking/v1
 	// kind: Ingress
 	// metadata:
 	//   name: kuard-ing
@@ -661,10 +635,12 @@ func TestIssue257(t *testing.T) {
 	//    http:
 	//      paths:
 	//      - backend:
-	//         serviceName: kuard
-	//         servicePort: 80
+	//         service:
+	//           name: kuard
+	//           port:
+	//             number: 80
 	//        path: /
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: "default",
@@ -672,17 +648,14 @@ func TestIssue257(t *testing.T) {
 				"kubernetes.io/ingress.class": "contour",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.db.gd-ms.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
@@ -705,8 +678,12 @@ func TestRDSFilter(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
+	s1 := fixture.NewService("app-service").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s1)
+
 	// i1 is a stock ingress with force-ssl-redirect on the / route
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "app",
 			Namespace: "default",
@@ -714,21 +691,18 @@ func TestRDSFilter(t *testing.T) {
 				"ingress.kubernetes.io/force-ssl-redirect": "true",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"example.com"},
 				SecretName: "example-tls",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "app-service",
-								ServicePort: intstr.FromInt(8080),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
@@ -746,24 +720,21 @@ func TestRDSFilter(t *testing.T) {
 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
 	})
 
-	s1 := fixture.NewService("app-service").
-		WithPorts(v1.ServicePort{Name: "http", Port: 8080, TargetPort: intstr.FromInt(8080)})
-	rh.OnAdd(s1)
+	s2 := fixture.NewService("nginx-ingress/challenge-service").
+		WithPorts(v1.ServicePort{Name: "http", Port: 8009, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s2)
 
 	// i2 is an overlay to add the let's encrypt handler.
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{Name: "challenge", Namespace: "nginx-ingress"},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "challenge-service",
-								ServicePort: intstr.FromInt(8009),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/.well-known/acme-challenge/gVJl5NWL2owUqZekjHkt_bo3OHYC2XNDURRRgLI5JTk",
+							Backend: *featuretests.IngressBackend(s2),
 						}},
 					},
 				},
@@ -771,10 +742,6 @@ func TestRDSFilter(t *testing.T) {
 		},
 	}
 	rh.OnAdd(i2)
-
-	s2 := fixture.NewService("nginx-ingress/challenge-service").
-		WithPorts(v1.ServicePort{Name: "http", Port: 8009, TargetPort: intstr.FromInt(8080)})
-	rh.OnAdd(s2)
 
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "5",
@@ -826,38 +793,44 @@ func TestDefaultBackendDoesNotOverwriteNamedHost(t *testing.T) {
 		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
-	rh.OnAdd(&v1beta1.Ingress{
+	rh.OnAdd(&networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hello",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(80),
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: &networking_v1.IngressBackend{
+				Service: &networking_v1.IngressServiceBackend{
+					Name: "kuard",
+					Port: networking_v1.ServiceBackendPort{Number: 80},
+				},
 			},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "test-gui",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
 							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "test-gui",
-								ServicePort: intstr.FromInt(80),
+							Backend: networking_v1.IngressBackend{
+								Service: &networking_v1.IngressServiceBackend{
+									Name: "test-gui",
+									Port: networking_v1.ServiceBackendPort{Number: 80},
+								},
 							},
 						}},
 					},
 				},
 			}, {
 				// Empty host.
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
 							Path: "/kuard",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromInt(8080),
+							Backend: networking_v1.IngressBackend{
+								Service: &networking_v1.IngressServiceBackend{
+									Name: "kuard",
+									Port: networking_v1.ServiceBackendPort{Number: 8080},
+								},
 							},
 						}},
 					},
@@ -904,28 +877,32 @@ func TestDefaultBackendIsOverriddenByNoHostIngressRule(t *testing.T) {
 		),
 	)
 
-	rh.OnAdd(&v1beta1.Ingress{
+	rh.OnAdd(&networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hello",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(80),
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: &networking_v1.IngressBackend{
+				Service: &networking_v1.IngressServiceBackend{
+					Name: "kuard",
+					Port: networking_v1.ServiceBackendPort{Number: 80},
+				},
 			},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				// Empty host.
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{
 							{
 								// This conflicts with the default backend and
 								// should override it.
 								Path: "/",
-								Backend: v1beta1.IngressBackend{
-									ServiceName: "kuard",
-									ServicePort: intstr.FromInt(8080),
+								Backend: networking_v1.IngressBackend{
+									Service: &networking_v1.IngressServiceBackend{
+										Name: "kuard",
+										Port: networking_v1.ServiceBackendPort{Number: 8080},
+									},
 								},
 							},
 						},
@@ -961,10 +938,11 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 	})
 	defer done()
 
-	rh.OnAdd(fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)}))
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s1)
 
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: "default",
@@ -972,11 +950,8 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 				"projectcontour.io/ingress.class": "linkerd",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(8080),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnAdd(i1)
@@ -989,7 +964,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 		),
 	), nil)
 
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: "default",
@@ -997,17 +972,14 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 				"kubernetes.io/ingress.class": "contour",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(8080),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnUpdate(i1, i2)
 	assertRDS(t, c, "2", nil, nil)
 
-	i3 := &v1beta1.Ingress{
+	i3 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: "default",
@@ -1015,17 +987,14 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 				"projectcontour.io/ingress.class": "contour",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(8080),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnUpdate(i2, i3)
 	assertRDS(t, c, "2", nil, nil)
 
-	i4 := &v1beta1.Ingress{
+	i4 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: "default",
@@ -1033,11 +1002,8 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 				"kubernetes.io/ingress.class": "linkerd",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(8080),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnUpdate(i3, i4)
@@ -1050,7 +1016,7 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 		),
 	), nil)
 
-	i5 := &v1beta1.Ingress{
+	i5 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard-ing",
 			Namespace: "default",
@@ -1058,11 +1024,8 @@ func TestRDSIngressClassAnnotation(t *testing.T) {
 				"projectcontour.io/ingress.class": "linkerd",
 			},
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(8080),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnUpdate(i4, i5)
@@ -1126,7 +1089,7 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 }
 
 // issue 606: spec.rules.host without a http key causes panic.
-// apiVersion: networking/v1beta1
+// apiVersion: networking/v1
 // kind: Ingress
 // metadata:
 //   name: test-ingress3
@@ -1137,8 +1100,10 @@ func TestRDSAssertNoDataRaceDuringInsertAndStream(t *testing.T) {
 //     http:
 //       paths:
 //       - backend:
-//           serviceName: network-test
-//           servicePort: 9001
+//           service:
+//             name: network-test
+//             port:
+//               number: 9001
 //         path: /
 //
 // note: this test caused a panic in dag.Builder, but testing the
@@ -1147,24 +1112,24 @@ func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	i1 := &v1beta1.Ingress{
+	s1 := fixture.NewService("network-test").
+		WithPorts(v1.ServicePort{Name: "http", Port: 9001, TargetPort: intstr.FromInt(8080)})
+
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-ingress3",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "test1.test.com",
 			}, {
 				Host: "test2.test.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "network-test",
-								ServicePort: intstr.FromInt(9001),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/",
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
@@ -1173,8 +1138,7 @@ func TestRDSIngressSpecMissingHTTPKey(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	rh.OnAdd(fixture.NewService("network-test").
-		WithPorts(v1.ServicePort{Name: "http", Port: 9001, TargetPort: intstr.FromInt(8080)}))
+	rh.OnAdd(s1)
 
 	assertRDS(t, c, "2", virtualhosts(
 		envoy_v3.VirtualHost("test2.test.com",
@@ -1450,22 +1414,16 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// add default/kuard to translator.
-	old := &v1beta1.Ingress{
+	old := &networking_v1.Ingress{
 		ObjectMeta: meta,
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(80),
-			},
-			Rules: []v1beta1.IngressRule{{
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "/[^/]+/invoices(/.*|/?)", // issue 1243
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromInt(80),
-							},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "/[^/]+/invoices(/.*|/?)", // issue 1243
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},
@@ -1495,22 +1453,16 @@ func TestRoutePrefixRouteRegex(t *testing.T) {
 		Nonce:   "1",
 	})
 
-	invalid := &v1beta1.Ingress{
+	invalid := &networking_v1.Ingress{
 		ObjectMeta: meta,
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(80),
-			},
-			Rules: []v1beta1.IngressRule{{
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Path: "^\\/(?!\\/)(.*?)",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromInt(80),
-							},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Path:    "^\\/(?!\\/)(.*?)",
+							Backend: *featuretests.IngressBackend(s1),
 						}},
 					},
 				},

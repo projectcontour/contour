@@ -81,33 +81,29 @@ type serveContext struct {
 
 	// DisableLeaderElection can only be set by command line flag.
 	DisableLeaderElection bool
-
-	// DEPRECATED: Configure the Gateway.Name & Gateway.Namespace in the configuration file.
-	UseExperimentalServiceAPITypes bool `yaml:"-"`
 }
 
 // newServeContext returns a serveContext initialized to defaults.
 func newServeContext() *serveContext {
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
 	return &serveContext{
-		Config:                         config.Defaults(),
-		statsAddr:                      "0.0.0.0",
-		statsPort:                      8002,
-		debugAddr:                      "127.0.0.1",
-		debugPort:                      6060,
-		healthAddr:                     "0.0.0.0",
-		healthPort:                     8000,
-		metricsAddr:                    "0.0.0.0",
-		metricsPort:                    8000,
-		httpAccessLog:                  xdscache_v3.DEFAULT_HTTP_ACCESS_LOG,
-		httpsAccessLog:                 xdscache_v3.DEFAULT_HTTPS_ACCESS_LOG,
-		httpAddr:                       "0.0.0.0",
-		httpsAddr:                      "0.0.0.0",
-		httpPort:                       8080,
-		httpsPort:                      8443,
-		PermitInsecureGRPC:             false,
-		DisableLeaderElection:          false,
-		UseExperimentalServiceAPITypes: false,
+		Config:                config.Defaults(),
+		statsAddr:             "0.0.0.0",
+		statsPort:             8002,
+		debugAddr:             "127.0.0.1",
+		debugPort:             6060,
+		healthAddr:            "0.0.0.0",
+		healthPort:            8000,
+		metricsAddr:           "0.0.0.0",
+		metricsPort:           8000,
+		httpAccessLog:         xdscache_v3.DEFAULT_HTTP_ACCESS_LOG,
+		httpsAccessLog:        xdscache_v3.DEFAULT_HTTPS_ACCESS_LOG,
+		httpAddr:              "0.0.0.0",
+		httpsAddr:             "0.0.0.0",
+		httpPort:              8080,
+		httpsPort:             8443,
+		PermitInsecureGRPC:    false,
+		DisableLeaderElection: false,
 		ServerConfig: ServerConfig{
 			xdsAddr: "127.0.0.1",
 			xdsPort: 8001,

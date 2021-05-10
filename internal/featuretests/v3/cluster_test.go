@@ -20,10 +20,11 @@ import (
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/protobuf"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -34,23 +35,21 @@ func TestClusterLongServiceName(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	i1 := &v1beta1.Ingress{
+	s1 := fixture.NewService("default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r").
+		WithPorts(v1.ServicePort{Port: 8080})
+
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r",
-				ServicePort: intstr.FromInt(8080),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnAdd(i1)
 
-	rh.OnAdd(fixture.NewService("default/kbujbkuhdod66gjdmwmijz8xzgsx1nkfbrloezdjiulquzk4x3p0nnvpzi8r").
-		WithPorts(v1.ServicePort{Port: 8080}),
-	)
+	rh.OnAdd(s1)
 
 	// check that it's been translated correctly.
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -67,35 +66,38 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	i1 := &v1beta1.Ingress{
+	// s1 is a simple tcp 80 -> 8080 service.
+	s1 := fixture.NewService("default/kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(80),
-			},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
 		},
 	}
 	rh.OnAdd(i1)
 
-	i2 := &v1beta1.Ingress{
+	i2 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuarder",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "www.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
 							Path: "/kuarder",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromString("https"),
+							Backend: networking_v1.IngressBackend{
+								Service: &networking_v1.IngressServiceBackend{
+									Name: "kuard",
+									Port: networking_v1.ServiceBackendPort{Name: "https"},
+								},
 							},
 						}},
 					},
@@ -104,10 +106,6 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		},
 	}
 	rh.OnAdd(i2)
-
-	// s1 is a simple tcp 80 -> 8080 service.
-	s1 := fixture.NewService("default/kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 	rh.OnAdd(s1)
 
@@ -118,7 +116,7 @@ func TestClusterAddUpdateDelete(t *testing.T) {
 		TypeUrl: clusterType,
 	})
 
-	// s2 is the same as s2, but the service port has a name
+	// s2 is the same as s1, but the service port has a name
 	s2 := fixture.NewService("default/kuard").
 		WithPorts(v1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080)})
 
@@ -178,26 +176,30 @@ func TestClusterRenameUpdateDelete(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "www.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromString("http"),
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: networking_v1.IngressBackend{
+								Service: &networking_v1.IngressServiceBackend{
+									Name: "kuard",
+									Port: networking_v1.ServiceBackendPort{Name: "http"},
+								},
 							},
 						}, {
 							Path: "/kuarder",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromInt(443),
+							Backend: networking_v1.IngressBackend{
+								Service: &networking_v1.IngressServiceBackend{
+									Name: "kuard",
+									Port: networking_v1.ServiceBackendPort{Number: 443},
+								},
 							},
 						}},
 					},
@@ -262,25 +264,23 @@ func TestIssue243(t *testing.T) {
 	defer done()
 
 	t.Run("single unnamed service with a different numeric target port", func(t *testing.T) {
+		s1 := fixture.NewService("default/kuard").
+			WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
-		i1 := &v1beta1.Ingress{
+		i1 := &networking_v1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kuard",
 				Namespace: "default",
 			},
-			Spec: v1beta1.IngressSpec{
-				Backend: &v1beta1.IngressBackend{
-					ServiceName: "kuard",
-					ServicePort: intstr.FromInt(80),
-				},
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: featuretests.IngressBackend(s1),
 			},
 		}
 
 		rh.OnAdd(i1)
-		s1 := fixture.NewService("default/kuard").
-			WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
 		rh.OnAdd(s1)
+
 		c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 			Resources: resources(t,
 				cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -295,20 +295,6 @@ func TestIssue247(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kuard",
-			Namespace: "default",
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(80),
-			},
-		},
-	}
-	rh.OnAdd(i1)
-
 	// spec:
 	//   ports:
 	//   - port: 80
@@ -317,7 +303,19 @@ func TestIssue247(t *testing.T) {
 	s1 := fixture.NewService("kuard").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
 
+	i1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
+		},
+	}
+	rh.OnAdd(i1)
+
 	rh.OnAdd(s1)
+
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			cluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80"),
@@ -330,27 +328,26 @@ func TestCDSResourceFiltering(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	i1 := &v1beta1.Ingress{
+	s1 := fixture.NewService("kuard").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
+	s2 := fixture.NewService("httpbin").
+		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("httpbin")})
+
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{{
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
 				Host: "www.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "kuard",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(s1),
 						}, {
-							Path: "/httpbin",
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "httpbin",
-								ServicePort: intstr.FromInt(8080),
-							},
+							Path:    "/httpbin",
+							Backend: *featuretests.IngressBackend(s2),
 						}},
 					},
 				},
@@ -360,15 +357,9 @@ func TestCDSResourceFiltering(t *testing.T) {
 	rh.OnAdd(i1)
 
 	// add two services, check that they are there
-	s1 := fixture.NewService("kuard").
-		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromString("kuard")})
-
 	rh.OnAdd(s1)
-
-	s2 := fixture.NewService("httpbin").
-		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("httpbin")})
-
 	rh.OnAdd(s2)
+
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			// note, resources are sorted by Cluster.Name
@@ -395,26 +386,23 @@ func TestClusterCircuitbreakerAnnotations(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	i1 := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "default",
-			Name:      "kuard",
-		},
-		Spec: v1beta1.IngressSpec{
-			Backend: &v1beta1.IngressBackend{
-				ServiceName: "kuard",
-				ServicePort: intstr.FromInt(8080),
-			},
-		},
-	}
-	rh.OnAdd(i1)
-
 	s1 := fixture.NewService("kuard").
 		Annotate("projectcontour.io/max-connections", "9000").
 		Annotate("projectcontour.io/max-pending-requests", "4096").
 		Annotate("projectcontour.io/max-requests", "404").
 		Annotate("projectcontour.io/max-retries", "7").
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromString("8080")})
+
+	i1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "kuard",
+		},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
+		},
+	}
+	rh.OnAdd(i1)
 
 	rh.OnAdd(s1)
 

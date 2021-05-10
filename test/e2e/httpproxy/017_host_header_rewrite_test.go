@@ -23,9 +23,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testMergeSlash(fx *e2e.Framework) {
+func testHostHeaderRewrite(fx *e2e.Framework) {
 	t := fx.T()
-	namespace := "006-merge-slash"
+	namespace := "017-host-header-rewrite"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -35,11 +35,11 @@ func testMergeSlash(fx *e2e.Framework) {
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      "echo",
+			Name:      "host-header-rewrite",
 		},
 		Spec: contourv1.HTTPProxySpec{
 			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "mergeslash.projectcontour.io",
+				Fqdn: "hostheaderrewrite.projectcontour.io",
 			},
 			Routes: []contourv1.Route{
 				{
@@ -49,9 +49,12 @@ func testMergeSlash(fx *e2e.Framework) {
 							Port: 80,
 						},
 					},
-					Conditions: []contourv1.MatchCondition{
-						{
-							Prefix: "/",
+					RequestHeadersPolicy: &contourv1.HeadersPolicy{
+						Set: []contourv1.HeaderValue{
+							{
+								Name:  "Host",
+								Value: "rewritten.com",
+							},
 						},
 					},
 				},
@@ -62,10 +65,9 @@ func testMergeSlash(fx *e2e.Framework) {
 
 	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host:      p.Spec.VirtualHost.Fqdn,
-		Path:      "/anything/this//has//lots////of/slashes",
 		Condition: e2e.HasStatusCode(200),
 	})
 	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-	assert.Contains(t, fx.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")
+	assert.Equal(t, "rewritten.com", fx.GetEchoResponseBody(res.Body).Host)
 }

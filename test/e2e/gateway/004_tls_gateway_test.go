@@ -16,15 +16,14 @@
 package gateway
 
 import (
-	"testing"
-
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func testTLSGateway(t *testing.T, fx *e2e.Framework) {
+func testTLSGateway(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "gateway-004-tls-gateway"
 
 	fx.CreateNamespace(namespace)
@@ -32,9 +31,6 @@ func testTLSGateway(t *testing.T, fx *e2e.Framework) {
 
 	fx.Fixtures.Echo.Deploy(namespace, "echo-insecure")
 	fx.Fixtures.Echo.Deploy(namespace, "echo-secure")
-
-	cleanup := fx.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "tls-gateway.projectcontour.io")
-	defer cleanup()
 
 	route := &gatewayv1alpha1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{

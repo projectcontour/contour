@@ -149,7 +149,6 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("kubernetes-debug", "Enable Kubernetes client debug logging with log level.").PlaceHolder("<log level>").UintVar(&ctx.KubernetesDebug)
-	serve.Flag("experimental-service-apis", "DEPRECATED: Please configure the gateway.name & gateway.namespace in the configuration file.").BoolVar(&ctx.UseExperimentalServiceAPITypes)
 	return serve, ctx
 }
 
@@ -406,11 +405,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		if err := informOnResource(clients, k8s.IngressV1Beta1Resource(), &dynamicHandler); err != nil {
 			log.WithError(err).WithField("resource", k8s.IngressV1Beta1Resource()).Fatal("failed to create informer")
 		}
-	}
-
-	// Inform on gateway-api types if they are present.
-	if ctx.UseExperimentalServiceAPITypes {
-		log.Warn("DEPRECATED: The flag '--experimental-service-apis' is deprecated and should not be used. Please configure the gateway.name & gateway.namespace in the configuration file to specify which Gateway Contour will be watching.")
 	}
 
 	// Only inform on GatewayAPI resources if Gateway API is found.

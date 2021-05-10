@@ -16,8 +16,6 @@
 package gateway
 
 import (
-	"testing"
-
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +23,8 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func testInvalidForwardTo(t *testing.T, fx *e2e.Framework) {
+func testInvalidForwardTo(fx *e2e.Framework) {
+	t := fx.T()
 	namespace := "gateway-003-invalid-forward-to"
 
 	fx.CreateNamespace(namespace)

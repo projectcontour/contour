@@ -29,7 +29,7 @@ import (
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -149,13 +149,13 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"one http only ingress with service": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 8080),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -185,21 +185,18 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"one http only ingress with regex match": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						Rules: []v1beta1.IngressRule{{
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
-										Path: "/[^/]+/invoices(/.*|/?)", // issue 1243
-										Backend: v1beta1.IngressBackend{
-											ServiceName: "kuard",
-											ServicePort: intstr.FromInt(8080),
-										},
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
+										Path:    "/[^/]+/invoices(/.*|/?)", // issue 1243
+										Backend: *backend("kuard", 8080),
 									}},
 								},
 							},
@@ -277,17 +274,17 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"default backend ingress with secret": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"whatever.example.com"},
 							SecretName: "secret",
 						}},
-						Backend: backend("kuard", 8080),
+						DefaultBackend: backend("kuard", 8080),
 					},
 				},
 				&v1.Secret{
@@ -325,24 +322,26 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"vhost ingress with secret": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"www.example.com"},
 							SecretName: "secret",
 						}},
-						Rules: []v1beta1.IngressRule{{
+						Rules: []networking_v1.IngressRule{{
 							Host: "www.example.com",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
-										Backend: v1beta1.IngressBackend{
-											ServiceName: "kuard",
-											ServicePort: intstr.FromString("www"),
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
+												Name: "kuard",
+												Port: networking_v1.ServiceBackendPort{Name: "www"},
+											},
 										},
 									}},
 								},
@@ -467,7 +466,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"simple tls ingress with allow-http:false": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
@@ -475,19 +474,21 @@ func TestRouteVisit(t *testing.T) {
 							"kubernetes.io/ingress.allow-http": "false",
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"www.example.com"},
 							SecretName: "secret",
 						}},
-						Rules: []v1beta1.IngressRule{{
+						Rules: []networking_v1.IngressRule{{
 							Host: "www.example.com",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
-										Backend: v1beta1.IngressBackend{
-											ServiceName: "kuard",
-											ServicePort: intstr.FromString("www"),
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
+												Name: "kuard",
+												Port: networking_v1.ServiceBackendPort{Name: "www"},
+											},
 										},
 									}},
 								},
@@ -532,7 +533,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"simple tls ingress with force-ssl-redirect": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
@@ -540,19 +541,21 @@ func TestRouteVisit(t *testing.T) {
 							"ingress.kubernetes.io/force-ssl-redirect": "true",
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"www.example.com"},
 							SecretName: "secret",
 						}},
-						Rules: []v1beta1.IngressRule{{
+						Rules: []networking_v1.IngressRule{{
 							Host: "www.example.com",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
-										Backend: v1beta1.IngressBackend{
-											ServiceName: "kuard",
-											ServicePort: intstr.FromString("www"),
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
+												Name: "kuard",
+												Port: networking_v1.ServiceBackendPort{Name: "www"},
+											},
 										},
 									}},
 								},
@@ -610,7 +613,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"ingress with websocket annotation": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "simple",
 						Namespace: "default",
@@ -618,22 +621,26 @@ func TestRouteVisit(t *testing.T) {
 							"projectcontour.io/websocket-routes": "/ws1 , /ws2",
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						Rules: []v1beta1.IngressRule{{
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{{
 							Host: "www.example.com",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
 										Path: "/",
-										Backend: v1beta1.IngressBackend{
-											ServiceName: "kuard",
-											ServicePort: intstr.FromString("www"),
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
+												Name: "kuard",
+												Port: networking_v1.ServiceBackendPort{Name: "www"},
+											},
 										},
 									}, {
 										Path: "/ws1",
-										Backend: v1beta1.IngressBackend{
-											ServiceName: "kuard",
-											ServicePort: intstr.FromString("www"),
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
+												Name: "kuard",
+												Port: networking_v1.ServiceBackendPort{Name: "www"},
+											},
 										},
 									}},
 								},
@@ -673,7 +680,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"ingress invalid timeout": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
@@ -681,8 +688,8 @@ func TestRouteVisit(t *testing.T) {
 							"projectcontour/request-timeout": "contour",
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 8080),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -712,7 +719,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"ingress infinite timeout": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
@@ -720,8 +727,8 @@ func TestRouteVisit(t *testing.T) {
 							"projectcontour.io/request-timeout": "infinity",
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 8080),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -751,7 +758,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"ingress 90 second timeout": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
@@ -759,8 +766,8 @@ func TestRouteVisit(t *testing.T) {
 							"projectcontour.io/request-timeout": "1m30s",
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 8080),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -790,63 +797,45 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"ingress different path matches": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						Rules: []v1beta1.IngressRule{{
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{
 										{
 											Path:     "/",
-											PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
-											Backend: v1beta1.IngressBackend{
-												ServiceName: "kuard",
-												ServicePort: intstr.FromInt(8080),
-											},
+											PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo",
-											PathType: (*v1beta1.PathType)(pointer.StringPtr("Prefix")),
-											Backend: v1beta1.IngressBackend{
-												ServiceName: "kuard",
-												ServicePort: intstr.FromInt(8080),
-											},
+											PathType: (*networking_v1.PathType)(pointer.StringPtr("Prefix")),
+											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo",
-											PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
-											Backend: v1beta1.IngressBackend{
-												ServiceName: "kuard",
-												ServicePort: intstr.FromInt(8080),
-											},
+											PathType: (*networking_v1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo2",
-											PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
-											Backend: v1beta1.IngressBackend{
-												ServiceName: "kuard",
-												ServicePort: intstr.FromInt(8080),
-											},
+											PathType: (*networking_v1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo3[a|b]?",
-											PathType: (*v1beta1.PathType)(pointer.StringPtr("ImplementationSpecific")),
-											Backend: v1beta1.IngressBackend{
-												ServiceName: "kuard",
-												ServicePort: intstr.FromInt(8080),
-											},
+											PathType: (*networking_v1.PathType)(pointer.StringPtr("ImplementationSpecific")),
+											Backend:  *backend("kuard", 8080),
 										},
 										{
 											Path:     "/foo4",
-											PathType: (*v1beta1.PathType)(pointer.StringPtr("Exact")),
-											Backend: v1beta1.IngressBackend{
-												ServiceName: "kuard",
-												ServicePort: intstr.FromInt(8080),
-											},
+											PathType: (*networking_v1.PathType)(pointer.StringPtr("Exact")),
+											Backend:  *backend("kuard", 8080),
 										},
 									},
 								},
@@ -901,21 +890,23 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"vhost name exceeds 60 chars": { // projectcontour/contour#25
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "my-service-name",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						Rules: []v1beta1.IngressRule{{
+					Spec: networking_v1.IngressSpec{
+						Rules: []networking_v1.IngressRule{{
 							Host: "my-very-very-long-service-host-name.subdomain.boring-dept.my.company",
-							IngressRuleValue: v1beta1.IngressRuleValue{
-								HTTP: &v1beta1.HTTPIngressRuleValue{
-									Paths: []v1beta1.HTTPIngressPath{{
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{{
 										Path: "/",
-										Backend: v1beta1.IngressBackend{
-											ServiceName: "kuard",
-											ServicePort: intstr.FromString("www"),
+										Backend: networking_v1.IngressBackend{
+											Service: &networking_v1.IngressServiceBackend{
+												Name: "kuard",
+												Port: networking_v1.ServiceBackendPort{Name: "www"},
+											},
 										},
 									}},
 								},
@@ -951,7 +942,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"ingress retry-on": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
@@ -959,8 +950,8 @@ func TestRouteVisit(t *testing.T) {
 							"projectcontour.io/retry-on": "5xx,gateway-error",
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 8080),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -990,7 +981,7 @@ func TestRouteVisit(t *testing.T) {
 		},
 		"ingress retry-on, num-retries": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
@@ -999,8 +990,8 @@ func TestRouteVisit(t *testing.T) {
 							"projectcontour.io/num-retries": "7", // not five or six or eight, but seven.
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 8080),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{
@@ -1031,7 +1022,7 @@ func TestRouteVisit(t *testing.T) {
 
 		"ingress retry-on, per-try-timeout": {
 			objs: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kuard",
 						Namespace: "default",
@@ -1040,8 +1031,8 @@ func TestRouteVisit(t *testing.T) {
 							"projectcontour.io/per-try-timeout": "150ms",
 						},
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: backend("kuard", 8080),
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("kuard", 8080),
 					},
 				},
 				&v1.Service{

@@ -24,9 +24,8 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func TestSDSVisibility(t *testing.T) {
@@ -55,24 +54,26 @@ func TestSDSVisibility(t *testing.T) {
 	})
 
 	// i1 is a tls ingress
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "backend",
-								ServicePort: intstr.FromInt(80),
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: networking_v1.IngressBackend{
+								Service: &networking_v1.IngressServiceBackend{
+									Name: "backend",
+									Port: networking_v1.ServiceBackendPort{Number: 80},
+								},
 							},
 						}},
 					},
@@ -101,6 +102,9 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 		assert.Equal(t, expected, r.Nonce, "got unexpected Nonce")
 	}
 
+	svc1 := fixture.NewService("backend").
+		WithPorts(v1.ServicePort{Name: "http", Port: 80})
+
 	// s1 is a tls secret
 	s1 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -114,25 +118,22 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// i1 is a tls ingress
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "secret",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "backend",
-								ServicePort: intstr.FromInt(80),
-							},
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *featuretests.IngressBackend(svc1),
 						}},
 					},
 				},
@@ -141,8 +142,7 @@ func TestSDSShouldNotIncrementVersionNumberForUnrelatedSecret(t *testing.T) {
 	}
 	rh.OnAdd(i1)
 
-	rh.OnAdd(fixture.NewService("backend").
-		WithPorts(v1.ServicePort{Name: "http", Port: 80}))
+	rh.OnAdd(svc1)
 
 	res := c.Request(secretType)
 	res.Equals(&envoy_discovery_v3.DiscoveryResponse{
@@ -197,24 +197,26 @@ func TestSDSshouldNotPublishInvalidSecret(t *testing.T) {
 	rh.OnAdd(s1)
 
 	// i1 is a tls ingress
-	i1 := &v1beta1.Ingress{
+	i1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "simple",
 			Namespace: "default",
 		},
-		Spec: v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{{
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
 				SecretName: "invalid",
 			}},
-			Rules: []v1beta1.IngressRule{{
+			Rules: []networking_v1.IngressRule{{
 				Host: "kuard.example.com",
-				IngressRuleValue: v1beta1.IngressRuleValue{
-					HTTP: &v1beta1.HTTPIngressRuleValue{
-						Paths: []v1beta1.HTTPIngressPath{{
-							Backend: v1beta1.IngressBackend{
-								ServiceName: "backend",
-								ServicePort: intstr.FromInt(80),
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: networking_v1.IngressBackend{
+								Service: &networking_v1.IngressServiceBackend{
+									Name: "backend",
+									Port: networking_v1.ServiceBackendPort{Number: 80},
+								},
 							},
 						}},
 					},
