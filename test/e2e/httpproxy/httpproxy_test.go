@@ -61,6 +61,12 @@ var _ = Describe("HTTPProxy", func() {
 	It("012-https-fallback-certificate", func() {
 		testHTTPSFallbackCertificate(f)
 	})
+	It("014-external-auth", func() {
+		testExternalAuth(f)
+	})
+	It("015-http-health-checks", func() {
+		testHTTPHealthChecks(f)
+	})
 	It("016-dynamic-headers", func() {
 		testDynamicHeaders(f)
 	})

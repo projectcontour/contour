@@ -32,6 +32,10 @@ type Fixtures struct {
 	// Echo provides helpers for working with the ingress-conformance-echo
 	// test fixture.
 	Echo *Echo
+
+	// HTTPBin provides helpers for working with the kennethreitz/httpbin
+	// test fixture.
+	HTTPBin *HTTPBin
 }
 
 // Echo manages the ingress-conformance-echo fixture.
@@ -144,4 +148,84 @@ func (e *Echo) Deploy(ns, name string) func() {
 		require.NoError(e.t, e.client.Delete(context.TODO(), service))
 		require.NoError(e.t, e.client.Delete(context.TODO(), deployment))
 	}
+}
+
+// HTTPBin manages the kennethreitz/httpbin fixture.
+type HTTPBin struct {
+	client client.Client
+	t      ginkgo.GinkgoTInterface
+}
+
+// Deploy creates the kennethreitz/httpbin fixture, specifically
+// the deployment and service, in the given namespace and with the given name, or
+// fails the test if it encounters an error. Namespace is defaulted to "default"
+// and name is defaulted to "httpbin" if not provided.
+func (h *HTTPBin) Deploy(ns, name string) {
+	valOrDefault := func(val, defaultVal string) string {
+		if val != "" {
+			return val
+		}
+		return defaultVal
+	}
+
+	ns = valOrDefault(ns, "default")
+	name = valOrDefault(name, "httpbin")
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app.kubernetes.io/name": name},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "httpbin",
+							Image: "docker.io/kennethreitz/httpbin",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "http",
+									ContainerPort: 80,
+								},
+							},
+							ReadinessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/status/200",
+										Port: intstr.FromInt(80),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	require.NoError(h.t, h.client.Create(context.TODO(), deployment))
+
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http",
+					Port:       80,
+					TargetPort: intstr.FromString("http"),
+				},
+			},
+			Selector: map[string]string{"app.kubernetes.io/name": name},
+		},
+	}
+	require.NoError(h.t, h.client.Create(context.TODO(), service))
 }
