@@ -2278,6 +2278,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"app":  "contour",
 							"type": "controller",
 						},
+						CreationTimestamp: metav1.NewTime(time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)),
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
 						Gateways: &gatewayapi_v1alpha1.RouteGateways{
@@ -2305,6 +2306,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"app":  "contour",
 							"type": "controller",
 						},
+						CreationTimestamp: metav1.NewTime(time.Date(1982, time.Month(2), 21, 1, 10, 30, 0, time.UTC)),
 					},
 					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
 						Gateways: &gatewayapi_v1alpha1.RouteGateways{
@@ -2320,7 +2322,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									Value: pointer.StringPtr("/blog"),
 								},
 							}},
-							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
+							ForwardTo: httpRouteForwardTo("kuard2", 8080, 1),
 						}},
 					},
 				},
@@ -2330,7 +2332,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
-							prefixrouteHTTPRoute("/blog", service(kuardService))),
+							prefixrouteHTTPRoute("/blog", service(kuardService2))),
 					),
 				},
 			),
