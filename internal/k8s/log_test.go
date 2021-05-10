@@ -30,6 +30,13 @@ import (
 	klog "k8s.io/klog/v2"
 )
 
+const (
+	// klog automatic flush interval is 5s but we can wait for less time to pass
+	// since we proactively call klog.Flush().
+	klogFlushWaitTime     = time.Millisecond * 10
+	klogFlushWaitInterval = time.Millisecond * 1
+)
+
 func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	// Save stderr/out.
 	oldStderr := os.Stderr
@@ -94,9 +101,7 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	errorLine := line + 3
 
 	// Should be a recorded logrus log with the correct fields.
-	// Wait for up to 1s (klog automatic flush interval is 5s
-	// but we call klog.Flush() above).
-	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 2 }, time.Second*1, time.Millisecond*10)
+	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 2 }, klogFlushWaitTime, klogFlushWaitInterval)
 
 	// Close write end of pipes.
 	seWriter.Close()
@@ -129,8 +134,7 @@ func TestMultipleLogWriterOptions(t *testing.T) {
 
 	klog.Info("some log")
 	klog.Flush()
-	// Wait for up to 5s (klog flush interval)
-	assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, time.Second*5, time.Millisecond*10)
+	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, klogFlushWaitTime, klogFlushWaitInterval)
 	assert.Equal(t, "data3", logHook.AllEntries()[0].Data["field"])
 }
 
@@ -147,12 +151,12 @@ func TestLogLevelOption(t *testing.T) {
 					assert.True(t, enabled)
 					klog.V(klog.Level(verbosityLevel)).Info("something")
 					klog.Flush()
-					assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, time.Second*1, time.Millisecond*10)
+					assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, klogFlushWaitTime, klogFlushWaitInterval)
 				} else {
 					assert.False(t, enabled)
 					klog.V(klog.Level(verbosityLevel)).Info("something")
 					klog.Flush()
-					assert.Never(t, func() bool { return len(logHook.AllEntries()) > 0 }, time.Second*1, time.Millisecond*10)
+					assert.Never(t, func() bool { return len(logHook.AllEntries()) > 0 }, klogFlushWaitTime, klogFlushWaitInterval)
 				}
 				logHook.Reset()
 			}
