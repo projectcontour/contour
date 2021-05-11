@@ -22,6 +22,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -64,11 +65,17 @@ func testHTTPHealthChecks(fx *e2e.Framework) {
 	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 	// set the health check policy to always fail
-	require.NoError(t, fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p))
-	p.Spec.Routes[0].HealthCheckPolicy = &contourv1.HTTPHealthCheckPolicy{
-		Path: "/status/418",
-	}
-	require.NoError(t, fx.Client.Update(context.TODO(), p))
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+			return err
+		}
+
+		p.Spec.Routes[0].HealthCheckPolicy = &contourv1.HTTPHealthCheckPolicy{
+			Path: "/status/418",
+		}
+
+		return fx.Client.Update(context.TODO(), p)
+	}))
 
 	// the health check is set to always fail so the service should
 	// be unavailable.
@@ -79,11 +86,17 @@ func testHTTPHealthChecks(fx *e2e.Framework) {
 	require.Truef(t, ok, "expected 503 response code, got %d", res.StatusCode)
 
 	// set the health check policy to always pass
-	require.NoError(t, fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p))
-	p.Spec.Routes[0].HealthCheckPolicy = &contourv1.HTTPHealthCheckPolicy{
-		Path: "/status/200",
-	}
-	require.NoError(t, fx.Client.Update(context.TODO(), p))
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+			return err
+		}
+
+		p.Spec.Routes[0].HealthCheckPolicy = &contourv1.HTTPHealthCheckPolicy{
+			Path: "/status/200",
+		}
+
+		return fx.Client.Update(context.TODO(), p)
+	}))
 
 	// the health check is set to always pass so the service should
 	// return a 200.

@@ -22,6 +22,8 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func testLocalRateLimitingVirtualHost(fx *e2e.Framework) {
@@ -65,13 +67,20 @@ func testLocalRateLimitingVirtualHost(fx *e2e.Framework) {
 	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 	// Add a local rate limit policy on the virtual host.
-	p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
-		Local: &contourv1.LocalRateLimitPolicy{
-			Requests: 1,
-			Unit:     "hour",
-		},
-	}
-	require.NoError(t, fx.Client.Update(context.TODO(), p))
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+			return err
+		}
+
+		p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
+			Local: &contourv1.LocalRateLimitPolicy{
+				Requests: 1,
+				Unit:     "hour",
+			},
+		}
+
+		return fx.Client.Update(context.TODO(), p)
+	}))
 
 	// Make a request against the proxy, confirm a 200 response
 	// is returned since we're allowed one request per hour.
@@ -144,13 +153,20 @@ func testLocalRateLimitingRoute(fx *e2e.Framework) {
 	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 	// Add a local rate limit policy on the first route.
-	p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
-		Local: &contourv1.LocalRateLimitPolicy{
-			Requests: 1,
-			Unit:     "hour",
-		},
-	}
-	require.NoError(t, fx.Client.Update(context.TODO(), p))
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+			return err
+		}
+
+		p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
+			Local: &contourv1.LocalRateLimitPolicy{
+				Requests: 1,
+				Unit:     "hour",
+			},
+		}
+
+		return fx.Client.Update(context.TODO(), p)
+	}))
 
 	// Make a request against the proxy, confirm a 200 response
 	// is returned since we're allowed one request per hour.
