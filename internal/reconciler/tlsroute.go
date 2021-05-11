@@ -62,12 +62,6 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Re
 		return reconcile.Result{}, nil
 	}
 
-	// Check if object is deleted.
-	if !tlsroute.ObjectMeta.DeletionTimestamp.IsZero() {
-		r.eventHandler.OnDelete(tlsroute)
-		return reconcile.Result{}, nil
-	}
-
 	// Pass the new changed object off to the eventHandler.
 	r.eventHandler.OnAdd(tlsroute)
 

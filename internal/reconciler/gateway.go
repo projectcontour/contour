@@ -62,12 +62,6 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, nil
 	}
 
-	// Check if object is deleted.
-	if !gateway.ObjectMeta.DeletionTimestamp.IsZero() {
-		r.eventHandler.OnDelete(gateway)
-		return reconcile.Result{}, nil
-	}
-
 	// Pass the new changed object off to the eventHandler.
 	r.eventHandler.OnAdd(gateway)
 
