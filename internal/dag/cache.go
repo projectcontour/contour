@@ -265,17 +265,6 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	return false
 }
 
-func serviceBackendPort(port intstr.IntOrString) networking_v1.ServiceBackendPort {
-	if port.Type == intstr.String {
-		return networking_v1.ServiceBackendPort{
-			Name: port.StrVal,
-		}
-	}
-	return networking_v1.ServiceBackendPort{
-		Number: port.IntVal,
-	}
-}
-
 // Remove removes obj from the KubernetesCache.
 // Remove returns a boolean indicating if the cache changed after the remove operation.
 func (kc *KubernetesCache) Remove(obj interface{}) bool {
