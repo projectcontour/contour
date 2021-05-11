@@ -18,6 +18,7 @@ package ingress
 import (
 	"context"
 
+	. "github.com/onsi/ginkgo"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	"k8s.io/api/extensions/v1beta1"
@@ -25,33 +26,28 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// Explicitly ensure v1beta1 resources continue to work.
-func testEnsureV1Beta1(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "002-ingress-ensure-v1beta1"
+var _ = Describe("002-ingress-ensure-v1beta1", f.NamespacedTest(func(namespace string) {
+	It("ensures Ingress v1beta1 resources work as expected", func() {
+		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
-
-	fx.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
-
-	ingressHost := "v1beta1.projectcontour.io"
-	i := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "echo",
-		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{
-				{
-					Host: ingressHost,
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: []v1beta1.HTTPIngressPath{
-								{
-									Backend: v1beta1.IngressBackend{
-										ServiceName: "ingress-conformance-echo",
-										ServicePort: intstr.FromInt(80),
+		ingressHost := "v1beta1.projectcontour.io"
+		i := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo",
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{
+					{
+						Host: ingressHost,
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{
+									{
+										Backend: v1beta1.IngressBackend{
+											ServiceName: "ingress-conformance-echo",
+											ServicePort: intstr.FromInt(80),
+										},
 									},
 								},
 							},
@@ -59,14 +55,14 @@ func testEnsureV1Beta1(fx *e2e.Framework) {
 					},
 				},
 			},
-		},
-	}
-	require.NoError(t, fx.Client.Create(context.TODO(), i))
+		}
+		require.NoError(f.T(), f.Client.Create(context.TODO(), i))
 
-	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      ingressHost,
-		Path:      "/echo",
-		Condition: e2e.HasStatusCode(200),
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      ingressHost,
+			Path:      "/echo",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
 	})
-	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-}
+}))

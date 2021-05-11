@@ -26,18 +26,14 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+var f = e2e.NewFramework()
+
 func TestGatewayAPI(t *testing.T) {
 	RunSpecs(t, "Gateway API tests")
 }
 
-var _ = Describe("Gateway API", func() {
-	var f *e2e.Framework
-
-	BeforeEach(func() {
-		f = e2e.NewFramework(GinkgoT())
-	})
-
-	Describe("Insecure (Non-TLS) Gateway", func() {
+func withHTTPGateway(body func()) {
+	Context("with HTTP (Non-TLS) Gateway", func() {
 		var gateway *gatewayv1alpha1.Gateway
 
 		// Note, this ends up creating the Gateway before each spec
@@ -81,101 +77,102 @@ var _ = Describe("Gateway API", func() {
 			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
 		})
 
-		It("001-path-condition-match", func() {
-			testGatewayPathConditionMatch(f)
-		})
-
-		It("002-header-condition-match", func() {
-			testGatewayHeaderConditionMatch(f)
-		})
-
-		It("003-invalid-forward-to", func() {
-			testInvalidForwardTo(f)
-		})
-
-		It("005-request-header-modifier-forward-to", func() {
-			testRequestHeaderModifierForwardTo(f)
-		})
-
-		It("005-request-header-modifier-rule", func() {
-			testRequestHeaderModifierRule(f)
-		})
-
-		It("006-host-rewrite", func() {
-			testHostRewrite(f)
-		})
-
-		It("007-gateway-allow-type", func() {
-			testGatewayAllowType(f)
-		})
+		body()
 	})
+}
 
-	Describe("TLS Gateway", func() {
-		var gateway *gatewayv1alpha1.Gateway
-		var cleanupCert func()
+// var _ = Describe("Gateway API", func() {
+// 		It("001-path-condition-match", func() {
+// 			testGatewayPathConditionMatch(f)
+// 		})
 
-		BeforeEach(func() {
-			gateway = &gatewayv1alpha1.Gateway{
-				// Namespace and name need to match what's
-				// configured in the Contour config file.
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "projectcontour",
-					Name:      "contour",
-				},
-				Spec: gatewayv1alpha1.GatewaySpec{
-					GatewayClassName: "contour-class",
-					Listeners: []gatewayv1alpha1.Listener{
-						{
-							Protocol: gatewayv1alpha1.HTTPProtocolType,
-							Port:     gatewayv1alpha1.PortNumber(80),
-							Routes: gatewayv1alpha1.RouteBindingSelector{
-								Kind: "HTTPRoute",
-								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
-								},
-								Selector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{"type": "insecure"},
-								},
-							},
-						},
-						{
-							Protocol: gatewayv1alpha1.HTTPSProtocolType,
-							Port:     gatewayv1alpha1.PortNumber(443),
-							TLS: &gatewayv1alpha1.GatewayTLSConfig{
-								CertificateRef: &gatewayv1alpha1.LocalObjectReference{
-									Group: "core",
-									Kind:  "Secret",
-									Name:  "tlscert",
-								},
-							},
-							Routes: gatewayv1alpha1.RouteBindingSelector{
-								Kind: "HTTPRoute",
-								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
-								},
-								Selector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{"type": "secure"},
-								},
-							},
-						},
-					},
-				},
-			}
+// 		It("002-header-condition-match", func() {
+// 			testGatewayHeaderConditionMatch(f)
+// 		})
 
-			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
-			cleanupCert = f.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "tls-gateway.projectcontour.io")
-		})
+// 		It("003-invalid-forward-to", func() {
+// 			testInvalidForwardTo(f)
+// 		})
 
-		AfterEach(func() {
-			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
-			cleanupCert()
-		})
+// 		It("005-request-header-modifier-rule", func() {
+// 			testRequestHeaderModifierRule(f)
+// 		})
 
-		It("004-tls-gateway", func() {
-			testTLSGateway(f)
-		})
-	})
-})
+// 		It("006-host-rewrite", func() {
+// 			testHostRewrite(f)
+// 		})
+
+// 		It("007-gateway-allow-type", func() {
+// 			testGatewayAllowType(f)
+// 		})
+// 	})
+
+// 	Describe("TLS Gateway", func() {
+// 		var gateway *gatewayv1alpha1.Gateway
+// 		var cleanupCert func()
+
+// 		BeforeEach(func() {
+// 			gateway = &gatewayv1alpha1.Gateway{
+// 				// Namespace and name need to match what's
+// 				// configured in the Contour config file.
+// 				ObjectMeta: metav1.ObjectMeta{
+// 					Namespace: "projectcontour",
+// 					Name:      "contour",
+// 				},
+// 				Spec: gatewayv1alpha1.GatewaySpec{
+// 					GatewayClassName: "contour-class",
+// 					Listeners: []gatewayv1alpha1.Listener{
+// 						{
+// 							Protocol: gatewayv1alpha1.HTTPProtocolType,
+// 							Port:     gatewayv1alpha1.PortNumber(80),
+// 							Routes: gatewayv1alpha1.RouteBindingSelector{
+// 								Kind: "HTTPRoute",
+// 								Namespaces: &gatewayv1alpha1.RouteNamespaces{
+// 									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+// 								},
+// 								Selector: &metav1.LabelSelector{
+// 									MatchLabels: map[string]string{"type": "insecure"},
+// 								},
+// 							},
+// 						},
+// 						{
+// 							Protocol: gatewayv1alpha1.HTTPSProtocolType,
+// 							Port:     gatewayv1alpha1.PortNumber(443),
+// 							TLS: &gatewayv1alpha1.GatewayTLSConfig{
+// 								CertificateRef: &gatewayv1alpha1.LocalObjectReference{
+// 									Group: "core",
+// 									Kind:  "Secret",
+// 									Name:  "tlscert",
+// 								},
+// 							},
+// 							Routes: gatewayv1alpha1.RouteBindingSelector{
+// 								Kind: "HTTPRoute",
+// 								Namespaces: &gatewayv1alpha1.RouteNamespaces{
+// 									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+// 								},
+// 								Selector: &metav1.LabelSelector{
+// 									MatchLabels: map[string]string{"type": "secure"},
+// 								},
+// 							},
+// 						},
+// 					},
+// 				},
+// 			}
+
+// 			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
+// 			cleanupCert = f.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "tls-gateway.projectcontour.io")
+// 		})
+
+// 		AfterEach(func() {
+// 			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
+// 			cleanupCert()
+// 		})
+
+// 		It("004-tls-gateway", func() {
+// 			testTLSGateway(f)
+// 		})
+// 	})
+// })
 
 func stringPtr(s string) *string {
 	return &s

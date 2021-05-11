@@ -22,18 +22,8 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 )
 
+var f = e2e.NewFramework()
+
 func TestIngress(t *testing.T) {
 	RunSpecs(t, "Ingress tests")
 }
-
-var _ = Describe("Ingress", func() {
-	var f *e2e.Framework
-
-	BeforeEach(func() {
-		f = e2e.NewFramework(GinkgoT())
-	})
-
-	It("002-ingress-ensure-v1beta1", func() {
-		testEnsureV1Beta1(f)
-	})
-})

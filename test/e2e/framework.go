@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubescheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -66,7 +67,8 @@ type Framework struct {
 	t ginkgo.GinkgoTInterface
 }
 
-func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
+func NewFramework() *Framework {
+	t := ginkgo.GinkgoT()
 	scheme := runtime.NewScheme()
 	require.NoError(t, kubescheme.AddToScheme(scheme))
 	require.NoError(t, contourv1.AddToScheme(scheme))
@@ -130,6 +132,25 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 			t:             t,
 		},
 		t: t,
+	}
+}
+
+// NamespacedTest generates a unique namespace name and sets up
+// a Before/AfterEach to create and delete the namespace before/after the
+// test body. Intended to be used to wrap a single test.
+func (f *Framework) NamespacedTest(body func(string)) func() {
+	namespace := "contour-e2e-" + rand.String(15)
+	return func() {
+		ginkgo.Context("with namespace: "+namespace, func() {
+			ginkgo.BeforeEach(func() {
+				f.CreateNamespace(namespace)
+			})
+			ginkgo.AfterEach(func() {
+				f.DeleteNamespace(namespace)
+			})
+
+			body(namespace)
+		})
 	}
 }
 
