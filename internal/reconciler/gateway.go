@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cache
+package reconciler
 
 import (
 	"context"
@@ -28,48 +28,48 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-type tlsRouteReconciler struct {
+type gatewayReconciler struct {
 	client       client.Client
 	eventHandler cache.ResourceEventHandler
 	logrus.FieldLogger
 }
 
-// NewTLSRouteController creates the tlsroute controller from mgr. The controller will be pre-configured
-// to watch for TLSRoute objects across all namespaces.
-func NewTLSRouteController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger) (controller.Controller, error) {
-	r := &tlsRouteReconciler{
+// NewGatewayController creates the gateway controller from mgr. The controller will be pre-configured
+// to watch for Gateway objects across all namespaces.
+func NewGatewayController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger) (controller.Controller, error) {
+	r := &gatewayReconciler{
 		client:       mgr.GetClient(),
 		eventHandler: eventHandler,
 		FieldLogger:  log,
 	}
-	c, err := controller.New("tlsroute-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("gateway-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return nil, err
 	}
-	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha1.TLSRoute{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha1.Gateway{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 
-	// Fetch the TLSRoute from the cache.
-	tlsroute := &gatewayapi_v1alpha1.TLSRoute{}
-	err := r.client.Get(ctx, request.NamespacedName, tlsroute)
+	// Fetch the Gateway from the cache.
+	gateway := &gatewayapi_v1alpha1.Gateway{}
+	err := r.client.Get(ctx, request.NamespacedName, gateway)
 	if errors.IsNotFound(err) {
-		r.Error(nil, "Could not find TLSRoute %q in Namespace %q", request.Name, request.Namespace)
+		r.Error(nil, "Could not find Gateway %q in Namespace %q", request.Name, request.Namespace)
 		return reconcile.Result{}, nil
 	}
 
 	// Check if object is deleted.
-	if !tlsroute.ObjectMeta.DeletionTimestamp.IsZero() {
-		r.eventHandler.OnDelete(tlsroute)
+	if !gateway.ObjectMeta.DeletionTimestamp.IsZero() {
+		r.eventHandler.OnDelete(gateway)
 		return reconcile.Result{}, nil
 	}
 
 	// Pass the new changed object off to the eventHandler.
-	r.eventHandler.OnAdd(tlsroute)
+	r.eventHandler.OnAdd(gateway)
 
 	return reconcile.Result{}, nil
 }

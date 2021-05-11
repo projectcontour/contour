@@ -25,7 +25,7 @@ import (
 	"syscall"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"github.com/projectcontour/contour/internal/reconciler"
 
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -37,7 +37,6 @@ import (
 	"github.com/projectcontour/contour/internal/health"
 	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/projectcontour/contour/internal/k8s"
-	contour_cache "github.com/projectcontour/contour/internal/k8s/cache"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/workgroup"
@@ -59,6 +58,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	controller_config "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -420,27 +420,26 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			// Setup a Manager
 			mgr, err := manager.New(controller_config.GetConfigOrDie(), manager.Options{})
 			if err != nil {
-				log.Fatal(err, "unable to set up controller manager")
+				log.WithError(err).Fatal("unable to set up controller manager")
 			}
 
 			err = gatewayapi_v1alpha1.AddToScheme(mgr.GetScheme())
 			if err != nil {
-				log.Error(err, "unable to add GatewayAPI to scheme.")
-				os.Exit(1)
+				log.WithError(err).Fatal("unable to add GatewayAPI to scheme.")
 			}
 
 			// Create and register the NewGatewayController controller with the manager.
-			if _, err := contour_cache.NewGatewayController(mgr, &dynamicHandler, log.WithField("context", "gateway-controller")); err != nil {
+			if _, err := reconciler.NewGatewayController(mgr, &dynamicHandler, log.WithField("context", "gateway-controller")); err != nil {
 				log.WithError(err).Fatal("failed to create gateway-controller")
 			}
 
 			// Create and register the NewHTTPRouteController controller with the manager.
-			if _, err := contour_cache.NewHTTPRouteController(mgr, &dynamicHandler, log.WithField("context", "httproute-controller")); err != nil {
+			if _, err := reconciler.NewHTTPRouteController(mgr, &dynamicHandler, log.WithField("context", "httproute-controller")); err != nil {
 				log.WithError(err).Fatal("failed to create httproute-controller")
 			}
 
 			// Create and register the NewTLSRouteController controller with the manager.
-			if _, err := contour_cache.NewTLSRouteController(mgr, &dynamicHandler, log.WithField("context", "tlsroute-controller")); err != nil {
+			if _, err := reconciler.NewTLSRouteController(mgr, &dynamicHandler, log.WithField("context", "tlsroute-controller")); err != nil {
 				log.WithError(err).Fatal("failed to create tlsroute-controller")
 			}
 
