@@ -16,6 +16,8 @@ package reconciler
 import (
 	"context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/cache"
@@ -58,7 +60,12 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	gateway := &gatewayapi_v1alpha1.Gateway{}
 	err := r.client.Get(ctx, request.NamespacedName, gateway)
 	if errors.IsNotFound(err) {
-		r.eventHandler.OnDelete(gateway)
+		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      request.Name,
+				Namespace: request.Namespace,
+			},
+		})
 		return reconcile.Result{}, nil
 	}
 

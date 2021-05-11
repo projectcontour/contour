@@ -16,6 +16,8 @@ package reconciler
 import (
 	"context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/cache"
@@ -58,7 +60,12 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Re
 	tlsroute := &gatewayapi_v1alpha1.TLSRoute{}
 	err := r.client.Get(ctx, request.NamespacedName, tlsroute)
 	if errors.IsNotFound(err) {
-		r.eventHandler.OnDelete(tlsroute)
+		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.TLSRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      request.Name,
+				Namespace: request.Namespace,
+			},
+		})
 		return reconcile.Result{}, nil
 	}
 
