@@ -22,6 +22,8 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func testGlobalRateLimitingVirtualHostNonTLS(fx *e2e.Framework) {
@@ -64,23 +66,30 @@ func testGlobalRateLimitingVirtualHostNonTLS(fx *e2e.Framework) {
 	})
 	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-	// Add a global rate limit policy on the virtual host.
-	p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
-		Global: &contourv1.GlobalRateLimitPolicy{
-			Descriptors: []contourv1.RateLimitDescriptor{
-				{
-					Entries: []contourv1.RateLimitDescriptorEntry{
-						{
-							GenericKey: &contourv1.GenericKeyDescriptor{
-								Value: "vhostlimit",
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+			return err
+		}
+
+		// Add a global rate limit policy on the virtual host.
+		p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
+			Global: &contourv1.GlobalRateLimitPolicy{
+				Descriptors: []contourv1.RateLimitDescriptor{
+					{
+						Entries: []contourv1.RateLimitDescriptorEntry{
+							{
+								GenericKey: &contourv1.GenericKeyDescriptor{
+									Value: "vhostlimit",
+								},
 							},
 						},
 					},
 				},
 			},
-		},
-	}
-	require.NoError(t, fx.Client.Update(context.TODO(), p))
+		}
+
+		return fx.Client.Update(context.TODO(), p)
+	}))
 
 	// Make a request against the proxy, confirm a 200 response
 	// is returned since we're allowed one request per hour.
@@ -153,23 +162,30 @@ func testGlobalRateLimitingRouteNonTLS(fx *e2e.Framework) {
 	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 	// Add a global rate limit policy on the first route.
-	p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
-		Global: &contourv1.GlobalRateLimitPolicy{
-			Descriptors: []contourv1.RateLimitDescriptor{
-				{
-					Entries: []contourv1.RateLimitDescriptorEntry{
-						{
-							GenericKey: &contourv1.GenericKeyDescriptor{
-								Key:   "route_limit_key",
-								Value: "routelimit",
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+			return err
+		}
+
+		p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
+			Global: &contourv1.GlobalRateLimitPolicy{
+				Descriptors: []contourv1.RateLimitDescriptor{
+					{
+						Entries: []contourv1.RateLimitDescriptorEntry{
+							{
+								GenericKey: &contourv1.GenericKeyDescriptor{
+									Key:   "route_limit_key",
+									Value: "routelimit",
+								},
 							},
 						},
 					},
 				},
 			},
-		},
-	}
-	require.NoError(t, fx.Client.Update(context.TODO(), p))
+		}
+
+		return fx.Client.Update(context.TODO(), p)
+	}))
 
 	// Make a request against the proxy, confirm a 200 response
 	// is returned since we're allowed one request per hour.
@@ -242,22 +258,29 @@ func testGlobalRateLimitingVirtualHostTLS(fx *e2e.Framework) {
 	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 	// Add a global rate limit policy on the virtual host.
-	p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
-		Global: &contourv1.GlobalRateLimitPolicy{
-			Descriptors: []contourv1.RateLimitDescriptor{
-				{
-					Entries: []contourv1.RateLimitDescriptorEntry{
-						{
-							GenericKey: &contourv1.GenericKeyDescriptor{
-								Value: "tlsvhostlimit",
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+			return err
+		}
+
+		p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
+			Global: &contourv1.GlobalRateLimitPolicy{
+				Descriptors: []contourv1.RateLimitDescriptor{
+					{
+						Entries: []contourv1.RateLimitDescriptorEntry{
+							{
+								GenericKey: &contourv1.GenericKeyDescriptor{
+									Value: "tlsvhostlimit",
+								},
 							},
 						},
 					},
 				},
 			},
-		},
-	}
-	require.NoError(t, fx.Client.Update(context.TODO(), p))
+		}
+
+		return fx.Client.Update(context.TODO(), p)
+	}))
 
 	// Make a request against the proxy, confirm a 200 response
 	// is returned since we're allowed one request per hour.
@@ -334,22 +357,29 @@ func testGlobalRateLimitingRouteTLS(fx *e2e.Framework) {
 	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 	// Add a global rate limit policy on the first route.
-	p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
-		Global: &contourv1.GlobalRateLimitPolicy{
-			Descriptors: []contourv1.RateLimitDescriptor{
-				{
-					Entries: []contourv1.RateLimitDescriptorEntry{
-						{
-							GenericKey: &contourv1.GenericKeyDescriptor{
-								Value: "tlsroutelimit",
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+			return err
+		}
+
+		p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
+			Global: &contourv1.GlobalRateLimitPolicy{
+				Descriptors: []contourv1.RateLimitDescriptor{
+					{
+						Entries: []contourv1.RateLimitDescriptorEntry{
+							{
+								GenericKey: &contourv1.GenericKeyDescriptor{
+									Value: "tlsroutelimit",
+								},
 							},
 						},
 					},
 				},
 			},
-		},
-	}
-	require.NoError(t, fx.Client.Update(context.TODO(), p))
+		}
+
+		return fx.Client.Update(context.TODO(), p)
+	}))
 
 	// Make a request against the proxy, confirm a 200 response
 	// is returned since we're allowed one request per hour.
