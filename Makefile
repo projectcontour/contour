@@ -343,7 +343,7 @@ integration: check-integration
 e2e:
 	./_integration/testsuite/make-kind-cluster.sh
 	./_integration/testsuite/install-contour-working.sh
-	ginkgo -tags=e2e -mod=readonly -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r ./test/e2e
+	ginkgo -tags=e2e -mod=readonly -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
 	./_integration/testsuite/cleanup.sh
 
 check-ingress-conformance: ## Run Ingress controller conformance
