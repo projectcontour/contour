@@ -58,7 +58,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	gateway := &gatewayapi_v1alpha1.Gateway{}
 	err := r.client.Get(ctx, request.NamespacedName, gateway)
 	if errors.IsNotFound(err) {
-		r.Error(nil, "Could not find Gateway %q in Namespace %q", request.Name, request.Namespace)
+		r.eventHandler.OnDelete(gateway)
 		return reconcile.Result{}, nil
 	}
 

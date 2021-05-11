@@ -58,7 +58,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Re
 	tlsroute := &gatewayapi_v1alpha1.TLSRoute{}
 	err := r.client.Get(ctx, request.NamespacedName, tlsroute)
 	if errors.IsNotFound(err) {
-		r.Error(nil, "Could not find TLSRoute %q in Namespace %q", request.Name, request.Namespace)
+		r.eventHandler.OnDelete(tlsroute)
 		return reconcile.Result{}, nil
 	}
 

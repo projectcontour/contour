@@ -58,7 +58,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, request reconcile.R
 	gateway := &gatewayapi_v1alpha1.HTTPRoute{}
 	err := r.client.Get(ctx, request.NamespacedName, gateway)
 	if errors.IsNotFound(err) {
-		r.Error(nil, "Could not find HTTPRoute %q in Namespace %q", request.Name, request.Namespace)
+		r.eventHandler.OnDelete(gateway)
 		return reconcile.Result{}, nil
 	}
 
