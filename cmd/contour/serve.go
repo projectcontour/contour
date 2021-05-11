@@ -25,6 +25,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/projectcontour/contour/internal/controller"
+
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -54,6 +56,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
+	controller_config "sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 // Add RBAC policy to support leader election.
@@ -399,18 +405,49 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	}
 
+	// Set up workgroup runner and register informers.
+	var g workgroup.Group
+
 	// Only inform on GatewayAPI resources if Gateway API is found.
 	if ctx.Config.GatewayConfig != nil {
 		if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
-			for _, r := range k8s.GatewayAPIResources() {
-				if err := informOnResource(clients, r, &dynamicHandler); err != nil {
-					log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
-				}
+
+			// Setup a Manager
+			mgr, err := manager.New(controller_config.GetConfigOrDie(), manager.Options{})
+			if err != nil {
+				log.WithError(err).Fatal("unable to set up controller manager")
 			}
+
+			// Add the GatetwayAPI Scheme.
+			err = gatewayapi_v1alpha1.AddToScheme(mgr.GetScheme())
+			if err != nil {
+				log.WithError(err).Fatal("unable to add GatewayAPI to scheme.")
+			}
+
+			// Create and register the NewGatewayController controller with the manager.
+			if _, err := controller.NewGatewayController(mgr, &dynamicHandler, log.WithField("context", "gateway-controller")); err != nil {
+				log.WithError(err).Fatal("failed to create gateway-controller")
+			}
+
+			// Create and register the NewHTTPRouteController controller with the manager.
+			if _, err := controller.NewHTTPRouteController(mgr, &dynamicHandler, log.WithField("context", "httproute-controller")); err != nil {
+				log.WithError(err).Fatal("failed to create httproute-controller")
+			}
+
+			// Create and register the NewTLSRouteController controller with the manager.
+			if _, err := controller.NewTLSRouteController(mgr, &dynamicHandler, log.WithField("context", "tlsroute-controller")); err != nil {
+				log.WithError(err).Fatal("failed to create tlsroute-controller")
+			}
+
 			// Inform on Namespaces.
 			if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler); err != nil {
 				log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
 			}
+
+			// Start Manager
+			g.AddContext(func(taskCtx context.Context) error {
+				return mgr.Start(signals.SetupSignalHandler())
+			})
 		} else {
 			log.Fatalf("GatewayAPI Gateway configured but APIs not installed in cluster.")
 		}
@@ -443,9 +480,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
-
-	// Set up workgroup runner and register informers.
-	var g workgroup.Group
 
 	// Register a task to start all the informers.
 	g.AddContext(func(taskCtx context.Context) error {
