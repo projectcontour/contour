@@ -17,6 +17,7 @@ package httpproxy
 
 import (
 	"context"
+	"time"
 
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
@@ -78,13 +79,15 @@ func testPodRestart(fx *e2e.Framework) {
 	}
 	require.NoError(t, fx.Client.Delete(context.TODO(), pod))
 
+	// This step occasionally takes longer than the default 60s timeout
+	// so give it 2 minutes to succeed.
 	require.Eventually(t, func() bool {
 		var res corev1.Pod
 		err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(pod), &res)
 
 		// we want a non-nil, "not found" error to confirm the pod was deleted
 		return err != nil && errors.IsNotFound(err)
-	}, fx.RetryTimeout, fx.RetryInterval)
+	}, 2*time.Minute, fx.RetryInterval)
 
 	// now make HTTP requests again and confirm we eventually get a 200
 	res, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
