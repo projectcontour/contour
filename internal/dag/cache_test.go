@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -103,13 +102,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 
 		"insert secret referenced by ingress": {
 			pre: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							SecretName: "secret",
 						}},
 					},
@@ -127,13 +126,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert secret referenced by ingress with multiple pem blocks": {
 			pre: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							SecretName: "secret",
 						}},
 					},
@@ -151,13 +150,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert secret w/ wrong type referenced by ingress": {
 			pre: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							SecretName: "secret",
 						}},
 					},
@@ -174,13 +173,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert secret referenced by ingress via tls delegation": {
 			pre: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "extra",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							SecretName: "default/secret",
 						}},
 					},
@@ -212,13 +211,13 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert secret referenced by ingress via wildcard tls delegation": {
 			pre: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "extra",
 					},
-					Spec: v1beta1.IngressSpec{
-						TLS: []v1beta1.IngressTLS{{
+					Spec: networking_v1.IngressSpec{
+						TLS: []networking_v1.IngressTLS{{
 							SecretName: "default/secret",
 						}},
 					},
@@ -436,15 +435,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert ingressv1beta1 empty ingress class": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "correct",
-					Namespace: "default",
-				},
-			},
-			want: true,
-		},
 		"insert ingressv1 incorrect ingress class name": {
 			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -464,30 +454,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("contour"),
-				},
-			},
-			want: true,
-		},
-		"insert ingressv1beta1 incorrect ingress class name": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-				},
-				Spec: v1beta1.IngressSpec{
-					IngressClassName: pointer.StringPtr("nginx"),
-				},
-			},
-			want: false,
-		},
-		"insert ingressv1beta1 explicit ingress class name": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "explicit",
-					Namespace: "default",
-				},
-				Spec: v1beta1.IngressSpec{
 					IngressClassName: pointer.StringPtr("contour"),
 				},
 			},
@@ -517,30 +483,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: false,
 		},
-		"insert ingressv1beta1 incorrect kubernetes.io/ingress.class": {
-			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": "nginx",
-					},
-				},
-			},
-			want: false,
-		},
-		"insert ingressv1beta1 incorrect projectcontour.io/ingress.class": {
-			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": "nginx",
-					},
-				},
-			},
-			want: false,
-		},
 		"insert ingressv1 explicit kubernetes.io/ingress.class": {
 			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -555,30 +497,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert ingressv1 explicit projectcontour.io/ingress.class": {
 			obj: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "explicit",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
-					},
-				},
-			},
-			want: true,
-		},
-		"insert ingressv1beta1 explicit kubernetes.io/ingress.class": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "explicit",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
-					},
-				},
-			},
-			want: true,
-		},
-		"insert ingressv1beta1 explicit projectcontour.io/ingress.class": {
-			obj: &v1beta1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "explicit",
 					Namespace: "default",
@@ -615,32 +533,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert ingressv1beta1 projectcontour.io ingress class annotation overrides kubernetes.io incorrect": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "override",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": "nginx",
-						"kubernetes.io/ingress.class":     annotation.DEFAULT_INGRESS_CLASS_NAME,
-					},
-				},
-			},
-			want: false,
-		},
-		"insert ingressv1beta1 projectcontour.io ingress class annotation overrides kubernetes.io correct": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "override",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
-						"kubernetes.io/ingress.class":     "nginx",
-					},
-				},
-			},
-			want: true,
-		},
 		"insert ingressv1 ingress class annotation overrides spec incorrect": {
 			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -666,36 +558,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					},
 				},
 				Spec: networking_v1.IngressSpec{
-					IngressClassName: pointer.StringPtr("nginx"),
-				},
-			},
-			want: true,
-		},
-		"insert ingressv1beta1 ingress class annotation overrides spec incorrect": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "override",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": "nginx",
-					},
-				},
-				Spec: v1beta1.IngressSpec{
-					IngressClassName: pointer.StringPtr("contour"),
-				},
-			},
-			want: false,
-		},
-		"insert ingressv1beta1 ingress class annotation overrides spec correct": {
-			obj: &v1beta1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "override",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
-					},
-				},
-				Spec: v1beta1.IngressSpec{
 					IngressClassName: pointer.StringPtr("nginx"),
 				},
 			},
@@ -791,14 +653,16 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert service referenced by ingress backend": {
 			pre: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "default",
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "service",
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: &networking_v1.IngressBackend{
+							Service: &networking_v1.IngressServiceBackend{
+								Name: "service",
+							},
 						},
 					},
 				},
@@ -813,14 +677,16 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		},
 		"insert service in different namespace": {
 			pre: []interface{}{
-				&v1beta1.Ingress{
+				&networking_v1.Ingress{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "www",
 						Namespace: "kube-system",
 					},
-					Spec: v1beta1.IngressSpec{
-						Backend: &v1beta1.IngressBackend{
-							ServiceName: "service",
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: &networking_v1.IngressBackend{
+							Service: &networking_v1.IngressServiceBackend{
+								Name: "service",
+							},
 						},
 					},
 				},
@@ -1090,13 +956,13 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: false,
 		},
 		"remove ingress": {
-			cache: cache(&v1beta1.Ingress{
+			cache: cache(&networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
 				},
 			}),
-			obj: &v1beta1.Ingress{
+			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
@@ -1120,7 +986,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			want: true,
 		},
 		"remove ingress incorrect ingressclass": {
-			cache: cache(&v1beta1.Ingress{
+			cache: cache(&networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
@@ -1129,7 +995,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 					},
 				},
 			}),
-			obj: &v1beta1.Ingress{
+			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "ingress",
 					Namespace: "default",
