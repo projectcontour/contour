@@ -161,6 +161,33 @@ The preceding example enables validation by setting the optional `clientValidati
 Its mandatory attribute `caSecret` contains a name of an existing Kubernetes Secret that must be of type "Opaque" and have a data key named `ca.crt`.
 The data value of the key `ca.crt` must be a PEM-encoded certificate bundle and it must contain all the trusted CA certificates that are to be used for validating the client certificate.
 
+When using external authorization, it may be desirable to use an external authorization server to validate client certificates on requests, rather than the Envoy proxy.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: with-client-auth-and-ext-authz
+spec:
+  virtualhost:
+    fqdn: www.example.com
+    authorization:
+      # external authorization server configuration
+    tls:
+      secretName: secret
+      clientValidation:
+        caSecret: client-root-ca
+        skipClientCertValidation: true
+  routes:
+    - services:
+        - name: s1
+          port: 80
+```
+
+In the above example, setting the `skipClientCertValidation` field to `true` will configure Envoy to require client certificates on requests and pass them along to a configured authorization server.
+Failed validation of client certificates by Envoy will be ignored and the `fail_verify_error` [Listener statistic][2] incremented.
+If the `caSecret` field is omitted, Envoy will request but not require client certificates to be present on requests.
+
 ## TLS Session Proxying
 
 HTTPProxy supports proxying of TLS encapsulated TCP sessions.
@@ -220,3 +247,4 @@ spec:
 ```
 
 [1]: /docs/{{page.version}}/configuration#fallback-certificate
+[2]: https://www.envoyproxy.io/docs/envoy/latest/configuration/listeners/stats#tls-statistics

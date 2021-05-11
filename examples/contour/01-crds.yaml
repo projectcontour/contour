@@ -1834,7 +1834,9 @@ spec:
                           caSecret:
                             description: Name of a Kubernetes secret that contains
                               a CA certificate bundle. The client certificate must
-                              validate against the certificates in the bundle.
+                              validate against the certificates in the bundle. If
+                              specified and SkipClientCertValidation is true, client
+                              certificates will be required on requests.
                             minLength: 1
                             type: string
                           skipClientCertValidation:
@@ -1844,9 +1846,10 @@ spec:
                               authorization in order to enable the external authorization
                               server to validate client certificates. When this field
                               is set to true, client certificates are requested but
-                              not verified by Envoy. If external authorization is
-                              in use, they are presented to the external authorization
-                              server.
+                              not verified by Envoy. If CACertificate is specified,
+                              client certificates are required on requests, but not
+                              verified. If external authorization is in use, they
+                              are presented to the external authorization server.
                             type: boolean
                         type: object
                       enableFallbackCertificate:
