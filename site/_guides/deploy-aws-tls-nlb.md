@@ -25,11 +25,13 @@ Alternate ports may be configured. End-to-end encryption technically requires th
 
 ### Prerequisites
 
-1. Domain registered in Route 53. 
+1. Access to DNS records for domain name.
 
-[Review the docs on registering domains.](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/registrar.html)
+[Review the docs on registering domains with AWS's Route 53.](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/registrar.html)
 
-Later, a subdomain (e.g., demo-service.gcline.us) will be created, pointing to the NLB. 
+An alternate DNS provider may be used, such as Google Domains or Namecheap.
+
+Later, a subdomain (e.g., demo-service.gcline.us) will be created, pointing to the NLB. Additionally, access to the DNS records is required to generate a TLS certificate for use by the NLB. 
 
 3. Verify [Contour is installed in the cluster.](https://projectcontour.io/getting-started/)
 
@@ -41,9 +43,13 @@ Generally, setting up the Load Balancer Controller has two steps: enabling IAM r
 
 1. Generate TLS Certificate
 
-Create a public TLS certificate for the domain using AWS Certificate Manager. This is streamlined when the domain is managed by Route 53. Review the [AWS Certificate Manager Docs.](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html#request-public-console)
+Create a public TLS certificate for the domain using AWS Certificate Manager (ACM). This is streamlined when the domain is managed by Route 53. Review the [AWS Certificate Manager Docs.](https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html#request-public-console)
 
-The domain name on the TLS certificate must correspond to the planned domain name for the kubernetes service. The domain name may be specified explicitly (e.g, tls-demo.gcline.us), or a wildcard certificate can be used (e.g., *.gcline.us).
+The domain name on the TLS certificate must correspond to the planned domain name for the kubernetes service. The domain name may be specified explicitly (e.g., tls-demo.gcline.us), or a wildcard certificate can be used (e.g., *.gcline.us).
+
+If the domain is registered with Route53, the TLS certificate request will automatically be approved. Otherwise, follow ACM console the instructions to create a DNS record to validate the domain. 
+
+After validation, the certificate will be available for use in your AWS account. 
 
 Note the ARN of the certificate, which uniquely identifies it in kubernetes config files. 
 
@@ -101,9 +107,13 @@ envoy   LoadBalancer   10.100.24.154   a7ea2bbde8a164036a7e4c1ed5700cdf-154fb911
 
 Note the last 4 digits of the domain name for the NLB. For example, "bb1f". 
 
-**Setup alias in Route 53**
+**Setup DNS alias for NLB**
 
-Create a new record in Route 53. 
+Create a DNS record pointing from a friendly name (e.g., tls-demo.gcline.us) to the NLB domain (e.g., bb1f.elb.us-east-2.amazonaws.com). 
+
+For AWS's Route 53, follow the instructions below. If you use a different DNS provider, follow their instructions for [creating a CNAME record](https://docs.digitalocean.com/products/networking/dns/how-to/manage-records/#cname-records). 
+
+First, create a new record in Route 53. 
 
 Use the "A" record type, and enable the ["alias" option.](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-alias.html) This option attaches the DNS record to the AWS resource, without requiring an extra lookup step for clients. 
 
