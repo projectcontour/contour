@@ -157,7 +157,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 
 		// Validate that this route doesn't conflict with another.
-		matchingRoutes, rejectedRoutes := filterConflictingRoutes(matchingRoutes)
+		filteredRoutes, rejectedRoutes := filterConflictingRoutes(matchingRoutes)
 
 		// Set status for all rejected routes.
 		for _, rejected := range rejectedRoutes {
@@ -168,7 +168,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 
 		// Process all the routes that match this Gateway.
-		for _, matchingRoute := range matchingRoutes {
+		for _, matchingRoute := range filteredRoutes {
 			p.computeHTTPRoute(matchingRoute, listenerSecret)
 		}
 	}

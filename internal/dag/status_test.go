@@ -3448,16 +3448,26 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []metav1.Condition{{
-			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
-			Status:  contour_api_v1.ConditionFalse,
-			Reason:  string(status.ReasonRouteConflict),
-			Message: "HTTPRoute rejected due to conflict with another.",
+		want: []*status.ConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic2"},
+			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
+				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
+					Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonRouteConflict),
+					Message: "HTTPRoute rejected due to conflict with another.",
+				},
+			},
 		}, {
-			Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
-			Status:  contour_api_v1.ConditionTrue,
-			Reason:  string(status.ValidCondition),
-			Message: "Valid HTTPRoute",
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
+				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
+					Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+					Status:  contour_api_v1.ConditionTrue,
+					Reason:  string(status.ValidCondition),
+					Message: "Valid HTTPRoute",
+				},
+			},
 		}},
 	})
 }

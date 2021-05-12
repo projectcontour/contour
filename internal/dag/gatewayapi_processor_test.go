@@ -503,7 +503,7 @@ func TestMatchesConflict(t *testing.T) {
 					}}, 1982),
 			},
 		},
-		"same prefixMatch, different match types": {
+		"same path, different match types": {
 			routes: []*gatewayapi_v1alpha1.HTTPRoute{
 				httpRoute("basic",
 					[]gatewayapi_v1alpha1.Hostname{"test.projectcontour.io"}, []gatewayapi_v1alpha1.HTTPRouteRule{{
@@ -529,7 +529,7 @@ func TestMatchesConflict(t *testing.T) {
 					}}, 1982),
 			},
 		},
-		"same prefixMatch, same match types, same timestamps": {
+		"same prefixMatch, same match types, same timestamps, valid route is chosen alphabetically": {
 			routes: []*gatewayapi_v1alpha1.HTTPRoute{
 				httpRoute("basic",
 					[]gatewayapi_v1alpha1.Hostname{"test.projectcontour.io"}, []gatewayapi_v1alpha1.HTTPRouteRule{{
