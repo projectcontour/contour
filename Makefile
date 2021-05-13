@@ -9,6 +9,10 @@ SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
 ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.18.3
 
+# Variables needed for running upgrade tests.
+CONTOUR_UPGRADE_FROM_VERSION ?= $(shell git describe --tags `git rev-list --tags --max-count=1`)
+CONTOUR_UPGRADE_TO_IMAGE ?= projectcontour/contour:main
+
 # The version of Jekyll is pinned in site/Gemfile.lock.
 # https://docs.netlify.com/configure-builds/common-configurations/#jekyll
 JEKYLL_IMAGE := jekyll/jekyll:4
@@ -337,18 +341,28 @@ site-check: ## Test the site's links
 check-integration:
 	@integration-tester --version > /dev/null 2>&1 || (echo "ERROR: To run the integration tests, you will need to install integration-tester (https://github.com/projectcontour/integration-tester)"; exit 1)
 
-.PHONY: integration ## Run integration tests against a real k8s cluster
-integration: check-integration
+.PHONY: integration
+integration: check-integration ## Run integration tests against a real k8s cluster
 	./_integration/testsuite/make-kind-cluster.sh
 	./_integration/testsuite/install-contour-working.sh
 	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/ingress/*.yaml ./_integration/testsuite/httpproxy/*.yaml ./_integration/testsuite/gatewayapi/*.yaml
 	./_integration/testsuite/cleanup.sh
 
 .PHONY: e2e
-e2e:
+e2e: ## Run integration tests against a real k8s cluster
 	./_integration/testsuite/make-kind-cluster.sh
 	./_integration/testsuite/install-contour-working.sh
-	ginkgo -tags=e2e -mod=readonly -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
+	ginkgo -tags=e2e -mod=readonly -skipPackage=upgrade -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
+	./_integration/testsuite/cleanup.sh
+
+.PHONY: upgrade
+upgrade: ## Run upgrade tests against a real k8s cluster
+	./_integration/testsuite/make-kind-cluster.sh
+	./_integration/testsuite/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
+	./hack/actions/kind-load-contour-image.sh
+	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
+		CONTOUR_UPGRADE_TO_IMAGE=$(CONTOUR_UPGRADE_TO_IMAGE) \
+		ginkgo -tags=e2e -mod=readonly -randomizeAllSpecs -slowSpecThreshold=300 -v ./test/e2e/upgrade
 	./_integration/testsuite/cleanup.sh
 
 check-ingress-conformance: ## Run Ingress controller conformance
