@@ -136,8 +136,10 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 			t:             t,
 		},
 		Certs: &Certs{
-			client: crClient,
-			t:      t,
+			client:        crClient,
+			retryInterval: time.Second,
+			retryTimeout:  60 * time.Second,
+			t:             t,
 		},
 		t: t,
 	}
