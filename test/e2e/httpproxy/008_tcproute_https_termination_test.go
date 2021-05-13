@@ -36,7 +36,7 @@ func testTCPRouteHTTPSTermination(fx *e2e.Framework) {
 	defer fx.DeleteNamespace(namespace)
 
 	fx.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
-	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo-cert", "tcp-route-https-termination.projectcontour.io")
+	fx.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo-cert", "tcp-route-https-termination.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

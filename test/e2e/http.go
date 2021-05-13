@@ -127,6 +127,52 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 	return h.requestUntil(makeRequest, opts.Condition)
 }
 
+// SecureRequest makes a single HTTPS request with the provided parameters
+// and returns the HTTP response or an error. Note that opts.Condition is
+// ignored by this method.
+//
+// In general, E2E's should use SecureRequestUntil instead of this method since
+// SecureRequestUntil will retry requests to account for eventual consistency and
+// other ephemeral issues.
+func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
+	req, err := http.NewRequest("GET", h.HTTPSURLBase+opts.Path, nil)
+	require.NoError(h.t, err, "error creating HTTP request")
+
+	req.Host = opts.Host
+	for _, opt := range opts.RequestOpts {
+		opt(req)
+	}
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = &tls.Config{
+		ServerName: opts.Host,
+		//nolint:gosec
+		InsecureSkipVerify: true,
+	}
+	for _, opt := range opts.TLSConfigOpts {
+		opt(transport.TLSClientConfig)
+	}
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
+	r, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	require.NoError(h.t, err)
+
+	return &HTTPResponse{
+		StatusCode: r.StatusCode,
+		Headers:    r.Header,
+		Body:       bodyBytes,
+	}, nil
+}
+
 func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), condition func(*http.Response) bool) (*HTTPResponse, bool) {
 	var res *HTTPResponse
 

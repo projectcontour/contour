@@ -221,7 +221,7 @@ func testGlobalRateLimitingVirtualHostTLS(fx *e2e.Framework) {
 	defer fx.DeleteNamespace(namespace)
 
 	fx.Fixtures.Echo.Deploy(namespace, "echo")
-	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitvhosttls.projectcontour.io")
+	fx.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitvhosttls.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -307,7 +307,7 @@ func testGlobalRateLimitingRouteTLS(fx *e2e.Framework) {
 	defer fx.DeleteNamespace(namespace)
 
 	fx.Fixtures.Echo.Deploy(namespace, "echo")
-	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitroutetls.projectcontour.io")
+	fx.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "globalratelimitroutetls.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

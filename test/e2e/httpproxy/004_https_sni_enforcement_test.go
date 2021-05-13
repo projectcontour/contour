@@ -33,7 +33,7 @@ func testHTTPSSNIEnforcement(fx *e2e.Framework) {
 	defer fx.DeleteNamespace(namespace)
 
 	fx.Fixtures.Echo.Deploy(namespace, "echo-one")
-	fx.CreateSelfSignedCert(namespace, "echo-one-cert", "echo-one", "sni-enforcement-echo-one.projectcontour.io")
+	fx.Certs.CreateSelfSignedCert(namespace, "echo-one-cert", "echo-one", "sni-enforcement-echo-one.projectcontour.io")
 
 	echoOneProxy := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -72,7 +72,7 @@ func testHTTPSSNIEnforcement(fx *e2e.Framework) {
 
 	// echo-two
 	fx.Fixtures.Echo.Deploy(namespace, "echo-two")
-	fx.CreateSelfSignedCert(namespace, "echo-two-cert", "echo-two", "sni-enforcement-echo-two.projectcontour.io")
+	fx.Certs.CreateSelfSignedCert(namespace, "echo-two-cert", "echo-two", "sni-enforcement-echo-two.projectcontour.io")
 
 	echoTwoProxy := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
