@@ -34,6 +34,9 @@ var _ = Describe("HTTPProxy", func() {
 		f = e2e.NewFramework(GinkgoT())
 	})
 
+	It("001-required-field-validation", func() {
+		testRequiredFieldValidation(f)
+	})
 	It("002-header-condition-match", func() {
 		testHeaderConditionMatch(f)
 	})
@@ -57,6 +60,9 @@ var _ = Describe("HTTPProxy", func() {
 	})
 	It("010-include-prefix-condition", func() {
 		testIncludePrefixCondition(f)
+	})
+	It("011-retry-policy-validation", func() {
+		testRetryPolicyValidation(f)
 	})
 	It("012-https-fallback-certificate", func() {
 		testHTTPSFallbackCertificate(f)
