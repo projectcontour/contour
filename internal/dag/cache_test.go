@@ -756,6 +756,16 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		// invalid gatewayclass test case is unneeded since the controller
+		// uses a predicate to filter events before they're given to the EventHandler.
+		"insert valid gatewayclass": {
+			obj: &gatewayapi_v1alpha1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+				},
+			},
+			want: true,
+		},
 		"insert gateway-api Gateway": {
 			obj: &gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1041,6 +1051,19 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			},
 			want: false,
+		},
+		"remove gatewayclass": {
+			cache: cache(&gatewayapi_v1alpha1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+				},
+			}),
+			obj: &gatewayapi_v1alpha1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+				},
+			},
+			want: true,
 		},
 		"remove gateway-api Gateway": {
 			cache: cache(&gatewayapi_v1alpha1.Gateway{

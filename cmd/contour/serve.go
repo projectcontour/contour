@@ -408,7 +408,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Set up workgroup runner and register informers.
 	var g workgroup.Group
 
-	// Only inform on GatewayAPI resources if Gateway API is found.
+	// Only inform on Gateway API resources if Gateway API is found.
 	if ctx.Config.GatewayConfig != nil {
 		if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 
@@ -418,10 +418,16 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				log.WithError(err).Fatal("unable to set up controller manager")
 			}
 
-			// Add the GatetwayAPI Scheme.
+			// Add the Gatetway API Scheme.
 			err = gatewayapi_v1alpha1.AddToScheme(mgr.GetScheme())
 			if err != nil {
-				log.WithError(err).Fatal("unable to add GatewayAPI to scheme.")
+				log.WithError(err).Fatal("unable to add Gateway " +
+					"API to scheme.")
+			}
+
+			// Create and register the gatewayclass controller with the manager.
+			if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler, log.WithField("context", "gatewayclass-controller"), ctx.Config.GatewayClassController); err != nil {
+				log.WithError(err).Fatal("failed to create gatewayclass-controller")
 			}
 
 			// Create and register the NewGatewayController controller with the manager.
@@ -449,7 +455,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				return mgr.Start(signals.SetupSignalHandler())
 			})
 		} else {
-			log.Fatalf("GatewayAPI Gateway configured but APIs not installed in cluster.")
+			log.Fatalf("Gateway API Gateway configured but APIs not installed in cluster.")
 		}
 	}
 
@@ -728,7 +734,7 @@ func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallback
 
 	if ctx.Config.GatewayConfig != nil && clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-			FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
+			FieldLogger: log.WithField("context", "NewGatewayClassControllerIProcessor"),
 		})
 	}
 

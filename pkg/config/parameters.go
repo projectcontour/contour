@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -491,6 +493,10 @@ type Parameters struct {
 	// Server contains parameters for the xDS server.
 	Server ServerParameters `yaml:"server,omitempty"`
 
+	// GatewayClassController is the identifier used by Contour's gatewayclass
+	// controller to determine if a GatewayClass object should be managed.
+	GatewayClassController string `yaml:"gatewayclass-controller,omitempty"`
+
 	// GatewayConfig contains parameters for the gateway-api Gateway that Contour
 	// is configured to serve traffic.
 	GatewayConfig *GatewayParameters `yaml:"gateway,omitempty"`
@@ -630,6 +636,7 @@ func (p *Parameters) Validate() error {
 // Defaults returns the default set of parameters.
 func Defaults() Parameters {
 	contourNamespace := GetenvOr("CONTOUR_NAMESPACE", "projectcontour")
+	gatewayClassController := fmt.Sprintf("%s/%s/contour", contour_api_v1.GroupName, contourNamespace)
 
 	return Parameters{
 		Debug:      false,
@@ -672,6 +679,7 @@ func Defaults() Parameters {
 		Listener: ListenerParameters{
 			ConnectionBalancer: "",
 		},
+		GatewayClassController: gatewayClassController,
 	}
 }
 
