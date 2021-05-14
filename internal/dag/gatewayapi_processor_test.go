@@ -19,6 +19,7 @@ import (
 
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
@@ -199,6 +200,250 @@ func TestComputeHosts(t *testing.T) {
 			got, gotError := processor.computeHosts(tc.route)
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantError, gotError)
+		})
+	}
+}
+
+func TestNamespaceMatches(t *testing.T) {
+	tests := map[string]struct {
+		namespaces *gatewayapi_v1alpha1.RouteNamespaces
+		namespace  string
+		valid      bool
+		wantError  bool
+	}{
+		"nil matches all": {
+			namespaces: nil,
+			namespace:  "projectcontour",
+			valid:      true,
+			wantError:  false,
+		},
+		"nil From matches all": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: nil,
+			},
+			namespace: "projectcontour",
+			valid:     true,
+			wantError: false,
+		},
+		"From.RouteSelectAll matches all": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+			},
+			namespace: "projectcontour",
+			valid:     true,
+			wantError: false,
+		},
+		"From.RouteSelectSame matches": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
+			},
+			namespace: "projectcontour",
+			valid:     true,
+			wantError: false,
+		},
+		"From.RouteSelectSame doesn't match": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
+			},
+			namespace: "custom",
+			valid:     false,
+			wantError: false,
+		},
+		"From.RouteSelectSelector matches labels, same ns as gateway": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "production",
+					},
+				},
+			},
+			namespace: "projectcontour",
+			valid:     true,
+			wantError: false,
+		},
+		"From.RouteSelectSelector matches labels, different ns as gateway": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"something": "special",
+					},
+				},
+			},
+			namespace: "custom",
+			valid:     true,
+			wantError: false,
+		},
+		"From.RouteSelectSelector doesn't matches labels, different ns as gateway": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"something": "special",
+					},
+				},
+			},
+			namespace: "projectcontour",
+			valid:     false,
+			wantError: false,
+		},
+		"From.RouteSelectSelector matches expression 'In', different ns as gateway": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{{
+						Key:      "something",
+						Operator: metav1.LabelSelectorOpIn,
+						Values:   []string{"special"},
+					}},
+				},
+			},
+			namespace: "custom",
+			valid:     true,
+			wantError: false,
+		},
+		"From.RouteSelectSelector matches expression 'DoesNotExist', different ns as gateway": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{{
+						Key:      "notthere",
+						Operator: metav1.LabelSelectorOpDoesNotExist,
+					}},
+				},
+			},
+			namespace: "custom",
+			valid:     true,
+			wantError: false,
+		},
+		"From.RouteSelectSelector doesn't match expression 'DoesNotExist', different ns as gateway": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{{
+						Key:      "something",
+						Operator: metav1.LabelSelectorOpDoesNotExist,
+					}},
+				},
+			},
+			namespace: "custom",
+			valid:     false,
+			wantError: false,
+		},
+		"From.RouteSelectSelector matches expression 'Exists', different ns as gateway": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{{
+						Key:      "notthere",
+						Operator: metav1.LabelSelectorOpExists,
+					}},
+				},
+			},
+			namespace: "custom",
+			valid:     false,
+			wantError: false,
+		},
+		"From.RouteSelectSelector doesn't match expression 'Exists', different ns as gateway": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{{
+						Key:      "something",
+						Operator: metav1.LabelSelectorOpExists,
+					}},
+				},
+			},
+			namespace: "custom",
+			valid:     true,
+			wantError: false,
+		},
+		"From.RouteSelectSelector match expression 'Exists', cannot specify values": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{{
+						Key:      "something",
+						Operator: metav1.LabelSelectorOpExists,
+						Values:   []string{"error"},
+					}},
+				},
+			},
+			namespace: "custom",
+			valid:     false,
+			wantError: true,
+		},
+		"From.RouteSelectSelector match expression 'NotExists', cannot specify values": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{{
+						Key:      "something",
+						Operator: metav1.LabelSelectorOpDoesNotExist,
+						Values:   []string{"error"},
+					}},
+				},
+			},
+			namespace: "custom",
+			valid:     false,
+			wantError: true,
+		},
+		"From.RouteSelectSelector must define matchLabels or matchExpression": {
+			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+				From:     routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+				Selector: &metav1.LabelSelector{},
+			},
+			namespace: "custom",
+			valid:     false,
+			wantError: true,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+
+			processor := &GatewayAPIProcessor{
+				FieldLogger: fixture.NewTestLogger(t),
+				source: &KubernetesCache{
+					ConfiguredGateway: types.NamespacedName{
+						Name:      "contour",
+						Namespace: "projectcontour",
+					},
+					namespaces: map[string]*v1.Namespace{
+						"projectcontour": {
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "projectcontour",
+								Labels: map[string]string{
+									"app": "production",
+								},
+							},
+						},
+						"custom": {
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "custom",
+								Labels: map[string]string{
+									"something": "special",
+									"another":   "val",
+									"testkey":   "testval",
+								},
+							},
+						},
+						"customsimilar": {
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "custom",
+								Labels: map[string]string{
+									"something": "special",
+								},
+							},
+						},
+					},
+				},
+			}
+
+			got, gotError := processor.namespaceMatches(tc.namespaces, tc.namespace)
+			assert.Equal(t, tc.valid, got)
+			assert.Equal(t, tc.wantError, gotError != nil)
 		})
 	}
 }
