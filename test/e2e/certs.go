@@ -18,6 +18,7 @@ package e2e
 import (
 	"context"
 	"crypto/tls"
+	"time"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
@@ -26,14 +27,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Certs provides helpers for creating cert-manager certificates
 // and related resources.
 type Certs struct {
-	client client.Client
-	t      ginkgo.GinkgoTInterface
+	client        client.Client
+	retryInterval time.Duration
+	retryTimeout  time.Duration
+	t             ginkgo.GinkgoTInterface
 }
 
 // CreateSelfSignedCert creates a self-signed Issuer if it doesn't already exist
@@ -74,6 +78,30 @@ func (c *Certs) CreateSelfSignedCert(ns, name, secretName, dnsName string) func(
 		require.NoError(c.t, c.client.Delete(context.TODO(), cert))
 		require.NoError(c.t, c.client.Delete(context.TODO(), issuer))
 	}
+}
+
+// CreateCertAndWaitFor creates the provided Certificate in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (c *Certs) CreateCertAndWaitFor(cert *certmanagerv1.Certificate, condition func(cert *certmanagerv1.Certificate) bool) (*certmanagerv1.Certificate, bool) {
+	require.NoError(c.t, c.client.Create(context.TODO(), cert))
+
+	res := &certmanagerv1.Certificate{}
+
+	if err := wait.PollImmediate(c.retryInterval, c.retryTimeout, func() (bool, error) {
+		if err := c.client.Get(context.TODO(), client.ObjectKeyFromObject(cert), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
+	}
+
+	return res, true
 }
 
 // GetTLSCertificate returns a tls.Certificate containing the data in the specified
