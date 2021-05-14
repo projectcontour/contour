@@ -137,7 +137,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			// the route to the set of matchingRoutes.
 			if selMatches && nsMatches {
 
-				gatewayAllowMatches := p.gatewayMatches(route)
+				gatewayAllowMatches := p.gatewayMatches(route.Spec.Gateways, route.Namespace)
 				if (listener.Routes.Selector != nil || listener.Routes.Namespaces != nil) && !gatewayAllowMatches {
 
 					// If a label selector or namespace selector matches, but the gateway Allow doesn't
@@ -276,19 +276,19 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.R
 // gatewayMatches returns true if "AllowAll" is set, the "SameNamespace" is set and the HTTPRoute
 // matches the Gateway's namespace, or the "FromList" is set and the gateway Contour is watching
 // matches one from the list.
-func (p *GatewayAPIProcessor) gatewayMatches(route *gatewayapi_v1alpha1.HTTPRoute) bool {
+func (p *GatewayAPIProcessor) gatewayMatches(routeGateways *gatewayapi_v1alpha1.RouteGateways, namespace string) bool {
 
-	switch *route.Spec.Gateways.Allow {
+	switch *routeGateways.Allow {
 	case gatewayapi_v1alpha1.GatewayAllowAll:
 		return true
 	case gatewayapi_v1alpha1.GatewayAllowFromList:
-		for _, gateway := range route.Spec.Gateways.GatewayRefs {
+		for _, gateway := range routeGateways.GatewayRefs {
 			if gateway.Name == p.source.ConfiguredGateway.Name && gateway.Namespace == p.source.ConfiguredGateway.Namespace {
 				return true
 			}
 		}
 	case gatewayapi_v1alpha1.GatewayAllowSameNamespace:
-		return p.source.ConfiguredGateway.Namespace == route.Namespace
+		return p.source.ConfiguredGateway.Namespace == namespace
 	}
 
 	return false

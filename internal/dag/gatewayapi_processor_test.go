@@ -17,10 +17,10 @@ import (
 	"fmt"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -199,6 +199,76 @@ func TestComputeHosts(t *testing.T) {
 			got, gotError := processor.computeHosts(tc.route)
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantError, gotError)
+		})
+	}
+}
+
+func TestGatewayMatches(t *testing.T) {
+	tests := map[string]struct {
+		routeGateways *gatewayapi_v1alpha1.RouteGateways
+		namespace     string
+		want          bool
+	}{
+		"gateway allow all is always valid": {
+			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+			},
+			namespace: "",
+			want:      true,
+		},
+		"gateway allow from list matches configured gateway": {
+			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
+				GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				}},
+			},
+			namespace: "projectcontour",
+			want:      true,
+		},
+		"gateway allow from list doesn't match configured gateway": {
+			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
+				GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
+					Name:      "different",
+					Namespace: "gateway",
+				}},
+			},
+			namespace: "projectcontour",
+			want:      false,
+		},
+		"gateway allow same namespace matches configured gateway": {
+			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
+			},
+			namespace: "projectcontour",
+			want:      true,
+		},
+		"gateway allow same namespace doesn't match configured gateway": {
+			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
+			},
+			namespace: "different",
+			want:      false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+
+			processor := &GatewayAPIProcessor{
+				FieldLogger: fixture.NewTestLogger(t),
+				source: &KubernetesCache{
+					ConfiguredGateway: types.NamespacedName{
+						Name:      "contour",
+						Namespace: "projectcontour",
+					},
+				},
+			}
+
+			got := processor.gatewayMatches(tc.routeGateways, tc.namespace)
+			assert.Equal(t, tc.want, got)
 		})
 	}
 }
