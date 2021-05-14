@@ -32,20 +32,14 @@ func TestTLSRoute(t *testing.T) {
 	rh, c, done := setup(t)
 	defer done()
 
-	//s1 := &v1.Secret{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      "secret",
-	//		Namespace: "default",
-	//	},
-	//	Type: "kubernetes.io/tls",
-	//	Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-	//}
-
 	svc := fixture.NewService("correct-backend").
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
 
-	//rh.OnAdd(s1)
+	svcAnother := fixture.NewService("another-backend").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+
 	rh.OnAdd(svc)
+	rh.OnAdd(svcAnother)
 
 	rh.OnAdd(&gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
@@ -145,6 +139,84 @@ func TestTLSRoute(t *testing.T) {
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
 						tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
+					),
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						TransportProtocol: "tls",
+					},
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			staticListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	// check that ingress_http is empty
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+
+	route3 := &gatewayapi_v1alpha1.TLSRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+			Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+				Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+					SNIs: []gatewayapi_v1alpha1.Hostname{
+						"tcp.projectcontour.io",
+					},
+				}},
+				ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+					ServiceName: pointer.StringPtr("correct-backend"),
+					Port:        gatewayPort(80),
+				}},
+			}},
+		},
+	}
+
+	route4 := &gatewayapi_v1alpha1.TLSRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic-wildcard",
+			Namespace: "default",
+		},
+		Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+			Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+				ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+					ServiceName: pointer.StringPtr("another-backend"),
+					Port:        gatewayPort(80),
+				}},
+			}},
+		},
+	}
+
+	rh.OnUpdate(route2, route3)
+	rh.OnAdd(route4)
+
+	// Validate that we have a TCP match against 'tcp.projectcontour.io' routing to 'correct-backend`
+	// as well as a wildcard TCP match routing to 'another-service'.
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					Filters: envoy_v3.Filters(
+						tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"),
+					),
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"tcp.projectcontour.io"},
+					},
+				}, {
+					Filters: envoy_v3.Filters(
+						tcpproxy("ingress_https", "default/another-backend/80/da39a3ee5e"),
 					),
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						TransportProtocol: "tls",

@@ -402,26 +402,13 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 
 		var proxy TCPProxy
 		for _, forward := range rule.ForwardTo {
-			// Verify the service is valid
-			if forward.ServiceName == nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServiceName must be specified.")
-				continue
-			}
 
-			// TODO: Do not require port to be present (#3352).
-			if forward.Port == nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServicePort must be specified.")
-				continue
-			}
-
-			meta := types.NamespacedName{Name: *forward.ServiceName, Namespace: route.Namespace}
-
-			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
-			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*forward.Port)), p.source)
+			service, err := p.validateForwardTo(forward.ServiceName, forward.Port, route.Namespace)
 			if err != nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("Service %q does not exist", meta.Name))
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 				continue
 			}
+
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream: service,
 				SNI:      service.ExternalName,
@@ -496,24 +483,9 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		totalWeight := uint32(0)
 		for _, forward := range rule.ForwardTo {
 
-			// Verify the service is valid
-			if forward.ServiceName == nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServiceName must be specified.")
-				continue
-			}
-
-			// TODO: Do not require port to be present (#3352).
-			if forward.Port == nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "Spec.Rules.ForwardTo.ServicePort must be specified.")
-				continue
-			}
-
-			meta := types.NamespacedName{Name: *forward.ServiceName, Namespace: route.Namespace}
-
-			// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
-			service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*forward.Port)), p.source)
+			service, err := p.validateForwardTo(forward.ServiceName, forward.Port, route.Namespace)
 			if err != nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("Service %q does not exist", meta.Name))
+				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 				continue
 			}
 
@@ -594,6 +566,30 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 	default:
 		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 	}
+}
+
+// validateForwardTo verifies that the specified forwardTo is valid.
+// Returns an error if not or the service found in the cache.
+func (p *GatewayAPIProcessor) validateForwardTo(serviceName *string, port *gatewayapi_v1alpha1.PortNumber, namespace string) (*Service, error) {
+	// Verify the service is valid
+	if serviceName == nil {
+		return nil, fmt.Errorf("Spec.Rules.ForwardTo.ServiceName must be specified")
+	}
+
+	// TODO: Do not require port to be present (#3352).
+	if port == nil {
+		return nil, fmt.Errorf("Spec.Rules.ForwardTo.ServicePort must be specified")
+	}
+
+	meta := types.NamespacedName{Name: *serviceName, Namespace: namespace}
+
+	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
+	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*port)), p.source)
+	if err != nil {
+		return nil, fmt.Errorf("service %q does not exist", meta.Name)
+	}
+
+	return service, nil
 }
 
 func pathMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPPathMatch) error {
