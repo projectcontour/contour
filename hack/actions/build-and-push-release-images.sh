@@ -6,7 +6,7 @@ set -o pipefail
 
 # This scripts sets TAG_LATEST based on whether the tag currently being
 # built is the highest semantic version tag that's not a pre-release
-# (alpha, beta, rc), and calls 'make multiarch-build-push'.
+# (alpha, beta, rc), and calls 'make multiarch-build'.
 #
 # This script is intended to be run only for tag builds and will no-op
 # if GITHUB_REF is not in the format "refs/tags/<tag-name>".
@@ -54,4 +54,4 @@ echo "CURRENT_TAG: $CURRENT_TAG"
 echo "HIGHEST_SEMVER_TAG: $HIGHEST_SEMVER_TAG"
 echo "TAG_LATEST: $TAG_LATEST"
 
-make multiarch-build-push TAG_LATEST="$TAG_LATEST"
+make multiarch-build TAG_LATEST="$TAG_LATEST" PUSH_IMAGE=true

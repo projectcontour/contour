@@ -6,8 +6,27 @@ on: [push, pull_request]
 env:
   GOPROXY: https://proxy.golang.org/
 jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
+    - name: Build image
+      env:
+        TAG_LATEST: "false"
+      run: |
+        make multiarch-build
+    - name: Upload image
+      uses: actions/upload-artifact@v2
+      with:
+        name: image
+        path: image/contour-*.tar
   e2e:
     runs-on: ubuntu-latest
+    needs: [build-image]
     strategy:
       matrix:
         # use stable kubernetes_version values since they're included
@@ -27,6 +46,11 @@ jobs:
             node_image: "docker.io/kindest/node:v1.19.7"
     steps:
       - uses: actions/checkout@v2
+      - name: Download image
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+          path: image
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -34,10 +58,12 @@ jobs:
       - name: e2e tests
         env:
           NODEIMAGE: ${{ matrix.node_image }}
+          LOAD_PREBUILT_IMAGE: "true"
         run: |
           make e2e
   integration:
     runs-on: ubuntu-latest
+    needs: [build-image]
     strategy:
       matrix:
         # use stable kubernetes_version values since they're included
@@ -57,6 +83,11 @@ jobs:
             node_image: "docker.io/kindest/node:v1.19.7"
     steps:
       - uses: actions/checkout@v2
+      - name: Download image
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+          path: image
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -64,6 +95,7 @@ jobs:
       - name: integration tests
         env:
           NODEIMAGE: ${{ matrix.node_image }}
+          LOAD_PREBUILT_IMAGE: "true"
         run: |
           make integration
   # TODO: re-enable once Ingress v1 support is complete

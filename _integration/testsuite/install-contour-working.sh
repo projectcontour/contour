@@ -23,6 +23,8 @@ set -o nounset
 readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
+readonly LOAD_PREBUILT_IMAGE=${LOAD_PREBUILT_IMAGE:-false}
+
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
 readonly WAITTIME=${WAITTIME:-5m}
 
@@ -39,8 +41,14 @@ kind::cluster::exists() {
     ${KIND} get clusters | grep -q "$1"
 }
 
-kind::cluster::load() {
+kind::cluster::load::docker() {
     ${KIND} load docker-image \
+        --name "${CLUSTERNAME}" \
+        "$@"
+}
+
+kind::cluster::load::archive() {
+    ${KIND} load image-archive \
         --name "${CLUSTERNAME}" \
         "$@"
 }
@@ -50,19 +58,27 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
-# Build the current version of Contour.
-make -C ${REPO} container IMAGE=docker.io/projectcontour/contour VERSION="v$$"
+if [ "${LOAD_PREBUILT_IMAGE}" = "true" ]; then
+    IMAGE_FILE=$(ls ${REPO}/image/contour-*.tar)
+    VERSION=$(echo ${IMAGE_FILE} | sed -E 's/.*-(.*).tar/\1/')
+    kind::cluster::load::archive ${IMAGE_FILE}
+else
+    # Build the current version of Contour.
+    VERSION="v$$"
+    make -C ${REPO} container IMAGE=docker.io/projectcontour/contour VERSION=$VERSION
 
-for t in $TAGS ; do
-    docker tag \
-        docker.io/projectcontour/contour:"v$$" \
-        docker.io/projectcontour/contour:$t
-done
+    for t in $TAGS ; do
+        docker tag \
+            docker.io/projectcontour/contour:"v$$" \
+            docker.io/projectcontour/contour:$t
+    done
 
-# Push the Contour build image into the cluster.
-for t in $TAGS ; do
-    kind::cluster::load docker.io/projectcontour/contour:$t
-done
+    # Push the Contour build image into the cluster.
+    kind::cluster::load::docker docker.io/projectcontour/contour:${VERSION}
+    for t in $TAGS ; do
+        kind::cluster::load::docker docker.io/projectcontour/contour:$t
+    done
+fi
 
 
 # Install Contour
@@ -76,9 +92,9 @@ ${KUBECTL} apply -f ${REPO}/examples/contour/02-service-envoy.yaml
 
 # Manifests use the "Always" image pull policy, which forces the kubelet to re-fetch from
 # DockerHub, which is why we have to update policy to `IfNotPresent`.
-${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/02-job-certgen.yaml)
-${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-contour.yaml)
-${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-envoy.yaml)
+${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/02-job-certgen.yaml | sed "s/contour:main/contour:${VERSION}/g")
+${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-contour.yaml | sed "s/contour:main/contour:${VERSION}/g")
+${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-envoy.yaml | sed "s/contour:main/contour:${VERSION}/g")
 
 # The Contour pod won't schedule until this ConfigMap is created, since it's mounted as a volume.
 # This is ok to create the config after the Contour deployment.

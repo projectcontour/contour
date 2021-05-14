@@ -21,7 +21,8 @@ jobs:
         REGISTRY: projectcontour
         VERSION: main
         TAG_LATEST: "false"
+        PUSH_IMAGE: "true"
       run: |
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        make multiarch-build-push
+        make multiarch-build
         docker logout
