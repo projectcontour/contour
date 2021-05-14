@@ -81,7 +81,7 @@ func (e *Echo) Deploy(ns, name string) func() {
 					Containers: []corev1.Container{
 						{
 							Name:  "conformance-echo",
-							Image: "k8s.gcr.io/ingressconformance/echoserver:v0.0.1",
+							Image: "k8s.gcr.io/ingressconformance/echoserver@sha256:9b34b17f391f87fb2155f01da2f2f90b7a4a5c1110ed84cb5379faa4f570dc52",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "INGRESS_NAME",
@@ -193,7 +193,7 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 					Containers: []corev1.Container{
 						{
 							Name:  "conformance-echo",
-							Image: "tsaarni/echoserver:latest",
+							Image: "k8s.gcr.io/ingressconformance/echoserver@sha256:9b34b17f391f87fb2155f01da2f2f90b7a4a5c1110ed84cb5379faa4f570dc52",
 							Env: []corev1.EnvVar{
 								{
 									Name:  "INGRESS_NAME",
