@@ -4323,6 +4323,63 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// proxy20 is downstream validation, skip cert validation
+	proxy20 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						SkipClientCertValidation: true,
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	// proxy21 is downstream validation, skip cert validation
+	proxy21 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+				TLS: &contour_api_v1.TLS{
+					SecretName: sec1.Name,
+					ClientValidation: &contour_api_v1.DownstreamValidation{
+						SkipClientCertValidation: true,
+						CACertificate:            cert1.Name,
+					},
+				},
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	// invalid because tcpproxy both includes another and
 	// has a list of services.
 	proxy37 := &contour_api_v1.HTTPProxy{
@@ -4500,63 +4557,6 @@ func TestDAGInsert(t *testing.T) {
 					Prefix: "/",
 				}},
 				Services: nil, // missing
-			}},
-		},
-	}
-
-	// proxy20 is downstream validation, skip cert validation
-	proxy20 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-com",
-			Namespace: "default",
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
-				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
-					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
-						SkipClientCertValidation: true,
-					},
-				},
-			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
-					Prefix: "/",
-				}},
-				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
-
-	// proxy21 is downstream validation, skip cert validation
-	proxy21 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "example-com",
-			Namespace: "default",
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{
-				Fqdn: "example.com",
-				TLS: &contour_api_v1.TLS{
-					SecretName: sec1.Name,
-					ClientValidation: &contour_api_v1.DownstreamValidation{
-						SkipClientCertValidation: true,
-						CACertificate:            cert1.Name,
-					},
-				},
-			},
-			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
-					Prefix: "/",
-				}},
-				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
-					Port: 8080,
-				}},
 			}},
 		},
 	}
