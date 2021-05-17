@@ -18,7 +18,6 @@ import (
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -40,8 +39,6 @@ func KindOf(obj interface{}) string {
 			return "Service"
 		case *v1.Endpoints:
 			return "Endpoints"
-		case *v1beta1.Ingress:
-			return "Ingress"
 		case *networking_v1.Ingress:
 			return "Ingress"
 		case *contour_api_v1.HTTPProxy:
@@ -73,8 +70,8 @@ func VersionOf(obj interface{}) string {
 		switch obj := obj.(type) {
 		case *v1.Secret, *v1.Service, *v1.Endpoints:
 			return v1.SchemeGroupVersion.String()
-		case *v1beta1.Ingress:
-			return v1beta1.SchemeGroupVersion.String()
+		case *networking_v1.Ingress:
+			return networking_v1.SchemeGroupVersion.String()
 		case *contour_api_v1.HTTPProxy, *contour_api_v1.TLSCertificateDelegation:
 			return contour_api_v1.GroupVersion.String()
 		case *v1alpha1.ExtensionService:

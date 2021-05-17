@@ -46,6 +46,10 @@ go get sigs.k8s.io/kind@master
 # have their own version installed.
 mv /home/runner/go/bin/kind ${DESTDIR}/kind
 
+# Install ginkgo CLI
+go get github.com/onsi/ginkgo/...
+mv /home/runner/go/bin/ginkgo ${DESTDIR}/ginkgo
+
 # Uncomment this once v0.11 of Kind is released.
 #download \
 #    "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERS}/kind-${OS}-amd64" \

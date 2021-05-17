@@ -23,7 +23,6 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/pointer"
@@ -95,14 +94,6 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		o.GetObjectKind().SetGroupVersionKind(networking_v1.SchemeGroupVersion.WithKind("ingress"))
 		typed = o.DeepCopy()
 		gvr = networking_v1.SchemeGroupVersion.WithResource("ingresses")
-	case *v1beta1.Ingress:
-		if !ingress_validation.MatchesIngressClassName(o, s.IngressClassName) {
-			logNoMatch(s.Logger.WithField("ingress-class-name", pointer.StringPtrDerefOr(o.Spec.IngressClassName, "")), o)
-			return
-		}
-		o.GetObjectKind().SetGroupVersionKind(v1beta1.SchemeGroupVersion.WithKind("ingress"))
-		typed = o.DeepCopy()
-		gvr = v1beta1.SchemeGroupVersion.WithResource("ingresses")
 	case *contour_api_v1.HTTPProxy:
 		if !annotation.MatchesIngressClass(o, s.IngressClassName) {
 			logNoMatch(s.Logger, o)
@@ -131,10 +122,6 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		StatusMutatorFunc(func(obj interface{}) interface{} {
 			switch o := obj.(type) {
 			case *networking_v1.Ingress:
-				dco := o.DeepCopy()
-				dco.Status.LoadBalancer = loadBalancerStatus
-				return dco
-			case *v1beta1.Ingress:
 				dco := o.DeepCopy()
 				dco.Status.LoadBalancer = loadBalancerStatus
 				return dco

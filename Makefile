@@ -7,7 +7,7 @@ SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
-ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.18.2
+ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.18.3
 
 # The version of Jekyll is pinned in site/Gemfile.lock.
 # https://docs.netlify.com/configure-builds/common-configurations/#jekyll
@@ -30,7 +30,7 @@ endif
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
 # Base build image to use.
-BUILD_BASE_IMAGE ?= golang:1.16.2
+BUILD_BASE_IMAGE ?= golang:1.16.4
 
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
@@ -343,7 +343,7 @@ integration: check-integration
 e2e:
 	./_integration/testsuite/make-kind-cluster.sh
 	./_integration/testsuite/install-contour-working.sh
-	go test -v -tags e2e -p 1 -timeout 20m ./test/e2e/...
+	ginkgo -tags=e2e -mod=readonly -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
 	./_integration/testsuite/cleanup.sh
 
 check-ingress-conformance: ## Run Ingress controller conformance

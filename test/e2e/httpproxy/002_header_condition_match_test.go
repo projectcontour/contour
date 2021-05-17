@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -229,42 +230,48 @@ func testHeaderConditionMatch(fx *e2e.Framework) {
 	}
 
 	// Specifically test the "notpresent" match type in isolation.
-	require.NoError(t, fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p))
-	p.Spec.Routes = []contourv1.Route{
-		{
-			Services: []contourv1.Service{
-				{
-					Name: "echo-header-present",
-					Port: 80,
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+			return err
+		}
+
+		p.Spec.Routes = []contourv1.Route{
+			{
+				Services: []contourv1.Service{
+					{
+						Name: "echo-header-present",
+						Port: 80,
+					},
 				},
-			},
-			Conditions: []contourv1.MatchCondition{
-				{
-					Header: &contourv1.HeaderMatchCondition{
-						Name:    "Target-Present",
-						Present: true,
+				Conditions: []contourv1.MatchCondition{
+					{
+						Header: &contourv1.HeaderMatchCondition{
+							Name:    "Target-Present",
+							Present: true,
+						},
 					},
 				},
 			},
-		},
-		{
-			Services: []contourv1.Service{
-				{
-					Name: "echo-header-notpresent",
-					Port: 80,
+			{
+				Services: []contourv1.Service{
+					{
+						Name: "echo-header-notpresent",
+						Port: 80,
+					},
 				},
-			},
-			Conditions: []contourv1.MatchCondition{
-				{
-					Header: &contourv1.HeaderMatchCondition{
-						Name:       "Target-Present",
-						NotPresent: true,
+				Conditions: []contourv1.MatchCondition{
+					{
+						Header: &contourv1.HeaderMatchCondition{
+							Name:       "Target-Present",
+							NotPresent: true,
+						},
 					},
 				},
 			},
-		},
-	}
-	require.NoError(t, fx.Client.Update(context.TODO(), p))
+		}
+
+		return fx.Client.Update(context.TODO(), p)
+	}))
 
 	cases = []scenario{
 		{
