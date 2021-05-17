@@ -23,8 +23,6 @@ import (
 	"strings"
 	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
@@ -636,7 +634,6 @@ func (p *Parameters) Validate() error {
 // Defaults returns the default set of parameters.
 func Defaults() Parameters {
 	contourNamespace := GetenvOr("CONTOUR_NAMESPACE", "projectcontour")
-	gatewayClassController := fmt.Sprintf("%s/%s/contour", contour_api_v1.GroupName, contourNamespace)
 
 	return Parameters{
 		Debug:      false,
@@ -679,7 +676,7 @@ func Defaults() Parameters {
 		Listener: ListenerParameters{
 			ConnectionBalancer: "",
 		},
-		GatewayClassController: gatewayClassController,
+		GatewayClassController: fmt.Sprintf("%s/contour", contourNamespace),
 	}
 }
 

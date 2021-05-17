@@ -15,6 +15,8 @@ package status
 
 import (
 	"fmt"
+
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilclock "k8s.io/apimachinery/pkg/util/clock"
@@ -257,4 +259,8 @@ func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition)
 
 func conditionChanged(a, b metav1.Condition) bool {
 	return a.Status != b.Status || a.Reason != b.Reason || a.Message != b.Message
+}
+
+func conditionsEqual(a, b []metav1.Condition) bool {
+	return apiequality.Semantic.DeepEqual(a, b)
 }

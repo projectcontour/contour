@@ -66,13 +66,13 @@ func newCondition(t string, status metav1.ConditionStatus, reason, msg string, l
 
 func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
 	testCases := []struct {
-		description string
-		valid       bool
-		expect      metav1.Condition
+		name   string
+		valid  bool
+		expect metav1.Condition
 	}{
 		{
-			description: "valid gatewayclass",
-			valid:       true,
+			name:  "valid gatewayclass",
+			valid: true,
 			expect: metav1.Condition{
 				Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
 				Status: metav1.ConditionTrue,
@@ -80,8 +80,8 @@ func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
 			},
 		},
 		{
-			description: "invalid gatewayclass",
-			valid:       false,
+			name:  "invalid gatewayclass",
+			valid: false,
 			expect: metav1.Condition{
 				Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
 				Status: metav1.ConditionFalse,
@@ -91,11 +91,11 @@ func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		actual := computeGatewayClassAdmittedCondition(tc.valid)
-		if !apiequality.Semantic.DeepEqual(actual.Type, tc.expect.Type) ||
-			!apiequality.Semantic.DeepEqual(actual.Status, tc.expect.Status) ||
-			!apiequality.Semantic.DeepEqual(actual.Reason, tc.expect.Reason) {
-			t.Fatalf("%q: expected %#v, got %#v", tc.description, tc.expect, actual)
+		got := computeGatewayClassAdmittedCondition(tc.valid)
+		if !apiequality.Semantic.DeepEqual(got.Type, tc.expect.Type) ||
+			!apiequality.Semantic.DeepEqual(got.Status, tc.expect.Status) ||
+			!apiequality.Semantic.DeepEqual(got.Reason, tc.expect.Reason) {
+			assert.Equal(t, tc.expect, got, tc.name)
 		}
 	}
 }
@@ -160,8 +160,8 @@ func TestConditionChanged(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		if actual := conditionChanged(tc.a, tc.b); actual != tc.expected {
-			t.Fatalf("%q: expected %v, got %v", tc.name, tc.expected, actual)
+		if got := conditionChanged(tc.a, tc.b); got != tc.expected {
+			assert.Equal(t, tc.expected, got, tc.name)
 		}
 	}
 }
@@ -227,9 +227,164 @@ func TestMergeConditions(t *testing.T) {
 	fakeClock.SetTime(later)
 
 	for _, tc := range testCases {
-		actual := mergeConditions(tc.current, tc.updates...)
-		if conditionChanged(tc.expected[0], actual[0]) {
-			t.Errorf("expected:\n%v\nactual:\n%v", tc.expected, actual)
+		got := mergeConditions(tc.current, tc.updates...)
+		if conditionChanged(tc.expected[0], got[0]) {
+			assert.Equal(t, tc.expected, got, tc.name)
+		}
+	}
+}
+
+func TestConditionsEqual(t *testing.T) {
+	testCases := []struct {
+		name     string
+		expected bool
+		a, b     []metav1.Condition
+	}{
+		{
+			name:     "zero-valued status should be equal",
+			expected: true,
+		},
+		{
+			name:     "nil and non-nil slices should be equal",
+			expected: true,
+			a:        []metav1.Condition{},
+		},
+		{
+			name:     "empty slices should be equal",
+			expected: true,
+			a:        []metav1.Condition{},
+			b:        []metav1.Condition{},
+		},
+		{
+			name:     "condition LastTransitionTime should not be ignored",
+			expected: false,
+			a: []metav1.Condition{
+				{
+					Type:               "foo",
+					Status:             metav1.ConditionTrue,
+					LastTransitionTime: metav1.Unix(0, 0),
+				},
+			},
+			b: []metav1.Condition{
+				{
+					Type:               "foo",
+					Status:             metav1.ConditionTrue,
+					LastTransitionTime: metav1.Unix(1, 0),
+				},
+			},
+		},
+		{
+			name:     "check condition types differ",
+			expected: false,
+			a: []metav1.Condition{
+				{
+					Type:   "foo",
+					Status: metav1.ConditionTrue,
+				},
+			},
+			b: []metav1.Condition{
+				{
+					Type:   "bar",
+					Status: metav1.ConditionTrue,
+				},
+			},
+		},
+		{
+			name:     "check condition status differs",
+			expected: false,
+			a: []metav1.Condition{
+				{
+					Type:   "foo",
+					Status: metav1.ConditionTrue,
+				},
+			},
+			b: []metav1.Condition{
+				{
+					Type:   "foo",
+					Status: metav1.ConditionFalse,
+				},
+			},
+		},
+		{
+			name:     "check condition reasons differ",
+			expected: false,
+			a: []metav1.Condition{
+				{
+					Type:   "foo",
+					Status: metav1.ConditionFalse,
+					Reason: "foo",
+				},
+			},
+			b: []metav1.Condition{
+				{
+					Type:   "foo",
+					Status: metav1.ConditionFalse,
+					Reason: "bar",
+				},
+			},
+		},
+		{
+			name:     "check duplicate of a single condition type",
+			expected: false,
+			a: []metav1.Condition{
+				{
+					Type: "foo",
+				},
+			},
+			b: []metav1.Condition{
+				{
+					Type: "foo",
+				},
+				{
+					Type: "foo",
+				},
+			},
+		},
+		{
+			name:     "check new condition added",
+			expected: false,
+			a: []metav1.Condition{
+				{
+					Type:   "foo",
+					Status: metav1.ConditionTrue,
+				},
+			},
+			b: []metav1.Condition{
+				{
+					Type:   "foo",
+					Status: metav1.ConditionTrue,
+				},
+				{
+					Type:   "bar",
+					Status: metav1.ConditionTrue,
+				},
+			},
+		},
+		{
+			name:     "check condition removed",
+			expected: false,
+			a: []metav1.Condition{
+				{
+					Type:   "foo",
+					Status: metav1.ConditionTrue,
+				},
+				{
+					Type:   "bar",
+					Status: metav1.ConditionTrue,
+				},
+			},
+			b: []metav1.Condition{
+				{
+					Type:   "foo",
+					Status: metav1.ConditionTrue,
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		if got := conditionsEqual(tc.a, tc.b); got != tc.expected {
+			assert.Equal(t, tc.expected, got, tc.name)
 		}
 	}
 }
