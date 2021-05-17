@@ -4351,7 +4351,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	// proxy21 is downstream validation, skip cert validation
+	// proxy21 is downstream validation, skip cert validation, with a CA
 	proxy21 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
