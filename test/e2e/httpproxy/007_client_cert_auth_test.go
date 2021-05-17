@@ -226,7 +226,9 @@ func testClientCertAuth(fx *e2e.Framework) {
 			},
 		},
 	}
-	require.NoError(t, fx.Client.Create(context.TODO(), clientCert))
+	// Wait for the Cert to be ready since we'll directly download
+	// the secret contents for use as a client cert later on.
+	fx.Certs.CreateCertAndWaitFor(clientCert, certIsReady)
 
 	// Get another client certificate.
 	clientCertInvalid := &certmanagerv1.Certificate{
@@ -248,7 +250,9 @@ func testClientCertAuth(fx *e2e.Framework) {
 			},
 		},
 	}
-	require.NoError(t, fx.Client.Create(context.TODO(), clientCertInvalid))
+	// Wait for the Cert to be ready since we'll directly download
+	// the secret contents for use as a client cert later on.
+	fx.Certs.CreateCertAndWaitFor(clientCertInvalid, certIsReady)
 
 	// This proxy does not require client certificate auth.
 	noAuthProxy := &contourv1.HTTPProxy{
@@ -338,8 +342,8 @@ func testClientCertAuth(fx *e2e.Framework) {
 	fx.CreateHTTPProxyAndWaitFor(authSkipVerifyProxy, httpProxyValid)
 
 	// get the valid & invalid client certs
-	validClientCert := fx.Certs.GetTLSCertificate(namespace, "echo-client")
-	invalidClientCert := fx.Certs.GetTLSCertificate(namespace, "echo-client-invalid")
+	validClientCert := fx.Certs.GetTLSCertificate(namespace, clientCert.Spec.SecretName)
+	invalidClientCert := fx.Certs.GetTLSCertificate(namespace, clientCertInvalid.Spec.SecretName)
 
 	cases := map[string]struct {
 		host       string
@@ -420,4 +424,13 @@ func optUseCert(cert tls.Certificate) func(*tls.Config) {
 	return func(c *tls.Config) {
 		c.Certificates = append(c.Certificates, cert)
 	}
+}
+
+func certIsReady(cert *certmanagerv1.Certificate) bool {
+	for _, cond := range cert.Status.Conditions {
+		if cond.Type == certmanagerv1.CertificateConditionReady && cond.Status == certmanagermetav1.ConditionTrue {
+			return true
+		}
+	}
+	return false
 }

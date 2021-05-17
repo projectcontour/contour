@@ -123,7 +123,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			// with the Gateway. If this Selector is defined, only routes matching the Selector
 			// are associated with the Gateway. An empty Selector matches all routes.
 
-			nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route)
+			nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route.Namespace)
 			if err != nil {
 				p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
 			}
@@ -137,7 +137,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			// the route to the set of matchingRoutes.
 			if selMatches && nsMatches {
 
-				gatewayAllowMatches := p.gatewayMatches(route)
+				gatewayAllowMatches := p.gatewayMatches(route.Spec.Gateways, route.Namespace)
 				if (listener.Routes.Selector != nil || listener.Routes.Namespaces != nil) && !gatewayAllowMatches {
 
 					// If a label selector or namespace selector matches, but the gateway Allow doesn't
@@ -230,7 +230,7 @@ func (p *GatewayAPIProcessor) computeHosts(route *gatewayapi_v1alpha1.HTTPRoute)
 
 // namespaceMatches returns true if the namespaces selector matches
 // the HTTPRoute that is being processed.
-func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.RouteNamespaces, route *gatewayapi_v1alpha1.HTTPRoute) (bool, error) {
+func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.RouteNamespaces, namespace string) (bool, error) {
 	// From indicates where Routes will be selected for this Gateway.
 	// Possible values are:
 	//   * All: Routes in all namespaces may be used by this Gateway.
@@ -250,14 +250,14 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.R
 	case gatewayapi_v1alpha1.RouteSelectAll:
 		return true, nil
 	case gatewayapi_v1alpha1.RouteSelectSame:
-		return p.source.ConfiguredGateway.Namespace == route.Namespace, nil
+		return p.source.ConfiguredGateway.Namespace == namespace, nil
 	case gatewayapi_v1alpha1.RouteSelectSelector:
-		if len(namespaces.Selector.MatchLabels) == 0 || len(namespaces.Selector.MatchExpressions) == 0 {
+		if len(namespaces.Selector.MatchLabels) == 0 && len(namespaces.Selector.MatchExpressions) == 0 {
 			return false, fmt.Errorf("RouteNamespaces selector must be specified when `RouteSelectType=Selector`")
 		}
 
 		// Look up the HTTPRoute's namespace in the list of cached namespaces.
-		if ns := p.source.namespaces[route.Namespace]; ns != nil {
+		if ns := p.source.namespaces[namespace]; ns != nil {
 
 			// Check that the route's namespace is included in the Gateway's
 			// namespace selector/expression.
@@ -276,19 +276,19 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.R
 // gatewayMatches returns true if "AllowAll" is set, the "SameNamespace" is set and the HTTPRoute
 // matches the Gateway's namespace, or the "FromList" is set and the gateway Contour is watching
 // matches one from the list.
-func (p *GatewayAPIProcessor) gatewayMatches(route *gatewayapi_v1alpha1.HTTPRoute) bool {
+func (p *GatewayAPIProcessor) gatewayMatches(routeGateways *gatewayapi_v1alpha1.RouteGateways, namespace string) bool {
 
-	switch *route.Spec.Gateways.Allow {
+	switch *routeGateways.Allow {
 	case gatewayapi_v1alpha1.GatewayAllowAll:
 		return true
 	case gatewayapi_v1alpha1.GatewayAllowFromList:
-		for _, gateway := range route.Spec.Gateways.GatewayRefs {
+		for _, gateway := range routeGateways.GatewayRefs {
 			if gateway.Name == p.source.ConfiguredGateway.Name && gateway.Namespace == p.source.ConfiguredGateway.Namespace {
 				return true
 			}
 		}
 	case gatewayapi_v1alpha1.GatewayAllowSameNamespace:
-		return p.source.ConfiguredGateway.Namespace == route.Namespace
+		return p.source.ConfiguredGateway.Namespace == namespace
 	}
 
 	return false

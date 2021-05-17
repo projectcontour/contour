@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
       - name: conformance-echo
-        image: k8s.gcr.io/ingressconformance/echoserver:v0.0.1
+        image: k8s.gcr.io/ingressconformance/echoserver@sha256:9b34b17f391f87fb2155f01da2f2f90b7a4a5c1110ed84cb5379faa4f570dc52
         env:
         - name: INGRESS_NAME
           value: *name
@@ -85,7 +85,7 @@ spec:
     spec:
       containers:
       - name: conformance-echo
-        image: tsaarni/echoserver:latest
+        image: k8s.gcr.io/ingressconformance/echoserver@sha256:9b34b17f391f87fb2155f01da2f2f90b7a4a5c1110ed84cb5379faa4f570dc52
         env:
         - name: POD_NAME
           valueFrom:
