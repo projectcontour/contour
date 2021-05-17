@@ -432,7 +432,7 @@ func testClientCertAuth(fx *e2e.Framework) {
 		"echo-with-auth with echo-client-cert-invalid should error": {
 			host:       authProxy.Spec.VirtualHost.Fqdn,
 			clientCert: &invalidClientCert,
-			wantErr:    "tls: certificate required",
+			wantErr:    "tls: unknown certificate authority",
 		},
 
 		"echo-with-auth-skip-verify without a client cert should succeed": {
@@ -474,13 +474,14 @@ func testClientCertAuth(fx *e2e.Framework) {
 			Host: tc.host,
 		}
 		if tc.clientCert != nil {
-			opts.TLSConfigOpts = append(opts.TLSConfigOpts, optUseCert(*tc.clientCert))
+			opts.TLSConfigOpts = append(opts.TLSConfigOpts, optUseClientCert(tc.clientCert))
 		}
 
 		switch {
 		case len(tc.wantErr) == 0:
 			opts.Condition = e2e.HasStatusCode(200)
 			res, ok := fx.HTTP.SecureRequestUntil(opts)
+			require.NotNil(t, res, "expected 200 response code, request was never successful")
 			assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		default:
 			_, err := fx.HTTP.SecureRequest(opts)
@@ -490,9 +491,14 @@ func testClientCertAuth(fx *e2e.Framework) {
 	}
 }
 
-func optUseCert(cert tls.Certificate) func(*tls.Config) {
+func optUseClientCert(cert *tls.Certificate) func(*tls.Config) {
 	return func(c *tls.Config) {
-		c.Certificates = append(c.Certificates, cert)
+		// Use c.GetClientCertificate rather than setting c.Certificates so the
+		// client cert specified is always presented, regardless of the request
+		// details from the server.
+		c.GetClientCertificate = func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			return cert, nil
+		}
 	}
 }
 
