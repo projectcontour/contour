@@ -41,9 +41,9 @@ func testExternalAuth(fx *e2e.Framework) {
 	defer fx.DeleteNamespace(authServerNamespace)
 
 	fx.Fixtures.Echo.Deploy(namespace, "echo")
-	fx.CreateSelfSignedCert(namespace, "echo", "echo", "externalauth.projectcontour.io")
+	fx.Certs.CreateSelfSignedCert(namespace, "echo", "echo", "externalauth.projectcontour.io")
 
-	fx.CreateSelfSignedCert(authServerNamespace, "testserver-cert", "testserver-cert", "testserver")
+	fx.Certs.CreateSelfSignedCert(authServerNamespace, "testserver-cert", "testserver-cert", "testserver")
 
 	// auth testserver
 	deployment := &appsv1.Deployment{

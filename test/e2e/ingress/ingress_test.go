@@ -20,6 +20,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/projectcontour/contour/test/e2e"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 func TestIngress(t *testing.T) {
@@ -33,7 +34,15 @@ var _ = Describe("Ingress", func() {
 		f = e2e.NewFramework(GinkgoT())
 	})
 
+	It("001-tls-wildcard-host", func() {
+		testTLSWildcardHost(f)
+	})
+
 	It("002-ingress-ensure-v1beta1", func() {
 		testEnsureV1Beta1(f)
 	})
 })
+
+func pathTypePtr(val networkingv1.PathType) *networkingv1.PathType {
+	return &val
+}

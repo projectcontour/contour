@@ -795,7 +795,7 @@ type DownstreamValidation struct {
 	// be required on requests.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
-	CACertificate string `json:"caSecret"`
+	CACertificate string `json:"caSecret,omitempty"`
 
 	// SkipClientCertValidation disables downstream client certificate
 	// validation. Defaults to false. This field is intended to be used in

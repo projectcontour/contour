@@ -33,7 +33,7 @@ func testHTTPSMisdirectedRequest(fx *e2e.Framework) {
 	defer fx.DeleteNamespace(namespace)
 
 	fx.Fixtures.Echo.Deploy(namespace, "echo")
-	fx.CreateSelfSignedCert(namespace, "echo-cert", "echo", "https-misdirected-request.projectcontour.io")
+	fx.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "https-misdirected-request.projectcontour.io")
 
 	p := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
