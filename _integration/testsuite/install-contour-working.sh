@@ -31,12 +31,6 @@ readonly WAITTIME=${WAITTIME:-5m}
 readonly HERE=$(cd $(dirname $0) && pwd)
 readonly REPO=$(cd ${HERE}/../.. && pwd)
 
-# List of tags to apply to the image built from the working directory.
-# The "working" tag is applied to unambigiously reference the working
-# image, since "main" and "latest" could also come from the Docker
-# registry.
-readonly TAGS="main latest working"
-
 kind::cluster::exists() {
     ${KIND} get clusters | grep -q "$1"
 }
@@ -67,17 +61,8 @@ else
     VERSION="v$$"
     make -C ${REPO} container IMAGE=docker.io/projectcontour/contour VERSION=$VERSION
 
-    for t in $TAGS ; do
-        docker tag \
-            docker.io/projectcontour/contour:"v$$" \
-            docker.io/projectcontour/contour:$t
-    done
-
     # Push the Contour build image into the cluster.
     kind::cluster::load::docker docker.io/projectcontour/contour:${VERSION}
-    for t in $TAGS ; do
-        kind::cluster::load::docker docker.io/projectcontour/contour:$t
-    done
 fi
 
 
