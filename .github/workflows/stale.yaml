@@ -19,8 +19,8 @@ jobs:
         stale-pr-message: >
           Marking this PR stale since there has been no activity for 14
           days. It will be closed if there is no activity for another
-          90 days.
+          30 days.
         stale-issue-label: 'lifecycle/stale'
         stale-pr-label: 'lifecycle/stale'
         days-before-stale: 14
-        days-before-close: 90
+        days-before-close: 30
