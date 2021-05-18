@@ -6,7 +6,7 @@ set -o pipefail
 
 readonly KUSTOMIZE_VERS="v3.8.6"
 readonly KUBECTL_VERS="v1.20.4"
-readonly KIND_VERS="v0.10.0"
+readonly KIND_VERS="v0.11.0"
 readonly SONOBUOY_VERS="0.19.0"
 
 readonly PROGNAME=$(basename $0)
@@ -38,24 +38,15 @@ case "$#" in
     ;;
 esac
 
-# TODO: Remove once upstream images are available (#3610).
-# Install latest version of kind.
-go get sigs.k8s.io/kind@master
-
-# Move the $GOPATH/bin/kind binary to local since Github actions
-# have their own version installed.
-mv /home/runner/go/bin/kind ${DESTDIR}/kind
-
 # Install ginkgo CLI
 go get github.com/onsi/ginkgo/...
 mv /home/runner/go/bin/ginkgo ${DESTDIR}/ginkgo
 
-# Uncomment this once v0.11 of Kind is released.
-#download \
-#    "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERS}/kind-${OS}-amd64" \
-#    "${DESTDIR}/kind"
-#
-#chmod +x  "${DESTDIR}/kind"
+download \
+   "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERS}/kind-${OS}-amd64" \
+   "${DESTDIR}/kind"
+
+chmod +x  "${DESTDIR}/kind"
 
 download \
     "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERS}/bin/${OS}/amd64/kubectl" \

@@ -24,7 +24,7 @@ set -o nounset
 readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
-readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.20.2"}
+readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.21.1"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
 readonly WAITTIME=${WAITTIME:-5m}
 readonly GATEWAY_API_VERSION=v0.3.0
