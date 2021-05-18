@@ -24,22 +24,11 @@ This section describes how to build Contour from source.
 
 Contour uses [`go modules`][2] for dependency management.
 
-```
-go get github.com/projectcontour/contour
-```
-
-Go is very particular when it comes to the location of the source code in your `$GOPATH`.
-The easiest way to make the `go` tool happy is to rename Contour's remote location to something else, and substitute your fork for `origin`.
-For example, to set `origin` to your fork, run this command substituting your GitHub username where appropriate.
+Fork the repo and create a local clone for development.
 
 ```
-git remote rename origin upstream
-git remote add origin git@github.com:davecheney/contour.git
+git clone git@github.com:YOUR-USERNAME/contour.git
 ```
-
-This ensures that the source code on disk remains at `$GOPATH/src/github.com/projectcontour/contour` while the remote repository is configured for your fork.
-
-The remainder of this document assumes your terminal's working directory is `$GOPATH/src/github.com/projectcontour/contour`.
 
 ### Building
 
