@@ -19,6 +19,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -141,6 +142,11 @@ func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 		GatewayRef: gatewayapi_v1alpha1.RouteStatusGatewayReference{
 			Name:      routeUpdate.GatewayRef.Name,
 			Namespace: routeUpdate.GatewayRef.Namespace,
+
+			// TODO(3689) the value of this field should probably come from
+			// the GatewayClass. Plumb that through once Contour handles
+			// GatewayClasses.
+			Controller: pointer.String("projectcontour.io/contour"),
 		},
 		Conditions: conditionsToWrite,
 	})
