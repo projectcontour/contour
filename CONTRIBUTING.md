@@ -18,13 +18,14 @@ This section describes how to build Contour from source.
 1. *Install Go*
 
     Contour requires [Go 1.16][1] or later.
-    We also assume that you're familiar with Go's [`GOPATH` workspace][3] convention, and have the appropriate environment variables set.
 
 ### Fetch the source
 
 Contour uses [`go modules`][2] for dependency management.
 
-Fork the repo and create a local clone for development.
+1. [Fork][3] the repo
+
+2. Create a local clone
 
 ```
 git clone git@github.com:YOUR-USERNAME/contour.git
@@ -48,8 +49,6 @@ Once you have Contour building, you can run all the unit tests for the project:
 ```
 make check
 ```
-
-This assumes your working directory is set to `$GOPATH/src/github.com/projectcontour/contour`. 
 
 To run the tests for a single package, change to package directory and run:
 
@@ -326,7 +325,7 @@ By making a contribution to this project, I certify that:
 
 [1]: https://golang.org/dl/
 [2]: https://github.com/golang/go/wiki/Modules
-[3]: https://golang.org/doc/code.html
+[3]: https://docs.github.com/en/github/getting-started-with-github/fork-a-repo#fork-an-example-repository 
 [4]: https://golang.org/pkg/testing/
 [5]: https://developercertificate.org/
 [6]: https://github.com/projectcontour/contour/issues/new/choose
