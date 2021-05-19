@@ -199,6 +199,30 @@ func (f *Framework) CreateHTTPRouteAndWaitFor(route *gatewayv1alpha1.HTTPRoute, 
 	return res, true
 }
 
+// CreateTLSRouteAndWaitFor creates the provided TLSRoute in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateTLSRouteAndWaitFor(route *gatewayv1alpha1.TLSRoute, condition func(*gatewayv1alpha1.TLSRoute) bool) (*gatewayv1alpha1.TLSRoute, bool) {
+	require.NoError(f.t, f.Client.Create(context.TODO(), route))
+
+	res := &gatewayv1alpha1.TLSRoute{}
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
+	}
+
+	return res, true
+}
+
 // CreateNamespace creates a namespace with the given name in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) CreateNamespace(name string) {
