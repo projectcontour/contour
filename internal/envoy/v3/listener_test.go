@@ -268,6 +268,39 @@ func TestDownstreamTLSContext(t *testing.T) {
 		SubjectName: subjectName,
 	}
 
+	peerValidationContextSkipClientCertValidation := &dag.PeerValidationContext{
+		SkipClientCertValidation: true,
+	}
+	validationContextSkipVerify := &envoy_tls_v3.CommonTlsContext_ValidationContext{
+		ValidationContext: &envoy_tls_v3.CertificateValidationContext{
+			TrustChainVerification: envoy_tls_v3.CertificateValidationContext_ACCEPT_UNTRUSTED,
+		},
+	}
+	peerValidationContextSkipClientCertValidationWithCA := &dag.PeerValidationContext{
+		CACertificate: &dag.Secret{
+			Object: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "default",
+				},
+				Data: map[string][]byte{
+					dag.CACertificateKey: ca,
+				},
+			},
+		},
+		SkipClientCertValidation: true,
+	}
+	validationContextSkipVerifyWithCA := &envoy_tls_v3.CommonTlsContext_ValidationContext{
+		ValidationContext: &envoy_tls_v3.CertificateValidationContext{
+			TrustChainVerification: envoy_tls_v3.CertificateValidationContext_ACCEPT_UNTRUSTED,
+			TrustedCa: &envoy_core_v3.DataSource{
+				Specifier: &envoy_core_v3.DataSource_InlineBytes{
+					InlineBytes: ca,
+				},
+			},
+		},
+	}
+
 	tests := map[string]struct {
 		got  *envoy_tls_v3.DownstreamTlsContext
 		want *envoy_tls_v3.DownstreamTlsContext
@@ -302,6 +335,30 @@ func TestDownstreamTLSContext(t *testing.T) {
 					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
 					AlpnProtocols:                  alpnProtocols,
 					ValidationContextType:          validationContext,
+				},
+				RequireClientCertificate: protobuf.Bool(true),
+			},
+		},
+		"skip client cert validation": {
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextSkipClientCertValidation, "h2", "http/1.1"),
+			&envoy_tls_v3.DownstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+					TlsParams:                      tlsParams,
+					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
+					AlpnProtocols:                  alpnProtocols,
+					ValidationContextType:          validationContextSkipVerify,
+				},
+				RequireClientCertificate: protobuf.Bool(true),
+			},
+		},
+		"skip client cert validation with ca": {
+			DownstreamTLSContext(serverSecret, envoy_tls_v3.TlsParameters_TLSv1_2, cipherSuites, peerValidationContextSkipClientCertValidationWithCA, "h2", "http/1.1"),
+			&envoy_tls_v3.DownstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+					TlsParams:                      tlsParams,
+					TlsCertificateSdsSecretConfigs: tlsCertificateSdsSecretConfigs,
+					AlpnProtocols:                  alpnProtocols,
+					ValidationContextType:          validationContextSkipVerifyWithCA,
 				},
 				RequireClientCertificate: protobuf.Bool(true),
 			},

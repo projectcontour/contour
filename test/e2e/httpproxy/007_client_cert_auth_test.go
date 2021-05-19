@@ -206,6 +206,28 @@ func testClientCertAuth(fx *e2e.Framework) {
 	}
 	require.NoError(t, fx.Client.Create(context.TODO(), echoWithAuthSkipVerifyCert))
 
+	fx.Fixtures.Echo.Deploy(namespace, "echo-with-auth-skip-verify-with-ca")
+
+	// Get a server certificate for echo-with-auth-skip-verify-with-ca.
+	echoWithAuthSkipVerifyWithCACert := &certmanagerv1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      "echo-with-auth-skip-verify-with-ca-cert",
+		},
+		Spec: certmanagerv1.CertificateSpec{
+
+			Usages: []certmanagerv1.KeyUsage{
+				certmanagerv1.UsageServerAuth,
+			},
+			DNSNames:   []string{"echo-with-auth-skip-verify-with-ca.projectcontour.io"},
+			SecretName: "echo-with-auth-skip-verify-with-ca",
+			IssuerRef: certmanagermetav1.ObjectReference{
+				Name: "ca-projectcontour-io",
+			},
+		},
+	}
+	require.NoError(t, fx.Client.Create(context.TODO(), echoWithAuthSkipVerifyWithCACert))
+
 	// Get a client certificate.
 	clientCert := &certmanagerv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
@@ -311,7 +333,7 @@ func testClientCertAuth(fx *e2e.Framework) {
 	}
 	fx.CreateHTTPProxyAndWaitFor(authProxy, httpProxyValid)
 
-	// This proxy requires a client certificate but does not verify it.
+	// This proxy does not verify client certs.
 	authSkipVerifyProxy := &contourv1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
@@ -340,6 +362,37 @@ func testClientCertAuth(fx *e2e.Framework) {
 		},
 	}
 	fx.CreateHTTPProxyAndWaitFor(authSkipVerifyProxy, httpProxyValid)
+
+	// This proxy requires a client certificate but does not verify it.
+	authSkipVerifyWithCAProxy := &contourv1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      "echo-with-auth-skip-verify-with-ca",
+		},
+		Spec: contourv1.HTTPProxySpec{
+			VirtualHost: &contourv1.VirtualHost{
+				Fqdn: "echo-with-auth-skip-verify-with-ca.projectcontour.io",
+				TLS: &contourv1.TLS{
+					SecretName: "echo-with-auth-skip-verify-with-ca",
+					ClientValidation: &contourv1.DownstreamValidation{
+						SkipClientCertValidation: true,
+						CACertificate:            "echo-with-auth",
+					},
+				},
+			},
+			Routes: []contourv1.Route{
+				{
+					Services: []contourv1.Service{
+						{
+							Name: "echo-with-auth-skip-verify-with-ca",
+							Port: 80,
+						},
+					},
+				},
+			},
+		},
+	}
+	fx.CreateHTTPProxyAndWaitFor(authSkipVerifyWithCAProxy, httpProxyValid)
 
 	// get the valid & invalid client certs
 	validClientCert := fx.Certs.GetTLSCertificate(namespace, clientCert.Spec.SecretName)
@@ -379,7 +432,7 @@ func testClientCertAuth(fx *e2e.Framework) {
 		"echo-with-auth with echo-client-cert-invalid should error": {
 			host:       authProxy.Spec.VirtualHost.Fqdn,
 			clientCert: &invalidClientCert,
-			wantErr:    "tls: certificate required",
+			wantErr:    "tls: unknown certificate authority",
 		},
 
 		"echo-with-auth-skip-verify without a client cert should succeed": {
@@ -397,6 +450,22 @@ func testClientCertAuth(fx *e2e.Framework) {
 			clientCert: &invalidClientCert,
 			wantErr:    "",
 		},
+
+		"echo-with-auth-skip-verify-with-ca without a client cert should error": {
+			host:       authSkipVerifyWithCAProxy.Spec.VirtualHost.Fqdn,
+			clientCert: nil,
+			wantErr:    "tls: certificate required",
+		},
+		"echo-with-auth-skip-verify-with-ca with echo-client-cert should succeed": {
+			host:       authSkipVerifyWithCAProxy.Spec.VirtualHost.Fqdn,
+			clientCert: &validClientCert,
+			wantErr:    "",
+		},
+		"echo-with-auth-skip-verify-with-ca with echo-client-cert-invalid should succeed": {
+			host:       authSkipVerifyWithCAProxy.Spec.VirtualHost.Fqdn,
+			clientCert: &invalidClientCert,
+			wantErr:    "",
+		},
 	}
 
 	for name, tc := range cases {
@@ -405,24 +474,31 @@ func testClientCertAuth(fx *e2e.Framework) {
 			Host: tc.host,
 		}
 		if tc.clientCert != nil {
-			opts.TLSConfigOpts = append(opts.TLSConfigOpts, optUseCert(*tc.clientCert))
+			opts.TLSConfigOpts = append(opts.TLSConfigOpts, optUseClientCert(tc.clientCert))
 		}
 
 		switch {
 		case len(tc.wantErr) == 0:
 			opts.Condition = e2e.HasStatusCode(200)
 			res, ok := fx.HTTP.SecureRequestUntil(opts)
+			require.NotNil(t, res, "expected 200 response code, request was never successful")
 			assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		default:
 			_, err := fx.HTTP.SecureRequest(opts)
+			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.wantErr)
 		}
 	}
 }
 
-func optUseCert(cert tls.Certificate) func(*tls.Config) {
+func optUseClientCert(cert *tls.Certificate) func(*tls.Config) {
 	return func(c *tls.Config) {
-		c.Certificates = append(c.Certificates, cert)
+		// Use c.GetClientCertificate rather than setting c.Certificates so the
+		// client cert specified is always presented, regardless of the request
+		// details from the server.
+		c.GetClientCertificate = func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			return cert, nil
+		}
 	}
 }
 

@@ -791,6 +791,8 @@ type UpstreamValidation struct {
 type DownstreamValidation struct {
 	// Name of a Kubernetes secret that contains a CA certificate bundle.
 	// The client certificate must validate against the certificates in the bundle.
+	// If specified and SkipClientCertValidation is true, client certificates will
+	// be required on requests.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	CACertificate string `json:"caSecret,omitempty"`
@@ -800,8 +802,9 @@ type DownstreamValidation struct {
 	// conjunction with external authorization in order to enable the external
 	// authorization server to validate client certificates. When this field
 	// is set to true, client certificates are requested but not verified by
-	// Envoy. If external authorization is in use, they are presented to the
-	// external authorization server.
+	// Envoy. If CACertificate is specified, client certificates are required on
+	// requests, but not verified. If external authorization is in use, they are
+	// presented to the external authorization server.
 	// +optional
 	SkipClientCertValidation bool `json:"skipClientCertValidation"`
 }
