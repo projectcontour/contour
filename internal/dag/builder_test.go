@@ -2265,6 +2265,256 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"basic TLSRoute": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"tcp.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "tcp.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute with multiple SNIs": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"tcp.projectcontour.io",
+									"another.projectcontour.io",
+									"thing.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "another.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(kuardService)),
+							},
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "tcp.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(kuardService)),
+							},
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "thing.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute with multiple SNIs, one is invalid": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"tcp.projectcontour.io",
+									"*.*.another.projectcontour.io",
+									"thing.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "tcp.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(kuardService)),
+							},
+						},
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "thing.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute with multiple SNIs, all are invalid": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"tcp.*.projectcontour.io",
+									"*.*.another.projectcontour.io",
+									"!!thing.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute without any hostnames specified results in '*' match all": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches:   []gatewayapi_v1alpha1.TLSRouteMatch{{}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "*",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute with missing forwardTo service": {
+			gateway: gatewayWithSelector,
+			objs: []interface{}{
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"tcp.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
 	}
 
 	for name, tc := range tests {
@@ -9319,6 +9569,14 @@ func httpRouteForwards(forwards ...[]gatewayapi_v1alpha1.HTTPRouteForwardTo) []g
 
 func httpRouteForwardTo(serviceName string, port int, weight int32) []gatewayapi_v1alpha1.HTTPRouteForwardTo {
 	return []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+		ServiceName: pointer.StringPtr(serviceName),
+		Port:        gatewayPort(port),
+		Weight:      pointer.Int32Ptr(weight),
+	}}
+}
+
+func tcpRouteForwardTo(serviceName string, port int, weight int32) []gatewayapi_v1alpha1.RouteForwardTo {
+	return []gatewayapi_v1alpha1.RouteForwardTo{{
 		ServiceName: pointer.StringPtr(serviceName),
 		Port:        gatewayPort(port),
 		Weight:      pointer.Int32Ptr(weight),

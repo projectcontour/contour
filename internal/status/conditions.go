@@ -24,6 +24,7 @@ import (
 )
 
 const ResourceHTTPRoute = "httproutes"
+const ResourceTLSRoute = "tlsroutes"
 
 const ConditionNotImplemented gatewayapi_v1alpha1.RouteConditionType = "NotImplemented"
 const ConditionResolvedRefs gatewayapi_v1alpha1.RouteConditionType = "ResolvedRefs"
@@ -96,14 +97,6 @@ func (c *Cache) commitRoute(pu *ConditionsUpdate) {
 }
 
 func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
-	o, ok := obj.(*gatewayapi_v1alpha1.HTTPRoute)
-	if !ok {
-		panic(fmt.Sprintf("Unsupported %T object %s/%s in ConditionsUpdate status mutator",
-			obj, routeUpdate.FullName.Namespace, routeUpdate.FullName.Name,
-		))
-	}
-
-	route := o.DeepCopy()
 
 	var gatewayStatuses []gatewayapi_v1alpha1.RouteGatewayStatus
 	var conditionsToWrite []metav1.Condition
@@ -151,9 +144,33 @@ func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 		Conditions: conditionsToWrite,
 	})
 
+	switch o := obj.(type) {
+	case *gatewayapi_v1alpha1.HTTPRoute:
+		route := o.DeepCopy()
+
+		// Set the GatewayStatuses.
+		route.Status.RouteStatus.Gateways = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
+		return route
+	case *gatewayapi_v1alpha1.TLSRoute:
+		route := o.DeepCopy()
+
+		// Set the GatewayStatuses.
+		route.Status.RouteStatus.Gateways = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
+		return route
+	default:
+		panic(fmt.Sprintf("Unsupported %T object %s/%s in ConditionsUpdate status mutator",
+			obj, routeUpdate.FullName.Namespace, routeUpdate.FullName.Name,
+		))
+	}
+}
+
+func (routeUpdate *ConditionsUpdate) combineConditions(gwStatus []gatewayapi_v1alpha1.RouteGatewayStatus) []gatewayapi_v1alpha1.RouteGatewayStatus {
+
+	var gatewayStatuses []gatewayapi_v1alpha1.RouteGatewayStatus
+
 	// Now that we have all the conditions, add them back to the object
 	// to get written out.
-	for _, rgs := range route.Status.Gateways {
+	for _, rgs := range gwStatus {
 		if rgs.GatewayRef.Name == routeUpdate.GatewayRef.Name && rgs.GatewayRef.Namespace == routeUpdate.GatewayRef.Namespace {
 			continue
 		} else {
@@ -161,10 +178,7 @@ func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 		}
 	}
 
-	// Set the GatewayStatuses.
-	route.Status.RouteStatus.Gateways = gatewayStatuses
-
-	return route
+	return gatewayStatuses
 }
 
 func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGatewayStatus) map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition {
