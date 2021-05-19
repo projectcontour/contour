@@ -14,15 +14,15 @@
 package k8s
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
-	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 
+	"github.com/bombsimon/logrusr"
+	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	klog "k8s.io/klog/v2"
 )
@@ -77,63 +77,42 @@ func InitLogging(options ...LogOption) {
 		must(p.flags.Set("logtostderr", "false"))
 		must(p.flags.Set("alsologtostderr", "false"))
 
-		klog.SetOutput(makeWriter(p.log))
+		klog.SetLogger(&callDepthLogr{
+			Logger: logrusr.NewLogger(p.log),
+		})
 	}
 }
 
-// makeWriter is based on (*Entry).Writer() from logrus, but has a
-// couple of improvements. We avoid the fixed buffer size of using
-// bufio.Scanner, and we take advantage of out knowledge of the fixed
-// klog output format to improve the final logging output.
-func makeWriter(entry *logrus.Entry) io.Writer {
-	closer := func(writer *io.PipeWriter) {
-		writer.Close()
+type callDepthLogr struct {
+	logr.Logger
+	callDepth int
+}
+
+func (l *callDepthLogr) WithCallDepth(depth int) logr.Logger {
+	return &callDepthLogr{
+		Logger:    l.Logger,
+		callDepth: depth,
 	}
+}
 
-	pipeReader, pipeWriter := io.Pipe()
-	runtime.SetFinalizer(pipeWriter, closer)
+func (l *callDepthLogr) Info(msg string, keysAndValues ...interface{}) {
+	_, file, line, ok := runtime.Caller(l.callDepth + 1)
+	if ok {
+		keysAndValues = append(keysAndValues, "location", fmt.Sprintf("%s:%d", filepath.Base(file), line))
+	}
+	l.Logger.Info(msg, keysAndValues...)
+}
 
-	go func() {
-		defer pipeReader.Close()
+func (l *callDepthLogr) Error(err error, msg string, keysAndValues ...interface{}) {
+	_, file, line, ok := runtime.Caller(l.callDepth + 1)
+	if ok {
+		keysAndValues = append(keysAndValues, "location", fmt.Sprintf("%s:%d", filepath.Base(file), line))
+	}
+	l.Logger.Error(err, msg, keysAndValues...)
+}
 
-		reader := bufio.NewReader(pipeReader)
-
-		for {
-			line, err := reader.ReadString('\n')
-			switch err {
-			case nil:
-			case io.EOF:
-				// Most likely, when the pipe closes, klog is being reinitialized.
-				return
-			default:
-				entry.Errorf("error reading from log pipe: %s", err)
-				return
-			}
-
-			// klog logs have the following format: Lmmdd hh:mm:ss.uuuuuu threadid file:line] msg...
-			fields := strings.SplitN(line, "] ", 2)
-
-			// Split out the file location. I could not
-			// find a reasonable way to make this work
-			// with (*Logger).SetReportCaller(), so we
-			// preserve it in the "location" field.
-			location := fields[0][strings.LastIndexByte(fields[0], ' ')+1:]
-
-			e := entry.WithField("location", location)
-
-			// The first character of the first header field is the log level.
-			switch fields[0][0] {
-			case 'I':
-				e.Info(fields[1])
-			case 'W':
-				e.Warn(fields[1])
-			case 'E':
-				e.Error(fields[1])
-			case 'F':
-				e.Fatal(fields[1])
-			}
-		}
-	}()
-
-	return pipeWriter
+// Override V and just pass through l since we can rely on klog itself to do log
+// level filtering.
+func (l *callDepthLogr) V(level int) logr.Logger {
+	return l
 }

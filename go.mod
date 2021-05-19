@@ -4,7 +4,9 @@ go 1.15
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
+	github.com/bombsimon/logrusr v1.0.0
 	github.com/envoyproxy/go-control-plane v0.9.9-0.20210111201334-f1f47757da33
+	github.com/go-logr/logr v0.4.0
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.2
 	github.com/google/uuid v1.1.2
@@ -24,7 +26,7 @@ require (
 	k8s.io/api v0.21.0
 	k8s.io/apimachinery v0.21.0
 	k8s.io/client-go v0.21.0
-	k8s.io/klog/v2 v2.8.0
+	k8s.io/klog/v2 v2.8.1-0.20210504170414-0cc9b8363efc
 	k8s.io/utils v0.0.0-20210305010621-2afb4311ab10
 	sigs.k8s.io/controller-runtime v0.9.0-beta.1
 	sigs.k8s.io/controller-tools v0.5.0

@@ -15,6 +15,7 @@ package k8s
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -25,7 +26,15 @@ import (
 
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	klog "k8s.io/klog/v2"
+)
+
+const (
+	// klog automatic flush interval is 5s but we can wait for less time to pass
+	// since we proactively call klog.Flush().
+	klogFlushWaitTime     = time.Millisecond * 20
+	klogFlushWaitInterval = time.Millisecond * 1
 )
 
 func TestKlogOnlyLogsToLogrus(t *testing.T) {
@@ -40,9 +49,9 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 
 	// Create pipes.
 	seReader, seWriter, err := os.Pipe()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	soReader, soWriter, err := os.Pipe()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Set stderr/out to pipe write end.
 	os.Stderr = seWriter
@@ -75,15 +84,24 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	}()
 
 	log, logHook := test.NewNullLogger()
-	l := log.WithField("foo", "bar")
-	InitLogging(LogWriterOption(l))
+	InitLogging(LogWriterOption(log.WithField("foo", "bar")))
 
-	klog.Info("some log")
+	infoLog := "some log"
+	errorLog := "some error log"
+	errorLogged := errors.New("some error")
+
+	// Keep these lines together.
+	_, file, line, ok := runtime.Caller(0)
+	require.True(t, ok)
+	klog.Info(infoLog)
+	klog.ErrorS(errorLogged, errorLog)
 	klog.Flush()
+	sourceFile := filepath.Base(file)
+	infoLine := line + 2
+	errorLine := line + 3
 
 	// Should be a recorded logrus log with the correct fields.
-	// Wait for up to 5s (klog flush interval)
-	assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, time.Second*5, time.Millisecond*10)
+	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 2 }, klogFlushWaitTime, klogFlushWaitInterval)
 
 	// Close write end of pipes.
 	seWriter.Close()
@@ -92,14 +110,18 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	// Stderr/out should be empty.
 	assert.Empty(t, <-outC)
 
-	entry := logHook.AllEntries()[0]
-	assert.Equal(t, "some log\n", entry.Message)
-	assert.Len(t, entry.Data, 2)
-	assert.Equal(t, "bar", entry.Data["foo"])
-	_, file, _, ok := runtime.Caller(0)
-	assert.True(t, ok)
-	// Assert this file name and some line number as location.
-	assert.Regexp(t, filepath.Base(file)+":[1-9][0-9]*$", entry.Data["location"])
+	infoEntry := logHook.AllEntries()[0]
+	assert.Equal(t, infoLog+"\n", infoEntry.Message)
+	assert.Len(t, infoEntry.Data, 2)
+	assert.Equal(t, "bar", infoEntry.Data["foo"])
+	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, infoLine), infoEntry.Data["location"])
+
+	errorEntry := logHook.AllEntries()[1]
+	assert.Equal(t, errorLog, errorEntry.Message)
+	assert.Len(t, errorEntry.Data, 3)
+	assert.Equal(t, "bar", errorEntry.Data["foo"])
+	assert.Equal(t, errorLogged, errorEntry.Data["error"])
+	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, errorLine), errorEntry.Data["location"])
 }
 
 // Last LogWriterOption passed in should be used.
@@ -112,25 +134,31 @@ func TestMultipleLogWriterOptions(t *testing.T) {
 
 	klog.Info("some log")
 	klog.Flush()
-	// Wait for up to 5s (klog flush interval)
-	assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, time.Second*5, time.Millisecond*10)
+	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, klogFlushWaitTime, klogFlushWaitInterval)
 	assert.Equal(t, "data3", logHook.AllEntries()[0].Data["field"])
 }
 
 func TestLogLevelOption(t *testing.T) {
-	log, _ := test.NewNullLogger()
+	log, logHook := test.NewNullLogger()
 	l := log.WithField("some", "field")
 	for logLevel := 1; logLevel <= 10; logLevel++ {
 		t.Run(fmt.Sprintf("log level %d", logLevel), func(t *testing.T) {
 			InitLogging(LogWriterOption(l), LogLevelOption(logLevel))
 			// Make sure log verbosity is set properly.
-			for verbositylevel := 1; verbositylevel <= 10; verbositylevel++ {
-				enabled := klog.V(klog.Level(verbositylevel)).Enabled()
-				if verbositylevel <= logLevel {
+			for verbosityLevel := 1; verbosityLevel <= 10; verbosityLevel++ {
+				enabled := klog.V(klog.Level(verbosityLevel)).Enabled()
+				if verbosityLevel <= logLevel {
 					assert.True(t, enabled)
+					klog.V(klog.Level(verbosityLevel)).Info("something")
+					klog.Flush()
+					assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, klogFlushWaitTime, klogFlushWaitInterval)
 				} else {
 					assert.False(t, enabled)
+					klog.V(klog.Level(verbosityLevel)).Info("something")
+					klog.Flush()
+					assert.Never(t, func() bool { return len(logHook.AllEntries()) > 0 }, klogFlushWaitTime, klogFlushWaitInterval)
 				}
+				logHook.Reset()
 			}
 		})
 	}
