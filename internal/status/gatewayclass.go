@@ -16,8 +16,8 @@ package status
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gateway_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )

@@ -16,11 +16,13 @@ package controller
 import (
 	"context"
 	"fmt"
+
+	"github.com/projectcontour/contour/internal/errors"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/validation"
 
 	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/api/errors"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,18 +38,18 @@ type gatewayClassReconciler struct {
 	client       client.Client
 	eventHandler cache.ResourceEventHandler
 	log          logrus.FieldLogger
-	controllerID string
+	className    string
 }
 
 // NewGatewayClassController creates the gatewayclass controller. The controller
 // will be pre-configured to watch for cluster-scoped GatewayClass objects with
-// a controller field that matches id.
-func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger, id string) (controller.Controller, error) {
+// a controller field that matches name.
+func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger, name string) (controller.Controller, error) {
 	r := &gatewayClassReconciler{
 		client:       mgr.GetClient(),
 		eventHandler: eventHandler,
 		log:          log,
-		controllerID: id,
+		className:    name,
 	}
 
 	c, err := controller.New("gatewayclass-controller", mgr, controller.Options{Reconciler: r})
@@ -55,8 +57,8 @@ func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceE
 		return nil, err
 	}
 
-	// Only enqueue GatewayClass objects that match id.
-	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha1.GatewayClass{}}, r.enqueueRequestForGatewayClass(id)); err != nil {
+	// Only enqueue GatewayClass objects that match name.
+	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha1.GatewayClass{}}, r.enqueueRequestForGatewayClass(name)); err != nil {
 		return nil, err
 	}
 
@@ -64,15 +66,15 @@ func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceE
 }
 
 // enqueueRequestForGatewayClass returns an event handler that maps events to
-// GatewayClass objects with a controller field that matches id.
-func (r *gatewayClassReconciler) enqueueRequestForGatewayClass(id string) handler.EventHandler {
+// GatewayClass objects with a controller field that matches name.
+func (r *gatewayClassReconciler) enqueueRequestForGatewayClass(name string) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
 		gc, ok := a.(*gatewayapi_v1alpha1.GatewayClass)
 		if !ok {
 			r.log.WithField("name", a.GetName()).Info("invalid object, bypassing reconciliation.")
 			return []reconcile.Request{}
 		}
-		if gc.Spec.Controller == id {
+		if gc.Spec.Controller == name {
 			r.log.WithField("name", gc.Name).Info("queueing gatewayclass")
 			return []reconcile.Request{
 				{
@@ -82,7 +84,7 @@ func (r *gatewayClassReconciler) enqueueRequestForGatewayClass(id string) handle
 				},
 			}
 		}
-		r.log.WithField("name", gc.Name).Info("controller is not ", id, "; bypassing reconciliation")
+		r.log.WithField("name", gc.Name).Info("controller is not ", name, "; bypassing reconciliation")
 		return []reconcile.Request{}
 	})
 }
@@ -93,7 +95,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 	// Fetch the Gateway from the cache.
 	gc := &gatewayapi_v1alpha1.GatewayClass{}
 	if err := r.client.Get(ctx, request.NamespacedName, gc); err != nil {
-		if errors.IsNotFound(err) {
+		if api_errors.IsNotFound(err) {
 			r.log.WithField("name", request.Name).Info("failed to find gatewayclass")
 			return reconcile.Result{}, nil
 		}
@@ -104,8 +106,6 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 	// Check if object is marked for deletion.
 	if !gc.ObjectMeta.DeletionTimestamp.IsZero() {
 		r.eventHandler.OnDelete(gc)
-		r.log.WithField("name", gc.Name).Info("delete timestamp set")
-		// TODO [danehans]: Handle deletion of gatewayclass.
 		return reconcile.Result{}, nil
 	}
 
@@ -113,8 +113,9 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 	r.eventHandler.OnAdd(gc)
 
 	// The gatewayclass is safe to process, so check if it's valid.
-	errs := validation.ValidateGatewayClass(ctx, r.client, gc); if errs != nil {
-		r.log.WithField("name", gc.Name).Error("invalid gatewayclass: ", errs)
+	errs := validation.ValidateGatewayClass(ctx, r.client, gc)
+	if errs != nil {
+		r.log.WithField("name", gc.Name).Error("invalid gatewayclass: ", errors.ParseFieldErrors(errs))
 	}
 
 	if err := status.SyncGatewayClass(ctx, r.client, gc, errs); err != nil {

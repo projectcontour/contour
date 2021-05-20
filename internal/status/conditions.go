@@ -16,6 +16,8 @@ package status
 import (
 	"fmt"
 
+	"github.com/projectcontour/contour/internal/errors"
+
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -208,8 +210,8 @@ func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGa
 	return map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{}
 }
 
-// computeGatewayClassAdmittedCondition computes the Admitted status condition based
-// on the provided valid.
+// computeGatewayClassAdmittedCondition computes the GatewayClass Admitted status
+// condition based on errs.
 func computeGatewayClassAdmittedCondition(errs field.ErrorList) metav1.Condition {
 	c := metav1.Condition{
 		Type:    string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
@@ -221,7 +223,7 @@ func computeGatewayClassAdmittedCondition(errs field.ErrorList) metav1.Condition
 	if errs != nil {
 		c.Status = metav1.ConditionFalse
 		c.Reason = reasonInvalidGatewayClass
-		c.Message = fmt.Sprintf("Invalid GatewayClass: %v.", errs)
+		c.Message = fmt.Sprintf("Invalid GatewayClass: %s.", errors.ParseFieldErrors(errs))
 	}
 
 	return c

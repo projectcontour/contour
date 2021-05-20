@@ -155,6 +155,9 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("kubernetes-debug", "Enable Kubernetes client debug logging with log level.").PlaceHolder("<log level>").UintVar(&ctx.KubernetesDebug)
+
+	serve.Flag("gateway-class-name", "Contour GatewayClass name.").PlaceHolder("<api_group>/<namespace>/contour").StringVar(&ctx.gatewayClassName)
+
 	return serve, ctx
 }
 
@@ -418,15 +421,14 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				log.WithError(err).Fatal("unable to set up controller manager")
 			}
 
-			// Add the Gatetway API Scheme.
+			// Add the Gateway API Scheme.
 			err = gatewayapi_v1alpha1.AddToScheme(mgr.GetScheme())
 			if err != nil {
-				log.WithError(err).Fatal("unable to add Gateway " +
-					"API to scheme.")
+				log.WithError(err).Fatal("unable to add Gateway API to scheme.")
 			}
 
 			// Create and register the gatewayclass controller with the manager.
-			if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler, log.WithField("context", "gatewayclass-controller"), ctx.Config.GatewayClassController); err != nil {
+			if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler, log.WithField("context", "gatewayclass-controller"), ctx.gatewayClassName); err != nil {
 				log.WithError(err).Fatal("failed to create gatewayclass-controller")
 			}
 
@@ -734,7 +736,7 @@ func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallback
 
 	if ctx.Config.GatewayConfig != nil && clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-			FieldLogger: log.WithField("context", "NewGatewayClassControllerIProcessor"),
+			FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
 		})
 	}
 

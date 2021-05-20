@@ -761,7 +761,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 		"insert valid gatewayclass": {
 			obj: &gatewayapi_v1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "contour",
+					Name: "contour",
 				},
 			},
 			want: true,
@@ -1055,12 +1055,12 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		"remove gatewayclass": {
 			cache: cache(&gatewayapi_v1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "contour",
+					Name: "contour",
 				},
 			}),
 			obj: &gatewayapi_v1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "contour",
+					Name: "contour",
 				},
 			},
 			want: true,

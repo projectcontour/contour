@@ -2,6 +2,6 @@
 kind: GatewayClass
 apiVersion: networking.x-k8s.io/v1alpha1
 metadata:
-  name: example-gatewayclass
+  name: example
 spec:
-  controller: projectcontour/contour
+  controller: projectcontour.io/projectcontour/contour

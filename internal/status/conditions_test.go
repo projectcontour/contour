@@ -14,6 +14,7 @@
 package status
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilclock "k8s.io/apimachinery/pkg/util/clock"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -65,14 +67,15 @@ func newCondition(t string, status metav1.ConditionStatus, reason, msg string, l
 }
 
 func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
+	var errs field.ErrorList
 	testCases := []struct {
 		name   string
-		valid  bool
+		errs   field.ErrorList
 		expect metav1.Condition
 	}{
 		{
-			name:  "valid gatewayclass",
-			valid: true,
+			name: "valid gatewayclass",
+			errs: nil,
 			expect: metav1.Condition{
 				Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
 				Status: metav1.ConditionTrue,
@@ -80,8 +83,8 @@ func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
 			},
 		},
 		{
-			name:  "invalid gatewayclass",
-			valid: false,
+			name: "invalid gatewayclass",
+			errs: append(errs, field.InternalError(field.NewPath("spec"), fmt.Errorf("foo"))),
 			expect: metav1.Condition{
 				Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
 				Status: metav1.ConditionFalse,
@@ -91,7 +94,7 @@ func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		got := computeGatewayClassAdmittedCondition(tc.valid)
+		got := computeGatewayClassAdmittedCondition(tc.errs)
 		if !apiequality.Semantic.DeepEqual(got.Type, tc.expect.Type) ||
 			!apiequality.Semantic.DeepEqual(got.Status, tc.expect.Status) ||
 			!apiequality.Semantic.DeepEqual(got.Reason, tc.expect.Reason) {

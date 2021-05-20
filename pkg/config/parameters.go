@@ -491,10 +491,6 @@ type Parameters struct {
 	// Server contains parameters for the xDS server.
 	Server ServerParameters `yaml:"server,omitempty"`
 
-	// GatewayClassController is the identifier used by Contour's gatewayclass
-	// controller to determine if a GatewayClass object should be managed.
-	GatewayClassController string `yaml:"gatewayclass-controller,omitempty"`
-
 	// GatewayConfig contains parameters for the gateway-api Gateway that Contour
 	// is configured to serve traffic.
 	GatewayConfig *GatewayParameters `yaml:"gateway,omitempty"`
@@ -676,7 +672,6 @@ func Defaults() Parameters {
 		Listener: ListenerParameters{
 			ConnectionBalancer: "",
 		},
-		GatewayClassController: fmt.Sprintf("%s/contour", contourNamespace),
 	}
 }
 
