@@ -26,6 +26,11 @@ else
 		--tag $(IMAGE):$(VERSION)
 endif
 
+IMAGE_RESULT_FLAG = --output=type=oci,dest=$(shell pwd)/image/contour-$(VERSION).tar
+ifeq ($(PUSH_IMAGE), true)
+	IMAGE_RESULT_FLAG = --push
+endif
+
 # Platforms to build the multi-arch image for.
 IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
@@ -102,8 +107,9 @@ race:
 download: ## Download Go modules
 	go mod download
 
-multiarch-build-push: ## Build and push a multi-arch Contour container image to the Docker registry
-	docker buildx build \
+multiarch-build: ## Build and optionally push a multi-arch Contour container image to the Docker registry
+	@mkdir -p $(shell pwd)/image
+	docker buildx build $(IMAGE_RESULT_FLAG) \
 		--platform $(IMAGE_PLATFORMS) \
 		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
@@ -113,7 +119,6 @@ multiarch-build-push: ## Build and push a multi-arch Contour container image to 
 		--build-arg "BUILD_EXTRA_GO_LDFLAGS=$(BUILD_EXTRA_GO_LDFLAGS)" \
 		$(DOCKER_BUILD_LABELS) \
 		$(IMAGE_TAGS) \
-		--push \
 		$(shell pwd)
 
 container: ## Build the Contour container image

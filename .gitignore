@@ -25,3 +25,6 @@ bundler
 *.js.map
 *.css.map
 .ruby-version
+
+# Saved container image archive
+image/
