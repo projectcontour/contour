@@ -79,12 +79,12 @@ GEM
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
     mercenary (0.3.6)
-    mini_portile2 (2.5.0)
+    mini_portile2 (2.5.1)
     multipart-post (2.1.1)
-    nokogiri (1.11.1)
+    nokogiri (1.11.5)
       mini_portile2 (~> 2.5.0)
       racc (~> 1.4)
-    nokogiri (1.11.1-x86_64-linux)
+    nokogiri (1.11.5-x86_64-linux)
       racc (~> 1.4)
     nokogumbo (2.0.2)
       nokogiri (~> 1.8, >= 1.8.4)
@@ -117,7 +117,7 @@ GEM
 
 PLATFORMS
   ruby
-  x86_64-linux-musl
+  x86_64-linux
 
 DEPENDENCIES
   html-proofer (~> 3.16)
