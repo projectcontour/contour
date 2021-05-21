@@ -175,6 +175,46 @@ var _ = Describe("Gateway API", func() {
 			testTLSGateway(f)
 		})
 	})
+
+	Describe("TLSRoute Gateway", func() {
+		var gateway *gatewayv1alpha1.Gateway
+
+		BeforeEach(func() {
+			gateway = &gatewayv1alpha1.Gateway{
+				// Namespace and name need to match what's
+				// configured in the Contour config file.
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayv1alpha1.GatewaySpec{
+					GatewayClassName: "contour-class",
+					Listeners: []gatewayv1alpha1.Listener{
+						{
+							Protocol: gatewayv1alpha1.TLSProtocolType,
+							Port:     gatewayv1alpha1.PortNumber(443),
+							Routes: gatewayv1alpha1.RouteBindingSelector{
+								Kind: "TLSRoute",
+								Namespaces: &gatewayv1alpha1.RouteNamespaces{
+									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+								},
+							},
+						},
+					},
+				},
+			}
+
+			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
+		})
+
+		AfterEach(func() {
+			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
+		})
+
+		It("008-tlsroute", func() {
+			testTLSRoute(f)
+		})
+	})
 })
 
 func stringPtr(s string) *string {
@@ -205,6 +245,24 @@ func gatewayAllowTypePtr(val gatewayv1alpha1.GatewayAllowType) *gatewayv1alpha1.
 // httpRouteAdmitted returns true if the route has a .status.conditions
 // entry of "Admitted: true".
 func httpRouteAdmitted(route *gatewayv1alpha1.HTTPRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Gateways {
+		for _, cond := range gw.Conditions {
+			if cond.Type == string(gatewayv1alpha1.ConditionRouteAdmitted) && cond.Status == metav1.ConditionTrue {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// tlsRouteAdmitted returns true if the route has a .status.conditions
+// entry of "Admitted: true".
+func tlsRouteAdmitted(route *gatewayv1alpha1.TLSRoute) bool {
 	if route == nil {
 		return false
 	}
