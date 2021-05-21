@@ -516,7 +516,7 @@ type SecureVirtualHost struct {
 	MinTLSVersion string
 
 	// The cert and key for this host.
-	Secrets []*Secret
+	Secrets map[string]*Secret
 
 	// FallbackCertificate
 	FallbackCertificate *Secret

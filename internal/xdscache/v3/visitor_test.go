@@ -29,6 +29,7 @@ import (
 )
 
 func TestVisitClusters(t *testing.T) {
+	sec := new(dag.Secret)
 	tests := map[string]struct {
 		root dag.Vertex
 		want map[string]*envoy_cluster_v3.Cluster
@@ -57,7 +58,7 @@ func TestVisitClusters(t *testing.T) {
 								},
 							}},
 						},
-						Secrets: []*dag.Secret{new(dag.Secret)},
+						Secrets: map[string]*dag.Secret{sec.Name(): sec},
 					},
 				),
 			},
@@ -115,7 +116,7 @@ func TestVisitListeners(t *testing.T) {
 							ListenerName: "ingress_https",
 						},
 						TCPProxy: p1,
-						Secrets: []*dag.Secret{{
+						Secrets: map[string]*dag.Secret{"secret": {
 							Object: &v1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									Name:      "secret",
@@ -185,7 +186,7 @@ func TestVisitSecrets(t *testing.T) {
 								},
 							}},
 						},
-						Secrets: []*dag.Secret{{
+						Secrets: map[string]*dag.Secret{"secret": {
 							Object: &v1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									Name:      "secret",

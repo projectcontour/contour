@@ -1483,7 +1483,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 								routes:       routes(prefixrouteHTTPRoute("/", service(kuardService))),
 							},
-							Secrets: []*Secret{secret(sec1)},
+							Secrets: map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
 					),
 				},
@@ -1530,7 +1530,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 								routes:       routes(prefixrouteHTTPRoute("/", service(blogService))),
 							},
-							Secrets: []*Secret{secret(sec1)},
+							Secrets: map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
 					),
 				},
@@ -1716,7 +1716,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 								routes:       routes(prefixrouteHTTPRoute("/", service(blogService))),
 							},
-							Secrets: []*Secret{secret(sec1)},
+							Secrets: map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
 					),
 				},
@@ -5517,9 +5517,6 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-<<<<<<< HEAD
-						virtualhost("*", prefixroute("/", service(s1))),
-=======
 						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
@@ -5534,9 +5531,8 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.2",
-							Secrets:       []*Secret{secret(sec1)},
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
->>>>>>> Ingress: Support multiple secrets for a given host
 					),
 				},
 			),
@@ -5550,9 +5546,6 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-<<<<<<< HEAD
-						virtualhost("*", prefixroute("/", service(s1))),
-=======
 						virtualhost("foo.com", routeUpgrade("/", service(s1))),
 					),
 				}, &Listener{
@@ -5567,9 +5560,8 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.3",
-							Secrets:       []*Secret{secret(sec1)},
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
->>>>>>> Ingress: Support multiple secrets for a given host
 					),
 				},
 			),
@@ -5653,9 +5645,6 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
-<<<<<<< HEAD
-						securevirtualhost("kuard.example.com", sec1, prefixroute("/", service(s1))),
-=======
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name:         "b.example.com",
@@ -5665,9 +5654,8 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.3",
-							Secrets:       []*Secret{secret(sec1)},
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
->>>>>>> Ingress: Support multiple secrets for a given host
 					),
 				},
 			),
@@ -5755,8 +5743,6 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("a.example.com", prefixroute("/", service(s1))),
 						virtualhost("b.example.com", prefixroute("/", service(s1))),
 					),
-<<<<<<< HEAD
-=======
 				}, &Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
@@ -5769,10 +5755,9 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.3",
-							Secrets:       []*Secret{secret(sec1)},
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
 					),
->>>>>>> Ingress: Support multiple secrets for a given host
 				},
 			),
 		},
@@ -5997,7 +5982,7 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.2",
-							Secret:        secret(sec1),
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
 					),
 				},
@@ -6025,7 +6010,7 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.3",
-							Secret:        secret(sec1),
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
 					),
 				},
@@ -6092,7 +6077,7 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.3",
-							Secret:        secret(sec1),
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
 					),
 				},
@@ -7013,7 +6998,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1))),
 							},
 							MinTLSVersion: "1.2",
-							Secrets:       []*Secret{secret(sec1)},
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate: &Secret{Object: cert1},
 							},
@@ -7041,7 +7026,7 @@ func TestDAGInsert(t *testing.T) {
 								),
 							},
 							MinTLSVersion: "1.2",
-							Secrets:       []*Secret{secret(sec1)},
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 							DownstreamValidation: &PeerValidationContext{
 								CACertificate: &Secret{Object: cert1},
 							},
@@ -7071,7 +7056,7 @@ func TestDAGInsert(t *testing.T) {
 									routeUpgrade("/", service(s1))),
 							},
 							MinTLSVersion: "1.2",
-							Secret:        secret(sec1),
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 							DownstreamValidation: &PeerValidationContext{
 								SkipClientCertValidation: true,
 							},
@@ -7713,7 +7698,7 @@ func TestDAGInsert(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							MinTLSVersion: "1.2",
-							Secrets:       []*Secret{secret(sec1)},
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s9)),
 							},
@@ -7772,7 +7757,7 @@ func TestDAGInsert(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							MinTLSVersion: "1.2",
-							Secrets:       []*Secret{secret(sec1)},
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s9)),
 							},
@@ -7913,7 +7898,7 @@ func TestDAGInsert(t *testing.T) {
 								}},
 							},
 							MinTLSVersion: "1.2",
-							Secrets:       []*Secret{secret(sec1)},
+							Secrets:       map[string]*Secret{sec1.Name: {Object: sec1}},
 						},
 					),
 				},
@@ -8197,7 +8182,7 @@ func TestDAGInsert(t *testing.T) {
 								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
-							Secrets:             []*Secret{secret(sec1)},
+							Secrets:             map[string]*Secret{sec1.Name: {Object: sec1}},
 							FallbackCertificate: secret(fallbackCertificateSecret),
 						},
 					),
@@ -8293,7 +8278,7 @@ func TestDAGInsert(t *testing.T) {
 								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
-							Secrets:             []*Secret{secret(sec1)},
+							Secrets:             map[string]*Secret{sec1.Name: {Object: sec1}},
 							FallbackCertificate: secret(fallbackCertificateSecretRootNamespace),
 						},
 					),
@@ -8358,7 +8343,7 @@ func TestDAGInsert(t *testing.T) {
 								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
-							Secrets:             []*Secret{secret(sec1)},
+							Secrets:             map[string]*Secret{sec1.Name: {Object: sec1}},
 							FallbackCertificate: secret(fallbackCertificateSecretRootNamespace),
 						},
 					),
@@ -8496,7 +8481,7 @@ func TestDAGInsert(t *testing.T) {
 								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
-							Secrets:             []*Secret{secret(sec1)},
+							Secrets:             map[string]*Secret{sec1.Name: {Object: sec1}},
 							FallbackCertificate: secret(fallbackCertificateSecret),
 						},
 						&SecureVirtualHost{
@@ -8506,7 +8491,7 @@ func TestDAGInsert(t *testing.T) {
 								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
-							Secrets:             []*Secret{secret(sec1)},
+							Secrets:             map[string]*Secret{sec1.Name: {Object: sec1}},
 							FallbackCertificate: nil,
 						},
 					),
@@ -8558,7 +8543,7 @@ func TestDAGInsert(t *testing.T) {
 								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
-							Secrets:             []*Secret{secret(sec1)},
+							Secrets:             map[string]*Secret{sec1.Name: {Object: sec1}},
 							FallbackCertificate: nil,
 						},
 					),
@@ -8611,7 +8596,7 @@ func TestDAGInsert(t *testing.T) {
 								routes:       routes(routeUpgrade("/", service(s9))),
 							},
 							MinTLSVersion:       "1.2",
-							Secrets:             []*Secret{secret(sec1)},
+							Secrets:             map[string]*Secret{sec1.Name: {Object: sec1}},
 							FallbackCertificate: nil,
 						},
 					),
@@ -9489,7 +9474,7 @@ func securevirtualhost(name string, sec *v1.Secret, first *Route, rest ...*Route
 			routes:       routes(append([]*Route{first}, rest...)...),
 		},
 		MinTLSVersion: "1.2",
-		Secrets:       []*Secret{secret(sec)},
+		Secrets:       map[string]*Secret{sec.Name: {Object: sec}},
 	}
 }
 

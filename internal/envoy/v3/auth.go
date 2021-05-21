@@ -92,7 +92,7 @@ func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool) *
 }
 
 // DownstreamTLSContext creates a new DownstreamTlsContext.
-func DownstreamTLSContext(serverSecret []*dag.Secret, tlsMinProtoVersion envoy_v3_tls.TlsParameters_TlsProtocol, cipherSuites []string, peerValidationContext *dag.PeerValidationContext, alpnProtos ...string) *envoy_v3_tls.DownstreamTlsContext {
+func DownstreamTLSContext(serverSecret map[string]*dag.Secret, tlsMinProtoVersion envoy_v3_tls.TlsParameters_TlsProtocol, cipherSuites []string, peerValidationContext *dag.PeerValidationContext, alpnProtos ...string) *envoy_v3_tls.DownstreamTlsContext {
 	sdsSecretConfig := []*envoy_v3_tls.SdsSecretConfig{}
 	for _, secret := range serverSecret {
 		sdsSecretConfig = append(sdsSecretConfig, &envoy_v3_tls.SdsSecretConfig{

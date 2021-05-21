@@ -541,7 +541,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 			// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
 			// the value defined in the Contour Configuration file if defined.
 			downstreamTLS = envoy_v3.DownstreamTLSContext(
-				[]*dag.Secret{vh.FallbackCertificate},
+				map[string]*dag.Secret{vh.FallbackCertificate.Name(): vh.FallbackCertificate},
 				v.ListenerConfig.minTLSVersion(),
 				v.ListenerConfig.CipherSuites,
 				vh.DownstreamValidation,
