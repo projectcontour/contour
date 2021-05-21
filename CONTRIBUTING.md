@@ -243,7 +243,7 @@ This section provides some useful information and guidelines for working with Co
 #### Test Categories
 * **Unit Test**: A Go test for a particular function/package. In some cases, these test more than one package at a time.
 * **Feature Test**: A Go test in `internal/featuretests` that tests the translation of Kubernetes config to Envoy config, using a Contour event handler and xDS server. 
-* **Integration Test**: A YAML/rego test in `_integration/testsuite` that performs a full end-to-end test of Contour running in a cluster. Typically verifies the behavior of HTTP requests given a Kubernetes config (currently `HTTPProxy` and Gateway API configs have test cases).
+* **End-To-End (E2E) Test**: A Go test in `test/e2e` that performs a full end-to-end test of Contour running in a cluster. Typically verifies the behavior of HTTP requests given a Kubernetes `HTTPProxy`, `Ingress` or Gateway API config.
 
 ### Summary of Major Test Suites
 
@@ -257,8 +257,10 @@ In general, changes to the core processing pipeline should be accompanied by new
 | `internal/envoy/v3/*_test.go` | Tests conversion of DAG objects to Envoy config. |
 | `internal/xdscache/v3/*_test.go` (specifically the `Test[Cluster\|Listener\|Route\|Secret]Visit` functions) | Tests conversion of Kubernetes config to Envoy config. |
 | `internal/featuretests/v3/*_test.go` | Tests conversion of Kubernetes config to Envoy config, using a ~full Contour event handler and xDS server. |
-| `_integration/testsuite/[httpproxy\|gatewayapi]` | E2E tests with Contour running in a cluster. Verifies behavior of HTTP requests for configured proxies. |
+| `test/e2e/[httpproxy\|gateway\|ingress]` | E2E tests with Contour running in a cluster. Verifies behavior of HTTP requests for configured proxies. |
 
+
+_Note: the tests previously implemented in `_integration` have been migrated to `test/e2e`. The `_integration` directory is no longer accepting changes and will be removed soon. All new end-to-end tests should be implemented in `test/e2e`._
 
 ## DCO Sign off
 
