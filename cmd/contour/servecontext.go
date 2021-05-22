@@ -23,8 +23,6 @@ import (
 	"strings"
 	"time"
 
-	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
@@ -83,15 +81,10 @@ type serveContext struct {
 
 	// DisableLeaderElection can only be set by command line flag.
 	DisableLeaderElection bool
-
-	// gatewayClassName is the gatewayclass controller string used by Contour.
-	gatewayClassName string
 }
 
 // newServeContext returns a serveContext initialized to defaults.
 func newServeContext() *serveContext {
-	ns := config.GetenvOr("CONTOUR_NAMESPACE", "projectcontour")
-
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
 	return &serveContext{
 		Config:                config.Defaults(),
@@ -115,7 +108,6 @@ func newServeContext() *serveContext {
 			xdsAddr: "127.0.0.1",
 			xdsPort: 8001,
 		},
-		gatewayClassName: fmt.Sprintf("%s/%s/contour", contour_v1.GroupName, ns),
 	}
 }
 

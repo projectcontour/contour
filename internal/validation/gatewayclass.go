@@ -34,38 +34,48 @@ var ValidateGatewayClassName = apivalidation.NameIsDNSSubdomain
 // ValidateGatewayClass validates gc according to the Gateway API specification.
 // For additional details of the Gateway spec, refer to:
 //   https://gateway-api.sigs.k8s.io/spec/#networking.x-k8s.io/v1alpha1.Gateway
-func ValidateGatewayClass(ctx context.Context, cli client.Client, gc *gatewayapi_v1alpha1.GatewayClass) field.ErrorList {
+func ValidateGatewayClass(ctx context.Context, cli client.Client, gc *gatewayapi_v1alpha1.GatewayClass, controller string) field.ErrorList {
 	var errs field.ErrorList
 
-	errs = append(errs, validateGatewayClassObjMeta(ctx, cli, &gc.ObjectMeta, field.NewPath("metadata"))...)
-	errs = append(errs, validateGatewayClassSpec(&gc.Spec, field.NewPath("spec"))...)
+	errs = append(errs, validateGatewayClassObjMeta(&gc.ObjectMeta, field.NewPath("metadata"))...)
+	errs = append(errs, validateGatewayClassSpec(ctx, cli, gc, controller, field.NewPath("spec"))...)
 
 	return errs
 }
 
 // validateGatewayClassObjMeta validates whether required fields of metadata are set according
 // to the Gateway API specification.
-func validateGatewayClassObjMeta(ctx context.Context, cli client.Client, meta *metav1.ObjectMeta, path *field.Path) field.ErrorList {
-	errs := apivalidation.ValidateObjectMeta(meta, false, ValidateGatewayClassName, path.Child("name"))
-
-	classes := &gatewayapi_v1alpha1.GatewayClassList{}
-	if err := cli.List(ctx, classes); err != nil {
-		errs = append(errs, field.InternalError(path, fmt.Errorf("failed to list gatewayclasses: %v", err)))
-	} else {
-		if len(classes.Items) > 1 {
-			errs = append(errs, field.InternalError(path, fmt.Errorf("only 1 gatewayclass is supported")))
-		}
-	}
-
-	return errs
+func validateGatewayClassObjMeta(meta *metav1.ObjectMeta, path *field.Path) field.ErrorList {
+	return apivalidation.ValidateObjectMeta(meta, false, ValidateGatewayClassName, path.Child("name"))
 }
 
 // validateGatewayClassSpec validates whether required fields of spec are set according
 // to the Gateway API specification.
-func validateGatewayClassSpec(spec *gatewayapi_v1alpha1.GatewayClassSpec, path *field.Path) field.ErrorList {
+func validateGatewayClassSpec(ctx context.Context, cli client.Client, gc *gatewayapi_v1alpha1.GatewayClass, controller string, path *field.Path) field.ErrorList {
 	var errs field.ErrorList
-	if spec.ParametersRef != nil {
-		errs = append(errs, field.NotSupported(path.Child("parametersRef"), spec.ParametersRef, []string{"nil"}))
+
+	classes := &gatewayapi_v1alpha1.GatewayClassList{}
+	if err := cli.List(ctx, classes); err != nil {
+		errs = append(errs, field.InternalError(path, fmt.Errorf("failed to list gatewayclasses: %v", err)))
+		return errs
+	}
+
+	// Consider the gatewayclass invalid if another is admitted with the same controller.
+	for _, item := range classes.Items {
+		if item.Name != gc.Name && item.Spec.Controller == controller {
+			for _, condition := range item.Status.Conditions {
+				if condition.Type == string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted) &&
+					condition.Status == metav1.ConditionTrue {
+					errs = append(errs, field.InternalError(path, fmt.Errorf("admitted gatewayclass %q with "+
+						"controller %q found", item.Name, controller)))
+				}
+			}
+		}
+	}
+
+	ref := gc.Spec.ParametersRef
+	if ref != nil {
+		errs = append(errs, field.NotSupported(path.Child("parametersRef"), ref, []string{"nil"}))
 	}
 	return errs
 }

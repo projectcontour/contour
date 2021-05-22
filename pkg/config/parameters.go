@@ -51,10 +51,13 @@ func (g *GatewayParameters) Validate() error {
 		return nil
 	}
 
-	if len(g.Name) == 0 && len(g.Namespace) == 0 {
+	if len(g.Name) == 0 && len(g.Namespace) == 0 && len(g.ControllerName) == 0 {
 		return nil
 	}
 
+	if len(g.ControllerName) == 0 {
+		errorString = "controllerName required"
+	}
 	if len(g.Name) == 0 {
 		errorString = "name required"
 	}
@@ -288,10 +291,14 @@ type ServerParameters struct {
 	XDSServerType ServerType `yaml:"xds-server-type,omitempty"`
 }
 
-// GatewayParameters holds the configuration for what Gateway API Gateway
-// Contour will be configured to watch.
+// GatewayParameters holds the configuration for Gateway API controllers.
 type GatewayParameters struct {
-	Name      string `yaml:"name,omitempty"`
+	// ControllerName is the controller of a GatewayClass used by Contour to
+	// determine if it should reconcile a GatewayClass.
+	ControllerName string `yaml:"controllerName,omitempty"`
+	// Name is the Gateway name that Contour should reconcile.
+	Name string `yaml:"name,omitempty"`
+	// Namespace is the Gateway name that Contour should reconcile.
 	Namespace string `yaml:"namespace,omitempty"`
 }
 

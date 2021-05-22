@@ -15,7 +15,6 @@ package validation
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/projectcontour/contour/internal/k8s"
@@ -28,45 +27,94 @@ import (
 var (
 	ctx = context.TODO()
 
-	gc = &gatewayapi_v1alpha1.GatewayClass{
+	defaultController = "projectcontour.io/projectcontour/contour"
+
+	new = &gatewayapi_v1alpha1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "new",
+		},
 		Spec: gatewayapi_v1alpha1.GatewayClassSpec{
-			Controller: "projectcontour/contour",
+			Controller: defaultController,
+		},
+	}
+
+	old = &gatewayapi_v1alpha1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "old",
 		},
 	}
 )
 
 func TestGatewayClass(t *testing.T) {
 	testCases := []struct {
-		name   string
-		mutate func(gc *gatewayapi_v1alpha1.GatewayClass)
-		exist  bool
-		expect bool
+		name      string
+		mutateNew func(gc *gatewayapi_v1alpha1.GatewayClass)
+		mutateOld func(gc *gatewayapi_v1alpha1.GatewayClass)
+		expect    bool
 	}{
 		{
-			name: "valid gatewayclass",
-			mutate: func(gc *gatewayapi_v1alpha1.GatewayClass) {
-				gc.Name = "valid-gatewayclass"
-			},
-			expect: true,
+			name:      "valid gatewayclass",
+			mutateNew: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
+			expect:    true,
 		},
 		{
-			name: "invalid gatewayclass name",
-			mutate: func(gc *gatewayapi_v1alpha1.GatewayClass) {
+			name: "invalid name",
+			mutateNew: func(gc *gatewayapi_v1alpha1.GatewayClass) {
 				gc.Name = "invalid name"
 			},
 			expect: false,
 		},
 		{
-			name: "existing gatewayclass",
-			mutate: func(gc *gatewayapi_v1alpha1.GatewayClass) {
-				gc.Name = "existing-gatewayclass"
+			name:      "existing admitted gatewayclass with same controller",
+			mutateNew: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
+			mutateOld: func(gc *gatewayapi_v1alpha1.GatewayClass) {
+				gc.Spec.Controller = defaultController
+				gc.Status = gatewayapi_v1alpha1.GatewayClassStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+							Status: metav1.ConditionTrue,
+						},
+					},
+				}
 			},
-			exist:  true,
 			expect: false,
 		},
 		{
+			name:      "existing non-admitted gatewayclass with same controller",
+			mutateNew: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
+			mutateOld: func(gc *gatewayapi_v1alpha1.GatewayClass) {
+				gc.Spec.Controller = defaultController
+				gc.Status = gatewayapi_v1alpha1.GatewayClassStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+							Status: metav1.ConditionFalse,
+						},
+					},
+				}
+			},
+			expect: true,
+		},
+		{
+			name:      "existing gatewayclass with different controller",
+			mutateNew: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
+			mutateOld: func(gc *gatewayapi_v1alpha1.GatewayClass) {
+				gc.Spec.Controller = "foo.io/bar"
+				gc.Status = gatewayapi_v1alpha1.GatewayClassStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+							Status: metav1.ConditionTrue,
+						},
+					},
+				}
+			},
+			expect: true,
+		},
+		{
 			name: "invalid gatewayclass params",
-			mutate: func(gc *gatewayapi_v1alpha1.GatewayClass) {
+			mutateNew: func(gc *gatewayapi_v1alpha1.GatewayClass) {
 				gc.Name = "invalid-gatewayclass-params"
 				gc.Spec.ParametersRef = &gatewayapi_v1alpha1.ParametersReference{
 					Group: "foo",
@@ -78,44 +126,40 @@ func TestGatewayClass(t *testing.T) {
 		},
 	}
 
-	// Create the client
+	// Build the client
 	builder := fake.NewClientBuilder()
 	scheme, err := k8s.NewContourScheme()
 	if err != nil {
 		t.Fatalf("failed to build contour scheme: %v", err)
 	}
 	builder.WithScheme(scheme)
-	cl := builder.Build()
 
-	for i, tc := range testCases {
-		mutated := gc.DeepCopy()
-		tc.mutate(mutated)
+	for _, tc := range testCases {
+		// Create the client
+		cl := builder.Build()
 
-		if err := cl.Create(context.TODO(), mutated); err != nil {
+		newMutated := new.DeepCopy()
+		tc.mutateNew(newMutated)
+
+		if err := cl.Create(context.TODO(), newMutated); err != nil {
 			t.Fatalf("failed to create gatewayclass: %v", err)
 		}
 
-		if tc.exist {
-			existing := &gatewayapi_v1alpha1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: fmt.Sprintf("existing-%d", i),
-				},
-				Spec: gatewayapi_v1alpha1.GatewayClassSpec{
-					Controller: "projectcontour/contour",
-				},
-			}
+		if tc.mutateOld != nil {
+			oldMutated := old.DeepCopy()
+			tc.mutateOld(oldMutated)
 
-			if err := cl.Create(context.TODO(), existing); err != nil {
-				t.Fatalf("failed to create gatewayclass: %v", err)
+			if err := cl.Create(context.TODO(), oldMutated); err != nil {
+				t.Fatalf("failed to create gatewayclass %q: %v", oldMutated.Name, err)
 			}
 		}
 
-		actual := ValidateGatewayClass(ctx, cl, mutated)
+		actual := ValidateGatewayClass(ctx, cl, newMutated, newMutated.Spec.Controller)
 		if actual != nil && tc.expect {
-			t.Fatalf("%q: expected %#v, got %#v", tc.name, tc.expect, actual)
+			t.Fatalf("%q: expected %#v, got %v", tc.name, tc.expect, actual)
 		}
 		if actual == nil && !tc.expect {
-			t.Fatalf("%q: expected %#v, got %#v", tc.name, tc.expect, actual)
+			t.Fatalf("%q: expected %#v, got %v", tc.name, tc.expect, actual)
 		}
 	}
 }

@@ -38,7 +38,7 @@ type gatewayClassReconciler struct {
 	client       client.Client
 	eventHandler cache.ResourceEventHandler
 	log          logrus.FieldLogger
-	className    string
+	controller   string
 }
 
 // NewGatewayClassController creates the gatewayclass controller. The controller
@@ -49,7 +49,7 @@ func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceE
 		client:       mgr.GetClient(),
 		eventHandler: eventHandler,
 		log:          log,
-		className:    name,
+		controller:   name,
 	}
 
 	c, err := controller.New("gatewayclass-controller", mgr, controller.Options{Reconciler: r})
@@ -109,14 +109,14 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, nil
 	}
 
-	// Pass the new changed object off to the eventHandler.
-	r.eventHandler.OnAdd(gc)
-
 	// The gatewayclass is safe to process, so check if it's valid.
-	errs := validation.ValidateGatewayClass(ctx, r.client, gc)
+	errs := validation.ValidateGatewayClass(ctx, r.client, gc, r.controller)
 	if errs != nil {
 		r.log.WithField("name", gc.Name).Error("invalid gatewayclass: ", errors.ParseFieldErrors(errs))
 	}
+
+	// Pass the new changed object off to the eventHandler.
+	r.eventHandler.OnAdd(gc)
 
 	if err := status.SyncGatewayClass(ctx, r.client, gc, errs); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to sync gatewayclass %q status: %w", gc.Name, err)

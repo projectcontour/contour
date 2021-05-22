@@ -156,8 +156,6 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("kubernetes-debug", "Enable Kubernetes client debug logging with log level.").PlaceHolder("<log level>").UintVar(&ctx.KubernetesDebug)
 
-	serve.Flag("gateway-class-name", "Contour GatewayClass name.").PlaceHolder("<api_group>/<namespace>/contour").StringVar(&ctx.gatewayClassName)
-
 	return serve, ctx
 }
 
@@ -428,7 +426,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			}
 
 			// Create and register the gatewayclass controller with the manager.
-			if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler, log.WithField("context", "gatewayclass-controller"), ctx.gatewayClassName); err != nil {
+			gcController := ctx.Config.GatewayConfig.ControllerName
+			if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler, log.WithField("context", "gatewayclass-controller"), gcController); err != nil {
 				log.WithError(err).Fatal("failed to create gatewayclass-controller")
 			}
 

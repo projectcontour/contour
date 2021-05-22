@@ -80,35 +80,6 @@ func TestServeContextProxyRootNamespaces(t *testing.T) {
 	}
 }
 
-func TestServeContextGatewayClassName(t *testing.T) {
-	tests := map[string]struct {
-		env  string
-		want string
-	}{
-		"default": {
-			want: "projectcontour.io/projectcontour/contour",
-		},
-		"foo namespace": {
-			env:  "foo",
-			want: "projectcontour.io/foo/contour",
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			if len(tc.env) != 0 {
-				if err := os.Setenv("CONTOUR_NAMESPACE", tc.env); err != nil {
-					t.Fatalf("failed to set env var: %v", err)
-				}
-			}
-			got := newServeContext()
-			if !reflect.DeepEqual(got.gatewayClassName, tc.want) {
-				t.Fatalf("expected: %q, got: %q", tc.want, got.gatewayClassName)
-			}
-		})
-	}
-}
-
 func TestServeContextTLSParams(t *testing.T) {
 	tests := map[string]struct {
 		ctx         serveContext

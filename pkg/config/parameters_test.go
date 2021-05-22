@@ -162,16 +162,20 @@ func TestValidateServerType(t *testing.T) {
 }
 
 func TestValidateGatewayParameters(t *testing.T) {
-	// Namespace is required if name is passed.
-	gw := &GatewayParameters{Name: "gwname", Namespace: ""}
+	// ControllerName is required if name and namespace are passed.
+	gw := &GatewayParameters{ControllerName: "", Name: "gwname", Namespace: "ns"}
+	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: controllerName required")
+
+	// Namespace is required if name and controllerName are passed.
+	gw = &GatewayParameters{ControllerName: "controller", Name: "gwname", Namespace: ""}
 	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: namespace required")
 
-	// Name is required if namespace if passed.
-	gw = &GatewayParameters{Name: "", Namespace: "ns"}
+	// Name is required if controllerName and namespace are passed.
+	gw = &GatewayParameters{ControllerName: "controller", Name: "", Namespace: "ns"}
 	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required")
 
-	// Not required if both aren't passed.
-	gw = &GatewayParameters{Name: "", Namespace: ""}
+	// Not required if none are passed.
+	gw = &GatewayParameters{ControllerName: "", Name: "", Namespace: ""}
 	assert.Equal(t, nil, gw.Validate())
 }
 
