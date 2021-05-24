@@ -552,16 +552,14 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 				// as Envoy's virtualhost hostname wildcard matching can match multiple
 				// labels. This match ignores a port in the hostname in case it is present.
 				if strings.HasPrefix(host, "*.") {
-					route.HeaderMatchConditions = []HeaderMatchCondition{
-						{
-							// Internally Envoy uses the HTTP/2 ":authority" header in
-							// place of the HTTP/1 "host" header.
-							// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-headermatcher
-							Name:      ":authority",
-							MatchType: HeaderMatchTypeRegex,
-							Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(host[1:]),
-						},
-					}
+					route.HeaderMatchConditions = append(route.HeaderMatchConditions, HeaderMatchCondition{
+						// Internally Envoy uses the HTTP/2 ":authority" header in
+						// place of the HTTP/1 "host" header.
+						// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-headermatcher
+						Name:      ":authority",
+						MatchType: HeaderMatchTypeRegex,
+						Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(host[1:]),
+					})
 				}
 
 				if listenerSecret != nil {
