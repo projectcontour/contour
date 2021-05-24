@@ -1,4 +1,3 @@
 # Contour API Reference
 
-{% include api-reference.html %}
-
+{{% include-html api-reference.html %}}

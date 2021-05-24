@@ -407,8 +407,6 @@ connects to Contour:
 | <nobr>--namespace</nobr> | projectcontour | Namespace the Envoy container will run, also configured via ENV variable "CONTOUR_NAMESPACE". Namespace is used as part of the metric names on static resources defined in the bootstrap configuration file.    |
 | <nobr>--xds-resource-version</nobr> | v3 | Currently, the only valid xDS API resource version is `v3`.  |
 | <nobr>--dns-lookup-family</nobr> | auto | Defines what DNS Resolution Policy to use for Envoy -> Contour cluster name lookup. Either v4, v6 or auto.  |
-{: class="table thead-dark table-bordered"}
-<br>
 
 
 [1]: {{< param github_url>}}/tree/{{< param latest_release_tag_name >}}/examples/contour/01-contour-config.yaml
