@@ -9,7 +9,7 @@
 			<div class="blog-post content">
 				{{ .Content }}
 				<ul>
-				{{ range .Pages }}
+				{{ range where .Pages "Params.layout" "=" "page" }}
 					<li>
 					  <p><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>
 					</li>
