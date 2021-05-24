@@ -19,7 +19,10 @@ import (
 
 	"github.com/projectcontour/contour/internal/k8s"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
@@ -46,26 +49,26 @@ var (
 )
 
 func TestGatewayClass(t *testing.T) {
-	testCases := []struct {
-		name      string
+	testCases := map[string]struct {
 		mutateNew func(gc *gatewayapi_v1alpha1.GatewayClass)
 		mutateOld func(gc *gatewayapi_v1alpha1.GatewayClass)
+		errType   field.ErrorType
+		errField  string
 		expect    bool
 	}{
-		{
-			name:      "valid gatewayclass",
+		"valid gatewayclass": {
 			mutateNew: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
 			expect:    true,
 		},
-		{
-			name: "invalid name",
+		"invalid name": {
 			mutateNew: func(gc *gatewayapi_v1alpha1.GatewayClass) {
 				gc.Name = "invalid name"
 			},
-			expect: false,
+			errType:  field.ErrorTypeInvalid,
+			errField: "metadata.name",
+			expect:   false,
 		},
-		{
-			name:      "existing admitted gatewayclass with same controller",
+		"existing admitted gatewayclass with same controller": {
 			mutateNew: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
 			mutateOld: func(gc *gatewayapi_v1alpha1.GatewayClass) {
 				gc.Spec.Controller = defaultController
@@ -78,10 +81,11 @@ func TestGatewayClass(t *testing.T) {
 					},
 				}
 			},
-			expect: false,
+			errType:  field.ErrorTypeInternal,
+			errField: "spec.controller",
+			expect:   false,
 		},
-		{
-			name:      "existing non-admitted gatewayclass with same controller",
+		"existing non-admitted gatewayclass with same controller": {
 			mutateNew: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
 			mutateOld: func(gc *gatewayapi_v1alpha1.GatewayClass) {
 				gc.Spec.Controller = defaultController
@@ -96,8 +100,7 @@ func TestGatewayClass(t *testing.T) {
 			},
 			expect: true,
 		},
-		{
-			name:      "existing gatewayclass with different controller",
+		"existing gatewayclass with different controller": {
 			mutateNew: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
 			mutateOld: func(gc *gatewayapi_v1alpha1.GatewayClass) {
 				gc.Spec.Controller = "foo.io/bar"
@@ -112,8 +115,7 @@ func TestGatewayClass(t *testing.T) {
 			},
 			expect: true,
 		},
-		{
-			name: "invalid gatewayclass params",
+		"invalid gatewayclass params": {
 			mutateNew: func(gc *gatewayapi_v1alpha1.GatewayClass) {
 				gc.Name = "invalid-gatewayclass-params"
 				gc.Spec.ParametersRef = &gatewayapi_v1alpha1.ParametersReference{
@@ -122,7 +124,9 @@ func TestGatewayClass(t *testing.T) {
 					Name:  "baz",
 				}
 			},
-			expect: false,
+			errType:  field.ErrorTypeNotSupported,
+			errField: "spec.parametersRef",
+			expect:   false,
 		},
 	}
 
@@ -134,32 +138,36 @@ func TestGatewayClass(t *testing.T) {
 	}
 	builder.WithScheme(scheme)
 
-	for _, tc := range testCases {
-		// Create the client
-		cl := builder.Build()
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			// Create the client
+			cl := builder.Build()
 
-		newMutated := new.DeepCopy()
-		tc.mutateNew(newMutated)
+			newMutated := new.DeepCopy()
+			tc.mutateNew(newMutated)
 
-		if err := cl.Create(context.TODO(), newMutated); err != nil {
-			t.Fatalf("failed to create gatewayclass: %v", err)
-		}
+			err := cl.Create(context.TODO(), newMutated)
+			require.NoErrorf(t, err, "Failed to create gatewayclass %s", newMutated.Name)
 
-		if tc.mutateOld != nil {
-			oldMutated := old.DeepCopy()
-			tc.mutateOld(oldMutated)
+			if tc.mutateOld != nil {
+				oldMutated := old.DeepCopy()
+				tc.mutateOld(oldMutated)
 
-			if err := cl.Create(context.TODO(), oldMutated); err != nil {
-				t.Fatalf("failed to create gatewayclass %q: %v", oldMutated.Name, err)
+				err := cl.Create(context.TODO(), oldMutated)
+				require.NoErrorf(t, err, "Failed to create gatewayclass %s", oldMutated.Name)
 			}
-		}
 
-		actual := ValidateGatewayClass(ctx, cl, newMutated, newMutated.Spec.Controller)
-		if actual != nil && tc.expect {
-			t.Fatalf("%q: expected %#v, got %v", tc.name, tc.expect, actual)
-		}
-		if actual == nil && !tc.expect {
-			t.Fatalf("%q: expected %#v, got %v", tc.name, tc.expect, actual)
-		}
+			actual := ValidateGatewayClass(ctx, cl, newMutated, newMutated.Spec.Controller)
+			if tc.expect {
+				assert.Nilf(t, actual, "expected no error, got: %v", actual)
+			} else {
+				// Not asserting an error since a field.ErrorList is being returned.
+				assert.NotNilf(t, actual, "expected no error, got: %v", actual)
+				for _, a := range actual {
+					assert.Contains(t, a.Type, tc.errType)
+					assert.Contains(t, a.Field, tc.errField)
+				}
+			}
+		})
 	}
 }

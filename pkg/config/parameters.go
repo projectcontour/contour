@@ -51,13 +51,10 @@ func (g *GatewayParameters) Validate() error {
 		return nil
 	}
 
-	if len(g.Name) == 0 && len(g.Namespace) == 0 && len(g.ControllerName) == 0 {
+	if len(g.Name) == 0 && len(g.Namespace) == 0 && g.ControllerName == nil {
 		return nil
 	}
 
-	if len(g.ControllerName) == 0 {
-		errorString = "controllerName required"
-	}
 	if len(g.Name) == 0 {
 		errorString = "name required"
 	}
@@ -293,12 +290,13 @@ type ServerParameters struct {
 
 // GatewayParameters holds the configuration for Gateway API controllers.
 type GatewayParameters struct {
-	// ControllerName is the controller of a GatewayClass used by Contour to
-	// determine if it should reconcile a GatewayClass.
-	ControllerName string `yaml:"controllerName,omitempty"`
+	// ControllerName is used to determine whether Contour should reconcile a
+	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
+	// If unset, the gatewayclass controller will not be started.
+	ControllerName *string `yaml:"controllerName,omitempty"`
 	// Name is the Gateway name that Contour should reconcile.
 	Name string `yaml:"name,omitempty"`
-	// Namespace is the Gateway name that Contour should reconcile.
+	// Namespace is the Gateway namespace that Contour should reconcile.
 	Namespace string `yaml:"namespace,omitempty"`
 }
 

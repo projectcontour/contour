@@ -46,7 +46,7 @@ func ValidateGatewayClass(ctx context.Context, cli client.Client, gc *gatewayapi
 // validateGatewayClassObjMeta validates whether required fields of metadata are set according
 // to the Gateway API specification.
 func validateGatewayClassObjMeta(meta *metav1.ObjectMeta, path *field.Path) field.ErrorList {
-	return apivalidation.ValidateObjectMeta(meta, false, ValidateGatewayClassName, path.Child("name"))
+	return apivalidation.ValidateObjectMeta(meta, false, ValidateGatewayClassName, path)
 }
 
 // validateGatewayClassSpec validates whether required fields of spec are set according
@@ -66,8 +66,8 @@ func validateGatewayClassSpec(ctx context.Context, cli client.Client, gc *gatewa
 			for _, condition := range item.Status.Conditions {
 				if condition.Type == string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted) &&
 					condition.Status == metav1.ConditionTrue {
-					errs = append(errs, field.InternalError(path, fmt.Errorf("admitted gatewayclass %q with "+
-						"controller %q found", item.Name, controller)))
+					errs = append(errs, field.InternalError(path.Child("controller"),
+						fmt.Errorf("admitted gatewayclass %q with controller %q found", item.Name, controller)))
 				}
 			}
 		}
