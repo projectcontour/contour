@@ -76,7 +76,9 @@ Prefix conditions **must** start with a `/` if they are present.
 
 For `header` conditions there is one required field, `name`, and six operator fields: `present`, `notpresent`, `contains`, `notcontains`, `exact`, and `notexact`.
 
-- `present` is a boolean and checks that the header is present. The value will not be checked. `notpresent` similarly checks that the header is *not* present.
+- `present` is a boolean and checks that the header is present. The value will not be checked. 
+
+- `notpresent` similarly checks that the header is *not* present.
 
 - `contains` is a string, and checks that the header contains the string. `notcontains` similarly checks that the header does *not* contain the string.
 
@@ -213,8 +215,10 @@ Example input values: "300ms", "5s", "1m". Valid time units are "ns", "us" (or "
 The string 'infinity' is also a valid input and specifies no timeout.
 
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
-  - `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
-  - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
+
+- `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
+
+- `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
   If left unspecified, `timeoutPolicy.request` will be used.
 
 ## Load Balancing Strategy

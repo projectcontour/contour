@@ -7,19 +7,366 @@ layout: page
 
 This document describes the changes needed to upgrade your Contour installation.
 
-<div class="alert-deprecation">
-<b>Deprecation Notices</b><br>
-- Contour annotations starting with `contour.heptio.com` have been removed from documentation for some time.
-Contour 1.8 marks the official deprecation of these annotations and have been removed in Contour v1.11.0.
-</div>
-
-<br>
-
 <div id="toc" class="navigation"></div>
 
-## Upgrading Contour 1.10.0 to 1.11.0
+## Upgrading Contour 1.15.0 to 1.15.1
 
-Contour 1.11.0 is the current stable release.
+Contour 1.15.1 is the current stable release.
+
+### Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.18.3`.
+
+Please see the [Envoy Release Notes][32] for information about issues fixed in Envoy 1.18.3.
+
+### The easy way to upgrade
+
+If the following are true for you:
+
+* Your installation is in the `projectcontour` namespace.
+* You are using our [quickstart example][18] deployments.
+* Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade to 1.15.1 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.15.1/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+### The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.15.0 to 1.15.01 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.15.1` tag.
+
+If your version of Contour is older than v1.15.0, please upgrade to v1.15.0 first, then upgrade to v1.15.1.
+
+1. Users of the example deployment should reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+This will rotate the TLS certificates used for gRPC security.
+
+    ```bash
+    $ kubectl apply -f examples/contour/02-job-certgen.yaml
+    ```
+
+1. Upgrade your Contour deployment::
+
+    ```bash
+    $ kubectl apply -f examples/contour/03-contour.yaml
+    ```
+
+1. Once the Contour deployment has finished upgrading, update the Envoy DaemonSet:
+
+    ```bash
+    $ kubectl apply -f examples/contour/03-envoy.yaml
+    ```
+
+## Upgrading Contour 1.14.1 to 1.15.0
+
+### Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.18.2`.
+
+Please see the [Envoy Release Notes][31] for information about issues fixed in Envoy 1.18.2.
+
+### The easy way to upgrade
+
+If the following are true for you:
+
+* Your installation is in the `projectcontour` namespace.
+* You are using our [quickstart example][18] deployments.
+* Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade to 1.15.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.15.0/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+### The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.14.1 to 1.15.0 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.15.0` tag.
+
+If your version of Contour is older than v1.14, please upgrade to v1.14 first, then upgrade to v1.15.0.
+
+1. The Contour CRD definitions must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
+
+    ```bash
+    $ kubectl apply -f examples/contour/01-crds.yaml
+    ```
+
+1. Users of the example deployment should reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+This will rotate the TLS certificates used for gRPC security.
+
+    ```bash
+    $ kubectl apply -f examples/contour/02-job-certgen.yaml
+    ```
+
+1. This release includes an update to RBAC rules. Update the Contour ClusterRole with the following:
+
+    ```bash
+    $ kubectl apply -f examples/contour/02-role-contour.yaml
+    ```
+
+1. This release includes changes to support Ingress wildcard hosts that require Envoy to be upgraded *before* Contour. Update the Envoy DaemonSet:
+
+    ```bash
+    $ kubectl apply -f examples/contour/03-envoy.yaml
+    ```
+
+1. Once the Envoy DaemonSet has finished updating, upgrade your Contour deployment:
+
+    ```bash
+    $ kubectl apply -f examples/contour/03-contour.yaml
+    ```
+
+## Upgrading Contour 1.14.0 to 1.14.1
+
+### Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.17.2`.
+
+Please see the [Envoy Release Notes][30] for information about issues fixed in Envoy 1.17.2.
+
+### The easy way to upgrade
+
+If the following are true for you:
+
+* Your installation is in the `projectcontour` namespace.
+* You are using our [quickstart example][18] deployments.
+* Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade to 1.14.1 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.14.1/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+### The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.14.0 to 1.14.1 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.14.1` tag.
+
+Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+This will rotate the TLS certificates used for gRPC security.
+
+If your version of Contour is older than v1.14, please upgrade to v1.14 first, then upgrade to v1.14.1.
+
+```bash
+$ kubectl apply -f examples/contour/02-job-certgen.yaml
+```
+
+Upgrade your Contour deployment:
+
+```bash
+$ kubectl apply -f examples/contour/03-contour.yaml
+```
+
+Once the Contour deployment has finished upgrading, update the Envoy DaemonSet:
+
+```bash
+$ kubectl apply -f examples/contour/03-envoy.yaml
+```
+
+## Upgrading Contour 1.13.1 to 1.14.0
+
+### Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.17.1`.
+
+Please see the [Envoy Release Notes][29] for information about issues fixed in Envoy 1.17.1.
+
+### The easy way to upgrade
+
+If the following are true for you:
+
+* Your installation is in the `projectcontour` namespace.
+* You are using our [quickstart example][18] deployments.
+* Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade to 1.14.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.14.0/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+### The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.13.1 to 1.14.0 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.14.0` tag.
+
+The Contour CRD definition must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
+
+```bash
+$ kubectl apply -f examples/contour/01-crds.yaml
+```
+
+Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+This will rotate the TLS certificates used for gRPC security.
+
+```bash
+$ kubectl apply -f examples/contour/02-job-certgen.yaml
+```
+
+If your version of Contour is older than v1.13, please upgrade to v1.13 first, then upgrade to v1.14.0.
+
+This release includes an update to the Envoy service ports. Upgrade your Envoy service with the following:
+
+```bash
+$ kubectl apply -f examples/contour/02-service-envoy.yaml
+```
+
+Upgrade your Contour deployment:
+
+```bash
+$ kubectl apply -f examples/contour/03-contour.yaml
+```
+
+Once the Contour deployment has finished upgrading, update the Envoy DaemonSet:
+
+```bash
+$ kubectl apply -f examples/contour/03-envoy.yaml
+```
+
+## Upgrading Contour 1.12.0 to 1.13.1
+
+### Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.17.1`.
+
+Please see the [Envoy Release Notes][29] for information about issues fixed in Envoy 1.17.1.
+
+### The easy way to upgrade
+
+If the following are true for you:
+
+* Your installation is in the `projectcontour` namespace.
+* You are using our [quickstart example][18] deployments.
+* Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade to 1.13.1 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.13.1/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+### The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.12.0 to 1.13.1 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.13.1` tag.
+
+The Contour CRD definition must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
+
+```bash
+$ kubectl apply -f examples/contour/01-crds.yaml
+```
+
+Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+This will rotate the TLS certificates used for gRPC security.
+
+```bash
+$ kubectl apply -f examples/contour/02-job-certgen.yaml
+```
+
+If your version of Contour is older than v1.12, please upgrade to v1.12 first, then upgrade to v1.13.1.
+
+Upgrade your Contour deployment:
+
+```bash
+$ kubectl apply -f examples/contour/03-contour.yaml
+```
+
+Once the Contour deployment has finished upgrading, update the Envoy DaemonSet:
+
+```bash
+$ kubectl apply -f examples/contour/03-envoy.yaml
+```
+
+## Upgrading Contour 1.11.0 to 1.12.0
+
+### Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.17.0`.
+
+Please see the [Envoy Release Notes][28] for information about issues fixed in Envoy 1.17.0.
+
+### The easy way to upgrade
+
+If the following are true for you:
+
+* Your installation is in the `projectcontour` namespace.
+* You are using our [quickstart example][18] deployments.
+* Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade to 1.12.0 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{site.url}}/quickstart/v1.12.0/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+### The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.11.0 to 1.12.0 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.12.0` tag.
+
+The Contour CRD definition must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
+
+```bash
+$ kubectl apply -f examples/contour/01-crds.yaml
+```
+
+Users of the example deployment should first reapply the certgen Job YAML which will re-generate the relevant Secrets in the new format, which is compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+This will rotate the TLS certificates used for gRPC security.
+
+```bash
+$ kubectl apply -f examples/contour/02-job-certgen.yaml
+```
+
+If your version of Contour is older than v1.11, please upgrade to v1.11 first, then upgrade to v1.12.
+
+Upgrade your Contour deployment:
+
+```bash
+$ kubectl apply -f examples/contour/03-contour.yaml
+```
+
+Note that the Contour deployment needs to be updated before the Envoy daemon set since it contains backwards-compatible changes that are required in order to work with Envoy 1.17.0.
+Once the Contour deployment has finished upgrading, update the Envoy daemon set:
+
+```bash
+$ kubectl apply -f examples/contour/03-envoy.yaml
+```
+
+## Upgrading Contour 1.10.0 to 1.11.0
 
 ### Required Envoy version
 
@@ -1008,30 +1355,35 @@ and checking the annotations that store exact details using
 $ kubectl get configmap -n heptio-contour -o yaml contour
 ```
 
-[1]: {{< param github_url >}}/tree/{{< param latest_release_tag_name >}}/examples
-[2]: {{< param github_url >}}/blob/v1.0.0/examples
-[3]: /docs/{{< param docs_latest >}}/config/fundamentals
-[4]: /docs/{{< param docs_latest >}}/config/annotations
-[5]: {{< param github_url >}}/issues/899
-[6]: /docs/{{< param docs_latest >}}/configuration
-[7]: {{< param github_url >}}/blob/{{< param docs_latest >}}/examples/contour/README.md
-[8]: {{< param github_url >}}/blob/{{< param docs_latest >}}/examples/contour/02-rbac.yaml#L71
-[9]: {{< param github_url >}}/blob/{{< param docs_latest >}}/examples/contour/02-rbac.yaml
+[1]: {{site.github.repository_url}}/blob/{{site.latest}}/examples
+[2]: {{site.github.repository_url}}/blob/v1.0.0/examples
+[3]: /docs/{{site.latest}}/config/fundamentals
+[4]: /docs/{{site.latest}}/config/annotations
+[5]: {{site.github.repository_url}}/issues/899
+[6]: /docs/{{site.latest}}/configuration
+[7]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/README.md
+[8]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/02-rbac.yaml#L71
+[9]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/02-rbac.yaml
 [10]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/version_history
-[11]: {{< param github_url >}}/blob/v0.15.3/examples/
-[12]: /docs/{{< param docs_latest >}}/deploy-options
+[11]: {{site.github.repository_url}}/blob/v0.15.3/examples/
+[12]: /docs/{{site.latest}}/deploy-options
 [13]: https://hub.docker.com/r/projectcontour/contour
-[14]: /docs/{{< param docs_latest >}}/grpc-tls-howto
+[14]: /docs/{{site.latest}}/grpc-tls-howto
 [15]: https://www.envoyproxy.io/docs/envoy/v1.12.2/intro/version_history
-[16]: /getting-started
+[16]: {% link getting-started.md %}
 [17]: https://www.envoyproxy.io/docs/envoy/v1.13.1/intro/version_history
-[18]: https://projectcontour.io/quickstart/{{< param docs_latest >}}/contour.yaml
+[18]: https://projectcontour.io/quickstart/{{site.latest}}/contour.yaml
 [19]: https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/envoy-announce/sVqmxy0un2s/8aq430xiHAAJ
 [20]: https://www.envoyproxy.io/docs/envoy/v1.14.1/intro/version_history
 [21]: https://www.envoyproxy.io/docs/envoy/v1.14.2/intro/version_history
 [22]: https://www.envoyproxy.io/docs/envoy/v1.14.3/intro/version_history
 [23]: https://www.envoyproxy.io/docs/envoy/v1.15.0/version_history/current
-[24]: /guides/ingressroute-to-httpproxy
+[24]: {% link _guides/ingressroute-to-httpproxy.md %}
 [25]: https://www.envoyproxy.io/docs/envoy/v1.16.0/version_history/current
-[26]: /guides/xds-migration
+[26]: {% link _guides/xds-migration.md %}
 [27]: https://www.envoyproxy.io/docs/envoy/v1.16.2/version_history/current
+[28]: https://www.envoyproxy.io/docs/envoy/v1.17.0/version_history/current
+[29]: https://www.envoyproxy.io/docs/envoy/v1.17.1/version_history/current
+[30]: https://www.envoyproxy.io/docs/envoy/v1.17.2/version_history/current
+[31]: https://www.envoyproxy.io/docs/envoy/v1.18.2/version_history/current
+[32]: https://www.envoyproxy.io/docs/envoy/v1.18.3/version_history/current

@@ -115,7 +115,7 @@ spec:
 
 HTTPProxy inclusion allows Administrators to limit which users/namespaces may configure routes for a given domain, but it does not restrict where root HTTPProxies may be created.
 Contour has an enforcing mode which accepts a list of namespaces where root HTTPProxy are valid.
-Only users permitted to operate in those namespaces can therefore create HTTPProxy with the [`virtualhost`][2] field.
+Only users permitted to operate in those namespaces can therefore create HTTPProxy with the [`virtualhost`] field ([see API docs][2]).
 
 This restricted mode is enabled in Contour by specifying a command line flag, `--root-namespaces`, which will restrict Contour to only searching the defined namespaces for root HTTPProxy. This CLI flag accepts a comma separated list of namespaces where HTTPProxy are valid (e.g. `--root-namespaces=default,kube-system,my-admin-namespace`).
 
@@ -128,5 +128,5 @@ An example of this is included in the [examples directory][1] and shows how you 
 _**Note:** The restricted root namespace feature is only supported for HTTPProxy CRDs.
 `--root-namespaces` does not affect the operation of Ingress objects._
 
-[1]: {{site.github.repository_url}}/tree/{{page.version}}/examples/root-rbac
-[2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.VirtualHost
+[1]: {{< param github_url>}}/tree/{{< param latest_release_tag_name >}}/examples/root-rbac
+[2]: api/#projectcontour.io/v1.VirtualHost

@@ -44,9 +44,9 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 1. Create a new local feature branch from `main`.
 1. Generate a new set of versioned docs:
     
-    ```bash
-    go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION
-    ```
+```bash
+go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION
+```
 
 1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
 1. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
@@ -59,66 +59,66 @@ _Note: the PR will probably fail the siteproof check due to [#2032](https://gith
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a local release branch:
 
-    ```bash
-    git checkout -b release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-    ```
+```bash
+git checkout -b release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+```
 
 1. Push the branch to `github.com/projectcontour/contour`:
 
-    ```bash
-    git push --set-upstream ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-    ```
+```bash
+git push --set-upstream ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+```
 
 1. Update the deployment YAML and create a local tag:
 
-    ```bash
-    ./hack/release/make-release-tag.sh main $CONTOUR_RELEASE_VERSION
-    ```
+```bash
+./hack/release/make-release-tag.sh main $CONTOUR_RELEASE_VERSION
+```
 
 1. Push the branch to `github.com/projectcontour/contour`:
 
-    ```bash
-    git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-    ```
+```bash
+git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+```
 
 1. Push the tag to `github.com/projectcontour/contour`:
 
-    ```bash
-    git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
-    ```
+```bash
+git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
+```
 
 ### Release the operator
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a local release branch:
 
-    ```bash
-    git checkout -b release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-    ```
+```bash
+git checkout -b release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+```
 
 1. Push the branch to `github.com/projectcontour/contour-operator`:
 
-    ```bash
-    git push --set-upstream ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-    ```
+```bash
+git push --set-upstream ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+```
 
 1. Update the deployment YAML and create a local tag:
 
-    ```bash
-    ./hack/release/make-release-tag.sh main $CONTOUR_RELEASE_VERSION
-    ```
+```bash
+./hack/release/make-release-tag.sh main $CONTOUR_RELEASE_VERSION
+```
 
 1. Push the branch to `github.com/projectcontour/contour-operator`:
 
-    ```bash
-    git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-    ```
+```bash
+git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+```
 
 1. Push the tag to `github.com/projectcontour/contour-operator`:
 
-    ```bash
-    git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
-    ```
+```bash
+git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
+```
 
 ### Update quickstart YAML redirects
 
@@ -185,10 +185,10 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 1. Create a new local feature branch from the release branch.
 1. Cherry-pick each commit from Step 1, fixing any conflicts as needed:
 
-    ```bash
-    # repeat for each SHA
-    git cherry-pick <SHA>
-    ```
+```bash
+# repeat for each SHA
+git cherry-pick <SHA>
+```
 
 1. Commit all changes, push the branch, and PR it into the release branch.
 
@@ -198,9 +198,9 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 1. Create a new local feature branch from `main`.
 1. Generate a new set of versioned docs:
     
-    ```bash
-    go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
-    ```
+```bash
+go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
+```
 
 1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
 1. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
@@ -212,21 +212,21 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 
 1. Update the deployment YAML and create a local tag:
 
-    ```bash
-    ./hack/release/make-release-tag.sh $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
-    ```
+```bash
+./hack/release/make-release-tag.sh $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
+```
 
 1. Push the branch to `github.com/projectcontour/contour`:
 
-    ```bash
-    git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-    ```
+```bash
+git push ${CONTOUR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+```
 
 1. Push the tag to `github.com/projectcontour/contour`:
 
-    ```bash
-    git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
-    ```
+```bash
+git push ${CONTOUR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
+```
 
 ### Release the operator
 
@@ -235,10 +235,10 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 1. Create a new local feature branch from the release branch.
 1. Cherry-pick each commit from Step 1, fixing any conflicts as needed:
 
-    ```bash
-    # repeat for each SHA
-    git cherry-pick <SHA>
-    ```
+```bash
+# repeat for each SHA
+git cherry-pick <SHA>
+```
 
 1. Commit all changes, push the branch, and PR it into the release branch.
 
@@ -246,21 +246,21 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 
 1. Update the deployment YAML and create a local tag:
 
-    ```bash
-    ./hack/release/make-release-tag.sh $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
-    ```
+```bash
+./hack/release/make-release-tag.sh $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
+```
 
 1. Push the branch to `github.com/projectcontour/contour-operator`:
 
-    ```bash
-    git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
-    ```
+```bash
+git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERSION_MAJOR}.${CONTOUR_RELEASE_VERSION_MINOR}
+```
 
 1. Push the tag to `github.com/projectcontour/contour-operator`:
 
-    ```bash
-    git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
-    ```
+```bash
+git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
+```
 
 ### Do the Github release and write release notes
 
