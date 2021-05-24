@@ -1,9 +1,5 @@
 [build]
   base = "site/"
-  command = "jekyll build"
-  publish = "site/_site"
-[build]
-  base = "site/"
   publish = "site/_site"
   command = "hugo --gc --minify"
 
