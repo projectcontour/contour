@@ -50,6 +50,16 @@ jobs:
         with:
           name: image
           path: image
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
       - name: add deps to path
         run: |
           ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
@@ -112,6 +122,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: '1.16.4'
@@ -127,6 +147,16 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Windows)
+          path: |
+            ~/go/pkg/mod
+            ~/Library/Caches/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: '1.16.4'
@@ -160,6 +190,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: '1.16.4'
