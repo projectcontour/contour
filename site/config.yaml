@@ -1,0 +1,67 @@
+baseURL: "https://projectcontour.io/"
+languageCode: "en-us"
+title: "Contour"
+theme: "contour"
+outputs:
+  home: [ "HTML", "REDIRECTS" ]
+  posts: [ "HTML", "RSS" ]
+pygmentsCodefences: true
+pygmentsStyle: "pygments"
+markup:
+  highlight:
+    anchorLineNos: false
+    codeFences: true
+    guessSyntax: false
+    hl_Lines: ""
+    lineAnchors: ""
+    lineNoStart: 1
+    lineNos: false
+    lineNumbersInTable: true
+    noClasses: true
+    style: native
+    tabWidth: 4
+  goldmark:
+    renderer:
+      unsafe: true
+params:
+  twitter_url: "https://twitter.com/projectcontour"
+  github_url: "https://github.com/projectcontour/contour"
+  slack_url: "https://kubernetes.slack.com/messages/contour"
+  github_base_url: "https://github.com/projectcontour/contour"
+  latest_release_tag_name: v1.15.1
+  use_advanced_docs: true
+  docs_right_sidebar: true
+  docs_search: true
+  docs_search_index_name: projectcontour
+  docs_search_api_key: 5e2fa46757e313755936b88feae652d1
+  docs_versioning: true
+  docs_latest: v1.15.1
+  docs_versions:
+    - main
+    - v1.9.0
+    - v1.10.0
+    - v1.10.1
+    - v1.11.0
+    - v1.12.0
+    - v1.13.0
+    - v1.13.1
+    - v1.14.0
+    - v1.14.1
+    - v1.15.0
+    - v1.15.1
+
+mediaTypes:
+  "text/netlify":
+    delimiter: ""
+outputFormats:
+  REDIRECTS:
+    mediaType: "text/netlify"
+    baseName: "_redirects"
+  RSS:
+    mediatype: "application/rss"
+    baseName: "feed"
+collections:
+  guides:
+    output: true
+permalinks:
+  posts: /:slug

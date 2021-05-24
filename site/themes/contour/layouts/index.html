@@ -1,0 +1,22 @@
+{{ define "main" }}
+	<main>
+		{{ partial "hero.html" . }}
+		{{ partial "homepage-grid.html" . }}
+		{{ partial "cloud-native.html" . }}
+		<div class="bg-grey introduction">
+			<div class="wrapper grid two">
+				<div class="col">
+					<p class="strong"><a href="/posts/2019-04-22-routing-traffic-to-applications-in-kubernetes-with-contour/">Introduction to Contour</a></p>
+					<p>Read an overview of the Contour project, including key use cases and how to get involved.</p>
+				</div>
+				<div class="col">
+					<p class="strong"><a href="https://tanzu.vmware.com/content/blog/deploying-new-app-versions-by-using-blue-green-deployments-with-contour-s-ingressroute">Learn how Contour is used for advanced traffic routing</a></p>
+					<p>Read about using Contour for blue-green application deployments.</p>
+				</div>
+			</div>
+		</div>
+		{{ partial "use-cases.html" . }}
+		{{ partial "blog-highlights.html" . }}
+		{{ partial "team.html" . }}
+	</main>
+{{ end }}
