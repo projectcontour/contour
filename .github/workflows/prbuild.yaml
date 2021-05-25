@@ -182,7 +182,7 @@ jobs:
       - name: Codespell
         uses: codespell-project/actions-codespell@master
         with:
-          skip: .git,*.png,*.woff,*.ttf,*.jpg,*.ico,./site/Gemfile.lock,./site/_config.yml
+          skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md
           ignore_words_file: './.codespell.ignorewords'
           check_filenames: true
           check_hidden: true
