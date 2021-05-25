@@ -42,4 +42,4 @@ ln -s "${REPO}" "${GOPATH}/src/github.com/projectcontour/contour"
 
 gendoc::exec \
     -api-dir "${PKGROOT}" \
-    -out-file "${REPO}/site/docs/main/config/api-reference.html"
+    -out-file "${REPO}/site/content/docs/main/config/api-reference.html"
