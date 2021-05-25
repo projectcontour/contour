@@ -11,8 +11,9 @@ data:
     #   determine which XDS Server implementation to utilize in Contour.
     #   xds-server-type: contour
     #
-    # Specify the gateway-api Gateway Contour should watch.
+    # Specify the Gateway API configuration.
     # gateway:
+    #   controllerName: projectcontour.io/projectcontour/contour
     #   name: contour
     #   namespace: projectcontour
     #

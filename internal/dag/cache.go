@@ -59,6 +59,7 @@ type KubernetesCache struct {
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
 	services                  map[types.NamespacedName]*v1.Service
 	namespaces                map[string]*v1.Namespace
+	gatewayclass              *gatewayapi_v1alpha1.GatewayClass
 	gateway                   *gatewayapi_v1alpha1.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute
@@ -224,6 +225,9 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	case *contour_api_v1.TLSCertificateDelegation:
 		kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
 		return true
+	case *gatewayapi_v1alpha1.GatewayClass:
+		kc.gatewayclass = obj
+		return true
 	case *gatewayapi_v1alpha1.Gateway:
 		if kc.matchesGateway(obj) {
 			kc.gateway = obj
@@ -311,6 +315,9 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.tlscertificatedelegations[m]
 		delete(kc.tlscertificatedelegations, m)
 		return ok
+	case *gatewayapi_v1alpha1.GatewayClass:
+		kc.gatewayclass = nil
+		return true
 	case *gatewayapi_v1alpha1.Gateway:
 		if kc.matchesGateway(obj) {
 			kc.gateway = nil
