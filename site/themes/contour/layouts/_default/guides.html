@@ -1,0 +1,21 @@
+{{ define "main" }}
+	<main>
+		<div class="hero subpage-hero">
+			<div class="wrapper">
+				<h1>Guides</h1>
+			</div>
+		</div>
+		<div class="wrapper subpage blog">
+			<div class="blog-post content">
+				{{ .Content }}
+				<ul>
+				{{ range where .Pages "Params.layout" "=" "page" }}
+					<li>
+					  <p><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>
+					</li>
+				{{ end }}
+				</ul>
+			</div>
+		</div>
+	</main>
+{{ end }}

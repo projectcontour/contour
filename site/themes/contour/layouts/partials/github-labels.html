@@ -1,0 +1,20 @@
+<table class="table thead-dark table-striped table-bordered">
+
+    <tr>
+        <th> Label </th>
+        <th> Description </th>
+    </tr>
+
+    {{ $label := (index $.Site.Data "github-labels").default.labels }}
+    {{ range $label }}
+    <tr>
+        <td>  
+            <div style="background-color:#{{.color}}; width:20px; height:20px; float: left"></div>
+            &nbsp;
+            <a href="https://github.com/projectcontour/contour/labels/{{.name}}">{{.name}}</a>
+        </td>
+        <td> {{.description}} </td>
+    </tr>
+    {{ end }}
+    
+</table>

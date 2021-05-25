@@ -1,0 +1,1 @@
+{{ $file := .Get 0 }} {{ if strings.HasSuffix $file ".md" }} {{ $file | readFile | safeHTML }} {{ end }}
