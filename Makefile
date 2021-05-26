@@ -319,6 +319,10 @@ generate-uml: $(patsubst %.uml,%.png,$(wildcard site/img/uml/*.uml))
 %.png: %.uml
 	cd `dirname $@` && plantuml `basename "$^"`
 
+.PHONY: site-devel
+site-devel: ## Launch the website
+	cd site && hugo serve
+
 .PHONY: site-check
 site-check: ## Test the site's links
 	# TODO: Clean up to use htmltest
