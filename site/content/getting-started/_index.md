@@ -24,7 +24,7 @@ you have specific requirements to customize Contour for environment, see Options
 Run:
 
 ```bash
-$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+$ kubectl apply -f {{< param base_url >}}/quickstart/contour.yaml
 ```
 
 ### Option 2: Install using Operator
@@ -34,7 +34,7 @@ __FEATURE STATE:__ Contour v1.11.0 [alpha][13]
 Deploy Contour using the [operator][14]. First deploy the operator:
 
 ```bash
-$ kubectl apply -f https://projectcontour.io/quickstart/operator.yaml
+$ kubectl apply -f {{< param base_url >}}/quickstart/operator.yaml
 ```
 
 This command creates:
@@ -48,7 +48,7 @@ This command creates:
 Then create an instance of the Contour custom resource:
 
 ```bash
-$ kubectl apply -f https://projectcontour.io/quickstart/contour-custom-resource.yaml
+$ kubectl apply -f {{< param base_url >}}/quickstart/contour-custom-resource.yaml
 ```
 
 Deploying Contour using either option creates:
@@ -80,7 +80,7 @@ If you don't have an application ready to run with Contour, you can explore with
 Run:
 
 ```bash
-$ kubectl apply -f https://projectcontour.io/examples/kuard.yaml
+$ kubectl apply -f {{< param base_url >}}/examples/kuard.yaml
 ```
 
 This example specifies a default backend for all hosts, so that you can test your Contour install.

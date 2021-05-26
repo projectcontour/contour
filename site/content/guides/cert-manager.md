@@ -36,7 +36,7 @@ After you've been through the steps the first time, you don't need to repeat dep
 Run:
 
 ```bash
-$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+$ kubectl apply -f {{< param base_url >}}/quickstart/contour.yaml
 ```
 
 to set up Contour as a deployment in its own namespace, `projectcontour`, and tell the cloud provider to provision an external IP that is forwarded to the Contour pods.
@@ -93,7 +93,7 @@ For this tutorial we deploy a version of Kenneth Reitz's [httpbin.org service][3
 To deploy httpbin to your cluster, run this command:
 
 ```bash
-$ kubectl apply -f https://projectcontour.io/examples/httpbin.yaml
+$ kubectl apply -f {{< param base_url >}}/examples/httpbin.yaml
 ```
 
 Check that the pod is running:
@@ -111,7 +111,7 @@ Then type the DNS name you set up in the previous step into a web browser, for e
 You can delete the httpbin service now, or at any time, by running:
 
 ```bash
-$ kubectl delete -f https://projectcontour.io/examples/httpbin.yaml
+$ kubectl delete -f {{< param base_url >}}/examples/httpbin.yaml
 ```
 
 ## 2. Deploy jetstack/cert-manager
