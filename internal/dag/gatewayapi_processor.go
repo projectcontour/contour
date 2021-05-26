@@ -114,74 +114,77 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			continue
 		}
 
-		for _, route := range p.source.httproutes {
+		switch listener.Routes.Kind {
+		case KindHTTPRoute:
+			for _, route := range p.source.httproutes {
 
-			// Filter the HTTPRoutes that match the gateway which Contour is configured to watch.
-			// RouteBindingSelector defines a schema for associating routes with the Gateway.
-			// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
+				// Filter the HTTPRoutes that match the gateway which Contour is configured to watch.
+				// RouteBindingSelector defines a schema for associating routes with the Gateway.
+				// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
 
-			// ## RouteBindingSelector ##
-			//
-			// Selector specifies a set of route labels used for selecting routes to associate
-			// with the Gateway. If this Selector is defined, only routes matching the Selector
-			// are associated with the Gateway. An empty Selector matches all routes.
+				// ## RouteBindingSelector ##
+				//
+				// Selector specifies a set of route labels used for selecting routes to associate
+				// with the Gateway. If this Selector is defined, only routes matching the Selector
+				// are associated with the Gateway. An empty Selector matches all routes.
 
-			nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route.Namespace)
-			if err != nil {
-				p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
-			}
-
-			selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
-			if err != nil {
-				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
-			}
-
-			// If all the match criteria for this HTTPRoute match the Gateway, then add
-			// the route to the set of matchingRoutes.
-			if selMatches && nsMatches {
-
-				gatewayAllowMatches := p.gatewayMatches(route.Spec.Gateways, route.Namespace)
-				if (listener.Routes.Selector != nil || listener.Routes.Namespaces != nil) && !gatewayAllowMatches {
-
-					// If a label selector or namespace selector matches, but the gateway Allow doesn't
-					// then set the "Admitted: false" for the route.
-					routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
-					routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
-					commit()
-					continue
+				nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route.Namespace)
+				if err != nil {
+					p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
 				}
 
-				if gatewayAllowMatches {
+				selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
+				if err != nil {
+					p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+				}
+
+				// If all the match criteria for this HTTPRoute match the Gateway, then add
+				// the route to the set of matchingRoutes.
+				if selMatches && nsMatches {
+
+					gatewayAllowMatches := p.gatewayMatches(route.Spec.Gateways, route.Namespace)
+					if (listener.Routes.Selector != nil || listener.Routes.Namespaces != nil) && !gatewayAllowMatches {
+
+						// If a label selector or namespace selector matches, but the gateway Allow doesn't
+						// then set the "Admitted: false" for the route.
+						routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
+						routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+						commit()
+						continue
+					}
+
+					if gatewayAllowMatches {
+						// Empty Selector matches all routes.
+						matchingHTTPRoutes = append(matchingHTTPRoutes, route)
+					}
+				}
+			}
+		case KindTLSRoute:
+			for _, route := range p.source.tlsroutes {
+				// Filter the TLSRoutes that match the gateway which Contour is configured to watch.
+				// RouteBindingSelector defines a schema for associating routes with the Gateway.
+				// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
+
+				// ## RouteBindingSelector ##
+				//
+				// Selector specifies a set of route labels used for selecting routes to associate
+				// with the Gateway. If this Selector is defined, only routes matching the Selector
+				// are associated with the Gateway. An empty Selector matches all routes.
+
+				nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route.Namespace)
+				if err != nil {
+					p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
+				}
+
+				selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
+				if err != nil {
+					p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+				}
+
+				if selMatches && nsMatches {
 					// Empty Selector matches all routes.
-					matchingHTTPRoutes = append(matchingHTTPRoutes, route)
+					matchingTLSRoutes = append(matchingTLSRoutes, route)
 				}
-			}
-		}
-
-		for _, route := range p.source.tlsroutes {
-			// Filter the TLSRoutes that match the gateway which Contour is configured to watch.
-			// RouteBindingSelector defines a schema for associating routes with the Gateway.
-			// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
-
-			// ## RouteBindingSelector ##
-			//
-			// Selector specifies a set of route labels used for selecting routes to associate
-			// with the Gateway. If this Selector is defined, only routes matching the Selector
-			// are associated with the Gateway. An empty Selector matches all routes.
-
-			nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route.Namespace)
-			if err != nil {
-				p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
-			}
-
-			selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
-			if err != nil {
-				p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
-			}
-
-			if selMatches && nsMatches {
-				// Empty Selector matches all routes.
-				matchingTLSRoutes = append(matchingTLSRoutes, route)
 			}
 		}
 

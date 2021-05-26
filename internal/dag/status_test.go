@@ -2483,7 +2483,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 }
 
-func TestGatewayAPIDAGStatus(t *testing.T) {
+func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 
 	type testcase struct {
 		objs []interface{}
@@ -2510,7 +2510,7 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 						Spec: gatewayapi_v1alpha1.GatewaySpec{
 							Listeners: []gatewayapi_v1alpha1.Listener{{
 								Port:     80,
-								Protocol: "HTTP",
+								Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
 								Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 									Selector: &metav1.LabelSelector{
 										MatchLabels: map[string]string{
@@ -3378,6 +3378,98 @@ func TestGatewayAPIDAGStatus(t *testing.T) {
 			},
 		}},
 	})
+}
+
+func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
+
+	type testcase struct {
+		objs []interface{}
+		want []*status.ConditionsUpdate
+	}
+
+	run := func(t *testing.T, desc string, tc testcase) {
+		t.Helper()
+		t.Run(desc, func(t *testing.T) {
+			t.Helper()
+			builder := Builder{
+				Source: KubernetesCache{
+					RootNamespaces: []string{"roots", "marketing"},
+					FieldLogger:    fixture.NewTestLogger(t),
+					ConfiguredGateway: types.NamespacedName{
+						Namespace: "contour",
+						Name:      "projectcontour",
+					},
+					gateway: &gatewayapi_v1alpha1.Gateway{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "contour",
+							Namespace: "projectcontour",
+						},
+						Spec: gatewayapi_v1alpha1.GatewaySpec{
+							Listeners: []gatewayapi_v1alpha1.Listener{{
+								Port:     80,
+								Protocol: gatewayapi_v1alpha1.TLSProtocolType,
+								Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+									Selector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											"app": "contour",
+										},
+									},
+									Kind: KindTLSRoute,
+								},
+							}},
+						},
+					},
+				},
+				Processors: []Processor{
+					&IngressProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&HTTPProxyProcessor{},
+					&GatewayAPIProcessor{
+						FieldLogger: fixture.NewTestLogger(t),
+					},
+					&ListenerProcessor{},
+				},
+			}
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			dag := builder.Build()
+			gotUpdates := dag.StatusCache.GetRouteUpdates()
+
+			ops := []cmp.Option{
+				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"),
+				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "ExistingConditions"),
+				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "GatewayRef"),
+				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "Generation"),
+				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "TransitionTime"),
+				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "Resource"),
+				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
+					return i.Message < j.Message
+				}),
+			}
+
+			if diff := cmp.Diff(tc.want, gotUpdates, ops...); diff != "" {
+				t.Fatalf("expected: %v, got %v", tc.want, diff)
+			}
+
+		})
+	}
+
+	kuardService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
 
 	run(t, "TLSRoute: spec.rules.forwardTo.serviceName not specified", testcase{
 		objs: []interface{}{
