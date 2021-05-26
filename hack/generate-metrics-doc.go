@@ -79,23 +79,19 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	tableRowFormat := "| %s | %s |\n"
-	// Empty header and table header/content divider.
-	tableHeader := "| | |\n| - | - |\n"
-	for _, mf := range family {
-		f, err := os.OpenFile(fmt.Sprintf("%s.md", mf.GetName()), os.O_CREATE|os.O_RDWR, 0644)
-		if err != nil {
-			log.Fatalf("%s", err)
-		}
-
-		fmt.Fprintf(f, "* %s\n\n", mf.GetHelp())
-		fmt.Fprint(f, tableHeader)
-		fmt.Fprintf(f, tableRowFormat, "name", mf.GetName())
-		fmt.Fprintf(f, tableRowFormat, "type", typeof(mf))
-		fmt.Fprintf(f, tableRowFormat, "labels", labels(mf))
-
-		f.Close()
+	f, err := os.OpenFile("table.md", os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatalf("%s", err)
 	}
+
+	fmt.Fprintln(f, "| Name | Type | Labels | Description |")
+	fmt.Fprintln(f, "| ---- | ---- | ------ | ----------- |")
+
+	for _, mf := range family {
+		fmt.Fprintf(f, "| %s | %s | %s | %s |\n", mf.GetName(), typeof(mf), labels(mf), mf.GetHelp())
+	}
+
+	f.Close()
 
 	runPromlint(family)
 }
