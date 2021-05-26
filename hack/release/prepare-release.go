@@ -95,28 +95,21 @@ func updateConfigForSite(filePath string, vers string) error {
 		return err
 	}
 
-	scopeNode := yaml.MustParse(
-		fmt.Sprintf(`
-scope:
-  path: docs/%s
-values:
-  version: %s
-  layout: "docs"
-`, vers, vers))
-
 	rn := yaml.MustParse(string(data))
 
-	// Append the new scope to the "defaults" array.
+	// Set params.docs_latest to the provided version.
 	if _, err := rn.Pipe(
-		yaml.Lookup("defaults"),
-		yaml.Append(scopeNode.YNode()),
+		yaml.Lookup("params"),
+		yaml.FieldSetter{Name: "docs_latest", StringValue: vers},
 	); err != nil {
-		log.Fatalf("%s", err)
+		return err
 	}
 
-	// Set this version to the "latest" value.
+	// Set params.latest_release_tag_name to the provided version.
 	if _, err := rn.Pipe(
-		yaml.FieldSetter{Name: "latest", StringValue: vers}); err != nil {
+		yaml.Lookup("params"),
+		yaml.FieldSetter{Name: "latest_release_tag_name", StringValue: vers},
+	); err != nil {
 		return err
 	}
 
@@ -125,16 +118,28 @@ values:
 		Value: vers,
 	}
 
-	// Insert the new scope to the "defaults" array. We insert
-	// after the "main" element so that it stays in order.
+	// Add the new version to the params.docs_versions array.
+	// We insert after the "main" element so that it stays in
+	// order.
 	if _, err := rn.Pipe(
-		yaml.Lookup("versions"),
+		yaml.Lookup("params", "docs_versions"),
 		InsertAfter{After: "main", Node: &versNode},
 	); err != nil {
 		log.Fatalf("%s", err)
 	}
 
 	return ioutil.WriteFile(filePath, []byte(rn.MustString()), 0644)
+}
+
+func updateIndexFile(filePath, oldVers, newVers string) error {
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	upd := strings.ReplaceAll(string(data), "version: "+oldVers, "version: "+newVers)
+
+	return ioutil.WriteFile(filePath, []byte(upd), 0644)
 }
 
 func main() {
@@ -169,20 +174,24 @@ func main() {
 	oldTocName := strings.ReplaceAll(fmt.Sprintf("%s-toc", oldVers), ".", "-")
 
 	// Make a versioned copy of the oldVers docs.
-	run([]string{"cp", "-r", fmt.Sprintf("site/docs/%s", oldVers), fmt.Sprintf("site/docs/%s", newVers)})
-	run([]string{"git", "add", fmt.Sprintf("site/docs/%s", newVers)})
+	run([]string{"cp", "-r", fmt.Sprintf("site/content/docs/%s", oldVers), fmt.Sprintf("site/content/docs/%s", newVers)})
+	run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s", newVers)})
+
+	// Update site/content/docs/<newVers>/_index.md content.
+	must(updateIndexFile(fmt.Sprintf("site/content/docs/%s/_index.md", newVers), oldVers, newVers))
+	run([]string{"git", "add", fmt.Sprintf("site/content/docs/%s/_index.md", newVers)})
 
 	// Make a versioned TOC for the docs.
-	run([]string{"cp", "-r", fmt.Sprintf("site/_data/%s.yml", oldTocName), fmt.Sprintf("site/_data/%s.yml", tocName)})
-	run([]string{"git", "add", fmt.Sprintf("site/_data/%s.yml", tocName)})
+	run([]string{"cp", "-r", fmt.Sprintf("site/data/docs/%s.yml", oldTocName), fmt.Sprintf("site/data/docs/%s.yml", tocName)})
+	run([]string{"git", "add", fmt.Sprintf("site/data/docs/%s.yml", tocName)})
 
 	// Insert the versioned TOC.
-	must(updateMappingForTOC("site/_data/toc-mapping.yml", newVers, tocName))
-	run([]string{"git", "add", "site/_data/toc-mapping.yml"})
+	must(updateMappingForTOC("site/data/docs/toc-mapping.yml", newVers, tocName))
+	run([]string{"git", "add", "site/data/docs/toc-mapping.yml"})
 
 	// Insert the versioned docs into the main site layout.
-	must(updateConfigForSite("site/_config.yml", newVers))
-	run([]string{"git", "add", "site/_config.yml"})
+	must(updateConfigForSite("site/config.yaml", newVers))
+	run([]string{"git", "add", "site/config.yaml"})
 
 	// Now commit everything
 	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Prepare documentation site for %s release.", newVers)})
