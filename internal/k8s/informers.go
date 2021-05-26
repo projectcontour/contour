@@ -48,12 +48,16 @@ func IngressV1Resources() []schema.GroupVersionResource {
 	}
 }
 
-// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gateways;httproutes;backendpolicies;tlsroutes;tcproutes;udproutes,verbs=get;list;watch
-// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=httproutes/status;backendpolicies/status;tlsroutes/status;tcproutes/status;udproutes/status,verbs=update
+// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gatewayclasses;gateways;httproutes;backendpolicies;tlsroutes;tcproutes;udproutes,verbs=get;list;watch
+// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gatewayclasses/status;httproutes/status;backendpolicies/status;tlsroutes/status;tcproutes/status;udproutes/status,verbs=update
 
-// GatewayAPIResources ...
+// GatewayAPIResources returns a list of Gateway API group/version resources.
 func GatewayAPIResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{{
+		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Resource: "gatewayclasses",
+	}, {
 		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
 		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
 		Resource: "gateways",

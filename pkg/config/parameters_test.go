@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+	"k8s.io/utils/pointer"
 )
 
 func TestGetenvOr(t *testing.T) {
@@ -170,8 +171,24 @@ func TestValidateGatewayParameters(t *testing.T) {
 	gw = &GatewayParameters{Name: "", Namespace: "ns"}
 	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required")
 
-	// Not required if both aren't passed.
-	gw = &GatewayParameters{Name: "", Namespace: ""}
+	// Name is required if controllerName and namespace are passed.
+	gw = &GatewayParameters{ControllerName: pointer.StringPtr("controller"), Name: "", Namespace: "ns"}
+	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required")
+
+	// Namespace is required if controllerName and name are passed.
+	gw = &GatewayParameters{ControllerName: pointer.StringPtr("controller"), Name: "gwname", Namespace: ""}
+	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: namespace required")
+
+	// Namespace and name are required if controllerName is passed.
+	gw = &GatewayParameters{ControllerName: pointer.StringPtr("controller"), Name: "", Namespace: ""}
+	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required, namespace required")
+
+	// ControllerName should not be required.
+	gw = &GatewayParameters{Name: "gwname", Namespace: "ns"}
+	assert.Equal(t, nil, gw.Validate())
+
+	// Not required if nothing is passed.
+	gw = &GatewayParameters{ControllerName: nil, Name: "", Namespace: ""}
 	assert.Equal(t, nil, gw.Validate())
 }
 

@@ -209,11 +209,11 @@ $ kubectl delete ns contour-operator
 ```
 
 [1]: #running-without-a-kubernetes-loadbalancer
-[2]: {{< param github_url>}}/tree/{{< param latest_release_tag_name >}}/examples/contour
+[2]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour
 [3]: #host-networking
 [4]: /guides/proxy-proto.md
 [5]: https://github.com/kubernetes-up-and-running/kuard
-[7]: {{< param github_url>}}/tree/{{< param latest_release_tag_name >}}/examples/contour/02-service-envoy.yaml
+[7]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour/02-service-envoy.yaml
 [8]: /getting-started.md
 [9]: config/fundamentals.md
 [10]: /guides/deploy-aws-nlb.md

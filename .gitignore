@@ -15,8 +15,6 @@ securelocalenvoyconfig.yaml
 _ignore
 node_modules
 _site
-.jekyll
-.jekyll-metadata
 .bundle
 .vscode
 bundler
@@ -25,6 +23,7 @@ bundler
 *.js.map
 *.css.map
 .ruby-version
+site/public
 
 # Saved container image archive
 image/

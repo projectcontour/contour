@@ -79,21 +79,19 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	for _, mf := range family {
-		f, err := os.OpenFile(fmt.Sprintf("%s.md", mf.GetName()), os.O_CREATE|os.O_RDWR, 0644)
-		if err != nil {
-			log.Fatalf("%s", err)
-		}
-
-		fmt.Fprintf(f, "---\n")
-		fmt.Fprintf(f, "name: '%s'\n", mf.GetName())
-		fmt.Fprintf(f, "type: '%s'\n", typeof(mf))
-		fmt.Fprintf(f, "labels: '%s'\n", labels(mf))
-		fmt.Fprintf(f, "---\n")
-		fmt.Fprintf(f, "\n%s\n", mf.GetHelp())
-
-		f.Close()
+	f, err := os.OpenFile("table.md", os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatalf("%s", err)
 	}
+
+	fmt.Fprintln(f, "| Name | Type | Labels | Description |")
+	fmt.Fprintln(f, "| ---- | ---- | ------ | ----------- |")
+
+	for _, mf := range family {
+		fmt.Fprintf(f, "| %s | %s | %s | %s |\n", mf.GetName(), typeof(mf), labels(mf), mf.GetHelp())
+	}
+
+	f.Close()
 
 	runPromlint(family)
 }
