@@ -215,6 +215,72 @@ var _ = Describe("Gateway API", func() {
 			testTLSRoute(f)
 		})
 	})
+
+	Describe("Wildcard TLS Gateway", func() {
+		var gateway *gatewayv1alpha1.Gateway
+		var cleanupCert func()
+
+		BeforeEach(func() {
+			gateway = &gatewayv1alpha1.Gateway{
+				// Namespace and name need to match what's
+				// configured in the Contour config file.
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour",
+				},
+				Spec: gatewayv1alpha1.GatewaySpec{
+					GatewayClassName: "contour-class",
+					Listeners: []gatewayv1alpha1.Listener{
+						{
+							Protocol: gatewayv1alpha1.HTTPProtocolType,
+							Port:     gatewayv1alpha1.PortNumber(80),
+							Routes: gatewayv1alpha1.RouteBindingSelector{
+								Kind: "HTTPRoute",
+								Namespaces: &gatewayv1alpha1.RouteNamespaces{
+									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+								},
+								Selector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{"type": "insecure"},
+								},
+							},
+						},
+						{
+							Protocol: gatewayv1alpha1.HTTPSProtocolType,
+							Port:     gatewayv1alpha1.PortNumber(443),
+							TLS: &gatewayv1alpha1.GatewayTLSConfig{
+								CertificateRef: &gatewayv1alpha1.LocalObjectReference{
+									Group: "core",
+									Kind:  "Secret",
+									Name:  "tlscert",
+								},
+							},
+							Routes: gatewayv1alpha1.RouteBindingSelector{
+								Kind: "HTTPRoute",
+								Namespaces: &gatewayv1alpha1.RouteNamespaces{
+									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+								},
+								Selector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{"type": "secure"},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
+			cleanupCert = f.Certs.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "*.wildcardhost.gateway.projectcontour.io")
+		})
+
+		AfterEach(func() {
+			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
+			cleanupCert()
+		})
+
+		It("009-tls-wildcard-host", func() {
+			testTLSWildcardHost(f)
+		})
+	})
 })
 
 func stringPtr(s string) *string {

@@ -9,10 +9,10 @@ readonly REPO=$(cd ${HERE}/../.. && pwd)
 
 declare -r -a TARGETS=(
 	${REPO}/apis
-	${REPO}/site/_metrics
+	${REPO}/site/content/guides/metrics
 	${REPO}/examples/render
 	${REPO}/examples/contour
-	${REPO}/site/docs/main/config/api-reference.html
+	${REPO}/site/content/docs/main/config/api-reference.html
 )
 
 if git status -s ${TARGETS[@]} 2>&1 | grep -E -q '^\s+[MADRCU]'

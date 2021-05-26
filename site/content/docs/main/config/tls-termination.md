@@ -246,5 +246,5 @@ spec:
       weight: 20
 ```
 
-[1]: {{< param github_url>}}/tree/{{< param latest_release_tag_name >}}/examples/contour/01-contour-config.yaml
+[1]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour/01-contour-config.yaml
 [2]: https://www.envoyproxy.io/docs/envoy/latest/configuration/listeners/stats#tls-statistics

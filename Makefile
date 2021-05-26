@@ -9,12 +9,6 @@ SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
 ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.18.3
 
-# The version of Jekyll is pinned in site/Gemfile.lock.
-# https://docs.netlify.com/configure-builds/common-configurations/#jekyll
-JEKYLL_IMAGE := jekyll/jekyll:4
-JEKYLL_PORT := 4000
-JEKYLL_LIVERELOAD_PORT := 35729
-
 TAG_LATEST ?= false
 
 ifeq ($(TAG_LATEST), true)
@@ -178,7 +172,7 @@ lint-golint:
 .PHONY: check-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
-	@./hack/yamllint examples/ site/examples/
+	@./hack/yamllint examples/ site/content/examples/
 
 # Check that CLI flags are formatted consistently. We are checking
 # for calls to Kingping Flags() and Command() APIs where the 2nd
@@ -198,7 +192,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-uml
 
 .PHONY: generate-rbac
 generate-rbac:
@@ -224,11 +218,6 @@ generate-crd-yaml:
 generate-api-docs:
 	@echo "Generating API documentation..."
 	@./hack/generate-api-docs.sh github.com/projectcontour/contour/apis/projectcontour
-
-.PHONY: generate-metrics-docs
-generate-metrics-docs:
-	@echo Generating metrics documentation ...
-	@cd site/_metrics && rm -f *.md && go run ../../hack/generate-metrics-doc.go
 
 .PHONY: check-generate
 check-generate: generate
@@ -326,13 +315,12 @@ generate-uml: $(patsubst %.uml,%.png,$(wildcard site/img/uml/*.uml))
 	cd `dirname $@` && plantuml `basename "$^"`
 
 .PHONY: site-devel
-site-devel: ## Launch the website in a Docker container
-	docker run --rm -p $(JEKYLL_PORT):$(JEKYLL_PORT) -p $(JEKYLL_LIVERELOAD_PORT):$(JEKYLL_LIVERELOAD_PORT) -v $$(pwd)/site:/site -it $(JEKYLL_IMAGE) \
-		bash -c "cd /site && bundle install --path bundler/cache && bundle exec jekyll serve --host 0.0.0.0 --port $(JEKYLL_PORT) --livereload_port $(JEKYLL_LIVERELOAD_PORT) --livereload --force_polling --incremental"
+site-devel: ## Launch the website
+	cd site && hugo serve
 
 .PHONY: site-check
 site-check: ## Test the site's links
-	docker run --rm -v $$(pwd):/src -it $(JEKYLL_IMAGE) bash -c "cd /src && ./hack/site-proofing/cibuild"
+	# TODO: Clean up to use htmltest
 
 check-integration:
 	@integration-tester --version > /dev/null 2>&1 || (echo "ERROR: To run the integration tests, you will need to install integration-tester (https://github.com/projectcontour/integration-tester)"; exit 1)

@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/projectcontour/contour/internal/k8s"
@@ -544,6 +545,21 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 					route.DirectResponse = &DirectResponse{
 						StatusCode: http.StatusServiceUnavailable,
 					}
+				}
+
+				// If we have a wildcard match, add a header match regex rule to match the
+				// hostname so we can be sure to only match one DNS label. This is required
+				// as Envoy's virtualhost hostname wildcard matching can match multiple
+				// labels. This match ignores a port in the hostname in case it is present.
+				if strings.HasPrefix(host, "*.") {
+					route.HeaderMatchConditions = append(route.HeaderMatchConditions, HeaderMatchCondition{
+						// Internally Envoy uses the HTTP/2 ":authority" header in
+						// place of the HTTP/1 "host" header.
+						// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-headermatcher
+						Name:      ":authority",
+						MatchType: HeaderMatchTypeRegex,
+						Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(host[1:]),
+					})
 				}
 
 				if listenerSecret != nil {
