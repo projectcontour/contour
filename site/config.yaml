@@ -24,6 +24,7 @@ markup:
     renderer:
       unsafe: true
 params:
+  base_url: "https://projectcontour.io"
   twitter_url: "https://twitter.com/projectcontour"
   github_url: "https://github.com/projectcontour/contour"
   slack_url: "https://kubernetes.slack.com/messages/contour"

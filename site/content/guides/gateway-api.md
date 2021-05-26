@@ -43,7 +43,7 @@ resources should be managed by active controllers that are implemented by the op
 
 Run the operator:
 ```shell
-$ kubectl apply -f https://projectcontour.io/quickstart/operator.yaml
+$ kubectl apply -f {{< param base_url >}}/quickstart/operator.yaml
 ```
 This command creates:
 
@@ -57,12 +57,12 @@ Create the Gateway API resources:
 
 Option 1: Using a LoadBalancer Service:
 ```shell
-$ kubectl apply -f https://projectcontour.io/quickstart/gateway.yaml
+$ kubectl apply -f {{< param base_url >}}/quickstart/gateway.yaml
 ```
 
 Option 2: Using a NodePort Service:
 ```shell
-$ kubectl apply -f https://projectcontour.io/quickstart/gateway-nodeport.yaml
+$ kubectl apply -f {{< param base_url >}}/quickstart/gateway-nodeport.yaml
 ```
 
 Either of the above options create:
@@ -78,7 +78,7 @@ Either of the above options create:
 
 Run the test application:
 ```shell
-$ kubectl apply -f https://projectcontour.io/quickstart/kuard.yaml
+$ kubectl apply -f {{< param base_url >}}/quickstart/kuard.yaml
 ```
 This command creates:
 
