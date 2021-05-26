@@ -31,7 +31,7 @@ Then the simplest way to upgrade to 1.15.1 is to delete the `projectcontour` nam
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.15.1/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.15.1/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -84,7 +84,7 @@ Then the simplest way to upgrade to 1.15.0 is to delete the `projectcontour` nam
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.15.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.15.0/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -149,7 +149,7 @@ Then the simplest way to upgrade to 1.14.1 is to delete the `projectcontour` nam
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.14.1/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.14.1/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -202,7 +202,7 @@ Then the simplest way to upgrade to 1.14.0 is to delete the `projectcontour` nam
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.14.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.14.0/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -267,7 +267,7 @@ Then the simplest way to upgrade to 1.13.1 is to delete the `projectcontour` nam
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.13.1/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.13.1/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -326,7 +326,7 @@ Then the simplest way to upgrade to 1.12.0 is to delete the `projectcontour` nam
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.12.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.12.0/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -386,7 +386,7 @@ Then the simplest way to upgrade to 1.11.0 is to delete the `projectcontour` nam
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.11.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.11.0/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -439,7 +439,7 @@ Then the simplest way to upgrade to 1.10.0 is to delete the `projectcontour` nam
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.10.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.10.0/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -493,7 +493,7 @@ Then the simplest way to upgrade to 1.9.0 is to delete the `projectcontour` name
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.9.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.9.0/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -549,7 +549,7 @@ Then the simplest way to upgrade to 1.8.0 is to delete the `projectcontour` name
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.8.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.8.0/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -605,7 +605,7 @@ Then the simplest way to upgrade to 1.7.0 is to delete the `projectcontour` name
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.7.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.7.0/contour.yaml
 ```
 
 This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -672,7 +672,7 @@ Then the simplest way to upgrade to 1.6.1 is to delete the `projectcontour` name
 $ kubectl delete crd ingressroutes.contour.heptio.com
 $ kubectl delete crd tlscertificatedelegations.contour.heptio.com
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.6.1/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.6.1/contour.yaml
 ```
 
 This will remove the IngressRoute CRD, and both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -736,7 +736,7 @@ Then the simplest way to upgrade to 1.5.1 is to delete the `projectcontour` name
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.5.1/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.5.1/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -795,7 +795,7 @@ Then the simplest way to upgrade to 1.4.0 is to delete the `projectcontour` name
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.4.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.4.0/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -852,7 +852,7 @@ Then the simplest way to upgrade to 1.3.0 is to delete the `projectcontour` name
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.3.0/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.3.0/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -891,7 +891,7 @@ From the root directory of the repository:
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.2.1/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.2.1/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -937,7 +937,7 @@ From the root directory of the repository:
 
 ```bash
 $ kubectl delete namespace projectcontour
-$ kubectl apply -f {{site.url}}/quickstart/v1.2.1/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.2.1/contour.yaml
 ```
 
 This will remove both the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
@@ -1023,7 +1023,7 @@ Contour 1.1.0 requires Envoy 1.12.2. Change the Envoy image version to `docker.i
 If you are running Contour 1.0.0, the easy way to upgrade to Contour 1.0.1 is to reapply the [quickstart yaml][16].
 
 ```bash
-$ kubectl apply -f {{site.url}}/quickstart/v1.0.1/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/v1.0.1/contour.yaml
 ```
 
 ### The less easy way

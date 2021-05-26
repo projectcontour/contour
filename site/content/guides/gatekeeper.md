@@ -21,7 +21,7 @@ The benefits of using Gatekeeper with Contour are:
 Run:
 
 ```bash
-$ kubectl apply -f {{ site.url }}/quickstart/contour.yaml
+$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
 ```
 
 This creates a `projectcontour` namespace and sets up Contour as a deployment and Envoy as a daemonset, with communication between them secured by mutual TLS.
