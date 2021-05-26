@@ -119,7 +119,7 @@ The critical communication paths and how they are set up to be FIPS compliant ar
   - A FIPS compliant build of Envoy will choose FIPS approved TLS ciphers when negotiating TLS 1.2 as documented [here][15]
   - The set of ciphers is not configurable
 - TLS client -> Envoy
-  - As of [Contour 1.13.0][16], the ciphers Envoy will accept as a server when negotiating TLS 1.2
+  - As of [Contour 1.13.0][16], the ciphers Envoy will accept as a server when negotiating TLS 1.2 are configurable
   - The [default set of ciphers Contour configures][17] includes some ciphers that are not FIPS approved
   - Users must configure FIPS approved ciphers from the list [here][15]
 
