@@ -127,6 +127,10 @@ jobs:
             node_image: "docker.io/kindest/node:v1.19.7"
     steps:
       - uses: actions/checkout@v2
+        with:
+          # Fetch history for all tags and branches so we can figure out most
+          # recent release tag.
+          fetch-depth: 0
       - name: Download image
         uses: actions/download-artifact@v2
         with:
@@ -150,7 +154,6 @@ jobs:
         env:
           NODEIMAGE: ${{ matrix.node_image }}
           LOAD_PREBUILT_IMAGE: "true"
-          CONTOUR_UPGRADE_FROM_VERSION: v1.15.1
         run: |
           export CONTOUR_UPGRADE_TO_IMAGE="projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make upgrade
