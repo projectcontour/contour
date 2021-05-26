@@ -24,7 +24,7 @@ gendoc::build() {
 # Exec the doc generator. Note that we use custom templates to inject
 # the CSS styles that make the output look better on the Contour site.
 gendoc::exec() {
-    local -r confdir="${REPO}/site/_data/refdocs"
+    local -r confdir="${REPO}/hack/api-docs-config/refdocs"
 
     "${GOBIN}"/gen-crd-api-reference-docs \
         -template-dir "${confdir}" \
