@@ -180,6 +180,7 @@ The gateway configuration block is used to configure which gateway-api Gateway C
 
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
+| controllerName | string |  | Gateway Class controller name (i.e. projectcontour.io/projectcontour/contour).  |
 | name | string | contour | This field specifies the name of a Gateway.  |
 | namespace | string | projectcontour | This field specifies the namespace of a Gateway.  |
 
@@ -238,6 +239,7 @@ data:
     #
     # specify the gateway-api Gateway Contour should configure
     # gateway:
+    #   controllerName: projectcontour.io/projectcontour/contour
     #   name: contour
     #   namespace: projectcontour
     #
