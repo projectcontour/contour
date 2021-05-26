@@ -27,17 +27,7 @@ Contour exposes a Prometheus-compatible `/metrics` endpoint that defaults to lis
 
 **The metrics endpoint exposes the following metrics:**
 
-{{% include "guides/metrics/contour_build_info.md" %}}
-{{% include "guides/metrics/contour_cachehandler_onupdate_duration_seconds.md" %}}
-{{% include "guides/metrics/contour_dagrebuild_timestamp.md" %}}
-{{% include "guides/metrics/contour_dagrebuild_total.md" %}}
-{{% include "guides/metrics/contour_eventhandler_operation_total.md" %}}
-{{% include "guides/metrics/contour_httpproxy_invalid.md" %}}
-{{% include "guides/metrics/contour_httpproxy_orphaned.md" %}}
-{{% include "guides/metrics/contour_httpproxy_root.md" %}}
-{{% include "guides/metrics/contour_httpproxy_valid.md" %}}
-{{% include "guides/metrics/contour_httpproxy.md" %}}
-
+{{% include "guides/metrics/table.md" %}}
 
 ## Sample Deployment
 

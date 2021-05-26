@@ -192,7 +192,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-uml
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml
 
 .PHONY: generate-rbac
 generate-rbac:
@@ -218,6 +218,11 @@ generate-crd-yaml:
 generate-api-docs:
 	@echo "Generating API documentation..."
 	@./hack/generate-api-docs.sh github.com/projectcontour/contour/apis/projectcontour
+
+.PHONY: generate-metrics-docs
+generate-metrics-docs:
+	@echo Generating metrics documentation ...
+	@cd site/content/guides/metrics && rm -f *.md && go run ../../../../hack/generate-metrics-doc.go
 
 .PHONY: check-generate
 check-generate: generate
