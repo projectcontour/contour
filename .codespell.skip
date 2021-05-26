@@ -1,12 +1,11 @@
 .git
 *.png
 *.woff
+*.woff2
+*.eot
 *.ttf
 *.jpg
 *.ico
-./site/Gemfile.lock
-./site/_config.yml
-./site/bundler
-./site/.jekyll-cache
-./site/_site
+*.svg
+./site/themes/contour/static/fonts/README.md
 ./vendor
