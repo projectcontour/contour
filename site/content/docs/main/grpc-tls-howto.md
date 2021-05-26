@@ -50,7 +50,7 @@ $ openssl genrsa -out certs/contourkey.pem 2048
 ```
 
 Then, we create a CSR and have our CA sign the CSR and issue a certificate.
-This uses the file [_integration/cert-contour.ext][2], which ensures that at least one of the valid names of the certificate is the bareword `contour`.
+This uses the file [certs/cert-contour.ext][2], which ensures that at least one of the valid names of the certificate is the bareword `contour`.
 This is required for the handshake to succeed, as `contour bootstrap` configures Envoy to pass this as the SNI server name for the connection.
 
 ```
@@ -64,7 +64,7 @@ $ openssl x509 -req -in certs/contour.csr \
     -CAcreateserial \
     -out certs/contourcert.pem \
     -days 1825 -sha256 \
-    -extfile _integration/cert-contour.ext
+    -extfile certs/cert-contour.ext
 ```
 
 At this point, the contour certificate and key are in the files `certs/contourcert.pem` and `certs/contourkey.pem` respectively.
@@ -90,10 +90,10 @@ $ openssl x509 -req -in certs/envoy.csr \
     -CAcreateserial \
     -out certs/envoycert.pem \
     -days 1825 -sha256 \
-    -extfile _integration/cert-envoy.ext
+    -extfile certs/cert-envoy.ext
 ```
 
-Like the Contour certificate, this CSR uses the file [_integration/cert-envoy.ext][3].
+Like the Contour certificate, this CSR uses the file [certs/cert-envoy.ext][3].
 However, in this case, there are no special names required.
 
 ### Putting the certificates in the cluster
@@ -162,8 +162,8 @@ Once this process is done, the certificates will be present as Secrets in the `p
 [examples/contour][5].
 
 [1]: {{< param github_url >}}/tree/{{< param version >}}/examples/contour/02-job-certgen.yaml
-[2]: {{< param github_url >}}/tree/{{< param version >}}/_integration/cert-contour.ext
-[3]: {{< param github_url >}}/tree/{{< param version >}}/_integration/cert-envoy.ext
+[2]: {{< param github_url >}}/tree/{{< param version >}}/certs/cert-contour.ext
+[3]: {{< param github_url >}}/tree/{{< param version >}}/certs/cert-envoy.ext
 [4]: {{< param github_url >}}/tree/{{< param version >}}/examples/contour/03-envoy.yaml
 [5]: {{< param github_url >}}/tree/{{< param version >}}/examples/contour
 
