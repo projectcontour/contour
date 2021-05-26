@@ -175,6 +175,8 @@ type contourDeploymentResources struct {
 
 // Unmarshals resources from rendered Contour manifest in order and updates
 // each.
+// Note: This will need to be updated if any new resources are added to the
+// rendered deployment manifest.
 func updateContourDeploymentResources() contourDeploymentResources {
 	file, err := os.Open("../../../examples/render/contour.yaml")
 	require.NoError(f.T(), err)
