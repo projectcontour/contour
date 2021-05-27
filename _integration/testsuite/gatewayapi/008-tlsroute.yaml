@@ -119,6 +119,8 @@ kind: TLSRoute
 metadata:
   name: tlsroute1
 spec:
+  gateways:
+    allow: All
   rules:
   - matches:
     - snis:
@@ -157,6 +159,8 @@ kind: TLSRoute
 metadata:
   name: tlsroute1
 spec:
+  gateways:
+    allow: All
   rules:
     - forwardTo:
         - serviceName: echo-slash-blue

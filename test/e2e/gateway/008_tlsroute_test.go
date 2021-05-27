@@ -43,23 +43,24 @@ func testTLSRoute(fx *e2e.Framework) {
 			Name:      "tls-route-1",
 		},
 		Spec: gatewayv1alpha1.TLSRouteSpec{
-			Rules: []gatewayv1alpha1.TLSRouteRule{
-				{
-					Matches: []gatewayv1alpha1.TLSRouteMatch{
-						{
-							SNIs: []gatewayv1alpha1.Hostname{
-								gatewayv1alpha1.Hostname("tlsroute.gatewayapi.projectcontour.io"),
-							},
-						},
-					},
-					ForwardTo: []gatewayv1alpha1.RouteForwardTo{
-						{
-							ServiceName: stringPtr("echo"),
-							Port:        portNumPtr(443),
+			Gateways: &gatewayv1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			},
+			Rules: []gatewayv1alpha1.TLSRouteRule{{
+				Matches: []gatewayv1alpha1.TLSRouteMatch{
+					{
+						SNIs: []gatewayv1alpha1.Hostname{
+							gatewayv1alpha1.Hostname("tlsroute.gatewayapi.projectcontour.io"),
 						},
 					},
 				},
-			},
+				ForwardTo: []gatewayv1alpha1.RouteForwardTo{
+					{
+						ServiceName: stringPtr("echo"),
+						Port:        portNumPtr(443),
+					},
+				},
+			}},
 		},
 	}
 	fx.CreateTLSRouteAndWaitFor(route, tlsRouteAdmitted)
