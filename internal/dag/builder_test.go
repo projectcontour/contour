@@ -143,6 +143,35 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	gatewayWithTLSRouteSelector := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindTLSRoute,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
+					},
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app": "contour",
+						},
+						MatchExpressions: []metav1.LabelSelectorRequirement{{
+							Key:      "type",
+							Operator: "In",
+							Values:   []string{"controller"},
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	gatewayWithSameNamespace := &gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
@@ -2272,7 +2301,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			),
 		},
 		"basic TLSRoute": {
-			gateway: gatewayWithSelector,
+			gateway: gatewayWithTLSRouteSelector,
 			objs: []interface{}{
 				kuardService,
 				&gatewayapi_v1alpha1.TLSRoute{
@@ -2314,7 +2343,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			),
 		},
 		"TLSRoute with multiple SNIs": {
-			gateway: gatewayWithSelector,
+			gateway: gatewayWithTLSRouteSelector,
 			objs: []interface{}{
 				kuardService,
 				&gatewayapi_v1alpha1.TLSRoute{
@@ -2376,7 +2405,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			),
 		},
 		"TLSRoute with multiple SNIs, one is invalid": {
-			gateway: gatewayWithSelector,
+			gateway: gatewayWithTLSRouteSelector,
 			objs: []interface{}{
 				kuardService,
 				&gatewayapi_v1alpha1.TLSRoute{
@@ -2458,7 +2487,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(),
 		},
 		"TLSRoute without any hostnames specified results in '*' match all": {
-			gateway: gatewayWithSelector,
+			gateway: gatewayWithTLSRouteSelector,
 			objs: []interface{}{
 				kuardService,
 				&gatewayapi_v1alpha1.TLSRoute{
