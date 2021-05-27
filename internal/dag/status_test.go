@@ -3086,7 +3086,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Type:    string(status.ConditionResolvedRefs),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonDegraded),
-					Message: "invalid listener hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+					Message: "invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 				},
 				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
 					Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
@@ -3732,7 +3732,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					Type:    string(status.ConditionResolvedRefs),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonDegraded),
-					Message: "invalid listener hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
+					Message: "invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 				},
 				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
 					Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
