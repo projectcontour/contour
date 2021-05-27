@@ -276,11 +276,11 @@ func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostn
 
 		hostname := string(host)
 
-		// A "*" hostname matches anything.
-		if hostname == "*" {
-			hosts[hostname] = struct{}{}
-			continue
-		}
+		//// A "*" hostname matches anything.
+		//if hostname == "*" {
+		//	hosts[hostname] = struct{}{}
+		//	continue
+		//}
 
 		// Validate the hostname.
 		if err := validHostName(hostname); err != nil {
@@ -306,17 +306,6 @@ func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostn
 					errors = append(errors, fmt.Errorf("gateway hostname %q does not match route hostname %q", lhn, hostname))
 					continue
 				}
-				//} else if strings.Contains(hostname, "*") {
-
-				//if removeFirstDNSLabel(lhn) != removeFirstDNSLabel(hostname) {
-				//	errors = append(errors, fmt.Errorf("hostnames hostname %q does not match gateway hostname %q", hostname, lhn))
-				//	continue
-				//}
-
-				// The Listener hostname is not a wildcard, but the route is a wildcard.
-				// Since the gateway is more specific, use that to match the route against.
-				//hosts[lhn] = struct{}{}
-				//continue
 			} else {
 				// Validate the gateway listener hostname matches the hostnames hostname.
 				errors = append(errors, fmt.Errorf("gateway hostname %q does not match route hostname %q", lhn, hostname))
