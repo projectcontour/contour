@@ -290,6 +290,24 @@ func TestComputeHosts(t *testing.T) {
 			want:      map[string]struct{}{},
 			wantError: []error{fmt.Errorf("invalid hostname \"*\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]")},
 		},
+		"listener wildcard host with bare hostname": {
+			listenerHost: listenerHostname("*"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"foo",
+			},
+			want: map[string]struct{}{
+				"foo": {},
+			},
+			wantError: nil,
+		},
+		"listener wildcard host with bare hostname is invalid": {
+			listenerHost: listenerHostname("*.foo"),
+			hostnames: []gatewayapi_v1alpha1.Hostname{
+				"foo",
+			},
+			want:      map[string]struct{}{},
+			wantError: []error{fmt.Errorf("gateway hostname \"*.foo\" does not match route hostname \"foo\"")},
+		},
 	}
 
 	for name, tc := range tests {

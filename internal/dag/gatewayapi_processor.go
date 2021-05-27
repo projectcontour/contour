@@ -318,7 +318,10 @@ func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostn
 }
 
 func removeFirstDNSLabel(input string) string {
-	return input[strings.IndexAny(input, ".")+1:]
+	if strings.Contains(input, ".") {
+		return input[strings.IndexAny(input, "."):]
+	}
+	return input
 }
 
 func validHostName(hostname string) error {
