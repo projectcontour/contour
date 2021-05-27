@@ -138,7 +138,7 @@ func TestComputeHosts(t *testing.T) {
 				"http.projectcontour.io",
 			},
 			want:      map[string]struct{}{},
-			wantError: []error{fmt.Errorf("gateway hostname \"listener.projectcontour.io\" does not match hostnames hostname \"http.projectcontour.io\"")},
+			wantError: []error{fmt.Errorf("gateway hostname \"listener.projectcontour.io\" does not match route hostname \"http.projectcontour.io\"")},
 		},
 		"listener host & hostnames host exactly match": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
@@ -161,8 +161,8 @@ func TestComputeHosts(t *testing.T) {
 				"http.projectcontour.io": {},
 			},
 			wantError: []error{
-				fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match hostnames hostname \"http2.projectcontour.io\""),
-				fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match hostnames hostname \"http3.projectcontour.io\""),
+				fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match route hostname \"http2.projectcontour.io\""),
+				fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match route hostname \"http3.projectcontour.io\""),
 			},
 		},
 		"listener host & hostnames host match wildcard host": {
@@ -181,17 +181,15 @@ func TestComputeHosts(t *testing.T) {
 				"http.example.com",
 			},
 			want:      map[string]struct{}{},
-			wantError: []error{fmt.Errorf("gateway hostname \"*.projectcontour.io\" does not match hostnames hostname \"http.example.com\"")},
+			wantError: []error{fmt.Errorf("gateway hostname \"*.projectcontour.io\" does not match route hostname \"http.example.com\"")},
 		},
-		"listener host & wildcard hostnames host match": {
+		"listener host & wildcard hostnames host do not match": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
 			hostnames: []gatewayapi_v1alpha1.Hostname{
 				"*.projectcontour.io",
 			},
-			want: map[string]struct{}{
-				"http.projectcontour.io": {},
-			},
-			wantError: nil,
+			want:      map[string]struct{}{},
+			wantError: []error{fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match route hostname \"*.projectcontour.io\"")},
 		},
 		"listener host & wildcard hostname and matching hostname match": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
@@ -202,7 +200,7 @@ func TestComputeHosts(t *testing.T) {
 			want: map[string]struct{}{
 				"http.projectcontour.io": {},
 			},
-			wantError: nil,
+			wantError: []error{fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match route hostname \"*.projectcontour.io\"")},
 		},
 		"listener host & wildcard hostname and non-matching hostname don't match": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
@@ -210,10 +208,11 @@ func TestComputeHosts(t *testing.T) {
 				"*.projectcontour.io",
 				"not.matching.io",
 			},
-			want: map[string]struct{}{
-				"http.projectcontour.io": {},
+			want: map[string]struct{}{},
+			wantError: []error{
+				fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match route hostname \"*.projectcontour.io\""),
+				fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match route hostname \"not.matching.io\""),
 			},
-			wantError: []error{fmt.Errorf("gateway hostname \"http.projectcontour.io\" does not match hostnames hostname \"not.matching.io\"")},
 		},
 		"listener host wildcard & wildcard hostnames host match": {
 			listenerHost: listenerHostname("*.projectcontour.io"),
@@ -263,7 +262,7 @@ func TestComputeHosts(t *testing.T) {
 				"*.projectcontour.io",
 			},
 			want:      map[string]struct{}{},
-			wantError: []error{fmt.Errorf("hostnames hostname \"*.projectcontour.io\" does not match gateway hostname \"too.many.labels.projectcontour.io\"")},
+			wantError: []error{fmt.Errorf("gateway hostname \"too.many.labels.projectcontour.io\" does not match route hostname \"*.projectcontour.io\"")},
 		},
 		"listener wildcard host doesn't match hostnames with many labels host": {
 			listenerHost: listenerHostname("*.projectcontour.io"),
@@ -271,7 +270,7 @@ func TestComputeHosts(t *testing.T) {
 				"too.many.labels.projectcontour.io",
 			},
 			want:      map[string]struct{}{},
-			wantError: []error{fmt.Errorf("gateway hostname \"*.projectcontour.io\" does not match hostnames hostname \"too.many.labels.projectcontour.io\"")},
+			wantError: []error{fmt.Errorf("gateway hostname \"*.projectcontour.io\" does not match route hostname \"too.many.labels.projectcontour.io\"")},
 		},
 		"listener wildcard host with wildcard hostnames": {
 			listenerHost: listenerHostname("*"),

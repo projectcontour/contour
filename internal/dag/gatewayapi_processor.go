@@ -289,7 +289,6 @@ func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostn
 		}
 
 		if listenerHostname != nil {
-			const wildcardString string = "[a-z0-9]([-a-z0-9]*[a-z0-9])*."
 			lhn := string(*listenerHostname)
 
 			// A "*" hostname matches anything.
@@ -303,38 +302,34 @@ func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostn
 				continue
 			} else if strings.Contains(lhn, "*") {
 
-				// Build a regex to match the hostname against the wildcard listener hostname.
-				wildcardDNS1123SubdomainRegexp := regexp.MustCompile("^" + strings.Replace(lhn, "*", wildcardString, 1) + "$")
-
-				// Validate the wildcard gateway listener hostname matches the hostnames hostname.
-				if !wildcardDNS1123SubdomainRegexp.MatchString(hostname) {
-					errors = append(errors, fmt.Errorf("gateway hostname %q does not match hostnames hostname %q", lhn, hostname))
+				if removeFirstDNSLabel(lhn) != removeFirstDNSLabel(hostname) {
+					errors = append(errors, fmt.Errorf("gateway hostname %q does not match route hostname %q", lhn, hostname))
 					continue
 				}
-			} else if strings.Contains(hostname, "*") {
+				//} else if strings.Contains(hostname, "*") {
 
-				// Build a regex to match the hostname against the wildcard hostnames hostname.
-				wildcardDNS1123SubdomainRegexp := regexp.MustCompile("^" + strings.Replace(hostname, "*", wildcardString, 1) + "$")
-
-				// Validate the wildcard hostnames hostname matches gateway listener hostname.
-				if !wildcardDNS1123SubdomainRegexp.MatchString(lhn) {
-					errors = append(errors, fmt.Errorf("hostnames hostname %q does not match gateway hostname %q", hostname, lhn))
-					continue
-				}
+				//if removeFirstDNSLabel(lhn) != removeFirstDNSLabel(hostname) {
+				//	errors = append(errors, fmt.Errorf("hostnames hostname %q does not match gateway hostname %q", hostname, lhn))
+				//	continue
+				//}
 
 				// The Listener hostname is not a wildcard, but the route is a wildcard.
 				// Since the gateway is more specific, use that to match the route against.
-				hosts[lhn] = struct{}{}
-				continue
+				//hosts[lhn] = struct{}{}
+				//continue
 			} else {
 				// Validate the gateway listener hostname matches the hostnames hostname.
-				errors = append(errors, fmt.Errorf("gateway hostname %q does not match hostnames hostname %q", lhn, hostname))
+				errors = append(errors, fmt.Errorf("gateway hostname %q does not match route hostname %q", lhn, hostname))
 				continue
 			}
 		}
 		hosts[hostname] = struct{}{}
 	}
 	return hosts, errors
+}
+
+func removeFirstDNSLabel(input string) string {
+	return input[strings.IndexAny(input, ".")+1:]
 }
 
 func validHostName(hostname string) error {
