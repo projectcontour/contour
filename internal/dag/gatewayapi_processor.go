@@ -142,8 +142,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				// the route to the set of matchingRoutes.
 				if selMatches && nsMatches {
 
-					gatewayAllowMatches := p.gatewayMatches(route.Spec.Gateways, route.Namespace)
-					if (listener.Routes.Selector != nil || listener.Routes.Namespaces != nil) && !gatewayAllowMatches {
+					if !p.gatewayMatches(route.Spec.Gateways, route.Namespace) {
 
 						// If a label selector or namespace selector matches, but the gateway Allow doesn't
 						// then set the "Admitted: false" for the route.
@@ -153,10 +152,8 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						continue
 					}
 
-					if gatewayAllowMatches {
-						// Empty Selector matches all routes.
-						matchingHTTPRoutes = append(matchingHTTPRoutes, route)
-					}
+					// Empty Selector matches all routes.
+					matchingHTTPRoutes = append(matchingHTTPRoutes, route)
 				}
 			}
 		case KindTLSRoute:
@@ -182,6 +179,17 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				}
 
 				if selMatches && nsMatches {
+
+					if !p.gatewayMatches(route.Spec.Gateways, route.Namespace) {
+
+						// If a label selector or namespace selector matches, but the gateway Allow doesn't
+						// then set the "Admitted: false" for the route.
+						routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
+						routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+						commit()
+						continue
+					}
+
 					// Empty Selector matches all routes.
 					matchingTLSRoutes = append(matchingTLSRoutes, route)
 				}
@@ -321,6 +329,10 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.R
 // matches one from the list.
 func (p *GatewayAPIProcessor) gatewayMatches(routeGateways *gatewayapi_v1alpha1.RouteGateways, namespace string) bool {
 
+	if routeGateways == nil || routeGateways.Allow == nil {
+		return true
+	}
+
 	switch *routeGateways.Allow {
 	case gatewayapi_v1alpha1.GatewayAllowAll:
 		return true
@@ -333,7 +345,6 @@ func (p *GatewayAPIProcessor) gatewayMatches(routeGateways *gatewayapi_v1alpha1.
 	case gatewayapi_v1alpha1.GatewayAllowSameNamespace:
 		return p.source.ConfiguredGateway.Namespace == namespace
 	}
-
 	return false
 }
 
