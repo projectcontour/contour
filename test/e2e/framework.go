@@ -29,6 +29,7 @@ import (
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -75,8 +76,10 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 	require.NoError(t, contourv1alpha1.AddToScheme(scheme))
 	require.NoError(t, gatewayv1alpha1.AddToScheme(scheme))
 	require.NoError(t, certmanagerv1.AddToScheme(scheme))
+	require.NoError(t, apiextensions_v1.AddToScheme(scheme))
 
-	config := config.GetConfigOrDie()
+	config, err := config.GetConfig()
+	require.NoError(t, err)
 
 	configQPS := os.Getenv("K8S_CLIENT_QPS")
 	if configQPS == "" {

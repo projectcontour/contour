@@ -20,7 +20,7 @@ import (
 
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
