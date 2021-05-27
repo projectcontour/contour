@@ -25,7 +25,7 @@ readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
 readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.21.1"}
-readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
+readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 readonly GATEWAY_API_VERSION=v0.3.0
 
@@ -41,7 +41,7 @@ kind::cluster::create() {
         --name "${CLUSTERNAME}" \
         --image "${NODEIMAGE}" \
         --wait "${WAITTIME}" \
-        --config "${REPO}/_integration/testsuite/kind-expose-port.yaml"
+        --config "${REPO}/test/scripts/kind-expose-port.yaml"
 }
 
 kind::cluster::load() {
@@ -63,11 +63,19 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
   ${KUBECTL} version
 fi
 
-# Push test images into the cluster.
-for i in $(find "$HERE" -name "*.yaml" -print0 | xargs -0 awk '$1=="image:"{print $2}')
+# Push test images into the cluster. Do this up-front
+# so that the first test to use each image does not 
+# incur the cost of pulling it. Helps avoid flakes.
+for i in $(find "$REPO/test/e2e" -name "fixtures.go" -print0 | xargs -0 awk '$1=="Image:"{print $2}')
 do
-    docker pull "$i"
-    kind::cluster::load "$i"
+    # The "$i" values will be formatted like: "<image>",
+    # So we need to strip the quotes and comma.
+    image="${i%,}"
+    image="${image%\"}"
+    image="${image#\"}"
+
+    docker pull "$image"
+    kind::cluster::load "$image"
 done
 
 # Install cert-manager.

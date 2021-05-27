@@ -61,14 +61,6 @@ download \
 tar -C "${DESTDIR}" -xf "${DESTDIR}/kustomize.tgz" kustomize
 rm "${DESTDIR}/kustomize.tgz"
 
-readonly INTEGRATION_TESTER_PATH="$(curl -s -L https://github.com/projectcontour/integration-tester/releases/latest | grep href | grep -i "integration-tester_.*${OS}_x86_64\.tar\.gz" | cut -d '"' -f2)"
-download \
-    "https://github.com${INTEGRATION_TESTER_PATH}" \
-    "${DESTDIR}/integration-tester.tgz"
-
-tar -C "${DESTDIR}" -xf "${DESTDIR}/integration-tester.tgz"
-rm "${DESTDIR}/integration-tester.tgz"
-
 download \
     "https://github.com/vmware-tanzu/sonobuoy/releases/download/v${SONOBUOY_VERS}/sonobuoy_${SONOBUOY_VERS}_linux_amd64.tar.gz" \
     "${DESTDIR}/sonobuoy.tgz"

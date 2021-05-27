@@ -18,20 +18,12 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-readonly HERE=$(cd $(dirname $0) && pwd)
+readonly KIND=${KIND:-kind}
+readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 
-readonly TESTER=${TESTER:-integration-tester}
+kind::cluster::delete() {
+    ${KIND} delete cluster --name "${CLUSTERNAME}"
+}
 
-readonly ADDRESS=${ADDRESS:-"127.0.0.1"}
-readonly HTTP_PORT=${HTTP_PORT:-"9080"}
-readonly HTTPS_PORT=${HTTPS_PORT:-"9443"}
-
-exec "$TESTER" run \
-    --format=tap \
-    --fixtures "${HERE}/fixtures" \
-    --policies "${HERE}/policies" \
-    --param proxy.address="$ADDRESS" \
-    --param proxy.http_port="$HTTP_PORT" \
-    --param proxy.https_port="$HTTPS_PORT" \
-    --watch pods,secrets,configmaps,endpoints \
-    "$@"
+# Delete existing kind cluster
+kind::cluster::delete

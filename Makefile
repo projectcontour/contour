@@ -331,38 +331,28 @@ site-devel: ## Launch the website
 site-check: ## Test the site's links
 	# TODO: Clean up to use htmltest
 
-check-integration:
-	@integration-tester --version > /dev/null 2>&1 || (echo "ERROR: To run the integration tests, you will need to install integration-tester (https://github.com/projectcontour/integration-tester)"; exit 1)
-
-.PHONY: integration
-integration: check-integration ## Run integration tests against a real k8s cluster
-	./_integration/testsuite/make-kind-cluster.sh
-	./_integration/testsuite/install-contour-working.sh
-	./_integration/testsuite/run-test-case.sh ./_integration/testsuite/ingress/*.yaml ./_integration/testsuite/httpproxy/*.yaml ./_integration/testsuite/gatewayapi/*.yaml
-	./_integration/testsuite/cleanup.sh
-
 .PHONY: e2e
-e2e: ## Run integration tests against a real k8s cluster
-	./_integration/testsuite/make-kind-cluster.sh
-	./_integration/testsuite/install-contour-working.sh
+e2e: ## Run E2E tests against a real k8s cluster
+	./test/scripts/make-kind-cluster.sh
+	./test/scripts/install-contour-working.sh
 	ginkgo -tags=e2e -mod=readonly -skipPackage=upgrade -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
-	./_integration/testsuite/cleanup.sh
+	./test/scripts/cleanup.sh
 
 .PHONY: upgrade
 upgrade: ## Run upgrade tests against a real k8s cluster
-	./_integration/testsuite/make-kind-cluster.sh
-	./_integration/testsuite/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
+	./test/scripts/make-kind-cluster.sh
+	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
 	./hack/actions/kind-load-contour-image.sh
 	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
 		CONTOUR_UPGRADE_TO_IMAGE=$(CONTOUR_UPGRADE_TO_IMAGE) \
 		ginkgo -tags=e2e -mod=readonly -randomizeAllSpecs -slowSpecThreshold=300 -v ./test/e2e/upgrade
-	./_integration/testsuite/cleanup.sh
+	./test/scripts/cleanup.sh
 
 check-ingress-conformance: ## Run Ingress controller conformance
-	./_integration/testsuite/make-kind-cluster.sh
-	./_integration/testsuite/install-contour-working.sh
-	./_integration/testsuite/run-ingress-conformance.sh
-	./_integration/testsuite/cleanup.sh
+	./test/scripts/make-kind-cluster.sh
+	./test/scripts/install-contour-working.sh
+	./test/scripts/run-ingress-conformance.sh
+	./test/scripts/cleanup.sh
 
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes

@@ -25,7 +25,7 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 
 readonly LOAD_PREBUILT_IMAGE=${LOAD_PREBUILT_IMAGE:-false}
 
-readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
+readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 
 readonly HERE=$(cd $(dirname $0) && pwd)
