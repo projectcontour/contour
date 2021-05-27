@@ -41,7 +41,7 @@ metadata:
   labels:
     app: httpbin
 spec:
-  backend:
+  defaultBackend:
     service:
       name: httpbin
       port:
