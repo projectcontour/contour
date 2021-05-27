@@ -31,6 +31,7 @@ import (
 	rbac_v1 "k8s.io/api/rbac/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -119,10 +120,33 @@ var _ = Describe("upgrading Contour", func() {
 	Specify("applications remain routable after the upgrade", func() {
 		resources := updateContourDeploymentResources()
 
+		// List pods with app label "contour" and heck that pods are updated
+		// with new container image and in ready state.
+		// We do this instead of check Deployment status as it is possible for
+		// it not to have been updated yet and replicas not yet been shut down.
 		By("waiting for contour deployment to be updated")
 		require.Eventually(f.T(), func() bool {
-			require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(resources.contourDeployment), resources.contourDeployment))
-			return resources.contourDeployment.Status.Replicas == *resources.contourDeployment.Spec.Replicas
+			pods := new(v1.PodList)
+			labelSelectAppContour := &client.ListOptions{
+				LabelSelector: labels.SelectorFromSet(map[string]string{"app": "contour"}),
+				Namespace:     resources.contourDeployment.Namespace,
+			}
+			require.NoError(f.T(), f.Client.List(context.TODO(), pods, labelSelectAppContour))
+
+			require.NotNil(f.T(), pods)
+			updatedPods := 0
+			for _, pod := range pods.Items {
+				require.Len(f.T(), pod.Spec.Containers, 1)
+				if pod.Spec.Containers[0].Image != contourUpgradeToImage {
+					continue
+				}
+				for _, cond := range pod.Status.Conditions {
+					if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
+						updatedPods++
+					}
+				}
+			}
+			return updatedPods == int(*resources.contourDeployment.Spec.Replicas)
 		}, time.Minute*1, time.Millisecond*50)
 
 		By("waiting for envoy daemonset to be updated")
