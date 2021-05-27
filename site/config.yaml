@@ -3,8 +3,8 @@ languageCode: "en-us"
 title: "Contour"
 theme: "contour"
 outputs:
-  home: [ "HTML", "REDIRECTS" ]
-  posts: [ "HTML", "RSS" ]
+  home: ["HTML", "REDIRECTS"]
+  posts: ["HTML", "RSS"]
 pygmentsCodefences: true
 pygmentsStyle: "pygments"
 markup:
@@ -29,28 +29,28 @@ params:
   github_url: "https://github.com/projectcontour/contour"
   slack_url: "https://kubernetes.slack.com/messages/contour"
   github_base_url: "https://github.com/projectcontour/contour"
-  latest_release_tag_name: v1.15.1
+  latest_release_tag_name: v1.16.0
   use_advanced_docs: true
   docs_right_sidebar: true
   docs_search: true
   docs_search_index_name: projectcontour
   docs_search_api_key: 5e2fa46757e313755936b88feae652d1
   docs_versioning: true
-  docs_latest: v1.15.1
+  docs_latest: v1.16.0
   docs_versions:
     - main
+    - v1.16.0
     - v1.15.1
     - v1.15.0
     - v1.14.1
     - v1.14.0
-    - v1.13.1    
+    - v1.13.1
     - v1.13.0
     - v1.12.0
     - v1.11.0
     - v1.10.1
     - v1.10.0
     - v1.9.0
-
 mediaTypes:
   "text/netlify":
     delimiter: ""
