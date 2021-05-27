@@ -276,12 +276,6 @@ func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostn
 
 		hostname := string(host)
 
-		//// A "*" hostname matches anything.
-		//if hostname == "*" {
-		//	hosts[hostname] = struct{}{}
-		//	continue
-		//}
-
 		// Validate the hostname.
 		if err := validHostName(hostname); err != nil {
 			errors = append(errors, err)
