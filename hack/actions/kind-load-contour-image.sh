@@ -6,7 +6,7 @@ set -o pipefail
 
 readonly KIND=${KIND:-kind}
 
-readonly CLUSTERNAME=${CLUSTERNAME:-contour-integration}
+readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 
 readonly HERE=$(cd $(dirname $0) && pwd)
 readonly REPO=$(cd ${HERE}/../.. && pwd)

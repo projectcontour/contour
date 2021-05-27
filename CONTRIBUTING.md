@@ -260,8 +260,6 @@ In general, changes to the core processing pipeline should be accompanied by new
 | `test/e2e/[httpproxy\|gateway\|ingress]` | E2E tests with Contour running in a cluster. Verifies behavior of HTTP requests for configured proxies. |
 
 
-_Note: the tests previously implemented in `_integration` have been migrated to `test/e2e`. The `_integration` directory is no longer accepting changes and will be removed soon. All new end-to-end tests should be implemented in `test/e2e`._
-
 ## DCO Sign off
 
 All authors to the project retain copyright to their work. However, to ensure

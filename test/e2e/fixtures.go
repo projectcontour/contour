@@ -345,7 +345,7 @@ func (h *HTTPBin) Deploy(ns, name string) {
 					Containers: []corev1.Container{
 						{
 							Name:  "httpbin",
-							Image: "docker.io/kennethreitz/httpbin",
+							Image: "docker.io/kennethreitz/httpbin:latest",
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "http",
