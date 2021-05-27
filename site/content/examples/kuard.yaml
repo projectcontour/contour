@@ -41,7 +41,7 @@ metadata:
   labels:
     app: kuard
 spec:
-  backend:
+  defaultBackend:
     service:
       name: kuard
       port:

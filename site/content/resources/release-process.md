@@ -48,8 +48,8 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION
 ```
 
-1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
-1. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
+1. Add the new release to the compatibility matrix (`site/content/resources/compatibility-matrix.md`).
+1. Document upgrade instructions for the new release (`site/content/resources/upgrading.md`).
 1. Commit all changes, push the branch, and PR it into `main`.
 
 _Note: the PR will probably fail the siteproof check due to [#2032](https://github.com/projectcontour/contour/issues/2032). It's a good idea to scan the CI log for any true issues._
