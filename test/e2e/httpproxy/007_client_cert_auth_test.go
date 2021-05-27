@@ -18,6 +18,7 @@ package httpproxy
 import (
 	"context"
 	"crypto/tls"
+	"strings"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
@@ -484,9 +485,17 @@ func testClientCertAuth(fx *e2e.Framework) {
 			require.NotNil(t, res, "expected 200 response code, request was never successful")
 			assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		default:
-			_, err := fx.HTTP.SecureRequest(opts)
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), tc.wantErr)
+			// Since we're expecting an error making the request
+			// itself, SecureRequestUntil won't work since that
+			// assumes an HTTP response is gotten.
+			assert.Eventually(t, func() bool {
+				_, err := fx.HTTP.SecureRequest(opts)
+				if err == nil {
+					return false
+				}
+
+				return strings.Contains(err.Error(), tc.wantErr)
+			}, fx.RetryTimeout, fx.RetryInterval)
 		}
 	}
 }
