@@ -292,7 +292,7 @@ certs/contourcert.pem: certs/CAkey.pem certs/contourkey.pem
 		-CAcreateserial \
 		-out certs/contourcert.pem \
 		-days 1825 -sha256 \
-		-extfile _integration/cert-contour.ext
+		-extfile certs/cert-contour.ext
 
 certs/envoykey.pem:
 	@echo Generating new Envoy key
@@ -309,7 +309,7 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 		-CAcreateserial \
 		-out certs/envoycert.pem \
 		-days 1825 -sha256 \
-		-extfile _integration/cert-envoy.ext
+		-extfile certs/cert-envoy.ext
 
 generate-uml: $(patsubst %.uml,%.png,$(wildcard site/img/uml/*.uml))
 
