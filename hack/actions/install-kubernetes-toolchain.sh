@@ -6,7 +6,7 @@ set -o pipefail
 
 readonly KUSTOMIZE_VERS="v3.8.6"
 readonly KUBECTL_VERS="v1.20.4"
-readonly KIND_VERS="v0.11.0"
+readonly KIND_VERS="v0.11.1"
 readonly SONOBUOY_VERS="0.19.0"
 
 readonly PROGNAME=$(basename $0)
