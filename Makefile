@@ -10,7 +10,7 @@ PHONY = gencerts
 ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.18.3
 
 # Variables needed for running upgrade tests.
-CONTOUR_UPGRADE_FROM_VERSION ?= $(shell git describe --tags `git rev-list --tags --max-count=1`)
+CONTOUR_UPGRADE_FROM_VERSION ?= $(shell ./test/scripts/get-contour-upgrade-from-version.sh)
 CONTOUR_UPGRADE_TO_IMAGE ?= projectcontour/contour:main
 
 TAG_LATEST ?= false
@@ -342,7 +342,7 @@ e2e: ## Run E2E tests against a real k8s cluster
 upgrade: ## Run upgrade tests against a real k8s cluster
 	./test/scripts/make-kind-cluster.sh
 	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
-	./hack/actions/kind-load-contour-image.sh
+	./test/scripts/kind-load-contour-image.sh
 	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
 		CONTOUR_UPGRADE_TO_IMAGE=$(CONTOUR_UPGRADE_TO_IMAGE) \
 		ginkgo -tags=e2e -mod=readonly -randomizeAllSpecs -slowSpecThreshold=300 -v ./test/e2e/upgrade
