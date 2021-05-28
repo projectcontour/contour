@@ -27,9 +27,8 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func testTLSRoute(fx *e2e.Framework) {
+func testTLSRoute(fx *e2e.Framework, namespace string) {
 	t := fx.T()
-	namespace := "gateway-008-tlsroute"
 
 	fx.CreateNamespace(namespace)
 	defer fx.DeleteNamespace(namespace)
@@ -37,6 +36,7 @@ func testTLSRoute(fx *e2e.Framework) {
 	fx.Fixtures.EchoSecure.Deploy(namespace, "echo")
 	fx.Certs.CreateSelfSignedCert(namespace, "backend-server-cert", "backend-server-cert", "tlsroute.gatewayapi.projectcontour.io")
 
+	// TLSRoute that doesn't define the termination type.
 	route := &gatewayv1alpha1.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
@@ -99,5 +99,4 @@ func testTLSRoute(fx *e2e.Framework) {
 	})
 	assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 	assert.Equal(t, "echo", fx.GetEchoResponseBody(res.Body).Service)
-
 }
