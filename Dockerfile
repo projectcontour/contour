@@ -4,7 +4,8 @@ ARG BUILD_BASE_IMAGE
 FROM --platform=$BUILDPLATFORM $BUILD_BASE_IMAGE AS build
 WORKDIR /contour
 
-ENV GOPROXY=https://proxy.golang.org
+ARG BUILD_GOPROXY
+ENV GOPROXY=${BUILD_GOPROXY}
 COPY go.mod go.sum /contour/
 RUN go mod download
 

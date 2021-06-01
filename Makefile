@@ -38,6 +38,9 @@ BUILD_BASE_IMAGE ?= golang:1.16.4
 # Enable build with CGO.
 BUILD_CGO_ENABLED ?= 0
 
+# Go module mirror to use.
+BUILD_GOPROXY ?= https://proxy.golang.org
+
 # Used to supply a local Envoy docker container an IP to connect to that is running
 # 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
 # LOCALIP as an env var before running 'make local' will solve that.
@@ -109,6 +112,7 @@ multiarch-build: ## Build and optionally push a multi-arch Contour container ima
 	@mkdir -p $(shell pwd)/image
 	docker buildx build $(IMAGE_RESULT_FLAG) \
 		--platform $(IMAGE_PLATFORMS) \
+		--build-arg "BUILD_GOPROXY=$(BUILD_GOPROXY)" \
 		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
@@ -121,6 +125,7 @@ multiarch-build: ## Build and optionally push a multi-arch Contour container ima
 
 container: ## Build the Contour container image
 	docker build \
+		--build-arg "BUILD_GOPROXY=$(BUILD_GOPROXY)" \
 		--build-arg "BUILD_BASE_IMAGE=$(BUILD_BASE_IMAGE)" \
 		--build-arg "BUILD_VERSION=$(BUILD_VERSION)" \
 		--build-arg "BUILD_BRANCH=$(BUILD_BRANCH)" \
