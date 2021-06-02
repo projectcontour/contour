@@ -1,6 +1,6 @@
 # Upstream TLS
 
-A HTTPProxy can proxy to an upstream TLS backend by annotating the upstream Kubernetes Service or by specifying the upstream protocol in the HTTPProxy [`services`][2] field.
+A HTTPProxy can proxy to an upstream TLS backend by annotating the upstream Kubernetes Service or by specifying the upstream protocol in the HTTPProxy [services][2] field.
 Applying the `projectcontour.io/upstream-protocol.tls` annotation to a Service object tells Contour that TLS should be enabled and which port should be used for the TLS connection.
 The same configuration can be specified by setting the protocol name in the `spec.routes.services[].protocol` field on the HTTPProxy object.
 If both the annotation and the protocol field are specified, the protocol field takes precedence.
@@ -91,6 +91,6 @@ Contour can be configured with a `namespace/name` in the [Contour configuration 
 Envoy will send the certificate during TLS handshake when the backend applications request the client to present its certificate.
 Backend applications can validate the certificate to ensure that the connection is coming from Envoy.
 
-[1]: {% link docs/{{page.version}}/config/annotations.md %}
-[2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.Service
-[3]: /docs/{{page.version}}/configuration#fallback-certificate
+[1]: annotations.md
+[2]: api/#projectcontour.io/v1.Service
+[3]: ../configuration#fallback-certificate
