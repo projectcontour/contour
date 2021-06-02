@@ -48,6 +48,7 @@ LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | hea
 
 # Sets GIT_REF to a tag if it's present, otherwise the short git sha will be used.
 GIT_REF = $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --short=8 --verify HEAD)
+# Used for Contour container image tag.
 VERSION ?= $(GIT_REF)
 
 # Stash the ISO 8601 date. Note that the GMT offset is missing the :
@@ -60,8 +61,9 @@ BUILD_SHA = $(shell git rev-parse --verify HEAD)
 # Sets the current branch. If we are on a detached header, filter it out so the
 # branch will be empty. This is similar to --show-current.
 BUILD_BRANCH = $(shell git branch | grep -v detached | awk '$$1=="*"{print $$2}')
-# Sets the current tagged git version.
-BUILD_VERSION = $(VERSION)
+# Sets the string output by "contour version" and labels on container image.
+# Defaults to current tagged git version but can be overridden.
+BUILD_VERSION ?= $(VERSION)
 
 GO_BUILD_VARS = \
 	github.com/projectcontour/contour/internal/build.Version=${BUILD_VERSION} \
