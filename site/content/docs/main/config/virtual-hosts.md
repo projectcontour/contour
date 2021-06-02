@@ -123,7 +123,7 @@ Only users permitted to operate in those namespaces can therefore create HTTPPro
 
 This restricted mode is enabled in Contour by specifying a command line flag, `--root-namespaces`, which will restrict Contour to only searching the defined namespaces for root HTTPProxy. This CLI flag accepts a comma separated list of namespaces where HTTPProxy are valid (e.g. `--root-namespaces=default,kube-system,my-admin-namespace`).
 
-HTTPProxy with a defined [`virtualhost`][2] field that are not in one of the allowed root namespaces will be flagged as `invalid` and will be ignored by Contour.
+HTTPProxy with a defined [virtualhost][2] field that are not in one of the allowed root namespaces will be flagged as `invalid` and will be ignored by Contour.
 
 Additionally, when defined, Contour will only watch for Kubernetes secrets in these namespaces ignoring changes in all other namespaces.
 Proper RBAC rules should also be created to restrict what namespaces Contour has access matching the namespaces passed to the command line flag.
