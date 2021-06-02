@@ -110,7 +110,7 @@ var _ = Describe("Gateway API", func() {
 		})
 	})
 
-	Describe("TLS Gateway", func() {
+	Describe("HTTPRoute: TLS Gateway", func() {
 		var gateway *gatewayv1alpha1.Gateway
 		var cleanupCert func()
 
@@ -171,12 +171,12 @@ var _ = Describe("Gateway API", func() {
 			cleanupCert()
 		})
 
-		It("004-tls-gateway", func() {
+		It("004-httproute-tls-gateway", func() {
 			testTLSGateway(f)
 		})
 	})
 
-	Describe("TLSRoute Gateway", func() {
+	Describe("TLSRoute: Gateway", func() {
 		var gateway *gatewayv1alpha1.Gateway
 
 		BeforeEach(func() {
@@ -212,11 +212,11 @@ var _ = Describe("Gateway API", func() {
 		})
 
 		It("008-tlsroute", func() {
-			testTLSRoute(f, "gateway-008-tlsroute")
+			testTLSRoutePassthrough(f, "gateway-008-tlsroute")
 		})
 	})
 
-	Describe("TLSRoute Gateway: Mode:Terminate", func() {
+	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
 		var gateway *gatewayv1alpha1.Gateway
 
 		BeforeEach(func() {
@@ -254,8 +254,8 @@ var _ = Describe("Gateway API", func() {
 			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
 		})
 
-		It("008-tlsroute", func() {
-			testTLSRoute(f, "gateway-008-tlsroute-mode")
+		It("008-tlsroute-mode-passthrough", func() {
+			testTLSRoutePassthrough(f, "gateway-008-tlsroute-mode-passthrough")
 		})
 	})
 

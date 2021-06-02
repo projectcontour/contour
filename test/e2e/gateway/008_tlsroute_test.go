@@ -27,7 +27,7 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func testTLSRoute(fx *e2e.Framework, namespace string) {
+func testTLSRoutePassthrough(fx *e2e.Framework, namespace string) {
 	t := fx.T()
 
 	fx.CreateNamespace(namespace)
