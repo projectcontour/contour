@@ -45,7 +45,7 @@ However, combinations not listed are not tested or supported by the Contour main
 
 The `client-go` package includes a [compatibility matrix][99] as to what Kubernetes API versions are supported with the version of client-go.
 
-__Note:__ Since Contour now uses `apiextensions.k8s.io/v1` for Custom Resource Definitions (CRDs), the minimum compatible Kubernetes version is v1.16.
+__Note:__ As of version 1.16.0, since Contour only subscribes to Ingress v1 resources (and no longer falls back to Ingress v1beta1), the minimum compatible Kubernetes version is 1.19.
 
 ## Envoy Extensions
 Contour requires the following Envoy extensions.
