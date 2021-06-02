@@ -36,7 +36,7 @@ spec:
 This Ingress object, named `basic`, will route incoming HTTP traffic with a `Host:` header for `foo-basic.bar.com` to a Service named `s1` on port `80`.
 Implementing similar behavior using an HTTPProxy looks like this:
 
-```
+```yaml
 # httpproxy.yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
