@@ -30,7 +30,7 @@ To resolve this Contour applies the following logic.
 
 ## Configuring Inclusion
 
-Inclusion is a top-level field in the HTTPProxy [`spec`][2] element.
+Inclusion is a top-level field in the HTTPProxy [spec][2] element.
 It requires one field, `name`, and has two optional fields:
 
 - `namespace`. This will assume the included HTTPProxy is in the same namespace if it's not specified.
