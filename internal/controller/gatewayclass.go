@@ -116,7 +116,9 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 	}
 
 	// Pass the new changed object off to the eventHandler.
-	r.eventHandler.OnAdd(gc)
+	if r.eventHandler != nil {
+		r.eventHandler.OnAdd(gc)
+	}
 
 	if err := status.SyncGatewayClass(ctx, r.client, gc, errs); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to sync gatewayclass %q status: %w", gc.Name, err)
