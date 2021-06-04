@@ -8,6 +8,7 @@ LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
 PHONY = gencerts
 ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.18.3
+GATEWAY_API_VERSION = $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
 # Variables needed for running upgrade tests.
 CONTOUR_UPGRADE_FROM_VERSION ?= $(shell ./test/scripts/get-contour-upgrade-from-version.sh)
@@ -203,7 +204,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-gateway-crd-yaml
 
 .PHONY: generate-rbac
 generate-rbac:
@@ -222,8 +223,13 @@ generate-deployment:
 
 .PHONY: generate-crd-yaml
 generate-crd-yaml:
-	@echo "Generating CRD YAML documents..."
+	@echo "Generating Contour CRD YAML documents..."
 	@./hack/generate-crd-yaml.sh
+
+.PHONY: generate-gateway-crd-yaml
+generate-gateway-crd-yaml:
+	@echo "Generating Gateway API CRD YAML documents..."
+	@kubectl kustomize -o examples/gateway/00-crds.yaml "github.com/kubernetes-sigs/gateway-api/config/crd?ref=${GATEWAY_API_VERSION}"
 
 .PHONY: generate-api-docs
 generate-api-docs:
