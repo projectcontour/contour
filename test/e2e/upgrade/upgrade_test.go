@@ -30,6 +30,7 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	rbac_v1 "k8s.io/api/rbac/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -293,6 +294,15 @@ func updateContourDeploymentResources() contourDeploymentResources {
 	By("updating certgen job")
 	resources.certgenJob = new(batch_v1.Job)
 	require.NoError(f.T(), decoder.Decode(resources.certgenJob))
+	// Delete if exists with the same name.
+	tempJ := new(batch_v1.Job)
+	jobDeleted := func() bool {
+		return errors.IsNotFound(f.Client.Get(context.TODO(), client.ObjectKeyFromObject(resources.certgenJob), tempJ))
+	}
+	if jobDeleted() == false {
+		require.NoError(f.T(), f.Client.Delete(context.TODO(), tempJ))
+	}
+	require.Eventually(f.T(), jobDeleted, time.Minute, time.Millisecond*250)
 	// Update container image.
 	require.Len(f.T(), resources.certgenJob.Spec.Template.Spec.Containers, 1)
 	resources.certgenJob.Spec.Template.Spec.Containers[0].Image = contourUpgradeToImage
