@@ -13,6 +13,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/jetstack/cert-manager v1.3.0
 	github.com/onsi/ginkgo v1.16.2
+	github.com/onsi/gomega v1.10.5
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.15.0

@@ -18,101 +18,100 @@ package gateway
 import (
 	"net/http"
 
+	. "github.com/onsi/ginkgo"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func testGatewayHeaderConditionMatch(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "gateway-002-header-condition-match"
+func testGatewayHeaderConditionMatch(namespace string) {
+	Specify("header match routing works", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
 
-	fx.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
-
-	route := &gatewayv1alpha1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "http-filter-1",
-			Labels:    map[string]string{"app": "filter"},
-		},
-		Spec: gatewayv1alpha1.HTTPRouteSpec{
-			Hostnames: []gatewayv1alpha1.Hostname{"gatewayheaderconditions.projectcontour.io"},
-			Gateways: &gatewayv1alpha1.RouteGateways{
-				Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+		route := &gatewayv1alpha1.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "http-filter-1",
+				Labels:    map[string]string{"app": "filter"},
 			},
-			Rules: []gatewayv1alpha1.HTTPRouteRule{
-				{
-					Matches: []gatewayv1alpha1.HTTPRouteMatch{
-						{
-							Path: &gatewayv1alpha1.HTTPPathMatch{
-								Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-								Value: stringPtr("/"),
-							},
-							Headers: &gatewayv1alpha1.HTTPHeaderMatch{
-								Type: headerMatchTypePtr(gatewayv1alpha1.HeaderMatchExact),
-								Values: map[string]string{
-									"My-Header": "Foo",
+			Spec: gatewayv1alpha1.HTTPRouteSpec{
+				Hostnames: []gatewayv1alpha1.Hostname{"gatewayheaderconditions.projectcontour.io"},
+				Gateways: &gatewayv1alpha1.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+				},
+				Rules: []gatewayv1alpha1.HTTPRouteRule{
+					{
+						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+							{
+								Path: &gatewayv1alpha1.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+									Value: stringPtr("/"),
+								},
+								Headers: &gatewayv1alpha1.HTTPHeaderMatch{
+									Type: headerMatchTypePtr(gatewayv1alpha1.HeaderMatchExact),
+									Values: map[string]string{
+										"My-Header": "Foo",
+									},
 								},
 							},
 						},
-					},
-					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-						{
-							ServiceName: stringPtr("echo-header-exact"),
-							Port:        portNumPtr(80),
+						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+							{
+								ServiceName: stringPtr("echo-header-exact"),
+								Port:        portNumPtr(80),
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-	fx.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		}
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
 
-	type scenario struct {
-		headers        map[string]string
-		expectResponse int
-		expectService  string
-	}
+		type scenario struct {
+			headers        map[string]string
+			expectResponse int
+			expectService  string
+		}
 
-	cases := []scenario{
-		{
-			headers:        map[string]string{"My-Header": "Foo"},
-			expectResponse: 200,
-			expectService:  "echo-header-exact",
-		},
-		{
-			headers:        map[string]string{"My-Header": "NotFoo"},
-			expectResponse: 404,
-		},
-		{
-			headers:        map[string]string{"Other-Header": "Foo"},
-			expectResponse: 404,
-		},
-	}
-
-	for _, tc := range cases {
-		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host: string(route.Spec.Hostnames[0]),
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(tc.headers),
+		cases := []scenario{
+			{
+				headers:        map[string]string{"My-Header": "Foo"},
+				expectResponse: 200,
+				expectService:  "echo-header-exact",
 			},
-			Condition: e2e.HasStatusCode(tc.expectResponse),
-		})
-		if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
-			continue
-		}
-		if res.StatusCode != 200 {
-			// If we expected something other than a 200,
-			// then we don't need to check the body.
-			continue
+			{
+				headers:        map[string]string{"My-Header": "NotFoo"},
+				expectResponse: 404,
+			},
+			{
+				headers:        map[string]string{"Other-Header": "Foo"},
+				expectResponse: 404,
+			},
 		}
 
-		body := fx.GetEchoResponseBody(res.Body)
-		assert.Equal(t, namespace, body.Namespace)
-		assert.Equal(t, tc.expectService, body.Service)
-	}
+		for _, tc := range cases {
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host: string(route.Spec.Hostnames[0]),
+				RequestOpts: []func(*http.Request){
+					e2e.OptSetHeaders(tc.headers),
+				},
+				Condition: e2e.HasStatusCode(tc.expectResponse),
+			})
+			if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
+				continue
+			}
+			if res.StatusCode != 200 {
+				// If we expected something other than a 200,
+				// then we don't need to check the body.
+				continue
+			}
+
+			body := f.GetEchoResponseBody(res.Body)
+			assert.Equal(t, namespace, body.Namespace)
+			assert.Equal(t, tc.expectService, body.Service)
+		}
+	})
 }

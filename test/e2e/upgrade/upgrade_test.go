@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	f *e2e.Framework
+	f = e2e.NewFramework(true)
 
 	// Contour container image to upgrade deployment to.
 	// If running against a kind cluster, this image should be loaded into
@@ -46,8 +46,6 @@ func TestUpgrade(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	f = e2e.NewFramework(GinkgoT())
-
 	contourUpgradeFromVersion = os.Getenv("CONTOUR_UPGRADE_FROM_VERSION")
 	require.NotEmpty(f.T(), contourUpgradeFromVersion, "CONTOUR_UPGRADE_FROM_VERSION environment variable not supplied")
 	By("Testing Contour upgrade from " + contourUpgradeFromVersion)
@@ -58,35 +56,32 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = Describe("upgrading Contour", func() {
-	var namespace string
-
 	const appHost = "upgrade-echo.test.com"
 
-	BeforeEach(func() {
-		namespace = "contour-upgrade-test"
-		f.CreateNamespace(namespace)
-
-		By("deploying an app")
-		f.Fixtures.Echo.Deploy(namespace, "echo")
-		i := &networking_v1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "echo",
-			},
-			Spec: networking_v1.IngressSpec{
-				Rules: []networking_v1.IngressRule{
-					{
-						Host: appHost,
-						IngressRuleValue: networking_v1.IngressRuleValue{
-							HTTP: &networking_v1.HTTPIngressRuleValue{
-								Paths: []networking_v1.HTTPIngressPath{
-									{
-										Path:     "/",
-										PathType: ingressPathTypePtr(networking_v1.PathTypePrefix),
-										Backend: networking_v1.IngressBackend{
-											Service: &networking_v1.IngressServiceBackend{
-												Name: "echo",
-												Port: networking_v1.ServiceBackendPort{Number: 80},
+	f.NamespacedTest("contour-upgrade-test", func(namespace string) {
+		Specify("applications remain routable after the upgrade", func() {
+			By("deploying an app")
+			f.Fixtures.Echo.Deploy(namespace, "echo")
+			i := &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: namespace,
+					Name:      "echo",
+				},
+				Spec: networking_v1.IngressSpec{
+					Rules: []networking_v1.IngressRule{
+						{
+							Host: appHost,
+							IngressRuleValue: networking_v1.IngressRuleValue{
+								HTTP: &networking_v1.HTTPIngressRuleValue{
+									Paths: []networking_v1.HTTPIngressPath{
+										{
+											Path:     "/",
+											PathType: ingressPathTypePtr(networking_v1.PathTypePrefix),
+											Backend: networking_v1.IngressBackend{
+												Service: &networking_v1.IngressServiceBackend{
+													Name: "echo",
+													Port: networking_v1.ServiceBackendPort{Number: 80},
+												},
 											},
 										},
 									},
@@ -95,30 +90,23 @@ var _ = Describe("upgrading Contour", func() {
 						},
 					},
 				},
-			},
-		}
-		require.NoError(f.T(), f.Client.Create(context.TODO(), i))
+			}
+			require.NoError(f.T(), f.Client.Create(context.TODO(), i))
 
-		By("ensuring it is routable")
-		checkRoutability(appHost)
-	})
+			By("ensuring it is routable")
+			checkRoutability(appHost)
 
-	AfterEach(func() {
-		By("cleaning up test artifacts")
-		f.DeleteNamespace(namespace)
-	})
+			updateContourDeploymentResources()
 
-	Specify("applications remain routable after the upgrade", func() {
-		updateContourDeploymentResources()
+			By("waiting for contour deployment to be updated")
+			require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
 
-		By("waiting for contour deployment to be updated")
-		require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
+			By("waiting for envoy daemonset to be updated")
+			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
 
-		By("waiting for envoy daemonset to be updated")
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
-
-		By("ensuring app is still routable")
-		checkRoutability(appHost)
+			By("ensuring app is still routable")
+			checkRoutability(appHost)
+		})
 	})
 })
 
@@ -176,19 +164,12 @@ func updateContourDeploymentResources() {
 	require.NoError(f.T(), f.Deployment.EnsureContourClusterRole())
 
 	By("updating contour service")
-	// Set cluster ip.
 	tempS := new(v1.Service)
 	require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(f.Deployment.ContourService), tempS))
-	f.Deployment.ContourService.Spec.ClusterIP = tempS.Spec.ClusterIP
-	f.Deployment.ContourService.Spec.ClusterIPs = tempS.Spec.ClusterIPs
 	require.NoError(f.T(), f.Deployment.EnsureContourService())
 
 	By("updating envoy service")
-	// Set cluster ip and health check node port.
 	require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(f.Deployment.EnvoyService), tempS))
-	f.Deployment.EnvoyService.Spec.ClusterIP = tempS.Spec.ClusterIP
-	f.Deployment.EnvoyService.Spec.ClusterIPs = tempS.Spec.ClusterIPs
-	f.Deployment.EnvoyService.Spec.HealthCheckNodePort = tempS.Spec.HealthCheckNodePort
 	require.NoError(f.T(), f.Deployment.EnsureEnvoyService())
 
 	By("updating contour deployment")

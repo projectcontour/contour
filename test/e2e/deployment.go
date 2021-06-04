@@ -18,25 +18,47 @@ package e2e
 import (
 	"context"
 	"errors"
+	"io"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"time"
 
+	"github.com/onsi/gomega/gexec"
+	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/pkg/config"
+	"gopkg.in/yaml.v2"
 	apps_v1 "k8s.io/api/apps/v1"
 	batch_v1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	rbac_v1 "k8s.io/api/rbac/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/apimachinery/pkg/util/yaml"
+	apimachinery_util_yaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Deployment struct {
-	client                    client.Client
+	// k8s client
+	client client.Client
+
+	// Command output is written to this writer.
+	cmdOutputWriter io.Writer
+
+	// Path to kube config to use with a local Contour.
+	kubeConfig string
+	// Hostname to use when running Contour locally.
+	localContourHost string
+	// Port for local Contour to bind to.
+	localContourPort string
+	// Path to Contour binary for use when running locally.
+	contourBin string
+
 	Namespace                 *v1.Namespace
 	ContourServiceAccount     *v1.ServiceAccount
 	EnvoyServiceAccount       *v1.ServiceAccount
@@ -54,6 +76,11 @@ type Deployment struct {
 	EnvoyService              *v1.Service
 	ContourDeployment         *apps_v1.Deployment
 	EnvoyDaemonSet            *apps_v1.DaemonSet
+
+	// Ratelimit deployment.
+	RateLimitDeployment       *apps_v1.Deployment
+	RateLimitService          *v1.Service
+	RateLimitExtensionService *contourv1alpha1.ExtensionService
 }
 
 // UnmarshalResources unmarshals resources from rendered Contour manifest in
@@ -71,7 +98,7 @@ func (d *Deployment) UnmarshalResources() error {
 		return err
 	}
 	defer file.Close()
-	decoder := yaml.NewYAMLToJSONDecoder(file)
+	decoder := apimachinery_util_yaml.NewYAMLToJSONDecoder(file)
 
 	// Discard empty document.
 	if err := decoder.Decode(new(struct{})); err != nil {
@@ -120,6 +147,36 @@ func (d *Deployment) UnmarshalResources() error {
 		}
 	}
 
+	rateLimitExamplePath := filepath.Join(filepath.Dir(thisFile), "..", "..", "examples", "ratelimit")
+	rateLimitDeploymentFile := filepath.Join(rateLimitExamplePath, "02-ratelimit.yaml")
+	rateLimitExtSvcFile := filepath.Join(rateLimitExamplePath, "03-ratelimit-extsvc.yaml")
+
+	rLDFile, err := os.Open(rateLimitDeploymentFile)
+	if err != nil {
+		return err
+	}
+	defer rLDFile.Close()
+	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rLDFile)
+	d.RateLimitDeployment = new(apps_v1.Deployment)
+	if err := decoder.Decode(d.RateLimitDeployment); err != nil {
+		return err
+	}
+	d.RateLimitService = new(v1.Service)
+	if err := decoder.Decode(d.RateLimitService); err != nil {
+		return err
+	}
+
+	rLESFile, err := os.Open(rateLimitExtSvcFile)
+	if err != nil {
+		return err
+	}
+	defer rLESFile.Close()
+	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rLESFile)
+	d.RateLimitExtensionService = new(contourv1alpha1.ExtensionService)
+	if err := decoder.Decode(d.RateLimitExtensionService); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -132,6 +189,13 @@ func (d *Deployment) ensureResource(new, existing client.Object) error {
 		return err
 	}
 	new.SetResourceVersion(existing.GetResourceVersion())
+	// If a v1.Service, pass along existing cluster IP and healthcheck node port.
+	if newS, ok := new.(*v1.Service); ok {
+		existingS := existing.(*v1.Service)
+		newS.Spec.ClusterIP = existingS.Spec.ClusterIP
+		newS.Spec.ClusterIPs = existingS.Spec.ClusterIPs
+		newS.Spec.HealthCheckNodePort = existingS.Spec.HealthCheckNodePort
+	}
 	return d.client.Update(context.TODO(), new)
 }
 
@@ -270,4 +334,179 @@ func (d *Deployment) WaitForEnvoyDaemonSetUpdated() error {
 		return tempDS.Status.NumberReady > 0, nil
 	}
 	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
+}
+
+func (d *Deployment) EnsureRateLimitResources(namespace string, configContents string) error {
+	setNamespace := d.Namespace.Name
+	if len(namespace) > 0 {
+		setNamespace = namespace
+	}
+
+	configMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ratelimit-config",
+			Namespace: setNamespace,
+		},
+		Data: map[string]string{
+			"ratelimit-config.yaml": configContents,
+		},
+	}
+	if err := d.ensureResource(configMap, new(v1.ConfigMap)); err != nil {
+		return err
+	}
+
+	deployment := d.RateLimitDeployment.DeepCopy()
+	deployment.Namespace = setNamespace
+	if err := d.ensureResource(deployment, new(apps_v1.Deployment)); err != nil {
+		return err
+	}
+
+	service := d.RateLimitService.DeepCopy()
+	service.Namespace = setNamespace
+	if err := d.ensureResource(service, new(v1.Service)); err != nil {
+		return err
+	}
+
+	extSvc := d.RateLimitExtensionService.DeepCopy()
+	extSvc.Namespace = setNamespace
+	return d.ensureResource(extSvc, new(contourv1alpha1.ExtensionService))
+}
+
+// Convenience method for deploying the pieces of the deployment needed for
+// testing Contour running locally, out of cluster.
+// Includes:
+// - namespace
+// - Envoy service account
+// - CRDs
+// - Envoy service
+// - ConfigMap with Envoy bootstrap config
+// - Envoy DaemonSet modified for local Contour xDS server
+func (d *Deployment) EnsureResourcesForLocalContour() error {
+	if err := d.EnsureNamespace(); err != nil {
+		return err
+	}
+	if err := d.EnsureEnvoyServiceAccount(); err != nil {
+		return err
+	}
+	if err := d.EnsureExtensionServiceCRD(); err != nil {
+		return err
+	}
+	if err := d.EnsureHTTPProxyCRD(); err != nil {
+		return err
+	}
+	if err := d.EnsureTLSCertDelegationCRD(); err != nil {
+		return err
+	}
+	if err := d.EnsureEnvoyService(); err != nil {
+		return err
+	}
+
+	bFile, err := ioutil.TempFile("", "bootstrap-*.json")
+	if err != nil {
+		return err
+	}
+
+	// Generate bootstrap config with Contour local address and plaintext
+	// client config.
+	bootstrapCmd := exec.Command( // nolint:gosec
+		d.contourBin,
+		"bootstrap",
+		bFile.Name(),
+		"--xds-address="+d.localContourHost,
+		"--xds-port="+d.localContourPort,
+		"--xds-resource-version=v3",
+	)
+	session, err := gexec.Start(bootstrapCmd, d.cmdOutputWriter, d.cmdOutputWriter)
+	if err != nil {
+		return err
+	}
+	session.Wait()
+
+	bootstrapContents, err := ioutil.ReadAll(bFile)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		bFile.Close()
+		os.RemoveAll(bFile.Name())
+	}()
+
+	bootstrapConfigMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "envoy-bootstrap",
+			Namespace: d.Namespace.Name,
+		},
+		Data: map[string]string{
+			"envoy.json": string(bootstrapContents),
+		},
+	}
+	if err := d.ensureResource(bootstrapConfigMap, new(v1.ConfigMap)); err != nil {
+		return err
+	}
+
+	// Add bootstrap ConfigMap as volume on Envoy pods (also removes cert volume).
+	d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = []v1.Volume{
+		{
+			Name: "envoy-config",
+			VolumeSource: v1.VolumeSource{
+				ConfigMap: &v1.ConfigMapVolumeSource{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: "envoy-bootstrap",
+					},
+				},
+			},
+		},
+	}
+
+	// Remove cert volume mount.
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[0]}
+
+	// Remove init container.
+	d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers = nil
+	// Remove shutdown-manager container.
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers = d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1:]
+
+	if err := d.EnsureEnvoyDaemonSet(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Starts local contour, applying arguments and marshaling config into config
+// file. Returns running Contour command and config file so we can clean them
+// up.
+func (d *Deployment) StartLocalContour(config *config.Parameters, additionalArgs ...string) (*gexec.Session, string, error) {
+	configFile, err := ioutil.TempFile("", "contour-config-*.yaml")
+	if err != nil {
+		return nil, "", err
+	}
+	defer configFile.Close()
+
+	content, err := yaml.Marshal(config)
+	if err != nil {
+		return nil, "", err
+	}
+	if err := os.WriteFile(configFile.Name(), content, 0644); err != nil {
+		return nil, "", err
+	}
+
+	contourServeArgs := append([]string{
+		"serve",
+		"--xds-address=0.0.0.0",
+		"--xds-port=" + d.localContourPort,
+		"--insecure",
+		"--kubeconfig=" + d.kubeConfig,
+		"--config-path=" + configFile.Name(),
+	}, additionalArgs...)
+	session, err := gexec.Start(exec.Command(d.contourBin, contourServeArgs...), d.cmdOutputWriter, d.cmdOutputWriter) // nolint:gosec
+	if err != nil {
+		return nil, "", err
+	}
+	return session, configFile.Name(), nil
+}
+
+func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile string) error {
+	contourCmd.Terminate().Wait()
+	return os.RemoveAll(configFile)
 }

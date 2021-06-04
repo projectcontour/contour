@@ -16,95 +16,169 @@
 package httpproxy
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
+	"github.com/stretchr/testify/require"
 )
 
+var f = e2e.NewFramework(false)
+
 func TestHTTPProxy(t *testing.T) {
+	RegisterFailHandler(Fail)
 	RunSpecs(t, "HTTPProxy tests")
 }
 
+var _ = BeforeSuite(func() {
+	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
+})
+
+var _ = AfterSuite(func() {
+	f.DeleteNamespace(f.Deployment.Namespace.Name, true)
+	gexec.CleanupBuildArtifacts()
+})
+
 var _ = Describe("HTTPProxy", func() {
-	var f *e2e.Framework
+	var (
+		contourCmd            *gexec.Session
+		contourConfig         *config.Parameters
+		contourConfigFile     string
+		additionalContourArgs []string
+	)
 
 	BeforeEach(func() {
-		f = e2e.NewFramework(GinkgoT())
+		// Contour config file contents, can be modified in nested
+		// BeforeEach.
+		contourConfig = &config.Parameters{}
+
+		// Default contour serve command line arguments can be appended to in
+		// nested BeforeEach.
+		additionalContourArgs = []string{}
 	})
 
-	It("001-required-field-validation", func() {
-		testRequiredFieldValidation(f)
+	JustBeforeEach(func() {
+		var err error
+		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, additionalContourArgs...)
+		require.NoError(f.T(), err)
+
+		// Wait for Envoy to be healthy.
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
 	})
-	It("002-header-condition-match", func() {
-		testHeaderConditionMatch(f)
+
+	AfterEach(func() {
+		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
-	It("003-path-condition-match", func() {
-		testPathConditionMatch(f)
+
+	f.NamespacedTest("001-required-field-validation", testRequiredFieldValidation)
+
+	f.NamespacedTest("002-header-condition-match", testHeaderConditionMatch)
+
+	f.NamespacedTest("003-path-condition-match", testPathConditionMatch)
+
+	f.NamespacedTest("004-https-sni-enforcement", testHTTPSSNIEnforcement)
+
+	f.NamespacedTest("005-pod-restart", testPodRestart)
+
+	f.NamespacedTest("006-merge-slash", testMergeSlash)
+
+	f.NamespacedTest("007-client-cert-auth", testClientCertAuth)
+
+	f.NamespacedTest("008-tcproute-https-termination", testTCPRouteHTTPSTermination)
+
+	f.NamespacedTest("009-https-misdirected-request", testHTTPSMisdirectedRequest)
+
+	f.NamespacedTest("010-include-prefix-condition", testIncludePrefixCondition)
+
+	f.NamespacedTest("011-retry-policy-validation", testRetryPolicyValidation)
+
+	f.NamespacedTest("012-https-fallback-certificate", func(namespace string) {
+		Context("with fallback certificate", func() {
+			BeforeEach(func() {
+				contourConfig.TLS = config.TLSParameters{
+					FallbackCertificate: config.NamespacedName{
+						Name:      "fallback-cert",
+						Namespace: namespace,
+					},
+				}
+				f.Certs.CreateSelfSignedCert(namespace, "fallback-cert", "fallback-cert", "fallback.projectcontour.io")
+			})
+
+			testHTTPSFallbackCertificate(namespace)
+		})
 	})
-	It("004-https-sni-enforcement", func() {
-		testHTTPSSNIEnforcement(f)
-	})
-	It("005-pod-restart", func() {
-		testPodRestart(f)
-	})
-	It("006-merge-slash", func() {
-		testMergeSlash(f)
-	})
-	It("007-client-cert-auth", func() {
-		testClientCertAuth(f)
-	})
-	It("008-tcproute-https-termination", func() {
-		testTCPRouteHTTPSTermination(f)
-	})
-	It("009-https-misdirected-request", func() {
-		testHTTPSMisdirectedRequest(f)
-	})
-	It("010-include-prefix-condition", func() {
-		testIncludePrefixCondition(f)
-	})
-	It("011-retry-policy-validation", func() {
-		testRetryPolicyValidation(f)
-	})
-	It("012-https-fallback-certificate", func() {
-		testHTTPSFallbackCertificate(f)
-	})
-	It("014-external-auth", func() {
-		testExternalAuth(f)
-	})
-	It("015-http-health-checks", func() {
-		testHTTPHealthChecks(f)
-	})
-	It("016-dynamic-headers", func() {
-		testDynamicHeaders(f)
-	})
-	It("017-host-header-rewrite", func() {
-		testHostHeaderRewrite(f)
-	})
-	It("018-external-name-service-insecure", func() {
-		testExternalNameServiceInsecure(f)
-	})
-	It("018-external-name-service-tls", func() {
-		testExternalNameServiceTLS(f)
-	})
-	It("019-local-rate-limiting-vhost", func() {
-		testLocalRateLimitingVirtualHost(f)
-	})
-	It("019-local-rate-limiting-route", func() {
-		testLocalRateLimitingRoute(f)
-	})
-	It("020-global-rate-limiting-vhost-non-tls", func() {
-		testGlobalRateLimitingVirtualHostNonTLS(f)
-	})
-	It("020-global-rate-limiting-route-non-tls", func() {
-		testGlobalRateLimitingRouteNonTLS(f)
-	})
-	It("020-global-rate-limiting-vhost-tls", func() {
-		testGlobalRateLimitingVirtualHostTLS(f)
-	})
-	It("020-global-rate-limiting-route-tls", func() {
-		testGlobalRateLimitingRouteTLS(f)
+
+	f.NamespacedTest("014-external-auth", testExternalAuth)
+
+	f.NamespacedTest("015-http-health-checks", testHTTPHealthChecks)
+
+	f.NamespacedTest("016-dynamic-headers", testDynamicHeaders)
+
+	f.NamespacedTest("017-host-header-rewrite", testHostHeaderRewrite)
+
+	f.NamespacedTest("018-external-name-service-insecure", testExternalNameServiceInsecure)
+
+	f.NamespacedTest("018-external-name-service-tls", testExternalNameServiceTLS)
+
+	f.NamespacedTest("019-local-rate-limiting-vhost", testLocalRateLimitingVirtualHost)
+
+	f.NamespacedTest("019-local-rate-limiting-route", testLocalRateLimitingRoute)
+
+	Context("global rate limiting", func() {
+		withRateLimitService := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+			return func(namespace string) {
+				Context("with rate limit service", func() {
+					BeforeEach(func() {
+						contourConfig.RateLimitService = config.RateLimitService{
+							ExtensionService: fmt.Sprintf("%s/%s", namespace, f.Deployment.RateLimitExtensionService.Name),
+							Domain:           "contour",
+							FailOpen:         false,
+						}
+						require.NoError(f.T(),
+							f.Deployment.EnsureRateLimitResources(
+								namespace,
+								`
+domain: contour
+descriptors:
+  - key: generic_key
+    value: vhostlimit
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1
+  - key: route_limit_key
+    value: routelimit
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1
+  - key: generic_key
+    value: tlsvhostlimit
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1
+  - key: generic_key
+    value: tlsroutelimit
+    rate_limit:
+      unit: hour
+      requests_per_unit: 1`))
+					})
+
+					body(namespace)
+				})
+			}
+		}
+
+		f.NamespacedTest("020-global-rate-limiting-vhost-non-tls", withRateLimitService(testGlobalRateLimitingVirtualHostNonTLS))
+
+		f.NamespacedTest("020-global-rate-limiting-route-non-tls", withRateLimitService(testGlobalRateLimitingRouteNonTLS))
+
+		f.NamespacedTest("020-global-rate-limiting-vhost-tls", withRateLimitService(testGlobalRateLimitingVirtualHostTLS))
+
+		f.NamespacedTest("020-global-rate-limiting-route-tls", withRateLimitService(testGlobalRateLimitingRouteTLS))
 	})
 })
 

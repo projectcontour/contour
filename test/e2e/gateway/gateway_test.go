@@ -17,42 +17,95 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+var f = e2e.NewFramework(false)
+
 func TestGatewayAPI(t *testing.T) {
+	RegisterFailHandler(Fail)
 	RunSpecs(t, "Gateway API tests")
 }
 
+var _ = BeforeSuite(func() {
+	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
+})
+
+var _ = AfterSuite(func() {
+	f.DeleteNamespace(f.Deployment.Namespace.Name, true)
+	gexec.CleanupBuildArtifacts()
+})
+
 var _ = Describe("Gateway API", func() {
-	var f *e2e.Framework
+	var (
+		contourCmd            *gexec.Session
+		contourConfig         *config.Parameters
+		contourConfigFile     string
+		additionalContourArgs []string
+	)
+
+	// Creates specified gateway in namespace and runs namespaced test
+	// body. Modifies contour config to point to gateway.
+	testWithGateway := func(gw *gatewayv1alpha1.Gateway, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+		return func(namespace string) {
+			Context(fmt.Sprintf("with gateway %s/%s", namespace, gw.Name), func() {
+				BeforeEach(func() {
+					// Ensure gateway created in this test's namespace.
+					gw.Namespace = namespace
+					// Update contour config to point to specified gateway.
+					contourConfig.GatewayConfig = &config.GatewayParameters{
+						Namespace: namespace,
+						Name:      gw.Name,
+					}
+					require.NoError(f.T(), f.Client.Create(context.TODO(), gw))
+				})
+				AfterEach(func() {
+					require.NoError(f.T(), f.Client.Delete(context.TODO(), gw))
+				})
+
+				body(namespace)
+			})
+		}
+	}
 
 	BeforeEach(func() {
-		f = e2e.NewFramework(GinkgoT())
+		// Contour config file contents, can be modified in nested
+		// BeforeEach.
+		contourConfig = &config.Parameters{}
+
+		// Default contour serve command line arguments can be appended to in
+		// nested BeforeEach.
+		additionalContourArgs = []string{}
 	})
 
-	Describe("Insecure (Non-TLS) Gateway", func() {
-		var gateway *gatewayv1alpha1.Gateway
+	JustBeforeEach(func() {
+		var err error
+		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, additionalContourArgs...)
+		require.NoError(f.T(), err)
 
-		// Note, this ends up creating the Gateway before each spec
-		// case (and deleting it after) which is not really necessary
-		// since all of these specs use the same Gateway. Consider
-		// moving each unique Gateway into its own test suite and using
-		// BeforeSuite/AfterSuit to create/delete the Gateway once, or
-		// some other similar structure.
-		BeforeEach(func() {
-			gateway = &gatewayv1alpha1.Gateway{
-				// Namespace and name need to match what's
-				// configured in the Contour config file.
+		// Wait for Envoy to be healthy.
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+	})
+
+	AfterEach(func() {
+		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
+	})
+
+	Describe("HTTPRoute: Insecure (Non-TLS) Gateway", func() {
+		testWithHTTPGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+			gw := &gatewayv1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "projectcontour",
-					Name:      "contour",
+					Name: "http",
 				},
 				Spec: gatewayv1alpha1.GatewaySpec{
 					GatewayClassName: "contour-class",
@@ -73,54 +126,29 @@ var _ = Describe("Gateway API", func() {
 					},
 				},
 			}
+			return testWithGateway(gw, body)
+		}
 
-			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
-		})
+		f.NamespacedTest("001-path-condition-match", testWithHTTPGateway(testGatewayPathConditionMatch))
 
-		AfterEach(func() {
-			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
-		})
+		f.NamespacedTest("002-header-condition-match", testWithHTTPGateway(testGatewayHeaderConditionMatch))
 
-		It("001-path-condition-match", func() {
-			testGatewayPathConditionMatch(f)
-		})
+		f.NamespacedTest("003-invalid-forward-to", testWithHTTPGateway(testInvalidForwardTo))
 
-		It("002-header-condition-match", func() {
-			testGatewayHeaderConditionMatch(f)
-		})
+		f.NamespacedTest("005-request-header-modifier-forward-to", testWithHTTPGateway(testRequestHeaderModifierForwardTo))
 
-		It("003-invalid-forward-to", func() {
-			testInvalidForwardTo(f)
-		})
+		f.NamespacedTest("005-request-header-modifier-rule", testWithHTTPGateway(testRequestHeaderModifierRule))
 
-		It("005-request-header-modifier-forward-to", func() {
-			testRequestHeaderModifierForwardTo(f)
-		})
+		f.NamespacedTest("006-host-rewrite", testWithHTTPGateway(testHostRewrite))
 
-		It("005-request-header-modifier-rule", func() {
-			testRequestHeaderModifierRule(f)
-		})
-
-		It("006-host-rewrite", func() {
-			testHostRewrite(f)
-		})
-
-		It("007-gateway-allow-type", func() {
-			testGatewayAllowType(f)
-		})
+		f.NamespacedTest("007-gateway-allow-type", testWithHTTPGateway(testGatewayAllowType))
 	})
 
 	Describe("HTTPRoute: TLS Gateway", func() {
-		var gateway *gatewayv1alpha1.Gateway
-		var cleanupCert func()
-
-		BeforeEach(func() {
-			gateway = &gatewayv1alpha1.Gateway{
-				// Namespace and name need to match what's
-				// configured in the Contour config file.
+		testWithHTTPSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+			gw := &gatewayv1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "projectcontour",
-					Name:      "contour",
+					Name: "https",
 				},
 				Spec: gatewayv1alpha1.GatewaySpec{
 					GatewayClassName: "contour-class",
@@ -161,168 +189,73 @@ var _ = Describe("Gateway API", func() {
 					},
 				},
 			}
+			return testWithGateway(gw, func(namespace string) {
+				Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
+					BeforeEach(func() {
+						f.Certs.CreateSelfSignedCert(namespace, "tlscert", "tlscert", hostname)
+					})
 
-			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
-			cleanupCert = f.Certs.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "tls-gateway.projectcontour.io")
-		})
+					body(namespace)
+				})
+			})
+		}
 
-		AfterEach(func() {
-			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
-			cleanupCert()
-		})
+		f.NamespacedTest("004-httproute-tls-gateway", testWithHTTPSGateway("tls-gateway.projectcontour.io", testTLSGateway))
 
-		It("004-httproute-tls-gateway", func() {
-			testTLSGateway(f)
-		})
+		f.NamespacedTest("009-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
 	})
 
 	Describe("TLSRoute: Gateway", func() {
-		var gateway *gatewayv1alpha1.Gateway
-
-		BeforeEach(func() {
-			gateway = &gatewayv1alpha1.Gateway{
-				// Namespace and name need to match what's
-				// configured in the Contour config file.
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "projectcontour",
-					Name:      "contour",
-				},
-				Spec: gatewayv1alpha1.GatewaySpec{
-					GatewayClassName: "contour-class",
-					Listeners: []gatewayv1alpha1.Listener{
-						{
-							Protocol: gatewayv1alpha1.TLSProtocolType,
-							Port:     gatewayv1alpha1.PortNumber(443),
-							Routes: gatewayv1alpha1.RouteBindingSelector{
-								Kind: "TLSRoute",
-								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
-								},
+		gw := &gatewayv1alpha1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "tls",
+			},
+			Spec: gatewayv1alpha1.GatewaySpec{
+				GatewayClassName: "contour-class",
+				Listeners: []gatewayv1alpha1.Listener{
+					{
+						Protocol: gatewayv1alpha1.TLSProtocolType,
+						Port:     gatewayv1alpha1.PortNumber(443),
+						Routes: gatewayv1alpha1.RouteBindingSelector{
+							Kind: "TLSRoute",
+							Namespaces: &gatewayv1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
 							},
 						},
 					},
 				},
-			}
+			},
+		}
 
-			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
-		})
-
-		AfterEach(func() {
-			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
-		})
-
-		It("008-tlsroute", func() {
-			testTLSRoutePassthrough(f, "gateway-008-tlsroute")
-		})
+		f.NamespacedTest("008-tlsroute", testWithGateway(gw, testTLSRoutePassthrough))
 	})
 
 	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
-		var gateway *gatewayv1alpha1.Gateway
-
-		BeforeEach(func() {
-			gateway = &gatewayv1alpha1.Gateway{
-				// Namespace and name need to match what's
-				// configured in the Contour config file.
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "projectcontour",
-					Name:      "contour",
-				},
-				Spec: gatewayv1alpha1.GatewaySpec{
-					GatewayClassName: "contour-class",
-					Listeners: []gatewayv1alpha1.Listener{
-						{
-							Protocol: gatewayv1alpha1.TLSProtocolType,
-							Port:     gatewayv1alpha1.PortNumber(443),
-							TLS: &gatewayv1alpha1.GatewayTLSConfig{
-								Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModePassthrough),
-							},
-							Routes: gatewayv1alpha1.RouteBindingSelector{
-								Kind: "TLSRoute",
-								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
-								},
+		gw := &gatewayv1alpha1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "tls-passthrough",
+			},
+			Spec: gatewayv1alpha1.GatewaySpec{
+				GatewayClassName: "contour-class",
+				Listeners: []gatewayv1alpha1.Listener{
+					{
+						Protocol: gatewayv1alpha1.TLSProtocolType,
+						Port:     gatewayv1alpha1.PortNumber(443),
+						TLS: &gatewayv1alpha1.GatewayTLSConfig{
+							Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModePassthrough),
+						},
+						Routes: gatewayv1alpha1.RouteBindingSelector{
+							Kind: "TLSRoute",
+							Namespaces: &gatewayv1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
 							},
 						},
 					},
 				},
-			}
+			},
+		}
 
-			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
-		})
-
-		AfterEach(func() {
-			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
-		})
-
-		It("008-tlsroute-mode-passthrough", func() {
-			testTLSRoutePassthrough(f, "gateway-008-tlsroute-mode-passthrough")
-		})
-	})
-
-	Describe("Wildcard TLS Gateway", func() {
-		var gateway *gatewayv1alpha1.Gateway
-		var cleanupCert func()
-
-		BeforeEach(func() {
-			gateway = &gatewayv1alpha1.Gateway{
-				// Namespace and name need to match what's
-				// configured in the Contour config file.
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "projectcontour",
-					Name:      "contour",
-				},
-				Spec: gatewayv1alpha1.GatewaySpec{
-					GatewayClassName: "contour-class",
-					Listeners: []gatewayv1alpha1.Listener{
-						{
-							Protocol: gatewayv1alpha1.HTTPProtocolType,
-							Port:     gatewayv1alpha1.PortNumber(80),
-							Routes: gatewayv1alpha1.RouteBindingSelector{
-								Kind: "HTTPRoute",
-								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
-								},
-								Selector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{"type": "insecure"},
-								},
-							},
-						},
-						{
-							Protocol: gatewayv1alpha1.HTTPSProtocolType,
-							Port:     gatewayv1alpha1.PortNumber(443),
-							TLS: &gatewayv1alpha1.GatewayTLSConfig{
-								CertificateRef: &gatewayv1alpha1.LocalObjectReference{
-									Group: "core",
-									Kind:  "Secret",
-									Name:  "tlscert",
-								},
-							},
-							Routes: gatewayv1alpha1.RouteBindingSelector{
-								Kind: "HTTPRoute",
-								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
-								},
-								Selector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{"type": "secure"},
-								},
-							},
-						},
-					},
-				},
-			}
-
-			require.NoError(f.T(), f.Client.Create(context.TODO(), gateway))
-			cleanupCert = f.Certs.CreateSelfSignedCert("projectcontour", "tlscert", "tlscert", "*.wildcardhost.gateway.projectcontour.io")
-		})
-
-		AfterEach(func() {
-			require.NoError(f.T(), f.Client.Delete(context.TODO(), gateway))
-			cleanupCert()
-		})
-
-		It("009-tls-wildcard-host", func() {
-			testTLSWildcardHost(f)
-		})
+		f.NamespacedTest("008-tlsroute-mode-passthrough", testWithGateway(gw, testTLSRoutePassthrough))
 	})
 })
 

@@ -18,6 +18,7 @@ package httpproxy
 import (
 	"crypto/tls"
 
+	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -25,61 +26,59 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testHTTPSFallbackCertificate(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "012-https-fallback-certificate"
+func testHTTPSFallbackCertificate(namespace string) {
+	Specify("requests with invalid SNI are accepted when a fallback cert is configured", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "echo")
+		f.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "fallback-cert-echo.projectcontour.io")
 
-	fx.Fixtures.Echo.Deploy(namespace, "echo")
-	fx.Certs.CreateSelfSignedCert(namespace, "echo-cert", "echo", "fallback-cert-echo.projectcontour.io")
-
-	p := &contourv1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "echo",
-		},
-		Spec: contourv1.HTTPProxySpec{
-			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "fallback-cert-echo.projectcontour.io",
-				TLS: &contourv1.TLS{
-					SecretName:                "echo",
-					EnableFallbackCertificate: true,
-				},
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo",
 			},
-			Routes: []contourv1.Route{
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "echo",
-							Port: 80,
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "fallback-cert-echo.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName:                "echo",
+						EnableFallbackCertificate: true,
+					},
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo",
+								Port: 80,
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		}
+		f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-	// Send a request that includes a valid SNI, confirm a 200 is
-	// returned.
-	res, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Condition: e2e.HasStatusCode(200),
+		// Send a request that includes a valid SNI, confirm a 200 is
+		// returned.
+		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected a 200 response code, got %d", res.StatusCode)
+
+		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
+
+		// Send a request that does not include a valid SNI, confirm a
+		// 200 is still returned since the fallback cert is used.
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host: p.Spec.VirtualHost.Fqdn,
+			TLSConfigOpts: []func(*tls.Config){
+				e2e.OptSetSNI("invalid-sni-should-use-fallback.projectcontour.io"),
+			},
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected a 200 response code, got %d", res.StatusCode)
 	})
-	require.Truef(t, ok, "expected a 200 response code, got %d", res.StatusCode)
-
-	assert.Equal(t, "echo", fx.GetEchoResponseBody(res.Body).Service)
-
-	// Send a request that does not include a valid SNI, confirm a
-	// 200 is still returned since the fallback cert is used.
-	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host: p.Spec.VirtualHost.Fqdn,
-		TLSConfigOpts: []func(*tls.Config){
-			e2e.OptSetSNI("invalid-sni-should-use-fallback.projectcontour.io"),
-		},
-		Condition: e2e.HasStatusCode(200),
-	})
-	require.Truef(t, ok, "expected a 200 response code, got %d", res.StatusCode)
 }

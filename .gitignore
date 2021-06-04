@@ -27,3 +27,6 @@ site/public
 
 # Saved container image archive
 image/
+
+# Compiled tests from Ginkgo
+*.test
