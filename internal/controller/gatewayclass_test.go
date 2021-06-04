@@ -20,6 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -35,10 +36,7 @@ var _ = Describe("GatewayClass Controller", func() {
 	Context("Managed GatewayClass", func() {
 		It("Should surface admitted status", func() {
 
-			gen, err := generateRandomString(10, charset)
-			Expect(err).NotTo(HaveOccurred())
-
-			key := types.NamespacedName{Name: "test-gatewayclass-" + gen}
+			key := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 
 			admitted := &gatewayv1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
@@ -74,13 +72,10 @@ var _ = Describe("GatewayClass Controller", func() {
 		})
 	})
 	Context("Unmanaged GatewayClass", func() {
-		It("Should surface waiting status", func() {
+		It("Should surface not admitted status", func() {
 
 			// Test a GatewayClass that should not be managed by Contour.
-			gen, err := generateRandomString(10, charset)
-			Expect(err).NotTo(HaveOccurred())
-
-			key := types.NamespacedName{Name: "test-gatewayclass-" + gen}
+			key := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 			waiting := &gatewayv1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      key.Name,
@@ -92,7 +87,7 @@ var _ = Describe("GatewayClass Controller", func() {
 			// Create
 			Expect(cl.Create(context.Background(), waiting)).Should(Succeed())
 
-			By("Expecting waiting status")
+			By("Expecting waiting reason")
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), key, gc)
@@ -117,10 +112,7 @@ var _ = Describe("GatewayClass Controller", func() {
 	Context("Multiple GatewayClasses", func() {
 		It("Should surface not admitted status", func() {
 
-			gen, err := generateRandomString(10, charset)
-			Expect(err).NotTo(HaveOccurred())
-
-			admittedKey := types.NamespacedName{Name: "test-gatewayclass-" + gen}
+			admittedKey := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 
 			admitted := &gatewayv1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
@@ -140,10 +132,7 @@ var _ = Describe("GatewayClass Controller", func() {
 				return isAdmitted(gc)
 			}, timeout, interval).Should(BeTrue())
 
-			gen, err = generateRandomString(10, charset)
-			Expect(err).NotTo(HaveOccurred())
-
-			notAdmittedKey := types.NamespacedName{Name: "test-gatewayclass-" + gen}
+			notAdmittedKey := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 
 			notAdmitted := &gatewayv1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
@@ -195,10 +184,7 @@ var _ = Describe("GatewayClass Controller", func() {
 	Context("Managed GatewayClass", func() {
 		It("With parameterRefs should not be admitted", func() {
 
-			gen, err := generateRandomString(10, charset)
-			Expect(err).NotTo(HaveOccurred())
-
-			key := types.NamespacedName{Name: "test-gatewayclass-" + gen}
+			key := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 
 			unsupported := &gatewayv1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{

@@ -14,8 +14,6 @@
 package controller
 
 import (
-	"crypto/rand"
-	"math/big"
 	"path/filepath"
 	"testing"
 	"time"
@@ -34,10 +32,7 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-const (
-	charset      = "abcdefghijklmnopqrstuvwxyz"
-	gcController = "test.io/contour"
-)
+const gcController = "test.io/contour"
 
 var (
 	cl       client.Client
@@ -112,23 +107,7 @@ func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// generateRandomString returns a securely generated random string with the provided
-// length. It will return an error if the system's secure random number generator
-// fails to function correctly, in which case the caller should not continue.
-func generateRandomString(length int, charset string) (string, error) {
-	ret := make([]byte, length)
-	for i := 0; i < length; i++ {
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-		if err != nil {
-			return "", err
-		}
-		ret[i] = charset[num.Int64()]
-	}
-
-	return string(ret), nil
-}
-
-// isAdmitted returns true if gc status is "Admitted".
+// isAdmitted returns true if gc status is "Admitted=true".
 func isAdmitted(gc *gatewayv1alpha1.GatewayClass) bool {
 	for _, c := range gc.Status.Conditions {
 		if c.Type == string(gatewayv1alpha1.GatewayClassConditionStatusAdmitted) &&
@@ -140,7 +119,7 @@ func isAdmitted(gc *gatewayv1alpha1.GatewayClass) bool {
 	return false
 }
 
-// isWaiting returns true if gc status is "Waiting".
+// isWaiting returns true if gc status is "Admitted=false" with the "Waiting" reason.
 func isWaiting(gc *gatewayv1alpha1.GatewayClass) bool {
 	for _, c := range gc.Status.Conditions {
 		if c.Type == string(gatewayv1alpha1.GatewayClassConditionStatusAdmitted) &&
