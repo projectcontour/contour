@@ -27,7 +27,6 @@ readonly KUBECTL=${KUBECTL:-kubectl}
 readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.21.1"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
-readonly GATEWAY_API_VERSION=v0.3.0
 
 readonly HERE=$(cd "$(dirname "$0")" && pwd)
 readonly REPO=$(cd "${HERE}/../.." && pwd)
@@ -84,4 +83,4 @@ ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=cert-manager depl
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deployments --for=condition=Available
 
 # Install Gateway API CRDs.
-${KUBECTL} kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=${GATEWAY_API_VERSION}" | ${KUBECTL} apply -f -
+${KUBECTL} apply -f "${REPO}/examples/gateway/00-crds.yaml"
