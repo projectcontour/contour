@@ -2,7 +2,7 @@
 
 Contour supports integrating external servers to authorize client requests.
 
-Envoy implements external authorization in the [`ext_authz`][1] filter.
+Envoy implements external authorization in the [ext_authz][1] filter.
 This filter intercepts client requests and holds them while it sends a check
 request to an external server.
 The filter uses the check result to either allow the request to proceed, or to
@@ -21,12 +21,12 @@ authentication using Contour and [contour-authserver](https://github.com/project
 ## Extension Services
 
 The starting point for external authorization in Contour is the
-[`ExtensionService`][2] API.
+[ExtensionService][2] API.
 This API creates a cluster which Envoy can use to send requests to an external server.
 In principle, the Envoy cluster can be used for any purpose, but in this
 document we are concerned only with how to use it as an authorization service.
 
-An authorization service is a gRPC service that implements the Envoy [`CheckRequest`][3] protocol.
+An authorization service is a gRPC service that implements the Envoy [CheckRequest][3] protocol.
 Note that Contour requires the extension to implement the "v3" version of the protocol.
 Contour is compatible with any authorization server that implements this protocol.
 
@@ -57,7 +57,7 @@ authorization server should be as secure as possible.
 Contour defaults the `.spec.protocol` field to "h2", which configures
 Envoy to use HTTP/2 over TLS for the authorization service connection.
 
-The [`.spec.validation`][4] field configures how Envoy should verify the TLS
+The [.spec.validation][4] field configures how Envoy should verify the TLS
 identity of the authorization server.
 This is a critical protection against accidentally sending credentials to an
 imposter service and should be enabled for all production deployments.
@@ -67,7 +67,7 @@ that can be used to validate the TLS chain of trust.
 
 ## Authorizing Virtual Hosts
 
-The [`.spec.virtualhost.authorization`][5] field in the Contour `HTTPProxy`
+The [.spec.virtualhost.authorization][5] field in the Contour `HTTPProxy`
 API connects a virtual host to an authorization server that is bound by an
 `ExtensionService` object.
 Each virtual host can use a different `ExtensionService`, but only one
@@ -115,9 +115,9 @@ A route can overwrite the value for a context key by setting it in the
 context field of authorization policy for the route.
 
 [1]: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/ext_authz_filter
-[2]: /docs/{{page.version}}/config/api/#projectcontour.io/v1alpha1.ExtensionService
+[2]: api/#projectcontour.io/v1alpha1.ExtensionService
 [3]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/auth/v3/external_auth.proto
-[4]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.UpstreamValidation
-[5]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.AuthorizationServer
-[6]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.AuthorizationPolicy
-[7]: {% link _guides/external-authorization.md %}
+[4]: api/#projectcontour.io/v1.UpstreamValidation
+[5]: api/#projectcontour.io/v1.AuthorizationServer
+[6]: api/#projectcontour.io/v1.AuthorizationPolicy
+[7]: /guides/external-authorization.md
