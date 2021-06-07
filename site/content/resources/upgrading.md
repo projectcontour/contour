@@ -1421,32 +1421,32 @@ and checking the annotations that store exact details using
 $ kubectl get configmap -n heptio-contour -o yaml contour
 ```
 
-[1]: {{site.github.repository_url}}/blob/{{site.latest}}/examples
-[2]: {{site.github.repository_url}}/blob/v1.0.0/examples
-[3]: /docs/{{site.latest}}/config/fundamentals
-[4]: /docs/{{site.latest}}/config/annotations
-[5]: {{site.github.repository_url}}/issues/899
-[6]: /docs/{{site.latest}}/configuration
-[7]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/README.md
-[8]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/02-rbac.yaml#L71
-[9]: {{site.github.repository_url}}/blob/{{site.latest}}/examples/contour/02-rbac.yaml
+[1]: https://github.com/projectcontour/contour/tree/main/examples/contour
+[2]: https://github.com/projectcontour/contour/blob/v1.0.0/examples
+[3]: /docs/main/config/fundamentals
+[4]: /docs/main/config/annotations
+[5]: https://github.com/projectcontour/contour/issues/899
+[6]: /docs/main/configuration
+[7]: https://github.com/projectcontour/contour/blob/main/examples/contour/README.md
+[8]: https://github.com/projectcontour/contour/blob/v1.0.0/examples/contour/02-rbac.yaml#L71
+[9]: https://github.com/projectcontour/contour/blob/main/examples/contour/02-rbac.yaml
 [10]: https://www.envoyproxy.io/docs/envoy/v1.11.2/intro/version_history
-[11]: {{site.github.repository_url}}/blob/v0.15.3/examples/
-[12]: /docs/{{site.latest}}/deploy-options
+[11]: https://github.com/projectcontour/contour/blob/v0.15.3/examples/
+[12]: /docs/main/deploy-options
 [13]: https://hub.docker.com/r/projectcontour/contour
-[14]: /docs/{{site.latest}}/grpc-tls-howto
+[14]: /docs/main/grpc-tls-howto
 [15]: https://www.envoyproxy.io/docs/envoy/v1.12.2/intro/version_history
-[16]: {% link getting-started.md %}
+[16]: /getting-started
 [17]: https://www.envoyproxy.io/docs/envoy/v1.13.1/intro/version_history
-[18]: https://projectcontour.io/quickstart/{{site.latest}}/contour.yaml
+[18]: https://projectcontour.io/quickstart/main/contour.yaml
 [19]: https://groups.google.com/forum/?utm_medium=email&utm_source=footer#!msg/envoy-announce/sVqmxy0un2s/8aq430xiHAAJ
 [20]: https://www.envoyproxy.io/docs/envoy/v1.14.1/intro/version_history
 [21]: https://www.envoyproxy.io/docs/envoy/v1.14.2/intro/version_history
 [22]: https://www.envoyproxy.io/docs/envoy/v1.14.3/intro/version_history
 [23]: https://www.envoyproxy.io/docs/envoy/v1.15.0/version_history/current
-[24]: {% link _guides/ingressroute-to-httpproxy.md %}
+[24]: /guides/ingressroute-to-httpproxy/
 [25]: https://www.envoyproxy.io/docs/envoy/v1.16.0/version_history/current
-[26]: {% link _guides/xds-migration.md %}
+[26]: /guides/xds-migration
 [27]: https://www.envoyproxy.io/docs/envoy/v1.16.2/version_history/current
 [28]: https://www.envoyproxy.io/docs/envoy/v1.17.0/version_history/current
 [29]: https://www.envoyproxy.io/docs/envoy/v1.17.1/version_history/current
