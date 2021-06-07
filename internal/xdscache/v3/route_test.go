@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"net/http"
 	"regexp"
 	"testing"
 	"time"
@@ -2922,6 +2923,41 @@ func TestRouteVisit(t *testing.T) {
 							},
 						},
 					)),
+			),
+		},
+		"direct response on configuration error": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Services: []contour_api_v1.Service{{
+								Name: "missing-backend-service",
+								Port: 80,
+							}},
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match: routePrefix("/"),
+							Action: &envoy_route_v3.Route_DirectResponse{
+								DirectResponse: &envoy_route_v3.DirectResponseAction{
+									Status: http.StatusServiceUnavailable,
+								},
+							},
+						},
+					),
+				),
 			),
 		},
 	}
