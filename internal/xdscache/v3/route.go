@@ -18,6 +18,7 @@ import (
 	"sort"
 	"sync"
 
+	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
@@ -148,6 +149,14 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 			return &envoy_route_v3.Route{
 				Match:  envoy_v3.RouteMatch(route),
 				Action: envoy_v3.RouteDirectResponse(route.DirectResponse),
+				// Add custom header to the direct response to help user identify that
+				// the response is coming from Contour instead of the backend service.
+				ResponseHeadersToAdd: []*envoy_core_v3.HeaderValueOption{{
+					Header: &envoy_core_v3.HeaderValue{
+						Key:   "X-Contour-Status",
+						Value: "Invalid configuration",
+					},
+				}},
 			}
 		}
 
