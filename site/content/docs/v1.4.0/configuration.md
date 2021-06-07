@@ -54,7 +54,7 @@ In the vast majority of deployments, only the `configmap-name` and `configmap-na
 
 The following is an example ConfigMap with configuration file included:
 
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:

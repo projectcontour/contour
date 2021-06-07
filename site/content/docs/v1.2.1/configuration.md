@@ -5,7 +5,7 @@ This file is passed to Contour via a ConfigMap which is mounted as a volume to t
 
 Following is an example ConfigMap with configuration file included: 
 
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
