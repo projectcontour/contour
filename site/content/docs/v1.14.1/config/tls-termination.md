@@ -219,4 +219,4 @@ spec:
       weight: 20
 ```
 
-[1]: /docs/{{page.version}}/configuration#fallback-certificate
+[1]: ../configuration#fallback-certificate
