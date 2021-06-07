@@ -2,7 +2,7 @@
 
 Contour supports integrating external servers to authorize client requests.
 
-Envoy implements external authorization in the [`ext_authz`][1] filter.
+Envoy implements external authorization in the [ext_authz][1] filter.
 This filter intercepts client requests and holds them while it sends a check
 request to an external server.
 The filter uses the check result to either allow the request to proceed, or to
@@ -21,12 +21,12 @@ authentication using Contour and [contour-authserver](https://github.com/project
 ## Extension Services
 
 The starting point for external authorization in Contour is the
-[`ExtensionService`][2] API.
+[ExtensionService][2] API.
 This API creates a cluster which Envoy can use to send requests to an external server.
 In principle, the Envoy cluster can be used for any purpose, but in this
 document we are concerned only with how to use it as an authorization service.
 
-An authorization service is a gRPC service that implements the Envoy [`CheckRequest`][3] protocol.
+An authorization service is a gRPC service that implements the Envoy [CheckRequest][3] protocol.
 Note that Contour requires the extension to implement the "v3" version of the protocol.
 Contour is compatible with any authorization server that implements this protocol.
 
@@ -57,7 +57,7 @@ authorization server should be as secure as possible.
 Contour defaults the `.spec.protocol` field to "h2", which configures
 Envoy to use HTTP/2 over TLS for the authorization service connection.
 
-The [`.spec.validation`][4] field configures how Envoy should verify the TLS
+The [.spec.validation][4] field configures how Envoy should verify the TLS
 identity of the authorization server.
 This is a critical protection against accidentally sending credentials to an
 imposter service and should be enabled for all production deployments.
@@ -85,7 +85,7 @@ and set the `.spec.services[].name` field to the name of the Service.
 
 ## Authorizing Virtual Hosts
 
-The [`.spec.virtualhost.authorization`][5] field in the Contour `HTTPProxy`
+The [.spec.virtualhost.authorization][5] field in the Contour `HTTPProxy`
 API connects a virtual host to an authorization server that is bound by an
 `ExtensionService` object.
 Each virtual host can use a different `ExtensionService`, but only one
