@@ -133,7 +133,7 @@ If you encounter issues, review the Troubleshooting section of [the docs][3], [f
 [2]: /docs/{{< param docs_latest >}}/config/fundamentals
 [3]: /docs/{{< param docs_latest >}}
 [4]: {{< ref "resources/faq.md" >}}
-[6]: {{site.github.repository_url}}/issues
+[6]: {{< param github_url >}}/issues
 [9]: https://github.com/kubernetes-up-and-running/kuard
 [10]: https://kubernetes.io/docs/concepts/services-networking/service
 [11]: https://kubernetes.io/docs/concepts/services-networking/ingress

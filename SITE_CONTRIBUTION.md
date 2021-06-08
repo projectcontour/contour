@@ -89,7 +89,7 @@ Additionally, the above method will not follow any permalink changes or page-spe
 
 **Linking to the project contour GitHub repo:**
 
-The GitHub metadata plugin populates Jekyll variables with data from GitHub during build. When inserting a link to the Project Contour repository, use the prefix `{{site.github.repository_url}}`.
+The GitHub metadata plugin populates Jekyll variables with data from GitHub during build. When inserting a link to the Project Contour repository, use the prefix `{{< param github_url >}}`.
 
 A full list of variables can be found in the [jekyll-github-metadata documentation][4].
 
