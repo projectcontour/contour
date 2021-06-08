@@ -16,5 +16,8 @@ Thanks for taking the time to join our community and start contributing!
 [2]: {{< param github_url >}}/blob/main/CONTRIBUTING.md
 [3]: {{< param github_url >}}/issues
 [4]: {{< param slack_url >}}
-[5]: https://github.com/projectcontour/contour-operator/blob/main/docs/CONTRIBUTING.md
-[6]: https://github.com/projectcontour/contour-operator/issues
+[5]: {{< param github_operator_url >}}/blob/main/docs/CONTRIBUTING.md
+[6]: {{< param github_operator_url >}}/issues
+[7]: https://vmware.zoom.us/j/347232187
+[8]: https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw
+[9]: https://www.youtube.com/playlist?list=PL7bmigfV0EqTBsPrnCkzhu0R4SAWnBjLj

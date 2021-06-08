@@ -7,14 +7,17 @@ Thanks for taking the time to join our community and start contributing!
 - See Contour Operator's [CONTRIBUTING.md][5] for details on contributing to Contour Operator.
 - Check out [Contour][3] and [Contour Operator][6] open issues.
 - Join our Kubernetes Slack channel: [#contour][4]
-- Join the [Contour Community Meetings](https://vmware.zoom.us/j/347232187), every third Tuesday at 6PM ET / 3PM PT 
+- Join the [Contour Community Meetings][7], every third Tuesday at 6PM ET / 3PM PT 
 / Wednesday at 8AM Australian Eastern Time.
-  - Meeting notes can be found [here](https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw).
-  - Meetings are recorded and can be found [here](https://www.youtube.com/playlist?list=PL7bmigfV0EqTBsPrnCkzhu0R4SAWnBjLj).
+  - Meeting notes can be found [here][8].
+  - Meetings are recorded and can be found [here][9].
 
 [1]: {{< param github_url >}}/blob/main/CODE_OF_CONDUCT.md
 [2]: {{< param github_url >}}/blob/main/CONTRIBUTING.md
 [3]: {{< param github_url >}}/issues
 [4]: {{< param slack_url >}}
-[5]: https://github.com/projectcontour/contour-operator/blob/main/docs/CONTRIBUTING.md
-[6]: https://github.com/projectcontour/contour-operator/issues
+[5]: {{< param github_operator_url >}}/blob/main/docs/CONTRIBUTING.md
+[6]: {{< param github_operator_url >}}/issues
+[7]: https://vmware.zoom.us/j/347232187
+[8]: https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw
+[9]: https://www.youtube.com/playlist?list=PL7bmigfV0EqTBsPrnCkzhu0R4SAWnBjLj
