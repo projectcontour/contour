@@ -38,7 +38,7 @@ contour   10.106.53.14   a47761ccbb9ce11e7b27f023b7e83d33-2036788482.ap-southeas
 Depending on your cloud provider, the `EXTERNAL-IP` value is an IP address, or, in the case of Amazon AWS, the DNS name of the ELB created for Contour. Keep a record of this value.
 
 Note that if you are running an Elastic Load Balancer (ELB) on AWS, you must add more details to your configuration to get the remote address of your incoming connections.
-See the [instructions for enabling the PROXY protocol.][9].
+See the [instructions for enabling the PROXY protocol.][4]
 
 #### Minikube
 
@@ -209,14 +209,14 @@ $ kubectl delete ns contour-operator
 ```
 
 [1]: #running-without-a-kubernetes-loadbalancer
-[2]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/README.md
+[2]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour
 [3]: #host-networking
-[4]: {% link _guides/proxy-proto.md %}
+[4]: /guides/proxy-proto.md
 [5]: https://github.com/kubernetes-up-and-running/kuard
-[7]: {{site.github.repository_url}}/tree/{{page.version}}/examples/contour/02-service-envoy.yaml
-[8]: {% link getting-started.md %}
-[9]: {% link docs/{{page.version}}/config/fundamentals.md %}
-[10]: {% link _guides/deploy-aws-nlb.md %}
+[7]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour/02-service-envoy.yaml
+[8]: /getting-started.md
+[9]: config/fundamentals.md
+[10]: /guides/deploy-aws-nlb.md
 [11]: redeploy-envoy.md
 [12]: https://github.com/projectcontour/contour-operator
 [13]: https://projectcontour.io/resources/deprecation-policy/
