@@ -7,7 +7,7 @@
             </button>
             <div class="dropdown-menu" id="dropdown-menu" aria-labelledby="dropdownMenuButton">
                 {{ $original_version := printf "/%s/" .CurrentSection.Params.version }}
-                {{ $latest_url := replace .Params.url .CurrentSection.Params.version .Site.Params.docs_latest | relURL }}
+                {{ $latest_url := replace .Params.url .CurrentSection.Params.version .Site.Params.latest_version | relURL }}
                 {{ $currentUrl := .Permalink }}
                 {{ range .Site.Params.docs_versions }}
                     {{ $new_version := printf "/%s/" . }}
@@ -16,7 +16,7 @@
                 {{ end }}
             </div>
         {{ else }}
-            <span>{{ .Site.Params.Docs_latest }}</span>
+            <span>{{ .Site.Params.latest_version }}</span>
         {{ end }}
     </div>
 {{ end }}

@@ -552,4 +552,4 @@ No change.
 
 Status reporting on HTTPProxy objects is similar in scope and function to IngressRoute status.
 
-[1]: /docs/{{< param docs_latest >}}/httpproxy
+[1]: /docs/{{< param latest_version >}}/httpproxy
