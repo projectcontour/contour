@@ -31,9 +31,9 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--http-port=<port>`  |    Port the metrics HTTP endpoint will bind to. |
 | `--health-address=<ipaddr>` |   Address the health HTTP endpoint will bind to |
 | `--health-port=<port>` | Port the health HTTP endpoint will bind to |
-| `--contour-cafile=</path/to/file|CONTOUR_CERT_FILE>` | CA bundle file name for serving gRPC with TLS |
-| `--contour-cert-file=</path/to/file|CONTOUR_CERT_FILE>`  | Contour certificate file name for serving gRPC over TLS |
-| `--contour-key-file=</path/to/file|CONTOUR_KEY_FILE>` | Contour key file name for serving gRPC over TLS |
+| `--contour-cafile=</path/to/file\|CONTOUR_CERT_FILE>` | CA bundle file name for serving gRPC with TLS |
+| `--contour-cert-file=</path/to/file\|CONTOUR_CERT_FILE>`  | Contour certificate file name for serving gRPC over TLS |
+| `--contour-key-file=</path/to/file\|CONTOUR_KEY_FILE>` | Contour key file name for serving gRPC over TLS |
 | `--insecure`  |               Allow serving without TLS secured gRPC |
 | `--root-namespaces=<ns,ns>` | Restrict contour to searching these namespaces for root ingress routes |
 | `--ingress-class-name=<name>` | Contour IngressClass name |
@@ -47,7 +47,7 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--envoy-service-name=<name>` | Name of the Envoy service to inspect for Ingress status details. |
 | `--envoy-service-namespace=<namespace>` | Envoy Service Namespace  |
 | `--use-proxy-protocol`  |     Use PROXY protocol for all listeners |
-| `--accesslog-format=<envoy|json>` | Format for Envoy access logs |
+| `--accesslog-format=<envoy\|json>` | Format for Envoy access logs |
 | `--disable-leader-election` | Disable leader election mechanism |
 | `-d, --debug`   |                  Enable debug logging |
 | `--kubernetes-debug=<log level>`  | Enable Kubernetes client debug logging |
@@ -103,8 +103,7 @@ Contour should provision TLS hosts.
 |------------|-----|----------|-------------|
 | name       | string | `""` | This field specifies the name of the Kubernetes secret to use as the fallback certificate.      |
 | namespace  | string | `""` | This field specifies the namespace of the Kubernetes secret to use as the fallback certificate. |
-{: class="table thead-dark table-bordered"}
-<br>
+
 
 ### Envoy Client Certificate
 
@@ -224,7 +223,7 @@ The rate limit service configuration block is used to configure an optional glob
 
 The following is an example ConfigMap with configuration file included:
 
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:

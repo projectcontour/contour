@@ -28,8 +28,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | leaderelection | leaderelection | | The [leader election configuration](#leader-election-configuration). |
 | request-timeout | [duration][4] | `0s` | This field specifies the default request timeout as a Go duration string. Zero means there is no timeout. |
 | tls | TLS | | The default [TLS configuration](#tls-configuration). |
-{: class="table thead-dark table-bordered"}
-<br>
+
 
 ### TLS Configuration
 
@@ -40,8 +39,7 @@ Contour should provision TLS hosts.
 |------------|-----|----------|-------------|
 | minimum-protocol-version| string | `""` | This field specifies the minimum TLS protocol version that is allowed. Valid options are `1.2` and `1.3`. Any other value defaults to TLS 1.1. |
 | fallback-certificate | | | [Fallback certificate configuration](#fallback-certificate). |
-{: class="table thead-dark table-bordered"}
-<br>
+
 
 ### Fallback Certificate
 
@@ -49,8 +47,7 @@ Contour should provision TLS hosts.
 |------------|-----|----------|-------------|
 | name       | string | `""` | This field specifies the name of the Kubernetes secret to use as the fallback certificate.      |
 | namespace  | string | `""` | This field specifies the namespace of the Kubernetes secret to use as the fallback certificate. |
-{: class="table thead-dark table-bordered"}
-<br>
+
 
 ### Leader Election Configuration
 
@@ -65,14 +62,13 @@ In the vast majority of deployments, only the `configmap-name` and `configmap-na
 | lease-duration | [duration][4] | `15s` | The duration of the leadership lease. |
 | renew-deadline | [duration][4] | `10s` | The length of time that the leader will retry refreshing leadership before giving up. |
 | retry-period | [duration][4] | `2s` | The interval at which Contour will attempt to the acquire leadership lease. |
-{: class="table thead-dark table-bordered"}
-<br>
+
 
 ### Configuration Example
 
 The following is an example ConfigMap with configuration file included:
 
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
