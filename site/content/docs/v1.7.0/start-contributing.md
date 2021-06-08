@@ -13,4 +13,4 @@ Thanks for taking the time to join our community and start contributing!
 [1]: {{< param github_url >}}/blob/main/CODE_OF_CONDUCT.md
 [2]: {{< param github_url >}}/blob/main/CONTRIBUTING.md
 [3]: {{< param github_url >}}/issues
-[4]: {{site.footer_social_links.Slack.url}}
+[4]: {{< param slack_url >}}

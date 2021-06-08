@@ -15,6 +15,6 @@ Thanks for taking the time to join our community and start contributing!
 [1]: {{< param github_url >}}/blob/main/CODE_OF_CONDUCT.md
 [2]: {{< param github_url >}}/blob/main/CONTRIBUTING.md
 [3]: {{< param github_url >}}/issues
-[4]: {{site.footer_social_links.Slack.url}}
+[4]: {{< param slack_url >}}
 [5]: https://github.com/projectcontour/contour-operator/blob/main/docs/CONTRIBUTING.md
 [6]: https://github.com/projectcontour/contour-operator/issues
