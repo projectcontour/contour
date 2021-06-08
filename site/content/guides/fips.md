@@ -131,7 +131,7 @@ The critical communication paths and how they are set up to be FIPS compliant ar
 [5]: https://hub.docker.com/r/projectcontour/contour
 [6]: https://www.gnu.org/software/make/
 [7]: https://www.docker.com/
-[8]: {{site.github.repository_url}}/blob/main/Dockerfile
+[8]: {{< param github_url >}}/blob/main/Dockerfile
 [9]: https://hub.docker.com/r/goboring/golang/
 [10]: https://go.googlesource.com/go/+/dev.boringcrypto/misc/boring/README.md#version-strings
 [11]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/security/ssl.html#fips-140-2
