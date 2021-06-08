@@ -78,7 +78,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		var matchingTLSRoutes []*gatewayapi_v1alpha1.TLSRoute
 		var listenerSecret *Secret
 
-		// Validate the Kind on the selector is a supported type.
+		// Validate the Protocol on the selector is a supported type.
 		switch listener.Protocol {
 		case gatewayapi_v1alpha1.HTTPSProtocolType:
 			// Validate that if protocol is type HTTPS, that TLS is defined.
@@ -93,7 +93,27 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				// routes to be bound to this listener since it can't serve TLS traffic.
 				continue
 			}
-		case gatewayapi_v1alpha1.HTTPProtocolType, gatewayapi_v1alpha1.TLSProtocolType:
+		case gatewayapi_v1alpha1.TLSProtocolType:
+
+			if tlsConfig := listener.TLS; tlsConfig != nil {
+				if tlsConfig.Mode != nil {
+					switch *tlsConfig.Mode {
+					case gatewayapi_v1alpha1.TLSModeTerminate:
+						// Check for TLS on the Gateway.
+						if listenerSecret = p.validGatewayTLS(listener); listenerSecret == nil {
+							// If TLS was configured on the Listener, but it's invalid, don't allow any
+							// routes to be bound to this listener since it can't serve TLS traffic.
+							continue
+						}
+					case gatewayapi_v1alpha1.TLSModePassthrough:
+						if listener.TLS.CertificateRef != nil {
+							p.Errorf("Listener.TLS cannot be defined when TLS Mode is %q.", tlsConfig.Mode)
+							continue
+						}
+					}
+				}
+			}
+		case gatewayapi_v1alpha1.HTTPProtocolType:
 			break
 		default:
 			p.Errorf("Listener.Protocol %q is not supported.", listener.Protocol)
@@ -157,6 +177,13 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				}
 			}
 		case KindTLSRoute:
+
+			// Validate the listener protocol is type=TLS.
+			if listener.Protocol != gatewayapi_v1alpha1.TLSProtocolType {
+				p.Errorf("invalid listener protocol %q for Kind: TLSRoute", listener.Protocol)
+				continue
+			}
+
 			for _, route := range p.source.tlsroutes {
 				// Filter the TLSRoutes that match the gateway which Contour is configured to watch.
 				// RouteBindingSelector defines a schema for associating routes with the Gateway.
@@ -213,12 +240,6 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha1.Liste
 	// Validate the CertificateRef is configured.
 	if listener.TLS.CertificateRef == nil {
 		p.Errorf("Spec.VirtualHost.TLS.CertificateRef is not configured.")
-		return nil
-	}
-
-	// Validate the correct protocol is specified.
-	if listener.Protocol != gatewayapi_v1alpha1.HTTPSProtocolType {
-		p.Errorf("Spec.VirtualHost.Protocol %q is not valid.", listener.Protocol)
 		return nil
 	}
 
