@@ -1106,7 +1106,58 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLSRoute with in valid listener protocol": {
+		"TLSRoute with invalid listener protocol of HTTP": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
+						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+							Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModePassthrough),
+							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+								Group: "core",
+								Kind:  "Secret",
+								Name:  sec1.Name,
+							},
+						},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindTLSRoute,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute with invalid listener kind": {
 			gateway: gatewayNoSelector,
 			objs: []interface{}{
 				&v1.Namespace{

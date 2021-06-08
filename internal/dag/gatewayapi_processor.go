@@ -177,6 +177,13 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				}
 			}
 		case KindTLSRoute:
+
+			// Validate the listener protocol is type=TLS.
+			if listener.Protocol != gatewayapi_v1alpha1.TLSProtocolType {
+				p.Errorf("invalid listener protocol %q for Kind: TLSRoute", listener.Protocol)
+				continue
+			}
+
 			for _, route := range p.source.tlsroutes {
 				// Filter the TLSRoutes that match the gateway which Contour is configured to watch.
 				// RouteBindingSelector defines a schema for associating routes with the Gateway.
@@ -187,12 +194,6 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				// Selector specifies a set of route labels used for selecting routes to associate
 				// with the Gateway. If this Selector is defined, only routes matching the Selector
 				// are associated with the Gateway. An empty Selector matches all routes.
-
-				// Validate the listener protocol is type=TLS.
-				if listener.Protocol != gatewayapi_v1alpha1.TLSProtocolType {
-					p.Errorf("invalid listener protocol %q for Kind: TLSRoute", listener.Protocol)
-					continue
-				}
 
 				nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route.Namespace)
 				if err != nil {
