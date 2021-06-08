@@ -52,5 +52,5 @@ _Previously posted on <https://blogs.vmware.com/cloudnative/2019/03/08/routing-t
 
 [1]: https://en.wikipedia.org/wiki/OSI_model#Layer_7:_Application_Layer
 [2]: https://kubernetes.io/docs/concepts/services-networking/ingress/
-[3]: {{site.github.repository_url}}/blob/v0.10.0/design/tls-certificate-delegation.md
-[4]: {{site.github.repository_url}}/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22+
+[3]: {{< param github_url >}}/blob/v0.10.0/design/tls-certificate-delegation.md
+[4]: {{< param github_url >}}/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22+
