@@ -42,4 +42,4 @@ spec:
 In this example, the permission for Contour to reference the Secret `example-com-wildcard` in the `admin` namespace has been delegated to HTTPProxy objects in the `example-com` namespace.
 Also, the permission for Contour to reference the Secret `another-com-wildcard` from all namespaces has been delegated to all HTTPProxy objects in the cluster.
 
-[1]: /docs/{{page.version}}/config/api/#projectcontour.io/v1.TLSCertificateDelegation
+[1]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.TLSCertificateDelegation

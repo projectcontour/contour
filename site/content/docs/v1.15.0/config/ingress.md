@@ -78,4 +78,4 @@ If not provided, Contour will use the address of the Envoy service using the pas
 [5]: https://kubernetes.io/docs/concepts/services-networking/ingress/#hostname-wildcards
 [6]: https://kubernetes.io/docs/concepts/services-networking/ingress/#path-types
 [7]: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
-[8]: /docs/{{page.version}}/config/tls-delegation/
+[8]: /docs/{{< param version >}}/config/tls-delegation/

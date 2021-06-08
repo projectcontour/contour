@@ -1481,13 +1481,13 @@ Some examples of invalid configurations that Contour provides statuses for:
 
  [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
  [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
- [3]: {{< param github_url >}}/tree/{{page.version}}/examples/example-workload/httpproxy
+ [3]: {{< param github_url >}}/tree/{{< param version >}}/examples/example-workload/httpproxy
  [4]: https://www.envoyproxy.io/docs/envoy/v1.14.2/api-v2/api/v2/route/route_components.proto#envoy-api-field-route-routeaction-timeout
  [5]: https://godoc.org/time#ParseDuration
  [6]: https://www.envoyproxy.io/docs/envoy/v1.14.2/api-v2/api/v2/route/route_components.proto#envoy-api-field-route-routeaction-idle-timeout
  [7]: https://www.envoyproxy.io/docs/envoy/v1.14.2/intro/arch_overview/upstream/load_balancing/overview
  [8]: #conditions
- [9]: {% link docs/{{page.version}}/annotations.md %}
- [10]: /docs/{{page.version}}/api/#projectcontour.io/v1.Service
+ [9]: {% link docs/{{< param version >}}/annotations.md %}
+ [10]: /docs/{{< param version >}}/api/#projectcontour.io/v1.Service
  [11]: configuration.md#fallback-certificate
- [12]: {{< param github_url >}}/tree/{{page.version}}/examples/root-rbac
+ [12]: {{< param github_url >}}/tree/{{< param version >}}/examples/root-rbac
