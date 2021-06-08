@@ -431,5 +431,5 @@ The YAML used in this guide is available [in the Contour repository][9].
 [6]: https://github.com/envoyproxy/ratelimit#configuration
 [7]: /docs/{{< param docs_latest >}}/config/rate-limiting/
 [8]: /docs/{{< param docs_latest >}}/config/api/
-[9]: {{< param github_base_url>}}/tree/main/examples/ratelimit
+[9]: {{< param github_url>}}/tree/main/examples/ratelimit
 [10]: https://github.com/lyft/goruntime
