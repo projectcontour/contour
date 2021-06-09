@@ -93,7 +93,7 @@ The Contour project is very community-driven and the team would love to hear you
 - We’ve heard that a number of teams have forked Contour and we would love to hear about what changes you needed, and to see if we can help to bring them upstream.
 Please consider coming to our community meeting, or contact us: either via an issue, or hit me up on Twitter [@youngnick](https://twitter.com/youngnick).
 
-If you are interested in contributing, a great place to start is to comment on one of the issues labeled with [Help Wanted]({{site.github.repository_url}}/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22+) and work with the team on how to resolve them. 
+If you are interested in contributing, a great place to start is to comment on one of the issues labeled with [Help Wanted]({{< param github_url >}}/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+label%3A%22Help+wanted%22+) and work with the team on how to resolve them. 
 
 ## Are you a Contour user? We would love to know!
 If you're using Contour and want to add your organization to our adopters list, please visit this [page](https://github.com/projectcontour/contour/blob/main/ADOPTERS.md).

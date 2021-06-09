@@ -156,5 +156,5 @@ There are a number of working examples of HTTPProxy objects in the [`examples/ex
 
  [1]: https://kubernetes.io/docs/concepts/services-networking/ingress/
  [2]: https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md
- [3]: {{site.github.repository_url}}/tree/{{page.version}}/examples/example-workload/httpproxy
+ [3]: {{< param github_url >}}/tree/{{< param version >}}/examples/example-workload/httpproxy
  [4]: api.md

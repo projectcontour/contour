@@ -142,5 +142,5 @@ The sign of a strong community is how users communicate through Slack and GitHub
 
 _**Note**: Stats above were taken on  Oct. 31, 2019._
 
-[1]: {{site.github.repository_url}}/commit/788feabc67c4da76cd1ae3c9ac1998b43cb0e2f3
+[1]: {{< param github_url >}}/commit/788feabc67c4da76cd1ae3c9ac1998b43cb0e2f3
 [2]: {% link img/contour-1.0/contour-1.0-stats.png %}

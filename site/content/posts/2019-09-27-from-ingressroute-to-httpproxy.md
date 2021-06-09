@@ -57,9 +57,9 @@ The final question that should be answered is, with the focus on layer 7 HTTP pr
 The short answer is Contour's layer 3/4 TCP proxying feature is not going away.
 Despite the cognitive dissonance, we're committed to supporting and enhancing Contour's TCP proxying abilities via the HTTPProxy CRD for the long term.
 
-[1]: {{site.github.repository_url}}/releases/tag/v1.0.0-beta.1
-[2]: {{site.github.repository_url}}/blob/v1.0.0-beta.1/docs/ingressroute.md
-[3]: {{site.github.repository_url}}/blob/v1.0.0-beta.1/docs/httpproxy.md
-[4]: {{site.github.repository_url}}/blob/v1.0.0-beta.1/docs/httpproxy.md#httpproxy-inclusion
-[5]: {{site.github.repository_url}}/blob/v1.0.0-beta.1/docs/httpproxy.md#conditions
+[1]: {{< param github_url >}}/releases/tag/v1.0.0-beta.1
+[2]: {{< param github_url >}}/blob/v1.0.0-beta.1/docs/ingressroute.md
+[3]: {{< param github_url >}}/blob/v1.0.0-beta.1/docs/httpproxy.md
+[4]: {{< param github_url >}}/blob/v1.0.0-beta.1/docs/httpproxy.md#httpproxy-inclusion
+[5]: {{< param github_url >}}/blob/v1.0.0-beta.1/docs/httpproxy.md#conditions
 [6]: {% link _guides/ingressroute-to-httpproxy.md %}
