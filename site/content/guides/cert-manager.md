@@ -636,7 +636,7 @@ __Note:__ For HTTPProxy resources this happens automatically without the need fo
 [4]: https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html
 [5]: https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
 [6]: https://letsencrypt.org/getting-started/
-[7]: /docs/{{< param docs_latest >}}/deploy-options/#get-your-hostname-or-ip-address
+[7]: /docs/{{< param latest_version >}}/deploy-options/#get-your-hostname-or-ip-address
 [8]: /img/cert-manager/httpbinhomepage.png
 [9]: /img/cert-manager/httpbin.png
 [10]: {{< param github_url >}}/issues/950

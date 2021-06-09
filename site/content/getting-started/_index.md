@@ -129,9 +129,9 @@ We've also got [a FAQ][4] for short-answer questions and conceptual stuff that d
 If you encounter issues, review the Troubleshooting section of [the docs][3], [file an issue][6], or talk to us on the [#contour channel][12] on the Kubernetes Slack server.
 
 [0]: https://aws.amazon.com/quickstart/architecture/vmware-kubernetes
-[1]: /docs/{{< param docs_latest >}}/deploy-options
-[2]: /docs/{{< param docs_latest >}}/config/fundamentals
-[3]: /docs/{{< param docs_latest >}}
+[1]: /docs/{{< param latest_version >}}/deploy-options
+[2]: /docs/{{< param latest_version >}}/config/fundamentals
+[3]: /docs/{{< param latest_version >}}
 [4]: {{< ref "resources/faq.md" >}}
 [6]: {{< param github_url >}}/issues
 [9]: https://github.com/kubernetes-up-and-running/kuard

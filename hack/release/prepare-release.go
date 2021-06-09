@@ -97,18 +97,10 @@ func updateConfigForSite(filePath string, vers string) error {
 
 	rn := yaml.MustParse(string(data))
 
-	// Set params.docs_latest to the provided version.
+	// Set params.latest_version to the provided version.
 	if _, err := rn.Pipe(
 		yaml.Lookup("params"),
-		yaml.FieldSetter{Name: "docs_latest", StringValue: vers},
-	); err != nil {
-		return err
-	}
-
-	// Set params.latest_release_tag_name to the provided version.
-	if _, err := rn.Pipe(
-		yaml.Lookup("params"),
-		yaml.FieldSetter{Name: "latest_release_tag_name", StringValue: vers},
+		yaml.FieldSetter{Name: "latest_version", StringValue: vers},
 	); err != nil {
 		return err
 	}
