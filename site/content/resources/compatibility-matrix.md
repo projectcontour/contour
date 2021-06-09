@@ -93,7 +93,7 @@ If you are providing your own Envoy it must be compiled with the following exten
 __Note:__ This list of extensions was last verified to be complete with Envoy v1.16.1.
 
 
-[1]: {{< param github_url >}}/tree/{{< param latest_release_tag_name >}}/examples/contour
+[1]: {{< param github_url >}}/tree/{{< param latest_version >}}/examples/contour
 
 [2]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.14.1
 [3]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.14.2
