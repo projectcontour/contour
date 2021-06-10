@@ -52,8 +52,6 @@ go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION
 1. Document upgrade instructions for the new release (`site/content/resources/upgrading.md`).
 1. Commit all changes, push the branch, and PR it into `main`.
 
-_Note: the PR will probably fail the siteproof check due to [#2032][3]. It's a good idea to scan the CI log for any true issues._
-
 ### Branch and tag release
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
@@ -131,7 +129,7 @@ git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 
 Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
 
-You can use [this template][4] as a basic structure to get started.
+You can use [this template][3] as a basic structure to get started.
 
 Specific items to call out in the release notes:
 - Filter on the Github label `release-note` and Github milestone which should include any PRs which should be called out in the release notes.
@@ -143,7 +141,7 @@ Specific items to call out in the release notes:
 - Post a blog entry to projectcontour.io
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
-- Send an update to the [cncf-contour-users mailing list][5]
+- Send an update to the [cncf-contour-users mailing list][4]
 
 ### File issues
 
@@ -269,7 +267,7 @@ git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 
 Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
 
-You can use [this template][4] as a basic structure to get started.
+You can use [this template][3] as a basic structure to get started.
 
 Specific items to call out in the release notes:
 - Filter on the Github label `release-note` and Github milestone which should include any PRs which should be called out in the release notes.
@@ -280,7 +278,7 @@ Specific items to call out in the release notes:
 
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
-- Send an update to the [cncf-contour-users mailing list][5]
+- Send an update to the [cncf-contour-users mailing list][4]
 
 ### File issues
 
@@ -288,6 +286,5 @@ If you encountered any problems or areas for improvement while executing the rel
 
 [1]: #minor-release-process
 [2]: #patch-release-process
-[3]: {{< param github_url >}}/contour/issues/2032
-[4]: {{< param github_url >}}/blob/main/hack/release/release-notes-template.md
-[5]: https://lists.cncf.io/g/cncf-contour-users/
+[3]: {{< param github_url >}}/blob/main/hack/release/release-notes-template.md
+[4]: https://lists.cncf.io/g/cncf-contour-users/
