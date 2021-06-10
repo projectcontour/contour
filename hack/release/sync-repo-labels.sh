@@ -7,7 +7,7 @@ readonly REPO=$(cd "${HERE}/../.." && pwd)
 readonly TOKEN=${TOKEN:-}
 
 readonly DOCKER=${DOCKER:-docker}
-readonly LABELS=${LABELS:-${REPO}/site/_data/github-labels.yaml}
+readonly LABELS=${LABELS:-${REPO}/site/data/github-labels.yaml}
 
 set -o errexit
 set -o nounset
@@ -55,5 +55,3 @@ labelsync \
     --skip projectcontour/toc \
     --config "${yaml}" \
     --token "${token}"
-
-# TODO(jpeach): add the -confirm flag to enable changes.
