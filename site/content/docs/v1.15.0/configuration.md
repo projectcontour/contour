@@ -404,7 +404,7 @@ the configuration file to match the environment in which Envoy is deployed.
 
 ### Flags
 
-There are flags that can be passed to `contour boostrap` that help configure how Envoy
+There are flags that can be passed to `contour bootstrap` that help configure how Envoy
 connects to Contour:
 
 | Flag | Default  | Description |

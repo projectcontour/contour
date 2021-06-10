@@ -9,3 +9,4 @@
 *.svg
 ./site/themes/contour/static/fonts/README.md
 ./vendor
+./site/public
