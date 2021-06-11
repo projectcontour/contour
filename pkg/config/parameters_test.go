@@ -167,7 +167,7 @@ func TestValidateGatewayParameters(t *testing.T) {
 	gw := &GatewayParameters{Name: "gwname", Namespace: ""}
 	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: namespace required")
 
-	// Name is required if namespace if passed.
+	// Name is required if namespace is passed.
 	gw = &GatewayParameters{Name: "", Namespace: "ns"}
 	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required")
 
@@ -183,8 +183,8 @@ func TestValidateGatewayParameters(t *testing.T) {
 	gw = &GatewayParameters{ControllerName: pointer.StringPtr("controller"), Name: "", Namespace: ""}
 	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required, namespace required")
 
-	// ControllerName should not be required.
-	gw = &GatewayParameters{Name: "gwname", Namespace: "ns"}
+	// ControllerName is required.
+	gw = &GatewayParameters{ControllerName: pointer.StringPtr("controller"), Name: "gwname", Namespace: "ns"}
 	assert.Equal(t, nil, gw.Validate())
 
 	// Not required if nothing is passed.

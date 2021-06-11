@@ -27,12 +27,12 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-var (
-	ctx = context.TODO()
+var defaultController = "projectcontour.io/projectcontour/contour"
 
-	defaultController = "projectcontour.io/projectcontour/contour"
+func TestGatewayClass(t *testing.T) {
+	ctx := context.TODO()
 
-	new = &gatewayapi_v1alpha1.GatewayClass{
+	new := &gatewayapi_v1alpha1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "new",
 		},
@@ -41,14 +41,12 @@ var (
 		},
 	}
 
-	old = &gatewayapi_v1alpha1.GatewayClass{
+	old := &gatewayapi_v1alpha1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "old",
 		},
 	}
-)
 
-func TestGatewayClass(t *testing.T) {
 	testCases := map[string]struct {
 		mutateNew func(gc *gatewayapi_v1alpha1.GatewayClass)
 		mutateOld func(gc *gatewayapi_v1alpha1.GatewayClass)

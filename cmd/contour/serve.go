@@ -425,16 +425,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			}
 
 			// Create and register the gatewayclass controller with the manager.
-			if ctx.Config.GatewayConfig.ControllerName != nil {
-				gcController := *ctx.Config.GatewayConfig.ControllerName
-				if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler,
-					log.WithField("context", "gatewayclass-controller"), gcController); err != nil {
-					log.WithError(err).Fatal("failed to create gatewayclass-controller")
-				}
+			gcController := *ctx.Config.GatewayConfig.ControllerName
+			if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler,
+				log.WithField("context", "gatewayclass-controller"), gcController); err != nil {
+				log.WithError(err).Fatal("failed to create gatewayclass-controller")
 			}
 
 			// Create and register the NewGatewayController controller with the manager.
-			if _, err := controller.NewGatewayController(mgr, &dynamicHandler, log.WithField("context", "gateway-controller")); err != nil {
+			if _, err := controller.NewGatewayController(mgr, &dynamicHandler,
+				log.WithField("context", "gateway-controller"), gcController); err != nil {
 				log.WithError(err).Fatal("failed to create gateway-controller")
 			}
 

@@ -14,6 +14,7 @@
 #       examples/contour/03-envoy.yaml
 #       examples/gateway/00-crds.yaml
 #       examples/gateway/01-gatewayclass.yaml
+#       examples/gateway/02-gateway.yaml
 #
 
 ---
@@ -2843,6 +2844,7 @@ rules:
   resources:
   - backendpolicies/status
   - gatewayclasses/status
+  - gateways/status
   - httproutes/status
   - tcproutes/status
   - tlsroutes/status
