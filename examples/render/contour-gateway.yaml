@@ -14,6 +14,7 @@
 #       examples/contour/03-envoy.yaml
 #       examples/gateway/00-crds.yaml
 #       examples/gateway/01-gatewayclass.yaml
+#       examples/gateway/02-gateway.yaml
 #
 
 ---
@@ -2828,8 +2829,6 @@ rules:
   - networking.x-k8s.io
   resources:
   - backendpolicies
-  - gatewayclasses
-  - gateways
   - httproutes
   - tcproutes
   - tlsroutes
@@ -2843,12 +2842,23 @@ rules:
   resources:
   - backendpolicies/status
   - gatewayclasses/status
+  - gateways/status
   - httproutes/status
   - tcproutes/status
   - tlsroutes/status
   - udproutes/status
   verbs:
   - update
+- apiGroups:
+  - networking.x-k8s.io
+  resources:
+  - gatewayclasses
+  - gateways
+  verbs:
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - projectcontour.io
   resources:
@@ -6505,3 +6515,20 @@ metadata:
   name: example
 spec:
   controller: projectcontour.io/projectcontour/contour
+
+---
+kind: Gateway
+apiVersion: networking.x-k8s.io/v1alpha1
+metadata:
+  name: contour
+  namespace: projectcontour
+spec:
+  gatewayClassName: example
+  listeners:
+    - protocol: HTTP
+      port: 80
+      routes:
+        kind: HTTPRoute
+        selector:
+          matchLabels:
+            app: kuard
