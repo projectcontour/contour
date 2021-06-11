@@ -56,13 +56,14 @@ type Deployment struct {
 	EnvoyDaemonSet            *apps_v1.DaemonSet
 }
 
-// Unmarshals resources from rendered Contour manifest in order.
+// UnmarshalResources unmarshals resources from rendered Contour manifest in
+// order.
 // Note: This will need to be updated if any new resources are added to the
 // rendered deployment manifest.
 func (d *Deployment) UnmarshalResources() error {
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
-		return errors.New("could not get filename")
+		return errors.New("could not get path to this source file (test/e2e/deployment.go)")
 	}
 	renderedManifestPath := filepath.Join(filepath.Dir(thisFile), "..", "..", "examples", "render", "contour.yaml")
 	file, err := os.Open(renderedManifestPath)

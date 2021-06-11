@@ -55,8 +55,6 @@ var _ = BeforeSuite(func() {
 	contourUpgradeToImage = os.Getenv("CONTOUR_UPGRADE_TO_IMAGE")
 	require.NotEmpty(f.T(), contourUpgradeToImage, "CONTOUR_UPGRADE_TO_IMAGE environment variable not supplied")
 	By("upgrading Contour image to " + contourUpgradeToImage)
-
-	// TODO: Install "from" version here instead of relying on it existing in cluster.
 })
 
 var _ = Describe("upgrading Contour", func() {
@@ -209,6 +207,4 @@ func updateContourDeploymentResources() {
 	f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Image = contourUpgradeToImage
 	f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
 	require.NoError(f.T(), f.Deployment.EnsureEnvoyDaemonSet())
-	// TODO: when we deploy the from version in this test, ensure envoy
-	// shutdown time is configured to take less time.
 }
