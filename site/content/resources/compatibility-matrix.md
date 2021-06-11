@@ -37,10 +37,10 @@ These combinations of versions are specifically tested in CI and supported by th
 
 ## Notes on Compatibility
 
-**As of version 1.16.0, since Contour only subscribes to Ingress v1 resources (and no longer falls back to Ingress v1beta1), the minimum compatible Kubernetes version is 1.19.**
+**As of Contour version 1.16.0, Contour only subscribes to Ingress v1 resources (and no longer falls back to Ingress v1beta1). The minimum compatible Kubernetes version for Contour 1.16.0 and above is Kubernetes 1.19.**
 
 Contour utilizes [client-go][98] to watch for resources in a Kubernetes cluster.
-We try to stay up to date with the latest version of the library and by extension the latest versions of Kubernetes.
+We depend on the latest version of the library and by extension only support the latest versions of Kubernetes.
 While the `client-go` [compatibility matrix][99] may list older versions of Kubernetes as being compatible and supported by upstream, the Contour project only tests a given version of Contour against the versions listed in the table above.
 Combinations not listed are not tested, guaranteed to work, or supported by the Contour maintainers.
 
