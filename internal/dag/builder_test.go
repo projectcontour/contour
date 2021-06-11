@@ -32,6 +32,25 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+var sec1 = &v1.Secret{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "secret",
+		Namespace: "default",
+	},
+	Type: v1.SecretTypeTLS,
+	Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+}
+
+// Invalid cert in the secret
+var secInvalid = &v1.Secret{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      "secret",
+		Namespace: "default",
+	},
+	Type: v1.SecretTypeTLS,
+	Data: secretdata("wrong", "wronger"),
+}
+
 func gatewayPort(port int) *gatewayapi_v1alpha1.PortNumber {
 	p := gatewayapi_v1alpha1.PortNumber(port)
 	return &p
@@ -143,6 +162,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlscert",
+			Namespace: "projectcontour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+	}
+
 	hostname := gatewayapi_v1alpha1.Hostname("gateway.projectcontour.io")
 	wildcardHostname := gatewayapi_v1alpha1.Hostname("*.projectcontour.io")
 
@@ -215,6 +243,9 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
 				Protocol: gatewayapi_v1alpha1.TLSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModePassthrough),
+				},
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindTLSRoute,
 					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
@@ -254,10 +285,15 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			Listeners: []gatewayapi_v1alpha1.Listener{{
-				Port:     80,
+				Port:     443,
 				Protocol: gatewayapi_v1alpha1.TLSProtocolType,
 				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
 					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModeTerminate),
+					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+						Group: "core",
+						Kind:  "Secret",
+						Name:  sec1.Name,
+					},
 				},
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindTLSRoute,
@@ -297,8 +333,12 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
 				Protocol: gatewayapi_v1alpha1.TLSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModePassthrough),
+				},
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Kind: KindTLSRoute,
+
 					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
 						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
 					},
@@ -315,15 +355,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			}},
 		},
-	}
-
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "tlscert",
-			Namespace: "projectcontour",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
 	}
 
 	gatewayWithOnlyTLS := &gatewayapi_v1alpha1.Gateway{
@@ -1071,8 +1102,125 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLSRoute with TLS.Mode=Terminate is invalid when TLS is not defined": {
+		"TLSRoute with TLS.Mode=Terminate": {
 			gateway: gatewayTLSRouteModeTerminate,
+			objs: []interface{}{
+				kuardService,
+				sec1,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(
+									service(kuardService),
+								),
+							},
+							Secret: secret(sec1),
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute with TLS.Mode=Terminate, invalid cert": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     443,
+						Protocol: gatewayapi_v1alpha1.TLSProtocolType,
+						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+							Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModeTerminate),
+							CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+								Group: "core",
+								Kind:  "Secret",
+								Name:  secInvalid.Name,
+							},
+						},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindTLSRoute,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+							},
+						},
+					}},
+				},
+			},
+			objs: []interface{}{
+				kuardService,
+				secInvalid,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute with TLS.Mode=Terminate is invalid when TLS is not defined": {
+			gateway: &gatewayapi_v1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "contour",
+					Namespace: "projectcontour",
+				},
+				Spec: gatewayapi_v1alpha1.GatewaySpec{
+					Listeners: []gatewayapi_v1alpha1.Listener{{
+						Port:     80,
+						Protocol: gatewayapi_v1alpha1.TLSProtocolType,
+						TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+							Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModeTerminate),
+						},
+						Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+							Kind: KindTLSRoute,
+							Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+							},
+						},
+					}},
+				},
+			},
 			objs: []interface{}{
 				&v1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -3252,25 +3400,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 func TestDAGInsert(t *testing.T) {
 	// The DAG is sensitive to ordering, adding an ingress, then a service,
 	// should have the same result as adding a service, then an ingress.
-
-	sec1 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
-	}
-
-	// Invalid cert in the secret
-	sec2 := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secret",
-			Namespace: "default",
-		},
-		Type: v1.SecretTypeTLS,
-		Data: secretdata("wrong", "wronger"),
-	}
 
 	// weird secret with a blank ca.crt that
 	// cert manager creates. #1644
@@ -6605,7 +6734,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"ingressv1: insert invalid secret then ingress w/o tls": {
 			objs: []interface{}{
-				sec2,
+				secInvalid,
 				i1V1,
 			},
 			want: listeners(),
@@ -6613,7 +6742,7 @@ func TestDAGInsert(t *testing.T) {
 		"ingressv1: insert service, invalid secret then ingress w/o tls": {
 			objs: []interface{}{
 				s1,
-				sec2,
+				secInvalid,
 				i1V1,
 			},
 			want: listeners(
@@ -6627,7 +6756,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"ingressv1: insert invalid secret then ingress w/ tls": {
 			objs: []interface{}{
-				sec2,
+				secInvalid,
 				i3V1,
 			},
 			want: listeners(),
@@ -6635,7 +6764,7 @@ func TestDAGInsert(t *testing.T) {
 		"ingressv1: insert service, invalid secret then ingress w/ tls": {
 			objs: []interface{}{
 				s1,
-				sec2,
+				secInvalid,
 				i3V1,
 			},
 			want: listeners(

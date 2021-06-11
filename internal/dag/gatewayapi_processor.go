@@ -112,6 +112,14 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						}
 					}
 				}
+			} else {
+				// Config is nil so validate the default which is mode: terminate
+				// Check for TLS on the Gateway.
+				if listenerSecret = p.validGatewayTLS(listener); listenerSecret == nil {
+					// If TLS was configured on the Listener, but it's invalid, don't allow any
+					// routes to be bound to this listener since it can't serve TLS traffic.
+					continue
+				}
 			}
 		case gatewayapi_v1alpha1.HTTPProtocolType:
 			break
@@ -230,7 +238,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 		// Process all the routes that match this Gateway.
 		for _, matchingRoute := range matchingTLSRoutes {
-			p.computeTLSRoute(matchingRoute)
+			p.computeTLSRoute(matchingRoute, listenerSecret)
 		}
 	}
 }
@@ -238,7 +246,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha1.Listener) *Secret {
 
 	// Validate the CertificateRef is configured.
-	if listener.TLS.CertificateRef == nil {
+	if listener.TLS == nil || listener.TLS.CertificateRef == nil {
 		p.Errorf("Spec.VirtualHost.TLS.CertificateRef is not configured.")
 		return nil
 	}
@@ -445,7 +453,7 @@ func selectorMatches(selector *metav1.LabelSelector, objLabels map[string]string
 	return true, nil
 }
 
-func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRoute) {
+func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRoute, listenerSecret *Secret) {
 
 	routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
 	defer commit()
@@ -513,6 +521,11 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 
 		for _, host := range hosts {
 			secure := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
+
+			if listenerSecret != nil {
+				secure.Secret = listenerSecret
+			}
+
 			secure.TCPProxy = &proxy
 		}
 	}

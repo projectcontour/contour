@@ -261,6 +261,39 @@ var _ = Describe("Gateway API", func() {
 
 		f.NamespacedTest("008-tlsroute-mode-passthrough", testWithGateway(gw, testTLSRoutePassthrough))
 	})
+
+	Describe("TLSRoute Gateway: Mode: Terminate", func() {
+		gw := &gatewayv1alpha1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "tls-passthrough",
+			},
+			Spec: gatewayv1alpha1.GatewaySpec{
+				GatewayClassName: "contour-class",
+				Listeners: []gatewayv1alpha1.Listener{
+					{
+						Protocol: gatewayv1alpha1.TLSProtocolType,
+						Port:     gatewayv1alpha1.PortNumber(443),
+						TLS: &gatewayv1alpha1.GatewayTLSConfig{
+							Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModePassthrough),
+							CertificateRef: &gatewayv1alpha1.LocalObjectReference{
+								Group: "core",
+								Kind:  "Secret",
+								Name:  "tlscert",
+							},
+						},
+						Routes: gatewayv1alpha1.RouteBindingSelector{
+							Kind: "TLSRoute",
+							Namespaces: &gatewayv1alpha1.RouteNamespaces{
+								From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		f.NamespacedTest("008-tlsroute-mode-passthrough", testWithGateway(gw, testTLSRoutePassthrough))
+	})
 })
 
 func stringPtr(s string) *string {
