@@ -87,12 +87,12 @@ var _ = Describe("GatewayClass Controller", func() {
 			// Create
 			Expect(cl.Create(context.Background(), waiting)).Should(Succeed())
 
-			By("Expecting waiting reason")
+			By("Expecting not admitted status condition")
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), key, gc)
-				return isWaiting(gc)
-			}, timeout, interval).Should(BeTrue())
+				return isAdmitted(gc)
+			}, timeout, interval).Should(BeFalse())
 
 			// Delete
 			By("Expecting to delete successfully")

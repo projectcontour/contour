@@ -118,16 +118,3 @@ func isAdmitted(gc *gatewayv1alpha1.GatewayClass) bool {
 
 	return false
 }
-
-// isWaiting returns true if gc status is "Admitted=false" with the "Waiting" reason.
-func isWaiting(gc *gatewayv1alpha1.GatewayClass) bool {
-	for _, c := range gc.Status.Conditions {
-		if c.Type == string(gatewayv1alpha1.GatewayClassConditionStatusAdmitted) &&
-			c.Status == metav1.ConditionFalse &&
-			c.Reason == string(gatewayv1alpha1.GatewayClassNotAdmittedWaiting) {
-			return true
-		}
-	}
-
-	return false
-}
