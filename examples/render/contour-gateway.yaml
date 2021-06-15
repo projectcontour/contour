@@ -2830,7 +2830,6 @@ rules:
   resources:
   - backendpolicies
   - gatewayclasses
-  - gateways
   - httproutes
   - tcproutes
   - tlsroutes
@@ -2851,6 +2850,15 @@ rules:
   - udproutes/status
   verbs:
   - update
+- apiGroups:
+  - networking.x-k8s.io
+  resources:
+  - gateways
+  verbs:
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - projectcontour.io
   resources:
