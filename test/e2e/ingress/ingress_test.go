@@ -24,7 +24,6 @@ import (
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	networkingv1 "k8s.io/api/networking/v1"
 )
 
 var f = e2e.NewFramework(false)
@@ -82,7 +81,3 @@ var _ = Describe("Ingress", func() {
 
 	f.NamespacedTest("002-ingress-ensure-v1beta1", testEnsureV1Beta1)
 })
-
-func pathTypePtr(val networkingv1.PathType) *networkingv1.PathType {
-	return &val
-}

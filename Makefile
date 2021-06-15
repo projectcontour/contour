@@ -19,7 +19,7 @@ LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | hea
 CONTOUR_E2E_LOCAL_HOST ?= $(LOCALIP)
 # Variables needed for running upgrade tests.
 CONTOUR_UPGRADE_FROM_VERSION ?= $(shell ./test/scripts/get-contour-upgrade-from-version.sh)
-CONTOUR_UPGRADE_TO_IMAGE ?= projectcontour/contour:main
+CONTOUR_E2E_IMAGE ?= projectcontour/contour:main
 
 TAG_LATEST ?= false
 
@@ -368,7 +368,7 @@ upgrade: | install-contour-release load-contour-image-kind run-upgrade cleanup-k
 .PHONY: run-upgrade
 run-upgrade:
 	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
-		CONTOUR_UPGRADE_TO_IMAGE=$(CONTOUR_UPGRADE_TO_IMAGE) \
+		CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
 		ginkgo -tags=e2e -mod=readonly -randomizeAllSpecs -slowSpecThreshold=300 -v ./test/e2e/upgrade
 
 .PHONY: check-ingress-conformance
