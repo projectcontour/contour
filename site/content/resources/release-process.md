@@ -3,8 +3,8 @@ title: Contour Release Process
 layout: page
 ---
 
-- [Minor release process](#minor-release-process)
-- [Patch release process](#patch-release-process)
+- [Minor release process][1]
+- [Patch release process][2]
 
 # Minor Release Process
 
@@ -51,8 +51,6 @@ go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION
 1. Add the new release to the compatibility matrix (`site/content/resources/compatibility-matrix.md`).
 1. Document upgrade instructions for the new release (`site/content/resources/upgrading.md`).
 1. Commit all changes, push the branch, and PR it into `main`.
-
-_Note: the PR will probably fail the siteproof check due to [#2032](https://github.com/projectcontour/contour/issues/2032). It's a good idea to scan the CI log for any true issues._
 
 ### Branch and tag release
 
@@ -131,20 +129,23 @@ git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 
 Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
 
-_Note: Filter on the Github label "release note" and Github milestone which should include any PRs which should be called out in the release notes._ 
+You can use [this template][3] as a basic structure to get started.
+
+Specific items to call out in the release notes:
+- Filter on the Github label `release-note` and Github milestone which should include any PRs which should be called out in the release notes.
+- Also filter on the Github label `release-note-action-required` and ensure these are mentioned specifically with emphasis there may be user action required.
+- Be sure to include a section that specifies the compatible kubernetes versions for this version of Contour.
 
 ### Toot your horn
 
 - Post a blog entry to projectcontour.io
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
-- Send an update to the [cncf-contour-users mailing list](https://lists.cncf.io/g/cncf-contour-users/)
+- Send an update to the [cncf-contour-users mailing list][4]
 
 ### File issues
 
 If you encountered any problems or areas for improvement while executing the release, file issues before you forget.
-
-
 
 # Patch Release Process
 
@@ -266,14 +267,24 @@ git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 
 Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
 
-_Note: Filter on the Github label "release note" and Github milestone which should include any PRs which should be called out in the release notes._ 
+You can use [this template][3] as a basic structure to get started.
+
+Specific items to call out in the release notes:
+- Filter on the Github label `release-note` and Github milestone which should include any PRs which should be called out in the release notes.
+- Also filter on the Github label `release-note-action-required` and ensure these are mentioned specifically with emphasis there may be user action required.
+- Be sure to include a section that specifies the compatible kubernetes versions for this version of Contour.
 
 ### Toot your horn
 
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
-- Send an update to the [cncf-contour-users mailing list](https://lists.cncf.io/g/cncf-contour-users/)
+- Send an update to the [cncf-contour-users mailing list][4]
 
 ### File issues
 
 If you encountered any problems or areas for improvement while executing the release, file issues before you forget.
+
+[1]: #minor-release-process
+[2]: #patch-release-process
+[3]: {{< param github_url >}}/blob/main/hack/release/release-notes-template.md
+[4]: https://lists.cncf.io/g/cncf-contour-users/

@@ -7,6 +7,8 @@
 This document describes Contour's implementation of specific Ingress resource fields and features.
 As the Ingress specification has evolved between v1beta1 and v1, any differences between versions are highlighted to ensure clarity for Contour users.
 
+**Note: As of Contour version 1.16.0, Contour is not compatible with Kubernetes versions that predate Ingress v1. This means Contour 1.16.0 and above require Kubernetes 1.19 and above. The Ingress v1beta1 resource is still available in Kubernetes 1.19 (but will be removed in 1.22) and the API server will convert such resources to Ingress v1 for Contour to subscribe to.**
+
 ## Kubernetes Versions
 
 Contour is [validated against Kubernetes release versions N through N-2][1] (with N being the latest release).

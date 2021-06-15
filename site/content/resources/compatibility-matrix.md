@@ -4,8 +4,7 @@ layout: page
 ---
 
 This page documents the compatibility matrix of versions of Contour, Envoy, Kubernetes, and the Contour Operator.
-These combinations of versions are specifically tested and supported by the Contour maintainers.
-Other combinations *may* work, but are not tested or supported.
+These combinations of versions are specifically tested in CI and supported by the Contour maintainers.
 
 ## Compatibility Matrix
 
@@ -37,15 +36,13 @@ Other combinations *may* work, but are not tested or supported.
 <br />
 
 ## Notes on Compatibility
+
+**As of Contour version 1.16.0, Contour only subscribes to Ingress v1 resources (and no longer falls back to Ingress v1beta1). The minimum compatible Kubernetes version for Contour 1.16.0 and above is Kubernetes 1.19.**
+
 Contour utilizes [client-go][98] to watch for resources in a Kubernetes cluster.
-Since Kubernetes is backwards compatible with clients, older client-go versions will work with many different Kubernetes cluster versions.
-Contour also only consumes a small number of quite stable Kubernetes APIs.
-This means that Contour is *likely* compatible with more Kubernetes versions than those listed in the matrix.
-However, combinations not listed are not tested or supported by the Contour maintainers.
-
-The `client-go` package includes a [compatibility matrix][99] as to what Kubernetes API versions are supported with the version of client-go.
-
-__Note:__ As of version 1.16.0, since Contour only subscribes to Ingress v1 resources (and no longer falls back to Ingress v1beta1), the minimum compatible Kubernetes version is 1.19.
+We depend on the latest version of the library and by extension only support the latest versions of Kubernetes.
+While the `client-go` [compatibility matrix][99] may list older versions of Kubernetes as being compatible and supported by upstream, the Contour project only tests a given version of Contour against the versions listed in the table above.
+Combinations not listed are not tested, guaranteed to work, or supported by the Contour maintainers.
 
 ## Envoy Extensions
 Contour requires the following Envoy extensions.
