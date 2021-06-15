@@ -127,6 +127,20 @@ default:
       name: area/operational
       target: both
       addedBy: label
+    - color: 0052cc
+      description: Issues or PRs about making Contour interoperate with service meshes. Contour is not a service mesh.
+      name: area/service-mesh
+      previously:
+        - name: "area/service mesh"
+      target: both
+      addedBy: label
+    - color: 0052cc
+      description: Issues or PRs about Contour's support for sticky sessions.
+      name: area/sticky-session
+      previously:
+        - name: "area/sticky session"
+      target: both
+      addedBy: label
 
 # Blocked.
     - color: "FF7B7B"
@@ -171,6 +185,11 @@ default:
       addedBy: anyone
       previously:
         - name: bug
+    - color: 8cff82
+      description: Categorizes issue as a decision to be voted on.
+      name: kind/decision
+      target: issue
+      addedBy: anyone
     - color: c7def8
       description: Categorizes issue or PR as related to cleaning up code, process, or technical debt.
       name: kind/cleanup
@@ -248,6 +267,14 @@ default:
       name: lifecycle/accepted
       target: both
       addedBy: anyone
+
+# Documentation
+    - color: 9F629C
+      description: Indicates that an issue or PR needs attention from a technical writer or a docs update.
+      name: doc-impact
+      target: both
+      addedBy: anyone
+
 
 # Priority.
     - color: fef2c0

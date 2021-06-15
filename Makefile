@@ -176,18 +176,18 @@ lint-codespell: CODESPELL_SKIP := $(shell cat .codespell.skip | tr \\n ',')
 lint-codespell:
 	@./hack/codespell.sh --skip $(CODESPELL_SKIP) --ignore-words .codespell.ignorewords --check-filenames --check-hidden -q2
 
-.PHONY: check-golint
+.PHONY: lint-golint
 lint-golint:
 	@echo Running Go linter ...
 	@./hack/golangci-lint run --build-tags=e2e
 
-.PHONY: check-yamllint
+.PHONY: lint-yamllint
 lint-yamllint:
 	@echo Running YAML linter ...
 	@./hack/yamllint examples/ site/content/examples/
 
 # Check that CLI flags are formatted consistently. We are checking
-# for calls to Kingping Flags() and Command() APIs where the 2nd
+# for calls to Kingpin Flags() and Command() APIs where the 2nd
 # argument (the help text) either doesn't start with a capital letter
 # or doesn't end with a period. "xDS" and "gRPC" are exceptions to
 # the first rule.
@@ -246,34 +246,11 @@ generate-metrics-docs:
 check-generate: generate
 	@./hack/actions/check-uncommitted-codegen.sh
 
-# TODO(youngnick): Move these local bootstrap config files out of the repo root dir.
-$(LOCAL_BOOTSTRAP_CONFIG): install
-	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 $@
 
-$(SECURE_LOCAL_BOOTSTRAP_CONFIG): install
-	contour bootstrap --xds-address $(LOCALIP) --xds-port=8001 --envoy-cafile /config/certs/CAcert.pem --envoy-cert-file /config/certs/envoycert.pem --envoy-key-file /config/certs/envoykey.pem $@
 
-secure-local: $(SECURE_LOCAL_BOOTSTRAP_CONFIG)
-	docker run \
-		-it \
-		--mount type=bind,source=$(CURDIR),target=/config \
-		--net bridge \
-		$(ENVOY_IMAGE) \
-		envoy \
-		--config-path /config/$< \
-		--service-node node0 \
-		--service-cluster cluster0
-
-local: $(LOCAL_BOOTSTRAP_CONFIG)
-	docker run \
-		-it \
-		--mount type=bind,source=$(CURDIR),target=/config \
-		--net bridge \
-		$(ENVOY_IMAGE) \
-		envoy \
-		--config-path /config/$< \
-		--service-node node0 \
-		--service-cluster cluster0
+####
+# This method of certificate generation is DEPRECATED and will be removed soon.
+####
 
 gencerts: certs/contourcert.pem certs/envoycert.pem
 	@echo "certs are generated."
@@ -329,6 +306,9 @@ certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
 		-days 1825 -sha256 \
 		-extfile certs/cert-envoy.ext
 
+
+# Site development targets
+
 generate-uml: $(patsubst %.uml,%.png,$(wildcard site/img/uml/*.uml))
 
 # Generate a PNG from a PlantUML specification. This rule should only
@@ -345,28 +325,55 @@ site-devel: ## Launch the website
 site-check: ## Test the site's links
 	# TODO: Clean up to use htmltest
 
-.PHONY: e2e
-e2e: ## Run E2E tests against a real k8s cluster
+
+# Tools for testing and troubleshooting
+
+.PHONY: setup-kind-cluster
+setup-kind-cluster: ## Make a kind cluster with standard ports forwarded
 	./test/scripts/make-kind-cluster.sh
+
+.PHONY: install-contour-working
+install-contour-working: | setup-kind-cluster ## Install the local working directory version of Contour into a kind cluster
 	./test/scripts/install-contour-working.sh
+
+.PHONY: install-contour-release 
+install-contour-release: | setup-kind-cluster ## Install the release version of Contour in CONTOUR_UPGRADE_FROM_VERSION, defaults to latest
+	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
+
+.PHONY: e2e
+e2e: | install-contour-working run-e2e cleanup-kind ## Run E2E tests against a real k8s cluster
+
+.PHONY: run-e2e
+run-e2e:
 	ginkgo -tags=e2e -mod=readonly -skipPackage=upgrade -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
+
+.PHONY: cleanup-kind
+cleanup-kind:
 	./test/scripts/cleanup.sh
 
-.PHONY: upgrade
-upgrade: ## Run upgrade tests against a real k8s cluster
-	./test/scripts/make-kind-cluster.sh
-	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
+## This requires the multiarch-build target to have been run,
+## which puts the Contour docker image at <repo>/image/contour-version.tar.gz
+## It can't be run as a Make dependency, because we need to do it as a pre-step
+## during our build to speed things up.
+.PHONY: load-contour-image-kind
+load-contour-image-kind: ## Load Contour image from image/ into Kind. Image can be made with `make multiarch-build`
 	./test/scripts/kind-load-contour-image.sh
+
+.PHONY: upgrade
+upgrade: | install-contour-release load-contour-image-kind run-upgrade cleanup-kind ## Run upgrade tests against a real k8s cluster
+
+.PHONY: run-upgrade
+run-upgrade:
 	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
 		CONTOUR_UPGRADE_TO_IMAGE=$(CONTOUR_UPGRADE_TO_IMAGE) \
 		ginkgo -tags=e2e -mod=readonly -randomizeAllSpecs -slowSpecThreshold=300 -v ./test/e2e/upgrade
-	./test/scripts/cleanup.sh
 
-check-ingress-conformance: ## Run Ingress controller conformance
-	./test/scripts/make-kind-cluster.sh
-	./test/scripts/install-contour-working.sh
+.PHONY: check-ingress-conformance
+check-ingress-conformance: | install-contour-working run-ingress-conformance cleanup-kind ## Run Ingress controller conformance
+
+.PHONY: run-ingress-conformance
+run-ingress-conformance:
 	./test/scripts/run-ingress-conformance.sh
-	./test/scripts/cleanup.sh
 
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes

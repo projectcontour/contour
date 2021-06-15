@@ -13,7 +13,7 @@ Its goal is to expand upon the functionality of the Ingress API to allow for a r
 
 ## Prerequisites
 
-Contour requires Kubernetes version 1.19 or later, for [stable Ingress v1 support](https://kubernetes.io/docs/concepts/services-networking/ingress/).
+See the [compatibility matrix](https://projectcontour.io/resources/compatibility-matrix/) for the Kubernetes versions Contour is supported with.
 
 RBAC must be enabled on your cluster.
 
