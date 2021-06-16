@@ -21,6 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	core_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -50,7 +51,18 @@ func TestGateway(t *testing.T) {
 
 	gw := &gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "gw",
+			Name:      "gw",
+			Namespace: "gw-ns",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			GatewayClassName: gc.Name,
+		},
+	}
+
+	other := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "other-gw",
+			Namespace: "gw-ns",
 		},
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			GatewayClassName: gc.Name,
@@ -58,16 +70,43 @@ func TestGateway(t *testing.T) {
 	}
 
 	testCases := map[string]struct {
-		mutateGw func(gw *gatewayapi_v1alpha1.Gateway)
-		mutateGc func(gc *gatewayapi_v1alpha1.GatewayClass)
-		errType  field.ErrorType
-		errField string
-		expect   bool
+		mutateGw  func(gw *gatewayapi_v1alpha1.Gateway)
+		mutateGc  func(gc *gatewayapi_v1alpha1.GatewayClass)
+		otherInNs bool
+		errType   field.ErrorType
+		errField  string
+		expect    bool
 	}{
 		"valid gateway": {
 			mutateGw: func(_ *gatewayapi_v1alpha1.Gateway) {},
 			mutateGc: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
 			expect:   true,
+		},
+		"invalid gateway name": {
+			mutateGw: func(gw *gatewayapi_v1alpha1.Gateway) {
+				gw.Name = "@#$%"
+			},
+			mutateGc: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
+			errType:  field.ErrorTypeInvalid,
+			errField: "metadata.name",
+			expect:   false,
+		},
+		"undefined gateway namespace": {
+			mutateGw: func(gw *gatewayapi_v1alpha1.Gateway) {
+				gw.Namespace = ""
+			},
+			mutateGc: func(_ *gatewayapi_v1alpha1.GatewayClass) {},
+			errType:  field.ErrorTypeRequired,
+			errField: "metadata.namespace",
+			expect:   false,
+		},
+		"other gateway in namespace": {
+			mutateGw:  func(_ *gatewayapi_v1alpha1.Gateway) {},
+			mutateGc:  func(_ *gatewayapi_v1alpha1.GatewayClass) {},
+			otherInNs: true,
+			errType:   field.ErrorTypeInternal,
+			errField:  "metadata.namespace",
+			expect:    false,
 		},
 		"gateway references non-existent gatewayclass": {
 			mutateGw: func(gw *gatewayapi_v1alpha1.Gateway) {
@@ -101,12 +140,27 @@ func TestGateway(t *testing.T) {
 			// Create the client
 			cl := builder.Build()
 
+			// Create the namespace for the gateway under test.
+			ns := &core_v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: gw.Namespace,
+				},
+			}
+			err := cl.Create(ctx, ns)
+			require.NoErrorf(t, err, "Failed to create namespace %s", gw.Namespace)
+
+			// Create the other gateway if needed
+			if tc.otherInNs {
+				err = cl.Create(context.TODO(), other)
+				require.NoErrorf(t, err, "Failed to create gateway %s/%s", other.Namespace, other.Name)
+			}
+
 			// Mutate and create the referenced gatewayclass.
 			muGc := gc.DeepCopy()
 			if tc.mutateGc != nil {
 				tc.mutateGc(muGc)
 			}
-			err := cl.Create(context.TODO(), muGc)
+			err = cl.Create(context.TODO(), muGc)
 			require.NoErrorf(t, err, "Failed to create gatewayclass %s", muGc.Name)
 
 			// Mutate and create the gateway being tested.

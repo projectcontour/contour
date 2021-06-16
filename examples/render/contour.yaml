@@ -2826,7 +2826,6 @@ rules:
   - networking.x-k8s.io
   resources:
   - backendpolicies
-  - gatewayclasses
   - httproutes
   - tcproutes
   - tlsroutes
@@ -2850,6 +2849,7 @@ rules:
 - apiGroups:
   - networking.x-k8s.io
   resources:
+  - gatewayclasses
   - gateways
   verbs:
   - get

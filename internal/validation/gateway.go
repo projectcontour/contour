@@ -17,6 +17,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/projectcontour/contour/internal/gateway"
+
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -24,14 +27,32 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+// ValidateName validates that the given name conforms to Kubernetes naming standards.
+var ValidateName = apivalidation.NameIsDNSSubdomain
+
 // ValidateGateway validates gw according to the Gateway API specification.
 // For additional details of the Gateway spec, refer to:
 //   https://gateway-api.sigs.k8s.io/spec/#networking.x-k8s.io/v1alpha1.Gateway
 func ValidateGateway(ctx context.Context, cli client.Client, gw *gatewayapi_v1alpha1.Gateway) field.ErrorList {
-	var errs field.ErrorList
-
+	errs := apivalidation.ValidateObjectMeta(&gw.ObjectMeta, true, ValidateName, field.NewPath("metadata"))
+	errs = append(errs, validateGatewayNamespace(ctx, cli, gw, field.NewPath("metadata"))...)
 	errs = append(errs, validateGatewaySpec(ctx, cli, gw, field.NewPath("spec"))...)
 
+	if len(errs) > 0 {
+		return errs
+	}
+	return nil
+}
+
+// validateGatewayNamespace validates whether other gateways exist in the namespace of gw.
+func validateGatewayNamespace(ctx context.Context, cli client.Client, gw *gatewayapi_v1alpha1.Gateway, path *field.Path) field.ErrorList {
+	var errs field.ErrorList
+
+	if err := gateway.OthersExistInNs(ctx, cli, gw); err != nil {
+		errs = append(errs, field.InternalError(path.Child("namespace"),
+			fmt.Errorf("failed to validate gateway %s/%s: %v", gw.Namespace, gw.Name, err)))
+
+	}
 	return errs
 }
 
@@ -44,7 +65,8 @@ func validateGatewaySpec(ctx context.Context, cli client.Client, gw *gatewayapi_
 	gcName := gw.Spec.GatewayClassName
 	gc := &gatewayapi_v1alpha1.GatewayClass{}
 	if err := cli.Get(ctx, types.NamespacedName{Name: gcName}, gc); err != nil {
-		errs = append(errs, field.InternalError(path.Child("gatewayClassName"), fmt.Errorf("failed to get gatewayclass %s: %v", gcName, err)))
+		errs = append(errs, field.InternalError(path.Child("gatewayClassName"),
+			fmt.Errorf("failed to get gatewayclass %s: %v", gcName, err)))
 		// return early since additional validation checks require the gatewayclass.
 		return errs
 	}
@@ -58,7 +80,8 @@ func validateGatewaySpec(ctx context.Context, cli client.Client, gw *gatewayapi_
 	}
 
 	if !gcAdmitted {
-		errs = append(errs, field.InternalError(path.Child("gatewayClassName"), fmt.Errorf("gatewayclass %q is not admitted", gcName)))
+		errs = append(errs, field.InternalError(path.Child("gatewayClassName"),
+			fmt.Errorf("gatewayclass %q is not admitted", gcName)))
 	}
 	// TODO: Add additional validation checks from internal cache and upstream.
 
