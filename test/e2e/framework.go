@@ -66,6 +66,10 @@ type Framework struct {
 	// and related resources.
 	Certs *Certs
 
+	// Deployment provides helpers for managing deploying resources that
+	// are part of a full Contour deployment manifest.
+	Deployment *Deployment
+
 	t ginkgo.GinkgoTInterface
 }
 
@@ -113,6 +117,9 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 		httpsURLBase = "https://127.0.0.1:9443"
 	}
 
+	deployment := &Deployment{client: crClient}
+	require.NoError(t, deployment.UnmarshalResources())
+
 	return &Framework{
 		Client:        crClient,
 		RetryInterval: time.Second,
@@ -144,7 +151,8 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 			retryTimeout:  60 * time.Second,
 			t:             t,
 		},
-		t: t,
+		Deployment: deployment,
+		t:          t,
 	}
 }
 
