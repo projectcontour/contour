@@ -155,20 +155,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 		// If needed, finalize the referenced gatewayclass.
 		if !r.isClassFinalized() {
-			if err := r.ensureClassFinalizer(); err != nil {
-				return reconcile.Result{}, fmt.Errorf("failed to finalize gatewayclass %s: %w",
-					r.referencedClass.Name, err)
-			}
+			r.addClassFinalizer()
 			r.log.WithField("name", r.referencedClass.Name).Info("finalized gatewayclass")
-			// The gatewayclass has been mutated, so get the latest.
-			key := types.NamespacedName{
-				Namespace: r.referencedClass.Namespace,
-				Name:      r.referencedClass.Name,
-			}
-			if err := r.client.Get(ctx, key, r.referencedClass); err != nil {
-				return reconcile.Result{}, fmt.Errorf("failed to get gatewayclass %s: %w",
-					r.referencedClass.Name, err)
-			}
 		}
 		// Pass the gateway off to the eventHandler.
 		r.eventHandler.OnAdd(gw)
@@ -176,6 +164,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		// TODO: Ensure the gateway by creating manage infrastructure, i.e. the Envoy service.
 	}
 
+	// TODO: Pass in the status of the infrastructure, i.e. Envoy DaemonSet, to compute
+	// the Gateway "Ready" condition.
 	if err := status.SyncGateway(ctx, r.client, gw, errs); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to sync gateway %s/%s status: %w", gw.Namespace, gw.Name, err)
 	}
@@ -212,16 +202,12 @@ func (r *gatewayReconciler) isClassFinalized() bool {
 	return false
 }
 
-// ensureClassFinalizer ensures the finalizer is added to the referenced gatewayclass.
-func (r *gatewayReconciler) ensureClassFinalizer() error {
+// addClassFinalizer adds the finalizer to the reconciler's referenced gatewayclass.
+func (r *gatewayReconciler) addClassFinalizer() {
 	if !slice.ContainsString(r.referencedClass.Finalizers, gatewayClassFinalizer) {
 		updated := r.referencedClass.DeepCopy()
 		updated.Finalizers = append(updated.Finalizers, gatewayClassFinalizer)
-		if err := r.client.Update(r.ctx, updated); err != nil {
-			return fmt.Errorf("failed to add finalizer %s: %w", gatewayClassFinalizer, err)
-		}
 	}
-	return nil
 }
 
 // EnsureClassFinalizerRemoved ensures the finalizer is removed for the given gc.

@@ -51,7 +51,7 @@ const reasonInvalidGatewayClass = "Invalid"
 
 type GatewayReasonType string
 
-const reasonReadyGateway = "GatewayReady"
+const reasonValidGateway = "GatewayValid"
 const reasonInvalidGateway = "GatewayInvalid"
 
 // clock is used to set lastTransitionTime on status conditions.
@@ -234,27 +234,13 @@ func computeGatewayClassAdmittedCondition(errs field.ErrorList) metav1.Condition
 	return c
 }
 
-// removeGatewayCondition returns a newly created []metav1.Condition that contains all items
-// from conditions that are not equal to condition type t.
-func removeGatewayCondition(conditions []metav1.Condition, t gatewayapi_v1alpha1.GatewayConditionType) []metav1.Condition {
-	var new []metav1.Condition
-	if len(conditions) > 0 {
-		for _, c := range conditions {
-			if c.Type != string(t) {
-				new = append(new, c)
-			}
-		}
-	}
-	return new
-}
-
-// computeGatewayReadyCondition computes the Gateway Ready status condition based on errs.
-func computeGatewayReadyCondition(errs field.ErrorList) metav1.Condition {
+// computeGatewayScheduledCondition computes the Gateway Ready status condition based on errs.
+func computeGatewayScheduledCondition(errs field.ErrorList) metav1.Condition {
 	c := metav1.Condition{
-		Type:    string(gatewayapi_v1alpha1.GatewayConditionReady),
+		Type:    string(gatewayapi_v1alpha1.GatewayConditionScheduled),
 		Status:  metav1.ConditionTrue,
-		Reason:  reasonReadyGateway,
-		Message: "The Gateway is ready to serve routes.",
+		Reason:  reasonValidGateway,
+		Message: "The Gateway is valid.",
 	}
 
 	if errs != nil {

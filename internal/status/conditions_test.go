@@ -103,57 +103,7 @@ func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
 	}
 }
 
-func TestRemoveGatewayCondition(t *testing.T) {
-	testCases := map[string]struct {
-		conditions []metav1.Condition
-		remove     gatewayapi_v1alpha1.GatewayConditionType
-		expect     []metav1.Condition
-	}{
-		"no condition": {
-			conditions: []metav1.Condition{},
-			remove:     gatewayapi_v1alpha1.GatewayConditionReady,
-			expect:     nil,
-		},
-		"single condition": {
-			conditions: []metav1.Condition{
-				{
-					Type:   string(gatewayapi_v1alpha1.GatewayConditionReady),
-					Status: metav1.ConditionTrue,
-				},
-			},
-			remove: gatewayapi_v1alpha1.GatewayConditionReady,
-			expect: nil,
-		},
-		"multiple conditions": {
-			conditions: []metav1.Condition{
-				{
-					Type:   string(gatewayapi_v1alpha1.GatewayConditionReady),
-					Status: metav1.ConditionTrue,
-				},
-				{
-					Type:   string(gatewayapi_v1alpha1.GatewayConditionScheduled),
-					Status: metav1.ConditionFalse,
-				},
-			},
-			remove: gatewayapi_v1alpha1.GatewayConditionScheduled,
-			expect: []metav1.Condition{
-				{
-					Type:   string(gatewayapi_v1alpha1.GatewayConditionReady),
-					Status: metav1.ConditionTrue,
-				},
-			},
-		},
-	}
-
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			got := removeGatewayCondition(tc.conditions, tc.remove)
-			assert.Equal(t, tc.expect, got, name)
-		})
-	}
-}
-
-func TestComputeGatewayReadyCondition(t *testing.T) {
+func TestComputeGatewayScheduledCondition(t *testing.T) {
 	var errs field.ErrorList
 
 	testCases := map[string]struct {
@@ -163,15 +113,15 @@ func TestComputeGatewayReadyCondition(t *testing.T) {
 		"valid gateway": {
 			errs: nil,
 			expect: metav1.Condition{
-				Type:   string(gatewayapi_v1alpha1.GatewayConditionReady),
+				Type:   string(gatewayapi_v1alpha1.GatewayConditionScheduled),
 				Status: metav1.ConditionTrue,
-				Reason: reasonReadyGateway,
+				Reason: reasonValidGateway,
 			},
 		},
 		"invalid gateway": {
 			errs: append(errs, field.InternalError(field.NewPath("spec"), fmt.Errorf("foo"))),
 			expect: metav1.Condition{
-				Type:   string(gatewayapi_v1alpha1.GatewayConditionReady),
+				Type:   string(gatewayapi_v1alpha1.GatewayConditionScheduled),
 				Status: metav1.ConditionFalse,
 				Reason: reasonInvalidGateway,
 			},
@@ -180,7 +130,7 @@ func TestComputeGatewayReadyCondition(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			got := computeGatewayReadyCondition(tc.errs)
+			got := computeGatewayScheduledCondition(tc.errs)
 			if !apiequality.Semantic.DeepEqual(got.Type, tc.expect.Type) ||
 				!apiequality.Semantic.DeepEqual(got.Status, tc.expect.Status) ||
 				!apiequality.Semantic.DeepEqual(got.Reason, tc.expect.Reason) {

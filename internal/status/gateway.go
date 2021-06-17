@@ -28,9 +28,7 @@ import (
 func SyncGateway(ctx context.Context, cli client.Client, gw *gateway_v1alpha1.Gateway, errs field.ErrorList) error {
 	updated := gw.DeepCopy()
 
-	// Gateway's contain a default status condition that must be removed when reconciled by a controller.
-	updated.Status.Conditions = removeGatewayCondition(updated.Status.Conditions, gateway_v1alpha1.GatewayConditionScheduled)
-	updated.Status.Conditions = mergeConditions(updated.Status.Conditions, computeGatewayReadyCondition(errs))
+	updated.Status.Conditions = mergeConditions(updated.Status.Conditions, computeGatewayScheduledCondition(errs))
 
 	// Update status if current does not match desired.
 	if !api_equality.Semantic.DeepEqual(gw.Status, updated.Status) {
