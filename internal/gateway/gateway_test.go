@@ -172,9 +172,9 @@ func TestOthersExistInNs(t *testing.T) {
 
 			err = OthersExistInNs(ctx, cl, tc.gw)
 			if tc.expect {
-				assert.Nilf(t, err, "expected no error, got: %v", err)
+				assert.NoErrorf(t, err, "expected no error, got: %v", err)
 			} else {
-				assert.NotNilf(t, err, "expected error, got: %v", err)
+				assert.Errorf(t, err, "expected error, got: %v", err)
 			}
 		})
 	}
@@ -477,12 +477,14 @@ func TestOthersExist(t *testing.T) {
 			err = cl.Create(ctx, tc.gw)
 			require.NoErrorf(t, err, "Failed to create gateway %s/%s", tc.gw.Namespace, tc.gw.Name)
 
-			others, _ := OthersExist(ctx, cl, tc.gw)
+			others, err := OthersExist(ctx, cl, tc.gw)
 			if tc.expect && others == nil {
 				assert.Nilf(t, others, "expected other gateways, got: %v", others)
+				assert.NoErrorf(t, err, "expected no error, got: %v", err)
 			}
 			if !tc.expect && others != nil {
 				assert.NotNilf(t, others, "expected no other gateways, got: %v", others)
+				assert.Errorf(t, err, "expected error, got: %v", err)
 			}
 		})
 	}
