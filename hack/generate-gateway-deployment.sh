@@ -41,3 +41,13 @@ for y in "${REPO}/examples/contour/"*.yaml ; do
         ;;
     esac
 done
+
+for y in "${REPO}/examples/gateway/"*.yaml ; do
+    echo # Ensure we have at least one newline between joined fragments.
+    case $y in
+    */00-crds.yaml)
+        # Since the Gateway CRDs are generated, the manifest does not start with "---".
+        echo "---"
+    esac
+    cat "$y"
+done
