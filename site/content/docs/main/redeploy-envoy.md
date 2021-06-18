@@ -64,7 +64,7 @@ The shutdown manager has a set of arguments that can be passed to change how it 
   - Type: integer (Default 8090)
 
 # Troubleshooting
-If you encounter issues, review the Troubleshooting section of [the docs][2], [file an issue][3], or talk to us on the [#contour channel][4] on the Kubernetes Slack server
+If you encounter issues, review the Troubleshooting section of [the docs][2], [file an issue][3], or talk to us on the [#contour channel][4] on the Kubernetes Slack server.
 
   [1]: ../img/shutdownmanager.png
   [2]: /docs/main/troubleshooting
