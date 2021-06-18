@@ -208,6 +208,9 @@ To remove Contour Operator from your cluster, delete the operator's namespace:
 $ kubectl delete ns contour-operator
 ```
 
+# Troubleshooting
+If you encounter issues, review the Troubleshooting section of [the docs][14], [file an issue][15], or talk to us on the [#contour channel][16] on the Kubernetes Slack server.
+
 [1]: #running-without-a-kubernetes-loadbalancer
 [2]: {{< param github_url>}}/tree/{{< param version >}}/examples/contour
 [3]: #host-networking
@@ -220,3 +223,6 @@ $ kubectl delete ns contour-operator
 [11]: redeploy-envoy.md
 [12]: https://github.com/projectcontour/contour-operator
 [13]: https://projectcontour.io/resources/deprecation-policy/
+[14]: /docs/main/troubleshooting
+[15]: {{< param github_url >}}/issues
+[16]: kubernetes.slack.com

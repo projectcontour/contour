@@ -161,9 +161,14 @@ When using the built-in Contour certificate generation, the following steps can 
 Once this process is done, the certificates will be present as Secrets in the `projectcontour` namespace, as required by
 [examples/contour][5].
 
+# Troubleshooting
+If you encounter issues, review the Troubleshooting section of [the docs][6], [file an issue][7], or talk to us on the [#contour channel][8] on the Kubernetes Slack server.
+
 [1]: {{< param github_url >}}/tree/{{< param version >}}/examples/contour/02-job-certgen.yaml
 [2]: {{< param github_url >}}/tree/{{< param version >}}/certs/cert-contour.ext
 [3]: {{< param github_url >}}/tree/{{< param version >}}/certs/cert-envoy.ext
 [4]: {{< param github_url >}}/tree/{{< param version >}}/examples/contour/03-envoy.yaml
 [5]: {{< param github_url >}}/tree/{{< param version >}}/examples/contour
-
+[6]: /docs/main/troubleshooting
+[7]: {{< param github_url >}}/issues
+[8]: kubernetes.slack.com

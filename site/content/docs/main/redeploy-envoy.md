@@ -3,9 +3,9 @@
 The Envoy process, the data path component of Contour, at times needs to be re-deployed.
 This could be due to an upgrade, a change in configuration, or a node-failure forcing a redeployment.
 
-When implementing this roll out, the following steps should be taken: 
+When implementing this roll out, the following steps should be taken:
 
-1. Stop Envoy from accepting new connections 
+1. Stop Envoy from accepting new connections
 2. Start draining existing connections in Envoy by sending a `POST` request to `/healthcheck/fail` endpoint
 3. Wait for connections to drain before allowing Kubernetes to `SIGTERM` the pod
 
@@ -63,4 +63,10 @@ The shutdown manager has a set of arguments that can be passed to change how it 
 - **serve-port:** Port to serve the http server on.
   - Type: integer (Default 8090)
 
+# Troubleshooting
+If you encounter issues, review the Troubleshooting section of [the docs][2], [file an issue][3], or talk to us on the [#contour channel][4] on the Kubernetes Slack server
+
   [1]: ../img/shutdownmanager.png
+  [2]: /docs/main/troubleshooting
+  [3]: {{< param github_url >}}/issues
+  [4]: kubernetes.slack.com
