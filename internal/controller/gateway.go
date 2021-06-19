@@ -17,11 +17,7 @@ import (
 	"context"
 	"fmt"
 
-	int_errors "github.com/projectcontour/contour/internal/errors"
-	"github.com/projectcontour/contour/internal/gateway"
 	"github.com/projectcontour/contour/internal/slice"
-	"github.com/projectcontour/contour/internal/status"
-	"github.com/projectcontour/contour/internal/validation"
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -35,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
+
+const gatewayFinalizer = "gateway.projectcontour.io"
 
 type gatewayReconciler struct {
 	ctx          context.Context
@@ -102,7 +100,7 @@ func (r *gatewayReconciler) enqueueRequestForOwnedGateway() handler.EventHandler
 	})
 }
 
-// classForGateway returns an nil, error if the gatewayclass referenced by gw does not exist
+// classForGateway returns nil, error if the gatewayclass referenced by gw does not exist
 // or nil, nil if gw is not owned by Contour. Otherwise, the referenced gatewayclass is returned.
 func (r *gatewayReconciler) classForGateway(gw *gatewayapi_v1alpha1.Gateway) (*gatewayapi_v1alpha1.GatewayClass, error) {
 	gc := &gatewayapi_v1alpha1.GatewayClass{}
@@ -137,57 +135,61 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 	// Check if object is deleted.
 	if !gw.ObjectMeta.DeletionTimestamp.IsZero() {
-		r.eventHandler.OnDelete(gw)
+		r.log.WithField("name", request.Name).WithField("namespace", request.Namespace).Info("zero timestamp")
+
 		if err := r.ensureGatewayDeleted(gw); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to ensure deletion of gateway %s/%s: %w",
 				gw.Namespace, gw.Name, err)
 		}
+
+		r.eventHandler.OnDelete(gw)
+
 		return reconcile.Result{}, nil
 	}
 
-	// The gateway is safe to process, so check if it's valid.
-	errs := validation.ValidateGateway(ctx, r.client, gw)
-	if errs != nil {
-		r.log.WithField("name", request.Name).WithField("namespace", request.Namespace).
-			Error("invalid gateway: ", int_errors.ParseFieldErrors(errs))
-	} else {
-		// TODO: Finalize the gateway when managed infrastructure is added.
-
-		// If needed, finalize the referenced gatewayclass.
-		if !r.isClassFinalized() {
-			r.addClassFinalizer()
-			r.log.WithField("name", r.referencedClass.Name).Info("finalized gatewayclass")
+	// Finalize the gateway.
+	if !r.isFinalized(gw) {
+		if err := r.ensureFinalizer(gw); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to finalize gateway %s/%s: %w",
+				gw.Namespace, gw.Name, err)
 		}
-		// Pass the gateway off to the eventHandler.
-		r.eventHandler.OnAdd(gw)
-
-		// TODO: Ensure the gateway by creating manage infrastructure, i.e. the Envoy service.
 	}
 
-	// TODO: Pass in the status of the infrastructure, i.e. Envoy DaemonSet, to compute
-	// the Gateway "Ready" condition.
-	if err := status.SyncGateway(ctx, r.client, gw, errs); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to sync gateway %s/%s status: %w", gw.Namespace, gw.Name, err)
+	// If needed, finalize the referenced gatewayclass.
+	if !r.isClassFinalized() {
+		// Before doing anything with the gateway, ensure the reference gatewayclass is finalized.
+		if err := r.ensureClassFinalizer(); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to finalize gatewayclass %s: %w",
+				r.referencedClass.Name, err)
+		}
 	}
-	r.log.WithField("name", gw.Name).WithField("namespace", gw.Namespace).Info("synced gateway status")
+
+	// TODO: Ensure the gateway by creating manage infrastructure, i.e. the Envoy service.
+
+	// Pass the gateway off to the eventHandler.
+	r.eventHandler.OnAdd(gw)
 
 	return reconcile.Result{}, nil
 }
 
-// ensureGatewayDeleted ensures child resources and finalizers of gw have been deleted.
-func (r *gatewayReconciler) ensureGatewayDeleted(gw *gatewayapi_v1alpha1.Gateway) error {
-	// TODO: Remove managed Envoy infrastructure when introduced.
-
-	others, err := gateway.OthersRefClass(r.ctx, r.client, gw)
-	if err != nil {
-		return fmt.Errorf("failed to verify if other gateways reference gatewayclass %s: %w",
-			r.referencedClass.Name, err)
-	}
-	if !others {
-		if err := r.EnsureClassFinalizerRemoved(); err != nil {
-			return fmt.Errorf("failed to remove finalizer from gatewayclass %s: %w", r.referencedClass.Name, err)
+// isFinalized returns true if gw is finalized.
+func (r *gatewayReconciler) isFinalized(gw *gatewayapi_v1alpha1.Gateway) bool {
+	for _, f := range gw.Finalizers {
+		if f == gatewayFinalizer {
+			return true
 		}
-		r.log.Info("removed finalizer from gatewayclass", "name", r.referencedClass.Name)
+	}
+	return false
+}
+
+// ensureFinalizer ensures gw is finalized.
+func (r *gatewayReconciler) ensureFinalizer(gw *gatewayapi_v1alpha1.Gateway) error {
+	if !slice.ContainsString(gw.Finalizers, gatewayFinalizer) {
+		gw.Finalizers = append(gw.Finalizers, gatewayFinalizer)
+		if err := r.client.Update(r.ctx, gw); err != nil {
+			return fmt.Errorf("failed to update %s/%s: %w", gw.Namespace, gw.Name, err)
+		}
+		r.log.WithField("namespace", gw.Namespace).WithField("name", gw.Name).Info("finalized gateway")
 	}
 	return nil
 }
@@ -202,22 +204,97 @@ func (r *gatewayReconciler) isClassFinalized() bool {
 	return false
 }
 
-// addClassFinalizer adds the finalizer to the reconciler's referenced gatewayclass.
-func (r *gatewayReconciler) addClassFinalizer() {
+// ensureClassFinalizer ensures a finalizer is applied to the reconciler's referenced gatewayclass.
+func (r *gatewayReconciler) ensureClassFinalizer() error {
 	if !slice.ContainsString(r.referencedClass.Finalizers, gatewayClassFinalizer) {
 		updated := r.referencedClass.DeepCopy()
 		updated.Finalizers = append(updated.Finalizers, gatewayClassFinalizer)
+		if err := r.client.Update(r.ctx, updated); err != nil {
+			return fmt.Errorf("failed to update %s: %w", r.referencedClass.Name, err)
+		}
+		r.log.WithField("name", r.referencedClass.Name).Info("finalized gatewayclass")
+		r.referencedClass = updated
 	}
+	return nil
 }
 
-// EnsureClassFinalizerRemoved ensures the finalizer is removed for the given gc.
+// ensureGatewayDeleted ensures child resources and finalizers of gw have been deleted.
+func (r *gatewayReconciler) ensureGatewayDeleted(gw *gatewayapi_v1alpha1.Gateway) error {
+	// TODO: Remove managed Envoy infrastructure when introduced.
+
+	// Remove the finalizer from the referenced gateway class, if needed.
+	others, err := r.othersRefClass(gw)
+	if err != nil {
+		return fmt.Errorf("failed to verify if other gateways reference gatewayclass %s: %w",
+			r.referencedClass.Name, err)
+	}
+	if !others {
+		if err := r.EnsureClassFinalizerRemoved(); err != nil {
+			return fmt.Errorf("failed to remove gatewayclass %s finalizer: %w", r.referencedClass.Name, err)
+		}
+	}
+
+	// Remove the finalizer from the gateway.
+	if err := r.EnsureFinalizerRemoved(gw); err != nil {
+		return fmt.Errorf("failed to remove gateway %s/%s finalizer: %w", gw.Namespace, gw.Name, err)
+	}
+
+	return nil
+}
+
+// EnsureFinalizerRemoved ensures the finalizer is removed for the given gw.
+func (r *gatewayReconciler) EnsureFinalizerRemoved(gw *gatewayapi_v1alpha1.Gateway) error {
+	if slice.ContainsString(gw.Finalizers, gatewayFinalizer) {
+		gw.Finalizers = slice.RemoveString(gw.Finalizers, gatewayFinalizer)
+		if err := r.client.Update(r.ctx, gw); err != nil {
+			return fmt.Errorf("failed to remove finalizer from gateway %s/%s: %w", gw.Namespace, gw.Name, err)
+		}
+		r.log.WithField("namespace", gw.Namespace).WithField("name", gw.Name).Info("removed gateway finalizer")
+	}
+	return nil
+}
+
+// EnsureClassFinalizerRemoved ensures the finalizer is removed for the referenced gatewayclass.
 func (r *gatewayReconciler) EnsureClassFinalizerRemoved() error {
 	if slice.ContainsString(r.referencedClass.Finalizers, gatewayClassFinalizer) {
 		updated := r.referencedClass.DeepCopy()
 		updated.Finalizers = slice.RemoveString(updated.Finalizers, gatewayClassFinalizer)
 		if err := r.client.Update(r.ctx, updated); err != nil {
-			return fmt.Errorf("failed to remove finalizer %s: %w", gatewayClassFinalizer, err)
+			return fmt.Errorf("failed to remove finalizer from gatewayclass %s: %w", r.referencedClass.Name, err)
 		}
+		r.log.WithField("name", r.referencedClass.Name).Info("removed gatewayclass finalizer")
+		r.referencedClass = updated
 	}
 	return nil
+}
+
+// othersRefClass returns true if other gateways have the same gatewayClassName as gw.
+func (r *gatewayReconciler) othersRefClass(gw *gatewayapi_v1alpha1.Gateway) (bool, error) {
+	gwList, err := r.othersExist(gw)
+	if err != nil {
+		return false, err
+	}
+	if gwList != nil {
+		for _, item := range gwList.Items {
+			if item.Namespace != gw.Namespace &&
+				item.Name != gw.Name &&
+				item.Spec.GatewayClassName == gw.Spec.GatewayClassName {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+// othersExist lists Gateway objects in all namespaces, returning the list
+// if any exist other than gw.
+func (r *gatewayReconciler) othersExist(gw *gatewayapi_v1alpha1.Gateway) (*gatewayapi_v1alpha1.GatewayList, error) {
+	gwList := &gatewayapi_v1alpha1.GatewayList{}
+	if err := r.client.List(r.ctx, gwList); err != nil {
+		return nil, fmt.Errorf("failed to list gateways: %w", err)
+	}
+	if len(gwList.Items) == 0 || len(gwList.Items) == 1 && gwList.Items[0].Name == gw.Name {
+		return nil, nil
+	}
+	return gwList, nil
 }

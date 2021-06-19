@@ -27,6 +27,7 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+const ResourceGateway = "gateways"
 const ResourceHTTPRoute = "httproutes"
 const ResourceTLSRoute = "tlsroutes"
 
@@ -51,13 +52,13 @@ const reasonInvalidGatewayClass = "Invalid"
 
 type GatewayReasonType string
 
-const reasonValidGateway = "GatewayValid"
-const reasonInvalidGateway = "GatewayInvalid"
+const ReasonValidGateway = "Valid"
+const ReasonInvalidGateway = "Invalid"
 
 // clock is used to set lastTransitionTime on status conditions.
 var clock utilclock.Clock = utilclock.RealClock{}
 
-type ConditionsUpdate struct {
+type RouteConditionsUpdate struct {
 	FullName           types.NamespacedName
 	Conditions         map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
 	ExistingConditions map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
@@ -68,7 +69,7 @@ type ConditionsUpdate struct {
 }
 
 // AddCondition returns a metav1.Condition for a given ConditionType.
-func (routeUpdate *ConditionsUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteConditionType, status metav1.ConditionStatus, reason RouteReasonType, message string) metav1.Condition {
+func (routeUpdate *RouteConditionsUpdate) AddCondition(cond gatewayapi_v1alpha1.RouteConditionType, status metav1.ConditionStatus, reason RouteReasonType, message string) metav1.Condition {
 
 	if c, ok := routeUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
@@ -86,15 +87,15 @@ func (routeUpdate *ConditionsUpdate) AddCondition(cond gatewayapi_v1alpha1.Route
 	return newDc
 }
 
-// ConditionsAccessor returns a ConditionsUpdate that allows a client to build up a list of
+// RouteConditionsAccessor returns a RouteConditionsUpdate that allows a client to build up a list of
 // metav1.Conditions as well as a function to commit the change back to the cache when everything
-// is done. The commit function pattern is used so that the ConditionsUpdate does not need
+// is done. The commit function pattern is used so that the RouteConditionsUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) ConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gateways []gatewayapi_v1alpha1.RouteGatewayStatus) (*ConditionsUpdate, func()) {
-	pu := &ConditionsUpdate{
+func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gateways []gatewayapi_v1alpha1.RouteGatewayStatus) (*RouteConditionsUpdate, func()) {
+	pu := &RouteConditionsUpdate{
 		FullName:           nsName,
 		Conditions:         make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition),
-		ExistingConditions: c.getGatewayConditions(gateways),
+		ExistingConditions: c.getRouteGatewayConditions(gateways),
 		GatewayRef:         c.gatewayRef,
 		Generation:         generation,
 		TransitionTime:     metav1.NewTime(clock.Now()),
@@ -106,14 +107,14 @@ func (c *Cache) ConditionsAccessor(nsName types.NamespacedName, generation int64
 	}
 }
 
-func (c *Cache) commitRoute(pu *ConditionsUpdate) {
+func (c *Cache) commitRoute(pu *RouteConditionsUpdate) {
 	if len(pu.Conditions) == 0 {
 		return
 	}
 	c.routeUpdates[pu.FullName] = pu
 }
 
-func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
+func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 
 	var gatewayStatuses []gatewayapi_v1alpha1.RouteGatewayStatus
 	var conditionsToWrite []metav1.Condition
@@ -175,13 +176,13 @@ func (routeUpdate *ConditionsUpdate) Mutate(obj interface{}) interface{} {
 		route.Status.RouteStatus.Gateways = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
 		return route
 	default:
-		panic(fmt.Sprintf("Unsupported %T object %s/%s in ConditionsUpdate status mutator",
+		panic(fmt.Sprintf("Unsupported %T object %s/%s in RouteConditionsUpdate status mutator",
 			obj, routeUpdate.FullName.Namespace, routeUpdate.FullName.Name,
 		))
 	}
 }
 
-func (routeUpdate *ConditionsUpdate) combineConditions(gwStatus []gatewayapi_v1alpha1.RouteGatewayStatus) []gatewayapi_v1alpha1.RouteGatewayStatus {
+func (routeUpdate *RouteConditionsUpdate) combineConditions(gwStatus []gatewayapi_v1alpha1.RouteGatewayStatus) []gatewayapi_v1alpha1.RouteGatewayStatus {
 
 	var gatewayStatuses []gatewayapi_v1alpha1.RouteGatewayStatus
 
@@ -198,7 +199,7 @@ func (routeUpdate *ConditionsUpdate) combineConditions(gwStatus []gatewayapi_v1a
 	return gatewayStatuses
 }
 
-func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGatewayStatus) map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition {
+func (c *Cache) getRouteGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGatewayStatus) map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition {
 	for _, gs := range gatewayStatus {
 		if c.gatewayRef.Name == gs.GatewayRef.Name &&
 			c.gatewayRef.Namespace == gs.GatewayRef.Namespace {
@@ -213,6 +214,122 @@ func (c *Cache) getGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.RouteGa
 		}
 	}
 	return map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{}
+}
+
+type GatewayConditionsUpdate struct {
+	FullName           types.NamespacedName
+	Conditions         map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition
+	ExistingConditions map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition
+	GatewayRef         types.NamespacedName
+	Resource           string
+	Generation         int64
+	TransitionTime     metav1.Time
+}
+
+// AddCondition returns a metav1.Condition for a given GatewayConditionType.
+func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alpha1.GatewayConditionType, status metav1.ConditionStatus, reason GatewayReasonType, message string) metav1.Condition {
+
+	if c, ok := gatewayUpdate.Conditions[cond]; ok {
+		message = fmt.Sprintf("%s, %s", c.Message, message)
+	}
+
+	newCond := metav1.Condition{
+		Reason:             string(reason),
+		Status:             status,
+		Type:               string(cond),
+		Message:            message,
+		LastTransitionTime: metav1.NewTime(clock.Now()),
+		ObservedGeneration: gatewayUpdate.Generation,
+	}
+	gatewayUpdate.Conditions[cond] = newCond
+	return newCond
+}
+
+// GatewayConditionsAccessor returns a GatewayConditionsUpdate that allows a client to build up a list of
+// metav1.Conditions as well as a function to commit the change back to the cache when everything
+// is done. The commit function pattern is used so that the GatewayConditionsUpdate does not need
+// to know anything the cache internals.
+func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gs *gatewayapi_v1alpha1.GatewayStatus) (*GatewayConditionsUpdate, func()) {
+	gu := &GatewayConditionsUpdate{
+		FullName:           nsName,
+		Conditions:         make(map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition),
+		ExistingConditions: getGatewayConditions(gs),
+		GatewayRef:         c.gatewayRef,
+		Generation:         generation,
+		TransitionTime:     metav1.NewTime(clock.Now()),
+		Resource:           resource,
+	}
+
+	return gu, func() {
+		c.commitGateway(gu)
+	}
+}
+
+func (c *Cache) commitGateway(gu *GatewayConditionsUpdate) {
+	if len(gu.Conditions) == 0 {
+		return
+	}
+	c.gatewayUpdates[gu.FullName] = gu
+}
+
+func getGatewayConditions(gs *gatewayapi_v1alpha1.GatewayStatus) map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition {
+	conditions := make(map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition)
+	for _, cond := range gs.Conditions {
+		if val, ok := conditions[gatewayapi_v1alpha1.GatewayConditionType(cond.Type)]; !ok {
+			conditions[gatewayapi_v1alpha1.GatewayConditionType(cond.Type)] = val
+		}
+	}
+	return conditions
+}
+
+func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj interface{}) interface{} {
+
+	var conditionsToWrite []metav1.Condition
+
+	for _, cond := range gatewayUpdate.Conditions {
+
+		// Set the Condition's observed generation based on
+		// the generation of the gateway we looked at.
+		cond.ObservedGeneration = gatewayUpdate.Generation
+		cond.LastTransitionTime = gatewayUpdate.TransitionTime
+
+		// is there a newer Condition on the gateway matching
+		// this condition's type? If so, our observation is stale,
+		// so don't write it, keep the newer one instead.
+		var newerConditionExists bool
+		for _, existingCond := range gatewayUpdate.ExistingConditions {
+			if existingCond.Type != cond.Type {
+				continue
+			}
+
+			if existingCond.ObservedGeneration > cond.ObservedGeneration {
+				conditionsToWrite = append(conditionsToWrite, existingCond)
+				newerConditionExists = true
+				break
+			}
+		}
+
+		// if we didn't find a newer version of the Condition on the
+		// gateway, then write the one we computed.
+		if !newerConditionExists {
+			conditionsToWrite = append(conditionsToWrite, cond)
+		}
+	}
+
+	switch o := obj.(type) {
+	case *gatewayapi_v1alpha1.Gateway:
+		gw := o.DeepCopy()
+		gw.Status = gatewayapi_v1alpha1.GatewayStatus{
+			Conditions: conditionsToWrite,
+			// TODO: Manage addresses and listeners.
+		}
+		return gw
+	default:
+		panic(fmt.Sprintf("Unsupported %T object %s/%s in GatewayConditionsUpdate status mutator",
+			obj, gatewayUpdate.FullName.Namespace, gatewayUpdate.FullName.Name,
+		))
+	}
+
 }
 
 // computeGatewayClassAdmittedCondition computes the GatewayClass Admitted status
@@ -231,23 +348,6 @@ func computeGatewayClassAdmittedCondition(errs field.ErrorList) metav1.Condition
 		c.Message = fmt.Sprintf("Invalid GatewayClass: %s.", errors.ParseFieldErrors(errs))
 	}
 
-	return c
-}
-
-// computeGatewayScheduledCondition computes the Gateway Ready status condition based on errs.
-func computeGatewayScheduledCondition(errs field.ErrorList) metav1.Condition {
-	c := metav1.Condition{
-		Type:    string(gatewayapi_v1alpha1.GatewayConditionScheduled),
-		Status:  metav1.ConditionTrue,
-		Reason:  reasonValidGateway,
-		Message: "The Gateway is valid.",
-	}
-
-	if errs != nil {
-		c.Status = metav1.ConditionFalse
-		c.Reason = reasonInvalidGateway
-		c.Message = fmt.Sprintf("Invalid Gateway: %s.", errors.ParseFieldErrors(errs))
-	}
 	return c
 }
 

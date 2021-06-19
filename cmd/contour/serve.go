@@ -425,7 +425,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			}
 
 			// Create and register the gatewayclass controller with the manager.
-			gcController := *ctx.Config.GatewayConfig.ControllerName
+			gcController := ctx.Config.GatewayConfig.ControllerName
 			if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler,
 				log.WithField("context", "gatewayclass-controller"), gcController); err != nil {
 				log.WithError(err).Fatal("failed to create gatewayclass-controller")

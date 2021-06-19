@@ -41,7 +41,7 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 		ObservedGeneration: testGeneration,
 	}
 
-	httpRouteUpdate := ConditionsUpdate{
+	httpRouteUpdate := RouteConditionsUpdate{
 		FullName:   k8s.NamespacedNameFrom("test/test"),
 		Generation: testGeneration,
 		Conditions: make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition),
@@ -100,43 +100,6 @@ func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
 			!apiequality.Semantic.DeepEqual(got.Reason, tc.expect.Reason) {
 			assert.Equal(t, tc.expect, got, tc.name)
 		}
-	}
-}
-
-func TestComputeGatewayScheduledCondition(t *testing.T) {
-	var errs field.ErrorList
-
-	testCases := map[string]struct {
-		errs   field.ErrorList
-		expect metav1.Condition
-	}{
-		"valid gateway": {
-			errs: nil,
-			expect: metav1.Condition{
-				Type:   string(gatewayapi_v1alpha1.GatewayConditionScheduled),
-				Status: metav1.ConditionTrue,
-				Reason: reasonValidGateway,
-			},
-		},
-		"invalid gateway": {
-			errs: append(errs, field.InternalError(field.NewPath("spec"), fmt.Errorf("foo"))),
-			expect: metav1.Condition{
-				Type:   string(gatewayapi_v1alpha1.GatewayConditionScheduled),
-				Status: metav1.ConditionFalse,
-				Reason: reasonInvalidGateway,
-			},
-		},
-	}
-
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			got := computeGatewayScheduledCondition(tc.errs)
-			if !apiequality.Semantic.DeepEqual(got.Type, tc.expect.Type) ||
-				!apiequality.Semantic.DeepEqual(got.Status, tc.expect.Status) ||
-				!apiequality.Semantic.DeepEqual(got.Reason, tc.expect.Reason) {
-				assert.Equal(t, tc.expect, got, name)
-			}
-		})
 	}
 }
 

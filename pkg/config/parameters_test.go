@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
-	"k8s.io/utils/pointer"
 )
 
 func TestGetenvOr(t *testing.T) {
@@ -163,32 +162,32 @@ func TestValidateServerType(t *testing.T) {
 }
 
 func TestValidateGatewayParameters(t *testing.T) {
-	// Namespace is required if name is passed.
-	gw := &GatewayParameters{Name: "gwname", Namespace: ""}
-	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: namespace required")
+	// Namespace and controllerName are required if name is passed.
+	gw := &GatewayParameters{Name: "gwname", Namespace: "", ControllerName: ""}
+	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: namespace required, controllerName required")
 
-	// Name is required if namespace is passed.
-	gw = &GatewayParameters{Name: "", Namespace: "ns"}
-	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required")
+	// Name and controllerName are required if namespace is passed.
+	gw = &GatewayParameters{Name: "", Namespace: "ns", ControllerName: ""}
+	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required, controllerName required")
+
+	// Name and namespace are required if controllerName is passed.
+	gw = &GatewayParameters{Name: "", Namespace: "", ControllerName: "controller"}
+	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required, namespace required")
 
 	// Name is required if controllerName and namespace are passed.
-	gw = &GatewayParameters{ControllerName: pointer.StringPtr("controller"), Name: "", Namespace: "ns"}
+	gw = &GatewayParameters{ControllerName: "controller", Name: "", Namespace: "ns"}
 	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required")
 
 	// Namespace is required if controllerName and name are passed.
-	gw = &GatewayParameters{ControllerName: pointer.StringPtr("controller"), Name: "gwname", Namespace: ""}
+	gw = &GatewayParameters{ControllerName: "controller", Name: "gwname", Namespace: ""}
 	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: namespace required")
 
-	// Namespace and name are required if controllerName is passed.
-	gw = &GatewayParameters{ControllerName: pointer.StringPtr("controller"), Name: "", Namespace: ""}
-	assert.EqualError(t, gw.Validate(), "invalid Gateway parameters specified: name required, namespace required")
-
 	// ControllerName is required.
-	gw = &GatewayParameters{ControllerName: pointer.StringPtr("controller"), Name: "gwname", Namespace: "ns"}
+	gw = &GatewayParameters{ControllerName: "controller", Name: "gwname", Namespace: "ns"}
 	assert.Equal(t, nil, gw.Validate())
 
 	// Not required if nothing is passed.
-	gw = &GatewayParameters{ControllerName: nil, Name: "", Namespace: ""}
+	gw = &GatewayParameters{ControllerName: "", Name: "", Namespace: ""}
 	assert.Equal(t, nil, gw.Validate())
 }
 

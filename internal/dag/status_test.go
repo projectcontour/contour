@@ -2487,7 +2487,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 
 	type testcase struct {
 		objs []interface{}
-		want []*status.ConditionsUpdate
+		want []*status.RouteConditionsUpdate
 	}
 
 	run := func(t *testing.T, desc string, tc testcase) {
@@ -2542,11 +2542,11 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 
 			ops := []cmp.Option{
 				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "ExistingConditions"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "GatewayRef"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "Generation"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "TransitionTime"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "Resource"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "ExistingConditions"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "GatewayRef"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "Generation"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "TransitionTime"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "Resource"),
 				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
 					return i.Message < j.Message
 				}),
@@ -2601,7 +2601,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
@@ -2646,7 +2646,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
@@ -2692,7 +2692,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
@@ -2747,7 +2747,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
@@ -2800,7 +2800,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
@@ -2846,7 +2846,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -2907,7 +2907,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -2953,7 +2953,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -2995,7 +2995,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3037,7 +3037,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3079,7 +3079,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3121,7 +3121,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3170,7 +3170,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionNotImplemented: {
@@ -3220,7 +3220,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionNotImplemented: {
@@ -3272,7 +3272,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3324,7 +3324,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3366,7 +3366,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
@@ -3384,7 +3384,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 	type testcase struct {
 		objs []interface{}
-		want []*status.ConditionsUpdate
+		want []*status.RouteConditionsUpdate
 	}
 
 	run := func(t *testing.T, desc string, tc testcase) {
@@ -3439,11 +3439,11 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 
 			ops := []cmp.Option{
 				cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "ExistingConditions"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "GatewayRef"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "Generation"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "TransitionTime"),
-				cmpopts.IgnoreFields(status.ConditionsUpdate{}, "Resource"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "ExistingConditions"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "GatewayRef"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "Generation"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "TransitionTime"),
+				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "Resource"),
 				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
 					return i.Message < j.Message
 				}),
@@ -3497,7 +3497,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3549,7 +3549,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3594,7 +3594,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3635,7 +3635,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3680,7 +3680,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3725,7 +3725,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
@@ -3770,7 +3770,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					}},
 				},
 			}},
-		want: []*status.ConditionsUpdate{{
+		want: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{
 				status.ConditionResolvedRefs: {
