@@ -180,7 +180,7 @@ The gateway configuration block is used to configure which gateway-api Gateway C
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | controllerName | string |  | Gateway Class controller name (i.e. projectcontour.io/projectcontour/contour).  |
-| name | string | contour | DEPRECATED: This field specifies the name of a Gateway.  |
+| name (Deprecated) | string | contour | DEPRECATED: This field specifies the name of a Gateway.  |
 | namespace (Deprecated) | string | projectcontour | DEPRECATED: This field specifies the namespace of a Gateway.  |
 
 _NOTE: The fields `name` and `namespace` have been deprecated and will be removed in Contour v1.18.
