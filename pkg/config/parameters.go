@@ -295,8 +295,10 @@ type GatewayParameters struct {
 	// If unset, the gatewayclass controller will not be started.
 	ControllerName *string `yaml:"controllerName,omitempty"`
 	// Name is the Gateway name that Contour should reconcile.
+	// Deprecated: Name is deprecated and will be removed in Contour v1.18. Configure "ControllerName" instead.
 	Name string `yaml:"name,omitempty"`
 	// Namespace is the Gateway namespace that Contour should reconcile.
+	// Deprecated: Namespace is deprecated will be removed in Contour v1.18. Configure "ControllerName" instead.
 	Namespace string `yaml:"namespace,omitempty"`
 }
 
