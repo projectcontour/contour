@@ -112,7 +112,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 					}
 				case gatewayapi_v1alpha1.TLSModePassthrough:
 					if listener.TLS.CertificateRef != nil {
-						p.Errorf("Listener.TLS cannot be defined when TLS Mode is %q.", *listener.TLS.Mode)
+						p.Errorf("Listener.TLS.CertificateRef cannot be defined when TLS Mode is %q.", *listener.TLS.Mode)
 						continue
 					}
 				}
