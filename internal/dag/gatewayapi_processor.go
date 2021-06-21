@@ -95,30 +95,26 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			}
 		case gatewayapi_v1alpha1.TLSProtocolType:
 
-			if tlsConfig := listener.TLS; tlsConfig != nil {
-				if tlsConfig.Mode != nil {
-					switch *tlsConfig.Mode {
-					case gatewayapi_v1alpha1.TLSModeTerminate:
-						// Check for TLS on the Gateway.
-						if listenerSecret = p.validGatewayTLS(listener); listenerSecret == nil {
-							// If TLS was configured on the Listener, but it's invalid, don't allow any
-							// routes to be bound to this listener since it can't serve TLS traffic.
-							continue
-						}
-					case gatewayapi_v1alpha1.TLSModePassthrough:
-						if listener.TLS.CertificateRef != nil {
-							p.Errorf("Listener.TLS cannot be defined when TLS Mode is %q.", tlsConfig.Mode)
-							continue
-						}
+			// TLS is required for the type TLS.
+			if listener.TLS == nil {
+				p.Errorf("Listener.TLS is required when protocol is %q.", listener.Protocol)
+				continue
+			}
+
+			if listener.TLS.Mode != nil {
+				switch *listener.TLS.Mode {
+				case gatewayapi_v1alpha1.TLSModeTerminate:
+					// Check for TLS on the Gateway.
+					if listenerSecret = p.validGatewayTLS(listener); listenerSecret == nil {
+						// If TLS was configured on the Listener, but it's invalid, don't allow any
+						// routes to be bound to this listener since it can't serve TLS traffic.
+						continue
 					}
-				}
-			} else {
-				// Config is nil so validate the default which is mode: terminate
-				// Check for TLS on the Gateway.
-				if listenerSecret = p.validGatewayTLS(listener); listenerSecret == nil {
-					// If TLS was configured on the Listener, but it's invalid, don't allow any
-					// routes to be bound to this listener since it can't serve TLS traffic.
-					continue
+				case gatewayapi_v1alpha1.TLSModePassthrough:
+					if listener.TLS.CertificateRef != nil {
+						p.Errorf("Listener.TLS cannot be defined when TLS Mode is %q.", *listener.TLS.Mode)
+						continue
+					}
 				}
 			}
 		case gatewayapi_v1alpha1.HTTPProtocolType:
