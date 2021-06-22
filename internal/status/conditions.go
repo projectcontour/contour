@@ -322,6 +322,7 @@ func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj interface{}) interface{
 		gw.Status = gatewayapi_v1alpha1.GatewayStatus{
 			Conditions: conditionsToWrite,
 			// TODO: Manage addresses and listeners.
+			// xref: https://github.com/projectcontour/contour/issues/3828
 		}
 		return gw
 	default:

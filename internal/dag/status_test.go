@@ -2502,6 +2502,23 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						Namespace: "contour",
 						Name:      "projectcontour",
 					},
+					gatewayclass: &gatewayapi_v1alpha1.GatewayClass{
+						TypeMeta: metav1.TypeMeta{},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-gc",
+						},
+						Spec: gatewayapi_v1alpha1.GatewayClassSpec{
+							Controller: "projectcontour.io/contour",
+						},
+						Status: gatewayapi_v1alpha1.GatewayClassStatus{
+							Conditions: []metav1.Condition{
+								{
+									Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+									Status: metav1.ConditionTrue,
+								},
+							},
+						},
+					},
 					gateway: &gatewayapi_v1alpha1.Gateway{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "contour",
@@ -3398,6 +3415,23 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					ConfiguredGateway: types.NamespacedName{
 						Namespace: "contour",
 						Name:      "projectcontour",
+					},
+					gatewayclass: &gatewayapi_v1alpha1.GatewayClass{
+						TypeMeta: metav1.TypeMeta{},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "test-gc",
+						},
+						Spec: gatewayapi_v1alpha1.GatewayClassSpec{
+							Controller: "projectcontour.io/contour",
+						},
+						Status: gatewayapi_v1alpha1.GatewayClassStatus{
+							Conditions: []metav1.Condition{
+								{
+									Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+									Status: metav1.ConditionTrue,
+								},
+							},
+						},
 					},
 					gateway: &gatewayapi_v1alpha1.Gateway{
 						ObjectMeta: metav1.ObjectMeta{

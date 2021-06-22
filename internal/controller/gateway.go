@@ -39,8 +39,8 @@ type gatewayReconciler struct {
 	client       client.Client
 	eventHandler cache.ResourceEventHandler
 	log          logrus.FieldLogger
-	// classController is the configured controller of managed gatewayclasses.
-	classController string
+	// controllerName is the configured controller of managed gatewayclasses.
+	controllerName string
 	// referencedClass is the gatewayclass referenced by managed gateways.
 	referencedClass *gatewayapi_v1alpha1.GatewayClass
 }
@@ -49,11 +49,11 @@ type gatewayReconciler struct {
 // to watch for Gateway objects across all namespaces and reconcile those that match class.
 func NewGatewayController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger, class string) (controller.Controller, error) {
 	r := &gatewayReconciler{
-		ctx:             context.Background(),
-		client:          mgr.GetClient(),
-		eventHandler:    eventHandler,
-		log:             log,
-		classController: class,
+		ctx:            context.Background(),
+		client:         mgr.GetClient(),
+		eventHandler:   eventHandler,
+		log:            log,
+		controllerName: class,
 	}
 	c, err := controller.New("gateway-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -107,16 +107,16 @@ func (r *gatewayReconciler) classForGateway(gw *gatewayapi_v1alpha1.Gateway) (*g
 	if err := r.client.Get(r.ctx, types.NamespacedName{Name: gw.Spec.GatewayClassName}, gc); err != nil {
 		return nil, fmt.Errorf("failed to get gatewayclass %s: %w", gw.Spec.GatewayClassName, err)
 	}
-	if !r.isController(gc) {
+	if !r.matchesControllerName(gc) {
 		return nil, nil
 	}
 	return gc, nil
 }
 
-// isController returns true if the controller of the provided gc matches Contour's
+// matchesControllerName returns true if the controller of the provided gc matches Contour's
 // GatewayClass controller string.
-func (r *gatewayReconciler) isController(gc *gatewayapi_v1alpha1.GatewayClass) bool {
-	return gc.Spec.Controller == r.classController
+func (r *gatewayReconciler) matchesControllerName(gc *gatewayapi_v1alpha1.GatewayClass) bool {
+	return gc.Spec.Controller == r.controllerName
 }
 
 func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -135,8 +135,6 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 	// Check if object is deleted.
 	if !gw.ObjectMeta.DeletionTimestamp.IsZero() {
-		r.log.WithField("name", request.Name).WithField("namespace", request.Namespace).Info("zero timestamp")
-
 		if err := r.ensureGatewayDeleted(gw); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to ensure deletion of gateway %s/%s: %w",
 				gw.Namespace, gw.Name, err)
@@ -165,6 +163,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	// TODO: Ensure the gateway by creating manage infrastructure, i.e. the Envoy service.
+	// xref: https://github.com/projectcontour/contour/issues/3545
 
 	// Pass the gateway off to the eventHandler.
 	r.eventHandler.OnAdd(gw)
@@ -221,6 +220,7 @@ func (r *gatewayReconciler) ensureClassFinalizer() error {
 // ensureGatewayDeleted ensures child resources and finalizers of gw have been deleted.
 func (r *gatewayReconciler) ensureGatewayDeleted(gw *gatewayapi_v1alpha1.Gateway) error {
 	// TODO: Remove managed Envoy infrastructure when introduced.
+	// xref: https://github.com/projectcontour/contour/issues/3545
 
 	// Remove the finalizer from the referenced gateway class, if needed.
 	others, err := r.othersRefClass(gw)
