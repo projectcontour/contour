@@ -1,6 +1,6 @@
 ## Troubleshooting
 
-If you encounter issues, follow the guides below for help. For topics not covered here, you can [file an issue][0], or talk to us on the [#contour channel][1] on the Kubernetes Slack server.
+If you encounter issues, follow the guides below for help. For topics not covered here, you can [file an issue][0], or talk to us on the [#contour channel][1] on Kubernetes Slack.
 
 ### [Envoy Administration Access][2]
 Review the linked steps to learn how to access the administration interface for your Envoy instance.
