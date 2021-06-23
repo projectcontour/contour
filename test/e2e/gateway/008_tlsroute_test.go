@@ -155,7 +155,7 @@ func testTLSRouteTerminate(fx *e2e.Framework, namespace string) {
 	})
 
 	// Since SNI doesn't match, Envoy won't respond.
-	assert.Nil(t, res, "expected nil response, got %q", res)
+	assert.Falsef(t, ok, "expected nil response, got %q", res)
 
 	// Update the TLSRoute to remove the Matches section which will allow it to match any SNI.
 	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
