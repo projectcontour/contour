@@ -146,16 +146,15 @@ func testTLSRouteTerminate(fx *e2e.Framework, namespace string) {
 	assert.Equal(t, "echo", fx.GetEchoResponseBody(res.Body).Service)
 
 	// Ensure request doesn't route to non-matching SNI: tlsroute.gatewayapi.projectcontour.io
-	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host:      "something.else.not.matching",
-		Condition: e2e.HasStatusCode(404),
+	_, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+		Host: "something.else.not.matching",
 		TLSConfigOpts: []func(*tls.Config){
 			e2e.OptSetSNI("something.else.not.matching"),
 		},
 	})
 
 	// Since SNI doesn't match, Envoy won't respond.
-	assert.Falsef(t, ok, "expected nil response, got %q", res)
+	assert.False(t, ok, "expected no response but got a response.")
 
 	// Update the TLSRoute to remove the Matches section which will allow it to match any SNI.
 	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
