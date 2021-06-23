@@ -6,7 +6,8 @@ set -o pipefail
 
 readonly KUSTOMIZE_VERS="v3.8.6"
 readonly KUBECTL_VERS="v1.21.1"
-readonly KUBEBUILDER_VERS="2.3.1"
+readonly KUBEBUILDER_VERS="3.1.0"
+readonly KUBEBUILDER_TOOLS_VERS="1.19.2"
 readonly KIND_VERS="v0.11.1"
 readonly SONOBUOY_VERS="0.19.0"
 
@@ -60,9 +61,19 @@ download \
 chmod +x "${DESTDIR}/kubectl"
 
 # Required for integration testing of controller-runtime controllers.
-echo Downloading "${DESTDIR}/kubebuilder" from "https://go.kubebuilder.io/dl/${KUBEBUILDER_VERS}/${OS}/amd64"
-curl --progress-bar --location "https://go.kubebuilder.io/dl/${KUBEBUILDER_VERS}/${OS}/amd64" | tar -xz -C "${DESTDIR}"
-mv "${DESTDIR}/kubebuilder_${KUBEBUILDER_VERS}_${OS}_amd64" "${DESTDIR}/kubebuilder"
+download \
+    "https://go.kubebuilder.io/dl/${KUBEBUILDER_VERS}/${OS}/amd64" \
+    "${DESTDIR}/kubebuilder"
+
+chmod +x "${DESTDIR}/kubebuilder"
+
+download \
+    "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-${KUBEBUILDER_TOOLS_VERS}-${OS}-amd64.tar.gz" \
+    "${DESTDIR}/envtest-bins.tar.gz"
+
+mkdir -p "${DESTDIR}/testbin"
+tar -C "${DESTDIR}/testbin" --strip-components=1 -zvxf "${DESTDIR}/envtest-bins.tar.gz"
+rm "${DESTDIR}/envtest-bins.tar.gz"
 
 download \
     "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERS}/kustomize_${KUSTOMIZE_VERS}_${OS}_amd64.tar.gz" \

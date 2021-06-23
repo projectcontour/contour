@@ -165,7 +165,7 @@ jobs:
           make install
           make check-coverage
         env:
-          KUBEBUILDER_ASSETS: "${{ github.workspace }}/bin/kubebuilder/bin"
+          KUBEBUILDER_ASSETS: "${{ github.workspace }}/bin/testbin/bin"
       - name: codeCoverage
         if: ${{ success() }}
         run: |
@@ -196,7 +196,7 @@ jobs:
           make install
           make check-coverage
         env:
-          KUBEBUILDER_ASSETS: "${{ github.workspace }}/bin/kubebuilder/bin"
+          KUBEBUILDER_ASSETS: "${{ github.workspace }}/bin/testbin/bin"
   lint:
     runs-on: ubuntu-latest
     steps:
