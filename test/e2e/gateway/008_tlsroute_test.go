@@ -17,6 +17,7 @@ package gateway
 
 import (
 	"context"
+	"crypto/tls"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/projectcontour/contour/test/e2e"
@@ -137,6 +138,9 @@ func testTLSRouteTerminate(fx *e2e.Framework, namespace string) {
 	res, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 		Host:      "tlsroute.gatewayapi.projectcontour.io",
 		Condition: e2e.HasStatusCode(200),
+		TLSConfigOpts: []func(*tls.Config){
+			e2e.OptSetSNI("tlsroute.gatewayapi.projectcontour.io"),
+		},
 	})
 	assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 	assert.Equal(t, "echo", fx.GetEchoResponseBody(res.Body).Service)
