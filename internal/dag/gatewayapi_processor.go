@@ -83,13 +83,13 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	// See if the referenced gatewayclass is admitted.
 	gcAdmitted := false
 	for _, c := range p.source.gatewayclass.Status.Conditions {
-		if c.Type == string(gatewayapi_v1alpha1.ConditionRouteAdmitted) && c.Status == metav1.ConditionTrue {
+		if c.Type == string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted) && c.Status == metav1.ConditionTrue {
 			gcAdmitted = true
 		}
 	}
 
 	if !gcAdmitted {
-		p.Errorf("GatewayClassName %q is not admitted.", p.source.gateway.Spec.GatewayClassName)
+		p.Errorf("GatewayClassName %s is not admitted.", p.source.gateway.Spec.GatewayClassName)
 		errs = append(errs, field.Invalid(path.Child("gatewayClassName"), p.source.gateway.Spec.GatewayClassName,
 			"is not admitted"))
 	}

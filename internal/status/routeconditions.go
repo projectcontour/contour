@@ -16,18 +16,13 @@ package status
 import (
 	"fmt"
 
-	"github.com/projectcontour/contour/internal/errors"
-
-	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilclock "k8s.io/apimachinery/pkg/util/clock"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-const ResourceGateway = "gateways"
 const ResourceHTTPRoute = "httproutes"
 const ResourceTLSRoute = "tlsroutes"
 
@@ -44,16 +39,6 @@ const ReasonDegraded RouteReasonType = "Degraded"
 const ReasonValid RouteReasonType = "Valid"
 const ReasonErrorsExist RouteReasonType = "ErrorsExist"
 const ReasonGatewayAllowMismatch RouteReasonType = "GatewayAllowMismatch"
-
-type GatewayClassReasonType string
-
-const reasonValidGatewayClass = "Valid"
-const reasonInvalidGatewayClass = "Invalid"
-
-type GatewayReasonType string
-
-const ReasonValidGateway = "Valid"
-const ReasonInvalidGateway = "Invalid"
 
 // clock is used to set lastTransitionTime on status conditions.
 var clock utilclock.Clock = utilclock.RealClock{}
@@ -214,178 +199,4 @@ func (c *Cache) getRouteGatewayConditions(gatewayStatus []gatewayapi_v1alpha1.Ro
 		}
 	}
 	return map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition{}
-}
-
-type GatewayConditionsUpdate struct {
-	FullName           types.NamespacedName
-	Conditions         map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition
-	ExistingConditions map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition
-	GatewayRef         types.NamespacedName
-	Resource           string
-	Generation         int64
-	TransitionTime     metav1.Time
-}
-
-// AddCondition returns a metav1.Condition for a given GatewayConditionType.
-func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alpha1.GatewayConditionType, status metav1.ConditionStatus, reason GatewayReasonType, message string) metav1.Condition {
-
-	if c, ok := gatewayUpdate.Conditions[cond]; ok {
-		message = fmt.Sprintf("%s, %s", c.Message, message)
-	}
-
-	newCond := metav1.Condition{
-		Reason:             string(reason),
-		Status:             status,
-		Type:               string(cond),
-		Message:            message,
-		LastTransitionTime: metav1.NewTime(clock.Now()),
-		ObservedGeneration: gatewayUpdate.Generation,
-	}
-	gatewayUpdate.Conditions[cond] = newCond
-	return newCond
-}
-
-// GatewayConditionsAccessor returns a GatewayConditionsUpdate that allows a client to build up a list of
-// metav1.Conditions as well as a function to commit the change back to the cache when everything
-// is done. The commit function pattern is used so that the GatewayConditionsUpdate does not need
-// to know anything the cache internals.
-func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gs *gatewayapi_v1alpha1.GatewayStatus) (*GatewayConditionsUpdate, func()) {
-	gu := &GatewayConditionsUpdate{
-		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition),
-		ExistingConditions: getGatewayConditions(gs),
-		GatewayRef:         c.gatewayRef,
-		Generation:         generation,
-		TransitionTime:     metav1.NewTime(clock.Now()),
-		Resource:           resource,
-	}
-
-	return gu, func() {
-		c.commitGateway(gu)
-	}
-}
-
-func (c *Cache) commitGateway(gu *GatewayConditionsUpdate) {
-	if len(gu.Conditions) == 0 {
-		return
-	}
-	c.gatewayUpdates[gu.FullName] = gu
-}
-
-func getGatewayConditions(gs *gatewayapi_v1alpha1.GatewayStatus) map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition {
-	conditions := make(map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition)
-	for _, cond := range gs.Conditions {
-		if val, ok := conditions[gatewayapi_v1alpha1.GatewayConditionType(cond.Type)]; !ok {
-			conditions[gatewayapi_v1alpha1.GatewayConditionType(cond.Type)] = val
-		}
-	}
-	return conditions
-}
-
-func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj interface{}) interface{} {
-
-	var conditionsToWrite []metav1.Condition
-
-	for _, cond := range gatewayUpdate.Conditions {
-
-		// Set the Condition's observed generation based on
-		// the generation of the gateway we looked at.
-		cond.ObservedGeneration = gatewayUpdate.Generation
-		cond.LastTransitionTime = gatewayUpdate.TransitionTime
-
-		// is there a newer Condition on the gateway matching
-		// this condition's type? If so, our observation is stale,
-		// so don't write it, keep the newer one instead.
-		var newerConditionExists bool
-		for _, existingCond := range gatewayUpdate.ExistingConditions {
-			if existingCond.Type != cond.Type {
-				continue
-			}
-
-			if existingCond.ObservedGeneration > cond.ObservedGeneration {
-				conditionsToWrite = append(conditionsToWrite, existingCond)
-				newerConditionExists = true
-				break
-			}
-		}
-
-		// if we didn't find a newer version of the Condition on the
-		// gateway, then write the one we computed.
-		if !newerConditionExists {
-			conditionsToWrite = append(conditionsToWrite, cond)
-		}
-	}
-
-	switch o := obj.(type) {
-	case *gatewayapi_v1alpha1.Gateway:
-		gw := o.DeepCopy()
-		gw.Status = gatewayapi_v1alpha1.GatewayStatus{
-			Conditions: conditionsToWrite,
-			// TODO: Manage addresses and listeners.
-			// xref: https://github.com/projectcontour/contour/issues/3828
-		}
-		return gw
-	default:
-		panic(fmt.Sprintf("Unsupported %T object %s/%s in GatewayConditionsUpdate status mutator",
-			obj, gatewayUpdate.FullName.Namespace, gatewayUpdate.FullName.Name,
-		))
-	}
-
-}
-
-// computeGatewayClassAdmittedCondition computes the GatewayClass Admitted status
-// condition based on errs.
-func computeGatewayClassAdmittedCondition(errs field.ErrorList) metav1.Condition {
-	c := metav1.Condition{
-		Type:    string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
-		Status:  metav1.ConditionTrue,
-		Reason:  reasonValidGatewayClass,
-		Message: "Valid GatewayClass.",
-	}
-
-	if errs != nil {
-		c.Status = metav1.ConditionFalse
-		c.Reason = reasonInvalidGatewayClass
-		c.Message = fmt.Sprintf("Invalid GatewayClass: %s.", errors.ParseFieldErrors(errs))
-	}
-
-	return c
-}
-
-// mergeConditions adds or updates matching conditions, and updates the transition
-// time if details of a condition have changed. Returns the updated condition array.
-func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition) []metav1.Condition {
-	now := metav1.NewTime(clock.Now())
-	var additions []metav1.Condition
-	for i, update := range updates {
-		add := true
-		for j, cond := range conditions {
-			if cond.Type == update.Type {
-				add = false
-				if conditionChanged(cond, update) {
-					conditions[j].Status = update.Status
-					conditions[j].Reason = update.Reason
-					conditions[j].Message = update.Message
-					if cond.Status != update.Status {
-						conditions[j].LastTransitionTime = now
-					}
-					break
-				}
-			}
-		}
-		if add {
-			updates[i].LastTransitionTime = now
-			additions = append(additions, updates[i])
-		}
-	}
-	conditions = append(conditions, additions...)
-	return conditions
-}
-
-func conditionChanged(a, b metav1.Condition) bool {
-	return a.Status != b.Status || a.Reason != b.Reason || a.Message != b.Message
-}
-
-func conditionsEqual(a, b []metav1.Condition) bool {
-	return apiequality.Semantic.DeepEqual(a, b)
 }

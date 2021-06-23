@@ -41,7 +41,7 @@ var (
 		Status: gatewayapi_v1alpha1.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+					Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
 					Status: metav1.ConditionTrue,
 				},
 			},
