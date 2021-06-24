@@ -80,35 +80,27 @@ func (r *gatewayReconciler) enqueueRequestForOwnedGateway() handler.EventHandler
 			r.log.WithField("namespace", gw.Namespace).WithField("name", gw.Name).Error(err)
 			return []reconcile.Request{}
 		}
-		if gc != nil {
-			r.referencedClass = gc
-			// The gateway references a gatewayclass that exists and is managed
-			// by Contour, so enqueue it for reconciliation.
-			r.log.WithField("namespace", gw.Namespace).WithField("name", gw.Name).Info("queueing gateway")
-			return []reconcile.Request{
-				{
-					NamespacedName: types.NamespacedName{
-						Namespace: gw.Namespace,
-						Name:      gw.Name,
-					},
+		r.referencedClass = gc
+		return []reconcile.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Namespace: gw.Namespace,
+					Name:      gw.Name,
 				},
-			}
+			},
 		}
-		r.log.WithField("name", a.GetName()).WithField("namespace", a.GetNamespace()).
-			Info("gateway not owned by contour, bypassing reconciliation.")
-		return []reconcile.Request{}
 	})
 }
 
 // classForGateway returns nil, error if the gatewayclass referenced by gw does not exist
-// or nil, nil if gw is not owned by Contour. Otherwise, the referenced gatewayclass is returned.
+// or is not owned by Contour. Otherwise, the referenced gatewayclass is returned.
 func (r *gatewayReconciler) classForGateway(gw *gatewayapi_v1alpha1.Gateway) (*gatewayapi_v1alpha1.GatewayClass, error) {
 	gc := &gatewayapi_v1alpha1.GatewayClass{}
 	if err := r.client.Get(r.ctx, types.NamespacedName{Name: gw.Spec.GatewayClassName}, gc); err != nil {
 		return nil, fmt.Errorf("failed to get gatewayclass %s: %w", gw.Spec.GatewayClassName, err)
 	}
 	if !r.matchesControllerName(gc) {
-		return nil, nil
+		return nil, fmt.Errorf("gatewayclass %q not owned by contour", gc.Name)
 	}
 	return gc, nil
 }
