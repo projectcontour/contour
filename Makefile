@@ -10,6 +10,13 @@ PHONY = gencerts
 ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.18.3
 GATEWAY_API_VERSION = $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
+# Used to supply a local Envoy docker container an IP to connect to that is running
+# 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
+# LOCALIP as an env var before running 'make local' will solve that.
+LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | head -n1 | awk '{print $$2}')
+
+# Variables needed for running e2e tests.
+CONTOUR_E2E_LOCAL_HOST ?= $(LOCALIP)
 # Variables needed for running upgrade tests.
 CONTOUR_UPGRADE_FROM_VERSION ?= $(shell ./test/scripts/get-contour-upgrade-from-version.sh)
 CONTOUR_UPGRADE_TO_IMAGE ?= projectcontour/contour:main
@@ -41,11 +48,6 @@ BUILD_CGO_ENABLED ?= 0
 
 # Go module mirror to use.
 BUILD_GOPROXY ?= https://proxy.golang.org
-
-# Used to supply a local Envoy docker container an IP to connect to that is running
-# 'contour serve'. On MacOS this will work, but may not on other OSes. Defining
-# LOCALIP as an env var before running 'make local' will solve that.
-LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | head -n1 | awk '{print $$2}')
 
 # Sets GIT_REF to a tag if it's present, otherwise the short git sha will be used.
 GIT_REF = $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --short=8 --verify HEAD)
@@ -341,11 +343,12 @@ install-contour-release: | setup-kind-cluster ## Install the release version of 
 	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
 
 .PHONY: e2e
-e2e: | install-contour-working run-e2e cleanup-kind ## Run E2E tests against a real k8s cluster
+e2e: | setup-kind-cluster run-e2e cleanup-kind ## Run E2E tests against a real k8s cluster
 
 .PHONY: run-e2e
 run-e2e:
-	ginkgo -tags=e2e -mod=readonly -skipPackage=upgrade -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
+	CONTOUR_E2E_LOCAL_HOST=$(CONTOUR_E2E_LOCAL_HOST) \
+		ginkgo -tags=e2e -mod=readonly -skipPackage=upgrade -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
 
 .PHONY: cleanup-kind
 cleanup-kind:

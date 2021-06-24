@@ -16,6 +16,7 @@
 package httpproxy
 
 import (
+	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -23,51 +24,49 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testHostHeaderRewrite(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "017-host-header-rewrite"
+func testHostHeaderRewrite(namespace string) {
+	Specify("hostname can be rewritten with policy on route", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
 
-	fx.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
-
-	p := &contourv1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "host-header-rewrite",
-		},
-		Spec: contourv1.HTTPProxySpec{
-			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "hostheaderrewrite.projectcontour.io",
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "host-header-rewrite",
 			},
-			Routes: []contourv1.Route{
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "ingress-conformance-echo",
-							Port: 80,
-						},
-					},
-					RequestHeadersPolicy: &contourv1.HeadersPolicy{
-						Set: []contourv1.HeaderValue{
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "hostheaderrewrite.projectcontour.io",
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
 							{
-								Name:  "Host",
-								Value: "rewritten.com",
+								Name: "ingress-conformance-echo",
+								Port: 80,
+							},
+						},
+						RequestHeadersPolicy: &contourv1.HeadersPolicy{
+							Set: []contourv1.HeaderValue{
+								{
+									Name:  "Host",
+									Value: "rewritten.com",
+								},
 							},
 						},
 					},
 				},
 			},
-		},
-	}
-	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		}
+		f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Condition: e2e.HasStatusCode(200),
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+		assert.Equal(t, "rewritten.com", f.GetEchoResponseBody(res.Body).Host)
 	})
-	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-	assert.Equal(t, "rewritten.com", fx.GetEchoResponseBody(res.Body).Host)
 }

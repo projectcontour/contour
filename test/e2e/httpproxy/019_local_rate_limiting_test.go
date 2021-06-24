@@ -18,6 +18,7 @@ package httpproxy
 import (
 	"context"
 
+	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
@@ -26,170 +27,166 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func testLocalRateLimitingVirtualHost(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "019-local-rate-limiting-vhost"
+func testLocalRateLimitingVirtualHost(namespace string) {
+	Specify("local rate limiting can be specified at the virtualhost", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-	fx.Fixtures.Echo.Deploy(namespace, "echo")
-
-	p := &contourv1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "vhostlocalratelimit",
-		},
-		Spec: contourv1.HTTPProxySpec{
-			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "vhostlocalratelimit.projectcontour.io",
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "vhostlocalratelimit",
 			},
-			Routes: []contourv1.Route{
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "echo",
-							Port: 80,
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "vhostlocalratelimit.projectcontour.io",
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo",
+								Port: 80,
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-	p, _ = fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
-
-	// Wait until we get a 200 from the proxy confirming
-	// the pods are up and serving traffic.
-	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Condition: e2e.HasStatusCode(200),
-	})
-	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-	// Add a local rate limit policy on the virtual host.
-	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
-			return err
 		}
+		p, _ = f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-		p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
-			Local: &contourv1.LocalRateLimitPolicy{
-				Requests: 1,
-				Unit:     "hour",
-			},
-		}
+		// Wait until we get a 200 from the proxy confirming
+		// the pods are up and serving traffic.
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		return fx.Client.Update(context.TODO(), p)
-	}))
+		// Add a local rate limit policy on the virtual host.
+		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+				return err
+			}
 
-	// Make a request against the proxy, confirm a 200 response
-	// is returned since we're allowed one request per hour.
-	res, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Condition: e2e.HasStatusCode(200),
+			p.Spec.VirtualHost.RateLimitPolicy = &contourv1.RateLimitPolicy{
+				Local: &contourv1.LocalRateLimitPolicy{
+					Requests: 1,
+					Unit:     "hour",
+				},
+			}
+
+			return f.Client.Update(context.TODO(), p)
+		}))
+
+		// Make a request against the proxy, confirm a 200 response
+		// is returned since we're allowed one request per hour.
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+		// Make another request against the proxy, confirm a 429 response
+		// is now gotten since we've exceeded the rate limit.
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(429),
+		})
+		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 	})
-	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-	// Make another request against the proxy, confirm a 429 response
-	// is now gotten since we've exceeded the rate limit.
-	res, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Condition: e2e.HasStatusCode(429),
-	})
-	require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 }
 
-func testLocalRateLimitingRoute(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "019-local-rate-limiting-route"
+func testLocalRateLimitingRoute(namespace string) {
+	Specify("local rate limits can be specified on a route", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-	fx.Fixtures.Echo.Deploy(namespace, "echo")
-
-	p := &contourv1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "routelocalratelimit",
-		},
-		Spec: contourv1.HTTPProxySpec{
-			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "routelocalratelimit.projectcontour.io",
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "routelocalratelimit",
 			},
-			Routes: []contourv1.Route{
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "echo",
-							Port: 80,
-						},
-					},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "routelocalratelimit.projectcontour.io",
 				},
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "echo",
-							Port: 80,
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo",
+								Port: 80,
+							},
 						},
 					},
-					Conditions: []contourv1.MatchCondition{
-						{
-							Prefix: "/unlimited",
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Prefix: "/unlimited",
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-	p, _ = fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
-
-	// Wait until we get a 200 from the proxy confirming
-	// the pods are up and serving traffic.
-	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Condition: e2e.HasStatusCode(200),
-	})
-	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-	// Add a local rate limit policy on the first route.
-	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
-			return err
 		}
+		p, _ = f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-		p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
-			Local: &contourv1.LocalRateLimitPolicy{
-				Requests: 1,
-				Unit:     "hour",
-			},
-		}
+		// Wait until we get a 200 from the proxy confirming
+		// the pods are up and serving traffic.
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-		return fx.Client.Update(context.TODO(), p)
-	}))
+		// Add a local rate limit policy on the first route.
+		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+				return err
+			}
 
-	// Make a request against the proxy, confirm a 200 response
-	// is returned since we're allowed one request per hour.
-	res, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Condition: e2e.HasStatusCode(200),
+			p.Spec.Routes[0].RateLimitPolicy = &contourv1.RateLimitPolicy{
+				Local: &contourv1.LocalRateLimitPolicy{
+					Requests: 1,
+					Unit:     "hour",
+				},
+			}
+
+			return f.Client.Update(context.TODO(), p)
+		}))
+
+		// Make a request against the proxy, confirm a 200 response
+		// is returned since we're allowed one request per hour.
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+		// Make another request against the proxy, confirm a 429 response
+		// is now gotten since we've exceeded the rate limit.
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Condition: e2e.HasStatusCode(429),
+		})
+		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
+
+		// Make a request against the route that doesn't have rate limiting
+		// to confirm we still get a 200 for that route.
+		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/unlimited",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected 200 response code for non-rate-limited route, got %d", res.StatusCode)
 	})
-	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-	// Make another request against the proxy, confirm a 429 response
-	// is now gotten since we've exceeded the rate limit.
-	res, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Condition: e2e.HasStatusCode(429),
-	})
-	require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
-
-	// Make a request against the route that doesn't have rate limiting
-	// to confirm we still get a 200 for that route.
-	res, ok = fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Path:      "/unlimited",
-		Condition: e2e.HasStatusCode(200),
-	})
-	require.Truef(t, ok, "expected 200 response code for non-rate-limited route, got %d", res.StatusCode)
 }

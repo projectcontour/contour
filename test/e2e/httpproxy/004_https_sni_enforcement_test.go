@@ -18,6 +18,7 @@ package httpproxy
 import (
 	"crypto/tls"
 
+	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -25,99 +26,97 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testHTTPSSNIEnforcement(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "004-https-sni-enforcement"
+func testHTTPSSNIEnforcement(namespace string) {
+	Specify("SNI routing works and hostname must match", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "echo-one")
+		f.Certs.CreateSelfSignedCert(namespace, "echo-one-cert", "echo-one", "sni-enforcement-echo-one.projectcontour.io")
 
-	fx.Fixtures.Echo.Deploy(namespace, "echo-one")
-	fx.Certs.CreateSelfSignedCert(namespace, "echo-one-cert", "echo-one", "sni-enforcement-echo-one.projectcontour.io")
-
-	echoOneProxy := &contourv1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "echo-one",
-		},
-		Spec: contourv1.HTTPProxySpec{
-			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "sni-enforcement-echo-one.projectcontour.io",
-				TLS: &contourv1.TLS{
-					SecretName: "echo-one",
-				},
+		echoOneProxy := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo-one",
 			},
-			Routes: []contourv1.Route{
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "echo-one",
-							Port: 80,
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "sni-enforcement-echo-one.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName: "echo-one",
+					},
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-one",
+								Port: 80,
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-	fx.CreateHTTPProxyAndWaitFor(echoOneProxy, httpProxyValid)
+		}
+		f.CreateHTTPProxyAndWaitFor(echoOneProxy, httpProxyValid)
 
-	res, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host:      echoOneProxy.Spec.VirtualHost.Fqdn,
-		Path:      "/https-sni-enforcement",
-		Condition: e2e.HasStatusCode(200),
-	})
-	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      echoOneProxy.Spec.VirtualHost.Fqdn,
+			Path:      "/https-sni-enforcement",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
-	assert.Equal(t, "echo-one", fx.GetEchoResponseBody(res.Body).Service)
+		assert.Equal(t, "echo-one", f.GetEchoResponseBody(res.Body).Service)
 
-	// echo-two
-	fx.Fixtures.Echo.Deploy(namespace, "echo-two")
-	fx.Certs.CreateSelfSignedCert(namespace, "echo-two-cert", "echo-two", "sni-enforcement-echo-two.projectcontour.io")
+		// echo-two
+		f.Fixtures.Echo.Deploy(namespace, "echo-two")
+		f.Certs.CreateSelfSignedCert(namespace, "echo-two-cert", "echo-two", "sni-enforcement-echo-two.projectcontour.io")
 
-	echoTwoProxy := &contourv1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "echo-two",
-		},
-		Spec: contourv1.HTTPProxySpec{
-			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "sni-enforcement-echo-two.projectcontour.io",
-				TLS: &contourv1.TLS{
-					SecretName: "echo-two",
-				},
+		echoTwoProxy := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo-two",
 			},
-			Routes: []contourv1.Route{
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "echo-two",
-							Port: 80,
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "sni-enforcement-echo-two.projectcontour.io",
+					TLS: &contourv1.TLS{
+						SecretName: "echo-two",
+					},
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-two",
+								Port: 80,
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-	fx.CreateHTTPProxyAndWaitFor(echoTwoProxy, httpProxyValid)
+		}
+		f.CreateHTTPProxyAndWaitFor(echoTwoProxy, httpProxyValid)
 
-	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host:      echoTwoProxy.Spec.VirtualHost.Fqdn,
-		Path:      "/https-sni-enforcement",
-		Condition: e2e.HasStatusCode(200),
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      echoTwoProxy.Spec.VirtualHost.Fqdn,
+			Path:      "/https-sni-enforcement",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+		assert.Equal(t, "echo-two", f.GetEchoResponseBody(res.Body).Service)
+
+		// Send a request to sni-enforcement-echo-two.projectcontour.io that has an SNI of
+		// sni-enforcement-echo-one.projectcontour.io and ensure a 421 (Misdirected Request)
+		// is returned.
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host: echoTwoProxy.Spec.VirtualHost.Fqdn,
+			TLSConfigOpts: []func(*tls.Config){
+				e2e.OptSetSNI(echoOneProxy.Spec.VirtualHost.Fqdn),
+			},
+			Condition: e2e.HasStatusCode(421),
+		})
+		require.Truef(t, ok, "expected 421 (Misdirected Request) response code, got %d", res.StatusCode)
 	})
-	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-	assert.Equal(t, "echo-two", fx.GetEchoResponseBody(res.Body).Service)
-
-	// Send a request to sni-enforcement-echo-two.projectcontour.io that has an SNI of
-	// sni-enforcement-echo-one.projectcontour.io and ensure a 421 (Misdirected Request)
-	// is returned.
-	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host: echoTwoProxy.Spec.VirtualHost.Fqdn,
-		TLSConfigOpts: []func(*tls.Config){
-			e2e.OptSetSNI(echoOneProxy.Spec.VirtualHost.Fqdn),
-		},
-		Condition: e2e.HasStatusCode(421),
-	})
-	require.Truef(t, ok, "expected 421 (Misdirected Request) response code, got %d", res.StatusCode)
 }

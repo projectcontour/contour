@@ -20,16 +20,19 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/onsi/ginkgo"
+	"github.com/onsi/gomega/gexec"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -73,7 +76,9 @@ type Framework struct {
 	t ginkgo.GinkgoTInterface
 }
 
-func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
+func NewFramework(inClusterTestSuite bool) *Framework {
+	t := ginkgo.GinkgoT()
+
 	scheme := runtime.NewScheme()
 	require.NoError(t, kubescheme.AddToScheme(scheme))
 	require.NoError(t, contourv1.AddToScheme(scheme))
@@ -117,7 +122,40 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 		httpsURLBase = "https://127.0.0.1:9443"
 	}
 
-	deployment := &Deployment{client: crClient}
+	var (
+		kubeConfig  string
+		contourHost string
+		contourPort string
+		contourBin  string
+	)
+	if inClusterTestSuite {
+		// TODO
+	} else {
+		var found bool
+		if kubeConfig, found = os.LookupEnv("KUBECONFIG"); !found {
+			kubeConfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+		}
+
+		contourHost = os.Getenv("CONTOUR_E2E_LOCAL_HOST")
+		require.NotEmpty(t, contourHost, "CONTOUR_E2E_LOCAL_HOST environment variable not supplied")
+
+		if contourPort, found = os.LookupEnv("CONTOUR_E2E_LOCAL_PORT"); !found {
+			contourPort = "8001"
+		}
+
+		var err error
+		contourBin, err = gexec.Build("github.com/projectcontour/contour/cmd/contour")
+		require.NoError(t, err)
+	}
+
+	deployment := &Deployment{
+		client:           crClient,
+		cmdOutputWriter:  ginkgo.GinkgoWriter,
+		kubeConfig:       kubeConfig,
+		localContourHost: contourHost,
+		localContourPort: contourPort,
+		contourBin:       contourBin,
+	}
 	require.NoError(t, deployment.UnmarshalResources())
 
 	return &Framework{
@@ -160,6 +198,21 @@ func NewFramework(t ginkgo.GinkgoTInterface) *Framework {
 // as a *testing.T, for use in tests that previously required a *testing.T.
 func (f *Framework) T() ginkgo.GinkgoTInterface {
 	return f.t
+}
+
+type NamespacedTestBody func(string)
+
+func (f *Framework) NamespacedTest(namespace string, body NamespacedTestBody) {
+	ginkgo.Context("with namespace: "+namespace, func() {
+		ginkgo.BeforeEach(func() {
+			f.CreateNamespace(namespace)
+		})
+		ginkgo.AfterEach(func() {
+			f.DeleteNamespace(namespace, false)
+		})
+
+		body(namespace)
+	})
 }
 
 // CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
@@ -248,13 +301,20 @@ func (f *Framework) CreateNamespace(name string) {
 
 // DeleteNamespace deletes the namespace with the given name in the
 // Kubernetes API or fails the test if it encounters an error.
-func (f *Framework) DeleteNamespace(name string) {
+func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 	}
 	require.NoError(f.t, f.Client.Delete(context.TODO(), ns))
+
+	if waitForDeletion {
+		require.Eventually(f.t, func() bool {
+			err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(ns), ns)
+			return api_errors.IsNotFound(err)
+		}, time.Minute*3, time.Millisecond*50)
+	}
 }
 
 // GetEchoResponseBody decodes an HTTP response body that is

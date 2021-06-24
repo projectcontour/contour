@@ -18,44 +18,42 @@ package httpproxy
 import (
 	"context"
 
+	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testRetryPolicyValidation(fx *e2e.Framework) {
-	t := fx.T()
-	ns := "011-retry-policy-validation"
+func testRetryPolicyValidation(namespace string) {
+	Specify("retry policy is validated on create", func() {
+		t := f.T()
 
-	fx.CreateNamespace(ns)
-	defer fx.DeleteNamespace(ns)
-
-	p := &contourv1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      "invalid-retry-on-condition",
-		},
-		Spec: contourv1.HTTPProxySpec{
-			Routes: []contourv1.Route{
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "foo",
-							Port: 80,
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "invalid-retry-on-condition",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "foo",
+								Port: 80,
+							},
 						},
-					},
-					RetryPolicy: &contourv1.RetryPolicy{
-						RetryOn: []contourv1.RetryOn{
-							"foobar",
+						RetryPolicy: &contourv1.RetryPolicy{
+							RetryOn: []contourv1.RetryOn{
+								"foobar",
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-	err := fx.Client.Create(context.TODO(), p)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "spec.routes.retryPolicy.retryOn: Unsupported value")
+		}
+		err := f.Client.Create(context.TODO(), p)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "spec.routes.retryPolicy.retryOn: Unsupported value")
+	})
 }
