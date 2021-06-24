@@ -82,7 +82,7 @@ var _ = Describe("Ingress", func() {
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
-	f.NamespacedTest("tls-wildcard-host", testTLSWildcardHost)
+	f.NamespacedTest("ingress-tls-wildcard-host", testTLSWildcardHost)
 
 	f.NamespacedTest("ingress-ensure-v1beta1", testEnsureV1Beta1)
 

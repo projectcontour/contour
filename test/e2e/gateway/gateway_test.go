@@ -221,7 +221,7 @@ var _ = Describe("Gateway API", func() {
 
 		f.NamespacedTest("httproute-tls-gateway", testWithHTTPSGateway("tls-gateway.projectcontour.io", testTLSGateway))
 
-		f.NamespacedTest("tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
+		f.NamespacedTest("httproute-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
 	})
 
 	Describe("TLSRoute: Gateway", func() {
