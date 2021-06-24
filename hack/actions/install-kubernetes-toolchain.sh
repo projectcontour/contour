@@ -6,10 +6,17 @@ set -o pipefail
 
 readonly KUSTOMIZE_VERS="v3.8.6"
 readonly KUBECTL_VERS="v1.21.1"
-readonly KUBEBUILDER_VERS="3.1.0"
-readonly KUBEBUILDER_TOOLS_VERS="1.19.2"
 readonly KIND_VERS="v0.11.1"
 readonly SONOBUOY_VERS="0.19.0"
+readonly KUBEBUILDER_VERS="3.1.0"
+
+# Envtest Binaries Manager is required for newer versions. See the following for details:
+# https://github.com/projectcontour/contour/issues/3832
+readonly KUBEBUILDER_TOOLS_VERS="1.19.2"
+
+# Note: The KUBEBUILDER_ASSETS env is required if this path is changed. See the following for details:
+# https://book.kubebuilder.io/reference/envtest.html
+readonly KUBEBUILDER_TOOLS_DIR="/usr/local/kubebuilder"
 
 readonly PROGNAME=$(basename $0)
 readonly CURL=${CURL:-curl}
@@ -71,8 +78,8 @@ download \
     "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-${KUBEBUILDER_TOOLS_VERS}-${OS}-amd64.tar.gz" \
     "${DESTDIR}/envtest-bins.tar.gz"
 
-mkdir -p "${DESTDIR}/testbin"
-tar -C "${DESTDIR}/testbin" --strip-components=1 -zvxf "${DESTDIR}/envtest-bins.tar.gz"
+sudo mkdir -p ${KUBEBUILDER_TOOLS_DIR}
+sudo tar -C ${KUBEBUILDER_TOOLS_DIR} --strip-components=1 -zvxf "${DESTDIR}/envtest-bins.tar.gz"
 rm "${DESTDIR}/envtest-bins.tar.gz"
 
 download \
