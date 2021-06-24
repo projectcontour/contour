@@ -263,37 +263,51 @@ var _ = Describe("Gateway API", func() {
 	})
 
 	Describe("TLSRoute Gateway: Mode: Terminate", func() {
-		gw := &gatewayv1alpha1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "tls-passthrough",
-			},
-			Spec: gatewayv1alpha1.GatewaySpec{
-				GatewayClassName: "contour-class",
-				Listeners: []gatewayv1alpha1.Listener{
-					{
-						Protocol: gatewayv1alpha1.TLSProtocolType,
-						Port:     gatewayv1alpha1.PortNumber(443),
-						TLS: &gatewayv1alpha1.GatewayTLSConfig{
-							Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModePassthrough),
-							CertificateRef: &gatewayv1alpha1.LocalObjectReference{
-								Group: "core",
-								Kind:  "Secret",
-								Name:  "tlscert",
+
+		testWithTLSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+			gw := &gatewayv1alpha1.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "tls-passthrough",
+				},
+				Spec: gatewayv1alpha1.GatewaySpec{
+					GatewayClassName: "contour-class",
+					Listeners: []gatewayv1alpha1.Listener{
+						{
+							Protocol: gatewayv1alpha1.TLSProtocolType,
+							Port:     gatewayv1alpha1.PortNumber(443),
+							TLS: &gatewayv1alpha1.GatewayTLSConfig{
+								Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModePassthrough),
+								CertificateRef: &gatewayv1alpha1.LocalObjectReference{
+									Group: "core",
+									Kind:  "Secret",
+									Name:  "tlscert",
+								},
 							},
-						},
-						Routes: gatewayv1alpha1.RouteBindingSelector{
-							Kind: "TLSRoute",
-							Namespaces: &gatewayv1alpha1.RouteNamespaces{
-								From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+							Routes: gatewayv1alpha1.RouteBindingSelector{
+								Kind: "TLSRoute",
+								Namespaces: &gatewayv1alpha1.RouteNamespaces{
+									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+								},
 							},
 						},
 					},
 				},
-			},
+			}
+			return testWithGateway(gw, func(namespace string) {
+				Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
+					BeforeEach(func() {
+						f.Certs.CreateSelfSignedCert(namespace, "tlscert", "tlscert", hostname)
+					})
+
+					body(namespace)
+				})
+			})
+
 		}
 
-		f.NamespacedTest("008-tlsroute-mode-passthrough", testWithGateway(gw, testTLSRoutePassthrough))
 	})
+
+	f.NamespacedTest("008-tlsroute-mode-passthrough", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
 })
 
 func stringPtr(s string) *string {
