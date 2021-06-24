@@ -30,8 +30,8 @@ func testIncludePrefixCondition(namespace string) {
 	Specify("HTTPProxy include prefixes can cross namespaces", func() {
 		var (
 			t              = f.T()
-			appNamespace   = "include-prefix-condition-app"
-			adminNamespace = "include-prefix-condition-admin"
+			appNamespace   = "httpproxy-include-prefix-condition-app"
+			adminNamespace = "httpproxy-include-prefix-condition-admin"
 		)
 
 		for _, ns := range []string{appNamespace, adminNamespace} {

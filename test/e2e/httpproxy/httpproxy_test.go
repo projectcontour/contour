@@ -83,29 +83,29 @@ var _ = Describe("HTTPProxy", func() {
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
-	f.NamespacedTest("required-field-validation", testRequiredFieldValidation)
+	f.NamespacedTest("httpproxy-required-field-validation", testRequiredFieldValidation)
 
-	f.NamespacedTest("header-condition-match", testHeaderConditionMatch)
+	f.NamespacedTest("httpproxy-header-condition-match", testHeaderConditionMatch)
 
-	f.NamespacedTest("path-condition-match", testPathConditionMatch)
+	f.NamespacedTest("httpproxy-path-condition-match", testPathConditionMatch)
 
-	f.NamespacedTest("https-sni-enforcement", testHTTPSSNIEnforcement)
+	f.NamespacedTest("httpproxy-https-sni-enforcement", testHTTPSSNIEnforcement)
 
-	f.NamespacedTest("pod-restart", testPodRestart)
+	f.NamespacedTest("httpproxy-pod-restart", testPodRestart)
 
-	f.NamespacedTest("merge-slash", testMergeSlash)
+	f.NamespacedTest("httpproxy-merge-slash", testMergeSlash)
 
-	f.NamespacedTest("client-cert-auth", testClientCertAuth)
+	f.NamespacedTest("httpproxy-client-cert-auth", testClientCertAuth)
 
-	f.NamespacedTest("tcproute-https-termination", testTCPRouteHTTPSTermination)
+	f.NamespacedTest("httpproxy-tcproute-https-termination", testTCPRouteHTTPSTermination)
 
-	f.NamespacedTest("https-misdirected-request", testHTTPSMisdirectedRequest)
+	f.NamespacedTest("httpproxy-https-misdirected-request", testHTTPSMisdirectedRequest)
 
-	f.NamespacedTest("include-prefix-condition", testIncludePrefixCondition)
+	f.NamespacedTest("httpproxy-include-prefix-condition", testIncludePrefixCondition)
 
-	f.NamespacedTest("retry-policy-validation", testRetryPolicyValidation)
+	f.NamespacedTest("httpproxy-retry-policy-validation", testRetryPolicyValidation)
 
-	f.NamespacedTest("https-fallback-certificate", func(namespace string) {
+	f.NamespacedTest("httpproxy-https-fallback-certificate", func(namespace string) {
 		Context("with fallback certificate", func() {
 			BeforeEach(func() {
 				contourConfig.TLS = config.TLSParameters{
@@ -121,7 +121,7 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
-	f.NamespacedTest("backend-tls", func(namespace string) {
+	f.NamespacedTest("httpproxy-backend-tls", func(namespace string) {
 		Context("with backend tls", func() {
 			BeforeEach(func() {
 				// Top level issuer.
@@ -206,21 +206,21 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
-	f.NamespacedTest("external-auth", testExternalAuth)
+	f.NamespacedTest("httpproxy-external-auth", testExternalAuth)
 
-	f.NamespacedTest("http-health-checks", testHTTPHealthChecks)
+	f.NamespacedTest("httpproxy-http-health-checks", testHTTPHealthChecks)
 
-	f.NamespacedTest("dynamic-headers", testDynamicHeaders)
+	f.NamespacedTest("httpproxy-dynamic-headers", testDynamicHeaders)
 
-	f.NamespacedTest("host-header-rewrite", testHostHeaderRewrite)
+	f.NamespacedTest("httpproxy-host-header-rewrite", testHostHeaderRewrite)
 
-	f.NamespacedTest("external-name-service-insecure", testExternalNameServiceInsecure)
+	f.NamespacedTest("httpproxy-external-name-service-insecure", testExternalNameServiceInsecure)
 
-	f.NamespacedTest("external-name-service-tls", testExternalNameServiceTLS)
+	f.NamespacedTest("httpproxy-external-name-service-tls", testExternalNameServiceTLS)
 
-	f.NamespacedTest("local-rate-limiting-vhost", testLocalRateLimitingVirtualHost)
+	f.NamespacedTest("httpproxy-local-rate-limiting-vhost", testLocalRateLimitingVirtualHost)
 
-	f.NamespacedTest("local-rate-limiting-route", testLocalRateLimitingRoute)
+	f.NamespacedTest("httpproxy-local-rate-limiting-route", testLocalRateLimitingRoute)
 
 	Context("global rate limiting", func() {
 		withRateLimitService := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
@@ -265,13 +265,13 @@ descriptors:
 			}
 		}
 
-		f.NamespacedTest("global-rate-limiting-vhost-non-tls", withRateLimitService(testGlobalRateLimitingVirtualHostNonTLS))
+		f.NamespacedTest("httpproxy-global-rate-limiting-vhost-non-tls", withRateLimitService(testGlobalRateLimitingVirtualHostNonTLS))
 
-		f.NamespacedTest("global-rate-limiting-route-non-tls", withRateLimitService(testGlobalRateLimitingRouteNonTLS))
+		f.NamespacedTest("httpproxy-global-rate-limiting-route-non-tls", withRateLimitService(testGlobalRateLimitingRouteNonTLS))
 
-		f.NamespacedTest("global-rate-limiting-vhost-tls", withRateLimitService(testGlobalRateLimitingVirtualHostTLS))
+		f.NamespacedTest("httpproxy-global-rate-limiting-vhost-tls", withRateLimitService(testGlobalRateLimitingVirtualHostTLS))
 
-		f.NamespacedTest("global-rate-limiting-route-tls", withRateLimitService(testGlobalRateLimitingRouteTLS))
+		f.NamespacedTest("httpproxy-global-rate-limiting-route-tls", withRateLimitService(testGlobalRateLimitingRouteTLS))
 	})
 })
 
