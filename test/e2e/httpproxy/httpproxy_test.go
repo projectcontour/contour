@@ -83,29 +83,29 @@ var _ = Describe("HTTPProxy", func() {
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
-	f.NamespacedTest("001-required-field-validation", testRequiredFieldValidation)
+	f.NamespacedTest("required-field-validation", testRequiredFieldValidation)
 
-	f.NamespacedTest("002-header-condition-match", testHeaderConditionMatch)
+	f.NamespacedTest("header-condition-match", testHeaderConditionMatch)
 
-	f.NamespacedTest("003-path-condition-match", testPathConditionMatch)
+	f.NamespacedTest("path-condition-match", testPathConditionMatch)
 
-	f.NamespacedTest("004-https-sni-enforcement", testHTTPSSNIEnforcement)
+	f.NamespacedTest("https-sni-enforcement", testHTTPSSNIEnforcement)
 
-	f.NamespacedTest("005-pod-restart", testPodRestart)
+	f.NamespacedTest("pod-restart", testPodRestart)
 
-	f.NamespacedTest("006-merge-slash", testMergeSlash)
+	f.NamespacedTest("merge-slash", testMergeSlash)
 
-	f.NamespacedTest("007-client-cert-auth", testClientCertAuth)
+	f.NamespacedTest("client-cert-auth", testClientCertAuth)
 
-	f.NamespacedTest("008-tcproute-https-termination", testTCPRouteHTTPSTermination)
+	f.NamespacedTest("tcproute-https-termination", testTCPRouteHTTPSTermination)
 
-	f.NamespacedTest("009-https-misdirected-request", testHTTPSMisdirectedRequest)
+	f.NamespacedTest("https-misdirected-request", testHTTPSMisdirectedRequest)
 
-	f.NamespacedTest("010-include-prefix-condition", testIncludePrefixCondition)
+	f.NamespacedTest("include-prefix-condition", testIncludePrefixCondition)
 
-	f.NamespacedTest("011-retry-policy-validation", testRetryPolicyValidation)
+	f.NamespacedTest("retry-policy-validation", testRetryPolicyValidation)
 
-	f.NamespacedTest("012-https-fallback-certificate", func(namespace string) {
+	f.NamespacedTest("https-fallback-certificate", func(namespace string) {
 		Context("with fallback certificate", func() {
 			BeforeEach(func() {
 				contourConfig.TLS = config.TLSParameters{
@@ -206,21 +206,21 @@ var _ = Describe("HTTPProxy", func() {
 		})
 	})
 
-	f.NamespacedTest("014-external-auth", testExternalAuth)
+	f.NamespacedTest("external-auth", testExternalAuth)
 
-	f.NamespacedTest("015-http-health-checks", testHTTPHealthChecks)
+	f.NamespacedTest("http-health-checks", testHTTPHealthChecks)
 
-	f.NamespacedTest("016-dynamic-headers", testDynamicHeaders)
+	f.NamespacedTest("dynamic-headers", testDynamicHeaders)
 
-	f.NamespacedTest("017-host-header-rewrite", testHostHeaderRewrite)
+	f.NamespacedTest("host-header-rewrite", testHostHeaderRewrite)
 
-	f.NamespacedTest("018-external-name-service-insecure", testExternalNameServiceInsecure)
+	f.NamespacedTest("external-name-service-insecure", testExternalNameServiceInsecure)
 
-	f.NamespacedTest("018-external-name-service-tls", testExternalNameServiceTLS)
+	f.NamespacedTest("external-name-service-tls", testExternalNameServiceTLS)
 
-	f.NamespacedTest("019-local-rate-limiting-vhost", testLocalRateLimitingVirtualHost)
+	f.NamespacedTest("local-rate-limiting-vhost", testLocalRateLimitingVirtualHost)
 
-	f.NamespacedTest("019-local-rate-limiting-route", testLocalRateLimitingRoute)
+	f.NamespacedTest("local-rate-limiting-route", testLocalRateLimitingRoute)
 
 	Context("global rate limiting", func() {
 		withRateLimitService := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
@@ -265,13 +265,13 @@ descriptors:
 			}
 		}
 
-		f.NamespacedTest("020-global-rate-limiting-vhost-non-tls", withRateLimitService(testGlobalRateLimitingVirtualHostNonTLS))
+		f.NamespacedTest("global-rate-limiting-vhost-non-tls", withRateLimitService(testGlobalRateLimitingVirtualHostNonTLS))
 
-		f.NamespacedTest("020-global-rate-limiting-route-non-tls", withRateLimitService(testGlobalRateLimitingRouteNonTLS))
+		f.NamespacedTest("global-rate-limiting-route-non-tls", withRateLimitService(testGlobalRateLimitingRouteNonTLS))
 
-		f.NamespacedTest("020-global-rate-limiting-vhost-tls", withRateLimitService(testGlobalRateLimitingVirtualHostTLS))
+		f.NamespacedTest("global-rate-limiting-vhost-tls", withRateLimitService(testGlobalRateLimitingVirtualHostTLS))
 
-		f.NamespacedTest("020-global-rate-limiting-route-tls", withRateLimitService(testGlobalRateLimitingRouteTLS))
+		f.NamespacedTest("global-rate-limiting-route-tls", withRateLimitService(testGlobalRateLimitingRouteTLS))
 	})
 })
 
