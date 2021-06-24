@@ -343,7 +343,7 @@ install-contour-release: | setup-kind-cluster ## Install the release version of 
 	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
 
 .PHONY: e2e
-e2e: | install-contour-working run-e2e cleanup-kind ## Run E2E tests against a real k8s cluster
+e2e: | setup-kind-cluster run-e2e cleanup-kind ## Run E2E tests against a real k8s cluster
 
 .PHONY: run-e2e
 run-e2e:

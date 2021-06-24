@@ -498,6 +498,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, additionalArgs
 		"--insecure",
 		"--kubeconfig=" + d.kubeConfig,
 		"--config-path=" + configFile.Name(),
+		"--disable-leader-election",
 	}, additionalArgs...)
 	session, err := gexec.Start(exec.Command(d.contourBin, contourServeArgs...), d.cmdOutputWriter, d.cmdOutputWriter) // nolint:gosec
 	if err != nil {
