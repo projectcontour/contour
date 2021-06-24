@@ -126,7 +126,7 @@ We've also got [a FAQ][4] for short-answer questions and conceptual stuff that d
 
 ## Troubleshooting
 
-If you encounter issues, review the [troubleshooting][17] page, [file an issue][6], or talk to us on the [#contour channel][12] on the Kubernetes Slack server.
+If you encounter issues, review the [troubleshooting][17] page, [file an issue][6], or talk to us on the [#contour channel][12] on Kubernetes Slack.
 
 [0]: https://aws.amazon.com/quickstart/architecture/vmware-kubernetes
 [1]: /docs/{{< param latest_version >}}/deploy-options
