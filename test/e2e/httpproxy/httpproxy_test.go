@@ -62,6 +62,10 @@ var _ = Describe("HTTPProxy", func() {
 		additionalContourArgs = []string{}
 	})
 
+	// JustBeforeEach is called after each of the nested BeforeEach are
+	// called, so it is a final setup step before running a test.
+	// A nested BeforeEach may have modified Contour config, so we wait
+	// until here to start Contour.
 	JustBeforeEach(func() {
 		var err error
 		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, additionalContourArgs...)
