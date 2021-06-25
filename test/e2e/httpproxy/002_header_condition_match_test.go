@@ -19,6 +19,7 @@ import (
 	"context"
 	"net/http"
 
+	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -28,32 +29,211 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func testHeaderConditionMatch(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "002-header-condition-match"
+func testHeaderConditionMatch(namespace string) {
+	Specify("header match routing works", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-present")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-notpresent")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-contains")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
+		f.Fixtures.Echo.Deploy(namespace, "echo-header-notexact")
 
-	fx.Fixtures.Echo.Deploy(namespace, "echo-header-present")
-	fx.Fixtures.Echo.Deploy(namespace, "echo-header-notpresent")
-	fx.Fixtures.Echo.Deploy(namespace, "echo-header-contains")
-	fx.Fixtures.Echo.Deploy(namespace, "echo-header-notcontains")
-	fx.Fixtures.Echo.Deploy(namespace, "echo-header-exact")
-	fx.Fixtures.Echo.Deploy(namespace, "echo-header-notexact")
-
-	// This HTTPProxy tests everything except the "notpresent" match type,
-	// which is tested separately below.
-	p := &contourv1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "header-conditions",
-		},
-		Spec: contourv1.HTTPProxySpec{
-			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "headerconditions.projectcontour.io",
+		// This HTTPProxy tests everything except the "notpresent" match type,
+		// which is tested separately below.
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "header-conditions",
 			},
-			Routes: []contourv1.Route{
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "headerconditions.projectcontour.io",
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-header-present",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:    "Target-Present",
+									Present: true,
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-header-contains",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:     "Target-Contains",
+									Contains: "ContainsValue",
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-header-notcontains",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:        "Target-NotContains",
+									NotContains: "ContainsValue",
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-header-exact",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:  "Target-Exact",
+									Exact: "ExactValue",
+								},
+							},
+						},
+					},
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "echo-header-notexact",
+								Port: 80,
+							},
+						},
+						Conditions: []contourv1.MatchCondition{
+							{
+								Header: &contourv1.HeaderMatchCondition{
+									Name:     "Target-NotExact",
+									NotExact: "ExactValue",
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+
+		type scenario struct {
+			headers        map[string]string
+			expectResponse int
+			expectService  string
+		}
+
+		cases := []scenario{
+			{
+				headers:        map[string]string{"Target-Present": "random"},
+				expectResponse: 200,
+				expectService:  "echo-header-present",
+			},
+			{
+				headers:        map[string]string{"Target-Contains": "random"},
+				expectResponse: 404,
+			},
+			{
+				headers:        map[string]string{"Target-Contains": "ContainsValue"},
+				expectResponse: 200,
+				expectService:  "echo-header-contains",
+			},
+			{
+				headers:        map[string]string{"Target-Contains": "xxx ContainsValue xxx"},
+				expectResponse: 200,
+				expectService:  "echo-header-contains",
+			},
+			{
+				headers:        map[string]string{"Target-NotContains": "ContainsValue"},
+				expectResponse: 404,
+			},
+			{
+				headers:        map[string]string{"Target-NotContains": "xxx ContainsValue xxx"},
+				expectResponse: 404,
+			},
+			{
+				headers:        map[string]string{"Target-NotContains": "random"},
+				expectResponse: 200,
+				expectService:  "echo-header-notcontains",
+			},
+			{
+				headers:        map[string]string{"Target-Exact": "random"},
+				expectResponse: 404,
+			},
+			{
+				headers:        map[string]string{"Target-Exact": "NotExactValue"},
+				expectResponse: 404,
+			},
+			{
+				headers:        map[string]string{"Target-Exact": "ExactValue"},
+				expectResponse: 200,
+				expectService:  "echo-header-exact",
+			},
+			{
+				headers:        map[string]string{"Target-NotExact": "random"},
+				expectResponse: 200,
+				expectService:  "echo-header-notexact",
+			},
+			{
+				headers:        map[string]string{"Target-NotExact": "NotExactValue"},
+				expectResponse: 200,
+				expectService:  "echo-header-notexact",
+			},
+			{
+				headers:        map[string]string{"Target-NotExact": "ExactValue"},
+				expectResponse: 404,
+			},
+		}
+
+		for _, tc := range cases {
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host: p.Spec.VirtualHost.Fqdn,
+				RequestOpts: []func(*http.Request){
+					e2e.OptSetHeaders(tc.headers),
+				},
+				Condition: e2e.HasStatusCode(tc.expectResponse),
+			})
+			if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
+				continue
+			}
+			if res.StatusCode != 200 {
+				// If we expected something other than a 200,
+				// then we don't need to check the body.
+				continue
+			}
+
+			body := f.GetEchoResponseBody(res.Body)
+			assert.Equal(t, namespace, body.Namespace)
+			assert.Equal(t, tc.expectService, body.Service)
+		}
+
+		// Specifically test the "notpresent" match type in isolation.
+		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+				return err
+			}
+
+			p.Spec.Routes = []contourv1.Route{
 				{
 					Services: []contourv1.Service{
 						{
@@ -73,237 +253,56 @@ func testHeaderConditionMatch(fx *e2e.Framework) {
 				{
 					Services: []contourv1.Service{
 						{
-							Name: "echo-header-contains",
+							Name: "echo-header-notpresent",
 							Port: 80,
 						},
 					},
 					Conditions: []contourv1.MatchCondition{
 						{
 							Header: &contourv1.HeaderMatchCondition{
-								Name:     "Target-Contains",
-								Contains: "ContainsValue",
+								Name:       "Target-Present",
+								NotPresent: true,
 							},
 						},
 					},
 				},
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "echo-header-notcontains",
-							Port: 80,
-						},
-					},
-					Conditions: []contourv1.MatchCondition{
-						{
-							Header: &contourv1.HeaderMatchCondition{
-								Name:        "Target-NotContains",
-								NotContains: "ContainsValue",
-							},
-						},
-					},
-				},
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "echo-header-exact",
-							Port: 80,
-						},
-					},
-					Conditions: []contourv1.MatchCondition{
-						{
-							Header: &contourv1.HeaderMatchCondition{
-								Name:  "Target-Exact",
-								Exact: "ExactValue",
-							},
-						},
-					},
-				},
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "echo-header-notexact",
-							Port: 80,
-						},
-					},
-					Conditions: []contourv1.MatchCondition{
-						{
-							Header: &contourv1.HeaderMatchCondition{
-								Name:     "Target-NotExact",
-								NotExact: "ExactValue",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+			}
 
-	type scenario struct {
-		headers        map[string]string
-		expectResponse int
-		expectService  string
-	}
+			return f.Client.Update(context.TODO(), p)
+		}))
 
-	cases := []scenario{
-		{
-			headers:        map[string]string{"Target-Present": "random"},
-			expectResponse: 200,
-			expectService:  "echo-header-present",
-		},
-		{
-			headers:        map[string]string{"Target-Contains": "random"},
-			expectResponse: 404,
-		},
-		{
-			headers:        map[string]string{"Target-Contains": "ContainsValue"},
-			expectResponse: 200,
-			expectService:  "echo-header-contains",
-		},
-		{
-			headers:        map[string]string{"Target-Contains": "xxx ContainsValue xxx"},
-			expectResponse: 200,
-			expectService:  "echo-header-contains",
-		},
-		{
-			headers:        map[string]string{"Target-NotContains": "ContainsValue"},
-			expectResponse: 404,
-		},
-		{
-			headers:        map[string]string{"Target-NotContains": "xxx ContainsValue xxx"},
-			expectResponse: 404,
-		},
-		{
-			headers:        map[string]string{"Target-NotContains": "random"},
-			expectResponse: 200,
-			expectService:  "echo-header-notcontains",
-		},
-		{
-			headers:        map[string]string{"Target-Exact": "random"},
-			expectResponse: 404,
-		},
-		{
-			headers:        map[string]string{"Target-Exact": "NotExactValue"},
-			expectResponse: 404,
-		},
-		{
-			headers:        map[string]string{"Target-Exact": "ExactValue"},
-			expectResponse: 200,
-			expectService:  "echo-header-exact",
-		},
-		{
-			headers:        map[string]string{"Target-NotExact": "random"},
-			expectResponse: 200,
-			expectService:  "echo-header-notexact",
-		},
-		{
-			headers:        map[string]string{"Target-NotExact": "NotExactValue"},
-			expectResponse: 200,
-			expectService:  "echo-header-notexact",
-		},
-		{
-			headers:        map[string]string{"Target-NotExact": "ExactValue"},
-			expectResponse: 404,
-		},
-	}
-
-	for _, tc := range cases {
-		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host: p.Spec.VirtualHost.Fqdn,
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(tc.headers),
-			},
-			Condition: e2e.HasStatusCode(tc.expectResponse),
-		})
-		if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
-			continue
-		}
-		if res.StatusCode != 200 {
-			// If we expected something other than a 200,
-			// then we don't need to check the body.
-			continue
-		}
-
-		body := fx.GetEchoResponseBody(res.Body)
-		assert.Equal(t, namespace, body.Namespace)
-		assert.Equal(t, tc.expectService, body.Service)
-	}
-
-	// Specifically test the "notpresent" match type in isolation.
-	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
-			return err
-		}
-
-		p.Spec.Routes = []contourv1.Route{
+		cases = []scenario{
 			{
-				Services: []contourv1.Service{
-					{
-						Name: "echo-header-present",
-						Port: 80,
-					},
-				},
-				Conditions: []contourv1.MatchCondition{
-					{
-						Header: &contourv1.HeaderMatchCondition{
-							Name:    "Target-Present",
-							Present: true,
-						},
-					},
-				},
+				headers:        map[string]string{"Target-Present": "random"},
+				expectResponse: 200,
+				expectService:  "echo-header-present",
 			},
 			{
-				Services: []contourv1.Service{
-					{
-						Name: "echo-header-notpresent",
-						Port: 80,
-					},
-				},
-				Conditions: []contourv1.MatchCondition{
-					{
-						Header: &contourv1.HeaderMatchCondition{
-							Name:       "Target-Present",
-							NotPresent: true,
-						},
-					},
-				},
+				headers:        nil,
+				expectResponse: 200,
+				expectService:  "echo-header-notpresent",
 			},
 		}
+		for _, tc := range cases {
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host: p.Spec.VirtualHost.Fqdn,
+				RequestOpts: []func(*http.Request){
+					e2e.OptSetHeaders(tc.headers),
+				},
+				Condition: e2e.HasStatusCode(tc.expectResponse),
+			})
+			if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
+				continue
+			}
+			if res.StatusCode != 200 {
+				// If we expected something other than a 200,
+				// then we don't need to check the body.
+				continue
+			}
 
-		return fx.Client.Update(context.TODO(), p)
-	}))
-
-	cases = []scenario{
-		{
-			headers:        map[string]string{"Target-Present": "random"},
-			expectResponse: 200,
-			expectService:  "echo-header-present",
-		},
-		{
-			headers:        nil,
-			expectResponse: 200,
-			expectService:  "echo-header-notpresent",
-		},
-	}
-	for _, tc := range cases {
-		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host: p.Spec.VirtualHost.Fqdn,
-			RequestOpts: []func(*http.Request){
-				e2e.OptSetHeaders(tc.headers),
-			},
-			Condition: e2e.HasStatusCode(tc.expectResponse),
-		})
-		if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
-			continue
+			body := f.GetEchoResponseBody(res.Body)
+			assert.Equal(t, namespace, body.Namespace)
+			assert.Equal(t, tc.expectService, body.Service)
 		}
-		if res.StatusCode != 200 {
-			// If we expected something other than a 200,
-			// then we don't need to check the body.
-			continue
-		}
-
-		body := fx.GetEchoResponseBody(res.Body)
-		assert.Equal(t, namespace, body.Namespace)
-		assert.Equal(t, tc.expectService, body.Service)
-	}
+	})
 }

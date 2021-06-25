@@ -16,6 +16,7 @@
 package gateway
 
 import (
+	. "github.com/onsi/ginkgo"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -23,162 +24,160 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-func testInvalidForwardTo(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "gateway-003-invalid-forward-to"
+func testInvalidForwardTo(namespace string) {
+	Specify("invalid forward to returns 503 status code", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "echo-slash-default")
 
-	fx.Fixtures.Echo.Deploy(namespace, "echo-slash-default")
-
-	route := &gatewayv1alpha1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "http-filter-1",
-			Labels:    map[string]string{"app": "filter"},
-		},
-		Spec: gatewayv1alpha1.HTTPRouteSpec{
-			Hostnames: []gatewayv1alpha1.Hostname{"invalidforwardto.projectcontour.io"},
-			Gateways: &gatewayv1alpha1.RouteGateways{
-				Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+		route := &gatewayv1alpha1.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "http-filter-1",
+				Labels:    map[string]string{"app": "filter"},
 			},
-			Rules: []gatewayv1alpha1.HTTPRouteRule{
-				{
-					Matches: []gatewayv1alpha1.HTTPRouteMatch{
-						{
-							Path: &gatewayv1alpha1.HTTPPathMatch{
-								Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-								Value: stringPtr("/invalidref"),
-							},
-						},
-					},
-					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-						{
-							ServiceName: stringPtr("invalid"),
-							Port:        portNumPtr(80),
-						},
-					},
+			Spec: gatewayv1alpha1.HTTPRouteSpec{
+				Hostnames: []gatewayv1alpha1.Hostname{"invalidforwardto.projectcontour.io"},
+				Gateways: &gatewayv1alpha1.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
 				},
-
-				{
-					Matches: []gatewayv1alpha1.HTTPRouteMatch{
-						{
-							Path: &gatewayv1alpha1.HTTPPathMatch{
-								Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-								Value: stringPtr("/invalidport"),
+				Rules: []gatewayv1alpha1.HTTPRouteRule{
+					{
+						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+							{
+								Path: &gatewayv1alpha1.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+									Value: stringPtr("/invalidref"),
+								},
+							},
+						},
+						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+							{
+								ServiceName: stringPtr("invalid"),
+								Port:        portNumPtr(80),
 							},
 						},
 					},
-					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-						{
-							ServiceName: stringPtr("echo-slash-default"),
-						},
-					},
-				},
 
-				{
-					Matches: []gatewayv1alpha1.HTTPRouteMatch{
-						{
-							Path: &gatewayv1alpha1.HTTPPathMatch{
-								Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-								Value: stringPtr("/invalidservicename"),
+					{
+						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+							{
+								Path: &gatewayv1alpha1.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+									Value: stringPtr("/invalidport"),
+								},
+							},
+						},
+						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+							{
+								ServiceName: stringPtr("echo-slash-default"),
 							},
 						},
 					},
-					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-						{
-							ServiceName: stringPtr(""),
-							Port:        portNumPtr(80),
-						},
-					},
-				},
 
-				{
-					Matches: []gatewayv1alpha1.HTTPRouteMatch{
-						{
-							Path: &gatewayv1alpha1.HTTPPathMatch{
-								Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-								Value: stringPtr("/"),
+					{
+						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+							{
+								Path: &gatewayv1alpha1.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+									Value: stringPtr("/invalidservicename"),
+								},
+							},
+						},
+						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+							{
+								ServiceName: stringPtr(""),
+								Port:        portNumPtr(80),
 							},
 						},
 					},
-					ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-						{
-							ServiceName: stringPtr("echo-slash-default"),
-							Port:        portNumPtr(80),
+
+					{
+						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+							{
+								Path: &gatewayv1alpha1.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+									Value: stringPtr("/"),
+								},
+							},
+						},
+						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+							{
+								ServiceName: stringPtr("echo-slash-default"),
+								Port:        portNumPtr(80),
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-
-	fx.CreateHTTPRouteAndWaitFor(route, func(route *gatewayv1alpha1.HTTPRoute) bool {
-		if len(route.Status.Gateways) != 1 {
-			return false
 		}
 
-		if len(route.Status.Gateways[0].Conditions) != 2 {
-			return false
-		}
-
-		var hasAdmitted, hasResolvedRefs bool
-		for _, cond := range route.Status.Gateways[0].Conditions {
-			if cond.Type == string(gatewayv1alpha1.ConditionRouteAdmitted) && cond.Status == metav1.ConditionFalse {
-				hasAdmitted = true
+		f.CreateHTTPRouteAndWaitFor(route, func(route *gatewayv1alpha1.HTTPRoute) bool {
+			if len(route.Status.Gateways) != 1 {
+				return false
 			}
-			if cond.Type == string(status.ConditionResolvedRefs) && cond.Status == metav1.ConditionFalse {
-				hasResolvedRefs = true
+
+			if len(route.Status.Gateways[0].Conditions) != 2 {
+				return false
 			}
-		}
 
-		return hasAdmitted && hasResolvedRefs
-	})
+			var hasAdmitted, hasResolvedRefs bool
+			for _, cond := range route.Status.Gateways[0].Conditions {
+				if cond.Type == string(gatewayv1alpha1.ConditionRouteAdmitted) && cond.Status == metav1.ConditionFalse {
+					hasAdmitted = true
+				}
+				if cond.Type == string(status.ConditionResolvedRefs) && cond.Status == metav1.ConditionFalse {
+					hasResolvedRefs = true
+				}
+			}
 
-	type scenario struct {
-		path           string
-		expectResponse int
-		expectService  string
-	}
-
-	cases := []scenario{
-		{
-			path:           "/",
-			expectResponse: 200,
-			expectService:  "echo-slash-default",
-		},
-		{
-			path:           "/invalidref",
-			expectResponse: 503,
-		},
-		{
-			path:           "/invalidport",
-			expectResponse: 503,
-		},
-		{
-			path:           "/invalidservicename",
-			expectResponse: 503,
-		},
-	}
-
-	for _, tc := range cases {
-		res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      string(route.Spec.Hostnames[0]),
-			Path:      tc.path,
-			Condition: e2e.HasStatusCode(tc.expectResponse),
+			return hasAdmitted && hasResolvedRefs
 		})
-		if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
-			continue
-		}
-		if res.StatusCode != 200 {
-			// If we expected something other than a 200,
-			// then we don't need to check the body.
-			continue
+
+		type scenario struct {
+			path           string
+			expectResponse int
+			expectService  string
 		}
 
-		body := fx.GetEchoResponseBody(res.Body)
-		assert.Equal(t, namespace, body.Namespace)
-		assert.Equal(t, tc.expectService, body.Service)
-	}
+		cases := []scenario{
+			{
+				path:           "/",
+				expectResponse: 200,
+				expectService:  "echo-slash-default",
+			},
+			{
+				path:           "/invalidref",
+				expectResponse: 503,
+			},
+			{
+				path:           "/invalidport",
+				expectResponse: 503,
+			},
+			{
+				path:           "/invalidservicename",
+				expectResponse: 503,
+			},
+		}
+
+		for _, tc := range cases {
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host:      string(route.Spec.Hostnames[0]),
+				Path:      tc.path,
+				Condition: e2e.HasStatusCode(tc.expectResponse),
+			})
+			if !assert.Truef(t, ok, "expected %d response code, got %d", tc.expectResponse, res.StatusCode) {
+				continue
+			}
+			if res.StatusCode != 200 {
+				// If we expected something other than a 200,
+				// then we don't need to check the body.
+				continue
+			}
+
+			body := f.GetEchoResponseBody(res.Body)
+			assert.Equal(t, namespace, body.Namespace)
+			assert.Equal(t, tc.expectService, body.Service)
+		}
+	})
 }

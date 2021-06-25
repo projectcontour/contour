@@ -26,6 +26,7 @@ import (
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/runtime/protoimpl"
 )
 
 func TestXDSHandlerStream(t *testing.T) {
@@ -81,7 +82,7 @@ func TestXDSHandlerStream(t *testing.T) {
 					}, nil
 				},
 			},
-			want: fmt.Errorf("proto: Marshal called with nil"),
+			want: protoimpl.X.NewError("invalid nil source message"),
 		},
 		"failed to send": {
 			xh: contourServer{

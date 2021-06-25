@@ -16,6 +16,7 @@
 package httpproxy
 
 import (
+	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -23,49 +24,47 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testMergeSlash(fx *e2e.Framework) {
-	t := fx.T()
-	namespace := "006-merge-slash"
+func testMergeSlash(namespace string) {
+	Specify("requests with many slashes are merged and matched", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
 
-	fx.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
-
-	p := &contourv1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "echo",
-		},
-		Spec: contourv1.HTTPProxySpec{
-			VirtualHost: &contourv1.VirtualHost{
-				Fqdn: "mergeslash.projectcontour.io",
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "echo",
 			},
-			Routes: []contourv1.Route{
-				{
-					Services: []contourv1.Service{
-						{
-							Name: "ingress-conformance-echo",
-							Port: 80,
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "mergeslash.projectcontour.io",
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: "ingress-conformance-echo",
+								Port: 80,
+							},
 						},
-					},
-					Conditions: []contourv1.MatchCondition{
-						{
-							Prefix: "/",
+						Conditions: []contourv1.MatchCondition{
+							{
+								Prefix: "/",
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-	fx.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		}
+		f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
 
-	res, ok := fx.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host:      p.Spec.VirtualHost.Fqdn,
-		Path:      "/anything/this//has//lots////of/slashes",
-		Condition: e2e.HasStatusCode(200),
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      p.Spec.VirtualHost.Fqdn,
+			Path:      "/anything/this//has//lots////of/slashes",
+			Condition: e2e.HasStatusCode(200),
+		})
+		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+
+		assert.Contains(t, f.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")
 	})
-	require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-	assert.Contains(t, fx.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")
 }
