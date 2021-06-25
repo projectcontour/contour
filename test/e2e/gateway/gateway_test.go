@@ -30,15 +30,6 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-var gatewayClass = &gatewayv1alpha1.GatewayClass{
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "contour-class",
-	},
-	Spec: gatewayv1alpha1.GatewayClassSpec{
-		Controller: "projectcontour.io/ingress-controller",
-	},
-}
-
 var f = e2e.NewFramework(false)
 
 func TestGatewayAPI(t *testing.T) {
@@ -67,7 +58,8 @@ var _ = Describe("Gateway API", func() {
 	// body. Modifies contour config to point to gateway.
 	testWithGateway := func(gw *gatewayv1alpha1.Gateway, gatewayClass *gatewayv1alpha1.GatewayClass, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 		return func(namespace string) {
-			Context(fmt.Sprintf("with gateway %s/%s, controllerName %s", namespace, gw.Name, gatewayClass.Spec.Controller), func() {
+
+			Context(fmt.Sprintf("with gateway %s/%s, controllerName: %s", namespace, gw.Name, gatewayClass.Spec.Controller), func() {
 				BeforeEach(func() {
 					// Ensure gateway created in this test's namespace.
 					gw.Namespace = namespace
@@ -142,6 +134,14 @@ var _ = Describe("Gateway API", func() {
 					},
 				},
 			}
+			gatewayClass := &gatewayv1alpha1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "contour-class",
+				},
+				Spec: gatewayv1alpha1.GatewayClassSpec{
+					Controller: "projectcontour.io/ingress-controller",
+				},
+			}
 			return testWithGateway(gw, gatewayClass, body)
 		}
 
@@ -205,6 +205,14 @@ var _ = Describe("Gateway API", func() {
 					},
 				},
 			}
+			gatewayClass := &gatewayv1alpha1.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "contour-class",
+				},
+				Spec: gatewayv1alpha1.GatewayClassSpec{
+					Controller: "projectcontour.io/ingress-controller",
+				},
+			}
 			return testWithGateway(gw, gatewayClass, func(namespace string) {
 				Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
 					BeforeEach(func() {
@@ -242,7 +250,14 @@ var _ = Describe("Gateway API", func() {
 				},
 			},
 		}
-
+		gatewayClass := &gatewayv1alpha1.GatewayClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "contour-class",
+			},
+			Spec: gatewayv1alpha1.GatewayClassSpec{
+				Controller: "projectcontour.io/ingress-controller",
+			},
+		}
 		f.NamespacedTest("008-tlsroute", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 
@@ -270,7 +285,14 @@ var _ = Describe("Gateway API", func() {
 				},
 			},
 		}
-
+		gatewayClass := &gatewayv1alpha1.GatewayClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "contour-class",
+			},
+			Spec: gatewayv1alpha1.GatewayClassSpec{
+				Controller: "projectcontour.io/ingress-controller",
+			},
+		}
 		f.NamespacedTest("008-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 })
