@@ -30,6 +30,8 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+const controllerName = "projectcontour.io/ingress-controller"
+
 var f = e2e.NewFramework(false)
 
 func TestGatewayAPI(t *testing.T) {
@@ -58,14 +60,15 @@ var _ = Describe("Gateway API", func() {
 	// body. Modifies contour config to point to gateway.
 	testWithGateway := func(gw *gatewayv1alpha1.Gateway, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 		return func(namespace string) {
-			Context(fmt.Sprintf("with gateway %s/%s", namespace, gw.Name), func() {
+			Context(fmt.Sprintf("with gateway %s/%s, controllerName %s", namespace, gw.Name, controllerName), func() {
 				BeforeEach(func() {
 					// Ensure gateway created in this test's namespace.
 					gw.Namespace = namespace
 					// Update contour config to point to specified gateway.
 					contourConfig.GatewayConfig = &config.GatewayParameters{
-						Namespace: namespace,
-						Name:      gw.Name,
+						ControllerName: controllerName,
+						Namespace:      namespace,
+						Name:           gw.Name,
 					}
 					require.NoError(f.T(), f.Client.Create(context.TODO(), gw))
 				})
