@@ -25,10 +25,10 @@ import (
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 type grpcStream interface {
@@ -134,7 +134,7 @@ func (s *contourServer) stream(st grpcStream) error {
 
 			any := make([]*any.Any, 0, len(resources))
 			for _, r := range resources {
-				a, err := ptypes.MarshalAny(r)
+				a, err := anypb.New(proto.MessageV2(r))
 				if err != nil {
 					return done(log, err)
 				}

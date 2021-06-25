@@ -21,10 +21,10 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/wrappers"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // Duration converts a time.Duration to a pointer to a duration.Duration.
@@ -87,10 +87,10 @@ func AsMessages(messages interface{}) []proto.Message {
 	return protos
 }
 
-// MustMarshalAny marshals a protobug into an any.Any type, panicking
+// MustMarshalAny marshals a protobuf into an any.Any type, panicking
 // if that operation fails.
 func MustMarshalAny(pb proto.Message) *any.Any {
-	a, err := ptypes.MarshalAny(pb)
+	a, err := anypb.New(proto.MessageV2(pb))
 	if err != nil {
 		panic(err.Error())
 	}

@@ -34,7 +34,6 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -311,7 +310,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 	lastIndex := len(b.filters) - 1
 	routerIndex := -1
 	for i, filter := range b.filters {
-		if ptypes.Is(filter.GetTypedConfig(), &envoy_extensions_filters_http_router_v3.Router{}) {
+		if filter.GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
 			routerIndex = i
 			break
 		}
@@ -321,7 +320,7 @@ func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnec
 	// If this happens, it has to be programmer error, so we panic to tell them
 	// it needs to be fixed. Note that in hitting this case, it doesn't matter we added
 	// the second one earlier, because we're panicking anyway.
-	if routerIndex != -1 && ptypes.Is(f.GetTypedConfig(), &envoy_extensions_filters_http_router_v3.Router{}) {
+	if routerIndex != -1 && f.GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
 		panic("Can't add more than one router to a filter chain")
 	}
 
@@ -349,7 +348,7 @@ func (b *httpConnectionManagerBuilder) Validate() error {
 	// with typeUrl `type.googleapis.com/envoy.extensions.filters.http.router.v3.Router`,
 	// which in this case is the one of type Router.
 	lastIndex := len(b.filters) - 1
-	if !ptypes.Is(b.filters[lastIndex].GetTypedConfig(), &envoy_extensions_filters_http_router_v3.Router{}) {
+	if !b.filters[lastIndex].GetTypedConfig().MessageIs(&envoy_extensions_filters_http_router_v3.Router{}) {
 		return errors.New("last filter is not a Router filter")
 	}
 
