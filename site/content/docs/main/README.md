@@ -14,7 +14,13 @@ RBAC must be enabled on your cluster.
 Getting started with Contour is as simple as one command.
 See the [Getting Started][3] document.
 
+## Troubleshooting
+If you encounter issues review the [troubleshooting][5] page, [file an issue][6], or talk to us on the [#contour channel][7] on Kubernetes slack.
+
 [1]: https://www.envoyproxy.io/
 [2]: config/fundamentals.md
 [3]: /getting-started
 [4]: /resources/compatibility-matrix.md
+[5]: /docs/main/troubleshooting
+[6]: https://github.com/projectcontour/contour/issues
+[7]: https://kubernetes.slack.com/messages/contour
