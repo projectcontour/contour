@@ -317,6 +317,35 @@ func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 	}
 }
 
+// DeleteGateway deletes the namespace with the given name in the
+// Kubernetes API or fails the test if it encounters an error.
+func (f *Framework) DeleteGateway(gw *gatewayv1alpha1.Gateway, waitForDeletion bool) error {
+	require.NoError(f.t, f.Client.Delete(context.TODO(), gw))
+
+	if waitForDeletion {
+		require.Eventually(f.t, func() bool {
+			err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gw), gw)
+			return api_errors.IsNotFound(err)
+		}, time.Minute*3, time.Millisecond*50)
+	}
+	return nil
+}
+
+// DeleteGatewayClass deletes the namespace with the given name in the
+// Kubernetes API or fails the test if it encounters an error.
+func (f *Framework) DeleteGatewayClass(gwc *gatewayv1alpha1.GatewayClass, waitForDeletion bool) error {
+	require.NoError(f.t, f.Client.Delete(context.TODO(), gwc))
+
+	if waitForDeletion {
+		require.Eventually(f.t, func() bool {
+			err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gwc), gwc)
+			return api_errors.IsNotFound(err)
+		}, time.Minute*3, time.Millisecond*50)
+	}
+
+	return nil
+}
+
 // GetEchoResponseBody decodes an HTTP response body that is
 // expected to have come from ingress-conformance-echo into an
 // EchoResponseBody, or fails the test if it encounters an error.

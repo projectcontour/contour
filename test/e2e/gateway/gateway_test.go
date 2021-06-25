@@ -30,7 +30,14 @@ import (
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-const controllerName = "projectcontour.io/ingress-controller"
+var gatewayClass = &gatewayv1alpha1.GatewayClass{
+	ObjectMeta: metav1.ObjectMeta{
+		Name: "contour-class",
+	},
+	Spec: gatewayv1alpha1.GatewayClassSpec{
+		Controller: "projectcontour.io/ingress-controller",
+	},
+}
 
 var f = e2e.NewFramework(false)
 
@@ -58,22 +65,24 @@ var _ = Describe("Gateway API", func() {
 
 	// Creates specified gateway in namespace and runs namespaced test
 	// body. Modifies contour config to point to gateway.
-	testWithGateway := func(gw *gatewayv1alpha1.Gateway, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+	testWithGateway := func(gw *gatewayv1alpha1.Gateway, gatewayClass *gatewayv1alpha1.GatewayClass, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 		return func(namespace string) {
-			Context(fmt.Sprintf("with gateway %s/%s, controllerName %s", namespace, gw.Name, controllerName), func() {
+			Context(fmt.Sprintf("with gateway %s/%s, controllerName %s", namespace, gw.Name, gatewayClass.Spec.Controller), func() {
 				BeforeEach(func() {
 					// Ensure gateway created in this test's namespace.
 					gw.Namespace = namespace
 					// Update contour config to point to specified gateway.
 					contourConfig.GatewayConfig = &config.GatewayParameters{
-						ControllerName: controllerName,
+						ControllerName: gatewayClass.Spec.Controller,
 						Namespace:      namespace,
 						Name:           gw.Name,
 					}
 					require.NoError(f.T(), f.Client.Create(context.TODO(), gw))
+					require.NoError(f.T(), f.Client.Create(context.TODO(), gatewayClass))
 				})
 				AfterEach(func() {
-					require.NoError(f.T(), f.Client.Delete(context.TODO(), gw))
+					require.NoError(f.T(), f.DeleteGateway(gw, true))
+					require.NoError(f.T(), f.DeleteGatewayClass(gatewayClass, true))
 				})
 
 				body(namespace)
@@ -133,7 +142,7 @@ var _ = Describe("Gateway API", func() {
 					},
 				},
 			}
-			return testWithGateway(gw, body)
+			return testWithGateway(gw, gatewayClass, body)
 		}
 
 		f.NamespacedTest("001-path-condition-match", testWithHTTPGateway(testGatewayPathConditionMatch))
@@ -196,7 +205,7 @@ var _ = Describe("Gateway API", func() {
 					},
 				},
 			}
-			return testWithGateway(gw, func(namespace string) {
+			return testWithGateway(gw, gatewayClass, func(namespace string) {
 				Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
 					BeforeEach(func() {
 						f.Certs.CreateSelfSignedCert(namespace, "tlscert", "tlscert", hostname)
@@ -234,7 +243,7 @@ var _ = Describe("Gateway API", func() {
 			},
 		}
 
-		f.NamespacedTest("008-tlsroute", testWithGateway(gw, testTLSRoutePassthrough))
+		f.NamespacedTest("008-tlsroute", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 
 	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
@@ -262,7 +271,7 @@ var _ = Describe("Gateway API", func() {
 			},
 		}
 
-		f.NamespacedTest("008-tlsroute-mode-passthrough", testWithGateway(gw, testTLSRoutePassthrough))
+		f.NamespacedTest("008-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 })
 
