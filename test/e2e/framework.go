@@ -317,8 +317,8 @@ func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 	}
 }
 
-// DeleteGateway deletes the namespace with the given name in the
-// Kubernetes API or fails the test if it encounters an error.
+// DeleteGateway deletes the provided gateway in the Kubernetes API
+// or fails the test if it encounters an error.
 func (f *Framework) DeleteGateway(gw *gatewayv1alpha1.Gateway, waitForDeletion bool) error {
 	require.NoError(f.t, f.Client.Delete(context.TODO(), gw))
 
@@ -331,7 +331,7 @@ func (f *Framework) DeleteGateway(gw *gatewayv1alpha1.Gateway, waitForDeletion b
 	return nil
 }
 
-// DeleteGatewayClass deletes the namespace with the given name in the
+// DeleteGatewayClass deletes the provided gatewayclass in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) DeleteGatewayClass(gwc *gatewayv1alpha1.GatewayClass, waitForDeletion bool) error {
 	require.NoError(f.t, f.Client.Delete(context.TODO(), gwc))

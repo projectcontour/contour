@@ -185,16 +185,6 @@ EOF
 ${KUBECTL} apply -f ${REPO}/examples/ratelimit/02-ratelimit.yaml
 ${KUBECTL} apply -f ${REPO}/examples/ratelimit/03-ratelimit-extsvc.yaml
 
-# Create a GatewayClass
-${KUBECTL} apply -f - <<EOF
-apiVersion: networking.x-k8s.io/v1alpha1 
-kind: GatewayClass
-metadata:
-  name: contour-class
-spec:
-  controller: projectcontour.io/ingress-controller
-EOF
-
-
+# Wait for Contour and Envoy to report "Ready" status.
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=contour deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n projectcontour -l app=envoy pods --for=condition=Ready
