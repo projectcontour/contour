@@ -216,50 +216,23 @@ var _ = Describe("Gateway API", func() {
 			},
 			Spec: gatewayv1alpha1.GatewaySpec{
 				GatewayClassName: "contour-class",
-				Listeners: []gatewayv1alpha1.Listener{
-					{
-						Protocol: gatewayv1alpha1.TLSProtocolType,
-						Port:     gatewayv1alpha1.PortNumber(443),
-						Routes: gatewayv1alpha1.RouteBindingSelector{
-							Kind: "TLSRoute",
-							Namespaces: &gatewayv1alpha1.RouteNamespaces{
-								From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
-							},
+				Listeners: []gatewayv1alpha1.Listener{{
+					Protocol: gatewayv1alpha1.TLSProtocolType,
+					TLS: &gatewayv1alpha1.GatewayTLSConfig{
+						Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModePassthrough),
+					},
+					Port: gatewayv1alpha1.PortNumber(443),
+					Routes: gatewayv1alpha1.RouteBindingSelector{
+						Kind: "TLSRoute",
+						Namespaces: &gatewayv1alpha1.RouteNamespaces{
+							From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
 						},
 					},
-				},
+				}},
 			},
 		}
 
 		f.NamespacedTest("008-tlsroute", testWithGateway(gw, testTLSRoutePassthrough))
-	})
-
-	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
-		gw := &gatewayv1alpha1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "tls-passthrough",
-			},
-			Spec: gatewayv1alpha1.GatewaySpec{
-				GatewayClassName: "contour-class",
-				Listeners: []gatewayv1alpha1.Listener{
-					{
-						Protocol: gatewayv1alpha1.TLSProtocolType,
-						Port:     gatewayv1alpha1.PortNumber(443),
-						TLS: &gatewayv1alpha1.GatewayTLSConfig{
-							Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModePassthrough),
-						},
-						Routes: gatewayv1alpha1.RouteBindingSelector{
-							Kind: "TLSRoute",
-							Namespaces: &gatewayv1alpha1.RouteNamespaces{
-								From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
-							},
-						},
-					},
-				},
-			},
-		}
-
-		f.NamespacedTest("008-tlsroute-mode-passthrough", testWithGateway(gw, testTLSRoutePassthrough))
 	})
 
 	Describe("TLSRoute Gateway: Mode: Terminate", func() {
@@ -276,7 +249,7 @@ var _ = Describe("Gateway API", func() {
 							Protocol: gatewayv1alpha1.TLSProtocolType,
 							Port:     gatewayv1alpha1.PortNumber(443),
 							TLS: &gatewayv1alpha1.GatewayTLSConfig{
-								Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModePassthrough),
+								Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModeTerminate),
 								CertificateRef: &gatewayv1alpha1.LocalObjectReference{
 									Group: "core",
 									Kind:  "Secret",
@@ -302,12 +275,10 @@ var _ = Describe("Gateway API", func() {
 					body(namespace)
 				})
 			})
-
 		}
 
+		f.NamespacedTest("008-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
 	})
-
-	f.NamespacedTest("008-tlsroute-mode-passthrough", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
 })
 
 func stringPtr(s string) *string {

@@ -102,85 +102,84 @@ func testTLSRoutePassthrough(namespace string) {
 	})
 }
 
-func testTLSRouteTerminate(fx *e2e.Framework, namespace string) {
-	t := fx.T()
+func testTLSRouteTerminate(namespace string) {
+	Specify("TLS requests terminate via SNI at Envoy and then are routed to a service", func() {
+		t := f.T()
 
-	fx.CreateNamespace(namespace)
-	defer fx.DeleteNamespace(namespace)
+		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-	fx.Fixtures.Echo.Deploy(namespace, "echo")
-
-	route := &gatewayv1alpha1.TLSRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "tls-route-1",
-		},
-		Spec: gatewayv1alpha1.TLSRouteSpec{
-			Gateways: &gatewayv1alpha1.RouteGateways{
-				Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+		route := &gatewayv1alpha1.TLSRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "tls-route-1",
 			},
-			Rules: []gatewayv1alpha1.TLSRouteRule{{
-				Matches: []gatewayv1alpha1.TLSRouteMatch{{
-					SNIs: []gatewayv1alpha1.Hostname{
-						gatewayv1alpha1.Hostname("tlsroute.gatewayapi.projectcontour.io"),
-					},
-				}},
-				ForwardTo: []gatewayv1alpha1.RouteForwardTo{{
-					ServiceName: stringPtr("echo"),
-					Port:        portNumPtr(80),
-				}},
-			}},
-		},
-	}
-	fx.CreateTLSRouteAndWaitFor(route, tlsRouteAdmitted)
-
-	// Ensure request routes to echo matching SNI: tlsroute.gatewayapi.projectcontour.io
-	res, ok := fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host:      "tlsroute.gatewayapi.projectcontour.io",
-		Condition: e2e.HasStatusCode(200),
-		TLSConfigOpts: []func(*tls.Config){
-			e2e.OptSetSNI("tlsroute.gatewayapi.projectcontour.io"),
-		},
-	})
-	assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-	assert.Equal(t, "echo", fx.GetEchoResponseBody(res.Body).Service)
-
-	// Ensure request doesn't route to non-matching SNI: tlsroute.gatewayapi.projectcontour.io
-	res, _ = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host: "something.else.not.matching",
-		TLSConfigOpts: []func(*tls.Config){
-			e2e.OptSetSNI("something.else.not.matching"),
-		},
-	})
-
-	// Since SNI doesn't match, Envoy won't respond.
-	assert.Nil(t, res, "expected no response but got a response.")
-
-	// Update the TLSRoute to remove the Matches section which will allow it to match any SNI.
-	require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := fx.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), route); err != nil {
-			return err
-		}
-
-		route.Spec.Rules = []gatewayv1alpha1.TLSRouteRule{
-			{
-				ForwardTo: []gatewayv1alpha1.RouteForwardTo{
-					{
+			Spec: gatewayv1alpha1.TLSRouteSpec{
+				Gateways: &gatewayv1alpha1.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+				},
+				Rules: []gatewayv1alpha1.TLSRouteRule{{
+					Matches: []gatewayv1alpha1.TLSRouteMatch{{
+						SNIs: []gatewayv1alpha1.Hostname{
+							gatewayv1alpha1.Hostname("tlsroute.gatewayapi.projectcontour.io"),
+						},
+					}},
+					ForwardTo: []gatewayv1alpha1.RouteForwardTo{{
 						ServiceName: stringPtr("echo"),
 						Port:        portNumPtr(80),
-					},
-				},
+					}},
+				}},
 			},
 		}
+		f.CreateTLSRouteAndWaitFor(route, tlsRouteAdmitted)
 
-		return fx.Client.Update(context.TODO(), route)
-	}))
+		// Ensure request routes to echo matching SNI: tlsroute.gatewayapi.projectcontour.io
+		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      "tlsroute.gatewayapi.projectcontour.io",
+			Condition: e2e.HasStatusCode(200),
+			TLSConfigOpts: []func(*tls.Config){
+				e2e.OptSetSNI("tlsroute.gatewayapi.projectcontour.io"),
+			},
+		})
+		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
 
-	// Ensure request routes to echo.
-	res, ok = fx.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-		Host:      "anything.should.work.now",
-		Condition: e2e.HasStatusCode(200),
+		// Ensure request doesn't route to non-matching SNI: tlsroute.gatewayapi.projectcontour.io
+		res, _ = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host: "something.else.not.matching",
+			TLSConfigOpts: []func(*tls.Config){
+				e2e.OptSetSNI("something.else.not.matching"),
+			},
+		})
+
+		// Since SNI doesn't match, Envoy won't respond.
+		assert.Nil(t, res, "expected no response but got a response.")
+
+		// Update the TLSRoute to remove the Matches section which will allow it to match any SNI.
+		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), route); err != nil {
+				return err
+			}
+
+			route.Spec.Rules = []gatewayv1alpha1.TLSRouteRule{
+				{
+					ForwardTo: []gatewayv1alpha1.RouteForwardTo{
+						{
+							ServiceName: stringPtr("echo"),
+							Port:        portNumPtr(80),
+						},
+					},
+				},
+			}
+
+			return f.Client.Update(context.TODO(), route)
+		}))
+
+		// Ensure request routes to echo.
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      "anything.should.work.now",
+			Condition: e2e.HasStatusCode(200),
+		})
+		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
 	})
-	assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-	assert.Equal(t, "echo", fx.GetEchoResponseBody(res.Body).Service)
 }
