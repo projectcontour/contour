@@ -16,6 +16,8 @@ package v3
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/internal/featuretests"
+
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/projectcontour/contour/internal/dag"
@@ -41,7 +43,7 @@ func TestTLSRoute(t *testing.T) {
 	rh.OnAdd(svc)
 	rh.OnAdd(svcAnother)
 
-	rh.OnAdd(&gatewayapi_v1alpha1.Gateway{
+	gatewayPassthrough := &gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
@@ -50,6 +52,9 @@ func TestTLSRoute(t *testing.T) {
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     443,
 				Protocol: "TLS",
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModePassthrough),
+				},
 				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
 					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
 						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
@@ -58,7 +63,9 @@ func TestTLSRoute(t *testing.T) {
 				},
 			}},
 		},
-	})
+	}
+
+	rh.OnAdd(gatewayPassthrough)
 
 	route1 := &gatewayapi_v1alpha1.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -239,4 +246,80 @@ func TestTLSRoute(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
+
+	rh.OnDelete(route1)
+	rh.OnDelete(route2)
+	rh.OnDelete(route3)
+	rh.OnDelete(route4)
+
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlscert",
+			Namespace: "projectcontour",
+		},
+		Type: "kubernetes.io/tls",
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+	}
+
+	// Validate TLSTerminate.
+	gatewayTerminate := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     443,
+				Protocol: "TLS",
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModeTerminate),
+					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+						Group: "core",
+						Kind:  "Secret",
+						Name:  "tlscert",
+					},
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+					},
+					Kind: dag.KindTLSRoute,
+				},
+			}},
+		},
+	}
+
+	rh.OnAdd(sec1)
+	rh.OnAdd(gatewayTerminate)
+	rh.OnAdd(route1)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: appendFilterChains(
+					filterchaintls("tcp.projectcontour.io", sec1, tcpproxy("ingress_https", "default/correct-backend/80/da39a3ee5e"), nil),
+				),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			staticListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	// check that ingress_http is empty
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+}
+
+func tlsModeTypePtr(mode gatewayapi_v1alpha1.TLSModeType) *gatewayapi_v1alpha1.TLSModeType {
+	return &mode
 }
