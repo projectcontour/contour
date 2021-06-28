@@ -7919,6 +7919,7 @@ func TestDAGInsert(t *testing.T) {
 				cert1, proxy19, s1, sec1,
 			},
 			want: listeners(
+				httpsRedirectListener("example.com"),
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
@@ -8024,6 +8025,7 @@ func TestDAGInsert(t *testing.T) {
 		"insert httpproxy w/ tcpproxy w/ includes another root": {
 			objs: []interface{}{proxy38, proxy39, s1},
 			want: listeners(
+				httpsRedirectListener("www.example.com"),
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
@@ -8045,6 +8047,7 @@ func TestDAGInsert(t *testing.T) {
 		"insert httpproxy w/tcpproxy w/include": {
 			objs: []interface{}{proxy39broot, proxy39bchild, s1},
 			want: listeners(
+				httpsRedirectListener("www.example.com"),
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
@@ -8067,6 +8070,7 @@ func TestDAGInsert(t *testing.T) {
 		"insert httpproxy w/tcpproxy w/include plural": {
 			objs: []interface{}{proxy39brootplural, proxy39bchild, s1},
 			want: listeners(
+				httpsRedirectListener("www.example.com"),
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
@@ -8088,6 +8092,7 @@ func TestDAGInsert(t *testing.T) {
 		"insert httpproxy w/ tcpproxy w/ includes valid child": {
 			objs: []interface{}{proxy38, proxy40, s1},
 			want: listeners(
+				httpsRedirectListener("passthrough.example.com"),
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
@@ -8465,6 +8470,7 @@ func TestDAGInsert(t *testing.T) {
 				proxy1a, s1,
 			},
 			want: listeners(
+				httpsRedirectListener("kuard.example.com"),
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
@@ -8591,7 +8597,7 @@ func TestDAGInsert(t *testing.T) {
 					Spec: networking_v1.IngressSpec{
 						TLS: []networking_v1.IngressTLS{{
 							Hosts:      []string{"example.com"},
-							SecretName: s1.Name,
+							SecretName: sec1.Name,
 						}},
 						Rules: []networking_v1.IngressRule{{
 							Host:             "example.com",
@@ -8634,6 +8640,7 @@ func TestDAGInsert(t *testing.T) {
 							VirtualHost: VirtualHost{
 								Name:         "example.com",
 								ListenerName: "ingress_https",
+								routes:       routes(prefixroute("/", service(s9))),
 							},
 							MinTLSVersion: "1.2",
 							Secret:        secret(sec1),
@@ -8812,6 +8819,7 @@ func TestDAGInsert(t *testing.T) {
 				sec1,
 			},
 			want: listeners(
+				httpsRedirectListener("example.com"),
 				&Listener{
 					Port: 443,
 					VirtualHosts: virtualhosts(
@@ -10456,4 +10464,22 @@ func routeSelectTypePtr(rst gatewayapi_v1alpha1.RouteSelectType) *gatewayapi_v1a
 
 func tlsModeTypePtr(mode gatewayapi_v1alpha1.TLSModeType) *gatewayapi_v1alpha1.TLSModeType {
 	return &mode
+}
+
+func httpsRedirectListener(fqdn string) *Listener {
+	return &Listener{
+		Port: 80,
+		VirtualHosts: virtualhosts(
+			&VirtualHost{
+				Name:         fqdn,
+				ListenerName: "ingress_http",
+				routes: routes(&Route{
+					PathMatchCondition: &PrefixMatchCondition{
+						Prefix: "/",
+					},
+					HTTPSUpgrade: true,
+				}),
+			},
+		),
+	}
 }
