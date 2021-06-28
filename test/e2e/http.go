@@ -195,7 +195,10 @@ func (h *HTTP) requestUntil(makeRequest func() (*http.Response, error), conditio
 			Body:       bodyBytes,
 		}
 
-		return condition(r), nil
+		if condition != nil {
+			return condition(r), nil
+		}
+		return false, nil
 	}); err != nil {
 		return res, false
 	}
