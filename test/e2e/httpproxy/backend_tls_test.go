@@ -28,7 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -110,14 +109,14 @@ func testBackendTLS(namespace string) {
 		assert.Equal(f.T(), tlsInfo.TLS.PeerCertificates[0], string(clientSecret.Data["tls.crt"]))
 
 		// Delete client cert so it is rotated.
+		oldUID := clientSecret.UID
 		require.NoError(f.T(), f.Client.Delete(context.TODO(), clientSecret))
-		// Make sure it is deleted.
+		// Make sure the cert is rotated.
 		require.Eventually(f.T(), func() bool {
-			return errors.IsNotFound(f.Client.Get(context.TODO(), clientSecretKey, clientSecret))
-		}, time.Second*10, time.Millisecond*50)
-		// Make sure it comes back.
-		require.Eventually(f.T(), func() bool {
-			return f.Client.Get(context.TODO(), clientSecretKey, clientSecret) == nil
+			if err := f.Client.Get(context.TODO(), clientSecretKey, clientSecret); err != nil {
+				return false
+			}
+			return clientSecret.UID != oldUID
 		}, time.Second*10, time.Millisecond*50)
 
 		// Send HTTP request again.
