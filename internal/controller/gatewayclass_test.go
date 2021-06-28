@@ -18,6 +18,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -25,17 +26,8 @@ import (
 )
 
 var _ = Describe("GatewayClass Controller", func() {
-	BeforeEach(func() {
-		// Add any setup steps that needs to be executed before each test
-	})
-
-	AfterEach(func() {
-		// Add any teardown steps that needs to be executed after each test
-	})
-
 	Context("Managed GatewayClass", func() {
 		It("Should surface admitted status", func() {
-
 			key := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 
 			admitted := &gatewayv1alpha1.GatewayClass{
@@ -65,15 +57,15 @@ var _ = Describe("GatewayClass Controller", func() {
 			}, timeout, interval).Should(Succeed())
 
 			By("Expecting to delete finish")
-			Eventually(func() error {
+			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				return cl.Get(context.Background(), key, gc)
-			}, timeout, interval).ShouldNot(Succeed())
+				return errors.IsNotFound(cl.Get(context.Background(), key, gc))
+			}, timeout, interval).Should(BeTrue())
 		})
 	})
+
 	Context("Unmanaged GatewayClass", func() {
 		It("Should surface not admitted status", func() {
-
 			// Test a GatewayClass that should not be managed by Contour.
 			key := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 			waiting := &gatewayv1alpha1.GatewayClass{
@@ -103,15 +95,15 @@ var _ = Describe("GatewayClass Controller", func() {
 			}, timeout, interval).Should(Succeed())
 
 			By("Expecting to delete finish")
-			Eventually(func() error {
+			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				return cl.Get(context.Background(), key, gc)
-			}, timeout, interval).ShouldNot(Succeed())
+				return errors.IsNotFound(cl.Get(context.Background(), key, gc))
+			}, timeout, interval).Should(BeTrue())
 		})
 	})
-	Context("Multiple GatewayClasses", func() {
-		It("Should surface not admitted status", func() {
 
+	Context("Multiple GatewayClasses", func() {
+		It("Should surface not admitted status on a younger GatewayClass", func() {
 			admittedKey := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 
 			admitted := &gatewayv1alpha1.GatewayClass{
@@ -146,7 +138,7 @@ var _ = Describe("GatewayClass Controller", func() {
 			Expect(cl.Create(context.Background(), notAdmitted)).Should(Succeed())
 
 			By("Expecting not admitted status")
-			Eventually(func() bool {
+			Consistently(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), notAdmittedKey, gc)
 				return isAdmitted(gc)
@@ -161,10 +153,10 @@ var _ = Describe("GatewayClass Controller", func() {
 			}, timeout, interval).Should(Succeed())
 
 			By("Expecting to delete finish")
-			Eventually(func() error {
+			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				return cl.Get(context.Background(), admittedKey, gc)
-			}, timeout, interval).ShouldNot(Succeed())
+				return errors.IsNotFound(cl.Get(context.Background(), admittedKey, gc))
+			}, timeout, interval).Should(BeTrue())
 
 			// Delete non-admitted gatewayclass
 			By("Expecting to delete successfully")
@@ -175,15 +167,15 @@ var _ = Describe("GatewayClass Controller", func() {
 			}, timeout, interval).Should(Succeed())
 
 			By("Expecting to delete finish")
-			Eventually(func() error {
+			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				return cl.Get(context.Background(), notAdmittedKey, gc)
-			}, timeout, interval).ShouldNot(Succeed())
+				return errors.IsNotFound(cl.Get(context.Background(), notAdmittedKey, gc))
+			}, timeout, interval).Should(BeTrue())
 		})
 	})
+
 	Context("Managed GatewayClass", func() {
 		It("With parameterRefs should not be admitted", func() {
-
 			key := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 
 			unsupported := &gatewayv1alpha1.GatewayClass{
@@ -205,7 +197,7 @@ var _ = Describe("GatewayClass Controller", func() {
 			Expect(cl.Create(context.Background(), unsupported)).Should(Succeed())
 
 			By("Expecting not admitted status")
-			Eventually(func() bool {
+			Consistently(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), key, gc)
 				return isAdmitted(gc)
