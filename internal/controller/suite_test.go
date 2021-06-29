@@ -43,7 +43,7 @@ var (
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Runtime Controller Suite")
+	RunSpecs(t, "Controller Runtime Suite")
 }
 
 var _ = BeforeSuite(func() {

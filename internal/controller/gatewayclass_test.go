@@ -49,14 +49,14 @@ var _ = Describe("GatewayClass Controller", func() {
 			}, timeout, interval).Should(BeTrue())
 
 			// Delete
-			By("Expecting to delete successfully")
+			By("Expecting successful deletion")
 			Eventually(func() error {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), key, gc)
 				return cl.Delete(context.Background(), gc)
 			}, timeout, interval).Should(Succeed())
 
-			By("Expecting to delete finish")
+			By("Expecting delete to finish")
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				return errors.IsNotFound(cl.Get(context.Background(), key, gc))
@@ -87,14 +87,14 @@ var _ = Describe("GatewayClass Controller", func() {
 			}, timeout, interval).Should(BeFalse())
 
 			// Delete
-			By("Expecting to delete successfully")
+			By("Expecting successful deletion")
 			Eventually(func() error {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), key, gc)
 				return cl.Delete(context.Background(), gc)
 			}, timeout, interval).Should(Succeed())
 
-			By("Expecting to delete finish")
+			By("Expecting delete to finish")
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				return errors.IsNotFound(cl.Get(context.Background(), key, gc))
@@ -145,28 +145,28 @@ var _ = Describe("GatewayClass Controller", func() {
 			}, timeout, interval).Should(BeFalse())
 
 			// Delete admitted gatewayclass
-			By("Expecting to delete successfully")
+			By("Expecting successful deletion")
 			Eventually(func() error {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), admittedKey, gc)
 				return cl.Delete(context.Background(), gc)
 			}, timeout, interval).Should(Succeed())
 
-			By("Expecting to delete finish")
+			By("Expecting delete to finish")
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				return errors.IsNotFound(cl.Get(context.Background(), admittedKey, gc))
 			}, timeout, interval).Should(BeTrue())
 
 			// Delete non-admitted gatewayclass
-			By("Expecting to delete successfully")
+			By("Expecting successful deletion")
 			Eventually(func() error {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), notAdmittedKey, gc)
 				return cl.Delete(context.Background(), gc)
 			}, timeout, interval).Should(Succeed())
 
-			By("Expecting to delete finish")
+			By("Expecting delete to finish")
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				return errors.IsNotFound(cl.Get(context.Background(), notAdmittedKey, gc))
