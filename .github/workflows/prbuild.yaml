@@ -156,6 +156,10 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '1.16.5'
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
       - name: test
         run: |
           make install
@@ -181,6 +185,10 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '1.16.5'
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
       - name: test
         run: |
           make install

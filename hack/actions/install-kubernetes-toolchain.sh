@@ -8,6 +8,15 @@ readonly KUSTOMIZE_VERS="v3.8.6"
 readonly KUBECTL_VERS="v1.21.1"
 readonly KIND_VERS="v0.11.1"
 readonly SONOBUOY_VERS="0.19.0"
+readonly KUBEBUILDER_VERS="3.1.0"
+
+# Envtest Binaries Manager is required for newer versions. See the following for details:
+# https://github.com/projectcontour/contour/issues/3832
+readonly KUBEBUILDER_TOOLS_VERS="1.19.2"
+
+# Note: The KUBEBUILDER_ASSETS env is required if this path is changed. See the following for details:
+# https://book.kubebuilder.io/reference/envtest.html
+readonly KUBEBUILDER_TOOLS_DIR="/usr/local/kubebuilder"
 
 readonly PROGNAME=$(basename $0)
 readonly CURL=${CURL:-curl}
@@ -38,9 +47,13 @@ case "$#" in
     ;;
 esac
 
+echo "Installing Kubernetes toolchain..."
+
 # Install ginkgo CLI
-go get github.com/onsi/ginkgo/...
-mv /home/runner/go/bin/ginkgo ${DESTDIR}/ginkgo
+if [[ ${OS} == "linux" ]]; then
+  go get github.com/onsi/ginkgo/...
+  mv /home/runner/go/bin/ginkgo ${DESTDIR}/ginkgo
+fi
 
 download \
    "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERS}/kind-${OS}-amd64" \
@@ -53,6 +66,21 @@ download \
     "${DESTDIR}/kubectl"
 
 chmod +x "${DESTDIR}/kubectl"
+
+# Required for integration testing of controller-runtime controllers.
+download \
+    "https://go.kubebuilder.io/dl/${KUBEBUILDER_VERS}/${OS}/amd64" \
+    "${DESTDIR}/kubebuilder"
+
+chmod +x "${DESTDIR}/kubebuilder"
+
+download \
+    "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-${KUBEBUILDER_TOOLS_VERS}-${OS}-amd64.tar.gz" \
+    "${DESTDIR}/envtest-bins.tar.gz"
+
+sudo mkdir -p ${KUBEBUILDER_TOOLS_DIR}
+sudo tar -C ${KUBEBUILDER_TOOLS_DIR} --strip-components=1 -zvxf "${DESTDIR}/envtest-bins.tar.gz"
+rm "${DESTDIR}/envtest-bins.tar.gz"
 
 download \
     "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERS}/kustomize_${KUSTOMIZE_VERS}_${OS}_amd64.tar.gz" \
