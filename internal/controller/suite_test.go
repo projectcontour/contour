@@ -27,7 +27,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
@@ -44,13 +43,10 @@ var (
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
-
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Runtime Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Controller Runtime Suite")
 }
 
-var _ = BeforeSuite(func(done Done) {
+var _ = BeforeSuite(func() {
 	log := logrus.New()
 	log.Out = GinkgoWriter
 	log.Level = logrus.DebugLevel
@@ -76,11 +72,7 @@ var _ = BeforeSuite(func(done Done) {
 	mgr, err = ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&gatewayClassReconciler{
-		client:     mgr.GetClient(),
-		log:        log,
-		controller: gcController,
-	}).SetupWithManager(mgr)
+	_, err = NewGatewayClassController(mgr, nil, log, gcController)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
@@ -90,22 +82,13 @@ var _ = BeforeSuite(func(done Done) {
 
 	cl = mgr.GetClient()
 	Expect(cl).ToNot(BeNil())
-
-	close(done)
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	By("Expecting the test environment teardown to complete")
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
 })
-
-// SetupWithManager adds the controller manager
-func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&gatewayv1alpha1.GatewayClass{}).
-		Complete(r)
-}
 
 // isAdmitted returns true if gc status is "Admitted=true".
 func isAdmitted(gc *gatewayv1alpha1.GatewayClass) bool {
