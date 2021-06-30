@@ -154,8 +154,9 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		ep   *v1.Endpoints
-		want []proto.Message
+		ep         *v1.Endpoints
+		want       []proto.Message
+		wantUpdate bool
 	}{
 		"simple": {
 			ep: endpoints("default", "simple", v1.EndpointSubset{
@@ -172,6 +173,17 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
 				},
 			},
+			wantUpdate: true,
+		},
+		"adding an Endpoints not used by a ServiceCluster should not trigger a recalculation": {
+			ep: endpoints("default", "not-used-endpoint", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.24"),
+				Ports: ports(
+					port("", 8080),
+				),
+			}),
+			want:       nil,
+			wantUpdate: false,
 		},
 		"multiple addresses": {
 			ep: endpoints("default", "simple", v1.EndpointSubset{
@@ -198,6 +210,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 					),
 				},
 			},
+			wantUpdate: true,
 		},
 		"multiple ports": {
 			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
@@ -221,6 +234,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				},
 				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
+			wantUpdate: true,
 		},
 		"cartesian product": {
 			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
@@ -250,6 +264,7 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				},
 				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
+			wantUpdate: true,
 		},
 		"not ready": {
 			ep: endpoints("default", "httpbin-org", v1.EndpointSubset{
@@ -287,18 +302,31 @@ func TestEndpointsTranslatorAddEndpoints(t *testing.T) {
 				},
 				&envoy_endpoint_v3.ClusterLoadAssignment{ClusterName: "default/simple"},
 			},
+			wantUpdate: true,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
+			observer := &simpleObserver{}
+			et.Observer = observer
+
 			require.NoError(t, et.cache.SetClusters(clusters))
 			et.OnAdd(tc.ep)
 			got := et.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
+			require.Equal(t, tc.wantUpdate, observer.updated)
 		})
 	}
+}
+
+type simpleObserver struct {
+	updated bool
+}
+
+func (s *simpleObserver) Refresh() {
+	s.updated = true
 }
 
 func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
@@ -339,9 +367,10 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		setup func(*EndpointsTranslator)
-		ep    *v1.Endpoints
-		want  []proto.Message
+		setup      func(*EndpointsTranslator)
+		ep         *v1.Endpoints
+		want       []proto.Message
+		wantUpdate bool
 	}{
 		"remove existing": {
 			setup: func(et *EndpointsTranslator) {
@@ -363,8 +392,9 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				envoy_v3.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
 				envoy_v3.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 			},
+			wantUpdate: true,
 		},
-		"remove different": {
+		"removing an Endpoints not used by a ServiceCluster should not trigger a recalculation": {
 			setup: func(et *EndpointsTranslator) {
 				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
 					Addresses: addresses("192.168.183.24"),
@@ -387,6 +417,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				envoy_v3.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
 				envoy_v3.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 			},
+			wantUpdate: false,
 		},
 		"remove non existent": {
 			setup: func(*EndpointsTranslator) {},
@@ -401,6 +432,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				envoy_v3.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
 				envoy_v3.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 			},
+			wantUpdate: true,
 		},
 		"remove long name": {
 			setup: func(et *EndpointsTranslator) {
@@ -439,6 +471,7 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 				envoy_v3.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/http"),
 				envoy_v3.ClusterLoadAssignment("super-long-namespace-name-oh-boy/what-a-descriptive-service-name-you-must-be-so-proud/https"),
 			},
+			wantUpdate: true,
 		},
 	}
 
@@ -447,6 +480,13 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
 			require.NoError(t, et.cache.SetClusters(clusters))
 			tc.setup(et)
+
+			// add the dummy observer after setting things up
+			// so we only get notified if the deletion triggers
+			// changes, not if the setup additions trigger changes.
+			observer := &simpleObserver{}
+			et.Observer = observer
+
 			// TODO(jpeach): this doesn't actually test
 			// that deleting endpoints works. We ought to
 			// ensure the cache is populated first and
@@ -455,6 +495,108 @@ func TestEndpointsTranslatorRemoveEndpoints(t *testing.T) {
 			et.OnDelete(tc.ep)
 			got := et.Contents()
 			protobuf.ExpectEqual(t, tc.want, got)
+			require.Equal(t, tc.wantUpdate, observer.updated)
+		})
+	}
+}
+
+func TestEndpointsTranslatorUpdateEndpoints(t *testing.T) {
+	clusters := []*dag.ServiceCluster{
+		{
+			ClusterName: "default/simple",
+			Services: []dag.WeightedService{
+				{
+					Weight:           1,
+					ServiceName:      "simple",
+					ServiceNamespace: "default",
+					ServicePort:      v1.ServicePort{},
+				},
+			},
+		},
+	}
+
+	tests := map[string]struct {
+		setup      func(*EndpointsTranslator)
+		old, new   *v1.Endpoints
+		want       []proto.Message
+		wantUpdate bool
+	}{
+		"update existing": {
+			setup: func(et *EndpointsTranslator) {
+				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
+					Addresses: addresses("192.168.183.24"),
+					Ports: ports(
+						port("", 8080),
+					),
+				}))
+			},
+			old: endpoints("default", "simple", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.24"),
+				Ports: ports(
+					port("", 8080),
+				),
+			}),
+			new: endpoints("default", "simple", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.25"),
+				Ports: ports(
+					port("", 8081),
+				),
+			}),
+			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "default/simple",
+					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.25", 8081)),
+				},
+			},
+			wantUpdate: true,
+		},
+		"getting an update for an Endpoints not used by a ServiceCluster should not trigger a recalculation": {
+			setup: func(et *EndpointsTranslator) {
+				et.OnAdd(endpoints("default", "simple", v1.EndpointSubset{
+					Addresses: addresses("192.168.183.24"),
+					Ports: ports(
+						port("", 8080),
+					),
+				}))
+			},
+			old: endpoints("default", "different", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.24"),
+				Ports: ports(
+					port("", 8080),
+				),
+			}),
+			new: endpoints("default", "different", v1.EndpointSubset{
+				Addresses: addresses("192.168.183.25"),
+				Ports: ports(
+					port("", 8081),
+				),
+			}),
+			want: []proto.Message{
+				&envoy_endpoint_v3.ClusterLoadAssignment{
+					ClusterName: "default/simple",
+					Endpoints:   envoy_v3.WeightedEndpoints(1, envoy_v3.SocketAddress("192.168.183.24", 8080)),
+				},
+			},
+			wantUpdate: false,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			et := NewEndpointsTranslator(fixture.NewTestLogger(t))
+			require.NoError(t, et.cache.SetClusters(clusters))
+			tc.setup(et)
+
+			// add the dummy observer after setting things up
+			// so we only get notified if the update triggers
+			// changes, not if the setup additions trigger changes.
+			observer := &simpleObserver{}
+			et.Observer = observer
+
+			et.OnUpdate(tc.old, tc.new)
+			got := et.Contents()
+			protobuf.ExpectEqual(t, tc.want, got)
+			require.Equal(t, tc.wantUpdate, observer.updated)
 		})
 	}
 }
