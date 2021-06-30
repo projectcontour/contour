@@ -18,6 +18,7 @@ package gateway
 import (
 	"context"
 	"crypto/tls"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/projectcontour/contour/test/e2e"
@@ -144,15 +145,15 @@ func testTLSRouteTerminate(namespace string) {
 		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
 
 		// Ensure request doesn't route to non-matching SNI: tlsroute.gatewayapi.projectcontour.io
-		res, _ = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-			Host: "something.else.not.matching",
-			TLSConfigOpts: []func(*tls.Config){
-				e2e.OptSetSNI("something.else.not.matching"),
-			},
-		})
-
-		// Since SNI doesn't match, Envoy won't respond.
-		assert.Nil(t, res, "expected no response but got a response.")
+		require.Never(f.T(), func() bool {
+			_, err := f.HTTP.SecureRequest(&e2e.HTTPSRequestOpts{
+				Host: "something.else.not.matching",
+				TLSConfigOpts: []func(*tls.Config){
+					e2e.OptSetSNI("something.else.not.matching"),
+				},
+			})
+			return err == nil
+		}, time.Second*5, time.Millisecond*200)
 
 		// Update the TLSRoute to remove the Matches section which will allow it to match any SNI.
 		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
