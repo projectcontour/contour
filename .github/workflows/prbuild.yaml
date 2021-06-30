@@ -70,8 +70,8 @@ jobs:
       - name: e2e tests
         env:
           NODEIMAGE: ${{ matrix.node_image }}
-          LOAD_PREBUILT_IMAGE: "true"
         run: |
+          export CONTOUR_E2E_IMAGE="projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make e2e
   upgrade:
     runs-on: ubuntu-latest
@@ -123,7 +123,6 @@ jobs:
       - name: upgrade tests
         env:
           NODEIMAGE: ${{ matrix.node_image }}
-          LOAD_PREBUILT_IMAGE: "true"
         run: |
           export CONTOUR_E2E_IMAGE="projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make upgrade

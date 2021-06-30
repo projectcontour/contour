@@ -345,6 +345,8 @@ func (d *Deployment) WaitForEnvoyDaemonSetUpdated() error {
 }
 
 func (d *Deployment) EnsureResourcesForInclusterContour() error {
+	fmt.Fprintln(d.logOutputWriter, "using contour image:", d.contourImage)
+
 	fmt.Fprintln(d.logOutputWriter, "updating contour namespace")
 	if err := d.EnsureNamespace(); err != nil {
 		return err
