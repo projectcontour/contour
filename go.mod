@@ -7,13 +7,13 @@ require (
 	github.com/bombsimon/logrusr v1.0.0
 	github.com/envoyproxy/go-control-plane v0.9.9-0.20210111201334-f1f47757da33
 	github.com/go-logr/logr v0.4.0
-	github.com/golang/protobuf v1.5.0
+	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.1.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/jetstack/cert-manager v1.3.0
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.10.5
+	github.com/onsi/gomega v1.13.0
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.15.0
