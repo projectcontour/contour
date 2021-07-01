@@ -188,8 +188,9 @@ func (c *EndpointsCache) SetClusters(clusters []*dag.ServiceCluster) error {
 
 // UpdateEndpoint adds ep to the cache, or replaces it if it is
 // already cached. Any ServiceClusters that are backed by a Service
-// that ep belongs become stale.
-func (c *EndpointsCache) UpdateEndpoint(ep *v1.Endpoints) {
+// that ep belongs become stale. Returns a boolean indicating whether
+// any ServiceClusters use ep or not.
+func (c *EndpointsCache) UpdateEndpoint(ep *v1.Endpoints) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -200,12 +201,16 @@ func (c *EndpointsCache) UpdateEndpoint(ep *v1.Endpoints) {
 	// all as stale.
 	if affected := c.services[name]; len(affected) > 0 {
 		c.stale = append(c.stale, affected...)
+		return true
 	}
+
+	return false
 }
 
 // DeleteEndpoint deletes ep from the cache. Any ServiceClusters
-// that are backed by a Service that ep belongs become stale.
-func (c *EndpointsCache) DeleteEndpoint(ep *v1.Endpoints) {
+// that are backed by a Service that ep belongs become stale. Returns
+// a boolean indicating whether any ServiceClusters use ep or not.
+func (c *EndpointsCache) DeleteEndpoint(ep *v1.Endpoints) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -216,7 +221,10 @@ func (c *EndpointsCache) DeleteEndpoint(ep *v1.Endpoints) {
 	// all as stale.
 	if affected := c.services[name]; len(affected) > 0 {
 		c.stale = append(c.stale, affected...)
+		return true
 	}
+
+	return false
 }
 
 // NewEndpointsTranslator allocates a new endpoints translator.
@@ -338,7 +346,11 @@ func equal(a, b map[string]*envoy_endpoint_v3.ClusterLoadAssignment) bool {
 func (e *EndpointsTranslator) OnAdd(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Endpoints:
-		e.cache.UpdateEndpoint(obj)
+		if !e.cache.UpdateEndpoint(obj) {
+			return
+		}
+
+		e.WithField("endpoint", k8s.NamespacedNameOf(obj)).Debug("Endpoint is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
 		if e.Observer != nil {
@@ -371,7 +383,11 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
 			return
 		}
 
-		e.cache.UpdateEndpoint(newObj)
+		if !e.cache.UpdateEndpoint(newObj) {
+			return
+		}
+
+		e.WithField("endpoint", k8s.NamespacedNameOf(newObj)).Debug("Endpoint is in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
 		if e.Observer != nil {
@@ -385,7 +401,11 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
 func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Endpoints:
-		e.cache.DeleteEndpoint(obj)
+		if !e.cache.DeleteEndpoint(obj) {
+			return
+		}
+
+		e.WithField("endpoint", k8s.NamespacedNameOf(obj)).Debug("Endpoint was in use by a ServiceCluster, recalculating ClusterLoadAssignments")
 		e.Merge(e.cache.Recalculate())
 		e.Notify()
 		if e.Observer != nil {
