@@ -347,7 +347,6 @@ func (e *EndpointsTranslator) OnAdd(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Endpoints:
 		if !e.cache.UpdateEndpoint(obj) {
-			e.WithField("endpoint", k8s.NamespacedNameOf(obj)).Debug("Endpoint is not in use by a ServiceCluster, not recalculating ClusterLoadAssignments")
 			return
 		}
 
@@ -385,7 +384,6 @@ func (e *EndpointsTranslator) OnUpdate(oldObj, newObj interface{}) {
 		}
 
 		if !e.cache.UpdateEndpoint(newObj) {
-			e.WithField("endpoint", k8s.NamespacedNameOf(newObj)).Debug("Endpoint is not in use by a ServiceCluster, not recalculating ClusterLoadAssignments")
 			return
 		}
 
@@ -404,7 +402,6 @@ func (e *EndpointsTranslator) OnDelete(obj interface{}) {
 	switch obj := obj.(type) {
 	case *v1.Endpoints:
 		if !e.cache.DeleteEndpoint(obj) {
-			e.WithField("endpoint", k8s.NamespacedNameOf(obj)).Debug("Endpoint is not in use by a ServiceCluster, not recalculating ClusterLoadAssignments")
 			return
 		}
 
