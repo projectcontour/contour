@@ -151,13 +151,13 @@ func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 	case *gatewayapi_v1alpha1.HTTPRoute:
 		route := o.DeepCopy()
 
-		// Set the GatewayStatuses.
+		// Set the HTTPRoute status.
 		route.Status.RouteStatus.Gateways = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
 		return route
 	case *gatewayapi_v1alpha1.TLSRoute:
 		route := o.DeepCopy()
 
-		// Set the GatewayStatuses.
+		// Set the TLSRoute status.
 		route.Status.RouteStatus.Gateways = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
 		return route
 	default:

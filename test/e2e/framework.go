@@ -317,6 +317,30 @@ func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 	}
 }
 
+// CreateGatewayAndWaitFor creates a gateway in the
+// Kubernetes API or fails the test if it encounters an error.
+func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayv1alpha1.Gateway, condition func(*gatewayv1alpha1.Gateway) bool) (*gatewayv1alpha1.Gateway, bool) {
+	require.NoError(f.t, f.Client.Create(context.TODO(), gateway))
+
+	res := &gatewayv1alpha1.Gateway{}
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gateway), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
+	}
+
+	return res, true
+}
+
 // DeleteGateway deletes the provided gateway in the Kubernetes API
 // or fails the test if it encounters an error.
 func (f *Framework) DeleteGateway(gw *gatewayv1alpha1.Gateway, waitForDeletion bool) error {

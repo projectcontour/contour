@@ -36,7 +36,7 @@ func computeGatewayClassAdmittedCondition(errs field.ErrorList) metav1.Condition
 		Type:    string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
 		Status:  metav1.ConditionTrue,
 		Reason:  reasonValidGatewayClass,
-		Message: "Valid GatewayClass.",
+		Message: "Valid GatewayClass",
 	}
 
 	if errs != nil {

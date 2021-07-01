@@ -34,8 +34,6 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-const gatewayClassFinalizer = gatewayapi_v1alpha1.GatewayClassFinalizerGatewaysExist
-
 type gatewayClassReconciler struct {
 	client       client.Client
 	eventHandler cache.ResourceEventHandler

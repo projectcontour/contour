@@ -22,7 +22,7 @@ import (
 	gateway_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-// SyncGatewayClass computes the current status of gc and updates status upon
+// SyncGatewayClass computes the current status of GatewayClass and updates status upon
 // any changes since last sync.
 func SyncGatewayClass(ctx context.Context, cli client.Client, gc *gateway_v1alpha1.GatewayClass, errs field.ErrorList) error {
 	updated := gc.DeepCopy()

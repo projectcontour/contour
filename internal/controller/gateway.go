@@ -30,8 +30,6 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
-const gatewayFinalizer = "gateway.projectcontour.io"
-
 type gatewayReconciler struct {
 	ctx          context.Context
 	client       client.Client

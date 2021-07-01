@@ -72,26 +72,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 	// Gateway and GatewayClass must be defined for resources to be processed.
 	if p.source.gateway == nil {
-		p.Info("No gateway found in DAG.")
+		p.Info("Gateway not found in cache.")
 		return
 	}
 	if p.source.gatewayclass == nil {
-		p.Info("No gatewayclass found in DAG.")
+		p.Info("Gatewayclass not found in cache.")
 		return
-	}
-
-	// See if the referenced gatewayclass is admitted.
-	gcAdmitted := false
-	for _, c := range p.source.gatewayclass.Status.Conditions {
-		if c.Type == string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted) && c.Status == metav1.ConditionTrue {
-			gcAdmitted = true
-		}
-	}
-
-	if !gcAdmitted {
-		p.Errorf("GatewayClassName %s is not admitted.", p.source.gateway.Spec.GatewayClassName)
-		errs = append(errs, field.Invalid(path.Child("gatewayClassName"), p.source.gateway.Spec.GatewayClassName,
-			"is not admitted"))
 	}
 
 	if len(p.source.gateway.Spec.Addresses) > 0 {
@@ -266,6 +252,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			p.computeTLSRoute(matchingRoute, validGateway, listenerSecret)
 		}
 	}
+
 	p.computeGateway(p.source.gateway, errs)
 }
 
@@ -479,8 +466,9 @@ func selectorMatches(selector *metav1.LabelSelector, objLabels map[string]string
 	return true, nil
 }
 
-func (p *GatewayAPIProcessor) computeGateway(gw *gatewayapi_v1alpha1.Gateway, fieldErrs field.ErrorList) {
-	gwAccessor, commit := p.dag.StatusCache.GatewayConditionsAccessor(k8s.NamespacedNameOf(gw), gw.Generation, status.ResourceGateway, &gw.Status)
+func (p *GatewayAPIProcessor) computeGateway(gateway *gatewayapi_v1alpha1.Gateway, fieldErrs field.ErrorList) {
+
+	gwAccessor, commit := p.dag.StatusCache.GatewayConditionsAccessor(k8s.NamespacedNameOf(gateway), gateway.Generation, status.ResourceGateway, &gateway.Status)
 	defer commit()
 
 	// Determine the gateway status based on fieldErrs.

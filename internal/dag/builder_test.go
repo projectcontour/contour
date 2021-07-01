@@ -151,24 +151,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	notAdmittedClass := &gatewayapi_v1alpha1.GatewayClass{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-validClass",
-		},
-		Spec: gatewayapi_v1alpha1.GatewayClassSpec{
-			Controller: "projectcontour.io/contour",
-		},
-		Status: gatewayapi_v1alpha1.GatewayClassStatus{
-			Conditions: []metav1.Condition{
-				{
-					Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
-					Status: metav1.ConditionFalse,
-				},
-			},
-		},
-	}
-
 	gatewayWithSelector := &gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
@@ -249,37 +231,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		Spec: gatewayapi_v1alpha1.GatewaySpec{
 			GatewayClassName: validClass.Name,
-			Listeners: []gatewayapi_v1alpha1.Listener{{
-				Port:     80,
-				Hostname: &wildcardHostname,
-				Protocol: gatewayapi_v1alpha1.HTTPProtocolType,
-				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-					Kind: KindHTTPRoute,
-					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
-					},
-					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"app": "contour",
-						},
-						MatchExpressions: []metav1.LabelSelectorRequirement{{
-							Key:      "type",
-							Operator: "In",
-							Values:   []string{"controller"},
-						}},
-					},
-				},
-			}},
-		},
-	}
-
-	gatewayWithNotAdmittedClass := &gatewayapi_v1alpha1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1alpha1.GatewaySpec{
-			GatewayClassName: notAdmittedClass.Name,
 			Listeners: []gatewayapi_v1alpha1.Listener{{
 				Port:     80,
 				Hostname: &wildcardHostname,
@@ -3423,36 +3374,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 			),
-		},
-		"insert gateway listener with non-admitted gatewayclass": {
-			gatewayclass: notAdmittedClass,
-			gateway:      gatewayWithNotAdmittedClass,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha1.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-						Labels: map[string]string{
-							"app":  "contour",
-							"type": "controller",
-						},
-					},
-					Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-						Gateways: &gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
-						},
-						Hostnames: []gatewayapi_v1alpha1.Hostname{
-							"http.projectcontour.io",
-						},
-						Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-							Matches:   httpRouteMatch(gatewayapi_v1alpha1.PathMatchExact, "/blog"),
-							ForwardTo: httpRouteForwardTo("kuard", 8080, 1),
-						}},
-					},
-				},
-			},
-			want: listeners(),
 		},
 	}
 
