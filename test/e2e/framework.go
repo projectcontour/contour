@@ -341,6 +341,30 @@ func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayv1alpha1.Gateway, co
 	return res, true
 }
 
+// CreateGatewayClassAndWaitFor creates a gateway in the
+// Kubernetes API or fails the test if it encounters an error.
+func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayv1alpha1.GatewayClass, condition func(*gatewayv1alpha1.GatewayClass) bool) (*gatewayv1alpha1.GatewayClass, bool) {
+	require.NoError(f.t, f.Client.Create(context.TODO(), gatewayClass))
+
+	res := &gatewayv1alpha1.GatewayClass{}
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gatewayClass), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
+	}
+
+	return res, true
+}
+
 // DeleteGateway deletes the provided gateway in the Kubernetes API
 // or fails the test if it encounters an error.
 func (f *Framework) DeleteGateway(gw *gatewayv1alpha1.Gateway, waitForDeletion bool) error {

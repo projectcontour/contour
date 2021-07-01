@@ -16,7 +16,6 @@
 package gateway
 
 import (
-	"context"
 	"crypto/rand"
 	"fmt"
 	"math/big"
@@ -109,7 +108,7 @@ var _ = Describe("Gateway API", func() {
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
 
-		require.NoError(f.T(), f.Client.Create(context.TODO(), contourGatewayClass))
+		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassValid)
 		f.CreateGatewayAndWaitFor(contourGateway, gatewayValid)
 	})
 
@@ -436,6 +435,22 @@ func gatewayValid(gateway *gatewayv1alpha1.Gateway) bool {
 
 	for _, cond := range gateway.Status.Conditions {
 		if cond.Type == string(gatewayv1alpha1.GatewayConditionScheduled) && cond.Status == metav1.ConditionTrue {
+			return true
+		}
+	}
+
+	return false
+}
+
+// gatewayClassValid returns true if the gateway has a .status.conditions
+// entry of Scheduled: true".
+func gatewayClassValid(gatewayClass *gatewayv1alpha1.GatewayClass) bool {
+	if gatewayClass == nil {
+		return false
+	}
+
+	for _, cond := range gatewayClass.Status.Conditions {
+		if cond.Type == string(gatewayv1alpha1.GatewayClassConditionStatusAdmitted) && cond.Status == metav1.ConditionTrue {
 			return true
 		}
 	}
