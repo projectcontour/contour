@@ -35,21 +35,20 @@ type gatewayReconciler struct {
 	client       client.Client
 	eventHandler cache.ResourceEventHandler
 	log          logrus.FieldLogger
-	// controllerName is the configured controller of managed gatewayclasses.
-	controllerName string
-	// referencedClass is the gatewayclass referenced by managed gateways.
-	referencedClass *gatewayapi_v1alpha1.GatewayClass
+
+	// gatewayClassControllerName is the configured controller of managed gatewayclasses.
+	gatewayClassControllerName string
 }
 
 // NewGatewayController creates the gateway controller from mgr. The controller will be pre-configured
 // to watch for Gateway objects across all namespaces and reconcile those that match class.
-func NewGatewayController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger, class string) (controller.Controller, error) {
+func NewGatewayController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger, gatewayClassControllerName string) (controller.Controller, error) {
 	r := &gatewayReconciler{
-		ctx:            context.Background(),
-		client:         mgr.GetClient(),
-		eventHandler:   eventHandler,
-		log:            log,
-		controllerName: class,
+		ctx:                        context.Background(),
+		client:                     mgr.GetClient(),
+		eventHandler:               eventHandler,
+		log:                        log,
+		gatewayClassControllerName: gatewayClassControllerName,
 	}
 	c, err := controller.New("gateway-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -71,40 +70,37 @@ func (r *gatewayReconciler) enqueueRequestForOwnedGateway() handler.EventHandler
 				Info("invalid object, bypassing reconciliation.")
 			return []reconcile.Request{}
 		}
-		gc, err := r.classForGateway(gw)
-		if err != nil {
-			r.log.WithField("namespace", gw.Namespace).WithField("name", gw.Name).Error(err)
-			return []reconcile.Request{}
-		}
-		r.referencedClass = gc
-		return []reconcile.Request{
-			{
-				NamespacedName: types.NamespacedName{
-					Namespace: gw.Namespace,
-					Name:      gw.Name,
+		if matches, err := r.hasContourOwnedClass(gw); matches {
+			if err != nil {
+				r.log.WithField("namespace", gw.Namespace).WithField("name", gw.Name).Error(err)
+				return []reconcile.Request{}
+			}
+			return []reconcile.Request{
+				{
+					NamespacedName: types.NamespacedName{
+						Namespace: gw.Namespace,
+						Name:      gw.Name,
+					},
 				},
-			},
+			}
 		}
+		r.log.WithField("name", a.GetName()).WithField("namespace", a.GetNamespace()).
+			Info("configured controllerName doesn't match an existing GatewayClass")
+		return []reconcile.Request{}
 	})
 }
 
-// classForGateway returns nil, error if the gatewayclass referenced by gw does not exist
-// or is not owned by Contour. Otherwise, the referenced gatewayclass is returned.
-func (r *gatewayReconciler) classForGateway(gw *gatewayapi_v1alpha1.Gateway) (*gatewayapi_v1alpha1.GatewayClass, error) {
+// hasContourOwnedClass returns true if the class referenced by gateway exists
+// and matches the configured controllerName.
+func (r *gatewayReconciler) hasContourOwnedClass(gw *gatewayapi_v1alpha1.Gateway) (bool, error) {
 	gc := &gatewayapi_v1alpha1.GatewayClass{}
 	if err := r.client.Get(r.ctx, types.NamespacedName{Name: gw.Spec.GatewayClassName}, gc); err != nil {
-		return nil, fmt.Errorf("failed to get gatewayclass %s: %w", gw.Spec.GatewayClassName, err)
+		return false, fmt.Errorf("failed to get gatewayclass %s: %w", gw.Spec.GatewayClassName, err)
 	}
-	if !r.matchesControllerName(gc) {
-		return nil, fmt.Errorf("gatewayclass %q not owned by contour", gc.Name)
+	if gc.Spec.Controller != r.gatewayClassControllerName {
+		return false, nil
 	}
-	return gc, nil
-}
-
-// matchesControllerName returns true if the controller of the provided gc matches Contour's
-// GatewayClass controller string.
-func (r *gatewayReconciler) matchesControllerName(gc *gatewayapi_v1alpha1.GatewayClass) bool {
-	return gc.Spec.Controller == r.controllerName
+	return true, nil
 }
 
 func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

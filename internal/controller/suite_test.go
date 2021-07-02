@@ -72,7 +72,7 @@ var _ = BeforeSuite(func() {
 	mgr, err = ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = NewGatewayClassController(mgr, nil, log, gcController)
+	_, err = NewGatewayClassController(mgr, &StubEventHandler{}, log, gcController)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
@@ -100,4 +100,19 @@ func isAdmitted(gc *gatewayv1alpha1.GatewayClass) bool {
 	}
 
 	return false
+}
+
+// StubEventHandler fills the interface that the EventHandler
+// is used for since the Controller tests do not require
+// the event handler for its tests.
+type StubEventHandler struct {
+}
+
+func (e *StubEventHandler) OnAdd(obj interface{}) {
+}
+
+func (e *StubEventHandler) OnUpdate(oldObj, newObj interface{}) {
+}
+
+func (e *StubEventHandler) OnDelete(obj interface{}) {
 }

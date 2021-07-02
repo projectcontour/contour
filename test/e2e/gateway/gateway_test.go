@@ -119,14 +119,7 @@ var _ = Describe("Gateway API", func() {
 
 	Describe("HTTPRoute: Insecure (Non-TLS) Gateway", func() {
 		testWithHTTPGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
-			gatewayClass := &gatewayv1alpha1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: fmt.Sprintf("contour-class-%d", getRandomNumber()),
-				},
-				Spec: gatewayv1alpha1.GatewayClassSpec{
-					Controller: fmt.Sprintf("projectcontour.io/ingress-controller-%d", getRandomNumber()),
-				},
-			}
+			gatewayClass := getGatewayClass()
 			gw := &gatewayv1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "http",
@@ -171,14 +164,7 @@ var _ = Describe("Gateway API", func() {
 
 	Describe("HTTPRoute: TLS Gateway", func() {
 		testWithHTTPSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
-			gatewayClass := &gatewayv1alpha1.GatewayClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: fmt.Sprintf("contour-class-%d", getRandomNumber()),
-				},
-				Spec: gatewayv1alpha1.GatewayClassSpec{
-					Controller: fmt.Sprintf("projectcontour.io/ingress-controller-%d", getRandomNumber()),
-				},
-			}
+			gatewayClass := getGatewayClass()
 			gw := &gatewayv1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "https",
@@ -239,14 +225,7 @@ var _ = Describe("Gateway API", func() {
 	})
 
 	Describe("TLSRoute: Gateway", func() {
-		gatewayClass := &gatewayv1alpha1.GatewayClass{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("contour-class-%d", getRandomNumber()),
-			},
-			Spec: gatewayv1alpha1.GatewayClassSpec{
-				Controller: fmt.Sprintf("projectcontour.io/ingress-controller-%d", getRandomNumber()),
-			},
-		}
+		gatewayClass := getGatewayClass()
 		gw := &gatewayv1alpha1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "tls",
@@ -272,14 +251,7 @@ var _ = Describe("Gateway API", func() {
 	})
 
 	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
-		gatewayClass := &gatewayv1alpha1.GatewayClass{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("contour-class-%d", getRandomNumber()),
-			},
-			Spec: gatewayv1alpha1.GatewayClassSpec{
-				Controller: fmt.Sprintf("projectcontour.io/ingress-controller-%d", getRandomNumber()),
-			},
-		}
+		gatewayClass := getGatewayClass()
 		gw := &gatewayv1alpha1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "tls-passthrough",
@@ -348,14 +320,7 @@ var _ = Describe("Gateway API", func() {
 			})
 		}
 
-		gatewayClass := &gatewayv1alpha1.GatewayClass{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("contour-class-%d", getRandomNumber()),
-			},
-			Spec: gatewayv1alpha1.GatewayClassSpec{
-				Controller: fmt.Sprintf("projectcontour.io/ingress-controller-%d", getRandomNumber()),
-			},
-		}
+		gatewayClass := getGatewayClass()
 
 		f.NamespacedTest("008-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", gatewayClass, testTLSRouteTerminate))
 	})
@@ -464,4 +429,17 @@ func getRandomNumber() int64 {
 		panic(err)
 	}
 	return nBig.Int64()
+}
+
+func getGatewayClass() *gatewayv1alpha1.GatewayClass {
+	randNumber := getRandomNumber()
+
+	return &gatewayv1alpha1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("contour-class-%d", randNumber),
+		},
+		Spec: gatewayv1alpha1.GatewayClassSpec{
+			Controller: fmt.Sprintf("projectcontour.io/ingress-controller-%d", randNumber),
+		},
+	}
 }

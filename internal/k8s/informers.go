@@ -48,7 +48,7 @@ func IngressV1Resources() []schema.GroupVersionResource {
 	}
 }
 
-// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gatewayclasses;gateways,verbs=get;list;watch;update
+// +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gatewayclasses;gateways,verbs=get;list;watch
 // +kubebuilder:rbac:groups="networking.x-k8s.io",resources=httproutes;backendpolicies;tlsroutes;tcproutes;udproutes,verbs=get;list;watch
 // +kubebuilder:rbac:groups="networking.x-k8s.io",resources=gatewayclasses/status;gateways/status;httproutes/status;backendpolicies/status;tlsroutes/status;tcproutes/status;udproutes/status,verbs=update
 
