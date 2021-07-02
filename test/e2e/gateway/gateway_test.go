@@ -392,14 +392,14 @@ func tlsRouteAdmitted(route *gatewayv1alpha1.TLSRoute) bool {
 }
 
 // gatewayValid returns true if the gateway has a .status.conditions
-// entry of Scheduled: true".
+// entry of Ready: true".
 func gatewayValid(gateway *gatewayv1alpha1.Gateway) bool {
 	if gateway == nil {
 		return false
 	}
 
 	for _, cond := range gateway.Status.Conditions {
-		if cond.Type == string(gatewayv1alpha1.GatewayConditionScheduled) && cond.Status == metav1.ConditionTrue {
+		if cond.Type == string(gatewayv1alpha1.GatewayConditionReady) && cond.Status == metav1.ConditionTrue {
 			return true
 		}
 	}

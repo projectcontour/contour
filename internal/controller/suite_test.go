@@ -91,9 +91,21 @@ var _ = AfterSuite(func() {
 })
 
 // isAdmitted returns true if gc status is "Admitted=true".
-func isAdmitted(gc *gatewayv1alpha1.GatewayClass) bool {
+func isGatewayClassAdmitted(gc *gatewayv1alpha1.GatewayClass) bool {
 	for _, c := range gc.Status.Conditions {
 		if c.Type == string(gatewayv1alpha1.GatewayClassConditionStatusAdmitted) &&
+			c.Status == metav1.ConditionTrue {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isGatewayScheduled returns true if gc status is "Scheduled=true".
+func isGatewayScheduled(gc *gatewayv1alpha1.Gateway) bool {
+	for _, c := range gc.Status.Conditions {
+		if c.Type == string(gatewayv1alpha1.GatewayConditionScheduled) &&
 			c.Status == metav1.ConditionTrue {
 			return true
 		}

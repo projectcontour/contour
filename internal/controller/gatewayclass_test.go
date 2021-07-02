@@ -45,7 +45,7 @@ var _ = Describe("GatewayClass Controller", func() {
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), key, gc)
-				return isAdmitted(gc)
+				return isGatewayClassAdmitted(gc)
 			}, timeout, interval).Should(BeTrue())
 
 			// Delete
@@ -83,7 +83,7 @@ var _ = Describe("GatewayClass Controller", func() {
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), key, gc)
-				return isAdmitted(gc)
+				return isGatewayClassAdmitted(gc)
 			}, timeout, interval).Should(BeFalse())
 
 			// Delete
@@ -121,7 +121,7 @@ var _ = Describe("GatewayClass Controller", func() {
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), admittedKey, gc)
-				return isAdmitted(gc)
+				return isGatewayClassAdmitted(gc)
 			}, timeout, interval).Should(BeTrue())
 
 			notAdmittedKey := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
@@ -141,7 +141,7 @@ var _ = Describe("GatewayClass Controller", func() {
 			Consistently(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), notAdmittedKey, gc)
-				return isAdmitted(gc)
+				return isGatewayClassAdmitted(gc)
 			}, timeout, interval).Should(BeFalse())
 
 			// Delete admitted gatewayclass
@@ -200,7 +200,7 @@ var _ = Describe("GatewayClass Controller", func() {
 			Consistently(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
 				_ = cl.Get(context.Background(), key, gc)
-				return isAdmitted(gc)
+				return isGatewayClassAdmitted(gc)
 			}, timeout, interval).Should(BeFalse())
 		})
 	})

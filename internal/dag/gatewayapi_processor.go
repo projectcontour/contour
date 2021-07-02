@@ -474,9 +474,9 @@ func (p *GatewayAPIProcessor) computeGateway(gateway *gatewayapi_v1alpha1.Gatewa
 	// Determine the gateway status based on fieldErrs.
 	switch len(fieldErrs) {
 	case 0:
-		gwAccessor.AddCondition(gatewayapi_v1alpha1.GatewayConditionScheduled, metav1.ConditionTrue, status.ReasonValidGateway, "Valid Gateway")
+		gwAccessor.AddCondition(gatewayapi_v1alpha1.GatewayConditionReady, metav1.ConditionTrue, status.ReasonValidGateway, "Valid Gateway")
 	default:
-		gwAccessor.AddCondition(gatewayapi_v1alpha1.GatewayConditionScheduled, metav1.ConditionFalse, status.ReasonInvalidGateway, errors.ParseFieldErrors(fieldErrs))
+		gwAccessor.AddCondition(gatewayapi_v1alpha1.GatewayConditionReady, metav1.ConditionFalse, status.ReasonInvalidGateway, errors.ParseFieldErrors(fieldErrs))
 	}
 }
 
