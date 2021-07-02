@@ -102,18 +102,6 @@ func isGatewayClassAdmitted(gc *gatewayv1alpha1.GatewayClass) bool {
 	return false
 }
 
-// isGatewayScheduled returns true if gc status is "Scheduled=true".
-func isGatewayScheduled(gc *gatewayv1alpha1.Gateway) bool {
-	for _, c := range gc.Status.Conditions {
-		if c.Type == string(gatewayv1alpha1.GatewayConditionScheduled) &&
-			c.Status == metav1.ConditionTrue {
-			return true
-		}
-	}
-
-	return false
-}
-
 // StubEventHandler fills the interface that the EventHandler
 // is used for since the Controller tests do not require
 // the event handler for its tests.
