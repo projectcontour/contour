@@ -1199,7 +1199,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-		"TLSRoute with TLS.Mode=Terminate is invalid when TLS is not defined": {
+		"TLSRoute with TLS.Mode=Terminate is invalid when TLS certificate reference is not defined": {
 			gateway: &gatewayapi_v1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "contour",
