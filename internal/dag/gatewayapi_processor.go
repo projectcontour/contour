@@ -485,6 +485,12 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
 	defer commit()
 
+	// If the Gateway is invalid, set status on the route.
+	if !validGateway {
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+		return
+	}
+
 	for _, rule := range route.Spec.Rules {
 		var hosts []string
 		var matchErrors []error
@@ -546,19 +552,16 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 			continue
 		}
 
-		if !validGateway {
-			routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
-		} else {
-			for _, host := range hosts {
-				secure := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
+		for _, host := range hosts {
+			secure := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
 
-				if listenerSecret != nil {
-					secure.Secret = listenerSecret
-				}
-
-				secure.TCPProxy = &proxy
+			if listenerSecret != nil {
+				secure.Secret = listenerSecret
 			}
+
+			secure.TCPProxy = &proxy
 		}
+
 	}
 
 	// Determine if any errors exist in conditions and set the "Admitted"
@@ -574,6 +577,12 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha1.Hostname, validGateway bool) {
 	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
 	defer commit()
+
+	// If the Gateway is invalid, set status on the route.
+	if !validGateway {
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+		return
+	}
 
 	hosts, errs := p.computeHosts(route.Spec.Hostnames, listenerHostname)
 	for _, err := range errs {
@@ -697,8 +706,6 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 				}
 
 				switch {
-				case !validGateway:
-					routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 				case listenerSecret != nil:
 					svhost := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
 					svhost.Secret = listenerSecret
