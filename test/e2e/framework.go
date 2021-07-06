@@ -347,6 +347,83 @@ func (f *Framework) DeleteNamespace(name string, waitForDeletion bool) {
 	}
 }
 
+// CreateGatewayAndWaitFor creates a gateway in the
+// Kubernetes API or fails the test if it encounters an error.
+func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayv1alpha1.Gateway, condition func(*gatewayv1alpha1.Gateway) bool) (*gatewayv1alpha1.Gateway, bool) {
+	require.NoError(f.t, f.Client.Create(context.TODO(), gateway))
+
+	res := &gatewayv1alpha1.Gateway{}
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gateway), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
+	}
+
+	return res, true
+}
+
+// CreateGatewayClassAndWaitFor creates a GatewayClass in the
+// Kubernetes API or fails the test if it encounters an error.
+func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayv1alpha1.GatewayClass, condition func(*gatewayv1alpha1.GatewayClass) bool) (*gatewayv1alpha1.GatewayClass, bool) {
+	require.NoError(f.t, f.Client.Create(context.TODO(), gatewayClass))
+
+	res := &gatewayv1alpha1.GatewayClass{}
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gatewayClass), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
+	}
+
+	return res, true
+}
+
+// DeleteGateway deletes the provided gateway in the Kubernetes API
+// or fails the test if it encounters an error.
+func (f *Framework) DeleteGateway(gw *gatewayv1alpha1.Gateway, waitForDeletion bool) error {
+	require.NoError(f.t, f.Client.Delete(context.TODO(), gw))
+
+	if waitForDeletion {
+		require.Eventually(f.t, func() bool {
+			err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gw), gw)
+			return api_errors.IsNotFound(err)
+		}, time.Minute*3, time.Millisecond*50)
+	}
+	return nil
+}
+
+// DeleteGatewayClass deletes the provided gatewayclass in the
+// Kubernetes API or fails the test if it encounters an error.
+func (f *Framework) DeleteGatewayClass(gwc *gatewayv1alpha1.GatewayClass, waitForDeletion bool) error {
+	require.NoError(f.t, f.Client.Delete(context.TODO(), gwc))
+
+	if waitForDeletion {
+		require.Eventually(f.t, func() bool {
+			err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(gwc), gwc)
+			return api_errors.IsNotFound(err)
+		}, time.Minute*3, time.Millisecond*50)
+	}
+
+	return nil
+}
+
 // GetEchoResponseBody decodes an HTTP response body that is
 // expected to have come from ingress-conformance-echo into an
 // EchoResponseBody, or fails the test if it encounters an error.
