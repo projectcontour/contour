@@ -447,6 +447,7 @@ func (d *Deployment) EnsureResourcesForInclusterContour() error {
 	}
 	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Image = d.contourImage
 	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Args = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Args, "--check-delay=0s")
 	if err := d.EnsureEnvoyDaemonSet(); err != nil {
 		return err
 	}
