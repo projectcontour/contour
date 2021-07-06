@@ -2841,6 +2841,7 @@ rules:
   resources:
   - backendpolicies/status
   - gatewayclasses/status
+  - gateways/status
   - httproutes/status
   - tcproutes/status
   - tlsroutes/status

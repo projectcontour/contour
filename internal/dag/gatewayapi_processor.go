@@ -20,17 +20,18 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/projectcontour/contour/internal/errors"
 	"github.com/projectcontour/contour/internal/k8s"
-
-	"k8s.io/utils/pointer"
-
 	"github.com/projectcontour/contour/internal/status"
+
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -57,6 +58,9 @@ type matchConditions struct {
 // Run translates Service APIs into DAG objects and
 // adds them to the DAG.
 func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
+	var errs field.ErrorList
+	path := field.NewPath("spec")
+
 	p.dag = dag
 	p.source = source
 
@@ -66,10 +70,19 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		p.source = nil
 	}()
 
-	// Gateway must be defined for resources to be processed.
+	// Gateway and GatewayClass must be defined for resources to be processed.
 	if p.source.gateway == nil {
-		p.Error("Gateway is not defined!")
+		p.Info("Gateway not found in cache.")
 		return
+	}
+	if p.source.gatewayclass == nil {
+		p.Info("Gatewayclass not found in cache.")
+		return
+	}
+
+	if len(p.source.gateway.Spec.Addresses) > 0 {
+		p.Error("Spec.Addresses is unsupported")
+		errs = append(errs, field.NotSupported(path, p.source.gateway.Spec.Addresses, []string{}))
 	}
 
 	for _, listener := range p.source.gateway.Spec.Listeners {
@@ -170,7 +183,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 						// If a label selector or namespace selector matches, but the gateway Allow doesn't
 						// then set the "Admitted: false" for the route.
-						routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
+						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
 						routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
 						commit()
 						continue
@@ -215,7 +228,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 						// If a label selector or namespace selector matches, but the gateway Allow doesn't
 						// then set the "Admitted: false" for the route.
-						routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
+						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
 						routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
 						commit()
 						continue
@@ -227,16 +240,20 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			}
 		}
 
+		validGateway := len(errs) == 0
+
 		// Process all the HTTPRoutes that match this Gateway.
 		for _, matchingRoute := range matchingHTTPRoutes {
-			p.computeHTTPRoute(matchingRoute, listenerSecret, listener.Hostname)
+			p.computeHTTPRoute(matchingRoute, listenerSecret, listener.Hostname, validGateway)
 		}
 
 		// Process all the routes that match this Gateway.
 		for _, matchingRoute := range matchingTLSRoutes {
-			p.computeTLSRoute(matchingRoute, listenerSecret)
+			p.computeTLSRoute(matchingRoute, validGateway, listenerSecret)
 		}
 	}
+
+	p.computeGateway(p.source.gateway, errs)
 }
 
 func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha1.Listener) *Secret {
@@ -449,10 +466,30 @@ func selectorMatches(selector *metav1.LabelSelector, objLabels map[string]string
 	return true, nil
 }
 
-func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRoute, listenerSecret *Secret) {
+func (p *GatewayAPIProcessor) computeGateway(gateway *gatewayapi_v1alpha1.Gateway, fieldErrs field.ErrorList) {
 
-	routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
+	gwAccessor, commit := p.dag.StatusCache.GatewayConditionsAccessor(k8s.NamespacedNameOf(gateway), gateway.Generation, status.ResourceGateway, &gateway.Status)
 	defer commit()
+
+	// Determine the gateway status based on fieldErrs.
+	switch len(fieldErrs) {
+	case 0:
+		gwAccessor.AddCondition(gatewayapi_v1alpha1.GatewayConditionReady, metav1.ConditionTrue, status.ReasonValidGateway, "Valid Gateway")
+	default:
+		gwAccessor.AddCondition(gatewayapi_v1alpha1.GatewayConditionReady, metav1.ConditionFalse, status.ReasonInvalidGateway, errors.ParseFieldErrors(fieldErrs))
+	}
+}
+
+func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRoute, validGateway bool, listenerSecret *Secret) {
+
+	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
+	defer commit()
+
+	// If the Gateway is invalid, set status on the route.
+	if !validGateway {
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+		return
+	}
 
 	for _, rule := range route.Spec.Rules {
 		var hosts []string
@@ -524,6 +561,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 
 			secure.TCPProxy = &proxy
 		}
+
 	}
 
 	// Determine if any errors exist in conditions and set the "Admitted"
@@ -536,9 +574,15 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 	}
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha1.Hostname) {
-	routeAccessor, commit := p.dag.StatusCache.ConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
+func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha1.Hostname, validGateway bool) {
+	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
 	defer commit()
+
+	// If the Gateway is invalid, set status on the route.
+	if !validGateway {
+		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+		return
+	}
 
 	hosts, errs := p.computeHosts(route.Spec.Hostnames, listenerHostname)
 	for _, err := range errs {
@@ -661,11 +705,12 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 					})
 				}
 
-				if listenerSecret != nil {
+				switch {
+				case listenerSecret != nil:
 					svhost := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
 					svhost.Secret = listenerSecret
 					svhost.addRoute(route)
-				} else {
+				default:
 					vhost := p.dag.EnsureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_http"})
 					vhost.addRoute(route)
 				}
