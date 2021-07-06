@@ -81,8 +81,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	}
 
 	if len(p.source.gateway.Spec.Addresses) > 0 {
-		p.Error("Spec.Addresses is unsupported")
-		errs = append(errs, field.NotSupported(path, p.source.gateway.Spec.Addresses, []string{}))
+		errs = append(errs, &field.Error{Type: field.ErrorTypeNotSupported, Field: path.String(), BadValue: p.source.gateway.Spec.Addresses, Detail: "Spec.Addresses is not supported"})
 	}
 
 	for _, listener := range p.source.gateway.Spec.Listeners {
