@@ -341,7 +341,7 @@ func (f *Framework) CreateGatewayAndWaitFor(gateway *gatewayv1alpha1.Gateway, co
 	return res, true
 }
 
-// CreateGatewayClassAndWaitFor creates a gateway in the
+// CreateGatewayClassAndWaitFor creates a GatewayClass in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) CreateGatewayClassAndWaitFor(gatewayClass *gatewayv1alpha1.GatewayClass, condition func(*gatewayv1alpha1.GatewayClass) bool) (*gatewayv1alpha1.GatewayClass, bool) {
 	require.NoError(f.t, f.Client.Create(context.TODO(), gatewayClass))

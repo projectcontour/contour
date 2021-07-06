@@ -408,7 +408,7 @@ func gatewayValid(gateway *gatewayv1alpha1.Gateway) bool {
 }
 
 // gatewayClassValid returns true if the gateway has a .status.conditions
-// entry of Scheduled: true".
+// entry of Admitted: true".
 func gatewayClassValid(gatewayClass *gatewayv1alpha1.GatewayClass) bool {
 	if gatewayClass == nil {
 		return false
