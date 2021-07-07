@@ -10,9 +10,17 @@ A big thank you to everyone who contributed to the release.
 
 Description
 
+Relevant PRs:
+<!-- Paste relevant PR details here, in a format like:
+
+[#3794](https://github.com/projectcontour/contour-operator/pull/3794) : site: replace latest_release_tag_name with latest_version
+
+-->
 ### Specific Change 2
 
 Description
+
+Relevant PRs:
 
 ## Theme 2
 
@@ -20,15 +28,25 @@ Description
 
 Description
 
+Relevant PRs:
 ### Specific Change 2
 
 Description
 
+Relevant PRs:
 # Deprecation & Removal Notices
 
 ## Deprecation 1
 
+Relevant PRs:
+
 ## Deprecation 2
+
+Relevant PRs:
+
+# Other changes
+
+<!-- Put a list of all the PRs merged that aren't discussed above in here.-->
 
 # Upgrading
 Please consult the [upgrade documentation](https://projectcontour.io/resources/upgrading/).

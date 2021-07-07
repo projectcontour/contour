@@ -25,14 +25,32 @@ A minor release requires:
 
 ## Process
 
+### Build out the release notes
+
+The first thing to do to prepare for the release is to look over the changes you need to include.
+This can be done before the day of release, and it's recommended to draft the notes first.
+
+You can use [this template][3] as a basic structure to get started.
+
+Specific items to call out in the release notes:
+- Filter on the Github label `release-note` and Github milestone which should include any PRs which should be called out in the release notes.
+- Also filter on the Github label `release-note-action-required` and ensure these are mentioned specifically with emphasis there may be user action required.
+- Be sure to include a section that specifies the compatible kubernetes versions for this version of Contour.
+
+Additionally, if you have the Github CLI tool installed, the following one-liner is helpful to pull a list of PRs merged after the last release date (which in this case was `2021-05-28`):
+```bash
+gh pr list --state merged --search "merged:>2021-05-28" | awk -F'\t' '{print "[#"$1"](https://github.com/projectcontour/contour/pull/"$1") : "$2 "," $3}'
+```
+I've had this one include the branch as well because it's useful for determining external contributors to thanks, but you should remove that from the release notes before publishing.
+ 
 ### Set environment variables
 
 Set environment variables for use in subsequent steps:
 
 ```bash
-export CONTOUR_RELEASE_VERSION=v1.11.0
+export CONTOUR_RELEASE_VERSION=v1.17.0
 export CONTOUR_RELEASE_VERSION_MAJOR=1
-export CONTOUR_RELEASE_VERSION_MINOR=11
+export CONTOUR_RELEASE_VERSION_MINOR=17
 
 export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
 export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
@@ -131,10 +149,7 @@ Now you have a tag pushed to Github, go to the release tab on github, select the
 
 You can use [this template][3] as a basic structure to get started.
 
-Specific items to call out in the release notes:
-- Filter on the Github label `release-note` and Github milestone which should include any PRs which should be called out in the release notes.
-- Also filter on the Github label `release-note-action-required` and ensure these are mentioned specifically with emphasis there may be user action required.
-- Be sure to include a section that specifies the compatible kubernetes versions for this version of Contour.
+
 
 ### Toot your horn
 
@@ -265,14 +280,7 @@ git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 
 ### Do the Github release and write release notes
 
-Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
-
-You can use [this template][3] as a basic structure to get started.
-
-Specific items to call out in the release notes:
-- Filter on the Github label `release-note` and Github milestone which should include any PRs which should be called out in the release notes.
-- Also filter on the Github label `release-note-action-required` and ensure these are mentioned specifically with emphasis there may be user action required.
-- Be sure to include a section that specifies the compatible kubernetes versions for this version of Contour.
+Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes, prepared earlier on.
 
 ### Toot your horn
 
