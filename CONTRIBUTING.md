@@ -144,7 +144,7 @@ The leftmost column should represent what is planned for the upcoming release.
 The "Investigating" column contains longer term items that may need more information, feedback from Issue reporters, etc.
 Further columns represent decreasing priority, with "Prioritized Backlog" containing cards that are coming soon, all the way to the "Unprioritized" column which contains items currently not yet sorted.
 
-**Notes for maintainers and contributers**
+**Notes for maintainers and contributors**
 - If you are looking for work to pick up, look to the leftmost columns of the project board
 - When a new Issue or PR is added, add it to the project board and make a best judgement on relative priority so we have a starting place in triage
 - When moving items between columns, please add a comment to the Issue or PR detailing why so we have context in triage sessions
