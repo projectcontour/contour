@@ -30,3 +30,9 @@ jobs:
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         ./hack/actions/build-and-push-release-images.sh
         docker logout
+    - uses: act10ns/slack@v1
+      with:
+        status: ${{ job.status }}
+        steps: ${{ toJson(steps) }}
+        channel: '#contour-ci-notifications'
+      if: ${{ failure() }}

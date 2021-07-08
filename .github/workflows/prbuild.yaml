@@ -24,6 +24,12 @@ jobs:
       with:
         name: image
         path: image/contour-*.tar
+    - uses: act10ns/slack@v1
+      with:
+        status: ${{ job.status }}
+        steps: ${{ toJson(steps) }}
+        channel: '#contour-ci-notifications'
+      if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
   e2e:
     runs-on: ubuntu-latest
     needs: [build-image]
@@ -73,6 +79,12 @@ jobs:
           LOAD_PREBUILT_IMAGE: "true"
         run: |
           make e2e
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
   upgrade:
     runs-on: ubuntu-latest
     needs: [build-image]
@@ -127,6 +139,12 @@ jobs:
         run: |
           export CONTOUR_UPGRADE_TO_IMAGE="projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make upgrade
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
   # TODO: re-enable once Ingress v1 support is complete
   # ingress-conformance:
   #   runs-on: ubuntu-latest
@@ -168,6 +186,12 @@ jobs:
         if: ${{ success() }}
         run: |
           CODECOV_NAME=coverage.out bash <(curl -s https://codecov.io/bash)
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
   test-osx:
     runs-on: macos-latest
     steps:
@@ -193,6 +217,12 @@ jobs:
         run: |
           make install
           make check-coverage
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -202,6 +232,12 @@ jobs:
         with:
           version: v1.38
           args: --build-tags=e2e
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
   codespell:
     name: Codespell
     runs-on: ubuntu-latest
@@ -215,6 +251,12 @@ jobs:
           ignore_words_file: './.codespell.ignorewords'
           check_filenames: true
           check_hidden: true
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
   codegen:
     runs-on: ubuntu-latest
     steps:
@@ -240,3 +282,9 @@ jobs:
         run: |
           make generate lint-yamllint lint-flags
           ./hack/actions/check-uncommitted-codegen.sh
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
