@@ -48,28 +48,37 @@ Currently the state of the world is as below:
 ## Non Goals
 - Drop support for features or projects
 
-## High-Level Design
-One to two paragraphs that describe the high level changes that will be made to implement this proposal.
+## Remediation Steps
 
-## Detailed Design
-A detailed design describing how the changes to the product should be made.
-
-The names of types, fields, interfaces, and methods should be agreed on here, not debated in code review.
-The same applies to changes in CRDs, YAML examples, and so on.
-
-Ideally the changes should be made in sequence so that the work required to implement this design can be done incrementally, possibly in parallel.
-
-## Alternatives Considered
-If there are alternative high level or detailed designs that were not pursued they should be called out here with a brief explanation of why they were not pursued.
-
-## Security Considerations
-If this proposal has an impact to the security of the product, its users, or data stored or transmitted via the product, they must be addressed here.
-
-## Compatibility
-A discussion of any compatibility issues that need to be considered
-
-## Implementation
-A description of the implementation, timelines, and any resources that have agreed to contribute.
-
-## Open Issues
-A discussion of issues relating to this proposal for which the author does not know the solution. This section may be omitted if there are none.
+- Set up alerting on Operator CI failures
+  - So we catch issues sooner.
+- Operator sets controller name in Contour ConfigMap
+  - To ensure Contour does not immediately exit on startup.
+- Operator stops setting any status on Gateway API resources
+  - To ensure Contour and Operator do not "fight" over status
+- Contour does not reject GatewayClasses if parameters ref is set
+  - At this point, we should have a workable intermediate solution for the moment and can cut a patch release
+  - Reconciliation will be duplicated but this should "work" for now
+  - User creates GatewayClass/Contour CRD with GatewayClass name
+  - Operator reconciles, does not set status
+  - User creates Gateway referencing GatewayClass
+  - Operator reconciles, creates a Contour
+  - Contour reconciles GatewayClass and Gateway, sets status, etc.
+- Contour no longer requires Gateway namespace/name to be configured
+  - This is a planned deprecation anyway
+  - Will help with next step
+- Remove GatewayClass and Gateway controllers from Operator
+  - Planned deprecation anyways
+  - Users will no longer create a GatewayClass that references a Contour CRD to get a Contour that is configured for Gateway API.
+  - Instead, users will create a Contour CRD with a GatewayClass name and the operator will turn that into a Contour with the appropriate config.
+  - Operator will need to expand on Contour CRD controller, ensure Contour deployment resources are created when GatewayClass ref is set on Contour object
+- Move Operator into main Contour repository (long-term/optional)
+  - This option is a longer term project that would help us sort out process issues between Contour and Operator development.
+  - We would move the Operator codebase into the Contour one and deprecate/remove the Operator specific repo.
+  - Pros
+    - Allows us to test, get feedback in one repository, each PR will be tested against Contour, Contour integration in Operator
+    - Operator can be tested against specific Contour image versions, currently Operator in CI is just pointed at the `main` tag so we don't always know what is tested in a CI run
+    - Shared code for common functions, no need to extract libraries and sync versions across repos.
+  - Cons
+    - Doesn't follow typical operator/component repo split pattern
+    - Changes unrelated to operator will cause CI to run, expensive+time consuming
