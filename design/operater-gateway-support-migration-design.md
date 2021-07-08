@@ -64,6 +64,10 @@ Currently the state of the world is as below:
   - User creates Gateway referencing GatewayClass
   - Operator reconciles, creates a Contour
   - Contour reconciles GatewayClass and Gateway, sets status, etc.
+- Operator deprecates Contour CRD GatewayClassRef field
+  - Currently the gateway reference has to be a GatewayClass name which is then validated to have the correct (hardcoded) controller string
+  - We should instead ensure the CRD has a field for setting the controller string the instance of Contour will watch for and reconcile GatewayClasses for
+  - The Operator should also set status to invalid on Contour objects that try to use a GatewayClass controller string that already exists, as it doesn't really make sense for multiple instances of Contour to watch for the same Controller string
 - Contour no longer requires Gateway namespace/name to be configured
   - This is a planned deprecation anyway
   - Will help with next step
