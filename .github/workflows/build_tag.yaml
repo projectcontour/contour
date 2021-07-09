@@ -35,4 +35,4 @@ jobs:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
         channel: '#contour-ci-notifications'
-      if: ${{ failure() }}
+      if: failure()

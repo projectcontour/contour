@@ -29,7 +29,7 @@ jobs:
         status: ${{ job.status }}
         steps: ${{ toJson(steps) }}
         channel: '#contour-ci-notifications'
-      if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
+      if: ${{ failure() && github.ref == 'refs/heads/main' }}
   e2e:
     runs-on: ubuntu-latest
     needs: [build-image]
@@ -84,7 +84,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
   upgrade:
     runs-on: ubuntu-latest
     needs: [build-image]
@@ -144,7 +144,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
   # TODO: re-enable once Ingress v1 support is complete
   # ingress-conformance:
   #   runs-on: ubuntu-latest
@@ -191,7 +191,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
   test-osx:
     runs-on: macos-latest
     steps:
@@ -222,7 +222,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -237,7 +237,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
   codespell:
     name: Codespell
     runs-on: ubuntu-latest
@@ -256,7 +256,7 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
   codegen:
     runs-on: ubuntu-latest
     steps:
@@ -287,4 +287,4 @@ jobs:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
           channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.head_ref == 'refs/heads/main' }}
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
