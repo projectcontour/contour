@@ -4,7 +4,7 @@ description: Getting Started
 id: getting-started
 ---
 
-This page will help you get up and running with Contour.
+This page will help you get up and running with Project Contour.
 
 ## Before you start
 
