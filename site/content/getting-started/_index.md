@@ -8,6 +8,8 @@ This page will help you get up and running with Contour.
 
 ## Before you start
 
+DEMO CHANGE FOR DOCS WG PR :)
+
 Before you start you will need:
 
 - A Kubernetes cluster (See [Deployment Options][1] for provider specific details)
