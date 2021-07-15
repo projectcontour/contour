@@ -177,11 +177,11 @@ func testGatewayAllowType(namespace string) {
 
 		// This route allows gateways in the same namespace, and the actual
 		// gateway is *NOT* in the same namespace.
-		f.CreateNamespace("007-gateway-allow-type-invalid")
-		defer f.DeleteNamespace("007-gateway-allow-type-invalid", false)
+		f.CreateNamespace("gateway-allow-type-invalid")
+		defer f.DeleteNamespace("gateway-allow-type-invalid", false)
 		gatewayNotInSameNamespaceRoute := &gatewayv1alpha1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "007-gateway-allow-type-invalid",
+				Namespace: "gateway-allow-type-invalid",
 				Name:      "gateway-not-in-same-namespace",
 				Labels:    map[string]string{"app": "filter"},
 			},

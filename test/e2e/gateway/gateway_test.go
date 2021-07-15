@@ -147,19 +147,19 @@ var _ = Describe("Gateway API", func() {
 			return testWithGateway(gw, gatewayClass, body)
 		}
 
-		f.NamespacedTest("001-path-condition-match", testWithHTTPGateway(testGatewayPathConditionMatch))
+		f.NamespacedTest("gateway-path-condition-match", testWithHTTPGateway(testGatewayPathConditionMatch))
 
-		f.NamespacedTest("002-header-condition-match", testWithHTTPGateway(testGatewayHeaderConditionMatch))
+		f.NamespacedTest("gateway-header-condition-match", testWithHTTPGateway(testGatewayHeaderConditionMatch))
 
-		f.NamespacedTest("003-invalid-forward-to", testWithHTTPGateway(testInvalidForwardTo))
+		f.NamespacedTest("gateway-invalid-forward-to", testWithHTTPGateway(testInvalidForwardTo))
 
-		f.NamespacedTest("005-request-header-modifier-forward-to", testWithHTTPGateway(testRequestHeaderModifierForwardTo))
+		f.NamespacedTest("gateway-request-header-modifier-forward-to", testWithHTTPGateway(testRequestHeaderModifierForwardTo))
 
-		f.NamespacedTest("005-request-header-modifier-rule", testWithHTTPGateway(testRequestHeaderModifierRule))
+		f.NamespacedTest("gateway-request-header-modifier-rule", testWithHTTPGateway(testRequestHeaderModifierRule))
 
-		f.NamespacedTest("006-host-rewrite", testWithHTTPGateway(testHostRewrite))
+		f.NamespacedTest("gateway-host-rewrite", testWithHTTPGateway(testHostRewrite))
 
-		f.NamespacedTest("007-gateway-allow-type", testWithHTTPGateway(testGatewayAllowType))
+		f.NamespacedTest("gateway-allow-type", testWithHTTPGateway(testGatewayAllowType))
 	})
 
 	Describe("HTTPRoute: TLS Gateway", func() {
@@ -219,9 +219,9 @@ var _ = Describe("Gateway API", func() {
 			})
 		}
 
-		f.NamespacedTest("004-httproute-tls-gateway", testWithHTTPSGateway("tls-gateway.projectcontour.io", testTLSGateway))
+		f.NamespacedTest("gateway-httproute-tls-gateway", testWithHTTPSGateway("tls-gateway.projectcontour.io", testTLSGateway))
 
-		f.NamespacedTest("009-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
+		f.NamespacedTest("gateway-httproute-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
 	})
 
 	Describe("TLSRoute: Gateway", func() {
@@ -247,7 +247,7 @@ var _ = Describe("Gateway API", func() {
 				}},
 			},
 		}
-		f.NamespacedTest("008-tlsroute", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
+		f.NamespacedTest("gateway-tlsroute", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 
 	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
@@ -275,7 +275,7 @@ var _ = Describe("Gateway API", func() {
 				},
 			},
 		}
-		f.NamespacedTest("008-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
+		f.NamespacedTest("gateway-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 
 	Describe("TLSRoute Gateway: Mode: Terminate", func() {
@@ -322,7 +322,7 @@ var _ = Describe("Gateway API", func() {
 
 		gatewayClass := getGatewayClass()
 
-		f.NamespacedTest("008-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", gatewayClass, testTLSRouteTerminate))
+		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", gatewayClass, testTLSRouteTerminate))
 	})
 })
 
