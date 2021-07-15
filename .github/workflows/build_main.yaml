@@ -5,6 +5,8 @@ on:
     branches:
       - main
 
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,3 +28,9 @@ jobs:
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         make multiarch-build
         docker logout
+     - uses: act10ns/slack@v1
+       with:
+         status: ${{ job.status }}
+         steps: ${{ toJson(steps) }}
+         channel: '#contour-ci-notifications'
+       if: failure()
