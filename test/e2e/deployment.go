@@ -68,6 +68,7 @@ type Deployment struct {
 	ExtensionServiceCRD       *apiextensions_v1.CustomResourceDefinition
 	HTTPProxyCRD              *apiextensions_v1.CustomResourceDefinition
 	TLSCertDelegationCRD      *apiextensions_v1.CustomResourceDefinition
+	ContourConfigurationCRD   *apiextensions_v1.CustomResourceDefinition
 	CertgenServiceAccount     *v1.ServiceAccount
 	ContourRoleBinding        *rbac_v1.RoleBinding
 	CertgenRole               *rbac_v1.Role
@@ -114,6 +115,7 @@ func (d *Deployment) UnmarshalResources() error {
 	d.ExtensionServiceCRD = new(apiextensions_v1.CustomResourceDefinition)
 	d.HTTPProxyCRD = new(apiextensions_v1.CustomResourceDefinition)
 	d.TLSCertDelegationCRD = new(apiextensions_v1.CustomResourceDefinition)
+	d.ContourConfigurationCRD = new(apiextensions_v1.CustomResourceDefinition)
 	d.CertgenServiceAccount = new(v1.ServiceAccount)
 	d.ContourRoleBinding = new(rbac_v1.RoleBinding)
 	d.CertgenRole = new(rbac_v1.Role)
@@ -132,6 +134,7 @@ func (d *Deployment) UnmarshalResources() error {
 		d.ExtensionServiceCRD,
 		d.HTTPProxyCRD,
 		d.TLSCertDelegationCRD,
+		d.ContourConfigurationCRD,
 		d.CertgenServiceAccount,
 		d.ContourRoleBinding,
 		d.CertgenRole,
@@ -224,6 +227,10 @@ func (d *Deployment) EnsureHTTPProxyCRD() error {
 
 func (d *Deployment) EnsureTLSCertDelegationCRD() error {
 	return d.ensureResource(d.TLSCertDelegationCRD, new(apiextensions_v1.CustomResourceDefinition))
+}
+
+func (d *Deployment) EnsureContourConfigurationCRD() error {
+	return d.ensureResource(d.ContourConfigurationCRD, new(apiextensions_v1.CustomResourceDefinition))
 }
 
 func (d *Deployment) EnsureCertgenServiceAccount() error {
@@ -394,6 +401,9 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		return err
 	}
 	if err := d.EnsureTLSCertDelegationCRD(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourConfigurationCRD(); err != nil {
 		return err
 	}
 	if err := d.EnsureEnvoyService(); err != nil {

@@ -655,6 +655,21 @@ type RateLimitService struct {
 	EnableXRateLimitHeaders bool `yaml:"enableXRateLimitHeaders,omitempty"`
 }
 
+// Logging defines how Envoy logs are configured.
+type Logging struct {
+	// AccessLogFormat sets the global access log format.
+	// Valid options are 'envoy' or 'json'
+	AccessLogFormat AccessLogType `yaml:"accesslog-format,omitempty"`
+
+	// AccessLogFormatString sets the access log format when format is set to `envoy`.
+	// When empty, Envoy's default format is used.
+	AccessLogFormatString string `yaml:"accesslog-format-string,omitempty"`
+
+	// AccessLogFields sets the fields that JSON logging will
+	// output when AccessLogFormat is json.
+	AccessLogFields AccessLogFields `yaml:"json-fields,omitempty"`
+}
+
 // Validate verifies that the parameter values do not have any syntax errors.
 func (p *Parameters) Validate() error {
 	if err := p.Cluster.DNSLookupFamily.Validate(); err != nil {
