@@ -15,6 +15,7 @@ package dag
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -3527,6 +3528,16 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	cert2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ca",
+			Namespace: "caCertOriginalNs",
+		},
+		Data: map[string][]byte{
+			CACertificateKey: []byte(fixture.CERTIFICATE),
+		},
+	}
+
 	i1V1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -5278,6 +5289,30 @@ func TestDAGInsert(t *testing.T) {
 					Protocol: &protocolh2,
 					UpstreamValidation: &contour_api_v1.UpstreamValidation{
 						CACertificate: cert1.Name,
+						SubjectName:   "example.com",
+					},
+				}},
+			}},
+		},
+	}
+	proxy17UpstreamCACertDelegation := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+					UpstreamValidation: &contour_api_v1.UpstreamValidation{
+						CACertificate: fmt.Sprintf("%s/%s", cert2.Namespace, cert2.Name),
 						SubjectName:   "example.com",
 					},
 				}},
@@ -8082,6 +8117,57 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com",
 							prefixroute("/", service(s1)),
+						),
+					),
+				},
+			),
+		},
+		"insert httpproxy expecting upstream verification, CA secret in different namespace is not delegated": {
+			objs: []interface{}{
+				cert2, proxy17UpstreamCACertDelegation, s1a,
+			},
+			want: listeners(),
+		},
+		"insert httpproxy expecting upstream verification, CA secret in different namespace is delegated": {
+			objs: []interface{}{
+				cert2, s1a,
+				&contour_api_v1.TLSCertificateDelegation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "CACertDelagation",
+						Namespace: cert2.Namespace,
+					},
+					Spec: contour_api_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_api_v1.CertificateDelegation{{
+							SecretName:       cert2.Name,
+							TargetNamespaces: []string{"*"},
+						}},
+					},
+				},
+				proxy17UpstreamCACertDelegation,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com",
+							routeCluster("/",
+								&Cluster{
+									Upstream: &Service{
+										Protocol: "tls",
+										Weighted: WeightedService{
+											Weight:           1,
+											ServiceName:      s1a.Name,
+											ServiceNamespace: s1a.Namespace,
+											ServicePort:      s1a.Spec.Ports[0],
+										},
+									},
+									Protocol: "tls",
+									UpstreamValidation: &PeerValidationContext{
+										CACertificate: secret(cert2),
+										SubjectName:   "example.com",
+									},
+								},
+							),
 						),
 					),
 				},

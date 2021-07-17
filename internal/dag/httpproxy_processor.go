@@ -578,9 +578,23 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			var uv *PeerValidationContext
-			if protocol == "tls" || protocol == "h2" {
+			if (protocol == "tls" || protocol == "h2") && service.UpstreamValidation != nil {
+				// If the CACertificate name in the UpstreamValidation is namespaced and the namespace
+				// is not the proxy's namespace, check if the referenced secret is permitted to be
+				// delegated to the proxy's namespace.
+				// By default, a non-namespaced CACertificate is expected to reside in the proxy's namespace.
+				caCertNamespacedName, err := getNamespacedName(service.UpstreamValidation.CACertificate)
+				if err != nil {
+					// The CACertificate name is not namespaced, scope it be in the proxy's namespace.
+					caCertNamespacedName = types.NamespacedName{Name: service.UpstreamValidation.CACertificate, Namespace: proxy.Namespace}
+				}
+				if caCertNamespacedName.Namespace != proxy.Namespace && !p.source.DelegationPermitted(caCertNamespacedName, proxy.Namespace) {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
+						"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+					return nil
+				}
 				// we can only validate TLS connections to services that talk TLS
-				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
+				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, caCertNamespacedName)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "TLSUpstreamValidation",
 						"Service [%s:%d] TLS upstream validation policy error: %s", service.Name, service.Port, err)
@@ -1006,4 +1020,13 @@ func isBlank(s string) bool {
 // routeEnforceTLS determines if the route should redirect the user to a secure TLS listener
 func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
 	return enforceTLS && !permitInsecure
+}
+
+func getNamespacedName(name string) (types.NamespacedName, error) {
+	chunks := strings.Split(name, string(types.Separator))
+	if len(chunks) != 2 {
+		return types.NamespacedName{}, fmt.Errorf("%q is not a NamespacedName of the form <namespace>/<name>", name)
+	}
+
+	return types.NamespacedName{Namespace: chunks[0], Name: chunks[1]}, nil
 }
