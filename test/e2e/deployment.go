@@ -18,6 +18,7 @@ package e2e
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -468,6 +469,54 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 
 	if err := d.EnsureEnvoyDaemonSet(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// DeleteResourcesForLocalContour ensures deletion of all resources
+// created in the projectcontour namespace for running a local contour.
+// This is done instead of deleting the entire namespace as a performance
+// optimization, because deleting non-empty namespaces can take up to a
+// couple minutes to complete.
+func (d *Deployment) DeleteResourcesForLocalContour() error {
+	ensureDeleted := func(obj client.Object) error {
+		// Delete the object; if it already doesn't exist,
+		// then we're done.
+		err := d.client.Delete(context.Background(), obj)
+		if api_errors.IsNotFound(err) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("error deleting resource %T %s/%s: %v", obj, obj.GetNamespace(), obj.GetName(), err)
+		}
+
+		// Wait to ensure it's fully deleted.
+		if err := wait.PollImmediate(100*time.Millisecond, time.Minute, func() (bool, error) {
+			err := d.client.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+			if api_errors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, nil
+		}); err != nil {
+			return fmt.Errorf("error waiting for deletion of resource %T %s/%s: %v", obj, obj.GetNamespace(), obj.GetName(), err)
+		}
+
+		return nil
+	}
+
+	for _, r := range []client.Object{
+		d.EnvoyDaemonSet,
+		d.ContourConfigMap,
+		d.EnvoyService,
+		d.TLSCertDelegationCRD,
+		d.ExtensionServiceCRD,
+		d.HTTPProxyCRD,
+		d.EnvoyServiceAccount,
+	} {
+		if err := ensureDeleted(r); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -44,7 +44,10 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	f.DeleteNamespace(f.Deployment.Namespace.Name, true)
+	// Delete resources individually instead of deleting the entire contour
+	// namespace as a performance optimization, because deleting non-empty
+	// namespaces can take up to a couple minutes to complete.
+	require.NoError(f.T(), f.Deployment.DeleteResourcesForLocalContour())
 	gexec.CleanupBuildArtifacts()
 })
 
