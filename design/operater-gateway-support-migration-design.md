@@ -74,7 +74,7 @@ Currently the state of the world is as below:
 - Remove GatewayClass and Gateway controllers from Operator
   - Planned deprecation anyways
   - Users will no longer create a GatewayClass that references a Contour CRD to get a Contour that is configured for Gateway API.
-  - Instead, users will create a Contour CRD with a GatewayClass name and the operator will turn that into a Contour with the appropriate config.
+  - Instead, users will create a Contour CRD with a controller name string and the operator will turn that into a Contour with the appropriate config.
   - Operator will need to expand on Contour CRD controller, ensure Contour deployment resources are created when GatewayClass ref is set on Contour object
 - Move Operator into main Contour repository (long-term/optional)
   - This option is a longer term project that would help us sort out process issues between Contour and Operator development.
