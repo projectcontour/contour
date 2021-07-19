@@ -583,12 +583,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				// is not the proxy's namespace, check if the referenced secret is permitted to be
 				// delegated to the proxy's namespace.
 				// By default, a non-namespaced CACertificate is expected to reside in the proxy's namespace.
-				caCertNamespacedName, err := getNamespacedName(service.UpstreamValidation.CACertificate)
-				if err != nil {
-					// The CACertificate name is not namespaced, scope it be in the proxy's namespace.
-					caCertNamespacedName = types.NamespacedName{Name: service.UpstreamValidation.CACertificate, Namespace: proxy.Namespace}
-				}
-				if caCertNamespacedName.Namespace != proxy.Namespace && !p.source.DelegationPermitted(caCertNamespacedName, proxy.Namespace) {
+				caCertNamespacedName := k8s.NamespacedNameFrom(service.UpstreamValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
+				if !p.source.DelegationPermitted(caCertNamespacedName, proxy.Namespace) {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
 						"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
 					return nil
@@ -1020,13 +1016,4 @@ func isBlank(s string) bool {
 // routeEnforceTLS determines if the route should redirect the user to a secure TLS listener
 func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
 	return enforceTLS && !permitInsecure
-}
-
-func getNamespacedName(name string) (types.NamespacedName, error) {
-	chunks := strings.Split(name, string(types.Separator))
-	if len(chunks) != 2 {
-		return types.NamespacedName{}, fmt.Errorf("%q is not a NamespacedName of the form <namespace>/<name>", name)
-	}
-
-	return types.NamespacedName{Namespace: chunks[0], Name: chunks[1]}, nil
 }

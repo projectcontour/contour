@@ -558,11 +558,10 @@ func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamV
 		return nil, nil
 	}
 
-	secretName := types.NamespacedName{Name: caCertificate.Name, Namespace: caCertificate.Namespace}
-	cacert, err := kc.LookupSecret(secretName, validCA)
+	cacert, err := kc.LookupSecret(caCertificate, validCA)
 	if err != nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
-		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
+		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
 	}
 
 	if uv.SubjectName == "" {

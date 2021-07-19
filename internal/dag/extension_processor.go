@@ -141,12 +141,8 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		// is not the ExtensionService's namespace, check if the referenced secret is permitted to be
 		// delegated to the ExtensionService's namespace.
 		// By default, a non-namespaced CACertificate is expected to reside in the ExtensionService's namespace.
-		caCertNamespacedName, err := getNamespacedName(v.CACertificate)
-		if err != nil {
-			// The CACertificate name is not namespaced, scope it be in the ExtensionService's namespace.
-			caCertNamespacedName = types.NamespacedName{Name: v.CACertificate, Namespace: ext.Namespace}
-		}
-		if caCertNamespacedName.Namespace != ext.Namespace && !cache.DelegationPermitted(caCertNamespacedName, ext.Namespace) {
+		caCertNamespacedName := k8s.NamespacedNameFrom(v.CACertificate, k8s.DefaultNamespace(ext.Namespace))
+		if !cache.DelegationPermitted(caCertNamespacedName, ext.Namespace) {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
 				"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
 			return nil
