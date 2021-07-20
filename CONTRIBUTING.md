@@ -145,7 +145,9 @@ The "Investigating" column contains longer term items that may need more informa
 Further columns represent decreasing priority, with "Prioritized Backlog" containing cards that are coming soon, all the way to the "Unprioritized" column which contains items currently not yet sorted.
 
 **Notes for maintainers and contributors**
-- If you are looking for work to pick up, look to the leftmost columns of the project board
+- If you are looking for work to pick up:
+  - Look to the leftmost columns of the project board
+  - *New contributors* can use [this shortcut link](https://github.com/projectcontour/contour/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22) to find good beginner Contour issues to work on and [this shortcut link](https://github.com/projectcontour/contour-operator/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22) to find Operator issues
 - When a new Issue or PR is added, add it to the project board and make a best judgement on relative priority so we have a starting place in triage
 - When moving items between columns, please add a comment to the Issue or PR detailing why so we have context in triage sessions
 
@@ -160,7 +162,10 @@ In addition, the meeting will be used to go over untriaged issues, longer-term i
 
 **Procedural notes**
 - Once an issue has been discussed, remove and add the appropriate labels and pull the item into the correct column
-- As a result of triage, Issues and PRs should be assigned a maintainer shepherd, particularly for "investigation" issues and community PRs
+- After triage, Issues and PRs that are actively being worked on should be assigned to someone. This could be:
+  - the person working on the issue or PR or
+  - a maintainer who is shepherding a new contributor or large PR
+- Issues and PRs that are not being actively worked on should have comments updated with the current context, then be unassigned
 
 ### Commit message and PR guidelines
 
