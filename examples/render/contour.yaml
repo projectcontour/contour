@@ -713,6 +713,10 @@ spec:
                   - name
                   type: object
                 type: array
+              ingressClassName:
+                description: IngressClassName optionally specifies the ingress class
+                  to use for this HTTPProxy.
+                type: string
               routes:
                 description: Routes are the ingress routes. If TCPProxy is present,
                   Routes is ignored.

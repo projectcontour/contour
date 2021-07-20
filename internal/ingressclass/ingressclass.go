@@ -14,9 +14,9 @@
 package ingressclass
 
 import (
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	networking_v1 "k8s.io/api/networking/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
@@ -29,39 +29,31 @@ const DefaultClassName = "contour"
 // or Spec.IngressClassName match the passed in ingress class name.
 // Annotations take precedence over spec field if both are set.
 func MatchesIngress(obj *networking_v1.Ingress, ingressClassName string) bool {
-	annotationClass := annotation.IngressClass(obj)
-	specClass := pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")
-
-	// If annotation is set, check if it matches.
-	if annotationClass != "" {
-		return MatchesAnnotation(obj, ingressClassName)
+	if annotationClass := annotation.IngressClass(obj); annotationClass != "" {
+		return matches(annotationClass, ingressClassName)
 	}
 
-	// If spec field is set, check if it matches.
-	if specClass != "" {
-		classToMatch := ingressClassName
-		if classToMatch == "" {
-			classToMatch = DefaultClassName
-		}
-		return specClass == classToMatch
-	}
-
-	// Matches if class is not set.
-	return ingressClassName == ""
+	return matches(pointer.StringPtrDerefOr(obj.Spec.IngressClassName, ""), ingressClassName)
 }
 
-// MatchesAnnotation checks that the passed object has an ingress class annotation
-// that matches either the passed ingress-class string, or DefaultClassName if it's
-// empty.
-func MatchesAnnotation(o meta_v1.Object, ic string) bool {
-	ingressClassAnnotation := annotation.IngressClass(o)
+// MatchesHTTPProxy returns true if the passed in HTTPProxy annotations
+// or Spec.IngressClassName match the passed in ingress class name.
+// Annotations take precedence over spec field if both are set.
+func MatchesHTTPProxy(obj *contour_v1.HTTPProxy, ingressClassName string) bool {
+	if annotationClass := annotation.IngressClass(obj); annotationClass != "" {
+		return matches(annotationClass, ingressClassName)
+	}
 
+	return matches(obj.Spec.IngressClassName, ingressClassName)
+}
+
+func matches(objIngressClass, contourIngressClass string) bool {
 	// If Contour's configured ingress class is empty, the object can either
 	// not have an ingress class, or can have a "contour" ingress class.
-	if ic == "" {
-		return ingressClassAnnotation == "" || ingressClassAnnotation == DefaultClassName
+	if contourIngressClass == "" {
+		return objIngressClass == "" || objIngressClass == DefaultClassName
 	}
 
 	// Otherwise, the object's ingress class must match Contour's.
-	return ingressClassAnnotation == ic
+	return objIngressClass == contourIngressClass
 }

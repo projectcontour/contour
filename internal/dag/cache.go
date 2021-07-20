@@ -105,40 +105,6 @@ func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) 
 	return false
 }
 
-// ingressMatchesIngressClass returns true if the given Ingress object matches
-// the configured ingress class name via annotation or Spec.IngressClassName
-// and emits a log message if there is no match.
-func (kc *KubernetesCache) ingressMatchesIngressClass(obj *networking_v1.Ingress) bool {
-	if !ingressclass.MatchesIngress(obj, kc.IngressClassName) {
-		// We didn't get a match so report this object is being ignored.
-		kc.WithField("name", obj.GetName()).
-			WithField("namespace", obj.GetNamespace()).
-			WithField("kind", k8s.KindOf(obj)).
-			WithField("ingress-class-annotation", annotation.IngressClass(obj)).
-			WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
-			WithField("target-ingress-class", kc.IngressClassName).
-			Debug("ignoring object with unmatched ingress class")
-		return false
-	}
-	return true
-}
-
-// httpProxyMatchesIngressClass returns true if the given HTTPProxy
-// belongs to the Ingress class that this cache is using.
-func (kc *KubernetesCache) matchesIngressClassAnnotation(obj *contour_api_v1.HTTPProxy) bool {
-	if !ingressclass.MatchesAnnotation(obj, kc.IngressClassName) {
-		kc.WithField("name", obj.GetName()).
-			WithField("namespace", obj.GetNamespace()).
-			WithField("kind", k8s.KindOf(obj)).
-			WithField("ingress-class", annotation.IngressClass(obj)).
-			WithField("target-ingress-class", kc.IngressClassName).
-			Debug("ignoring object with unmatched ingress class")
-		return false
-	}
-
-	return true
-}
-
 // matchesGateway returns true if the given Kubernetes object
 // belongs to the Gateway that this cache is using.
 func (kc *KubernetesCache) matchesGateway(obj *gatewayapi_v1alpha1.Gateway) bool {
@@ -208,20 +174,40 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.namespaces[obj.Name] = obj
 		return true
 	case *networking_v1.Ingress:
-		if kc.ingressMatchesIngressClass(obj) {
-			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
-			return true
+		if !ingressclass.MatchesIngress(obj, kc.IngressClassName) {
+			// We didn't get a match so report this object is being ignored.
+			kc.WithField("name", obj.GetName()).
+				WithField("namespace", obj.GetNamespace()).
+				WithField("kind", k8s.KindOf(obj)).
+				WithField("ingress-class-annotation", annotation.IngressClass(obj)).
+				WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
+				WithField("target-ingress-class", kc.IngressClassName).
+				Debug("ignoring Ingress with unmatched ingress class")
+			return false
 		}
+
+		kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
+		return true
 	case *networking_v1.IngressClass:
 		if kc.matchesIngressClass(obj) {
 			kc.ingressclass = obj
 			return true
 		}
 	case *contour_api_v1.HTTPProxy:
-		if kc.matchesIngressClassAnnotation(obj) {
-			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
-			return true
+		if !ingressclass.MatchesHTTPProxy(obj, kc.IngressClassName) {
+			// We didn't get a match so report this object is being ignored.
+			kc.WithField("name", obj.GetName()).
+				WithField("namespace", obj.GetNamespace()).
+				WithField("kind", k8s.KindOf(obj)).
+				WithField("ingress-class-annotation", annotation.IngressClass(obj)).
+				WithField("ingress-class-name", obj.Spec.IngressClassName).
+				WithField("target-ingress-class", kc.IngressClassName).
+				Debug("ignoring HTTPProxy with unmatched ingress class")
+			return false
 		}
+
+		kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
+		return true
 	case *contour_api_v1.TLSCertificateDelegation:
 		kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
 		return true

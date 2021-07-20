@@ -563,11 +563,35 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert httpproxy empty ingress annotation": {
+		"insert httpproxy empty ingress class": {
 			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert httpproxy incorrect ingress class": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					IngressClassName: "nginx",
+				},
+			},
+			want: false,
+		},
+		"insert httpproxy explicit ingress class": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					IngressClassName: "contour",
 				},
 			},
 			want: true,
@@ -616,6 +640,62 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Annotations: map[string]string{
 						"projectcontours.io/ingress.class": ingressclass.DefaultClassName,
 					},
+				},
+			},
+			want: true,
+		},
+		"insert httpproxy projectcontour.io ingress class annotation overrides kubernetes.io incorrect": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+						"kubernetes.io/ingress.class":     ingressclass.DefaultClassName,
+					},
+				},
+			},
+			want: false,
+		},
+		"insert httpproxy projectcontour.io ingress class annotation overrides kubernetes.io correct": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
+						"kubernetes.io/ingress.class":     "nginx",
+					},
+				},
+			},
+			want: true,
+		},
+		"insert httpproxy ingress class annotation overrides spec incorrect": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+					},
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					IngressClassName: "contour",
+				},
+			},
+			want: false,
+		},
+		"insert httpproxy ingress class annotation overrides spec correct": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
+					},
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					IngressClassName: "nginx",
 				},
 			},
 			want: true,

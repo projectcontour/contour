@@ -34,6 +34,10 @@ type HTTPProxySpec struct {
 	// possibly in another namespace.
 	// +optional
 	Includes []Include `json:"includes,omitempty"`
+	// IngressClassName optionally specifies the ingress class to use
+	// for this HTTPProxy.
+	// +optional
+	IngressClassName string `json:"ingressClassName,omitempty"`
 }
 
 // Include describes a set of policies that can be applied to an HTTPProxy in a namespace.

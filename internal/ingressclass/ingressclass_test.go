@@ -16,6 +16,7 @@ package ingressclass
 import (
 	"testing"
 
+	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/stretchr/testify/assert"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -107,86 +108,87 @@ func TestMatchesIngress(t *testing.T) {
 	}, "something"))
 }
 
-func TestMatchesAnnotation(t *testing.T) {
-	// This is a matrix test, we are testing the annotation parser
-	// across various annotations, with two options:
-	// ingress class is empty
-	// ingress class is not empty.
-	tests := map[string]struct {
-		fixture metav1.Object
-		// these are results for empty and "contour" ingress class
-		// respectively.
-		want []bool
-	}{
-		"ingress nginx kubernetes.io/ingress.class": {
-			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": "nginx",
-					},
-				},
+func TestMatchesHTTPProxy(t *testing.T) {
+	// No annotation, no spec field set, class not configured
+	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{}, ""))
+	// Annotation set to default, no spec field set, class not configured
+	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "contour",
 			},
-			want: []bool{false, false},
 		},
-		"ingress nginx projectcontour.io/ingress.class": {
-			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": "nginx",
-					},
-				},
+	}, ""))
+	// No annotation set, spec field set to default, class not configured
+	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "contour",
+		},
+	}, ""))
+	// Annotation set, no spec field set, class not configured
+	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
 			},
-			want: []bool{false, false},
 		},
-		"ingress contour kubernetes.io/ingress.class": {
-			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": DefaultClassName,
-					},
-				},
+	}, ""))
+	// No annotation set, spec field set, class not configured
+	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "aclass",
+		},
+	}, ""))
+	// No annotation, no spec field set, class configured
+	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{}, "something"))
+	// Annotation set, no spec field set, class configured
+	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "something",
 			},
-			want: []bool{true, true},
 		},
-		"ingress contour projectcontour.io/ingress.class": {
-			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incorrect",
-					Namespace: "default",
-					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": DefaultClassName,
-					},
-				},
+	}, "something"))
+	// No annotation set, spec field set, class configured
+	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "something",
+		},
+	}, "something"))
+	// Annotation set, no spec field set, class configured
+	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
 			},
-			want: []bool{true, true},
 		},
-		"no annotation": {
-			fixture: &networking_v1.Ingress{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "noannotation",
-					Namespace: "default",
-				},
+	}, "something"))
+	// No annotation set, spec field set, class configured
+	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "aclass",
+		},
+	}, "something"))
+	// Annotation set, spec field set, class configured
+	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "something",
 			},
-			want: []bool{true, false},
 		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			cases := []string{"", DefaultClassName}
-			for i := 0; i < len(cases); i++ {
-				got := MatchesAnnotation(tc.fixture, cases[i])
-				if tc.want[i] != got {
-					t.Errorf("matching %v against ingress class %q: expected %v, got %v", tc.fixture, cases[i], tc.want[i], got)
-				}
-			}
-
-		})
-	}
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "aclass",
+		},
+	}, "something"))
+	// Annotation set, spec field set, class configured
+	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
+			},
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "something",
+		},
+	}, "something"))
 }

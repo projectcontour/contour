@@ -95,7 +95,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		typed = o.DeepCopy()
 		gvr = networking_v1.SchemeGroupVersion.WithResource("ingresses")
 	case *contour_api_v1.HTTPProxy:
-		if !ingressclass.MatchesAnnotation(o, s.IngressClassName) {
+		if !ingressclass.MatchesHTTPProxy(o, s.IngressClassName) {
 			logNoMatch(s.Logger, o)
 			return
 		}
