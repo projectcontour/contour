@@ -161,7 +161,7 @@ spec:
                 properties:
                   caSecret:
                     description: Name or namespaced name of the Kubernetes secret
-                      be used to validate the certificate presented by the backend
+                      used to validate the certificate presented by the backend
                     type: string
                   subjectName:
                     description: Key which is expected to be present in the 'subjectAltName'
@@ -1190,7 +1190,7 @@ spec:
                             properties:
                               caSecret:
                                 description: Name or namespaced name of the Kubernetes
-                                  secret be used to validate the certificate presented
+                                  secret used to validate the certificate presented
                                   by the backend
                                 type: string
                               subjectName:
@@ -1447,7 +1447,7 @@ spec:
                           properties:
                             caSecret:
                               description: Name or namespaced name of the Kubernetes
-                                secret be used to validate the certificate presented
+                                secret used to validate the certificate presented
                                 by the backend
                               type: string
                             subjectName:
