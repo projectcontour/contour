@@ -19,8 +19,8 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -489,7 +489,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"kubernetes.io/ingress.class": ingressclass.DefaultClassName,
 					},
 				},
 			},
@@ -501,7 +501,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
 					},
 				},
 			},
@@ -514,7 +514,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 					Annotations: map[string]string{
 						"projectcontour.io/ingress.class": "nginx",
-						"kubernetes.io/ingress.class":     annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"kubernetes.io/ingress.class":     ingressclass.DefaultClassName,
 					},
 				},
 			},
@@ -526,7 +526,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
 						"kubernetes.io/ingress.class":     "nginx",
 					},
 				},
@@ -554,7 +554,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
 					},
 				},
 				Spec: networking_v1.IngressSpec{
@@ -602,7 +602,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"kubernetes.io/ingress.class": ingressclass.DefaultClassName,
 					},
 				},
 			},
@@ -614,7 +614,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"projectcontours.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"projectcontours.io/ingress.class": ingressclass.DefaultClassName,
 					},
 				},
 			},

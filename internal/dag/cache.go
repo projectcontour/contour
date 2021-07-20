@@ -21,8 +21,8 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s"
-	ingress_validation "github.com/projectcontour/contour/internal/validation/ingress"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -95,7 +95,7 @@ func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) 
 	// If no ingress class name set, we allow an ingress class that is named
 	// with the default Contour accepted name.
 	if kc.IngressClassName == "" {
-		return obj.Name == ingress_validation.DefaultClassName
+		return obj.Name == ingressclass.DefaultClassName
 	}
 	// Otherwise, the name of the ingress class must match what has been
 	// configured.
@@ -109,7 +109,7 @@ func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) 
 // the configured ingress class name via annotation or Spec.IngressClassName
 // and emits a log message if there is no match.
 func (kc *KubernetesCache) ingressMatchesIngressClass(obj *networking_v1.Ingress) bool {
-	if !ingress_validation.MatchesIngressClassName(obj, kc.IngressClassName) {
+	if !ingressclass.MatchesIngress(obj, kc.IngressClassName) {
 		// We didn't get a match so report this object is being ignored.
 		kc.WithField("name", obj.GetName()).
 			WithField("namespace", obj.GetNamespace()).
@@ -123,10 +123,10 @@ func (kc *KubernetesCache) ingressMatchesIngressClass(obj *networking_v1.Ingress
 	return true
 }
 
-// matchesIngressClassAnnotation returns true if the given Kubernetes object
+// httpProxyMatchesIngressClass returns true if the given HTTPProxy
 // belongs to the Ingress class that this cache is using.
-func (kc *KubernetesCache) matchesIngressClassAnnotation(obj metav1.Object) bool {
-	if !annotation.MatchesIngressClass(obj, kc.IngressClassName) {
+func (kc *KubernetesCache) matchesIngressClassAnnotation(obj *contour_api_v1.HTTPProxy) bool {
+	if !ingressclass.MatchesAnnotation(obj, kc.IngressClassName) {
 		kc.WithField("name", obj.GetName()).
 			WithField("namespace", obj.GetNamespace()).
 			WithField("kind", k8s.KindOf(obj)).

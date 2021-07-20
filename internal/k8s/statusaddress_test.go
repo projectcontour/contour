@@ -17,8 +17,8 @@ import (
 	"testing"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -261,8 +261,8 @@ func TestStatusAddressUpdater(t *testing.T) {
 			status:           ipLBStatus,
 			ingressClassName: "",
 			gvr:              ingressGVR,
-			preop:            simpleIngressGenerator(objName, annotation.DEFAULT_INGRESS_CLASS_NAME, "", emptyLBStatus),
-			postop:           simpleIngressGenerator(objName, annotation.DEFAULT_INGRESS_CLASS_NAME, "", ipLBStatus),
+			preop:            simpleIngressGenerator(objName, ingressclass.DefaultClassName, "", emptyLBStatus),
+			postop:           simpleIngressGenerator(objName, ingressclass.DefaultClassName, "", ipLBStatus),
 		},
 		"ingress: not-configured ingressclass, spec field set to default, should update": {
 			status:           ipLBStatus,
