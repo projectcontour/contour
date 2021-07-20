@@ -34,8 +34,10 @@ type HTTPProxySpec struct {
 	// possibly in another namespace.
 	// +optional
 	Includes []Include `json:"includes,omitempty"`
-	// IngressClassName optionally specifies the ingress class to use
-	// for this HTTPProxy.
+	// IngressClassName optionally specifies the ingress class to use for this
+	// HTTPProxy. This replaces the deprecated `kubernetes.io/ingress.class`
+	// annotation. For backwards compatibility, when that annotation is set, it
+	// is given precedence over this field.
 	// +optional
 	IngressClassName string `json:"ingressClassName,omitempty"`
 }

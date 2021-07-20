@@ -4,8 +4,7 @@
 
 Annotations are used in Ingress Controllers to configure features that are not covered by the Kubernetes Ingress API.
 
-Some of the features that have been historically configured via annotations are supported as first-class features in Contour's [HTTPProxy API][15], which provides a more robust configuration interface over
-annotations.
+Some of the features that have been historically configured via annotations are supported as first-class features in Contour's [HTTPProxy API][15], which provides a more robust configuration interface over annotations.
 
 However, Contour still supports a number of annotations on the Ingress resources.
 
@@ -31,6 +30,8 @@ If you do this, the behavior is as follows:
 * If the annotation matches the value that you passed to `--ingress-class-name` flag, Contour will serve the Ingress.
 
 This same logic applies for these annotations on HTTPProxy objects.
+
+_Note: Both `Ingress` and `HTTPProxy` now have an `IngressClassName` field in their spec. Going forward this is the preferred way to specify an ingress class, rather than using an annotation. If both the annotation and the spec field are specified on an object, the annotation takes preference for backwards compatibility._
 
 ### Other annotations 
 

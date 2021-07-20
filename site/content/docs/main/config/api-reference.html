@@ -157,8 +157,10 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>IngressClassName optionally specifies the ingress class to use
-for this HTTPProxy.</p>
+<p>IngressClassName optionally specifies the ingress class to use for this
+HTTPProxy. This replaces the deprecated <code>kubernetes.io/ingress.class</code>
+annotation. For backwards compatibility, when that annotation is set, it
+is given precedence over this field.</p>
 </td>
 </tr>
 </table>
@@ -1046,8 +1048,10 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>IngressClassName optionally specifies the ingress class to use
-for this HTTPProxy.</p>
+<p>IngressClassName optionally specifies the ingress class to use for this
+HTTPProxy. This replaces the deprecated <code>kubernetes.io/ingress.class</code>
+annotation. For backwards compatibility, when that annotation is set, it
+is given precedence over this field.</p>
 </td>
 </tr>
 </tbody>
