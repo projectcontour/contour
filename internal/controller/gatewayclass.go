@@ -23,12 +23,12 @@ import (
 
 	"github.com/sirupsen/logrus"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
@@ -58,35 +58,38 @@ func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceE
 	}
 
 	// Only enqueue GatewayClass objects that match name.
-	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha1.GatewayClass{}}, r.enqueueRequestForGatewayClass(name)); err != nil {
+	if err := c.Watch(
+		&source.Kind{Type: &gatewayapi_v1alpha1.GatewayClass{}},
+		&handler.EnqueueRequestForObject{},
+		predicate.NewPredicateFuncs(r.hasMatchingController),
+	); err != nil {
 		return nil, err
 	}
 
 	return c, nil
 }
 
-// enqueueRequestForGatewayClass returns an event handler that maps events to
-// GatewayClass objects with a controller field that matches name.
-func (r *gatewayClassReconciler) enqueueRequestForGatewayClass(name string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
-		gc, ok := a.(*gatewayapi_v1alpha1.GatewayClass)
-		if !ok {
-			r.log.WithField("name", a.GetName()).Info("invalid object, bypassing reconciliation.")
-			return []reconcile.Request{}
-		}
-		if gc.Spec.Controller == name {
-			r.log.WithField("name", gc.Name).Info("queueing gatewayclass")
-			return []reconcile.Request{
-				{
-					NamespacedName: types.NamespacedName{
-						Name: gc.Name,
-					},
-				},
-			}
-		}
-		r.log.WithField("name", gc.Name).Info("controller is not ", name, "; bypassing reconciliation")
-		return []reconcile.Request{}
+// hasMatchingController returns true if the provided object is a GatewayClass
+// with a Spec.Controller string matching this Contour's controller string,
+// or false otherwise.
+func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
+	log := r.log.WithFields(logrus.Fields{
+		"name": obj.GetName(),
 	})
+
+	gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
+	if !ok {
+		log.Info("invalid object, bypassing reconciliation.")
+		return false
+	}
+
+	if gc.Spec.Controller == r.controller {
+		log.Info("enqueueing gatewayclass")
+		return true
+	}
+
+	log.Infof("controller is not %s; bypassing reconciliation", r.controller)
+	return false
 }
 
 func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

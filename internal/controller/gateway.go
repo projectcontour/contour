@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
@@ -54,40 +55,44 @@ func NewGatewayController(mgr manager.Manager, eventHandler cache.ResourceEventH
 	if err != nil {
 		return nil, err
 	}
-	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha1.Gateway{}}, r.enqueueRequestForOwnedGateway()); err != nil {
+
+	if err := c.Watch(
+		&source.Kind{Type: &gatewayapi_v1alpha1.Gateway{}},
+		&handler.EnqueueRequestForObject{},
+		predicate.NewPredicateFuncs(r.hasMatchingController),
+	); err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-// enqueueRequestForOwnedGateway returns an event handler that maps events to
-// Gateway objects that reference a GatewayClass owned by Contour.
-func (r *gatewayReconciler) enqueueRequestForOwnedGateway() handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
-		gw, ok := a.(*gatewayapi_v1alpha1.Gateway)
-		if !ok {
-			r.log.WithField("name", a.GetName()).WithField("namespace", a.GetNamespace()).
-				Info("invalid object, bypassing reconciliation.")
-			return []reconcile.Request{}
-		}
-		if matches, err := r.hasContourOwnedClass(gw); matches {
-			if err != nil {
-				r.log.WithField("namespace", gw.Namespace).WithField("name", gw.Name).Error(err)
-				return []reconcile.Request{}
-			}
-			return []reconcile.Request{
-				{
-					NamespacedName: types.NamespacedName{
-						Namespace: gw.Namespace,
-						Name:      gw.Name,
-					},
-				},
-			}
-		}
-		r.log.WithField("name", a.GetName()).WithField("namespace", a.GetNamespace()).
-			Info("configured controllerName doesn't match an existing GatewayClass")
-		return []reconcile.Request{}
+// hasMatchingController returns true if the provided object is a Gateway
+// using a GatewayClass with a Spec.Controller string matching this Contour's
+// controller string, or false otherwise.
+func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
+	log := r.log.WithFields(logrus.Fields{
+		"namespace": obj.GetNamespace(),
+		"name":      obj.GetName(),
 	})
+
+	gw, ok := obj.(*gatewayapi_v1alpha1.Gateway)
+	if !ok {
+		log.Info("invalid object, bypassing reconciliation.")
+		return false
+	}
+
+	matches, err := r.hasContourOwnedClass(gw)
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+	if matches {
+		log.Info("enqueueing gateway")
+		return true
+	}
+
+	log.Info("configured controllerName doesn't match an existing GatewayClass")
+	return false
 }
 
 // hasContourOwnedClass returns true if the class referenced by gateway exists
