@@ -177,6 +177,8 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		}
 
 		// TODO(jpeach): Add ExternalName support in https://github.com/projectcontour/contour/issues/2875.
+		// TODO(youngnick): If ExternalName support is added, we must pass down the EnableExternalNameService bool
+		// and check it first.
 		if svc.Spec.ExternalName != "" {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeServiceError, "UnsupportedServiceType",
 				"Service %q is of unsupported type %q.", svcName, corev1.ServiceTypeExternalName)

@@ -47,6 +47,11 @@ type GatewayAPIProcessor struct {
 
 	dag    *DAG
 	source *KubernetesCache
+
+	// EnableExternalNameService allows processing of ExternalNameServices
+	// This is normally disabled for security reasons.
+	// See https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for details.
+	EnableExternalNameService bool
 }
 
 // matchConditions holds match rules.
@@ -744,9 +749,9 @@ func (p *GatewayAPIProcessor) validateForwardTo(serviceName *string, port *gatew
 	meta := types.NamespacedName{Name: *serviceName, Namespace: namespace}
 
 	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
-	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*port)), p.source)
+	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*port)), p.source, p.EnableExternalNameService)
 	if err != nil {
-		return nil, fmt.Errorf("service %q does not exist", meta.Name)
+		return nil, fmt.Errorf("service %q is invalid: %s", meta.Name, err)
 	}
 
 	return service, nil

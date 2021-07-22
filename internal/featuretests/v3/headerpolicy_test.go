@@ -30,7 +30,10 @@ import (
 )
 
 func TestHeaderPolicy_ReplaceHeader_HTTProxy(t *testing.T) {
-	rh, c, done := setup(t)
+	// Enable ExternalName processing here because
+	// we need to check that host rewrites work in combination
+	// with ExternalName.
+	rh, c, done := setup(t, enableExternalNameService(t))
 	defer done()
 
 	rh.OnAdd(fixture.NewService("svc1").

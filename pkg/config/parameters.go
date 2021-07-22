@@ -536,6 +536,11 @@ type Parameters struct {
 	// See: https://github.com/projectcontour/contour/issues/3221
 	DisableAllowChunkedLength bool `yaml:"disableAllowChunkedLength,omitempty"`
 
+	// EnableExternalNameService allows processing of ExternalNameServices
+	// Defaults to disabled for security reasons.
+	// TODO(youngnick): put a link to the issue and CVE here.
+	EnableExternalNameService bool `yaml:"enableExternalNameService,omitempty"`
+
 	// LeaderElection contains leader election parameters.
 	LeaderElection LeaderElectionParameters `yaml:"leaderelection,omitempty"`
 

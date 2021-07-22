@@ -714,29 +714,35 @@ func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallback
 		responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, ctx.Config.Policy.ResponseHeadersPolicy.Remove...)
 	}
 
+	log.Debugf("EnableExternalNameService is set to %t", ctx.Config.EnableExternalNameService)
 	// Get the appropriate DAG processors.
 	dagProcessors := []dag.Processor{
 		&dag.IngressProcessor{
-			FieldLogger:       log.WithField("context", "IngressProcessor"),
-			ClientCertificate: clientCert,
+			EnableExternalNameService: ctx.Config.EnableExternalNameService,
+			FieldLogger:               log.WithField("context", "IngressProcessor"),
+			ClientCertificate:         clientCert,
 		},
 		&dag.ExtensionServiceProcessor{
+			// Note that ExtensionService does not support ExternalName, if it does get added,
+			// need to bring EnableExternalNameService in here too.
 			FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
 			ClientCertificate: clientCert,
 		},
 		&dag.HTTPProxyProcessor{
-			DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
-			FallbackCertificate:   fallbackCert,
-			DNSLookupFamily:       ctx.Config.Cluster.DNSLookupFamily,
-			ClientCertificate:     clientCert,
-			RequestHeadersPolicy:  &requestHeadersPolicy,
-			ResponseHeadersPolicy: &responseHeadersPolicy,
+			EnableExternalNameService: ctx.Config.EnableExternalNameService,
+			DisablePermitInsecure:     ctx.Config.DisablePermitInsecure,
+			FallbackCertificate:       fallbackCert,
+			DNSLookupFamily:           ctx.Config.Cluster.DNSLookupFamily,
+			ClientCertificate:         clientCert,
+			RequestHeadersPolicy:      &requestHeadersPolicy,
+			ResponseHeadersPolicy:     &responseHeadersPolicy,
 		},
 	}
 
 	if ctx.Config.GatewayConfig != nil && clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-			FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
+			EnableExternalNameService: ctx.Config.EnableExternalNameService,
+			FieldLogger:               log.WithField("context", "GatewayAPIProcessor"),
 		})
 	}
 
