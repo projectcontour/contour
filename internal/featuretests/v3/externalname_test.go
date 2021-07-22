@@ -16,7 +16,10 @@ package v3
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/featuretests"
+	"github.com/sirupsen/logrus"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
@@ -37,7 +40,7 @@ import (
 // Assert that services of type v1.ServiceTypeExternalName can be
 // referenced by an Ingress, or HTTPProxy document.
 func TestExternalNameService(t *testing.T) {
-	rh, c, done := setup(t)
+	rh, c, done := setup(t, enableExternalNameService(t))
 	defer done()
 
 	s1 := fixture.NewService("kuard").
@@ -316,4 +319,26 @@ func TestExternalNameService(t *testing.T) {
 			),
 		),
 	})
+}
+
+func enableExternalNameService(t *testing.T) func(eh *contour.EventHandler) {
+	return func(eh *contour.EventHandler) {
+
+		log := fixture.NewTestLogger(t)
+		log.SetLevel(logrus.DebugLevel)
+
+		eh.Builder.Processors = []dag.Processor{
+			&dag.IngressProcessor{
+				EnableExternalNameService: true,
+				FieldLogger:               log.WithField("context", "IngressProcessor"),
+			},
+			&dag.HTTPProxyProcessor{
+				EnableExternalNameService: true,
+			},
+			&dag.ExtensionServiceProcessor{
+				FieldLogger: log.WithField("context", "ExtensionServiceProcessor"),
+			},
+			&dag.ListenerProcessor{},
+		}
+	}
 }
