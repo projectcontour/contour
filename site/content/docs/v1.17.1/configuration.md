@@ -84,6 +84,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | server | ServerConfig |  | The [server configuration](#server-configuration) for `contour serve` command. |
 | gateway | GatewayConfig |  | The [gateway-api Gateway configuration](#gateway-configuration). |
 | rateLimitService | RateLimitServiceConfig | | The [rate limit service configuration](#rate-limit-service-configuration). |
+| enableExternalNameService | boolean | `false` | Enable ExternalName Service processing. Enabling this has security implications. Please see the [advisory](https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc) for more details. |
 
 ### TLS Configuration
 
