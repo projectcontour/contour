@@ -311,14 +311,11 @@ func httpProxyValid(proxy *contourv1.HTTPProxy) bool {
 	}
 
 	cond := proxy.Status.GetConditionFor("Valid")
-	if cond.Status == "True" {
-		return true
-	}
-	return false
+	return cond.Status == "True"
 
 }
 
-// httpProxyErrors provides a pretty summary of any Errors on the HTTPProxy Valid conditon.
+// httpProxyErrors provides a pretty summary of any Errors on the HTTPProxy Valid condition.
 // If there are no errors, the return value will be empty.
 func httpProxyErrors(proxy *contourv1.HTTPProxy) string {
 	cond := proxy.Status.GetConditionFor("Valid")

@@ -140,12 +140,12 @@ func TestBuilderLookupService(t *testing.T) {
 		"When ExternalName Services are disabled an error is returned": {
 			NamespacedName: types.NamespacedName{Name: "externalnamevalid", Namespace: "default"},
 			port:           intstr.FromString("80"),
-			wantErr:        errors.New(`default/externalnamevalid is an ExternalName service, these are not currently enabled. See the config.enableExternalNameService config file setting.`),
+			wantErr:        errors.New(`default/externalnamevalid is an ExternalName service, these are not currently enabled. See the config.enableExternalNameService config file setting`),
 		},
 		"When ExternalName Services are enabled but a localhost ExternalName is used an error is returned": {
 			NamespacedName:        types.NamespacedName{Name: "externalnamelocalhost", Namespace: "default"},
 			port:                  intstr.FromString("80"),
-			wantErr:               errors.New(`default/externalnamelocalhost is an ExternalName service that points to localhost, this is not allowed.`),
+			wantErr:               errors.New(`default/externalnamelocalhost is an ExternalName service that points to localhost, this is not allowed`),
 			enableExternalNameSvc: true,
 		},
 	}
