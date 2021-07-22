@@ -93,7 +93,7 @@ func validateExternalName(svc *v1.Service, enableExternalNameSvc bool) error {
 
 	// If ExternalNames are disabled, then we don't want to add this to the DAG.
 	if !enableExternalNameSvc {
-		return fmt.Errorf("%s/%s is an ExternalName service, these are not currently enabled. See the config.enableExternalNameService config file setting.", svc.Namespace, svc.Name)
+		return fmt.Errorf("%s/%s is an ExternalName service, these are not currently enabled. See the config.enableExternalNameService config file setting", svc.Namespace, svc.Name)
 	}
 
 	// Check against a list of known localhost names, using a map to approximate a set.
@@ -109,7 +109,7 @@ func validateExternalName(svc *v1.Service, enableExternalNameSvc bool) error {
 
 	_, localhost := localhostNames[en]
 	if localhost {
-		return fmt.Errorf("%s/%s is an ExternalName service that points to localhost, this is not allowed.", svc.Namespace, svc.Name)
+		return fmt.Errorf("%s/%s is an ExternalName service that points to localhost, this is not allowed", svc.Namespace, svc.Name)
 	}
 
 	return nil
