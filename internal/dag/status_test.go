@@ -1758,7 +1758,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyTCPInvalidMissingService},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPInvalidMissingService.Name, Namespace: proxyTCPInvalidMissingService.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeTCPProxyError, "UnresolvedServiceRef", `Spec.TCPProxy unresolved service reference: service "roots/not-found" not found`),
+				WithError(contour_api_v1.ConditionTypeTCPProxyError, "ServiceUnresolvedReference", `Spec.TCPProxy unresolved service reference: service "roots/not-found" not found`),
 		},
 	})
 
@@ -1787,7 +1787,7 @@ func TestDAGStatus(t *testing.T) {
 		objs: []interface{}{proxyTCPInvalidPortNotMatched, fixture.ServiceRootsKuard},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
 			{Name: proxyTCPInvalidPortNotMatched.Name, Namespace: proxyTCPInvalidPortNotMatched.Namespace}: fixture.NewValidCondition().
-				WithError(contour_api_v1.ConditionTypeTCPProxyError, "UnresolvedServiceRef", `Spec.TCPProxy unresolved service reference: port "9999" on service "roots/kuard" not matched`),
+				WithError(contour_api_v1.ConditionTypeTCPProxyError, "ServiceUnresolvedReference", `Spec.TCPProxy unresolved service reference: port "9999" on service "roots/kuard" not matched`),
 		},
 	})
 
@@ -2931,7 +2931,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Type:    string(status.ConditionResolvedRefs),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonDegraded),
-					Message: "service \"invalid-one\" does not exist, service \"invalid-two\" does not exist",
+					Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 				},
 				gatewayapi_v1alpha1.ConditionRouteAdmitted: {
 					Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
@@ -3661,7 +3661,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						Type:    string(status.ConditionResolvedRefs),
 						Status:  contour_api_v1.ConditionFalse,
 						Reason:  string(status.ReasonDegraded),
-						Message: "service \"invalid-one\" does not exist, service \"invalid-two\" does not exist",
+						Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 					},
 					gatewayapi_v1alpha1.ConditionRouteAdmitted: {
 						Type:    string(gatewayapi_v1alpha1.ConditionRouteAdmitted),

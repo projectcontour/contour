@@ -40,15 +40,53 @@ func TestBuilderLookupService(t *testing.T) {
 			}},
 		},
 	}
+
+	externalNameValid := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "externalnamevalid",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Type:         v1.ServiceTypeExternalName,
+			ExternalName: "external.projectcontour.io",
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(80),
+			}},
+		},
+	}
+
+	externalNameLocalhost := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "externalnamelocalhost",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Type:         v1.ServiceTypeExternalName,
+			ExternalName: "localhost",
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       80,
+				TargetPort: intstr.FromInt(80),
+			}},
+		},
+	}
+
 	services := map[types.NamespacedName]*v1.Service{
-		{Name: "service1", Namespace: "default"}: s1,
+		{Name: "service1", Namespace: "default"}:              s1,
+		{Name: "externalnamevalid", Namespace: "default"}:     externalNameValid,
+		{Name: "externalnamelocalhost", Namespace: "default"}: externalNameLocalhost,
 	}
 
 	tests := map[string]struct {
 		types.NamespacedName
-		port    intstr.IntOrString
-		want    *Service
-		wantErr error
+		port                  intstr.IntOrString
+		enableExternalNameSvc bool
+		want                  *Service
+		wantErr               error
 	}{
 		"lookup service by port number": {
 			NamespacedName: types.NamespacedName{Name: "service1", Namespace: "default"},
@@ -80,6 +118,36 @@ func TestBuilderLookupService(t *testing.T) {
 			port:           intstr.FromString("9999"),
 			wantErr:        errors.New(`port "9999" on service "default/service1" not matched`),
 		},
+		"When ExternalName Services are not disabled no error is returned": {
+			NamespacedName: types.NamespacedName{Name: "externalnamevalid", Namespace: "default"},
+			port:           intstr.FromString("80"),
+			want: &Service{
+				Weighted: WeightedService{
+					Weight:           1,
+					ServiceName:      "externalnamevalid",
+					ServiceNamespace: "default",
+					ServicePort: v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(80),
+					},
+				},
+				ExternalName: "external.projectcontour.io",
+			},
+			enableExternalNameSvc: true,
+		},
+		"When ExternalName Services are disabled an error is returned": {
+			NamespacedName: types.NamespacedName{Name: "externalnamevalid", Namespace: "default"},
+			port:           intstr.FromString("80"),
+			wantErr:        errors.New(`default/externalnamevalid is an ExternalName service, these are not currently enabled. See the config.enableExternalNameService config file setting`),
+		},
+		"When ExternalName Services are enabled but a localhost ExternalName is used an error is returned": {
+			NamespacedName:        types.NamespacedName{Name: "externalnamelocalhost", Namespace: "default"},
+			port:                  intstr.FromString("80"),
+			wantErr:               errors.New(`default/externalnamelocalhost is an ExternalName service that points to localhost, this is not allowed`),
+			enableExternalNameSvc: true,
+		},
 	}
 
 	for name, tc := range tests {
@@ -93,7 +161,7 @@ func TestBuilderLookupService(t *testing.T) {
 
 			var dag DAG
 
-			got, gotErr := dag.EnsureService(tc.NamespacedName, tc.port, &b.Source)
+			got, gotErr := dag.EnsureService(tc.NamespacedName, tc.port, &b.Source, tc.enableExternalNameSvc)
 			assert.Equal(t, tc.want, got)
 			assert.Equal(t, tc.wantErr, gotErr)
 		})

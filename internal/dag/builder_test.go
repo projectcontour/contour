@@ -6536,6 +6536,25 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	ingressExternalNameService := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "externalname",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: *backendv1(s14.GetName(), intstr.FromInt(80)),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
 	proxyExternalNameService := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
@@ -6582,6 +6601,7 @@ func TestDAGInsert(t *testing.T) {
 	tests := map[string]struct {
 		objs                         []interface{}
 		disablePermitInsecure        bool
+		enableExternalNameSvc        bool
 		fallbackCertificateName      string
 		fallbackCertificateNamespace string
 		want                         []Vertex
@@ -8980,11 +9000,48 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert ingress with externalName service": {
+			objs: []interface{}{
+				ingressExternalNameService,
+				s14,
+			},
+			enableExternalNameSvc: true,
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									ExternalName: "externalservice.io",
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s14.Name,
+										ServiceNamespace: s14.Namespace,
+										ServicePort:      s14.Spec.Ports[0],
+									},
+								},
+							}},
+						}),
+					),
+				},
+			),
+		},
+		"insert ingress with externalName service, but externalName services disabled": {
+			objs: []interface{}{
+				ingressExternalNameService,
+				s14,
+			},
+			enableExternalNameSvc: false,
+			want:                  listeners(),
+		},
 		"insert proxy with externalName service": {
 			objs: []interface{}{
 				proxyExternalNameService,
 				s14,
 			},
+			enableExternalNameSvc: true,
 			want: listeners(
 				&Listener{
 					Port: 80,
@@ -9014,6 +9071,7 @@ func TestDAGInsert(t *testing.T) {
 				s14,
 				sec1,
 			},
+			enableExternalNameSvc: true,
 			want: listeners(
 				&Listener{
 					Port: 443,
@@ -9073,6 +9131,7 @@ func TestDAGInsert(t *testing.T) {
 				proxyReplaceHostHeaderRoute,
 				s14,
 			},
+			enableExternalNameSvc: true,
 			want: listeners(
 				&Listener{
 					Port: 80,
@@ -9111,7 +9170,8 @@ func TestDAGInsert(t *testing.T) {
 				proxyReplaceHostHeaderService,
 				s14,
 			},
-			want: listeners(),
+			enableExternalNameSvc: true,
+			want:                  listeners(),
 		},
 		"insert proxy with response header policy - route - host header": {
 			objs: []interface{}{
@@ -9754,10 +9814,12 @@ func TestDAGInsert(t *testing.T) {
 				},
 				Processors: []Processor{
 					&IngressProcessor{
-						FieldLogger: fixture.NewTestLogger(t),
+						FieldLogger:               fixture.NewTestLogger(t),
+						EnableExternalNameService: tc.enableExternalNameSvc,
 					},
 					&HTTPProxyProcessor{
-						DisablePermitInsecure: tc.disablePermitInsecure,
+						EnableExternalNameService: tc.enableExternalNameSvc,
+						DisablePermitInsecure:     tc.disablePermitInsecure,
 						FallbackCertificate: &types.NamespacedName{
 							Name:      tc.fallbackCertificateName,
 							Namespace: tc.fallbackCertificateNamespace,
