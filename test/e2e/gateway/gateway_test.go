@@ -136,7 +136,7 @@ var _ = Describe("Gateway API", func() {
 							Routes: gatewayv1alpha1.RouteBindingSelector{
 								Kind: "HTTPRoute",
 								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectSame),
 								},
 								Selector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{"app": "filter"},
@@ -181,7 +181,7 @@ var _ = Describe("Gateway API", func() {
 							Routes: gatewayv1alpha1.RouteBindingSelector{
 								Kind: "HTTPRoute",
 								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectSame),
 								},
 								Selector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{"type": "insecure"},
@@ -201,7 +201,7 @@ var _ = Describe("Gateway API", func() {
 							Routes: gatewayv1alpha1.RouteBindingSelector{
 								Kind: "HTTPRoute",
 								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectSame),
 								},
 								Selector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{"type": "secure"},
@@ -227,32 +227,6 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-httproute-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
 	})
 
-	Describe("TLSRoute: Gateway", func() {
-		gatewayClass := getGatewayClass()
-		gw := &gatewayv1alpha1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "tls",
-			},
-			Spec: gatewayv1alpha1.GatewaySpec{
-				GatewayClassName: gatewayClass.Name,
-				Listeners: []gatewayv1alpha1.Listener{{
-					Protocol: gatewayv1alpha1.TLSProtocolType,
-					TLS: &gatewayv1alpha1.GatewayTLSConfig{
-						Mode: tlsModeTypePtr(gatewayv1alpha1.TLSModePassthrough),
-					},
-					Port: gatewayv1alpha1.PortNumber(443),
-					Routes: gatewayv1alpha1.RouteBindingSelector{
-						Kind: "TLSRoute",
-						Namespaces: &gatewayv1alpha1.RouteNamespaces{
-							From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
-						},
-					},
-				}},
-			},
-		}
-		f.NamespacedTest("gateway-tlsroute", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
-	})
-
 	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
 		gatewayClass := getGatewayClass()
 		gw := &gatewayv1alpha1.Gateway{
@@ -271,7 +245,7 @@ var _ = Describe("Gateway API", func() {
 						Routes: gatewayv1alpha1.RouteBindingSelector{
 							Kind: "TLSRoute",
 							Namespaces: &gatewayv1alpha1.RouteNamespaces{
-								From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+								From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectSame),
 							},
 						},
 					},
@@ -283,10 +257,11 @@ var _ = Describe("Gateway API", func() {
 
 	Describe("TLSRoute Gateway: Mode: Terminate", func() {
 
-		testWithTLSGateway := func(hostname string, gatewayClass *gatewayv1alpha1.GatewayClass, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+		testWithTLSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+			gatewayClass := getGatewayClass()
 			gw := &gatewayv1alpha1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "tls-passthrough",
+					Name: "tls-terminate",
 				},
 				Spec: gatewayv1alpha1.GatewaySpec{
 					GatewayClassName: gatewayClass.Name,
@@ -305,7 +280,7 @@ var _ = Describe("Gateway API", func() {
 							Routes: gatewayv1alpha1.RouteBindingSelector{
 								Kind: "TLSRoute",
 								Namespaces: &gatewayv1alpha1.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectAll),
+									From: routeSelectTypePtr(gatewayv1alpha1.RouteSelectSame),
 								},
 							},
 						},
@@ -323,9 +298,7 @@ var _ = Describe("Gateway API", func() {
 			})
 		}
 
-		gatewayClass := getGatewayClass()
-
-		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", gatewayClass, testTLSRouteTerminate))
+		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
 	})
 })
 
