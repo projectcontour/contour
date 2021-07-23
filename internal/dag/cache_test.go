@@ -19,8 +19,8 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -489,7 +489,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"kubernetes.io/ingress.class": ingressclass.DefaultClassName,
 					},
 				},
 			},
@@ -501,7 +501,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "explicit",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
 					},
 				},
 			},
@@ -514,7 +514,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Namespace: "default",
 					Annotations: map[string]string{
 						"projectcontour.io/ingress.class": "nginx",
-						"kubernetes.io/ingress.class":     annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"kubernetes.io/ingress.class":     ingressclass.DefaultClassName,
 					},
 				},
 			},
@@ -526,7 +526,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
 						"kubernetes.io/ingress.class":     "nginx",
 					},
 				},
@@ -554,7 +554,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "override",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"projectcontour.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
 					},
 				},
 				Spec: networking_v1.IngressSpec{
@@ -563,11 +563,35 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert httpproxy empty ingress annotation": {
+		"insert httpproxy empty ingress class": {
 			obj: &contour_api_v1.HTTPProxy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "kuard",
 					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"insert httpproxy incorrect ingress class": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					IngressClassName: "nginx",
+				},
+			},
+			want: false,
+		},
+		"insert httpproxy explicit ingress class": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "simple",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					IngressClassName: "contour",
 				},
 			},
 			want: true,
@@ -602,7 +626,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"kubernetes.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"kubernetes.io/ingress.class": ingressclass.DefaultClassName,
 					},
 				},
 			},
@@ -614,8 +638,64 @@ func TestKubernetesCacheInsert(t *testing.T) {
 					Name:      "kuard",
 					Namespace: "default",
 					Annotations: map[string]string{
-						"projectcontours.io/ingress.class": annotation.DEFAULT_INGRESS_CLASS_NAME,
+						"projectcontours.io/ingress.class": ingressclass.DefaultClassName,
 					},
+				},
+			},
+			want: true,
+		},
+		"insert httpproxy projectcontour.io ingress class annotation overrides kubernetes.io incorrect": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+						"kubernetes.io/ingress.class":     ingressclass.DefaultClassName,
+					},
+				},
+			},
+			want: false,
+		},
+		"insert httpproxy projectcontour.io ingress class annotation overrides kubernetes.io correct": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
+						"kubernetes.io/ingress.class":     "nginx",
+					},
+				},
+			},
+			want: true,
+		},
+		"insert httpproxy ingress class annotation overrides spec incorrect": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": "nginx",
+					},
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					IngressClassName: "contour",
+				},
+			},
+			want: false,
+		},
+		"insert httpproxy ingress class annotation overrides spec correct": {
+			obj: &contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "override",
+					Namespace: "default",
+					Annotations: map[string]string{
+						"projectcontour.io/ingress.class": ingressclass.DefaultClassName,
+					},
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					IngressClassName: "nginx",
 				},
 			},
 			want: true,
