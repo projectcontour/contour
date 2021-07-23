@@ -129,6 +129,44 @@ If you plan to submit a pull request for anything more than a typo or obvious bu
 
 Depending on the size of the feature you may be expected to first write a design proposal. Follow the [Proposal Process](https://github.com/projectcontour/community/blob/master/GOVERNANCE.md#proposal-process) documented in Contour's Governance.
 
+### Issue and PR Triage
+
+#### Project Board
+
+In addition to maintaining the project repositories, project maintainers are responsible for maintaining the [project tracking board](https://github.com/orgs/projectcontour/projects/2).
+This board is intended to organize work for the team as well as provide visibility into the status and priority of tracks of work, specific Issues, and PRs.
+The board is used in conjunction with Issue and PR labels.
+
+Priority of cards on the board flows from left to right, with the *leftmost* column representing what is currently being worked on.
+Within a column, priority flows from top to bottom, with the *topmost* cards having the highest priority.
+
+The leftmost column should represent what is planned for the upcoming release.
+The "Investigating" column contains longer term items that may need more information, feedback from Issue reporters, etc.
+Further columns represent decreasing priority, with "Prioritized Backlog" containing cards that are coming soon, all the way to the "Unprioritized" column which contains items currently not yet sorted.
+
+**Notes for maintainers and contributors**
+- If you are looking for work to pick up:
+  - Look to the leftmost columns of the project board
+  - *New contributors* can use [this shortcut link](https://github.com/projectcontour/contour/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22) to find good beginner Contour issues to work on and [this shortcut link](https://github.com/projectcontour/contour-operator/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22) to find Operator issues
+- When a new Issue or PR is added, add it to the project board and make a best judgement on relative priority so we have a starting place in triage
+- When moving items between columns, please add a comment to the Issue or PR detailing why so we have context in triage sessions
+
+#### Community Meeting Triage
+
+The weekly Contour [community meeting](https://projectcontour.io/community/) provides some time for the maintainer team and community to collaborate on Issue and PR triage.
+
+Community members can add links to specific items they would like to discuss to the [meeting notes](https://hackmd.io/84Xbl4WBTpm7OBhaOAsSiw).
+This time will be used for clarification, potential to bump priority in the queue of work items for the team, and the ability for contributors to provide more context to their contributions.
+
+In addition, the meeting will be used to go over untriaged issues, longer-term items, and current progress on items in-flight as needed.
+
+**Procedural notes**
+- Once an issue has been discussed, remove and add the appropriate labels and pull the item into the correct column
+- After triage, Issues and PRs that are actively being worked on should be assigned to someone. This could be:
+  - the person working on the issue or PR or
+  - a maintainer who is shepherding a new contributor or large PR
+- Issues and PRs that are not being actively worked on should have comments updated with the current context, then be unassigned
+
 ### Commit message and PR guidelines
 
 - Have a short subject on the first line and a body. The body can be empty.
