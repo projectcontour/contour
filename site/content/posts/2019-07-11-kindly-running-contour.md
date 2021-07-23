@@ -13,17 +13,21 @@ slug: kindly-running-contour
 
 [kind][1] is a tool for running local Kubernetes clusters using Docker container “nodes.” Primarily designed for testing Kubernetes 1.11 or later, kind is initially targeting the upstream Kubernetes conformance tests, which are run to verify if a cluster meets standard expectations. It is also an excellent tool for creating a Kubernetes cluster locally on many platforms (Linux, macOS, or Windows), especially since it can create multi-node clusters quickly and reliably.
 
-This blog post demonstrates how to install kind, create a cluster, deploy Contour, and deploy a sample application, all locally on your machine which enables running applications locally the same way they are deployed to production. 
+This blog post demonstrates how to install kind, create a cluster, deploy Contour, and deploy a sample application, all locally on your machine which enables running applications locally the same way they are deployed to production.  
 
-![img][2]
+
+![image](/img/posts/kind-contour.png)
+ 
 *Example of a four worker node cluster with a single control plane.*
 
-[![img][3]][4]
-*Here's a quick video demonstration of how to install kind, create a cluster, deploy Contour, and deploy a sample application.*
+Here's a quick video demonstration of how to install kind, create a cluster, deploy Contour, and deploy a sample application.
+
+[![image](/img/posts/kind-contour-video.png)][4]
 
 ## Install Kind
 
-There are a number of ways to [install kind][5]. Here is a simple way to grab the latest release for a Darwin architecture. The following commands downloads the latest binary, makes it executable, and moves it to your local bin path.
+There are a number of ways to [install kind][5]. Here is a simple way to grab the latest release for a Darwin architecture. The following commands downloads the latest binary, makes it executable, and moves it to your local bin path.  
+
 *Note: You may want to update some portions of the commands to match your local operating system and configuration.*
 
 ```bash
@@ -58,12 +62,13 @@ nodes:
     listenAddress: "0.0.0.0"
 ```
 
-**Note**: *You can only have a single worker with this configuration because you can’t map multiple Docker containers (i.e., worker nodes) to the same port on a single Docker instance.*
+Note: You can only have a single worker with this configuration because you can’t map multiple Docker containers (i.e., worker nodes) to the same port on a single Docker instance.
 
 
 After the cluster comes up, you should have two nodes in the cluster, a worker node and a control plane node:
-
-![img][6]
+  
+  
+![image](/img/posts/kind-contour2.png)
 
 
 ## Deploy Contour
@@ -85,7 +90,7 @@ Since our deployment of kind is binding ports 80 and 443 to our laptop, when we 
 
 ## Deploy the Sample Application
 
-Finally, we’ll deploy a sample application to to verify the network ingress path is functional to an application. By deploying this way, we are matching how we would deploy an application in production within Kubernetes, so any testing done locally inside the `kind` cluster should match how the application will perform once deployed. Since we already cloned the Contour repo in the previous step, let’s deploy the "[kuard][8]" sample application, which is an example workload in the repo.
+Finally, we’ll deploy a sample application to to verify the network ingress path is functional to an application. By deploying this way, we are matching how we would deploy an application in production within Kubernetes, so any testing done locally inside the `kind` cluster should match how the application will perform once deployed. Since we already cloned the Contour repo in the previous step, let’s deploy the [kuard][8] sample application, which is an example workload in the repo.
 
 Deploy the application:
 
@@ -130,7 +135,7 @@ Let’s create an entry in our local `/etc/hosts` to route `kuard.local` to `127
 ```
 
 Now open a browser and go to: `http://kuard.local`
-![img][9]
+![image](/img/posts/kind-contour3.png)
 
 What's happening is that the request to `http://kuard.local` is resolved to `127.0.0.1` via the entry the `/etc/hosts` file. That request is then sent to Envoy running on the single Kubernetes worker node in the `kind` cluster. Envoy is configured to send any request to `kuard.local/` to the `kuard` application in the cluster. The request then gets routed to an instance of `kuard` and the response is sent back to the user. 
 
@@ -138,11 +143,9 @@ This blog post helps you enable Contour in your local development environment by
 
 
 [1]: https://github.com/kubernetes-sigs/kind
-[2]: {% link img/posts/kind-contour.png %}
-[3]: {% link img/posts/kind-contour-video.png %}
 [4]: https://youtu.be/j97MueCYcvc
 [5]: https://github.com/kubernetes-sigs/kind#installation-and-usage
-[6]: {% link img/posts/kind-contour2.png %}
 [7]: https://envoyproxy.io
 [8]: https://github.com/kubernetes-up-and-running/kuard
-[9]: {% link img/posts/kind-contour3.png %}
+
+
