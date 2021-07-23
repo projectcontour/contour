@@ -11,7 +11,7 @@ These combinations of versions are specifically tested in CI and supported by th
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version |
 | --------------- | :------------------- | ------------------- | ---------------- |
 | main            | [1.19.0][14]         | 1.21, 1.20, 1.19    | [main][50]       |
-| 1.17.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.17.1][61]     |
+| 1.17.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | N/A*             |
 | 1.17.0          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.17.0][60]     |
 | 1.16.0          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.16.0][59]     |
 | 1.15.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.15.1][58]     |
@@ -36,6 +36,8 @@ These combinations of versions are specifically tested in CI and supported by th
 | 1.4.0           | [1.14.1][2]          | 1.17, 1.16, 1.15    | N/A              |
 
 <br />
+
+_* For 1.17.1 the operator was not released because it was in a non-functional state. It will be fixed in the 1.18 release._
 
 ## Notes on Compatibility
 
@@ -120,7 +122,6 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [58]: https://github.com/projectcontour/contour-operator/releases/tag/v1.15.1
 [59]: https://github.com/projectcontour/contour-operator/releases/tag/v1.16.0
 [60]: https://github.com/projectcontour/contour-operator/releases/tag/v1.17.0
-[61]: https://github.com/projectcontour/contour-operator/releases/tag/v1.17.1
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix

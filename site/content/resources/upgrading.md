@@ -19,19 +19,6 @@ All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v
 
 Please see the [Envoy Release Notes][32] for information about issues fixed in Envoy 1.18.3.
 
-### The easiest way to upgrade (alpha)
-For existing Contour Operator users, complete the following steps to upgrade Contour:
-
-- Verify the operator is running v1.17.0, and it's deployment status is "Available=True".
-- Verify the status of all Contour custom resources are "Available=True".
-- Update the operator's image to v1.17.1:
-   ```bash
-   $ kubectl patch deploy/contour-operator -n contour-operator -p '{"spec":{"template":{"spec":{"containers":[{"name":"contour-operator","image":"docker.io/projectcontour/contour-operator:v1.17.1"}]}}}}'
-   ```
-- The above command will upgrade the operator. After the operator runs the new version, it will upgrade Contour.
-- Verify the operator and Contour are running the new version.
-- Verify all Contour custom resources are "Available=True".
-
 ### The easy way to upgrade
 
 If the following are true for you:
