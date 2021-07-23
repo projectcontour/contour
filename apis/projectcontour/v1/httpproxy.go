@@ -781,7 +781,7 @@ type HeaderValue struct {
 
 // UpstreamValidation defines how to verify the backend service's certificate
 type UpstreamValidation struct {
-	// Name of the Kubernetes secret be used to validate the certificate presented by the backend
+	// Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend
 	CACertificate string `json:"caSecret"`
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate
 	SubjectName string `json:"subjectName"`

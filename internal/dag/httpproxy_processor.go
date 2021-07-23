@@ -583,9 +583,19 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			var uv *PeerValidationContext
-			if protocol == "tls" || protocol == "h2" {
+			if (protocol == "tls" || protocol == "h2") && service.UpstreamValidation != nil {
+				// If the CACertificate name in the UpstreamValidation is namespaced and the namespace
+				// is not the proxy's namespace, check if the referenced secret is permitted to be
+				// delegated to the proxy's namespace.
+				// By default, a non-namespaced CACertificate is expected to reside in the proxy's namespace.
+				caCertNamespacedName := k8s.NamespacedNameFrom(service.UpstreamValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
+				if !p.source.DelegationPermitted(caCertNamespacedName, proxy.Namespace) {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
+						"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+					return nil
+				}
 				// we can only validate TLS connections to services that talk TLS
-				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
+				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, caCertNamespacedName)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "TLSUpstreamValidation",
 						"Service [%s:%d] TLS upstream validation policy error: %s", service.Name, service.Port, err)

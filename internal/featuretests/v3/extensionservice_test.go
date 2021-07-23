@@ -165,6 +165,55 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 	})
+
+	// Create a secret for the CA certificate that can be delegated
+	rh.OnAdd(&corev1.Secret{
+		ObjectMeta: fixture.ObjectMeta("otherNs/cacert"),
+		Data: map[string][]byte{
+			dag.CACertificateKey: []byte(featuretests.CERTIFICATE),
+		},
+	})
+
+	// Update the validation spec to reference a secret that is not delegated.
+	rh.OnUpdate(ext, &v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("ns/ext"),
+		Spec: v1alpha1.ExtensionServiceSpec{
+			Services: []v1alpha1.ExtensionServiceTarget{
+				{Name: "svc1", Port: 8081},
+			},
+			UpstreamValidation: &contour_api_v1.UpstreamValidation{
+				CACertificate: "otherNs/cacert",
+				SubjectName:   "ext.projectcontour.io",
+			},
+		},
+	})
+
+	// No Clusters are build because the CACertificate secret is not delegated.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+	})
+
+	// Delegate the CACertificate secret to be used in the ExtensionService's namespace
+	rh.OnAdd(&contour_api_v1.TLSCertificateDelegation{
+		ObjectMeta: fixture.ObjectMeta("otherNs/delegate-cacert"),
+		Spec: contour_api_v1.TLSCertificateDelegationSpec{
+			Delegations: []contour_api_v1.CertificateDelegation{{
+				SecretName:       "cacert",
+				TargetNamespaces: []string{"*"},
+			}},
+		},
+	})
+
+	// Expect cluster corresponding to the ExtensionService.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+		Resources: resources(t,
+			DefaultCluster(
+				h2cCluster(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext")),
+				&envoy_cluster_v3.Cluster{TransportSocket: tlsSocket},
+			),
+		),
+	})
 }
 
 func extExternalName(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {

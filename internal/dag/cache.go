@@ -552,17 +552,16 @@ func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func
 	return s, nil
 }
 
-func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamValidation, namespace string) (*PeerValidationContext, error) {
+func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamValidation, caCertificate types.NamespacedName) (*PeerValidationContext, error) {
 	if uv == nil {
 		// no upstream validation requested, nothing to do
 		return nil, nil
 	}
 
-	secretName := types.NamespacedName{Name: uv.CACertificate, Namespace: namespace}
-	cacert, err := kc.LookupSecret(secretName, validCA)
+	cacert, err := kc.LookupSecret(caCertificate, validCA)
 	if err != nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
-		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
+		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
 	}
 
 	if uv.SubjectName == "" {
