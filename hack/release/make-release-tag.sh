@@ -62,7 +62,8 @@ if git status -s examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then
         examples/contour/03-contour.yaml \
         examples/contour/03-envoy.yaml \
         examples/contour/02-job-certgen.yaml \
-        examples/render/contour.yaml
+        examples/render/contour.yaml \
+        examples/render/contour-gateway.yaml
 fi
 
 git tag -F - "$NEWVERS" <<EOF
