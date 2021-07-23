@@ -28,7 +28,7 @@ Here's a quick video demonstration of how to install kind, create a cluster, dep
 
 There are a number of ways to [install kind][5]. Here is a simple way to grab the latest release for a Darwin architecture. The following commands downloads the latest binary, makes it executable, and moves it to your local bin path.  
 
-*Note: You may want to update some portions of the commands to match your local operating system and configuration.*
+Note: You may want to update some portions of the commands to match your local operating system and configuration.
 
 ```bash
 $ curl -Lo ./kind-darwin-amd64 https://github.com/kubernetes-sigs/kind/releases/download/v0.6.0/kind-darwin-amd64
