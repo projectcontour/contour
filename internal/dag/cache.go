@@ -21,8 +21,8 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/projectcontour/contour/internal/k8s"
-	ingress_validation "github.com/projectcontour/contour/internal/validation/ingress"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -95,7 +95,7 @@ func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) 
 	// If no ingress class name set, we allow an ingress class that is named
 	// with the default Contour accepted name.
 	if kc.IngressClassName == "" {
-		return obj.Name == ingress_validation.DefaultClassName
+		return obj.Name == ingressclass.DefaultClassName
 	}
 	// Otherwise, the name of the ingress class must match what has been
 	// configured.
@@ -103,40 +103,6 @@ func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) 
 		return true
 	}
 	return false
-}
-
-// ingressMatchesIngressClass returns true if the given Ingress object matches
-// the configured ingress class name via annotation or Spec.IngressClassName
-// and emits a log message if there is no match.
-func (kc *KubernetesCache) ingressMatchesIngressClass(obj *networking_v1.Ingress) bool {
-	if !ingress_validation.MatchesIngressClassName(obj, kc.IngressClassName) {
-		// We didn't get a match so report this object is being ignored.
-		kc.WithField("name", obj.GetName()).
-			WithField("namespace", obj.GetNamespace()).
-			WithField("kind", k8s.KindOf(obj)).
-			WithField("ingress-class-annotation", annotation.IngressClass(obj)).
-			WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
-			WithField("target-ingress-class", kc.IngressClassName).
-			Debug("ignoring object with unmatched ingress class")
-		return false
-	}
-	return true
-}
-
-// matchesIngressClassAnnotation returns true if the given Kubernetes object
-// belongs to the Ingress class that this cache is using.
-func (kc *KubernetesCache) matchesIngressClassAnnotation(obj metav1.Object) bool {
-	if !annotation.MatchesIngressClass(obj, kc.IngressClassName) {
-		kc.WithField("name", obj.GetName()).
-			WithField("namespace", obj.GetNamespace()).
-			WithField("kind", k8s.KindOf(obj)).
-			WithField("ingress-class", annotation.IngressClass(obj)).
-			WithField("target-ingress-class", kc.IngressClassName).
-			Debug("ignoring object with unmatched ingress class")
-		return false
-	}
-
-	return true
 }
 
 // matchesGateway returns true if the given Kubernetes object
@@ -208,20 +174,40 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 		kc.namespaces[obj.Name] = obj
 		return true
 	case *networking_v1.Ingress:
-		if kc.ingressMatchesIngressClass(obj) {
-			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
-			return true
+		if !ingressclass.MatchesIngress(obj, kc.IngressClassName) {
+			// We didn't get a match so report this object is being ignored.
+			kc.WithField("name", obj.GetName()).
+				WithField("namespace", obj.GetNamespace()).
+				WithField("kind", k8s.KindOf(obj)).
+				WithField("ingress-class-annotation", annotation.IngressClass(obj)).
+				WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
+				WithField("target-ingress-class", kc.IngressClassName).
+				Debug("ignoring Ingress with unmatched ingress class")
+			return false
 		}
+
+		kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
+		return true
 	case *networking_v1.IngressClass:
 		if kc.matchesIngressClass(obj) {
 			kc.ingressclass = obj
 			return true
 		}
 	case *contour_api_v1.HTTPProxy:
-		if kc.matchesIngressClassAnnotation(obj) {
-			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
-			return true
+		if !ingressclass.MatchesHTTPProxy(obj, kc.IngressClassName) {
+			// We didn't get a match so report this object is being ignored.
+			kc.WithField("name", obj.GetName()).
+				WithField("namespace", obj.GetNamespace()).
+				WithField("kind", k8s.KindOf(obj)).
+				WithField("ingress-class-annotation", annotation.IngressClass(obj)).
+				WithField("ingress-class-name", obj.Spec.IngressClassName).
+				WithField("target-ingress-class", kc.IngressClassName).
+				Debug("ignoring HTTPProxy with unmatched ingress class")
+			return false
 		}
+
+		kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
+		return true
 	case *contour_api_v1.TLSCertificateDelegation:
 		kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
 		return true
@@ -552,17 +538,16 @@ func (kc *KubernetesCache) LookupSecret(name types.NamespacedName, validate func
 	return s, nil
 }
 
-func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamValidation, namespace string) (*PeerValidationContext, error) {
+func (kc *KubernetesCache) LookupUpstreamValidation(uv *contour_api_v1.UpstreamValidation, caCertificate types.NamespacedName) (*PeerValidationContext, error) {
 	if uv == nil {
 		// no upstream validation requested, nothing to do
 		return nil, nil
 	}
 
-	secretName := types.NamespacedName{Name: uv.CACertificate, Namespace: namespace}
-	cacert, err := kc.LookupSecret(secretName, validCA)
+	cacert, err := kc.LookupSecret(caCertificate, validCA)
 	if err != nil {
 		// UpstreamValidation is requested, but cert is missing or not configured
-		return nil, fmt.Errorf("invalid CA Secret %q: %s", secretName, err)
+		return nil, fmt.Errorf("invalid CA Secret %q: %s", caCertificate, err)
 	}
 
 	if uv.SubjectName == "" {

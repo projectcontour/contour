@@ -85,6 +85,13 @@ data:
     # leaderelection:
     #   configmap-name: leader-elect
     #   configmap-namespace: projectcontour
+    ####
+    # ExternalName Services are disabled by default due to CVE-2021-XXXXX
+    # You can re-enable them by setting this setting to `true`.
+    # This is not recommended without understanding the security implications.
+    # Please see the advisory at https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for the details.
+    # enableExternalNameService: false
+    ##
     ### Logging options
     # Default setting
     accesslog-format: envoy
@@ -340,8 +347,8 @@ spec:
                   service's certificate
                 properties:
                   caSecret:
-                    description: Name of the Kubernetes secret be used to validate
-                      the certificate presented by the backend
+                    description: Name or namespaced name of the Kubernetes secret
+                      used to validate the certificate presented by the backend
                     type: string
                   subjectName:
                     description: Key which is expected to be present in the 'subjectAltName'
@@ -713,6 +720,12 @@ spec:
                   - name
                   type: object
                 type: array
+              ingressClassName:
+                description: IngressClassName optionally specifies the ingress class
+                  to use for this HTTPProxy. This replaces the deprecated `kubernetes.io/ingress.class`
+                  annotation. For backwards compatibility, when that annotation is
+                  set, it is given precedence over this field.
+                type: string
               routes:
                 description: Routes are the ingress routes. If TCPProxy is present,
                   Routes is ignored.
@@ -1369,8 +1382,9 @@ spec:
                               the backend service's certificate
                             properties:
                               caSecret:
-                                description: Name of the Kubernetes secret be used
-                                  to validate the certificate presented by the backend
+                                description: Name or namespaced name of the Kubernetes
+                                  secret used to validate the certificate presented
+                                  by the backend
                                 type: string
                               subjectName:
                                 description: Key which is expected to be present in
@@ -1625,8 +1639,9 @@ spec:
                             backend service's certificate
                           properties:
                             caSecret:
-                              description: Name of the Kubernetes secret be used to
-                                validate the certificate presented by the backend
+                              description: Name or namespaced name of the Kubernetes
+                                secret used to validate the certificate presented
+                                by the backend
                               type: string
                             subjectName:
                               description: Key which is expected to be present in

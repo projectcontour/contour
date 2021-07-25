@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	. "github.com/onsi/ginkgo"
@@ -44,7 +45,10 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	f.DeleteNamespace(f.Deployment.Namespace.Name, true)
+	// Delete resources individually instead of deleting the entire contour
+	// namespace as a performance optimization, because deleting non-empty
+	// namespaces can take up to a couple minutes to complete.
+	require.NoError(f.T(), f.Deployment.DeleteResourcesForLocalContour())
 	gexec.CleanupBuildArtifacts()
 })
 
@@ -214,10 +218,32 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-host-header-rewrite", testHostHeaderRewrite)
 
-	f.NamespacedTest("httpproxy-external-name-service-insecure", testExternalNameServiceInsecure)
+	f.NamespacedTest("httpproxy-external-name-service-insecure", func(namespace string) {
+		Context("with ExternalName Services enabled", func() {
+			BeforeEach(func() {
+				contourConfig.EnableExternalNameService = true
+			})
+			testExternalNameServiceInsecure(namespace)
+		})
+	})
 
-	f.NamespacedTest("httpproxy-external-name-service-tls", testExternalNameServiceTLS)
+	f.NamespacedTest("httpproxy-external-name-service-tls", func(namespace string) {
+		Context("with ExternalName Services enabled", func() {
+			BeforeEach(func() {
+				contourConfig.EnableExternalNameService = true
+			})
+			testExternalNameServiceTLS(namespace)
+		})
+	})
 
+	f.NamespacedTest("httpproxy-external-name-service-localhost", func(namespace string) {
+		Context("with ExternalName Services enabled", func() {
+			BeforeEach(func() {
+				contourConfig.EnableExternalNameService = true
+			})
+			testExternalNameServiceLocalhostInvalid(namespace)
+		})
+	})
 	f.NamespacedTest("httpproxy-local-rate-limiting-vhost", testLocalRateLimitingVirtualHost)
 
 	f.NamespacedTest("httpproxy-local-rate-limiting-route", testLocalRateLimitingRoute)
@@ -278,5 +304,28 @@ descriptors:
 // httpProxyValid returns true if the proxy has a .status.currentStatus
 // of "valid".
 func httpProxyValid(proxy *contourv1.HTTPProxy) bool {
-	return proxy != nil && proxy.Status.CurrentStatus == "valid"
+
+	if proxy == nil {
+		return false
+	}
+
+	if len(proxy.Status.Conditions) == 0 {
+		return false
+	}
+
+	cond := proxy.Status.GetConditionFor("Valid")
+	return cond.Status == "True"
+
+}
+
+// httpProxyErrors provides a pretty summary of any Errors on the HTTPProxy Valid condition.
+// If there are no errors, the return value will be empty.
+func httpProxyErrors(proxy *contourv1.HTTPProxy) string {
+	cond := proxy.Status.GetConditionFor("Valid")
+	errors := cond.Errors
+	if len(errors) > 0 {
+		return spew.Sdump(errors)
+	}
+
+	return ""
 }

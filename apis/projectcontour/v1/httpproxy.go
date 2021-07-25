@@ -34,6 +34,12 @@ type HTTPProxySpec struct {
 	// possibly in another namespace.
 	// +optional
 	Includes []Include `json:"includes,omitempty"`
+	// IngressClassName optionally specifies the ingress class to use for this
+	// HTTPProxy. This replaces the deprecated `kubernetes.io/ingress.class`
+	// annotation. For backwards compatibility, when that annotation is set, it
+	// is given precedence over this field.
+	// +optional
+	IngressClassName string `json:"ingressClassName,omitempty"`
 }
 
 // Include describes a set of policies that can be applied to an HTTPProxy in a namespace.
@@ -781,7 +787,7 @@ type HeaderValue struct {
 
 // UpstreamValidation defines how to verify the backend service's certificate
 type UpstreamValidation struct {
-	// Name of the Kubernetes secret be used to validate the certificate presented by the backend
+	// Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend
 	CACertificate string `json:"caSecret"`
 	// Key which is expected to be present in the 'subjectAltName' of the presented certificate
 	SubjectName string `json:"subjectName"`

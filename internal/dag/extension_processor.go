@@ -137,7 +137,17 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	}
 
 	if v := ext.Spec.UpstreamValidation; v != nil {
-		if uv, err := cache.LookupUpstreamValidation(v, ext.GetNamespace()); err != nil {
+		// If the CACertificate name in the UpstreamValidation is namespaced and the namespace
+		// is not the ExtensionService's namespace, check if the referenced secret is permitted to be
+		// delegated to the ExtensionService's namespace.
+		// By default, a non-namespaced CACertificate is expected to reside in the ExtensionService's namespace.
+		caCertNamespacedName := k8s.NamespacedNameFrom(v.CACertificate, k8s.DefaultNamespace(ext.Namespace))
+		if !cache.DelegationPermitted(caCertNamespacedName, ext.Namespace) {
+			validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
+				"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+			return nil
+		}
+		if uv, err := cache.LookupUpstreamValidation(v, caCertNamespacedName); err != nil {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "TLSUpstreamValidation",
 				"TLS upstream validation policy error: %s", err.Error())
 		} else {
@@ -177,6 +187,8 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		}
 
 		// TODO(jpeach): Add ExternalName support in https://github.com/projectcontour/contour/issues/2875.
+		// TODO(youngnick): If ExternalName support is added, we must pass down the EnableExternalNameService bool
+		// and check it first.
 		if svc.Spec.ExternalName != "" {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeServiceError, "UnsupportedServiceType",
 				"Service %q is of unsupported type %q.", svcName, corev1.ServiceTypeExternalName)

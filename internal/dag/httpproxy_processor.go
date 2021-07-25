@@ -57,6 +57,11 @@ type HTTPProxyProcessor struct {
 	// request.
 	FallbackCertificate *types.NamespacedName
 
+	// EnableExternalNameService allows processing of ExternalNameServices
+	// This is normally disabled for security reasons.
+	// See https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for details.
+	EnableExternalNameService bool
+
 	// DNSLookupFamily defines how external names are looked up
 	// When configured as V4, the DNS resolver will only perform a lookup
 	// for addresses in the IPv4 family. If V6 is configured, the DNS resolver
@@ -563,7 +568,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				return nil
 			}
 			m := types.NamespacedName{Name: service.Name, Namespace: proxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source)
+			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source, p.EnableExternalNameService)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference",
 					"Spec.Routes unresolved service reference: %s", err)
@@ -578,9 +583,19 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			}
 
 			var uv *PeerValidationContext
-			if protocol == "tls" || protocol == "h2" {
+			if (protocol == "tls" || protocol == "h2") && service.UpstreamValidation != nil {
+				// If the CACertificate name in the UpstreamValidation is namespaced and the namespace
+				// is not the proxy's namespace, check if the referenced secret is permitted to be
+				// delegated to the proxy's namespace.
+				// By default, a non-namespaced CACertificate is expected to reside in the proxy's namespace.
+				caCertNamespacedName := k8s.NamespacedNameFrom(service.UpstreamValidation.CACertificate, k8s.DefaultNamespace(proxy.Namespace))
+				if !p.source.DelegationPermitted(caCertNamespacedName, proxy.Namespace) {
+					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "CACertificateNotDelegated",
+						"service.UpstreamValidation.CACertificate Secret %q is not configured for certificate delegation", caCertNamespacedName)
+					return nil
+				}
 				// we can only validate TLS connections to services that talk TLS
-				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, proxy.Namespace)
+				uv, err = p.source.LookupUpstreamValidation(service.UpstreamValidation, caCertNamespacedName)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeServiceError, "TLSUpstreamValidation",
 						"Service [%s:%d] TLS upstream validation policy error: %s", service.Name, service.Port, err)
@@ -688,9 +703,9 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 		var proxy TCPProxy
 		for _, service := range httpproxy.Spec.TCPProxy.Services {
 			m := types.NamespacedName{Name: service.Name, Namespace: httpproxy.Namespace}
-			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source)
+			s, err := p.dag.EnsureService(m, intstr.FromInt(service.Port), p.source, p.EnableExternalNameService)
 			if err != nil {
-				validCond.AddErrorf(contour_api_v1.ConditionTypeTCPProxyError, "UnresolvedServiceRef",
+				validCond.AddErrorf(contour_api_v1.ConditionTypeTCPProxyError, "ServiceUnresolvedReference",
 					"Spec.TCPProxy unresolved service reference: %s", err)
 				return false
 			}

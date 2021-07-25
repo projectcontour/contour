@@ -585,103 +585,216 @@ func TestIngressClassResource_Configured(t *testing.T) {
 
 	rh.OnAdd(ingressClass)
 
-	// Spec.IngressClassName matches.
-	ingressValid := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      IngressName,
-			Namespace: Namespace,
-		},
-		Spec: networking_v1.IngressSpec{
-			IngressClassName: pointer.StringPtr("testingressclass"),
-			DefaultBackend:   featuretests.IngressBackend(svc),
-		},
-	}
+	// Ingress
+	{
+		// Spec.IngressClassName matches.
+		ingressValid := &networking_v1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+			},
+			Spec: networking_v1.IngressSpec{
+				IngressClassName: pointer.StringPtr("testingressclass"),
+				DefaultBackend:   featuretests.IngressBackend(svc),
+			},
+		}
 
-	rh.OnAdd(ingressValid)
+		rh.OnAdd(ingressValid)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http",
-				envoy_v3.VirtualHost("*",
-					&envoy_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("*",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	// Spec.IngressClassName does not match.
-	ingressWrongClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      IngressName,
-			Namespace: Namespace,
-		},
-		Spec: networking_v1.IngressSpec{
-			IngressClassName: pointer.StringPtr("wrongingressclass"),
-			DefaultBackend:   featuretests.IngressBackend(svc),
-		},
-	}
+		// Spec.IngressClassName does not match.
+		ingressWrongClass := &networking_v1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+			},
+			Spec: networking_v1.IngressSpec{
+				IngressClassName: pointer.StringPtr("wrongingressclass"),
+				DefaultBackend:   featuretests.IngressBackend(svc),
+			},
+		}
 
-	rh.OnUpdate(ingressValid, ingressWrongClass)
+		rh.OnUpdate(ingressValid, ingressWrongClass)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
 
-	// No ingress class specified.
-	ingressNoClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      IngressName,
-			Namespace: Namespace,
-		},
-		Spec: networking_v1.IngressSpec{
-			DefaultBackend: featuretests.IngressBackend(svc),
-		},
-	}
-	rh.OnUpdate(ingressWrongClass, ingressNoClass)
+		// No ingress class specified.
+		ingressNoClass := &networking_v1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+			},
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: featuretests.IngressBackend(svc),
+			},
+		}
+		rh.OnUpdate(ingressWrongClass, ingressNoClass)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
 
-	// Remove Ingress class.
-	rh.OnDelete(ingressClass)
+		// Remove Ingress class.
+		rh.OnDelete(ingressClass)
 
-	// Insert valid ingress object
-	rh.OnAdd(ingressValid)
+		// Insert valid ingress object
+		rh.OnAdd(ingressValid)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http",
-				envoy_v3.VirtualHost("*",
-					&envoy_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("*",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	rh.OnDelete(ingressValid)
+		rh.OnDelete(ingressValid)
 
-	// Verify ingress is gone.
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+		// Verify ingress is gone.
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+	}
+
+	// HTTPProxy
+	{
+		// --- ingress class matches explicitly
+		proxyValid := fixture.NewProxy(HTTPProxyName).
+			WithSpec(contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []contour_api_v1.Route{{
+					Services: []contour_api_v1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+				IngressClassName: "testingressclass",
+			})
+
+		rh.OnAdd(proxyValid)
+
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- wrong ingress class specified
+		proxyWrongClass := fixture.NewProxy(HTTPProxyName).
+			WithSpec(contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []contour_api_v1.Route{{
+					Services: []contour_api_v1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+				IngressClassName: "wrongingressclass",
+			})
+
+		rh.OnUpdate(proxyValid, proxyWrongClass)
+
+		// ingress class does not match ingress controller, ignored.
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- no ingress class specified
+		proxyNoClass := fixture.NewProxy(HTTPProxyName).
+			WithSpec(contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []contour_api_v1.Route{{
+					Services: []contour_api_v1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+			})
+
+		rh.OnUpdate(proxyWrongClass, proxyNoClass)
+
+		// ingress class does not match ingress controller, ignored.
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- insert valid httpproxy object
+		rh.OnAdd(proxyValid)
+
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		rh.OnDelete(proxyValid)
+
+		// verify ingress is gone
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+	}
 }
 
 func TestIngressClassResource_NotConfigured(t *testing.T) {
@@ -703,108 +816,227 @@ func TestIngressClassResource_NotConfigured(t *testing.T) {
 
 	rh.OnAdd(ingressClass)
 
-	// No class specified.
-	ingressNoClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      IngressName,
-			Namespace: Namespace,
-		},
-		Spec: networking_v1.IngressSpec{
-			DefaultBackend: featuretests.IngressBackend(svc),
-		},
-	}
+	// Ingress
+	{
+		// No class specified.
+		ingressNoClass := &networking_v1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+			},
+			Spec: networking_v1.IngressSpec{
+				DefaultBackend: featuretests.IngressBackend(svc),
+			},
+		}
 
-	rh.OnAdd(ingressNoClass)
+		rh.OnAdd(ingressNoClass)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http",
-				envoy_v3.VirtualHost("*",
-					&envoy_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("*",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	// Spec.IngressClassName matches.
-	ingressMatchingClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      IngressName,
-			Namespace: Namespace,
-		},
-		Spec: networking_v1.IngressSpec{
-			IngressClassName: pointer.StringPtr("contour"),
-			DefaultBackend:   featuretests.IngressBackend(svc),
-		},
-	}
+		// Spec.IngressClassName matches.
+		ingressMatchingClass := &networking_v1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+			},
+			Spec: networking_v1.IngressSpec{
+				IngressClassName: pointer.StringPtr("contour"),
+				DefaultBackend:   featuretests.IngressBackend(svc),
+			},
+		}
 
-	rh.OnUpdate(ingressNoClass, ingressMatchingClass)
+		rh.OnUpdate(ingressNoClass, ingressMatchingClass)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http",
-				envoy_v3.VirtualHost("*",
-					&envoy_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("*",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	// Spec.IngressClassName does not match.
-	ingressNonMatchingClass := &networking_v1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      IngressName,
-			Namespace: Namespace,
-		},
-		Spec: networking_v1.IngressSpec{
-			IngressClassName: pointer.StringPtr("notcontour"),
-			DefaultBackend:   featuretests.IngressBackend(svc),
-		},
-	}
-	rh.OnUpdate(ingressMatchingClass, ingressNonMatchingClass)
+		// Spec.IngressClassName does not match.
+		ingressNonMatchingClass := &networking_v1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      IngressName,
+				Namespace: Namespace,
+			},
+			Spec: networking_v1.IngressSpec{
+				IngressClassName: pointer.StringPtr("notcontour"),
+				DefaultBackend:   featuretests.IngressBackend(svc),
+			},
+		}
+		rh.OnUpdate(ingressMatchingClass, ingressNonMatchingClass)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
 
-	// Remove Ingress class.
-	rh.OnDelete(ingressClass)
+		// Remove Ingress class.
+		rh.OnDelete(ingressClass)
 
-	// Insert valid ingress object
-	rh.OnAdd(ingressMatchingClass)
+		// Insert valid ingress object
+		rh.OnAdd(ingressMatchingClass)
 
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http",
-				envoy_v3.VirtualHost("*",
-					&envoy_route_v3.Route{
-						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/8080/da39a3ee5e"),
-					},
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("*",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
 				),
 			),
-		),
-		TypeUrl: routeType,
-	})
+			TypeUrl: routeType,
+		})
 
-	rh.OnDelete(ingressMatchingClass)
+		rh.OnDelete(ingressMatchingClass)
 
-	// Verify ingress is gone.
-	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t,
-			envoy_v3.RouteConfiguration("ingress_http"),
-		),
-		TypeUrl: routeType,
-	})
+		// Verify ingress is gone.
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+	}
+
+	// HTTPProxy
+	{
+		// --- no ingress class specified
+		proxyNoClass := fixture.NewProxy(HTTPProxyName).
+			WithSpec(contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []contour_api_v1.Route{{
+					Services: []contour_api_v1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+			})
+
+		rh.OnAdd(proxyNoClass)
+
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- matching ingress class specified
+		proxyMatchingClass := fixture.NewProxy(HTTPProxyName).
+			WithSpec(contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []contour_api_v1.Route{{
+					Services: []contour_api_v1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+				IngressClassName: "contour",
+			})
+
+		rh.OnUpdate(proxyNoClass, proxyMatchingClass)
+
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- non-matching ingress class specified
+		proxyNonMatchingClass := fixture.NewProxy(HTTPProxyName).
+			WithSpec(contour_api_v1.HTTPProxySpec{
+				VirtualHost: &contour_api_v1.VirtualHost{
+					Fqdn: "www.example.com",
+				},
+				Routes: []contour_api_v1.Route{{
+					Services: []contour_api_v1.Service{{
+						Name: svc.Name,
+						Port: int(svc.Spec.Ports[0].Port),
+					}},
+				}},
+				IngressClassName: "notcontour",
+			})
+
+		rh.OnUpdate(proxyMatchingClass, proxyNonMatchingClass)
+
+		// ingress class does not match ingress controller, ignored.
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+
+		// --- insert valid httpproxy object
+		rh.OnAdd(proxyNoClass)
+
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeCluster("default/kuard/8080/da39a3ee5e"),
+						},
+					),
+				),
+			),
+			TypeUrl: routeType,
+		})
+
+		rh.OnDelete(proxyNoClass)
+
+		// verify ingress is gone
+		c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+			Resources: resources(t,
+				envoy_v3.RouteConfiguration("ingress_http"),
+			),
+			TypeUrl: routeType,
+		})
+	}
 }

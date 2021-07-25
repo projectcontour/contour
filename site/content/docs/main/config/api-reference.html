@@ -147,6 +147,22 @@ TCPProxy
 possibly in another namespace.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ingressClassName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IngressClassName optionally specifies the ingress class to use for this
+HTTPProxy. This replaces the deprecated <code>kubernetes.io/ingress.class</code>
+annotation. For backwards compatibility, when that annotation is set, it
+is given precedence over this field.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -1020,6 +1036,22 @@ TCPProxy
 <em>(Optional)</em>
 <p>Includes allow for specific routing configuration to be included from another HTTPProxy,
 possibly in another namespace.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>ingressClassName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>IngressClassName optionally specifies the ingress class to use for this
+HTTPProxy. This replaces the deprecated <code>kubernetes.io/ingress.class</code>
+annotation. For backwards compatibility, when that annotation is set, it
+is given precedence over this field.</p>
 </td>
 </tr>
 </tbody>
@@ -3059,7 +3091,7 @@ string
 </em>
 </td>
 <td>
-<p>Name of the Kubernetes secret be used to validate the certificate presented by the backend</p>
+<p>Name or namespaced name of the Kubernetes secret used to validate the certificate presented by the backend</p>
 </td>
 </tr>
 <tr>

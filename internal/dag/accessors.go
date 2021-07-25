@@ -51,8 +51,13 @@ func (dag *DAG) GetService(meta types.NamespacedName, port int32) *Service {
 // EnsureService looks for a Kubernetes service in the cache matching the provided
 // namespace, name and port, and returns a DAG service for it. If a matching service
 // cannot be found in the cache, an error is returned.
-func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, cache *KubernetesCache) (*Service, error) {
+func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
 	svc, svcPort, err := cache.LookupService(meta, port)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateExternalName(svc, enableExternalNameSvc)
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +81,38 @@ func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString
 		ExternalName:       externalName(svc),
 	}
 	return dagSvc, nil
+}
+
+func validateExternalName(svc *v1.Service, enableExternalNameSvc bool) error {
+
+	// If this isn't an ExternalName Service, we're all good here.
+	en := externalName(svc)
+	if en == "" {
+		return nil
+	}
+
+	// If ExternalNames are disabled, then we don't want to add this to the DAG.
+	if !enableExternalNameSvc {
+		return fmt.Errorf("%s/%s is an ExternalName service, these are not currently enabled. See the config.enableExternalNameService config file setting", svc.Namespace, svc.Name)
+	}
+
+	// Check against a list of known localhost names, using a map to approximate a set.
+	// TODO(youngnick) This is a very porous hack, and we should probably look into doing a DNS
+	// lookup to check what the externalName resolves to, but I'm worried about the
+	// performance impact of doing one or more DNS lookups per DAG run, so we're
+	// going to go with a specific blocklist for now.
+	localhostNames := map[string]struct{}{
+		"localhost":               {},
+		"localhost.localdomain":   {},
+		"local.projectcontour.io": {},
+	}
+
+	_, localhost := localhostNames[en]
+	if localhost {
+		return fmt.Errorf("%s/%s is an ExternalName service that points to localhost, this is not allowed", svc.Namespace, svc.Name)
+	}
+
+	return nil
 }
 
 func upstreamProtocol(svc *v1.Service, port v1.ServicePort) string {

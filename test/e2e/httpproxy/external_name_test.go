@@ -79,7 +79,10 @@ func testExternalNameServiceInsecure(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		proxy, ok := f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		if !ok {
+			t.Fatalf("The HTTPProxy did not become valid, here are the Valid condition's Errors: %s", httpProxyErrors(proxy))
+		}
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
@@ -146,7 +149,10 @@ func testExternalNameServiceTLS(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		proxy, ok := f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		if !ok {
+			t.Fatalf("The HTTPProxy did not become valid, here are the Valid condition's Errors: %s", httpProxyErrors(proxy))
+		}
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
@@ -158,4 +164,64 @@ func testExternalNameServiceTLS(namespace string) {
 
 func stringPtr(s string) *string {
 	return &s
+}
+
+func testExternalNameServiceLocalhostInvalid(namespace string) {
+	Specify("external name services with localhost are rejected", func() {
+		t := f.T()
+
+		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
+
+		externalNameService := &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "external-name-service-localhost",
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeExternalName,
+				// The unit tests test just `localhost`, so test another item from that
+				// list.
+				ExternalName: "localhost.localdomain",
+				Ports: []corev1.ServicePort{
+					{
+						Name: "http",
+						Port: 80,
+					},
+				},
+			},
+		}
+		require.NoError(t, f.Client.Create(context.TODO(), externalNameService))
+
+		p := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "external-name-proxy",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "externalnameservice.projectcontour.io",
+				},
+				Routes: []contourv1.Route{
+					{
+						Services: []contourv1.Service{
+							{
+								Name: externalNameService.Name,
+								Port: 80,
+							},
+						},
+						RequestHeadersPolicy: &contourv1.HeadersPolicy{
+							Set: []contourv1.HeaderValue{
+								{
+									Name:  "Host",
+									Value: externalNameService.Spec.ExternalName,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		_, ok := f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		require.Falsef(t, ok, "ExternalName with hostname %s was accepted by Contour.", externalNameService.Spec.ExternalName)
+	})
 }

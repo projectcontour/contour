@@ -37,6 +37,11 @@ type IngressProcessor struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *types.NamespacedName
+
+	// EnableExternalNameService allows processing of ExternalNameServices
+	// This is normally disabled for security reasons.
+	// See https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for details.
+	EnableExternalNameService bool
 }
 
 // Run translates Ingresses into DAG objects and
@@ -144,7 +149,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 			port = intstr.FromInt(int(be.Service.Port.Number))
 		}
 
-		s, err := p.dag.EnsureService(m, port, p.source)
+		s, err := p.dag.EnsureService(m, port, p.source, p.EnableExternalNameService)
 		if err != nil {
 			p.WithError(err).
 				WithField("name", ing.GetName()).

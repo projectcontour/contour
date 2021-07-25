@@ -23,9 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DEFAULT_INGRESS_CLASS_NAME is the Contour default.
-const DEFAULT_INGRESS_CLASS_NAME = "contour"
-
 // IsKnown checks if an annotation is one Contour knows about.
 func IsKnown(key string) bool {
 	// We should know about everything with a Contour prefix.
@@ -177,25 +174,6 @@ func IngressClass(o metav1.Object) string {
 		return class
 	}
 	return ""
-}
-
-// MatchesIngressClass checks that the passed object has an ingress class that matches
-// either the passed ingress-class string, or DEFAULT_INGRESS_CLASS if it's empty.
-func MatchesIngressClass(o metav1.Object, ic string) bool {
-
-	switch IngressClass(o) {
-	case ic:
-		// Handles ic == "" and ic == "custom".
-		return true
-	case DEFAULT_INGRESS_CLASS_NAME:
-		// ic == "" implicitly matches the default too.
-		if ic == "" {
-			return true
-		}
-	}
-
-	return false
-
 }
 
 // MinTLSVersion returns the TLS protocol version specified by an ingress annotation
