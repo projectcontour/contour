@@ -1,7 +1,7 @@
 {{ $latest := (cond (.Site.Params.docs_versioning) .Site.Params.latest_version "") }}
 <header>
 	<div class="wrapper">
-		<a href="{{ .Site.BaseURL }}"><img class="image" src="/img/Contour.svg" alt="Logo" /></a>
+		<a href="{{ .Site.BaseURL }}"><img class="image" src="/img/Contour.svg" alt="Contour Logo" /></a>
 		<ul class="desktop-links">
 			<li><a href="/getting-started/" {{ if (eq .RelPermalink "/getting-started/")  }}class="active"{{ end }}>Getting Started</a></li>
 			<li><a href="/guides/" {{ if (eq .RelPermalink "/guides/")  }}class="active"{{ end }}>Guides</a></li>

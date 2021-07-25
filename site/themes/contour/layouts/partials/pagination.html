@@ -3,13 +3,13 @@
 <div class="pagination">
     <ul>
         {{ if $paginator.HasPrev }}
-            <li class="left-arrow"><a href="{{ $paginator.Prev.URL }}"><img src="/img/left-arrow.svg" /></a></li>
+            <li class="left-arrow"><a href="{{ $paginator.Prev.URL }}"><img src="/img/left-arrow.svg" alt="Left Arrow Image" /></a></li>
         {{ end }}
         {{ range $paginator.Pagers }}
             <li > <a href="{{ .URL }}" class="{{ if eq . $paginator }}active{{ end }}">{{ .PageNumber }}</a></li>
         {{ end }}
         {{ if $paginator.HasNext }}
-            <li class="right-arrow"><a href="{{ $paginator.Next.URL }}"><img src="/img/right-arrow.svg" /></a></li>
+            <li class="right-arrow"><a href="{{ $paginator.Next.URL }}"><img src="/img/right-arrow.svg" alt="Right Arrow Image" /></a></li>
         {{ end }}
     </ul>
 </div>
