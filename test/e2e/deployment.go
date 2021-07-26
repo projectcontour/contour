@@ -174,11 +174,8 @@ func (d *Deployment) UnmarshalResources() error {
 	defer rLESFile.Close()
 	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rLESFile)
 	d.RateLimitExtensionService = new(contourv1alpha1.ExtensionService)
-	if err := decoder.Decode(d.RateLimitExtensionService); err != nil {
-		return err
-	}
 
-	return nil
+	return decoder.Decode(d.RateLimitExtensionService)
 }
 
 // Common case of updating object if exists, create otherwise.
@@ -467,11 +464,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	// Remove shutdown-manager container.
 	d.EnvoyDaemonSet.Spec.Template.Spec.Containers = d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1:]
 
-	if err := d.EnsureEnvoyDaemonSet(); err != nil {
-		return err
-	}
-
-	return nil
+	return d.EnsureEnvoyDaemonSet()
 }
 
 // DeleteResourcesForLocalContour ensures deletion of all resources
@@ -536,7 +529,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, additionalArgs
 	if err != nil {
 		return nil, "", err
 	}
-	if err := os.WriteFile(configFile.Name(), content, 0644); err != nil {
+	if err := os.WriteFile(configFile.Name(), content, 0600); err != nil {
 		return nil, "", err
 	}
 
