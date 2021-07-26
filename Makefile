@@ -165,7 +165,7 @@ check-coverage: ## Run tests to generate code coverage
 		-mod=readonly \
 		-covermode=atomic \
 		-coverprofile=coverage.out \
-		-coverpkg=./cmd/...,./internal/... \
+		-coverpkg=./cmd/...,./internal/...,./pkg/... \
 		$(MODULE)/...
 	@go tool cover -html=coverage.out -o coverage.html
 
