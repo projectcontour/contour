@@ -19,6 +19,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -113,19 +114,19 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 	// Fetch the Gateway.
 	gw := &gatewayapi_v1alpha1.Gateway{}
-	if err := r.client.Get(ctx, request.NamespacedName, gw); err != nil {
-		if errors.IsNotFound(err) {
-			r.log.WithField("name", request.Name).WithField("namespace", request.Namespace).Info("failed to find gateway")
-			return reconcile.Result{}, nil
-		}
+	if err := r.client.Get(ctx, request.NamespacedName, gw); errors.IsNotFound(err) {
+		// Not-found error, so trigger an OnDelete.
+		r.log.WithField("name", request.Name).WithField("namespace", request.Namespace).Info("failed to find gateway")
+
+		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: request.Namespace,
+				Name:      request.Name,
+			}})
+		return reconcile.Result{}, nil
+	} else if err != nil {
 		// Error reading the object, so requeue the request.
 		return reconcile.Result{}, fmt.Errorf("failed to get gateway %s/%s: %w", request.Namespace, request.Name, err)
-	}
-
-	// Check if object is deleted.
-	if !gw.ObjectMeta.DeletionTimestamp.IsZero() {
-		r.eventHandler.OnDelete(gw)
-		return reconcile.Result{}, nil
 	}
 
 	// TODO: Ensure the gateway by creating manage infrastructure, i.e. the Envoy service.
