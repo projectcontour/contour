@@ -44,7 +44,7 @@ Contour allows you to choose from a set of JSON fields that will be expanded int
 There is a default set of fields if you enable JSON logging, and you may customize which fields you log.
 
 The list of available fields are discoverable in the following objects:
-- [JSONFields][2] are fields that have built in mappings to commonly used envoy operators.
+- [jsonFields][2] are fields that have built in mappings to commonly used envoy operators.
 - [envoySimpleOperators][3] are the names of simple envoy operators that don't require arguments, they are case-insensitive when configured.
 - [envoyComplexOperators][4] are the names of complex envoy operators that require arguments.
 
@@ -64,8 +64,8 @@ Without any further customization, the [default fields][5] will be used.
 To customize the logged fields, add a `json-fields` list of strings to your configuration file.
 If the `json-fields` key is not specified, the [default fields][5] will be configured.
 
-To use a value from [JSONFields][2] or [envoySimpleOperators][3], simply include the name of the value in the list of strings.
-The JSONFields are case-sensitive, but envoySimpleOperators are not.
+To use a value from [jsonFields][2] or [envoySimpleOperators][3], simply include the name of the value in the list of strings.
+The jsonFields are case-sensitive, but envoySimpleOperators are not.
 
 To use [envoyComplexOperators][4] or to use alternative field names, specify strings as key/value pairs like `"fieldName=%OPERATOR(...)%"`.
 
@@ -117,10 +117,10 @@ Following extensions are supported by Contour:
 
 
 [1]: ../configuration#serve-flags
-[2]: https://github.com/projectcontour/contour/blob/main/pkg/config/accesslog.go#L33-L45
-[3]: https://github.com/projectcontour/contour/blob/main/pkg/config/accesslog.go#L49-L93
-[4]: https://github.com/projectcontour/contour/blob/main/pkg/config/accesslog.go#L97-L102
-[5]: https://github.com/projectcontour/contour/blob/main/pkg/config/accesslog.go#L4
+[2]: https://github.com/search?q=jsonFields+repo%3Aprojectcontour%2Fcontour+path%3A%2Fpkg%2Fconfig+filename%3Aaccesslog.go&type=Code
+[3]: https://github.com/search?q=envoySimpleOperators+repo%3Aprojectcontour%2Fcontour+path%3A%2Fpkg%2Fconfig+filename%3Aaccesslog.go&type=Code
+[4]: https://github.com/search?q=envoyComplexOperators+repo%3Aprojectcontour%2Fcontour+path%3A%2Fpkg%2Fconfig+filename%3Aaccesslog.go&type=Code
+[5]: https://github.com/search?q=DefaultFields+repo%3Aprojectcontour%2Fcontour+path%3A%2Fpkg%2Fconfig+filename%3Aaccesslog.go&type=Code
 [6]: {{< param github_url >}}/tree/{{< param latest_version >}}/examples/contour/01-contour-config.yaml
 [7]: https://www.envoyproxy.io/docs/envoy/latest/configuration/observability/access_log/usage
 [8]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/formatter/req_without_query/v3/req_without_query.proto
