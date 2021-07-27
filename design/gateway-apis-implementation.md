@@ -65,7 +65,7 @@ Contour will merge Listeners within its Gateway. (See the detailed design for th
 Right now it is expected that one instance of Contour maps to a single fleet of Envoy instances. 
 Similarly, one GatewayClass maps to a single Gateway regardless if provisioned manually or via the operator.
 
-![drawing](https://docs.google.com/drawings/d/12345/export/png)
+![drawing](images/gatewayapi-contour-overview.jpg)
 
 ## Dynamic Envoy Provisioning
 
@@ -288,7 +288,7 @@ Once implementers catch up, specific implementations will be utilized and the st
 New fields will be added to the Contour configuration file which will allow users to define the GVK of a resource used in the GatewayClass along with the ControllerName to be used.
 The Operator will still auto-create the GatewayClass/Gateway which will allow the operator to still maintain the proper listeners matching the Gateway Contour is processing, but allow for custom implementations without the need for code changes to Contour.
 
-![alt_text](images/image1.png "image_tooltip")
+![alt_text](images/gatewayapi-external-gateway.jpg)
 
 ### WorkFlows
 
@@ -344,11 +344,7 @@ In this mode, the Operator is managing instances of Contour. Each instance of Co
     8. Cergen Job to create self-signed certificates
         1. Note: The job can be removed and certs created directly from the Operator since [this PR](https://github.com/projectcontour/contour/pull/3135) was merged.
 4. Contour creates an Envoy fleet which is an Envoy (Daemonset) and Service.
-5. Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). (
-
-<p id="gdcalert4" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: undefined internal link (link text: "Future is using GatewayAPI"). Did you generate a TOC? </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert5">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
-
-[Future is using GatewayAPI](#heading=h.r00a5hk7oybo))
+5. Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). ([Future is using GatewayAPI](#heading=h.r00a5hk7oybo))
 6. When the Contour instance is ready, it will watch for Ingress/HTTPProxy objects, validate, set status and configure Envoy.
 
 
@@ -369,7 +365,7 @@ The Contour configuration CRD will define how that traffic will get routed or if
 3. Cluster Operator creates `GatewayClass` with matching `gateway.controllerName` to the configuration CRD.
 4. Cluster Operator creates `Gateway` with matching `className` created in previous step.
 5. _If using GatewayAPI then Contour waits for valid Gateway to know what ports to configure, otherwise uses ports in the flags passed to Contour._
-6. Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). ([Future is using GatewayAPI](#heading=h.r00a5hk7oybo))
+6. Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). ([Future is using GatewayAPI](#exposing-envoy))
 7. When the Contour instance is ready, it will watch for Ingress/GatewayAPI/HTTPProxy objects, validate, set status and configure Envoy.
 
 #### Contour without Managed Envoy, GatewayAPI (No Operator)
