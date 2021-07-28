@@ -13,6 +13,9 @@ This document describes the changes needed to upgrade your Contour installation.
 
 Contour 1.18.0 is the current stable release.
 
+**If you utilize ExternalName services in your cluster, please note that this release disables Contour processing such services by default.**
+**Please see [this CVE](https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc) for context and the [1.18.0 release notes](https://github.com/projectcontour/contour/releases/tag/v1.18.0).**
+
 ### Required Envoy version
 
 All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.19.0`.
