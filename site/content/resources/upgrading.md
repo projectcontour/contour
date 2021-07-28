@@ -45,6 +45,12 @@ The YAML files referenced in this section can be found by cloning the Contour re
 
 If your version of Contour is older than v1.17.1, please upgrade to v1.17.1 first, then upgrade to v1.18.0.
 
+1. The Contour CRD definitions must be re-applied to the cluster, since a number of compatible changes and additions have been made to the Contour API:
+
+    ```bash
+    $ kubectl apply -f examples/contour/01-crds.yaml
+    ```
+
 1. Users of the example deployment should reapply the certgen Job YAML which will re-generate the relevant Secrets in a format compatible with [cert-manager](https://cert-manager.io) TLS secrets.
    This will rotate the TLS certificates used for gRPC security.
 

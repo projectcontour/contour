@@ -12,7 +12,7 @@ These combinations of versions are specifically tested in CI and supported by th
 | --------------- | :------------------- | ------------------- | ---------------- |
 | main            | [1.19.0][14]         | 1.21, 1.20, 1.19    | [main][50]       |
 | 1.18.1          | [1.19.0][14]         | 1.21, 1.20, 1.19    | [1.18.0][61]       |
-| 1.17.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | N/A*             |
+| 1.17.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | N/A             |
 | 1.17.0          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.17.0][60]     |
 | 1.16.0          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.16.0][59]     |
 | 1.15.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.15.1][58]     |
@@ -37,8 +37,6 @@ These combinations of versions are specifically tested in CI and supported by th
 | 1.4.0           | [1.14.1][2]          | 1.17, 1.16, 1.15    | N/A              |
 
 <br />
-
-_* For 1.17.1 the operator was not released because it was in a non-functional state. It will be fixed in the 1.18 release._
 
 ## Notes on Compatibility
 
