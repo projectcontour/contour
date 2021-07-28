@@ -48,19 +48,28 @@ Finally, the pod's `terminationGracePeriodSeconds` is customized to extend the t
 The termination grace period defines an upper bound for long-lived sessions.
 If during shutdown, the connections aren't drained to the configured amount, the `terminationGracePeriodSeconds` will send a `SIGTERM` to the pod killing it.
 
-![shutdown-manager overview][1]{: .center-image }
+![shutdown-manager overview][1]
 
 ### Shutdown Manager Config Options
 
 The shutdown manager has a set of arguments that can be passed to change how it behaves:
 
-- **check-interval:** Time to poll Envoy for open connections.
-  - Type: duration (Default 5s)
-- **check-delay:** Time wait before polling Envoy for open connections.
-  - Type: duration (Default 60s)
-- **min-open-connections:** Min number of open connections when polling Envoy.
-  - Type: integer (Default 0)
-- **serve-port:** Port to serve the http server on.
-  - Type: integer (Default 8090)
+| Field Name | Type | Default | Description |
+|------------|------|---------|-------------|
+| --serve-port | integer | `8090` | Port to serve the http server on. |
 
-  [1]: ../img/shutdownmanager.png
+### Shutdown Manager PreStop Options
+
+The shutdown manager "shutdown" command has a set of arguments that can be passed to change how it behaves.
+This command is used via the pod's lifecycle.preStop.exec.command when the actual shutdown sequence begins:
+
+| Field Name | Type | Default | Description |
+|------------|------|---------|-------------|
+| --admin-port | integer | `9001` | Envoy admin interface port |
+| --admin-address | ip address | `127.0.0.1` | Envoy admin interface address. |
+| --check-interval | duration | `5s` | Interval of time to wait between polls for open connections. |
+| --check-delay | duration | `60s` | Time wait before polling Envoy for open connections. |
+| --drain-delay | duration | `0s` | Time wait before draining Envoy connections. |
+| --min-open-connections | integer | `0` | Min number of open connections when polling Envoy. |
+
+[1]: ../img/shutdownmanager.png
