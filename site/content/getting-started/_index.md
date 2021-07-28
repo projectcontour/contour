@@ -29,7 +29,7 @@ $ kubectl apply -f {{< param base_url >}}/quickstart/contour.yaml
 
 ### Option 2: Install using Operator
 
-__FEATURE STATE:__ Contour v1.11.0 [alpha][13]
+__FEATURE STATE:__ The Contour Operator is currently in [alpha][13].
 
 Deploy Contour using the [operator][14]. First deploy the operator:
 
