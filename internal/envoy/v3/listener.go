@@ -545,6 +545,17 @@ func SocketAddress(address string, port int) *envoy_core_v3.Address {
 			},
 		}
 	}
+	// Check if the address is a socket.
+	if strings.Contains(address, "/") {
+		return &envoy_core_v3.Address{
+			Address: &envoy_core_v3.Address_Pipe{
+				Pipe: &envoy_core_v3.Pipe{
+					Path: address,
+					Mode: 0644,
+				},
+			},
+		}
+	}
 	return &envoy_core_v3.Address{
 		Address: &envoy_core_v3.Address_SocketAddress{
 			SocketAddress: &envoy_core_v3.SocketAddress{

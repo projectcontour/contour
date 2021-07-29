@@ -3094,6 +3094,9 @@ spec:
           initialDelaySeconds: 3
           periodSeconds: 10
         name: shutdown-manager
+        volumeMounts:
+          - name: envoy-admin
+            mountPath: /admin
       - args:
         - -c
         - /config/envoy.json
@@ -3138,6 +3141,8 @@ spec:
           - name: envoycert
             mountPath: /certs
             readOnly: true
+          - name: envoy-admin
+            mountPath: /admin
         lifecycle:
           preStop:
             httpGet:
@@ -3166,6 +3171,8 @@ spec:
         - name: envoycert
           mountPath: /certs
           readOnly: true
+        - name: envoy-admin
+          mountPath: /admin
         env:
         - name: CONTOUR_NAMESPACE
           valueFrom:
@@ -3175,6 +3182,8 @@ spec:
       serviceAccountName: envoy
       terminationGracePeriodSeconds: 300
       volumes:
+        - name: envoy-admin
+          emptyDir: {}
         - name: envoy-config
           emptyDir: {}
         - name: envoycert

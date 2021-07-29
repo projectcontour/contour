@@ -14,9 +14,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -30,8 +32,8 @@ import (
 )
 
 const (
-	prometheusURLFormat      = "http://localhost:%d/stats/prometheus"
-	healthcheckFailURLFormat = "http://localhost:%d/healthcheck/fail"
+	prometheusURLFormat      = "http://unix:%d/stats/prometheus"
+	healthcheckFailURLFormat = "http://unix:%d/healthcheck/fail"
 	prometheusStat           = "envoy_http_downstream_cx_active"
 )
 
@@ -70,8 +72,11 @@ type shutdownContext struct {
 	// that can be open when polling for active connections in Envoy
 	minOpenConnections int
 
-	// adminPort defines the port for our envoy pod, being configurable through --admin-port flag
+	// adminPort defines the port for the Envoy admin webpage, being configurable through --admin-port flag
 	adminPort int
+
+	// adminAddress defines the address for the Envoy admin webpage, being configurable through --admin-address flag
+	adminAddress string
 
 	logrus.FieldLogger
 }
@@ -158,7 +163,7 @@ func (s *shutdownContext) shutdownHandler() {
 		return true
 	}, func() error {
 		s.Infof("attempting to shutdown")
-		return shutdownEnvoy(s.adminPort)
+		return shutdownEnvoy(s.adminAddress, s.adminPort)
 	})
 	if err != nil {
 		// May be conflict if max retries were hit, or may be something unrelated
@@ -170,7 +175,7 @@ func (s *shutdownContext) shutdownHandler() {
 	time.Sleep(s.checkDelay)
 
 	for {
-		openConnections, err := getOpenConnections(s.adminPort)
+		openConnections, err := getOpenConnections(s.adminAddress, s.adminPort)
 		if err != nil {
 			s.Error(err)
 		} else {
@@ -196,10 +201,19 @@ func (s *shutdownContext) shutdownHandler() {
 }
 
 // shutdownEnvoy sends a POST request to /healthcheck/fail to tell Envoy to start draining connections
-func shutdownEnvoy(adminPort int) error {
+func shutdownEnvoy(adminAddress string, adminPort int) error {
+
 	healthcheckFailURL := fmt.Sprintf(healthcheckFailURLFormat, adminPort)
+
+	httpClient := http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", adminAddress)
+			},
+		},
+	}
 	/* #nosec */
-	resp, err := http.Post(healthcheckFailURL, "", nil)
+	resp, err := httpClient.Post(healthcheckFailURL, "", nil)
 	if err != nil {
 		return fmt.Errorf("creating healthcheck fail POST request failed: %s", err)
 	}
@@ -212,11 +226,20 @@ func shutdownEnvoy(adminPort int) error {
 }
 
 // getOpenConnections parses a http request to a prometheus endpoint returning the sum of values found
-func getOpenConnections(adminPort int) (int, error) {
+func getOpenConnections(adminAddress string, adminPort int) (int, error) {
 	prometheusURL := fmt.Sprintf(prometheusURLFormat, adminPort)
+
+	httpClient := http.Client{
+		Transport: &http.Transport{
+			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+				return net.Dial("unix", adminAddress)
+			},
+		},
+	}
+
 	// Make request to Envoy Prometheus endpoint
 	/* #nosec */
-	resp, err := http.Get(prometheusURL)
+	resp, err := httpClient.Get(prometheusURL)
 	if err != nil {
 		return -1, fmt.Errorf("creating metrics GET request failed: %s", err)
 	}
@@ -290,6 +313,7 @@ func registerShutdown(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*kingpin.
 
 	shutdown := cmd.Command("shutdown", "Initiate an shutdown sequence which configures Envoy to begin draining connections.")
 	shutdown.Flag("admin-port", "Envoy admin interface port.").IntVar(&ctx.adminPort)
+	shutdown.Flag("admin-address", "Envoy admin interface address.").Default("/admin/admin.sock").StringVar(&ctx.adminAddress)
 	shutdown.Flag("check-interval", "Time to poll Envoy for open connections.").DurationVar(&ctx.checkInterval)
 	shutdown.Flag("check-delay", "Time to wait before polling Envoy for open connections.").Default("60s").DurationVar(&ctx.checkDelay)
 	shutdown.Flag("drain-delay", "Time to wait before draining Envoy connections.").Default("0s").DurationVar(&ctx.drainDelay)

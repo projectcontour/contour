@@ -82,7 +82,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	}
 
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(conf, statsAddress, statsPort),
+		xdscache_v3.NewListenerCache(conf, statsAddress, statsPort, false),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},

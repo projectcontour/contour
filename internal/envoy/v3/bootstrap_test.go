@@ -111,9 +111,9 @@ func TestBootstrap(t *testing.T) {
                 {
                   "endpoint": {
                     "address": {
-                      "socket_address": {
-                        "address": "127.0.0.1",
-                        "port_value": 9001
+                      "pipe": {
+                        "path": "/admin/admin.sock",
+                        "mode": "420"
                       }
                     }
                   }
@@ -158,9 +158,9 @@ func TestBootstrap(t *testing.T) {
   "admin": {
     "access_log_path": "/dev/null",
     "address": {
-      "socket_address": {
-        "address": "127.0.0.1",
-        "port_value": 9001
+   	 "pipe": {
+        "path": "/admin/admin.sock",
+        "mode": "420"
       }
     }
   }
@@ -371,7 +371,7 @@ func TestBootstrap(t *testing.T) {
       {
         "name": "service-stats",
         "alt_stat_name": "testing-ns_service-stats_9200",
-        "type": "LOGICAL_DNS",
+        "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
           "cluster_name": "service-stats",
@@ -650,9 +650,9 @@ func TestBootstrap(t *testing.T) {
                 {
                   "endpoint": {
                     "address": {
-                      "socket_address": {
-                        "address": "127.0.0.1",
-                        "port_value": 9001
+                      "pipe": {
+                        "path": "/admin/admin.sock",
+                        "mode": "420"
                       }
                     }
                   }
@@ -697,9 +697,9 @@ func TestBootstrap(t *testing.T) {
   "admin": {
     "access_log_path": "/var/log/admin.log",
     "address": {
-      "socket_address": {
-        "address": "127.0.0.1",
-        "port_value": 9001
+      "pipe": {
+        "path": "/admin/admin.sock",
+        "mode": "420"
       }
     }
   }
@@ -785,9 +785,9 @@ func TestBootstrap(t *testing.T) {
                 {
                   "endpoint": {
                     "address": {
-                      "socket_address": {
-                        "address": "127.0.0.1",
-                        "port_value": 9001
+                      "pipe": {
+                        "path": "/admin/admin.sock",
+                        "mode": "420"
                       }
                     }
                   }
@@ -832,9 +832,9 @@ func TestBootstrap(t *testing.T) {
   "admin": {
     "access_log_path": "/dev/null",
     "address": {
-      "socket_address": {
-        "address": "127.0.0.1",
-        "port_value": 9001
+      "pipe": {
+        "path": "/admin/admin.sock",
+        "mode": "420"
       }
     }
   }
@@ -920,9 +920,9 @@ func TestBootstrap(t *testing.T) {
                 {
                   "endpoint": {
                     "address": {
-                      "socket_address": {
-                        "address": "127.0.0.1",
-                        "port_value": 9001
+                      "pipe": {
+                        "path": "/admin/admin.sock",
+                        "mode": "420"
                       }
                     }
                   }
@@ -967,9 +967,9 @@ func TestBootstrap(t *testing.T) {
   "admin": {
     "access_log_path": "/dev/null",
     "address": {
-      "socket_address": {
-        "address": "127.0.0.1",
-        "port_value": 9001
+      "pipe": {
+        "path": "/admin/admin.sock",
+        "mode": "420"
       }
     }
   }
@@ -1055,9 +1055,9 @@ func TestBootstrap(t *testing.T) {
                 {
                   "endpoint": {
                     "address": {
-                      "socket_address": {
-                        "address": "127.0.0.1",
-                        "port_value": 9001
+                      "pipe": {
+                        "path": "/admin/admin.sock",
+                        "mode": "420"
                       }
                     }
                   }
@@ -1102,9 +1102,9 @@ func TestBootstrap(t *testing.T) {
   "admin": {
     "access_log_path": "/dev/null",
     "address": {
-      "socket_address": {
-        "address": "127.0.0.1",
-        "port_value": 9001
+      "pipe": {
+        "path": "/admin/admin.sock",
+        "mode": "420"
       }
     }
   }
@@ -1192,9 +1192,9 @@ func TestBootstrap(t *testing.T) {
                 {
                   "endpoint": {
                     "address": {
-                      "socket_address": {
-                        "address": "127.0.0.1",
-                        "port_value": 9001
+                      "pipe": {
+                        "path": "/admin/admin.sock",
+                        "mode": "420"
                       }
                     }
                   }
@@ -1239,9 +1239,9 @@ func TestBootstrap(t *testing.T) {
   "admin": {
     "access_log_path": "/dev/null",
     "address": {
-      "socket_address": {
-        "address": "127.0.0.1",
-        "port_value": 9001
+      "pipe": {
+        "path": "/admin/admin.sock",
+        "mode": "420"
       }
     }
   }
@@ -1357,9 +1357,9 @@ func TestBootstrap(t *testing.T) {
                 {
                   "endpoint": {
                     "address": {
-                      "socket_address": {
-                        "address": "127.0.0.1",
-                        "port_value": 9001
+                      "pipe": {
+                        "path": "/admin/admin.sock",
+                        "mode": "420"
                       }
                     }
                   }
@@ -1404,9 +1404,9 @@ func TestBootstrap(t *testing.T) {
   "admin": {
     "access_log_path": "/dev/null",
     "address": {
-      "socket_address": {
-        "address": "127.0.0.1",
-        "port_value": 9001
+      "pipe": {
+        "path": "/admin/admin.sock",
+        "mode": "420"
       }
     }
   }
@@ -1518,14 +1518,14 @@ func TestBootstrap(t *testing.T) {
                     "lb_endpoints": [
                       {
                         "endpoint": {
-                          "address": {
-                            "socket_address": {
-                              "address": "127.0.0.1",
-                              "port_value": 9001
-                            }
-                          }
-                        }
-                      }
+                        "address": {
+						  "pipe": {
+							"path": "/admin/admin.sock",
+							"mode": "420"
+						  }
+						}
+                       }
+					 }
                     ]
                   }
                 ]
@@ -1566,10 +1566,10 @@ func TestBootstrap(t *testing.T) {
         "admin": {
           "access_log_path": "/dev/null",
           "address": {
-            "socket_address": {
-              "address": "127.0.0.1",
-              "port_value": 9001
-            }
+           "pipe": {
+		    "path": "/admin/admin.sock",
+			   "mode": "420"
+			}
           }
         }
     }`,

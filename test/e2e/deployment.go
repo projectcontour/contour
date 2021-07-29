@@ -413,6 +413,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		"--xds-address="+d.localContourHost,
 		"--xds-port="+d.localContourPort,
 		"--xds-resource-version=v3",
+		"--admin-address=/admin/admin.sock",
 	)
 	session, err := gexec.Start(bootstrapCmd, d.cmdOutputWriter, d.cmdOutputWriter)
 	if err != nil {
@@ -443,27 +444,42 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	}
 
 	// Add bootstrap ConfigMap as volume on Envoy pods (also removes cert volume).
-	d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = []v1.Volume{
-		{
-			Name: "envoy-config",
-			VolumeSource: v1.VolumeSource{
-				ConfigMap: &v1.ConfigMapVolumeSource{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: "envoy-bootstrap",
-					},
+	d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = []v1.Volume{{
+		Name: "envoy-config",
+		VolumeSource: v1.VolumeSource{
+			ConfigMap: &v1.ConfigMapVolumeSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: "envoy-bootstrap",
 				},
 			},
 		},
-	}
+	}, {
+		Name: "envoy-admin",
+		VolumeSource: v1.VolumeSource{
+			EmptyDir: &v1.EmptyDirVolumeSource{},
+		},
+	}}
 
 	// Remove cert volume mount.
-	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[0]}
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{
+		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[0], // Config mount
+		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[2], // Admin mount
+	}
 
 	// Remove init container.
 	d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers = nil
+
 	// Remove shutdown-manager container.
 	d.EnvoyDaemonSet.Spec.Template.Spec.Containers = d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1:]
 
+	// Expose the metrics & admin interfaces via host port to test from outside the kind cluster.
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports,
+		v1.ContainerPort{
+			Name:          "metrics",
+			ContainerPort: 8002,
+			HostPort:      8002,
+			Protocol:      v1.ProtocolTCP,
+		})
 	return d.EnsureEnvoyDaemonSet()
 }
 

@@ -26,7 +26,7 @@ func registerBootstrap(app *kingpin.Application) (*kingpin.CmdClause, *envoy.Boo
 	bootstrap := app.Command("bootstrap", "Generate bootstrap configuration.")
 	bootstrap.Arg("path", "Configuration file ('-' for standard output).").Required().StringVar(&config.Path)
 	bootstrap.Flag("resources-dir", "Directory where configuration files will be written to.").StringVar(&config.ResourcesDir)
-	bootstrap.Flag("admin-address", "Envoy admin interface address.").StringVar(&config.AdminAddress)
+	bootstrap.Flag("admin-address", "Envoy admin interface address.").Default("/admin/admin.sock").StringVar(&config.AdminAddress)
 	bootstrap.Flag("admin-port", "Envoy admin interface port.").IntVar(&config.AdminPort)
 	bootstrap.Flag("xds-address", "xDS gRPC API address.").StringVar(&config.XDSAddress)
 	bootstrap.Flag("xds-port", "xDS gRPC API port.").IntVar(&config.XDSGRPCPort)
