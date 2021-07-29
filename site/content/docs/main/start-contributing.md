@@ -1,4 +1,4 @@
-# Start Contributing Guide  
+# Getting Started with Contributing
 
 Thanks for your interest in contributing to Contour. Community contributions are always needed, welcome, and appreciated. This guide shows how you can contribute to Contour in the following areas:  
 
