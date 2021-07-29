@@ -479,16 +479,23 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 		}
 	default:
 		var clusters []*tcp.TcpProxy_WeightedCluster_ClusterWeight
+		var totalWeight uint32
 		for _, c := range proxy.Clusters {
-			weight := c.Weight
-			if weight == 0 {
-				weight = 1
-			}
 			clusters = append(clusters, &tcp.TcpProxy_WeightedCluster_ClusterWeight{
 				Name:   envoy.Clustername(c),
-				Weight: weight,
+				Weight: c.Weight,
 			})
+			totalWeight += c.Weight
 		}
+
+		// Check if no weights were defined, if not default to
+		// even distribution.
+		if totalWeight == 0 {
+			for _, c := range clusters {
+				c.Weight = 1
+			}
+		}
+
 		sort.Stable(sorter.For(clusters))
 		return &envoy_listener_v3.Filter{
 			Name: wellknown.TCPProxy,
