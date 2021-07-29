@@ -1339,6 +1339,7 @@ func TestTCPProxy(t *testing.T) {
 		accessLogPath = "/dev/stdout"
 	)
 
+	// c1 has no weight
 	c1 := &dag.Cluster{
 		Upstream: &dag.Service{
 			Weighted: dag.WeightedService{
@@ -1353,6 +1354,7 @@ func TestTCPProxy(t *testing.T) {
 			},
 		},
 	}
+	// c2 has a non-zero weight
 	c2 := &dag.Cluster{
 		Upstream: &dag.Service{
 			Weighted: dag.WeightedService{
@@ -1366,6 +1368,36 @@ func TestTCPProxy(t *testing.T) {
 			},
 		},
 		Weight: 20,
+	}
+	// c3 has a non-zero weight
+	c3 := &dag.Cluster{
+		Upstream: &dag.Service{
+			Weighted: dag.WeightedService{
+				ServiceName:      "example3",
+				ServiceNamespace: "default",
+				ServicePort: v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       443,
+					TargetPort: intstr.FromInt(8443),
+				},
+			},
+		},
+		Weight: 40,
+	}
+	// c4 has no weight
+	c4 := &dag.Cluster{
+		Upstream: &dag.Service{
+			Weighted: dag.WeightedService{
+				Weight:           1,
+				ServiceName:      "example4",
+				ServiceNamespace: "default",
+				ServicePort: v1.ServicePort{
+					Protocol:   "TCP",
+					Port:       443,
+					TargetPort: intstr.FromInt(8443),
+				},
+			},
+		},
 	}
 
 	tests := map[string]struct {
@@ -1390,9 +1422,82 @@ func TestTCPProxy(t *testing.T) {
 				},
 			},
 		},
-		"multiple cluster": {
+		"three clusters, one has no weight specified": {
 			proxy: &dag.TCPProxy{
-				Clusters: []*dag.Cluster{c2, c1},
+				Clusters: []*dag.Cluster{c1, c2, c3},
+			},
+			want: &envoy_listener_v3.Filter{
+				Name: wellknown.TCPProxy,
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
+						StatPrefix: statPrefix,
+						ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_WeightedClusters{
+							WeightedClusters: &envoy_tcp_proxy_v3.TcpProxy_WeightedCluster{
+								Clusters: []*envoy_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
+									{
+										Name:   envoy.Clustername(c2),
+										Weight: 20,
+									},
+									{
+										Name:   envoy.Clustername(c3),
+										Weight: 40,
+									},
+								},
+							},
+						},
+						AccessLog:   FileAccessLogEnvoy(accessLogPath, "", nil),
+						IdleTimeout: protobuf.Duration(9001 * time.Second),
+					}),
+				},
+			},
+		},
+		"three clusters, two have no weights specified": {
+			proxy: &dag.TCPProxy{
+				Clusters: []*dag.Cluster{c1, c2, c4},
+			},
+			want: &envoy_listener_v3.Filter{
+				Name: wellknown.TCPProxy,
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
+						StatPrefix: statPrefix,
+						ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_Cluster{
+							Cluster: envoy.Clustername(c2),
+						},
+						AccessLog:   FileAccessLogEnvoy(accessLogPath, "", nil),
+						IdleTimeout: protobuf.Duration(9001 * time.Second),
+					}),
+				},
+			},
+		},
+		"multiple clusters, all have weights specified": {
+			proxy: &dag.TCPProxy{
+				Clusters: []*dag.Cluster{c2, c3},
+			},
+			want: &envoy_listener_v3.Filter{
+				Name: wellknown.TCPProxy,
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
+						StatPrefix: statPrefix,
+						ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_WeightedClusters{
+							WeightedClusters: &envoy_tcp_proxy_v3.TcpProxy_WeightedCluster{
+								Clusters: []*envoy_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{{
+									Name:   envoy.Clustername(c2),
+									Weight: 20,
+								}, {
+									Name:   envoy.Clustername(c3),
+									Weight: 40,
+								}},
+							},
+						},
+						AccessLog:   FileAccessLogEnvoy(accessLogPath, "", nil),
+						IdleTimeout: protobuf.Duration(9001 * time.Second),
+					}),
+				},
+			},
+		},
+		"multiple clusters, none have weights specified": {
+			proxy: &dag.TCPProxy{
+				Clusters: []*dag.Cluster{c1, c4},
 			},
 			want: &envoy_listener_v3.Filter{
 				Name: wellknown.TCPProxy,
@@ -1405,8 +1510,8 @@ func TestTCPProxy(t *testing.T) {
 									Name:   envoy.Clustername(c1),
 									Weight: 1,
 								}, {
-									Name:   envoy.Clustername(c2),
-									Weight: 20,
+									Name:   envoy.Clustername(c4),
+									Weight: 1,
 								}},
 							},
 						},

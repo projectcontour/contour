@@ -460,51 +460,71 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 	// The value of two and a half hours for reasons documented at
 	// https://github.com/projectcontour/contour/issues/1074
 	// Set to 9001 because now it's OVER NINE THOUSAND.
-	idleTimeout := protobuf.Duration(9001 * time.Second)
+	tcpProxy := &tcp.TcpProxy{
+		StatPrefix:  statPrefix,
+		AccessLog:   accesslogger,
+		IdleTimeout: protobuf.Duration(9001 * time.Second),
+	}
 
-	switch len(proxy.Clusters) {
+	// Get the total weight of all clusters for the proxy.
+	var totalWeight uint32
+	for _, c := range proxy.Clusters {
+		totalWeight += c.Weight
+	}
+
+	// If some clusters have non-zero weights, then drop
+	// any others that have zero weights since they shouldn't
+	// get traffic (note that TCPProxy weighted clusters can't
+	// have zero weights, unlike HTTP route weighted clusters,
+	// so we can't include them with a zero weight). Also note
+	// that if all clusters have zero weights, then we keep them
+	// all and evenly weight them below.
+	var keepClusters []*dag.Cluster
+	for _, c := range proxy.Clusters {
+		if totalWeight > 0 && c.Weight == 0 {
+			continue
+		}
+
+		keepClusters = append(keepClusters, c)
+	}
+
+	// Set either Cluster or WeightedClusters based on whether
+	// there's one or more than one cluster to include.
+	switch len(keepClusters) {
 	case 1:
-		return &envoy_listener_v3.Filter{
-			Name: wellknown.TCPProxy,
-			ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&tcp.TcpProxy{
-					StatPrefix: statPrefix,
-					ClusterSpecifier: &tcp.TcpProxy_Cluster{
-						Cluster: envoy.Clustername(proxy.Clusters[0]),
-					},
-					AccessLog:   accesslogger,
-					IdleTimeout: idleTimeout,
-				}),
-			},
+		tcpProxy.ClusterSpecifier = &tcp.TcpProxy_Cluster{
+			Cluster: envoy.Clustername(keepClusters[0]),
 		}
 	default:
-		var clusters []*tcp.TcpProxy_WeightedCluster_ClusterWeight
-		for _, c := range proxy.Clusters {
+		var weightedClusters []*tcp.TcpProxy_WeightedCluster_ClusterWeight
+		for _, c := range keepClusters {
 			weight := c.Weight
+			// if this cluster has a zero weight then it means
+			// all clusters have zero weights, so evenly weight
+			// them all by setting their weights to 1.
 			if weight == 0 {
 				weight = 1
 			}
-			clusters = append(clusters, &tcp.TcpProxy_WeightedCluster_ClusterWeight{
+
+			weightedClusters = append(weightedClusters, &tcp.TcpProxy_WeightedCluster_ClusterWeight{
 				Name:   envoy.Clustername(c),
 				Weight: weight,
 			})
 		}
-		sort.Stable(sorter.For(clusters))
-		return &envoy_listener_v3.Filter{
-			Name: wellknown.TCPProxy,
-			ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-				TypedConfig: protobuf.MustMarshalAny(&tcp.TcpProxy{
-					StatPrefix: statPrefix,
-					ClusterSpecifier: &tcp.TcpProxy_WeightedClusters{
-						WeightedClusters: &tcp.TcpProxy_WeightedCluster{
-							Clusters: clusters,
-						},
-					},
-					AccessLog:   accesslogger,
-					IdleTimeout: idleTimeout,
-				}),
+
+		sort.Stable(sorter.For(weightedClusters))
+		tcpProxy.ClusterSpecifier = &tcp.TcpProxy_WeightedClusters{
+			WeightedClusters: &tcp.TcpProxy_WeightedCluster{
+				Clusters: weightedClusters,
 			},
 		}
+	}
+
+	return &envoy_listener_v3.Filter{
+		Name: wellknown.TCPProxy,
+		ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(tcpProxy),
+		},
 	}
 }
 
