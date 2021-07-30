@@ -1120,7 +1120,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1135,7 +1135,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardServiceCustomNs)),
+								Clusters: clustersWeight(service(kuardServiceCustomNs)),
 							},
 						},
 					),
@@ -1187,7 +1187,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1223,7 +1223,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1267,7 +1267,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1319,7 +1319,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1355,7 +1355,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1393,7 +1393,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1408,7 +1408,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardServiceCustomNs)),
+								Clusters: clustersWeight(service(kuardServiceCustomNs)),
 							},
 						},
 					),
@@ -1446,7 +1446,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1475,7 +1475,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1490,7 +1490,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardService)),
+								Clusters: clustersWeight(service(kuardService)),
 							},
 						},
 					),
@@ -1532,7 +1532,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -1547,7 +1547,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardServiceCustomNs)),
+								Clusters: clustersWeight(service(kuardServiceCustomNs)),
 							},
 						},
 					),
@@ -1589,7 +1589,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"test.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -3112,7 +3112,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"tcp.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -3127,7 +3127,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardService)),
+								Clusters: clustersWeight(service(kuardService)),
 							},
 						},
 					),
@@ -3157,7 +3157,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"thing.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -3172,7 +3172,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardService)),
+								Clusters: clustersWeight(service(kuardService)),
 							},
 						},
 						&SecureVirtualHost{
@@ -3181,7 +3181,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardService)),
+								Clusters: clustersWeight(service(kuardService)),
 							},
 						},
 						&SecureVirtualHost{
@@ -3190,7 +3190,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardService)),
+								Clusters: clustersWeight(service(kuardService)),
 							},
 						},
 					),
@@ -3220,7 +3220,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"thing.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -3235,7 +3235,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardService)),
+								Clusters: clustersWeight(service(kuardService)),
 							},
 						},
 						&SecureVirtualHost{
@@ -3244,7 +3244,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardService)),
+								Clusters: clustersWeight(service(kuardService)),
 							},
 						},
 					),
@@ -3274,7 +3274,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"!!thing.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -3298,7 +3298,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
 						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
 							Matches:   []gatewayapi_v1alpha1.TLSRouteMatch{{}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -3313,7 +3313,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								ListenerName: "ingress_https",
 							},
 							TCPProxy: &TCPProxy{
-								Clusters: clusters(service(kuardService)),
+								Clusters: clustersWeight(service(kuardService)),
 							},
 						},
 					),
@@ -3340,12 +3340,174 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									"tcp.projectcontour.io",
 								},
 							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, 0),
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
 						}},
 					},
 				},
 			},
 			want: listeners(),
+		},
+		"TLSRoute with multiple weighted ForwardTos": {
+			gatewayclass: validClass,
+			gateway:      gatewayWithTLSRouteSelector,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"tcp.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwards(
+								tcpRouteForwardTo("kuard", 8080, pointer.Int32Ptr(1)),
+								tcpRouteForwardTo("kuard2", 8080, pointer.Int32Ptr(2)),
+								tcpRouteForwardTo("kuard3", 8080, pointer.Int32Ptr(3)),
+							),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "tcp.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+
+								Clusters: clustersWeight(
+									weightedService(kuardService, 1),
+									weightedService(kuardService2, 2),
+									weightedService(kuardService3, 3),
+								),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute with multiple weighted ForwardTos and one zero weight": {
+			gatewayclass: validClass,
+			gateway:      gatewayWithTLSRouteSelector,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"tcp.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwards(
+								tcpRouteForwardTo("kuard", 8080, pointer.Int32Ptr(1)),
+								tcpRouteForwardTo("kuard2", 8080, pointer.Int32Ptr(0)),
+								tcpRouteForwardTo("kuard3", 8080, pointer.Int32Ptr(3)),
+							),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "tcp.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+
+								Clusters: clustersWeight(
+									weightedService(kuardService, 1),
+									weightedService(kuardService2, 0),
+									weightedService(kuardService3, 3),
+								),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute with multiple unweighted ForwardTos all default to 1": {
+			gatewayclass: validClass,
+			gateway:      gatewayWithTLSRouteSelector,
+			objs: []interface{}{
+				kuardService,
+				kuardService2,
+				kuardService3,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+						Labels: map[string]string{
+							"app":  "contour",
+							"type": "controller",
+						},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"tcp.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwards(
+								tcpRouteForwardTo("kuard", 8080, nil),
+								tcpRouteForwardTo("kuard2", 8080, nil),
+								tcpRouteForwardTo("kuard3", 8080, nil),
+							),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "tcp.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+
+								Clusters: clustersWeight(
+									weightedService(kuardService, 1),
+									weightedService(kuardService2, 1),
+									weightedService(kuardService3, 1),
+								),
+							},
+						},
+					),
+				},
+			),
 		},
 		"insert gateway listener with host": {
 			gatewayclass: validClass,
@@ -10609,11 +10771,20 @@ func httpRouteForwardTo(serviceName string, port int, weight int32) []gatewayapi
 	}}
 }
 
-func tcpRouteForwardTo(serviceName string, port int, weight int32) []gatewayapi_v1alpha1.RouteForwardTo {
+func tcpRouteForwards(forwards ...[]gatewayapi_v1alpha1.RouteForwardTo) []gatewayapi_v1alpha1.RouteForwardTo {
+	var fwds []gatewayapi_v1alpha1.RouteForwardTo
+
+	for _, f := range forwards {
+		fwds = append(fwds, f...)
+	}
+	return fwds
+}
+
+func tcpRouteForwardTo(serviceName string, port int, weight *int32) []gatewayapi_v1alpha1.RouteForwardTo {
 	return []gatewayapi_v1alpha1.RouteForwardTo{{
 		ServiceName: pointer.StringPtr(serviceName),
 		Port:        gatewayPort(port),
-		Weight:      pointer.Int32Ptr(weight),
+		Weight:      weight,
 	}}
 }
 
@@ -10725,9 +10896,13 @@ func clustersWeight(services ...*Service) (c []*Cluster) {
 }
 
 func service(s *v1.Service) *Service {
+	return weightedService(s, 1)
+}
+
+func weightedService(s *v1.Service, weight uint32) *Service {
 	return &Service{
 		Weighted: WeightedService{
-			Weight:           1,
+			Weight:           weight,
 			ServiceName:      s.Name,
 			ServiceNamespace: s.Namespace,
 			ServicePort:      s.Spec.Ports[0],

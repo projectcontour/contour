@@ -16,8 +16,13 @@ package v3
 
 import (
 	"testing"
+	"time"
 
+	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -244,6 +249,207 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 			},
 		),
 	), nil)
+}
+
+func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8443)}))
+
+	rh.OnAdd(fixture.NewService("svc2").
+		WithPorts(v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8443)}))
+
+	rh.OnAdd(&gatewayapi_v1alpha1.GatewayClass{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-gc",
+		},
+		Spec: gatewayapi_v1alpha1.GatewayClassSpec{
+			Controller: "projectcontour.io/contour",
+		},
+		Status: gatewayapi_v1alpha1.GatewayClassStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+					Status: metav1.ConditionTrue,
+				},
+			},
+		},
+	})
+
+	tlsMode := gatewayapi_v1alpha1.TLSModePassthrough
+
+	rh.OnAdd(&gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     443,
+				Protocol: "TLS",
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					Mode: &tlsMode,
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+					},
+					Kind: dag.KindTLSRoute,
+				},
+			}},
+		},
+	})
+
+	// TLSRoute with a single service/weight.
+	route1 := &gatewayapi_v1alpha1.TLSRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+			Labels: map[string]string{
+				"app":  "contour",
+				"type": "controller",
+			},
+		},
+		Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+			Gateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+			},
+			Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+				Matches: []gatewayapi_v1alpha1.TLSRouteMatch{
+					{
+						SNIs: []gatewayapi_v1alpha1.Hostname{"test.projectcontour.io"},
+					},
+				},
+				ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+					ServiceName: pointer.StringPtr("svc1"),
+					Port:        gatewayPort(443),
+					Weight:      pointer.Int32Ptr(1),
+				}},
+			}},
+		},
+	}
+
+	rh.OnAdd(route1)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					Filters: envoy_v3.Filters(
+						tcpproxy("ingress_https", "default/svc1/443/da39a3ee5e"),
+					),
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"test.projectcontour.io"},
+					},
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			staticListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	// check that ingress_http is empty
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+
+	// TLSRoute with multiple weighted services.
+	route2 := &gatewayapi_v1alpha1.TLSRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+			Labels: map[string]string{
+				"app":  "contour",
+				"type": "controller",
+			},
+		},
+		Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+			Gateways: &gatewayapi_v1alpha1.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+			},
+			Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+				Matches: []gatewayapi_v1alpha1.TLSRouteMatch{
+					{
+						SNIs: []gatewayapi_v1alpha1.Hostname{"test.projectcontour.io"},
+					},
+				},
+				ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{
+					{
+						ServiceName: pointer.StringPtr("svc1"),
+						Port:        gatewayPort(443),
+						Weight:      pointer.Int32Ptr(1),
+					},
+					{
+						ServiceName: pointer.StringPtr("svc2"),
+						Port:        gatewayPort(443),
+						Weight:      pointer.Int32Ptr(7),
+					},
+				},
+			}},
+		},
+	}
+
+	rh.OnUpdate(route1, route2)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					Filters: envoy_v3.Filters(
+						&envoy_listener_v3.Filter{
+							Name: wellknown.TCPProxy,
+							ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+								TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
+									StatPrefix: "ingress_https",
+									ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_WeightedClusters{
+										WeightedClusters: &envoy_tcp_proxy_v3.TcpProxy_WeightedCluster{
+											Clusters: []*envoy_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
+												{Name: "default/svc1/443/da39a3ee5e", Weight: 1},
+												{Name: "default/svc2/443/da39a3ee5e", Weight: 7},
+											},
+										},
+									},
+									AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil),
+									IdleTimeout: protobuf.Duration(9001 * time.Second),
+								}),
+							},
+						},
+					),
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"test.projectcontour.io"},
+					},
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			staticListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	// check that ingress_http is empty
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
 }
 
 func routeweightedcluster(clusters ...weightedcluster) *envoy_route_v3.Route_Route {
