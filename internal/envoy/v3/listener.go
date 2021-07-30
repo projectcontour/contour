@@ -466,26 +466,27 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 		IdleTimeout: protobuf.Duration(9001 * time.Second),
 	}
 
-	// Get the total weight of all clusters for the proxy.
 	var totalWeight uint32
-	for _, c := range proxy.Clusters {
-		totalWeight += c.Weight
-	}
+	var keepClusters []*dag.Cluster
 
-	// If some clusters have non-zero weights, then drop
+	// Keep clusters with non-zero weights and drop
 	// any others that have zero weights since they shouldn't
 	// get traffic (note that TCPProxy weighted clusters can't
 	// have zero weights, unlike HTTP route weighted clusters,
 	// so we can't include them with a zero weight). Also note
 	// that if all clusters have zero weights, then we keep them
 	// all and evenly weight them below.
-	var keepClusters []*dag.Cluster
 	for _, c := range proxy.Clusters {
-		if totalWeight > 0 && c.Weight == 0 {
-			continue
+		if c.Weight > 0 {
+			keepClusters = append(keepClusters, c)
+			totalWeight += c.Weight
 		}
+	}
 
-		keepClusters = append(keepClusters, c)
+	// If no clusters had non-zero weights, then revert to
+	// keeping all of them.
+	if totalWeight == 0 {
+		keepClusters = proxy.Clusters
 	}
 
 	// Set either Cluster or WeightedClusters based on whether
