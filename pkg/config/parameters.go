@@ -525,10 +525,10 @@ type NetworkParameters struct {
 	//
 	// See https://www.envoyproxy.io/docs/envoy/v1.17.0/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=xff_num_trusted_hops
 	// for more information.
-	XffNumTrustedHops uint32 `yaml:"num-trusted-hops"`
+	XffNumTrustedHops uint32 `yaml:"num-trusted-hops,omitempty"`
 
 	// Configure the port used to access the Envoy Admin interface.
-	EnvoyAdminPort int `yaml:"admin-port"`
+	EnvoyAdminPort int `yaml:"admin-port,omitempty"`
 }
 
 // ListenerParameters hold various configurable listener values.

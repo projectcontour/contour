@@ -14,6 +14,7 @@
 package v3
 
 import (
+	"fmt"
 	"path"
 	"sort"
 	"sync"
@@ -291,6 +292,8 @@ type ListenerCache struct {
 func NewListenerCache(config ListenerConfig, statsAddress string, statsPort, adminPort int, enableDebugListener bool) *ListenerCache {
 	stats := envoy_v3.StatsListener(statsAddress, statsPort)
 	admin := envoy_v3.AdminListener("127.0.0.1", adminPort)
+
+	fmt.Println("---admin port: ", adminPort)
 
 	listenerCache := &ListenerCache{
 		Config: config,
