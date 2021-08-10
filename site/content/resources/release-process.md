@@ -142,6 +142,7 @@ Specific items to call out in the release notes:
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
 - Send an update to the [cncf-contour-users mailing list][4]
+- Send an update to the [cncf-contour-distributors-announce mailing list][5]
 
 ### File issues
 
@@ -279,6 +280,7 @@ Specific items to call out in the release notes:
 - Post a note to the #contour channel on k8s slack, also update the /topic with the current release number
 - Post a note to the #project-contour channel on the vmware slack, also update the /topic with the current release number
 - Send an update to the [cncf-contour-users mailing list][4]
+- Send an update to the [cncf-contour-distributors-announce mailing list][5]
 
 ### File issues
 
@@ -288,3 +290,4 @@ If you encountered any problems or areas for improvement while executing the rel
 [2]: #patch-release-process
 [3]: {{< param github_url >}}/blob/main/hack/release/release-notes-template.md
 [4]: https://lists.cncf.io/g/cncf-contour-users/
+[5]: https://lists.cncf.io/g/cncf-contour-distributors-announce/
