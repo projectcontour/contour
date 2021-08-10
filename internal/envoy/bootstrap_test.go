@@ -28,9 +28,9 @@ func TestValidAdminAddress(t *testing.T) {
 		want    error
 	}{
 		{name: "valid socket name", address: "/admin/admin.sock", want: nil},
-		{name: "ip address invalid", address: "127.0.0.1", want: fmt.Errorf("invalid value %q, must be a unix socket name", "127.0.0.1")},
-		{name: "localhost invalid", address: "localhost", want: fmt.Errorf("invalid value %q, must be a unix socket name", "localhost")},
-		{name: "must have a /", address: "admin.sock", want: fmt.Errorf("invalid value %q, must be a unix socket name", "admin.sock")},
+		{name: "valid socket name", address: "admin.sock", want: nil},
+		{name: "ip address invalid", address: "127.0.0.1", want: fmt.Errorf("invalid value %q, cannot be `localhost` or an ip address", "127.0.0.1")},
+		{name: "localhost invalid", address: "localhost", want: fmt.Errorf("invalid value %q, cannot be `localhost` or an ip address", "localhost")},
 	}
 
 	for _, tc := range tests {

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -47,6 +46,7 @@ type BootstrapConfig struct {
 	// Defaults to 127.0.0.1.
 	AdminAddress string
 
+	// Deprecated
 	// AdminPort is the port that the administration server will listen on.
 	// Defaults to 9001.
 	AdminPort int
@@ -111,10 +111,8 @@ func (c *BootstrapConfig) GetDNSLookupFamily() string {
 // is supported for this address to mitigate security.
 func ValidAdminAddress(address string) error {
 	// Value of "localhost" is invalid.
-	if address == "localhost" ||
-		net.ParseIP(address) != nil ||
-		!strings.Contains(address, "/") {
-		return fmt.Errorf("invalid value %q, must be a unix socket name", address)
+	if address == "localhost" || net.ParseIP(address) != nil {
+		return fmt.Errorf("invalid value %q, cannot be `localhost` or an ip address", address)
 	}
 	return nil
 }

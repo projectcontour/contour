@@ -348,7 +348,7 @@ e2e: | setup-kind-cluster run-e2e cleanup-kind ## Run E2E tests against a real k
 .PHONY: run-e2e
 run-e2e:
 	CONTOUR_E2E_LOCAL_HOST=$(CONTOUR_E2E_LOCAL_HOST) \
-		ginkgo -tags=e2e -mod=readonly -skipPackage=upgrade -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
+		ginkgo -tags=e2e -mod=readonly -skipPackage=upgrade -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e/infra
 
 .PHONY: cleanup-kind
 cleanup-kind:

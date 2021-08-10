@@ -288,9 +288,9 @@ type ListenerCache struct {
 }
 
 // NewListenerCache returns an instance of a ListenerCache
-func NewListenerCache(config ListenerConfig, address string, port int, enableDebugListener bool) *ListenerCache {
-	stats := envoy_v3.StatsListener(address, port)
-	admin := envoy_v3.AdminListener("127.0.0.1", 9001)
+func NewListenerCache(config ListenerConfig, statsAddress string, statsPort, adminPort int, enableDebugListener bool) *ListenerCache {
+	stats := envoy_v3.StatsListener(statsAddress, statsPort)
+	admin := envoy_v3.AdminListener("127.0.0.1", adminPort)
 
 	listenerCache := &ListenerCache{
 		Config: config,

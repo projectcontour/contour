@@ -32,9 +32,9 @@ import (
 )
 
 const (
-	prometheusURLFormat      = "http://unix:%d/stats/prometheus"
-	healthcheckFailURLFormat = "http://unix:%d/healthcheck/fail"
-	prometheusStat           = "envoy_http_downstream_cx_active"
+	prometheusURL      = "http://unix/stats/prometheus"
+	healthcheckFailURL = "http://unix/healthcheck/fail"
+	prometheusStat     = "envoy_http_downstream_cx_active"
 )
 
 // shutdownReadyFile is the default file path used in the /shutdown endpoint.
@@ -72,7 +72,7 @@ type shutdownContext struct {
 	// that can be open when polling for active connections in Envoy
 	minOpenConnections int
 
-	// adminPort defines the port for the Envoy admin webpage, being configurable through --admin-port flag
+	// Deprecated: adminPort defines the port for the Envoy admin webpage, being configurable through --admin-port flag
 	adminPort int
 
 	// adminAddress defines the address for the Envoy admin webpage, being configurable through --admin-address flag
@@ -96,7 +96,6 @@ func newShutdownContext() *shutdownContext {
 		checkDelay:         60 * time.Second,
 		drainDelay:         0,
 		minOpenConnections: 0,
-		adminPort:          9001,
 	}
 }
 
@@ -150,7 +149,7 @@ func (s *shutdownContext) shutdownHandler() {
 	// Send shutdown signal to Envoy to start draining connections
 	s.Infof("failing envoy healthchecks")
 
-	// Retry any failures to shutdownEnvoy(s.adminPort) in a Backoff time window
+	// Retry any failures to shutdownEnvoy(s.adminAddress) in a Backoff time window
 	// doing 4 total attempts, multiplying the Duration by the Factor
 	// for each iteration.
 	err := retry.OnError(wait.Backoff{
@@ -163,7 +162,7 @@ func (s *shutdownContext) shutdownHandler() {
 		return true
 	}, func() error {
 		s.Infof("attempting to shutdown")
-		return shutdownEnvoy(s.adminAddress, s.adminPort)
+		return shutdownEnvoy(s.adminAddress)
 	})
 	if err != nil {
 		// May be conflict if max retries were hit, or may be something unrelated
@@ -175,7 +174,7 @@ func (s *shutdownContext) shutdownHandler() {
 	time.Sleep(s.checkDelay)
 
 	for {
-		openConnections, err := getOpenConnections(s.adminAddress, s.adminPort)
+		openConnections, err := getOpenConnections(s.adminAddress)
 		if err != nil {
 			s.Error(err)
 		} else {
@@ -201,9 +200,7 @@ func (s *shutdownContext) shutdownHandler() {
 }
 
 // shutdownEnvoy sends a POST request to /healthcheck/fail to tell Envoy to start draining connections
-func shutdownEnvoy(adminAddress string, adminPort int) error {
-
-	healthcheckFailURL := fmt.Sprintf(healthcheckFailURLFormat, adminPort)
+func shutdownEnvoy(adminAddress string) error {
 
 	httpClient := http.Client{
 		Transport: &http.Transport{
@@ -226,8 +223,7 @@ func shutdownEnvoy(adminAddress string, adminPort int) error {
 }
 
 // getOpenConnections parses a http request to a prometheus endpoint returning the sum of values found
-func getOpenConnections(adminAddress string, adminPort int) (int, error) {
-	prometheusURL := fmt.Sprintf(prometheusURLFormat, adminPort)
+func getOpenConnections(adminAddress string) (int, error) {
 
 	httpClient := http.Client{
 		Transport: &http.Transport{

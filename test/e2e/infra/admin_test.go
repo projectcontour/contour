@@ -25,26 +25,29 @@ func testAdminInterface() {
 	Specify("requests to admin listener are served", func() {
 		t := f.T()
 
-		cases := []string{
-			"/certs",
-			"/clusters",
-			"/listeners",
-			"/config_dump",
-			"/memory",
-			"/ready",
-			"/runtime",
-			"/server_info",
-			"/stats",
-			"/stats/prometheus",
-			"/stats/recentlookups",
+		cases := map[string]int{
+			"/certs":               200,
+			"/clusters":            200,
+			"/listeners":           200,
+			"/config_dump":         200,
+			"/memory":              200,
+			"/ready":               200,
+			"/runtime":             200,
+			"/server_info":         200,
+			"/stats":               200,
+			"/stats/prometheus":    200,
+			"/stats/recentlookups": 200,
+			"/quitquitquit":        404,
+			"/healthcheck/ok":      404,
+			"/healthcheck/fail":    404,
 		}
 
-		for _, prefix := range cases {
+		for prefix, code := range cases {
 			t.Logf("Querying admin prefix %q", prefix)
 
 			res, ok := f.HTTP.AdminRequestUntil(&e2e.HTTPRequestOpts{
 				Path:      prefix,
-				Condition: e2e.HasStatusCode(200),
+				Condition: e2e.HasStatusCode(code),
 			})
 			require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		}

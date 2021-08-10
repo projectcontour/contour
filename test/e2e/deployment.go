@@ -443,7 +443,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		return err
 	}
 
-	// Add bootstrap ConfigMap as volume on Envoy pods (also removes cert volume).
+	// Add bootstrap ConfigMap as volume and add envoy admin volume on Envoy pods (also removes cert volume).
 	d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = []v1.Volume{{
 		Name: "envoy-config",
 		VolumeSource: v1.VolumeSource{
