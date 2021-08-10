@@ -104,16 +104,16 @@ spec:
       - args:
         - bootstrap
         - /config/envoy.json
-        - --xds-address=10.52.131.186
+        - --xds-address=contour
         - --xds-port=8001
         - --xds-resource-version=v3
         - --resources-dir=/config/resources
-#        - --envoy-cafile=/certs/ca.crt
-#        - --envoy-cert-file=/certs/tls.crt
-#        - --envoy-key-file=/certs/tls.key
+        - --envoy-cafile=/certs/ca.crt
+        - --envoy-cert-file=/certs/tls.crt
+        - --envoy-key-file=/certs/tls.key
         command:
         - contour
-        image: stevesloka/contour:socket
+        image: docker.io/projectcontour/contour:main
         imagePullPolicy: Always
         name: envoy-initconfig
         volumeMounts:
