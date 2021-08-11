@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	api_errors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -97,19 +98,19 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 
 	// Fetch the Gateway from the cache.
 	gc := &gatewayapi_v1alpha1.GatewayClass{}
-	if err := r.client.Get(ctx, request.NamespacedName, gc); err != nil {
-		if api_errors.IsNotFound(err) {
-			r.log.WithField("name", request.Name).Info("failed to find gatewayclass")
-			return reconcile.Result{}, nil
-		}
+	if err := r.client.Get(ctx, request.NamespacedName, gc); api_errors.IsNotFound(err) {
+		// Not-found error, so trigger an OnDelete.
+		r.log.WithField("name", request.Name).Info("failed to find gatewayclass")
+
+		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.GatewayClass{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: request.Namespace,
+				Name:      request.Name,
+			}})
+		return reconcile.Result{}, nil
+	} else if err != nil {
 		// Error reading the object, so requeue the request.
 		return reconcile.Result{}, fmt.Errorf("failed to get gatewayclass %q: %w", request.Name, err)
-	}
-
-	// Check if object is marked for deletion.
-	if !gc.ObjectMeta.DeletionTimestamp.IsZero() {
-		r.eventHandler.OnDelete(gc)
-		return reconcile.Result{}, nil
 	}
 
 	// The gatewayclass is safe to process, so check if it's valid.

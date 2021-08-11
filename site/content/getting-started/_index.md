@@ -41,11 +41,12 @@ This quickstart guide installs Contour on a kubernetes cluster with a web applic
 ## 1. Set up a kubernetes environment
 This procedure uses Docker and kind to deploy a kubernetes cluster. If you already have a cluster available, skip to step 3  – Install a Contour service.  
 
+
 ### Install kind:
 
 See the download and install instructions for kind [here][22].
 
-Verfiy kind is installed by running:
+Verify kind is installed by running:
 
 ```yaml
 $ kind

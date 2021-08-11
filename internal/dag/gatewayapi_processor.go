@@ -537,6 +537,8 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 		}
 
 		var proxy TCPProxy
+		var totalWeight uint32
+
 		for _, forward := range rule.ForwardTo {
 
 			service, err := p.validateForwardTo(forward.ServiceName, forward.Port, route.Namespace)
@@ -545,14 +547,28 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 				continue
 			}
 
+			// Route defaults to a weight of "1" unless otherwise specified.
+			routeWeight := uint32(1)
+			if forward.Weight != nil {
+				routeWeight = uint32(*forward.Weight)
+			}
+
+			// Keep track of all the weights for this set of forwardTos. This will be
+			// used later to understand if all the weights are set to zero.
+			totalWeight += routeWeight
+
+			// https://github.com/projectcontour/contour/issues/3593
+			service.Weighted.Weight = routeWeight
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream: service,
 				SNI:      service.ExternalName,
+				Weight:   routeWeight,
 			})
 		}
 
-		if len(proxy.Clusters) == 0 {
-			// No valid clusters so the route should get rejected.
+		// No valid clusters or all forwardTos have a weight of 0
+		// so the route should get rejected.
+		if len(proxy.Clusters) == 0 || totalWeight == 0 {
 			continue
 		}
 
