@@ -101,6 +101,12 @@ toc:
         link: /resources/faq
       - page: Tagging
         link: /resources/tagging
+  - title: Security
+    subfolderitems:
+      - page: Security Report Process
+        link: /resources/security-process
+      - page: Security Fix Checklist
+        link: /resources/security-checklist
   - title: Contribute
     subfolderitems:
       - page: Start Contributing
