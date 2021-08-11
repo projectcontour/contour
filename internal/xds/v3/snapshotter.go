@@ -14,6 +14,8 @@
 package v3
 
 import (
+	"context"
+
 	envoy_types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoy_cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoy_log "github.com/envoyproxy/go-control-plane/pkg/log"
@@ -43,9 +45,10 @@ func (s *snapshotter) Generate(version string, resources map[envoy_types.Respons
 		resources[envoy_types.Listener],
 		nil,
 		resources[envoy_types.Secret],
+		nil,
 	)
 
-	return s.SetSnapshot(Hash.String(), snapshot)
+	return s.SetSnapshot(context.TODO(), Hash.String(), snapshot)
 }
 
 func NewSnapshotCache(ads bool, logger envoy_log.Logger) Snapshotter {

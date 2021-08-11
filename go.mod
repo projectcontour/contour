@@ -6,7 +6,7 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/bombsimon/logrusr v1.0.0
 	github.com/davecgh/go-spew v1.1.1
-	github.com/envoyproxy/go-control-plane v0.9.10-0.20210614203518-782de910ff04
+	github.com/envoyproxy/go-control-plane v0.9.10-0.20210806072310-abdc764d71d2
 	github.com/go-logr/logr v0.4.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.5
