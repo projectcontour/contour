@@ -402,8 +402,7 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.R
 	case gatewayapi_v1alpha1.RouteSelectAll:
 		return true, nil
 	case gatewayapi_v1alpha1.RouteSelectSame:
-		gatewayNSName := types.NamespacedName{}
-		gatewayNSName = k8s.NamespacedNameOf(p.source.gateway)
+		gatewayNSName := k8s.NamespacedNameOf(p.source.gateway)
 		return gatewayNSName.Namespace == namespace, nil
 	case gatewayapi_v1alpha1.RouteSelectSelector:
 		if len(namespaces.Selector.MatchLabels) == 0 && len(namespaces.Selector.MatchExpressions) == 0 {
