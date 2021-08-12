@@ -1,4 +1,4 @@
-# Start Contributing Guide  
+# Getting Started with Contributing
 
 Thanks for your interest in contributing to Contour. Community contributions are always needed, welcome, and appreciated. This guide shows how you can contribute to Contour in the following areas:  
 
@@ -10,7 +10,8 @@ Please familiarize yourself with the [Code of Conduct][1] and project [Philosoph
 
 # Getting Started with Code  
 
-Everything is managed on the [Project Contour GitHub][2] organization. Create an issue for a new idea or look for issues labeled **good first issue** to get started.
+Everything is managed on the [Project Contour GitHub][2] organization. Create an issue for a new idea or look for issues labeled **good first issue** to get started.  
+
 ## How we work  
 
 See [How We Work][3] for an overview:
