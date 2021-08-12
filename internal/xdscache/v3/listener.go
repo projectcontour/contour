@@ -14,7 +14,6 @@
 package v3
 
 import (
-	"fmt"
 	"path"
 	"sort"
 	"sync"
@@ -289,11 +288,9 @@ type ListenerCache struct {
 }
 
 // NewListenerCache returns an instance of a ListenerCache
-func NewListenerCache(config ListenerConfig, statsAddress string, statsPort, adminPort int, enableDebugListener bool) *ListenerCache {
+func NewListenerCache(config ListenerConfig, statsAddress string, statsPort, adminPort int) *ListenerCache {
 	stats := envoy_v3.StatsListener(statsAddress, statsPort)
 	admin := envoy_v3.AdminListener("127.0.0.1", adminPort)
-
-	fmt.Println("---admin port: ", adminPort)
 
 	listenerCache := &ListenerCache{
 		Config: config,
@@ -302,9 +299,9 @@ func NewListenerCache(config ListenerConfig, statsAddress string, statsPort, adm
 		},
 	}
 
-	// If enabled, allow the read-only options from the
+	// If the port is not zero, allow the read-only options from the
 	// Envoy admin webpage to be served.
-	if enableDebugListener {
+	if adminPort > 0 {
 		listenerCache.staticValues[admin.Name] = admin
 	}
 

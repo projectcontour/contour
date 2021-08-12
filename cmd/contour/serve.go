@@ -354,7 +354,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		// The enableDebugListener boolean is defaulted to true which matches Contour's current behavior.
 		// Future iterations can allow for this to be customized by the user if they desire to disable the
 		// Envoy admin interface entirely.
-		xdscache_v3.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort, ctx.Config.Network.EnvoyAdminPort, true),
+		xdscache_v3.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort, ctx.Config.Network.EnvoyAdminPort),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},

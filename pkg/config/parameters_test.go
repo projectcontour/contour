@@ -86,7 +86,6 @@ default-http-versions: []
 cluster:
   dns-lookup-family: auto
 network:
-  num-trusted-hops: 0
   admin-port: 9001
 `
 	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(data)))

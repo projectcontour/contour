@@ -57,6 +57,51 @@ func StatsListener(address string, port int) *envoy_listener_v3.Listener {
 	}
 }
 
+// EnvoyAdminListener returns a *envoy_listener_v3.Listener configured to serve
+// Envoy Admin endpoints.
+func EnvoyAdminListener(port int) *envoy_listener_v3.Listener {
+	return &envoy_listener_v3.Listener{
+		Name:    "envoy-admin",
+		Address: SocketAddress("127.0.0.1", port),
+		FilterChains: FilterChains(
+			&envoy_listener_v3.Filter{
+				Name: wellknown.HTTPConnectionManager,
+				ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+					TypedConfig: protobuf.MustMarshalAny(&http.HttpConnectionManager{
+						StatPrefix: "envoy-admin",
+						RouteSpecifier: &http.HttpConnectionManager_RouteConfig{
+							RouteConfig: &envoy_route_v3.RouteConfiguration{
+								VirtualHosts: []*envoy_route_v3.VirtualHost{{
+									Name:    "backend",
+									Domains: []string{"*"},
+									Routes: []*envoy_route_v3.Route{
+										serviceStatsRoute("/certs"),
+										serviceStatsRoute("/clusters"),
+										serviceStatsRoute("/listeners"),
+										serviceStatsRoute("/config_dump"),
+										serviceStatsRoute("/memory"),
+										serviceStatsRoute("/ready"),
+										serviceStatsRoute("/runtime"),
+										serviceStatsRoute("/server_info"),
+										serviceStatsRoute("/stats"),
+										serviceStatsRoute("/stats/prometheus"),
+										serviceStatsRoute("/stats/recentlookups"),
+									},
+								}},
+							},
+						},
+						HttpFilters: []*http.HttpFilter{{
+							Name: wellknown.Router,
+						}},
+						NormalizePath: protobuf.Bool(true),
+					}),
+				},
+			},
+		),
+		SocketOptions: TCPKeepaliveSocketOptions(),
+	}
+}
+
 // AdminListener returns a *envoy_listener_v3.Listener configured to serve Envoy
 // debug routes from the admin webpage.
 func AdminListener(address string, port int) *envoy_listener_v3.Listener {

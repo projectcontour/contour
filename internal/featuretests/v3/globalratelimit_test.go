@@ -98,7 +98,7 @@ func globalRateLimitFilterExists(t *testing.T, rh cache.ResourceEventHandler, c 
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			httpListener,
-			staticListener()),
+			statsListener()),
 	}).Status(p).IsValid()
 }
 
