@@ -151,6 +151,8 @@ data:
     #   Configure the number of additional ingress proxy hops from the
     #   right side of the x-forwarded-for HTTP header to trust.
     #   num-trusted-hops: 0
+    #   Configure the port used to access the Envoy Admin interface.
+    #   admin-port: 9001
     #
     # Configure an optional global rate limit service.
     # rateLimitService:
@@ -3174,8 +3176,6 @@ spec:
         - name: envoycert
           mountPath: /certs
           readOnly: true
-        - name: envoy-admin
-          mountPath: /admin
         env:
         - name: CONTOUR_NAMESPACE
           valueFrom:
