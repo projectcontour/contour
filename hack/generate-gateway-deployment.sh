@@ -31,7 +31,7 @@ for y in "${REPO}/examples/contour/"*.yaml ; do
     echo # Ensure we have at least one newline between joined fragments.
     case $y in
     */01-contour-config.yaml)
-        sed 's|# gateway:|gateway:|g ; s|#   controllerName: projectcontour.io/projectcontour/contour|  controllerName: projectcontour.io/projectcontour/contour|g ; s|#   name: contour|  name: contour|g ; s|#   namespace: projectcontour|  namespace: projectcontour|g' < "$y"
+        sed 's|# gateway:|gateway:|g ; s|#   controllerName: projectcontour.io/projectcontour/contour|  controllerName: projectcontour.io/projectcontour/contour|g' < "$y"
         ;;
     */02-job-certgen.yaml)
         cat "$y"
