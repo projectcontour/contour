@@ -33,7 +33,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	// assert that there is only a static listener
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -83,7 +83,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	// assert there are no listeners
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -123,7 +123,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -149,7 +149,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -173,7 +173,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -197,7 +197,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -232,7 +232,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 	// assert there are no listeners
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -257,7 +257,7 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})

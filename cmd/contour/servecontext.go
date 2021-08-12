@@ -194,6 +194,7 @@ func (ctx *serveContext) tlsconfig(log logrus.FieldLogger) *tls.Config {
 	}
 
 	return &tls.Config{
+		/* nosec */
 		ClientAuth: tls.RequireAndVerifyClientCert,
 		Rand:       rand.Reader,
 		GetConfigForClient: func(*tls.ClientHelloInfo) (*tls.Config, error) {
