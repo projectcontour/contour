@@ -203,14 +203,14 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
 					ClusterName: "service-stats",
 					Endpoints: Endpoints(
-						SocketAddress(c.GetAdminAddress(), c.GetAdminPort()),
+						UnixSocketAddress(c.GetAdminAddress(), c.GetAdminPort()),
 					),
 				},
 			}},
 		},
 		Admin: &envoy_bootstrap_v3.Admin{
 			AccessLogPath: c.GetAdminAccessLogPath(),
-			Address:       SocketAddress(c.GetAdminAddress(), c.GetAdminPort()),
+			Address:       UnixSocketAddress(c.GetAdminAddress(), c.GetAdminPort()),
 		},
 	}
 }

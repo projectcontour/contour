@@ -166,146 +166,10 @@ func TestBootstrap(t *testing.T) {
   }
 }`,
 		},
-		"--admin-address=8.8.8.8 --admin-port=9200": {
-			config: envoy.BootstrapConfig{
-				Path:         "envoy.json",
-				AdminAddress: "8.8.8.8",
-				AdminPort:    9200,
-				Namespace:    "testing-ns",
-			},
-			wantedBootstrapConfig: `{
-  "static_resources": {
-    "clusters": [
-      {
-        "name": "contour",
-        "alt_stat_name": "testing-ns_contour_8001",
-        "type": "STATIC",
-        "connect_timeout": "5s",
-        "load_assignment": {
-          "cluster_name": "contour",
-          "endpoints": [
-            {
-              "lb_endpoints": [
-                {
-                  "endpoint": {
-                    "address": {
-                      "socket_address": {
-                        "address": "127.0.0.1",
-                        "port_value": 8001
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "circuit_breakers": {
-          "thresholds": [
-            {
-              "priority": "HIGH",
-              "max_connections": 100000,
-              "max_pending_requests": 100000,
-              "max_requests": 60000000,
-              "max_retries": 50
-            },
-            {
-              "max_connections": 100000,
-              "max_pending_requests": 100000,
-              "max_requests": 60000000,
-              "max_retries": 50
-            }
-          ]
-        },
-        "typed_extension_protocol_options": {
-          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {	
-            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",	
-            "explicit_http_config": {	
-              "http2_protocol_options": {}	
-            }	
-          }	
-        },
-        "upstream_connection_options": {
-          "tcp_keepalive": {
-            "keepalive_probes": 3,
-            "keepalive_time": 30,
-            "keepalive_interval": 5
-          }
-        }
-      },
-      {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9200",
-        "type": "STATIC",
-        "connect_timeout": "0.250s",
-        "load_assignment": {
-          "cluster_name": "service-stats",
-          "endpoints": [
-            {
-              "lb_endpoints": [
-                {
-                  "endpoint": {
-                    "address": {
-                      "socket_address": {
-                        "address": "8.8.8.8",
-                        "port_value": 9200
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "dynamic_resources": {
-    "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-        "transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour"
-            }
-          }
-        ]
-      },
-      "resource_api_version": "V3"
-    },
-    "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-		"transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour"
-            }
-          }
-        ]
-      },
-      "resource_api_version": "V3"
-    }
-  },
-  "admin": {
-    "access_log_path": "/dev/null",
-    "address": {
-      "socket_address": {
-        "address": "8.8.8.8",
-        "port_value": 9200
-      }
-    }
-  }
-}`,
-		},
-		"--admin-address=someaddr --admin-port=9200": {
+		"--admin-address=someaddr": {
 			config: envoy.BootstrapConfig{
 				Path:         "envoy.json",
 				AdminAddress: "someaddr",
-				AdminPort:    9200,
 				Namespace:    "testing-ns",
 			},
 			wantedBootstrapConfig: `{
@@ -370,7 +234,7 @@ func TestBootstrap(t *testing.T) {
       },
       {
         "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9200",
+        "alt_stat_name": "testing-ns_service-stats_9001",
         "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
@@ -381,9 +245,9 @@ func TestBootstrap(t *testing.T) {
                 {
                   "endpoint": {
                     "address": {
-                      "socket_address": {
-                        "address": "someaddr",
-                        "port_value": 9200
+                     "pipe": {
+                        "path": "someaddr",
+                        "mode": "420"
                       }
                     }
                   }
@@ -428,144 +292,9 @@ func TestBootstrap(t *testing.T) {
   "admin": {
     "access_log_path": "/dev/null",
     "address": {
-      "socket_address": {
-        "address": "someaddr",
-        "port_value": 9200
-      }
-    }
-  }
-}`,
-		},
-		"--admin-address=::1 --admin-port=9200": {
-			config: envoy.BootstrapConfig{
-				Path:         "envoy.json",
-				AdminAddress: "::1",
-				AdminPort:    9200,
-				Namespace:    "testing-ns",
-			},
-			wantedBootstrapConfig: `{
-  "static_resources": {
-    "clusters": [
-      {
-        "name": "contour",
-        "alt_stat_name": "testing-ns_contour_8001",
-        "type": "STATIC",
-        "connect_timeout": "5s",
-        "load_assignment": {
-          "cluster_name": "contour",
-          "endpoints": [
-            {
-              "lb_endpoints": [
-                {
-                  "endpoint": {
-                    "address": {
-                      "socket_address": {
-                        "address": "127.0.0.1",
-                        "port_value": 8001
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "circuit_breakers": {
-          "thresholds": [
-            {
-              "priority": "HIGH",
-              "max_connections": 100000,
-              "max_pending_requests": 100000,
-              "max_requests": 60000000,
-              "max_retries": 50
-            },
-            {
-              "max_connections": 100000,
-              "max_pending_requests": 100000,
-              "max_requests": 60000000,
-              "max_retries": 50
-            }
-          ]
-        },
-        "typed_extension_protocol_options": {
-          "envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
-            "@type": "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
-            "explicit_http_config": {
-              "http2_protocol_options": {}
-            }
-          }
-        },
-        "upstream_connection_options": {
-          "tcp_keepalive": {
-            "keepalive_probes": 3,
-            "keepalive_time": 30,
-            "keepalive_interval": 5
-          }
-        }
-      },
-      {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9200",
-        "type": "STATIC",
-        "connect_timeout": "0.250s",
-        "load_assignment": {
-          "cluster_name": "service-stats",
-          "endpoints": [
-            {
-              "lb_endpoints": [
-                {
-                  "endpoint": {
-                    "address": {
-                      "socket_address": {
-                        "address": "::1",
-                        "port_value": 9200
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "dynamic_resources": {
-    "lds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-		"transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour"
-            }
-          }
-        ]
-      },
-      "resource_api_version": "V3"
-    },
-    "cds_config": {
-      "api_config_source": {
-        "api_type": "GRPC",
-		"transport_api_version": "V3",
-        "grpc_services": [
-          {
-            "envoy_grpc": {
-              "cluster_name": "contour"
-            }
-          }
-        ]
-      },
-      "resource_api_version": "V3"
-    }
-  },
-  "admin": {
-    "access_log_path": "/dev/null",
-    "address": {
-      "socket_address": {
-        "address": "::1",
-        "port_value": 9200
+      "pipe": {
+        "path": "someaddr",
+        "mode": "420"
       }
     }
   }
