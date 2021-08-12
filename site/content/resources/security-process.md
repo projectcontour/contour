@@ -18,7 +18,7 @@ To report a vulnerability or a security-related issue, please contact the [Conto
 
 ### Proposed Email Content
 Provide a descriptive subject line and in the body of the email include the following information:
-* Basic identity information, such as your name and your affiliation or company.
+* Basic identity information, such as your name or how you want to be referred to and your affiliation or company, if any.
 * Detailed steps to reproduce the vulnerability  (POC scripts, screenshots, and compressed packet captures are all helpful to us).
 * Description of the effects of the vulnerability on Contour and the related hardware and software configurations, so that the Contour Security Team can reproduce it.
 * How the vulnerability affects Contour usage and an estimation of the attack surface, if there is one.
