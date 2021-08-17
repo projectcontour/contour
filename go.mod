@@ -18,19 +18,19 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.26.0
-	github.com/sirupsen/logrus v1.7.0
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a
-	google.golang.org/grpc v1.36.0
+	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c
+	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.21.2
-	k8s.io/apiextensions-apiserver v0.21.2
-	k8s.io/apimachinery v0.21.2
-	k8s.io/client-go v0.21.2
-	k8s.io/klog/v2 v2.8.1-0.20210504170414-0cc9b8363efc
-	k8s.io/utils v0.0.0-20210527160623-6fdb442a123b
+	k8s.io/api v0.22.0
+	k8s.io/apiextensions-apiserver v0.22.0
+	k8s.io/apimachinery v0.22.0
+	k8s.io/client-go v0.22.0
+	k8s.io/klog/v2 v2.9.0
+	k8s.io/utils v0.0.0-20210707171843-4b05e18ac7d9
 	sigs.k8s.io/controller-runtime v0.9.2
 	sigs.k8s.io/controller-tools v0.5.0
 	sigs.k8s.io/gateway-api v0.3.0
