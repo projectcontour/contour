@@ -43,12 +43,11 @@ type BootstrapConfig struct {
 	AdminAccessLogPath string
 
 	// AdminAddress is the TCP address that the administration server will listen on.
-	// Defaults to 127.0.0.1.
+	// Defaults to /admin/admin.sock.
 	AdminAddress string
 
 	// Deprecated
 	// AdminPort is the port that the administration server will listen on.
-	// Defaults to 9001.
 	AdminPort int
 
 	// XDSAddress is the TCP address of the gRPC XDS management server.

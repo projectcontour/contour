@@ -528,6 +528,7 @@ type NetworkParameters struct {
 	XffNumTrustedHops uint32 `yaml:"num-trusted-hops,omitempty"`
 
 	// Configure the port used to access the Envoy Admin interface.
+	// If configured to port "0" then the admin interface is disabled.
 	EnvoyAdminPort int `yaml:"admin-port,omitempty"`
 }
 
