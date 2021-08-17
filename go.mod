@@ -9,12 +9,12 @@ require (
 	github.com/envoyproxy/go-control-plane v0.9.10-0.20210806072310-abdc764d71d2
 	github.com/go-logr/logr v0.4.0
 	github.com/golang/protobuf v1.5.2
-	github.com/google/go-cmp v0.5.5
+	github.com/google/go-cmp v0.5.6
 	github.com/google/uuid v1.1.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/jetstack/cert-manager v1.3.0
+	github.com/jetstack/cert-manager v1.5.1
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.13.0
+	github.com/onsi/gomega v1.14.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.26.0
@@ -30,9 +30,9 @@ require (
 	k8s.io/apimachinery v0.22.0
 	k8s.io/client-go v0.22.0
 	k8s.io/klog/v2 v2.9.0
-	k8s.io/utils v0.0.0-20210707171843-4b05e18ac7d9
+	k8s.io/utils v0.0.0-20210802155522-efc7438f0176
 	sigs.k8s.io/controller-runtime v0.9.2
-	sigs.k8s.io/controller-tools v0.5.0
+	sigs.k8s.io/controller-tools v0.6.0
 	sigs.k8s.io/gateway-api v0.3.0
-	sigs.k8s.io/kustomize/kyaml v0.1.1
+	sigs.k8s.io/kustomize/kyaml v0.10.17
 )
