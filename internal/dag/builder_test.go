@@ -305,6 +305,81 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	gatewayTLSRouteSameNamespace := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			GatewayClassName: validClass.Name,
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: gatewayapi_v1alpha1.TLSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModePassthrough),
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindTLSRoute,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
+					},
+				},
+			}},
+		},
+	}
+
+	gatewayTLSRouteNamespaceSelector := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			GatewayClassName: validClass.Name,
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: gatewayapi_v1alpha1.TLSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModePassthrough),
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindTLSRoute,
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{"matching-label-key": "matching-label-value"},
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	gatewayTLSRouteWithRouteSelector := &gatewayapi_v1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha1.GatewaySpec{
+			GatewayClassName: validClass.Name,
+			Listeners: []gatewayapi_v1alpha1.Listener{{
+				Port:     80,
+				Protocol: gatewayapi_v1alpha1.TLSProtocolType,
+				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
+					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModePassthrough),
+				},
+				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
+					Kind: KindTLSRoute,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{"matching-label-key": "matching-label-value"},
+					},
+					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+					},
+				},
+			}},
+		},
+	}
+
 	gatewayTLSRouteModePassthrough := &gatewayapi_v1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
@@ -1091,6 +1166,444 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
+		// BEGIN TLSRoute<->Gateway selection test cases
+		"TLSRoute: Gateway selects TLSRoutes in all namespaces": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteNoSelector,
+			objs: []interface{}{
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "custom",
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clustersWeight(service(kuardServiceCustomNs)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute: Gateway selects TLSRoutes in same namespace, and route is in the same namespace": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteSameNamespace,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: gatewayTLSRouteSameNamespace.Namespace,
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clustersWeight(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute: Gateway selects TLSRoutes in same namespace, and route is not in the same namespace": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteSameNamespace,
+			objs: []interface{}{
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardServiceCustomNs.Namespace,
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute: Gateway selects TLSRoutes in namespaces matching selector, and route is in a matching namespace": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteNamespaceSelector,
+			objs: []interface{}{
+				kuardServiceCustomNs,
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   kuardServiceCustomNs.Namespace,
+						Labels: map[string]string{"matching-label-key": "matching-label-value"},
+					},
+				},
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardServiceCustomNs.Namespace,
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clustersWeight(service(kuardServiceCustomNs)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute: Gateway selects TLSRoutes in namespaces matching selector, and route is in a non-matching namespace": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteNamespaceSelector,
+			objs: []interface{}{
+				kuardServiceCustomNs,
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   kuardServiceCustomNs.Namespace,
+						Labels: map[string]string{"matching-label-key": "this-label-value-does-not-match"},
+					},
+				},
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardServiceCustomNs.Namespace,
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+
+		"TLSRoute: Gateway selects TLSRoutes matching selector, and route matches": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteWithRouteSelector,
+			objs: []interface{}{
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardServiceCustomNs.Namespace,
+						Labels:    map[string]string{"matching-label-key": "matching-label-value"},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clustersWeight(service(kuardServiceCustomNs)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute: Gateway selects TLSRoutes matching selector, and route does not match": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteWithRouteSelector,
+			objs: []interface{}{
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardServiceCustomNs.Namespace,
+						Labels:    map[string]string{"matching-label-key": "this-label-value-does-not-match"},
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute: Gateway selects non-TLSRoutes": {
+			gatewayclass: validClass,
+			gateway:      gatewayNoSelector, // selects HTTPRoutes, not TLSRoutes
+			objs: []interface{}{
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardServiceCustomNs.Namespace,
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute: TLSRoute allows Gateways in same namespace, and gateway is in the same namespace": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteNoSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clustersWeight(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute: TLSRoute allows Gateways in same namespace, and gateway is not in the same namespace": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteNoSelector,
+			objs: []interface{}{
+				kuardServiceCustomNs,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardServiceCustomNs.Namespace,
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute: TLSRoute allows Gateways from list, and gateway is in the list": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteNoSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
+							GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{
+								{Namespace: gatewayTLSRouteNoSelector.Namespace, Name: gatewayTLSRouteNoSelector.Name},
+							},
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "test.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clustersWeight(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute: TLSRoute allows Gateways from list, and gateway is not in the list": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSRouteNoSelector,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha1.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
+						Gateways: &gatewayapi_v1alpha1.RouteGateways{
+							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
+							GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{
+								{Namespace: "some-other-namespace", Name: "some-other-gateway-name"},
+							},
+						},
+						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
+							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
+								SNIs: []gatewayapi_v1alpha1.Hostname{
+									"test.projectcontour.io",
+								},
+							}},
+							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		// END TLSRoute<->Gateway selection test cases
+
 		"TLSRoute with TLS.Mode=Passthrough is valid": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSRouteModePassthrough,
@@ -1348,240 +1861,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
 						Gateways: &gatewayapi_v1alpha1.RouteGateways{
 							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
-						},
-						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
-							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
-								SNIs: []gatewayapi_v1alpha1.Hostname{
-									"test.projectcontour.io",
-								},
-							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(),
-		},
-		// TLSRoute is in a different namespace than the Gateway,
-		// but will be allowed since "All" is set.
-		"TLSRoute: RouteGateways with GatewayAllowType: All": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSRouteNoSelector,
-			objs: []interface{}{
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "custom",
-						Labels: map[string]string{
-							"app":  "contour",
-							"type": "controller",
-						},
-					},
-				},
-				kuardServiceCustomNs,
-				&gatewayapi_v1alpha1.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "custom",
-					},
-					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
-						Gateways: &gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
-						},
-						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
-							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
-								SNIs: []gatewayapi_v1alpha1.Hostname{
-									"test.projectcontour.io",
-								},
-							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(
-				&Listener{
-					Port: 443,
-					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name:         "test.projectcontour.io",
-								ListenerName: "ingress_https",
-							},
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardServiceCustomNs)),
-							},
-						},
-					),
-				},
-			),
-		},
-		// TLSRoute is in a different namespace than the Gateway,
-		// and is rejected since "SameNamespace" is set.
-		"TLSRoute doesn't match with RouteGateways.GatewayAllowType: SameNamespace": {
-			gatewayclass: validClass,
-			gateway:      gatewayNoSelector,
-			objs: []interface{}{
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "custom",
-						Labels: map[string]string{
-							"app":  "contour",
-							"type": "controller",
-						},
-					},
-				},
-				kuardServiceCustomNs,
-				&gatewayapi_v1alpha1.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "custom",
-					},
-					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
-						Gateways: &gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
-						},
-						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
-							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
-								SNIs: []gatewayapi_v1alpha1.Hostname{
-									"test.projectcontour.io",
-								},
-							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(),
-		},
-		// TLSRoute is in the same namespace of the Gateway,
-		// and is allowed since "SameNamespace" is set.
-		"TLSRoute matches with RouteGateways.GatewayAllowType: SameNamespace": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSRouteNoSelector,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha1.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-					},
-					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
-						Gateways: &gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
-						},
-						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
-							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
-								SNIs: []gatewayapi_v1alpha1.Hostname{
-									"test.projectcontour.io",
-								},
-							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(
-				&Listener{
-					Port: 443,
-					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name:         "test.projectcontour.io",
-								ListenerName: "ingress_https",
-							},
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardService)),
-							},
-						},
-					),
-				},
-			),
-		},
-		// TLSRoute references same Gateway is configured with
-		// in the FromList.
-		"TLSRoute matches with RouteGateways.GatewayAllowType: FromList": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSRouteNoSelector,
-			objs: []interface{}{
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "custom",
-						Labels: map[string]string{
-							"app":  "contour",
-							"type": "controller",
-						},
-					},
-				},
-				kuardServiceCustomNs,
-				&gatewayapi_v1alpha1.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "custom",
-					},
-					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
-						Gateways: &gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
-							GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
-								Name:      "contour",
-								Namespace: "projectcontour",
-							}},
-						},
-						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
-							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
-								SNIs: []gatewayapi_v1alpha1.Hostname{
-									"test.projectcontour.io",
-								},
-							}},
-							ForwardTo: tcpRouteForwardTo("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(
-				&Listener{
-					Port: 443,
-					VirtualHosts: virtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name:         "test.projectcontour.io",
-								ListenerName: "ingress_https",
-							},
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardServiceCustomNs)),
-							},
-						},
-					),
-				},
-			),
-		},
-		// TLSRoute references different Gateway is configured with
-		// in the FromList.
-		"TLSRoute doesn't match with RouteGateways.GatewayAllowType: FromList": {
-			gatewayclass: validClass,
-			gateway:      gatewayNoSelector,
-			objs: []interface{}{
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "custom",
-						Labels: map[string]string{
-							"app":  "contour",
-							"type": "controller",
-						},
-					},
-				},
-				kuardServiceCustomNs,
-				&gatewayapi_v1alpha1.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "custom",
-					},
-					Spec: gatewayapi_v1alpha1.TLSRouteSpec{
-						Gateways: &gatewayapi_v1alpha1.RouteGateways{
-							Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
-							GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
-								Name:      "wrong",
-								Namespace: "reference",
-							}},
 						},
 						Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
 							Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
