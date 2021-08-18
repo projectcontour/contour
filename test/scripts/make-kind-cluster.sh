@@ -24,7 +24,7 @@ set -o nounset
 readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
-readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.21.1"}
+readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.22.0"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 
@@ -78,7 +78,7 @@ do
 done
 
 # Install cert-manager.
-${KUBECTL} apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
+${KUBECTL} apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.1/cert-manager.yaml
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=cert-manager deployments --for=condition=Available
 ${KUBECTL} wait --timeout="${WAITTIME}" -n cert-manager -l app=webhook deployments --for=condition=Available
 

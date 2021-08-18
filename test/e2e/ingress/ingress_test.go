@@ -87,8 +87,6 @@ var _ = Describe("Ingress", func() {
 
 	f.NamespacedTest("ingress-tls-wildcard-host", testTLSWildcardHost)
 
-	f.NamespacedTest("ingress-ensure-v1beta1", testEnsureV1Beta1)
-
 	f.NamespacedTest("backend-tls", func(namespace string) {
 		Context("with backend tls", func() {
 			BeforeEach(func() {
