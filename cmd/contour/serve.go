@@ -415,6 +415,16 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		Logger:    log.WithField("context", "dynamicHandler"),
 	}
 
+	// Start setting up StatusUpdateHandler since we need it in
+	// the Gateway API controllers. Will finish setting it up and
+	// start it later.
+	sh := k8s.StatusUpdateHandler{
+		Log:       log.WithField("context", "StatusUpdateHandler"),
+		Clients:   clients,
+		Cache:     mgr.GetCache(),
+		Converter: converter,
+	}
+
 	// Inform on DefaultResources.
 	for _, r := range k8s.DefaultResources() {
 		if err := informOnResource(clients, r, &dynamicHandler, mgr.GetCache()); err != nil {
@@ -433,8 +443,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 			// Create and register the gatewayclass controller with the manager.
 			gatewayClassControllerName := ctx.Config.GatewayConfig.ControllerName
-			if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler,
-				log.WithField("context", "gatewayclass-controller"), gatewayClassControllerName); err != nil {
+			if _, err := controller.NewGatewayClassController(
+				mgr,
+				&dynamicHandler,
+				sh.Writer(),
+				log.WithField("context", "gatewayclass-controller"),
+				gatewayClassControllerName,
+			); err != nil {
 				log.WithError(err).Fatal("failed to create gatewayclass-controller")
 			}
 
@@ -553,13 +568,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		NextObserver: eventHandler.Observer,
 	}
 
-	sh := k8s.StatusUpdateHandler{
-		Log:           log.WithField("context", "StatusUpdateHandler"),
-		Clients:       clients,
-		Cache:         mgr.GetCache(),
-		LeaderElected: eventHandler.IsLeader,
-		Converter:     converter,
-	}
+	// Finish setting up the StatusUpdateHandler and
+	// add it to the work group.
+	sh.LeaderElected = eventHandler.IsLeader
 	g.Add(sh.Start)
 
 	// Now we have the statusUpdateHandler, we can create the event handler's StatusUpdater, which will take the

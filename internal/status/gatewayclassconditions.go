@@ -14,44 +14,43 @@
 package status
 
 import (
-	"fmt"
-
-	"github.com/projectcontour/contour/internal/errors"
+	"time"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
-
-type GatewayClassReasonType string
 
 const reasonValidGatewayClass = "Valid"
 const reasonInvalidGatewayClass = "Invalid"
 
-// computeGatewayClassAdmittedCondition computes the GatewayClass Admitted status
-// condition based on errs.
-func computeGatewayClassAdmittedCondition(errs field.ErrorList) metav1.Condition {
-	c := metav1.Condition{
-		Type:    string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
-		Status:  metav1.ConditionTrue,
-		Reason:  reasonValidGatewayClass,
-		Message: "Valid GatewayClass",
+// computeGatewayClassAdmittedCondition computes the GatewayClass Admitted status condition.
+func computeGatewayClassAdmittedCondition(gatewayClass *gatewayapi_v1alpha1.GatewayClass, admitted bool) metav1.Condition {
+	switch admitted {
+	case true:
+		return metav1.Condition{
+			Type:               string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+			Status:             metav1.ConditionTrue,
+			Reason:             "Valid",
+			Message:            "Valid GatewayClass",
+			ObservedGeneration: gatewayClass.Generation,
+			LastTransitionTime: metav1.NewTime(time.Now()),
+		}
+	default:
+		return metav1.Condition{
+			Type:               string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+			Status:             metav1.ConditionFalse,
+			Reason:             "Invalid",
+			Message:            "Invalid GatewayClass: another older GatewayClass with the same Spec.Controller exists",
+			ObservedGeneration: gatewayClass.Generation,
+			LastTransitionTime: metav1.NewTime(time.Now()),
+		}
 	}
-
-	if errs != nil {
-		c.Status = metav1.ConditionFalse
-		c.Reason = reasonInvalidGatewayClass
-		c.Message = fmt.Sprintf("Invalid GatewayClass: %s.", errors.ParseFieldErrors(errs))
-	}
-
-	return c
 }
 
 // mergeConditions adds or updates matching conditions, and updates the transition
 // time if details of a condition have changed. Returns the updated condition array.
 func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition) []metav1.Condition {
-	now := metav1.NewTime(clock.Now())
 	var additions []metav1.Condition
 	for i, update := range updates {
 		add := true
@@ -62,15 +61,13 @@ func mergeConditions(conditions []metav1.Condition, updates ...metav1.Condition)
 					conditions[j].Status = update.Status
 					conditions[j].Reason = update.Reason
 					conditions[j].Message = update.Message
-					if cond.Status != update.Status {
-						conditions[j].LastTransitionTime = now
-					}
+					conditions[j].ObservedGeneration = update.ObservedGeneration
+					conditions[j].LastTransitionTime = update.LastTransitionTime
 					break
 				}
 			}
 		}
 		if add {
-			updates[i].LastTransitionTime = now
 			additions = append(additions, updates[i])
 		}
 	}
