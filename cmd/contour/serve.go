@@ -449,8 +449,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			}
 
 			// Create and register the NewGatewayController controller with the manager.
-			if _, err := controller.NewGatewayController(mgr, eventHandler,
-				log.WithField("context", "gateway-controller"), gatewayClassControllerName); err != nil {
+			if _, err := controller.NewGatewayController(
+				mgr,
+				eventHandler,
+				sh.Writer(),
+				log.WithField("context", "gateway-controller"),
+				gatewayClassControllerName,
+			); err != nil {
 				log.WithError(err).Fatal("failed to create gateway-controller")
 			}
 

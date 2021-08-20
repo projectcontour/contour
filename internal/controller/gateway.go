@@ -16,10 +16,12 @@ package controller
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,11 +34,18 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+var gatewayGVR = schema.GroupVersionResource{
+	Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+	Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+	Resource: "gateways",
+}
+
 type gatewayReconciler struct {
-	ctx          context.Context
-	client       client.Client
-	eventHandler cache.ResourceEventHandler
-	log          logrus.FieldLogger
+	ctx           context.Context
+	client        client.Client
+	eventHandler  cache.ResourceEventHandler
+	statusUpdater k8s.StatusUpdater
+	log           logrus.FieldLogger
 
 	// gatewayClassControllerName is the configured controller of managed gatewayclasses.
 	gatewayClassControllerName string
@@ -44,11 +53,12 @@ type gatewayReconciler struct {
 
 // NewGatewayController creates the gateway controller from mgr. The controller will be pre-configured
 // to watch for Gateway objects across all namespaces and reconcile those that match class.
-func NewGatewayController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger, gatewayClassControllerName string) (controller.Controller, error) {
+func NewGatewayController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, statusUpdater k8s.StatusUpdater, log logrus.FieldLogger, gatewayClassControllerName string) (controller.Controller, error) {
 	r := &gatewayReconciler{
 		ctx:                        context.Background(),
 		client:                     mgr.GetClient(),
 		eventHandler:               eventHandler,
+		statusUpdater:              statusUpdater,
 		log:                        log,
 		gatewayClassControllerName: gatewayClassControllerName,
 	}
@@ -64,7 +74,40 @@ func NewGatewayController(mgr manager.Manager, eventHandler cache.ResourceEventH
 	); err != nil {
 		return nil, err
 	}
+
+	// Watch GatewayClasses and reconcile their associated Gateways
+	// to handle changes in the GatewayClasses' "Admitted" conditions.
+	if err := c.Watch(
+		&source.Kind{Type: &gatewayapi_v1alpha1.GatewayClass{}},
+		handler.EnqueueRequestsFromMapFunc(r.mapGatewayClassToGateways),
+		predicate.NewPredicateFuncs(r.gatewayClassHasMatchingController),
+	); err != nil {
+		return nil, err
+	}
+
 	return c, nil
+}
+
+func (r *gatewayReconciler) mapGatewayClassToGateways(gatewayClass client.Object) []reconcile.Request {
+	var gateways gatewayapi_v1alpha1.GatewayList
+	if err := r.client.List(context.Background(), &gateways); err != nil {
+		r.log.WithError(err).Error("error listing gateways")
+		return nil
+	}
+
+	var reconciles []reconcile.Request
+	for _, gw := range gateways.Items {
+		if gw.Spec.GatewayClassName == gatewayClass.GetName() {
+			reconciles = append(reconciles, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: gw.Namespace,
+					Name:      gw.Name,
+				},
+			})
+		}
+	}
+
+	return reconciles
 }
 
 // hasMatchingController returns true if the provided object is a Gateway
@@ -78,7 +121,7 @@ func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
 
 	gw, ok := obj.(*gatewayapi_v1alpha1.Gateway)
 	if !ok {
-		log.Info("invalid object, bypassing reconciliation.")
+		log.Debugf("unexpected object type %T, bypassing reconciliation.", obj)
 		return false
 	}
 
@@ -88,11 +131,11 @@ func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
 		return false
 	}
 	if matches {
-		log.Info("enqueueing gateway")
+		log.Debug("enqueueing gateway")
 		return true
 	}
 
-	log.Info("configured controllerName doesn't match an existing GatewayClass")
+	log.Debugf("gateway's class controller is not %s; bypassing reconciliation", r.gatewayClassControllerName)
 	return false
 }
 
@@ -109,31 +152,169 @@ func (r *gatewayReconciler) hasContourOwnedClass(gw *gatewayapi_v1alpha1.Gateway
 	return true, nil
 }
 
+func (r *gatewayReconciler) gatewayClassHasMatchingController(obj client.Object) bool {
+	gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
+	if !ok {
+		r.log.Infof("expected GatewayClass, got %T", obj)
+		return false
+	}
+
+	return gc.Spec.Controller == r.gatewayClassControllerName
+}
+
+// Reconcile finds all the Gateways for the GatewayClass with an "Admitted: true" condition.
+// It passes the oldest such Gateway to the DAG for processing, and sets a "Scheduled: false"
+// condition on all other Gateways for the admitted GatewayClass.
 func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.log.WithField("namespace", request.Namespace).WithField("name", request.Name).Info("reconciling gateway")
 
-	// Fetch the Gateway.
-	gw := &gatewayapi_v1alpha1.Gateway{}
-	if err := r.client.Get(ctx, request.NamespacedName, gw); errors.IsNotFound(err) {
-		// Not-found error, so trigger an OnDelete.
-		r.log.WithField("name", request.Name).WithField("namespace", request.Namespace).Info("failed to find gateway")
+	var gatewayClasses gatewayapi_v1alpha1.GatewayClassList
+	if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
+		return reconcile.Result{}, fmt.Errorf("error listing gateway classes")
+	}
 
+	// Find the GatewayClass for this controller with Admitted=true.
+	var admittedGatewayClass *gatewayapi_v1alpha1.GatewayClass
+	for i := range gatewayClasses.Items {
+		gatewayClass := &gatewayClasses.Items[i]
+
+		if gatewayClass.Spec.Controller != r.gatewayClassControllerName {
+			continue
+		}
+		if !isAdmitted(gatewayClass) {
+			continue
+		}
+
+		admittedGatewayClass = gatewayClass
+		break
+	}
+
+	if admittedGatewayClass == nil {
+		r.log.Info("No admitted gateway class found")
 		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
 			}})
 		return reconcile.Result{}, nil
-	} else if err != nil {
-		// Error reading the object, so requeue the request.
-		return reconcile.Result{}, fmt.Errorf("failed to get gateway %s/%s: %w", request.Namespace, request.Name, err)
+	}
+
+	var allGateways gatewayapi_v1alpha1.GatewayList
+	if err := r.client.List(context.Background(), &allGateways); err != nil {
+		return reconcile.Result{}, fmt.Errorf("error listing gateways")
+	}
+
+	// Get all the Gateways for the Admitted=true GatewayClass.
+	var gatewaysForClass []*gatewayapi_v1alpha1.Gateway
+	for i := range allGateways.Items {
+		if allGateways.Items[i].Spec.GatewayClassName == admittedGatewayClass.Name {
+			gatewaysForClass = append(gatewaysForClass, &allGateways.Items[i])
+		}
+	}
+
+	if len(gatewaysForClass) == 0 {
+		r.log.Info("No gateways found for admitted gateway class")
+		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: request.Namespace,
+				Name:      request.Name,
+			}})
+		return reconcile.Result{}, nil
+	}
+
+	// Find the oldest Gateway, using alphabetical order
+	// as a tiebreaker.
+	var oldest *gatewayapi_v1alpha1.Gateway
+	for _, gw := range gatewaysForClass {
+		if oldest == nil {
+			oldest = gw
+		} else if gw.CreationTimestamp.Before(&oldest.CreationTimestamp) {
+			oldest = gw
+		} else if gw.CreationTimestamp.Equal(&oldest.CreationTimestamp) {
+			if fmt.Sprintf("%s/%s", gw.Namespace, gw.Name) < fmt.Sprintf("%s/%s", oldest.Namespace, oldest.Name) {
+				oldest = gw
+			}
+		}
+	}
+
+	// Set the "Scheduled" condition to false for all gateways
+	// except the oldest. The oldest will have its status set
+	// by the DAG processor, so don't set it here.
+	for _, gw := range gatewaysForClass {
+		if gw == oldest {
+			continue
+		}
+
+		if r.statusUpdater != nil {
+			r.statusUpdater.Send(k8s.StatusUpdate{
+				NamespacedName: k8s.NamespacedNameOf(gw),
+				Resource:       gatewayGVR,
+				Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+					gw, ok := obj.(*gatewayapi_v1alpha1.Gateway)
+					if !ok {
+						panic(fmt.Sprintf("unsupported object type %T", obj))
+					}
+
+					return setGatewayNotScheduled(gw.DeepCopy())
+				}),
+			})
+		} else {
+			// this branch makes testing easier by not going through the StatusUpdater.
+			copy := setGatewayNotScheduled(gw.DeepCopy())
+			if err := r.client.Status().Update(context.Background(), copy); err != nil {
+				r.log.WithError(err).Error("error updating gateway status")
+				return reconcile.Result{}, fmt.Errorf("error updating status of gateway %s/%s: %v", gw.Namespace, gw.Name, err)
+			}
+		}
 	}
 
 	// TODO: Ensure the gateway by creating manage infrastructure, i.e. the Envoy service.
 	// xref: https://github.com/projectcontour/contour/issues/3545
 
-	// Pass the gateway off to the eventHandler.
-	r.eventHandler.OnAdd(gw)
-
+	r.log.WithField("namespace", oldest.Namespace).WithField("name", oldest.Name).Info("assigning gateway to DAG")
+	r.eventHandler.OnAdd(oldest)
 	return reconcile.Result{}, nil
+}
+
+func isAdmitted(gatewayClass *gatewayapi_v1alpha1.GatewayClass) bool {
+	for _, cond := range gatewayClass.Status.Conditions {
+		if cond.Type == "Admitted" && cond.Status == metav1.ConditionTrue {
+			return true
+		}
+	}
+
+	return false
+}
+
+func setGatewayNotScheduled(gateway *gatewayapi_v1alpha1.Gateway) *gatewayapi_v1alpha1.Gateway {
+	newCond := metav1.Condition{
+		Type:               "Scheduled",
+		Status:             metav1.ConditionFalse,
+		Reason:             "OlderGatewayExists",
+		Message:            "An older Gateway exists for the admitted GatewayClass",
+		LastTransitionTime: metav1.NewTime(time.Now()),
+		ObservedGeneration: gateway.Generation,
+	}
+
+	for i := range gateway.Status.Conditions {
+		cond := &gateway.Status.Conditions[i]
+
+		if cond.Type != "Scheduled" {
+			continue
+		}
+
+		// Update only if something has changed.
+		if cond.Status != newCond.Status || cond.Reason != newCond.Reason || cond.Message != newCond.Message {
+			cond.Status = newCond.Status
+			cond.Reason = newCond.Reason
+			cond.Message = newCond.Message
+			cond.LastTransitionTime = newCond.LastTransitionTime
+			cond.ObservedGeneration = newCond.ObservedGeneration
+		}
+
+		return gateway
+	}
+
+	gateway.Status.Conditions = append(gateway.Status.Conditions, newCond)
+	return gateway
 }
