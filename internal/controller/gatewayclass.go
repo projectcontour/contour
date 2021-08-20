@@ -135,8 +135,33 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 	}
 
 	for _, gc := range controlledClasses.notAdmittedClasses() {
+		if r.statusUpdater != nil {
+			r.statusUpdater.Send(k8s.StatusUpdate{
+				NamespacedName: types.NamespacedName{Name: gc.Name},
+				Resource:       gatewayClassGVR,
+				Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+					gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
+					if !ok {
+						panic(fmt.Sprintf("unsupported object type %T", obj))
+					}
+
+					copy := gc.DeepCopy()
+					return status.SetGatewayClassAdmitted(context.Background(), r.client, copy, false)
+				}),
+			})
+		} else {
+			// this branch makes testing easier by not going through the StatusUpdater.
+			copy := status.SetGatewayClassAdmitted(context.Background(), r.client, gc.DeepCopy(), false)
+
+			if err := r.client.Status().Update(context.Background(), copy); err != nil {
+				return reconcile.Result{}, fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
+			}
+		}
+	}
+
+	if r.statusUpdater != nil {
 		r.statusUpdater.Send(k8s.StatusUpdate{
-			NamespacedName: types.NamespacedName{Name: gc.Name},
+			NamespacedName: types.NamespacedName{Name: controlledClasses.admittedClass().Name},
 			Resource:       gatewayClassGVR,
 			Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
 				gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
@@ -145,24 +170,16 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 				}
 
 				copy := gc.DeepCopy()
-				return status.SetGatewayClassAdmitted(context.Background(), r.client, copy, false)
+				return status.SetGatewayClassAdmitted(context.Background(), r.client, copy, true)
 			}),
 		})
+	} else {
+		// this branch makes testing easier by not going through the StatusUpdater.
+		copy := status.SetGatewayClassAdmitted(context.Background(), r.client, controlledClasses.admittedClass().DeepCopy(), true)
+		if err := r.client.Status().Update(context.Background(), copy); err != nil {
+			return reconcile.Result{}, fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
+		}
 	}
-
-	r.statusUpdater.Send(k8s.StatusUpdate{
-		NamespacedName: types.NamespacedName{Name: controlledClasses.admittedClass().Name},
-		Resource:       gatewayClassGVR,
-		Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
-			gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
-			if !ok {
-				panic(fmt.Sprintf("unsupported object type %T", obj))
-			}
-
-			copy := gc.DeepCopy()
-			return status.SetGatewayClassAdmitted(context.Background(), r.client, copy, true)
-		}),
-	})
 
 	r.eventHandler.OnAdd(controlledClasses.admittedClass())
 
