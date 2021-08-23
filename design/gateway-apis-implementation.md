@@ -103,7 +103,7 @@ If multiple GatewayClasses match the same controllerName, the oldest class based
 
 ### Gateway
 
-Contour watches for the Gateway that belongs to the GatewayClass identified per the rules in the previous section.
+Contour watches for the Gateway that belongs to the GatewayClass identified per the rules in the previous section. The `spec.classname` field in the Gateway is used to find a `GatewayClass`. As long as the corresponding GatewayClass matches the `ControllerName` field, Contour will process that Gateway. If multiple Gateways are found matching the same GatewayClass, then the oldest Gateway is processed and additional Gateways will have a status set informing users that the Gateway is not being processed.
 
 Contour is not able to specify the address that the Envoy deployment will listen on, and so will ignore any entries in the Gateway's spec.addresses field.
 
@@ -178,7 +178,7 @@ This design will migrate the Contour configuration configmap to a full custom re
 * Allows for a place to surface information about configuration errors - the CRD status, in addition to the Contour log files
 * Allows the Operator workflow to match a non-operator workflow  (i.e. you start with a Contour configuration CRD)
 
-Contour will have an entry added to the config CRD for the `ControllerName` it should watch.
+Contour will have an entry added to the config CRD for the `ControllerName` it should watch. The `ControllerName` should take the format of `projectcontour.io/<namespace>/<name>` but only really requires it be unique.
 
 ```
 gateway:
@@ -188,7 +188,7 @@ gateway:
 ```
 
 Contour will look for a Gateway + GatewayClass that matches the `ControllerName` field specified in the configuration CRD.
-If it does not find a matching Gateway/GatewayClass, then it will begin processing GatewayAPI resources once they are available.
+If it does not find a matching Gateway/GatewayClass, then it will begin processing GatewayAPI resources once they are available. 
 
 Should two different `Gateway` or `GatewayClasses` be found matching the same ControllerName, then Contour will utilize the oldest created object and set a status on the other(s) which describes that object as being rejected.
 
@@ -280,12 +280,10 @@ Contour’s implementation of the Operator has taken a similar approach where ba
 
 Initially Contour can do the same work to move that same logic and expose Envoy via annotations on the Service Type=LoadBalancer.
 
-The future looking way to approach this is to utilize GatewayAPI fully and instead of exposing a service with type=LoadBalancer, Contour can create a GatewayClass, Gateway which selects a TCPRoute used to send traffic to the Envoy fleet.
-The details defined in the Contour configuration CRD will be used to pre-populate annotations that will be stored in a Kubernetes configmap and referenced from the GatewayClass.Spec.ParametersRef.
-The Gateway Stub controller will be utilized to configure a new Kubernetes Service with the annotations defined in the configmap on the GatewayClass and send traffic to Envoy.
-Once implementers catch up, specific implementations will be utilized and the stub controller can be deprecated.
+Additionally, Contour will support utilizing GatewayAPI itself fully and instead of exposing a service with type=LoadBalancer, Contour can create a GatewayClass, Gateway which selects a TCPRoute used to send traffic to the Envoy fleet.
+The Gateway controller responsible for the newly created Gateway (not Contour) will manage the work to get traffic to the Envoy service. Should an implementation not yet exist, a Gateway Stub controller could be utilized to configure a new Kubernetes Service with the annotations defined in the configmap on the GatewayClass and send traffic to Envoy. This stub controller is an open source, non-Contour managed resource and won't be supported directly by the project.
 
-New fields will be added to the Contour configuration file which will allow users to define the GVK of a resource used in the GatewayClass along with the ControllerName to be used.
+New fields will be added to the Contour configuration file which will allow users to optionally define the GVK of a resource used in the GatewayClass along with the ControllerName to be used.
 The Operator will still auto-create the GatewayClass/Gateway which will allow the operator to still maintain the proper listeners matching the Gateway Contour is processing, but allow for custom implementations without the need for code changes to Contour.
 
 ![alt_text](images/gatewayapi-external-gateway.jpg)
@@ -302,29 +300,36 @@ When users want to deploy Contour without the Operator, then they have the abili
 
 **Assertion**:_ The GatewayClass.Spec.ParamsRef will not be defined since all the work to define how a Contour/Envoy is configured is defined in the Contour configuration CRD._
 
+#### Upgrades
+
+Since Contour manages Envoy, during an upgrade path, Contour is always updated first before Envoy. This requires Contour to not use new Envoy features until they've been out in Envoy for at least a release, or alternatively have a way for Contour's xDS server to understand Envoy versions and not send invalid config to an older instance of Envoy. 
+
 #### Operator with GatewayAPI (Envoy is managed by convention)
 
 In this mode, the Operator is managing instances of Contour. Each instance of Contour manages its own Envoy fleet by convention (since the Operator is in use). Contour will expose the Envoy fleet by managing a Gateway/GatewayClass/TCPRoute to get traffic to the Envoy instances. The Contour configuration CRD will define how that traffic will get routed or if another Gateway should be managing the traffic (i.e. custom).
 
 1. Deploy Operator to Cluster
-    1. Operator RBAC Perms/Service Account/etc
-    2. Operator Deployment/Service
-    3. Contour Configuration CRD Definition
-    4. GatewayAPI CRDs Definitions
+    - Operator RBAC Perms/Service Account/etc
+    - Operator Deployment/Service
+    - Contour Configuration CRD Definition
+    - GatewayAPI CRDs Definitions
+
 2. Cluster Operator creates Contour Configuration CRD
-    5. Cluster Operator must configure the `gateway.controllerName` in the Contour Configuration CRD.
+    - Cluster Operator must configure the `gateway.controllerName` in the Contour Configuration CRD.
+
 3. Operator receives update from Kubernetes API that a Contour CRD was created and deploys an instance of Contour
-    6. Contour RBAC Perms/Service Account/etc
-    7. Contour Deployment/Service
-    8. Cergen Job to create self-signed certificates
-        1. Note: The job can be removed and certs created directly from the Operator since [this PR](https://github.com/projectcontour/contour/pull/3135) was merged.
+    - Contour RBAC Perms/Service Account/etc
+    - Contour Deployment/Service
+    - Cergen Job to create self-signed certificates
+        - Note: The job can be removed and certs created directly from the Operator since [this PR](https://github.com/projectcontour/contour/pull/3135) was merged.
+
 4. Cluster Operator creates `GatewayClass` with matching `gateway.controllerName` to the configuration CRD.
+
 5. Cluster Operator creates Gateway with matching `className` created in previous step.
+
 6. <Contour waits for valid Gateway to know what ports to configure>
-    9. Contour creates an Envoy fleet which is an Envoy (Daemonset) and Service.
-    10. Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). (
-   
-[Future is using GatewayAPI](#heading=h.r00a5hk7oybo))
+    - Contour creates an Envoy fleet which is an Envoy (Daemonset) and Service.
+    - Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). ([Future is using GatewayAPI](#exposing-envoy))
 7. When the Contour instance is ready, it will perform its GatewayAPI logic looking for a GatewayClass/Gateway, then validate, set status and configure Envoy.
 
 #### Operator without GatewayAPI (Envoy is managed by convention)
@@ -332,17 +337,17 @@ In this mode, the Operator is managing instances of Contour. Each instance of Co
 In this mode, the Operator is managing instances of Contour. Each instance of Contour manages its own Envoy fleet by convention (since the Operator is in use). Contour will expose the Envoy fleet by managing a Gateway/GatewayClass/TCPRoute to get traffic to the Envoy instances. The Contour configuration CRD will define how that traffic will get routed or if another Gateway should be managing the traffic (i.e. custom).
 
 1. Deploy Operator to Cluster
-    1. Operator RBAC Perms/Service Account/etc
-    2. Operator Deployment/Service
-    3. Contour Configuration CRD Definition
-    4. GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
+    - Operator RBAC Perms/Service Account/etc
+    - Operator Deployment/Service
+    - Contour Configuration CRD Definition
+    - GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
 2. Create Contour Configuration CRD
-    5. Configure the envoy publishing section in the configuration CRD.
+    - Configure the envoy publishing section in the configuration CRD.
 3. Operator receives update from Kubernetes API that a Contour CRD was created and deploys an instance of Contour
-    6. Contour RBAC Perms/Service Account/etc
-    7. Contour Deployment/Service
-    8. Cergen Job to create self-signed certificates
-        1. Note: The job can be removed and certs created directly from the Operator since [this PR](https://github.com/projectcontour/contour/pull/3135) was merged.
+    - Contour RBAC Perms/Service Account/etc
+    - Contour Deployment/Service
+    - Cergen Job to create self-signed certificates
+        - Note: The job can be removed and certs created directly from the Operator since [this PR](https://github.com/projectcontour/contour/pull/3135) was merged.
 4. Contour creates an Envoy fleet which is an Envoy (Daemonset) and Service.
 5. Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). ([Future is using GatewayAPI](#heading=h.r00a5hk7oybo))
 6. When the Contour instance is ready, it will watch for Ingress/HTTPProxy objects, validate, set status and configure Envoy.
@@ -355,13 +360,13 @@ This mode matches how the Contour Quickstart works today except that the Envoy i
 The Contour configuration CRD will define how that traffic will get routed or if another Gateway should be managing the traffic (i.e. custom).
 
 1. Deploy Contour to Cluster
-    1. Contour RBAC Perms/Service Account/etc
-    2. Contour Deployment/Service
-    3. Contour Configuration CRD Definition
-    4. GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
+    - Contour RBAC Perms/Service Account/etc
+    - Contour Deployment/Service
+    - Contour Configuration CRD Definition
+    - GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
 2. Create Contour Configuration CRD
-    5. Configure the envoy publishing section in the configuration CRD
-    6. Set `envoy.managed: true`
+    - Configure the envoy publishing section in the configuration CRD
+    - Set `envoy.managed: true`
 3. Cluster Operator creates `GatewayClass` with matching `gateway.controllerName` to the configuration CRD.
 4. Cluster Operator creates `Gateway` with matching `className` created in previous step.
 5. _If using GatewayAPI then Contour waits for valid Gateway to know what ports to configure, otherwise uses ports in the flags passed to Contour._
@@ -375,13 +380,13 @@ This mode matches how the Contour Quickstart works today.
 The cluster operator is required to expose the Envoy service to users in a way that fits the use case best (i.e. type=LoadBalancer, etc) and no dynamic work is done by Contour to manage this object.
 
 1. Deploy Contour to Cluster
-    1. Contour RBAC Perms/Service Account/etc
-    2. Contour Deployment/Service
-    3. Contour Configuration CRD Definition
-    4. GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
+    - Contour RBAC Perms/Service Account/etc
+    - Contour Deployment/Service
+    - Contour Configuration CRD Definition
+    - GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
 2. Create Contour Configuration CRD
-    5. Cluster Operator must configure the `gateway.controllerName` in the Contour Configuration CRD.
-    6. Set `envoy.managed: false`
+    - Cluster Operator must configure the `gateway.controllerName` in the Contour Configuration CRD.
+    - Set `envoy.managed: false`
 3. Cluster operator creates GatewayClass matching the configuration CRD gateway.ControllerName field, Gateway matching the GatewayClass.Name
 4. When the Contour instance is ready, it will watch for Ingress/GatewayAPI/HTTPProxy objects, validate, set status and configure Envoy.
 
@@ -390,15 +395,15 @@ The cluster operator is required to expose the Envoy service to users in a way t
 In this mode, Contour is deployed to the cluster by the Cluster Operator. This could be straight YAML, Helm, or some other way that the user creates the required bits to deploy Contour. This mode matches how the Contour Quickstart works today.
 The cluster operator is required to expose the Envoy service to users in a way that fits the use case best (i.e. type=LoadBalancer, etc) and no dynamic work is done by Contour to manage this object.
 
-5. Deploy Contour to Cluster
-    7. Contour RBAC Perms/Service Account/etc
-    8. Contour Deployment/Service
-    9. Contour Configuration CRD Definition
-    10. GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
-6. Create Contour Configuration CRD
-    11. Configure the envoy publishing section in the configuration CRD.
-    12. Set `envoy.managed: false`
-7. When the Contour instance is ready, it will watch for Ingress/HTTPProxy objects, validate, set status and configure Envoy.
+1. Deploy Contour to Cluster
+    - Contour RBAC Perms/Service Account/etc
+    - Contour Deployment/Service
+    - Contour Configuration CRD Definition
+    - GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
+2. Create Contour Configuration CRD
+    - Configure the envoy publishing section in the configuration CRD.
+    - Set `envoy.managed: false`
+3. When the Contour instance is ready, it will watch for Ingress/HTTPProxy objects, validate, set status and configure Envoy.
 
 ### GatewayClass ParametersRef
 
@@ -535,14 +540,4 @@ Features that won’t be tackled with this design, but could be extended in futu
 
 _[stevesloka] I have some ideas around this that would allow us to manage multiple gateways potentially from a single envoy cleanly. But I don’t want to distract from the main goal of this design. _
 
-## Work Steps
-
-Pasted from Slack, proposed:
-
-* First thing we will do is merge in Steve S and Sunjay's fixes to the operator/Contour interaction for 1.18 release next week.
-* After 1.18 we will open for discussion that we move to quarterly releases starting end October. If the community agrees, we will release between 1.18 and October when the following phases are done.
-* Next, we will work on the config file to CRD change - this has operator changes as well. Release when this one is done.
-* Next, we will bring the Service management code from the operator into Contour. Release when this is done.
-* Then, we evaluate if we change Service management code to Gateway management code before October or wait until Gateway API is beta.
-
-This implementation plan is tricky because it’s interacting with the changing of the release cadence.
+=
