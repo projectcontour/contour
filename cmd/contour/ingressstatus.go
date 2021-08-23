@@ -23,7 +23,8 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // loadBalancerStatusWriter orchestrates LoadBalancer address status
@@ -46,7 +47,7 @@ import (
 //    status updates are made.
 type loadBalancerStatusWriter struct {
 	log              logrus.FieldLogger
-	clients          *k8s.Clients
+	cache            cache.Cache
 	isLeader         chan struct{}
 	lbStatus         chan v1.LoadBalancerStatus
 	statusUpdater    k8s.StatusUpdater
@@ -81,15 +82,15 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 	}
 
 	// Create informers for the types that need load balancer
-	// address status. The client should have already started
+	// address status. The cache should have already started
 	// informers, so new informers will auto-start.
-	resources := []schema.GroupVersionResource{
-		contour_api_v1.HTTPProxyGVR,
-		networking_v1.SchemeGroupVersion.WithResource("ingresses"),
+	resources := []client.Object{
+		&contour_api_v1.HTTPProxy{},
+		&networking_v1.Ingress{},
 	}
 
 	for _, r := range resources {
-		inf, err := isw.clients.InformerForResource(r)
+		inf, err := isw.cache.GetInformer(context.Background(), r)
 		if err != nil {
 			isw.log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
@@ -113,7 +114,7 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 			u.Set(lbs)
 
 			var ingressList networking_v1.IngressList
-			if err := isw.clients.Cache().List(context.Background(), &ingressList); err != nil {
+			if err := isw.cache.List(context.Background(), &ingressList); err != nil {
 				isw.log.WithError(err).WithField("kind", "Ingress").Error("failed to list objects")
 			} else {
 				for i := range ingressList.Items {
@@ -122,7 +123,7 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 			}
 
 			var proxyList contour_api_v1.HTTPProxyList
-			if err := isw.clients.Cache().List(context.Background(), &proxyList); err != nil {
+			if err := isw.cache.List(context.Background(), &proxyList); err != nil {
 				isw.log.WithError(err).WithField("kind", "HTTPProxy").Error("failed to list objects")
 			} else {
 				for i := range proxyList.Items {

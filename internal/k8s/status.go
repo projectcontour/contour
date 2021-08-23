@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -65,6 +66,7 @@ func (m StatusMutatorFunc) Mutate(old interface{}) interface{} {
 type StatusUpdateHandler struct {
 	Log           logrus.FieldLogger
 	Clients       *Clients
+	Cache         cache.Cache
 	UpdateChannel chan StatusUpdate
 	LeaderElected chan struct{}
 	IsLeader      bool
@@ -104,8 +106,8 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 	}
 
 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		// Fetch the lister cache for the informer associated with this resource.
-		if err := suh.Clients.Cache().Get(context.Background(), upd.NamespacedName, obj); err != nil {
+		// Get the resource from the informer cache.
+		if err := suh.Cache.Get(context.Background(), upd.NamespacedName, obj); err != nil {
 			return err
 		}
 

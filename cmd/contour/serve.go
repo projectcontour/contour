@@ -57,10 +57,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
+	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	controller_config "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 // Add RBAC policy to support leader election.
@@ -203,6 +203,29 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Validate that Contour CRDs have been updated to v1.
 	validateCRDs(clients.DynamicClient(), log)
+
+	// Set up workgroup runner.
+	var g workgroup.Group
+
+	scheme, err := k8s.NewContourScheme()
+	if err != nil {
+		log.WithError(err).Fatal("unable to create scheme")
+	}
+
+	// Instantiate a controller-runtime manager. We need this regardless of whether
+	// we're running the Gateway API controllers or not, because we use its cache
+	// everywhere.
+	mgr, err := manager.New(controller_config.GetConfigOrDie(), manager.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		log.WithError(err).Fatal("unable to set up controller manager")
+	}
+
+	// Register the manager with the workgroup.
+	g.AddContext(func(taskCtx context.Context) error {
+		return mgr.Start(signals.SetupSignalHandler())
+	})
 
 	// informerNamespaces is a list of namespaces that we should start informers for.
 	var informerNamespaces []string
@@ -394,39 +417,20 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Inform on DefaultResources.
 	for _, r := range k8s.DefaultResources() {
-		inf, err := clients.InformerForResource(r)
-		if err != nil {
+		if err := informOnResource(clients, r, &dynamicHandler, mgr.GetCache()); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
-
-		inf.AddEventHandler(&dynamicHandler)
 	}
 
 	for _, r := range k8s.IngressV1Resources() {
-		if err := informOnResource(clients, r, &dynamicHandler); err != nil {
+		if err := informOnResource(clients, r, &dynamicHandler, mgr.GetCache()); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
-
-	// Set up workgroup runner and register informers.
-	var g workgroup.Group
 
 	// Only inform on Gateway API resources if Gateway API is found.
 	if ctx.Config.GatewayConfig != nil {
 		if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
-
-			// Setup a Manager
-			mgr, err := manager.New(controller_config.GetConfigOrDie(), manager.Options{})
-			if err != nil {
-				log.WithError(err).Fatal("unable to set up controller manager")
-			}
-
-			// Add the Gateway API Scheme.
-			err = gatewayapi_v1alpha1.AddToScheme(mgr.GetScheme())
-			if err != nil {
-				log.WithError(err).Fatal("unable to add Gateway API to scheme.")
-			}
-
 			// Create and register the gatewayclass controller with the manager.
 			gatewayClassControllerName := ctx.Config.GatewayConfig.ControllerName
 			if _, err := controller.NewGatewayClassController(mgr, &dynamicHandler,
@@ -451,14 +455,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			}
 
 			// Inform on Namespaces.
-			if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler); err != nil {
+			if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler, mgr.GetCache()); err != nil {
 				log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
 			}
-
-			// Start Manager
-			g.AddContext(func(taskCtx context.Context) error {
-				return mgr.Start(signals.SetupSignalHandler())
-			})
 		} else {
 			log.Fatalf("Gateway API Gateway configured but APIs not installed in cluster.")
 		}
@@ -473,7 +472,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			handler = k8s.NewNamespaceFilter(informerNamespaces, &dynamicHandler)
 		}
 
-		if err := informOnResource(clients, r, handler); err != nil {
+		if err := informOnResource(clients, r, handler, mgr.GetCache()); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
@@ -487,25 +486,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			},
 			Converter: converter,
 			Logger:    log.WithField("context", "endpointstranslator"),
-		}); err != nil {
+		}, mgr.GetCache()); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
-
-	// Register a task to start all the informers.
-	g.AddContext(func(taskCtx context.Context) error {
-		log := log.WithField("context", "informers")
-
-		log.Info("starting informers")
-		defer log.Println("stopped informers")
-
-		if err := clients.StartInformers(taskCtx); err != nil {
-			log.WithError(err).Error("failed to start informers")
-		}
-
-		<-taskCtx.Done()
-		return nil
-	})
 
 	// Register our event handler with the workgroup.
 	g.Add(eventHandler.Start())
@@ -572,6 +556,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	sh := k8s.StatusUpdateHandler{
 		Log:           log.WithField("context", "StatusUpdateHandler"),
 		Clients:       clients,
+		Cache:         mgr.GetCache(),
 		LeaderElected: eventHandler.IsLeader,
 		Converter:     converter,
 	}
@@ -584,7 +569,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Set up ingress load balancer status writer.
 	lbsw := loadBalancerStatusWriter{
 		log:              log.WithField("context", "loadBalancerStatusWriter"),
-		clients:          clients,
+		cache:            mgr.GetCache(),
 		isLeader:         eventHandler.IsLeader,
 		lbStatus:         make(chan corev1.LoadBalancerStatus, 1),
 		ingressClassName: ctx.ingressClassName,
@@ -615,7 +600,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				handler = k8s.NewNamespaceFilter([]string{ctx.Config.EnvoyServiceNamespace}, handler)
 			}
 
-			if err := informOnResource(clients, r, handler); err != nil {
+			if err := informOnResource(clients, r, handler, mgr.GetCache()); err != nil {
 				log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 			}
 		}
@@ -629,7 +614,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log := log.WithField("context", "xds")
 
 		log.Printf("waiting for informer caches to sync")
-		if !clients.WaitForCacheSync(taskCtx) {
+		if !mgr.GetCache().WaitForCacheSync(taskCtx) {
 			return errors.New("informer cache failed to sync")
 		}
 		log.Printf("informer caches synced")
@@ -786,8 +771,13 @@ func contains(namespaces []string, ns string) bool {
 	return false
 }
 
-func informOnResource(clients *k8s.Clients, gvr schema.GroupVersionResource, handler cache.ResourceEventHandler) error {
-	inf, err := clients.InformerForResource(gvr)
+func informOnResource(clients *k8s.Clients, gvr schema.GroupVersionResource, handler cache.ResourceEventHandler, cache ctrl_cache.Cache) error {
+	gvk, err := clients.KindFor(gvr)
+	if err != nil {
+		return err
+	}
+
+	inf, err := cache.GetInformerForKind(context.Background(), gvk)
 	if err != nil {
 		return err
 	}
