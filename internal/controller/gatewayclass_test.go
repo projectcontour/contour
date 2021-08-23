@@ -105,72 +105,79 @@ var _ = Describe("GatewayClass Controller", func() {
 
 	Context("Multiple GatewayClasses", func() {
 		It("Should surface not admitted status on a younger GatewayClass", func() {
-			admittedKey := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
+			olderKey := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 
-			admitted := &gatewayv1alpha1.GatewayClass{
+			older := &gatewayv1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      admittedKey.Name,
-					Namespace: admittedKey.Namespace,
+					Name:      olderKey.Name,
+					Namespace: olderKey.Namespace,
 				},
 				Spec: gatewayv1alpha1.GatewayClassSpec{Controller: gcController},
 			}
 
 			// Create
-			Expect(cl.Create(context.Background(), admitted)).Should(Succeed())
+			Expect(cl.Create(context.Background(), older)).Should(Succeed())
 
-			By("Expecting admitted status")
+			By("Expecting admitted status on the older gateway class")
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				_ = cl.Get(context.Background(), admittedKey, gc)
+				_ = cl.Get(context.Background(), olderKey, gc)
 				return isGatewayClassAdmitted(gc)
 			}, timeout, interval).Should(BeTrue())
 
-			notAdmittedKey := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
+			youngerKey := types.NamespacedName{Name: "test-gatewayclass-" + rand.String(10)}
 
-			notAdmitted := &gatewayv1alpha1.GatewayClass{
+			younger := &gatewayv1alpha1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      notAdmittedKey.Name,
-					Namespace: notAdmittedKey.Namespace,
+					Name:      youngerKey.Name,
+					Namespace: youngerKey.Namespace,
 				},
 				Spec: gatewayv1alpha1.GatewayClassSpec{Controller: gcController},
 			}
 
 			// Create
-			Expect(cl.Create(context.Background(), notAdmitted)).Should(Succeed())
+			Expect(cl.Create(context.Background(), younger)).Should(Succeed())
 
-			By("Expecting not admitted status")
+			By("Expecting not admitted status on the younger gateway class")
 			Consistently(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				_ = cl.Get(context.Background(), notAdmittedKey, gc)
+				_ = cl.Get(context.Background(), youngerKey, gc)
 				return isGatewayClassAdmitted(gc)
 			}, timeout, interval).Should(BeFalse())
 
-			// Delete admitted gatewayclass
-			By("Expecting successful deletion")
+			// Delete older gatewayclass
+			By("Expecting successful deletion of the older gateway class")
 			Eventually(func() error {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				_ = cl.Get(context.Background(), admittedKey, gc)
+				_ = cl.Get(context.Background(), olderKey, gc)
 				return cl.Delete(context.Background(), gc)
 			}, timeout, interval).Should(Succeed())
 
 			By("Expecting delete to finish")
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				return errors.IsNotFound(cl.Get(context.Background(), admittedKey, gc))
+				return errors.IsNotFound(cl.Get(context.Background(), olderKey, gc))
 			}, timeout, interval).Should(BeTrue())
 
-			// Delete non-admitted gatewayclass
-			By("Expecting successful deletion")
+			By("Expecting next oldest gateway class to become admitted")
+			Eventually(func() bool {
+				gc := &gatewayv1alpha1.GatewayClass{}
+				_ = cl.Get(context.Background(), youngerKey, gc)
+				return isGatewayClassAdmitted(gc)
+			}, timeout, interval).Should(BeTrue())
+
+			// Delete younger gatewayclass
+			By("Expecting successful deletion of the younger gateway class")
 			Eventually(func() error {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				_ = cl.Get(context.Background(), notAdmittedKey, gc)
+				_ = cl.Get(context.Background(), youngerKey, gc)
 				return cl.Delete(context.Background(), gc)
 			}, timeout, interval).Should(Succeed())
 
 			By("Expecting delete to finish")
 			Eventually(func() bool {
 				gc := &gatewayv1alpha1.GatewayClass{}
-				return errors.IsNotFound(cl.Get(context.Background(), notAdmittedKey, gc))
+				return errors.IsNotFound(cl.Get(context.Background(), youngerKey, gc))
 			}, timeout, interval).Should(BeTrue())
 		})
 	})
