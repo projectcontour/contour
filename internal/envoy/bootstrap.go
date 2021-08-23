@@ -42,7 +42,7 @@ type BootstrapConfig struct {
 	// Defaults to /dev/null.
 	AdminAccessLogPath string
 
-	// AdminAddress is the TCP address that the administration server will listen on.
+	// AdminAddress is the Unix Socket address that the administration server will listen on.
 	// Defaults to /admin/admin.sock.
 	AdminAddress string
 
