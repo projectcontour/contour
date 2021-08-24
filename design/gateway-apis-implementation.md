@@ -230,7 +230,7 @@ gateway:
   controllerName: projectcontour.io/ingress-controller
 ```
 
-If Envoy is intended to be managed then the `managed` struct inside the `envoy` object needs to be populated with a configuration matching the desired enironment. For example, if deploying to an AWS environment, the `publishing` struct needs to be configured to configure an AWS Load Balancer. Similarly, this could be configured to utilize `NodePorts` for exposing Envoy. In any case, this must be configured and has no defaults. 
+If Envoy is intended to be managed then the `managed` struct inside the `envoy` object needs to be populated with a configuration matching the desired environment. For example, if deploying to an AWS environment, the `publishing` struct needs to be configured to configure an AWS Load Balancer. Similarly, this could be configured to utilize `NodePorts` for exposing Envoy. In any case, this must be configured and has no defaults. 
 
 _NOTE: Typically Envoy is deployed as a Daemonset, but not required (could also be a Deployment), so the term fleet is used to identify the set of Kubernetes managed pods which represent an Envoy instance._
 
