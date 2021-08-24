@@ -89,7 +89,7 @@ func TestTCPProxy(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -173,7 +173,7 @@ func TestTCPProxyDelegation(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -246,7 +246,7 @@ func TestTCPProxyTLSPassthrough(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -319,7 +319,7 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -411,7 +411,7 @@ func TestTCPProxyAndHTTPService(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -501,7 +501,7 @@ func TestTCPProxyAndHTTPServicePermitInsecure(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -589,7 +589,7 @@ func TestTCPProxyTLSPassthroughAndHTTPService(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -678,7 +678,7 @@ func TestTCPProxyTLSPassthroughAndHTTPServicePermitInsecure(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -754,7 +754,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		Resources: resources(t,
 			// ingress_http and ingress_https should be missing
 			// as hp1 is not valid.
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -800,7 +800,7 @@ func TestTCPProxyMissingTLS(t *testing.T) {
 		Resources: resources(t,
 			// ingress_http and ingress_https should be missing
 			// as hp2 is not valid.
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
