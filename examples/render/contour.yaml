@@ -2039,7 +2039,7 @@ spec:
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
         command: ["contour"]
-        image: docker.io/projectcontour/contour:v1.14.1
+        image: docker.io/projectcontour/contour:main
         imagePullPolicy: IfNotPresent
         name: contour
         ports:
@@ -2128,7 +2128,7 @@ spec:
         args:
           - envoy
           - shutdown-manager
-        image: docker.io/projectcontour/contour:v1.14.1
+        image: docker.io/projectcontour/contour:main
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -2212,7 +2212,7 @@ spec:
         - --envoy-key-file=/certs/tls.key
         command:
         - contour
-        image: docker.io/projectcontour/contour:v1.14.1
+        image: docker.io/projectcontour/contour:main
         imagePullPolicy: IfNotPresent
         name: envoy-initconfig
         volumeMounts:
