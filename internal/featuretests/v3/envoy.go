@@ -408,8 +408,12 @@ func tcpproxy(statPrefix, cluster string) *envoy_listener_v3.Filter {
 	}
 }
 
-func staticListener() *envoy_listener_v3.Listener {
+func statsListener() *envoy_listener_v3.Listener {
 	return envoy_v3.StatsListener("0.0.0.0", 8002)
+}
+
+func envoyAdminListener(port int) *envoy_listener_v3.Listener {
+	return envoy_v3.EnvoyAdminListener(port)
 }
 
 func defaultHTTPListener() *envoy_listener_v3.Listener {

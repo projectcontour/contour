@@ -85,6 +85,8 @@ envoy-service-name: envoy
 default-http-versions: []
 cluster:
   dns-lookup-family: auto
+network:
+  admin-port: 9001
 `
 	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(data)))
 
@@ -510,6 +512,7 @@ default-http-versions:
 	}, `
 network:
   num-trusted-hops: 1
+  admin-port: 9001
 `)
 }
 

@@ -125,7 +125,7 @@ func TestTLSRoute(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -174,7 +174,7 @@ func TestTLSRoute(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -252,7 +252,7 @@ func TestTLSRoute(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -324,7 +324,7 @@ func TestTLSRoute(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
