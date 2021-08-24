@@ -165,18 +165,22 @@ In the fully managed mode, Contour is responsible for managing the Envoy fleet w
 The operator is responsible for managing instances of Contour as well as any additional configuration items that are related to running Contour or Envoy.
 These pieces will be configured in the Contour Configuration CRD.
 
-### Configmap to CRD
+### Configmap to Contour Configuration CRD
 
 Currently, Contour gets its configuration from two different places, one is the configuration file represented as a Kubernetes configmap.
 The other are flags which are passed to Contour.
 
-This design will migrate the Contour configuration configmap to a full custom resource definition which will allow for better validation, easier processing, as well as represent a full Contour configuration including how Envoy is to be provisioned if the user desires.
+This design will migrate the Contour configuration configmap to a full custom resource definition which will allow for better validation, easier processing, allow for status to be set, including how Envoy is to be provisioned if the user desires.
 
 #### Benefits
 
 * Eliminates the need to translate from a CRD to a configmap (Like the Operator does today)
 * Allows for a place to surface information about configuration errors - the CRD status, in addition to the Contour log files
 * Allows the Operator workflow to match a non-operator workflow  (i.e. you start with a Contour configuration CRD)
+
+#### Configuration CRD Changes
+
+##### Gateway API
 
 Contour will have an entry added to the config CRD for the `ControllerName` it should watch. The `ControllerName` should take the format of `projectcontour.io/<namespace>/<name>` but only really requires it be unique.
 
@@ -199,28 +203,36 @@ If Contour is started without a proper configuration CRD, Contour will wait for 
 
 _NOTE: The fields name & namespace will be deprecated from the configuration file._
 
-#### Config Changes
+##### Changes to Configuration
 
 Contour will need to take into account any changes to the Contour Configuration CRD. We can take advantage of nested reconciliation loops.
-Contour startup may look like: validate flags/env vars etc. required to connect to k8s API, run outer reconciliation loop/controller to get config from CRD and start up/stop dependent controllers for ingress/gateway resources, ingress/gateway resource controllers run.
+Contour startup may look like: 
+
+  - validate flags/env vars etc. required to connect to k8s API
+  - run outer reconciliation loop/controller to get config from CRD and start up/stop dependent controllers for ingress/gateway resources, ingress/gateway resource controllers run.
+
 When config in the CRD changes we will need to gracefully stop the dependent ingress/gateway controllers and restart them with new config, or dynamically update some in-memory data that the controllers use.
 
-### Managed Envoy
+### Managed & Unmanaged Envoy
 
 Contour can optionally provision Envoy infrastructure in a Kubernetes cluster. A new field will be added to the Contour configuration CRD which will describe how an Envoy fleet should be configured.
 If this field is set, then Contour will dynamically provision a fleet of Envoys with a corresponding service matching the configuration specified. The field will be named `envoy` and initially contain the [NetworkPublishing structs](https://github.com/projectcontour/contour-operator/blob/b8fe3a30b7e80f2943c0c6ae593f5ce90ea929bc/api/v1alpha1/contour_types.go#L225) from the Operator.
 
-This field will default to false if unspecified.
-
-Example CRD spec YAML:
+Example CRD spec YAML showing how Envoy will be managed by Contour and exposed via an AWE Load Balancer:
 
 ```
 envoy:
-  managed: true
-  publishing:
+  networkPublishing:
+    type: LoadBalancerService
+    scope: External
+    type: AWS
+contour:
+  replicas: 2
 gateway:
   controllerName: projectcontour.io/ingress-controller
 ```
+
+If Envoy is intended to be managed then the `managed` struct inside the `envoy` object needs to be populated with a configuration matching the desired enironment. For example, if deploying to an AWS environment, the `publishing` struct needs to be configured to configure an AWS Load Balancer. Similarly, this could be configured to utilize `NodePorts` for exposing Envoy. In any case, this must be configured and has no defaults. 
 
 _NOTE: Typically Envoy is deployed as a Daemonset, but not required (could also be a Deployment), so the term fleet is used to identify the set of Kubernetes managed pods which represent an Envoy instance._
 
@@ -232,9 +244,9 @@ It’s possible we could allow this in the future.
 If an Envoy fleet is managed, it will be supported to disable management but switching the managed flag to false.
 Doing so will leave the fleet as-is and stop taking action against the Envoy fleet.
 
-#### managed: true
+#### Managed
 
-If envoy.managed is true, then Contour will automatically create an Envoy fleet/service.
+If the envoy struct is configured, then Contour will automatically create an Envoy fleet/service.
 
 If Gateway.ControllerName is not set, then the envoy-service-xxx flags passed to Contour will be used to define the ports which Envoy/Service will utilize.
 
@@ -242,9 +254,9 @@ If `Gateway.ControllerName` is set then the ports that are assigned to the Envoy
 
 Additional RBAC permissions will be required to the namespace where Contour is deployed to allow it to dynamically manage Daemonsets/Deployments/Services, etc.
 
-#### managed: false
+#### Unmanaged
 
-If envoy.managed is false, then Contour won't manage the Envoy fleet/service. It's up to the cluster operator to deploy and manage these resources.
+If the envoy struct is not configured, then Contour won't manage the Envoy fleet/service. It's up to the cluster operator to deploy and manage these resources.
 The external ports of the load balancer must match the ports Contour expects (otherwise insecure-secure redirects won’t work).
 
 The external ports should almost always be 80/443.
@@ -255,7 +267,7 @@ See: [https://github.com/projectcontour/contour/issues/3616](https://github.com/
 
 ### Leader Election
 
-Contour will take into account if it is the Leader or not which will represent if it should take action on managing resources or not.
+Contour will take into account if it is the Leader or not which will represent if it should take action on managing resources or not, only the leader should provision resources in the cluster.
 
 ### Finalizers
 
@@ -352,7 +364,6 @@ In this mode, the Operator is managing instances of Contour. Each instance of Co
 5. Apply annotations to Envoy service to make external providers take action and configure external resources (i.e. Load Balancers). ([Future is using GatewayAPI](#heading=h.r00a5hk7oybo))
 6. When the Contour instance is ready, it will watch for Ingress/HTTPProxy objects, validate, set status and configure Envoy.
 
-
 #### Contour with Managed Envoy (No Operator)
 
 In this mode, Contour is deployed to the cluster by the Cluster Operator. This could be straight YAML, Helm, or some other way that the user creates the required bits to deploy Contour.
@@ -366,7 +377,7 @@ The Contour configuration CRD will define how that traffic will get routed or if
     - GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
 2. Create Contour Configuration CRD
     - Configure the envoy publishing section in the configuration CRD
-    - Set `envoy.managed: true`
+    - The `envoy` section in the Contour CRD must be configured
 3. Cluster Operator creates `GatewayClass` with matching `gateway.controllerName` to the configuration CRD.
 4. Cluster Operator creates `Gateway` with matching `className` created in previous step.
 5. _If using GatewayAPI then Contour waits for valid Gateway to know what ports to configure, otherwise uses ports in the flags passed to Contour._
@@ -386,7 +397,7 @@ The cluster operator is required to expose the Envoy service to users in a way t
     - GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
 2. Create Contour Configuration CRD
     - Cluster Operator must configure the `gateway.controllerName` in the Contour Configuration CRD.
-    - Set `envoy.managed: false`
+    - Do not configure the `envoy` section in the Contour CRD
 3. Cluster operator creates GatewayClass matching the configuration CRD gateway.ControllerName field, Gateway matching the GatewayClass.Name
 4. When the Contour instance is ready, it will watch for Ingress/GatewayAPI/HTTPProxy objects, validate, set status and configure Envoy.
 
@@ -402,7 +413,7 @@ The cluster operator is required to expose the Envoy service to users in a way t
     - GatewayAPI CRDs Definitions (Note always required if exposing Envoy via Gateways)
 2. Create Contour Configuration CRD
     - Configure the envoy publishing section in the configuration CRD.
-    - Set `envoy.managed: false`
+    - Do not configure the `envoy` section in the Contour CRD
 3. When the Contour instance is ready, it will watch for Ingress/HTTPProxy objects, validate, set status and configure Envoy.
 
 ### GatewayClass ParametersRef
@@ -479,7 +490,7 @@ As the API currently stands, Contour must combine the statuses for all Listeners
 
 Whenever Contour looks at a Listener, it will add an Admitted Condition. In the event that a ListenerStatus has everything okay (all mergeable Listeners pass validation), the Admitted condition will be status: true. If there are any errors, the Admitted Condition will be status: false, and the Reason will tell you more about why.
 
-### *Route general notes
+### Route general notes
 
 For both HTTPRoute and TLSRoute, there are two fields in common, spec.gateways, and status.gateways. Both resources will handle these fields as per the spec.
 
@@ -505,8 +516,6 @@ In addition, we must ensure that the TLS config in the route will override the T
 #### Conflict Resolution and Route merging
 
 HTTPRoutes may be merged into a single Envoy config by Contour as long as:
-
-
 
 * the Hostnames match exactly and the TLS Config matches
 * the HTTPRouteRules are different
