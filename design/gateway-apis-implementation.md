@@ -226,8 +226,6 @@ envoy:
     type: LoadBalancerService
     scope: External
     type: AWS
-contour:
-  replicas: 2
 gateway:
   controllerName: projectcontour.io/ingress-controller
 ```
@@ -548,5 +546,3 @@ Features that won’t be tackled with this design, but could be extended in futu
 ~~The reason this model wasn't chosen was that it's difficult to define how you could merge multiple Gateway objects into a single Envoy installation. Model-wise, it seems to be intended that a Gateway represents the actual thing that takes traffic and transforms it so it can get to the requested Pods. In Contour's case, this is Envoy, and it's extremely difficult to design a model where a single Envoy deployment could handle multiple different Gateway specs.~~
 
 _[stevesloka] I have some ideas around this that would allow us to manage multiple gateways potentially from a single envoy cleanly. But I don’t want to distract from the main goal of this design. _
-
-=
