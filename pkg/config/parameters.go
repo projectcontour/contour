@@ -467,7 +467,11 @@ type NetworkParameters struct {
 	//
 	// See https://www.envoyproxy.io/docs/envoy/v1.17.0/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=xff_num_trusted_hops
 	// for more information.
-	XffNumTrustedHops uint32 `yaml:"num-trusted-hops"`
+	XffNumTrustedHops uint32 `yaml:"num-trusted-hops,omitempty"`
+
+	// Configure the port used to access the Envoy Admin interface.
+	// If configured to port "0" then the admin interface is disabled.
+	EnvoyAdminPort int `yaml:"admin-port,omitempty"`
 }
 
 // ListenerParameters hold various configurable listener values.
@@ -668,6 +672,7 @@ func Defaults() Parameters {
 		},
 		Network: NetworkParameters{
 			XffNumTrustedHops: 0,
+			EnvoyAdminPort:    9001,
 		},
 		Listener: ListenerParameters{
 			ConnectionBalancer: "",

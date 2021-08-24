@@ -24,12 +24,26 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
+	log := fixture.NewTestLogger(t)
+	et := xdscache_v3.NewEndpointsTranslator(log)
+	conf := xdscache_v3.ListenerConfig{}
+	return []xdscache.ResourceCache{
+		xdscache_v3.NewListenerCache(conf, statsAddress, statsPort, port),
+		&xdscache_v3.SecretCache{},
+		&xdscache_v3.RouteCache{},
+		&xdscache_v3.ClusterCache{},
+		et,
+	}
+}
 
 func TestNonTLSListener(t *testing.T) {
 	rh, c, done := setup(t)
@@ -40,7 +54,7 @@ func TestNonTLSListener(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -68,7 +82,7 @@ func TestNonTLSListener(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -94,7 +108,7 @@ func TestNonTLSListener(t *testing.T) {
 	rh.OnUpdate(i1, i2)
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -122,7 +136,20 @@ func TestNonTLSListener(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
-			staticListener(),
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+}
+
+func TestAdminPortListener(t *testing.T) {
+	_, c, done := setup(t, customAdminPort(t, 9001))
+	defer done()
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoyAdminListener(9001),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -178,7 +205,7 @@ func TestTLSListener(t *testing.T) {
 	// assert that there is only a static listener
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -201,7 +228,7 @@ func TestTLSListener(t *testing.T) {
 				},
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -253,7 +280,7 @@ func TestTLSListener(t *testing.T) {
 				},
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -262,7 +289,7 @@ func TestTLSListener(t *testing.T) {
 	rh.OnDelete(s1)
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -343,7 +370,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	// assert that there is only a static listener
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -372,7 +399,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l1,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -382,7 +409,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 	rh.OnDelete(secret1)
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -417,7 +444,7 @@ func TestHTTPProxyTLSListener(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l2,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -501,7 +528,7 @@ func TestTLSListenerCipherSuites(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l1,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -612,7 +639,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -646,7 +673,7 @@ func TestLDSIngressHTTPUseProxyProtocol(t *testing.T) {
 		VersionInfo: "1",
 		Resources: resources(t,
 			httpListener,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -702,7 +729,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 	// assert that there is only a static listener
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -735,7 +762,7 @@ func TestLDSIngressHTTPSUseProxyProtocol(t *testing.T) {
 		Resources: resources(t,
 			httpListener,
 			httpsListener,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -804,7 +831,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -837,7 +864,7 @@ func TestLDSCustomAddressAndPort(t *testing.T) {
 		Resources: resources(t,
 			httpListener,
 			httpsListener,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -897,7 +924,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -934,7 +961,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 		Resources: resources(t,
 			httpListener,
 			httpsListener,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -949,7 +976,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		VersionInfo: "0",
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "0",
@@ -1020,7 +1047,7 @@ func TestHTTPProxyHTTPS(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 		Nonce:   "1",
@@ -1101,7 +1128,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l1,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -1160,7 +1187,7 @@ func TestHTTPProxyMinimumTLSVersion(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			l2,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -1220,7 +1247,7 @@ func TestLDSHTTPProxyRootCannotDelegateToAnotherRoot(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -1266,7 +1293,7 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			httpListener,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
