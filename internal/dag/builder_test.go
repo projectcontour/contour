@@ -6981,6 +6981,198 @@ func TestDAGInsert(t *testing.T) {
 			}},
 		},
 	}
+
+	cookieRewritePoliciesRoute := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+					{
+						Name: "some-cookie",
+						PathRewrite: &contour_api_v1.CookiePathRewrite{
+							Value: "/foo",
+						},
+						DomainRewrite: &contour_api_v1.CookieDomainRewrite{
+							Value: "example.com",
+						},
+						Secure:   pointer.Bool(true),
+						SameSite: pointer.String("Strict"),
+					},
+					{
+						Name:     "some-other-cookie",
+						SameSite: pointer.String("Lax"),
+						Secure:   pointer.Bool(false),
+					},
+				},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	cookieRewritePoliciesService := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+					CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+						{
+							Name: "some-cookie",
+							PathRewrite: &contour_api_v1.CookiePathRewrite{
+								Value: "/foo",
+							},
+							DomainRewrite: &contour_api_v1.CookieDomainRewrite{
+								Value: "example.com",
+							},
+							Secure:   pointer.Bool(true),
+							SameSite: pointer.String("Strict"),
+						},
+						{
+							Name:     "some-other-cookie",
+							SameSite: pointer.String("Lax"),
+						},
+					},
+				}},
+			}},
+		},
+	}
+
+	duplicateCookieRewritePoliciesRoute := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+					{
+						Name:   "some-cookie",
+						Secure: pointer.Bool(true),
+					},
+					{
+						Name:     "some-cookie",
+						SameSite: pointer.String("Lax"),
+					},
+				},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	duplicateCookieRewritePoliciesService := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+					CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+						{
+							Name:   "some-cookie",
+							Secure: pointer.Bool(true),
+						},
+						{
+							Name:     "some-cookie",
+							SameSite: pointer.String("Lax"),
+						},
+					},
+				}},
+			}},
+		},
+	}
+
+	emptyCookieRewritePolicyRoute := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+					{
+						Name: "some-cookie",
+					},
+				},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+			}},
+		},
+	}
+
+	emptyCookieRewritePolicyService := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+					CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+						{
+							Name: "some-cookie",
+						},
+					},
+				}},
+			}},
+		},
+	}
+
 	protocol := "h2c"
 	proxy110 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -9803,6 +9995,99 @@ func TestDAGInsert(t *testing.T) {
 					),
 				},
 			),
+		},
+		"insert proxy with cookie rewrite policies on route": {
+			objs: []interface{}{
+				cookieRewritePoliciesRoute,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/foo"),
+							Clusters:           clustermap(s9),
+							CookieRewritePolicies: []CookieRewritePolicy{
+								{
+									Name:     "some-cookie",
+									Path:     pointer.String("/foo"),
+									Domain:   pointer.String("example.com"),
+									Secure:   2,
+									SameSite: pointer.String("Strict"),
+								},
+								{
+									Name:     "some-other-cookie",
+									SameSite: pointer.String("Lax"),
+									Secure:   1,
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with cookie rewrite policies on service": {
+			objs: []interface{}{
+				cookieRewritePoliciesService,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/foo"),
+							Clusters: []*Cluster{
+								{
+									Upstream: service(s9),
+									CookieRewritePolicies: []CookieRewritePolicy{
+										{
+											Name:     "some-cookie",
+											Path:     pointer.String("/foo"),
+											Domain:   pointer.String("example.com"),
+											Secure:   2,
+											SameSite: pointer.String("Strict"),
+										},
+										{
+											Name:     "some-other-cookie",
+											SameSite: pointer.String("Lax"),
+										},
+									},
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
+		"insert proxy with duplicate cookie rewrite policies on route": {
+			objs: []interface{}{
+				duplicateCookieRewritePoliciesRoute,
+				s9,
+			},
+			want: listeners(),
+		},
+		"insert proxy with duplicate cookie rewrite policies on service": {
+			objs: []interface{}{
+				duplicateCookieRewritePoliciesService,
+				s9,
+			},
+			want: listeners(),
+		},
+		"insert proxy with empty cookie rewrite policy on route": {
+			objs: []interface{}{
+				emptyCookieRewritePolicyRoute,
+				s9,
+			},
+			want: listeners(),
+		},
+		"insert proxy with empty cookie rewrite policy on service": {
+			objs: []interface{}{
+				emptyCookieRewritePolicyService,
+				s9,
+			},
+			want: listeners(),
 		},
 		"insert proxy with cookie load balancing strategy": {
 			objs: []interface{}{

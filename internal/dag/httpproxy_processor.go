@@ -479,6 +479,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
+		cookieRP, err := cookieRewritePolicies(route.CookieRewritePolicies)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid",
+				"%s on route cookie rewrite rules", err)
+			return nil
+		}
+
 		if len(route.Services) < 1 {
 			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "NoServicesPresent",
 				"route.services must have at least one entry")
@@ -510,6 +517,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			RetryPolicy:           retryPolicy(route.RetryPolicy),
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
+			CookieRewritePolicies: cookieRP,
 			RateLimitPolicy:       rlp,
 			RequestHashPolicies:   requestHashPolicies,
 		}
@@ -632,6 +640,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				return nil
 			}
 
+			cookieRP, err := cookieRewritePolicies(service.CookieRewritePolicies)
+			if err != nil {
+				validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid",
+					"%s on service cookie rewrite rules", err)
+				return nil
+			}
+
 			var clientCertSecret *Secret
 			if p.ClientCertificate != nil {
 				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validSecret)
@@ -650,6 +665,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				UpstreamValidation:    uv,
 				RequestHeadersPolicy:  reqHP,
 				ResponseHeadersPolicy: respHP,
+				CookieRewritePolicies: cookieRP,
 				Protocol:              protocol,
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
 				DNSLookupFamily:       string(p.DNSLookupFamily),

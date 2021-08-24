@@ -278,6 +278,14 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 			},
 		},
 		&http.HttpFilter{
+			Name: "envoy.filters.http.lua",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&lua.Lua{
+					InlineCode: "-- Placeholder for per-Route or per-Cluster overrides.",
+				}),
+			},
+		},
+		&http.HttpFilter{
 			Name: "router",
 			ConfigType: &http.HttpFilter_TypedConfig{
 				TypedConfig: &any.Any{

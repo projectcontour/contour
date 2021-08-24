@@ -73,6 +73,9 @@ func SingleSimpleCluster(clusters []*dag.Cluster) bool {
 		len(cluster.ResponseHeadersPolicy.Remove) != 0 {
 		return false
 	}
+	if len(cluster.CookieRewritePolicies) > 0 {
+		return false
+	}
 
 	return true
 }
