@@ -38,6 +38,7 @@ params:
   docs_versions:
     - main
     - v1.18.0
+    - v1.17.2
     - v1.17.1
     - v1.17.0
     - v1.16.1
