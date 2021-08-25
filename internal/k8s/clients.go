@@ -14,16 +14,12 @@
 package k8s
 
 import (
-	"context"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
@@ -33,7 +29,6 @@ type Clients struct {
 
 	core    *kubernetes.Clientset
 	dynamic dynamic.Interface
-	cache   cache.Cache
 }
 
 // NewClients returns a new set of the various API clients required
@@ -41,11 +36,6 @@ type Clients struct {
 // environment variables if inCluster is true.
 func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 	config, err := newRestConfig(kubeconfig, inCluster)
-	if err != nil {
-		return nil, err
-	}
-
-	scheme, err := NewContourScheme()
 	if err != nil {
 		return nil, err
 	}
@@ -66,14 +56,6 @@ func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 		return nil, err
 	}
 
-	clients.cache, err = cache.New(config, cache.Options{
-		Scheme: scheme,
-		Mapper: clients.RESTMapper,
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	return &clients, nil
 }
 
@@ -82,29 +64,6 @@ func newRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
 		return clientcmd.BuildConfigFromFlags("", kubeconfig)
 	}
 	return rest.InClusterConfig()
-}
-
-type Informer = cache.Informer
-
-func (c *Clients) InformerForResource(gvr schema.GroupVersionResource) (Informer, error) {
-	gvk, err := c.KindFor(gvr)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.cache.GetInformerForKind(context.Background(), gvk)
-}
-
-func (c *Clients) StartInformers(ctx context.Context) error {
-	return c.cache.Start(ctx)
-}
-
-func (c *Clients) WaitForCacheSync(ctx context.Context) bool {
-	return c.cache.WaitForCacheSync(ctx)
-}
-
-func (c *Clients) Cache() client.Reader {
-	return c.cache
 }
 
 // ClientSet returns the Kubernetes Core v1 ClientSet.
