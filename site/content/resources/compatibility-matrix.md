@@ -15,6 +15,7 @@ These combinations of versions are specifically tested in CI and supported by th
 | 1.17.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | N/A              |
 | 1.17.0          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.17.0][60]     |
 | 1.16.0          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.16.0][59]     |
+| 1.15.2          | [1.18.4][16]         | 1.21, 1.20, 1.19    | N/A              |
 | 1.15.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.15.1][58]     |
 | 1.15.0          | [1.18.2][12]         | 1.21, 1.20, 1.19    | [1.15.0][57]     |
 | 1.14.2          | [1.17.4][15]         | 1.20, 1.19, 1.18    | N/A              |
@@ -110,6 +111,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [13]: https://www.envoyproxy.io/docs/envoy/v1.18.3/version_history/current
 [14]: https://www.envoyproxy.io/docs/envoy/v1.19.0/version_history/current
 [15]: https://www.envoyproxy.io/docs/envoy/v1.17.4/version_history/current
+[16]: https://www.envoyproxy.io/docs/envoy/v1.18.4/version_history/current
 
 
 [50]: https://github.com/projectcontour/contour-operator
