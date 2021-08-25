@@ -70,7 +70,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -111,7 +111,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -161,7 +161,7 @@ func TestClusterServiceTLSBackendCAValidation(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
