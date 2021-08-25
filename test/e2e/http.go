@@ -36,16 +36,6 @@ type HTTP struct {
 	// HTTPS requests, formatted as "https://<ip>:<port>".
 	HTTPSURLBase string
 
-	// HTTPURLMetricsBase holds the IP address and port for making
-	// (insecure) HTTP requests to the Envoy metrics listener,
-	// formatted as "http://<ip>:<port>".
-	HTTPURLMetricsBase string
-
-	// HTTPURLAdminBase holds the IP address and port for making
-	// (insecure) HTTP requests to the Envoy admin listener,
-	// formatted as "http://<ip>:<port>".
-	HTTPURLAdminBase string
-
 	// RetryInterval is how often to retry polling operations.
 	RetryInterval time.Duration
 
@@ -79,42 +69,6 @@ func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host
-	for _, opt := range opts.RequestOpts {
-		opt(req)
-	}
-
-	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
-	}
-
-	return h.requestUntil(makeRequest, opts.Condition)
-}
-
-// MetricsRequestUntil repeatedly makes HTTP requests with the provided
-// parameters until "condition" returns true or the timeout is reached.
-// It always returns the last HTTP response received.
-func (h *HTTP) MetricsRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", h.HTTPURLMetricsBase+opts.Path, nil)
-	require.NoError(h.t, err, "error creating HTTP request")
-
-	for _, opt := range opts.RequestOpts {
-		opt(req)
-	}
-
-	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
-	}
-
-	return h.requestUntil(makeRequest, opts.Condition)
-}
-
-// AdminRequestUntil repeatedly makes HTTP requests with the provided
-// parameters until "condition" returns true or the timeout is reached.
-// It always returns the last HTTP response received.
-func (h *HTTP) AdminRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", h.HTTPURLAdminBase+opts.Path, nil)
-	require.NoError(h.t, err, "error creating HTTP request")
-
 	for _, opt := range opts.RequestOpts {
 		opt(req)
 	}
