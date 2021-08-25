@@ -375,7 +375,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	endpointHandler := xdscache_v3.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
 
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort),
+		xdscache_v3.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort, ctx.Config.Network.EnvoyAdminPort),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},
