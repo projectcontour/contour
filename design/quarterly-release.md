@@ -47,9 +47,9 @@ The following table illustrates how this will work.
 |Q2 2022  | :negative_squared_cross_mark: | :heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |
 |Q3 2022  | :negative_squared_cross_mark: | :negative_squared_cross_mark: |:heavy_check_mark: |:heavy_check_mark: | :heavy_check_mark: |
 
-## Upstream depdendency management
+## Upstream dependency management
 
 There are some unresolved questions about upstream dependencies and their release cadences, but some best guesses:
-* Kubernetes releases three times per year. We will investigate which Contour releaase is the best one to upgrade our Kubernetes dependencies and update this document at a later date.
+* Kubernetes releases three times per year. We will investigate which Contour release is the best one to upgrade our Kubernetes dependencies and update this document at a later date.
 * Envoy releases quarterly, we will attempt to ensure that Contour releases harmonize with Envoy releases.
 * Go releases every six months, we will most likely upgrade Go soon after it is released.
