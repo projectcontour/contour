@@ -52,6 +52,15 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
+# Wrap sed to deal with GNU and BSD sed flags.
+run::sed() {
+    local -r vers="$(sed --version < /dev/null 2>&1 | grep -q GNU && echo gnu || echo bsd)"
+    case "$vers" in
+        gnu) sed -i "$@" ;;
+        *) sed -i '' "$@" ;;
+    esac
+}
+
 if [ "${LOAD_PREBUILT_IMAGE}" = "true" ]; then
     IMAGE_FILE=$(ls ${REPO}/image/contour-*.tar)
     VERSION=$(echo ${IMAGE_FILE} | sed -E 's/.*-(.*).tar/\1/')
@@ -67,7 +76,6 @@ fi
 
 
 # Install Contour
-
 ${KUBECTL} apply -f ${REPO}/examples/contour/00-common.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/01-crds.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-rbac.yaml
@@ -75,11 +83,22 @@ ${KUBECTL} apply -f ${REPO}/examples/contour/02-role-contour.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-service-contour.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-service-envoy.yaml
 
-# Manifests use the "Always" image pull policy, which forces the kubelet to re-fetch from
-# DockerHub, which is why we have to update policy to `IfNotPresent`.
-${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/02-job-certgen.yaml | sed "s/contour:main/contour:${VERSION}/g")
-${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-contour.yaml | sed "s/contour:main/contour:${VERSION}/g")
-${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-envoy.yaml | sed "s/contour:main/contour:${VERSION}/g")
+for file in ${REPO}/examples/contour/02-job-certgen.yaml ${REPO}/examples/contour/03-contour.yaml ${REPO}/examples/contour/03-envoy.yaml ; do
+  # Set image pull policy to IfNotPresent so kubelet will use the
+  # images that we loaded onto the node, rather than trying to pull
+  # them from the registry.
+  run::sed \
+    "-es|imagePullPolicy: Always|imagePullPolicy: IfNotPresent|" \
+    "$file"
+
+  # Set the image tag to $VERSION to unambiguously use the image
+  # we built above.
+  run::sed \
+    "-es|image: docker.io/projectcontour/contour:.*$|image: docker.io/projectcontour/contour:${VERSION}|" \
+    "$file"
+
+  ${KUBECTL} apply -f "$file"
+done
 
 # The Contour pod won't schedule until this ConfigMap is created, since it's mounted as a volume.
 # This is ok to create the config after the Contour deployment.
