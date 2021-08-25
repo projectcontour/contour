@@ -50,6 +50,15 @@ if ! kind::cluster::exists "$CLUSTERNAME" ; then
     exit 2
 fi
 
+# Wrap sed to deal with GNU and BSD sed flags.
+run::sed() {
+    local -r vers="$(sed --version < /dev/null 2>&1 | grep -q GNU && echo gnu || echo bsd)"
+    case "$vers" in
+        gnu) sed -i "$@" ;;
+        *) sed -i '' "$@" ;;
+    esac
+}
+
 # Build the current version of Contour.
 make -C ${REPO} container IMAGE=docker.io/projectcontour/contour VERSION="v$$"
 
@@ -64,9 +73,7 @@ for t in $TAGS ; do
     kind::cluster::load docker.io/projectcontour/contour:$t
 done
 
-
 # Install Contour
-
 ${KUBECTL} apply -f ${REPO}/examples/contour/00-common.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/01-crds.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-rbac.yaml
@@ -74,11 +81,26 @@ ${KUBECTL} apply -f ${REPO}/examples/contour/02-role-contour.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-service-contour.yaml
 ${KUBECTL} apply -f ${REPO}/examples/contour/02-service-envoy.yaml
 
-# Manifests use the "Always" image pull policy, which forces the kubelet to re-fetch from
-# DockerHub, which is why we have to update policy to `IfNotPresent`.
-${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/02-job-certgen.yaml)
-${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-contour.yaml)
-${KUBECTL} apply -f <(sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < ${REPO}/examples/contour/03-envoy.yaml)
+for file in ${REPO}/examples/contour/02-job-certgen.yaml ${REPO}/examples/contour/03-contour.yaml ${REPO}/examples/contour/03-envoy.yaml ; do
+  # Set image pull policy to IfNotPresent so kubelet will use the
+  # images that we loaded onto the node, rather than trying to pull
+  # them from the registry.
+  run::sed \
+    "-es|imagePullPolicy: Always|imagePullPolicy: IfNotPresent|" \
+    "$file"
+
+  # Set the image tag to "working" to unambiguously use the image
+  # we built above. This is not strictly necessary for the main branch
+  # since the manifests there use the "main" tag, which we are tagging
+  # and loading above, but it *is* necessary for release branches, since
+  # their manifests will have a version-specific tag that we need to
+  # override.
+  run::sed \
+    "-es|image: docker.io/projectcontour/contour:.*$|image: docker.io/projectcontour/contour:working|" \
+    "$file"
+
+  ${KUBECTL} apply -f "$file"
+done
 
 # The Contour pod won't schedule until this ConfigMap is created, since it's mounted as a volume.
 # This is ok to create the config after the Contour deployment.
