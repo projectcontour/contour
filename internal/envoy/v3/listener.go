@@ -508,6 +508,18 @@ func TCPProxy(statPrefix string, proxy *dag.TCPProxy, accesslogger []*accesslog.
 	}
 }
 
+// UnixSocketAddress creates a new Unix Socket envoy_core_v3.Address.
+func UnixSocketAddress(address string, port int) *envoy_core_v3.Address {
+	return &envoy_core_v3.Address{
+		Address: &envoy_core_v3.Address_Pipe{
+			Pipe: &envoy_core_v3.Pipe{
+				Path: address,
+				Mode: 0644,
+			},
+		},
+	}
+}
+
 // SocketAddress creates a new TCP envoy_core_v3.Address.
 func SocketAddress(address string, port int) *envoy_core_v3.Address {
 	if address == "::" {
