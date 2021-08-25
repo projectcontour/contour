@@ -281,14 +281,24 @@ type ListenerCache struct {
 }
 
 // NewListenerCache returns an instance of a ListenerCache
-func NewListenerCache(config ListenerConfig, address string, port int) *ListenerCache {
-	stats := envoy_v3.StatsListener(address, port)
-	return &ListenerCache{
+func NewListenerCache(config ListenerConfig, statsAddress string, statsPort, adminPort int) *ListenerCache {
+	stats := envoy_v3.StatsListener(statsAddress, statsPort)
+	admin := envoy_v3.AdminListener("127.0.0.1", adminPort)
+
+	listenerCache := &ListenerCache{
 		Config: config,
 		staticValues: map[string]*envoy_listener_v3.Listener{
 			stats.Name: stats,
 		},
 	}
+
+	// If the port is not zero, allow the read-only options from the
+	// Envoy admin webpage to be served.
+	if adminPort > 0 {
+		listenerCache.staticValues[admin.Name] = admin
+	}
+
+	return listenerCache
 }
 
 // Update replaces the contents of the cache with the supplied map.

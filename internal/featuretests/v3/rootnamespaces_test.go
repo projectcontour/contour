@@ -46,7 +46,7 @@ func TestRootNamespaces(t *testing.T) {
 	// assert that there is only a static listener
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -81,7 +81,7 @@ func TestRootNamespaces(t *testing.T) {
 	// assert that hp1 has no effect on the listener set.
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -119,7 +119,7 @@ func TestRootNamespaces(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
