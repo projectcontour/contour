@@ -404,15 +404,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger:     log.WithField("context", "contourEventHandler"),
 	}
 
-	// Wrap eventHandler in a converter for objects from the dynamic client.
-	// and an EventRecorder which tracks API server events.
-	dynamicHandler := k8s.DynamicClientHandler{
-		Next: &contour.EventRecorder{
-			Next:    eventHandler,
-			Counter: contourMetrics.EventHandlerOperations,
-		},
-		Converter: converter,
-		Logger:    log.WithField("context", "dynamicHandler"),
+	// Wrap eventHandler in an EventRecorder which tracks API server events.
+	recordingHandler := &contour.EventRecorder{
+		Next:    eventHandler,
+		Counter: contourMetrics.EventHandlerOperations,
 	}
 
 	// Start setting up StatusUpdateHandler since we need it in
@@ -427,13 +422,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Inform on DefaultResources.
 	for _, r := range k8s.DefaultResources() {
-		if err := informOnResource(clients, r, &dynamicHandler, mgr.GetCache()); err != nil {
+		if err := informOnResource(clients, r, recordingHandler, mgr.GetCache()); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
 
 	for _, r := range k8s.IngressV1Resources() {
-		if err := informOnResource(clients, r, &dynamicHandler, mgr.GetCache()); err != nil {
+		if err := informOnResource(clients, r, recordingHandler, mgr.GetCache()); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
@@ -445,7 +440,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			gatewayClassControllerName := ctx.Config.GatewayConfig.ControllerName
 			if _, err := controller.NewGatewayClassController(
 				mgr,
-				&dynamicHandler,
+				recordingHandler,
 				sh.Writer(),
 				log.WithField("context", "gatewayclass-controller"),
 				gatewayClassControllerName,
@@ -454,23 +449,23 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			}
 
 			// Create and register the NewGatewayController controller with the manager.
-			if _, err := controller.NewGatewayController(mgr, &dynamicHandler,
+			if _, err := controller.NewGatewayController(mgr, recordingHandler,
 				log.WithField("context", "gateway-controller"), gatewayClassControllerName); err != nil {
 				log.WithError(err).Fatal("failed to create gateway-controller")
 			}
 
 			// Create and register the NewHTTPRouteController controller with the manager.
-			if _, err := controller.NewHTTPRouteController(mgr, &dynamicHandler, log.WithField("context", "httproute-controller")); err != nil {
+			if _, err := controller.NewHTTPRouteController(mgr, recordingHandler, log.WithField("context", "httproute-controller")); err != nil {
 				log.WithError(err).Fatal("failed to create httproute-controller")
 			}
 
 			// Create and register the NewTLSRouteController controller with the manager.
-			if _, err := controller.NewTLSRouteController(mgr, &dynamicHandler, log.WithField("context", "tlsroute-controller")); err != nil {
+			if _, err := controller.NewTLSRouteController(mgr, recordingHandler, log.WithField("context", "tlsroute-controller")); err != nil {
 				log.WithError(err).Fatal("failed to create tlsroute-controller")
 			}
 
 			// Inform on Namespaces.
-			if err := informOnResource(clients, k8s.NamespacesResource(), &dynamicHandler, mgr.GetCache()); err != nil {
+			if err := informOnResource(clients, k8s.NamespacesResource(), recordingHandler, mgr.GetCache()); err != nil {
 				log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
 			}
 		} else {
@@ -480,11 +475,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Inform on secrets, filtering by root namespaces.
 	for _, r := range k8s.SecretsResources() {
-		var handler cache.ResourceEventHandler = &dynamicHandler
+		var handler cache.ResourceEventHandler = recordingHandler
 
 		// If root namespaces are defined, filter for secrets in only those namespaces.
 		if len(informerNamespaces) > 0 {
-			handler = k8s.NewNamespaceFilter(informerNamespaces, &dynamicHandler)
+			handler = k8s.NewNamespaceFilter(informerNamespaces, recordingHandler)
 		}
 
 		if err := informOnResource(clients, r, handler, mgr.GetCache()); err != nil {
@@ -494,13 +489,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Inform on endpoints.
 	for _, r := range k8s.EndpointsResources() {
-		if err := informOnResource(clients, r, &k8s.DynamicClientHandler{
-			Next: &contour.EventRecorder{
-				Next:    endpointHandler,
-				Counter: contourMetrics.EventHandlerOperations,
-			},
-			Converter: converter,
-			Logger:    log.WithField("context", "endpointstranslator"),
+		if err := informOnResource(clients, r, &contour.EventRecorder{
+			Next:    endpointHandler,
+			Counter: contourMetrics.EventHandlerOperations,
 		}, mgr.GetCache()); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
@@ -594,18 +585,14 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log.WithField("loadbalancer-address", lbAddr).Info("Using supplied information for Ingress status")
 		lbsw.lbStatus <- parseStatusFlag(lbAddr)
 	} else {
-		dynamicServiceHandler := k8s.DynamicClientHandler{
-			Next: &k8s.ServiceStatusLoadBalancerWatcher{
-				ServiceName: ctx.Config.EnvoyServiceName,
-				LBStatus:    lbsw.lbStatus,
-				Log:         log.WithField("context", "serviceStatusLoadBalancerWatcher"),
-			},
-			Converter: converter,
-			Logger:    log.WithField("context", "serviceStatusLoadBalancerWatcher"),
+		serviceHandler := &k8s.ServiceStatusLoadBalancerWatcher{
+			ServiceName: ctx.Config.EnvoyServiceName,
+			LBStatus:    lbsw.lbStatus,
+			Log:         log.WithField("context", "serviceStatusLoadBalancerWatcher"),
 		}
 
 		for _, r := range k8s.ServicesResources() {
-			var handler cache.ResourceEventHandler = &dynamicServiceHandler
+			var handler cache.ResourceEventHandler = serviceHandler
 
 			if ctx.Config.EnvoyServiceNamespace != "" {
 				handler = k8s.NewNamespaceFilter([]string{ctx.Config.EnvoyServiceNamespace}, handler)
