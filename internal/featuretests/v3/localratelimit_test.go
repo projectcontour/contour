@@ -60,7 +60,7 @@ func filterExists(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 		TypeUrl: listenerType,
 		Resources: resources(t,
 			defaultHTTPListener(),
-			staticListener()),
+			statsListener()),
 	}).Status(p).IsValid()
 }
 

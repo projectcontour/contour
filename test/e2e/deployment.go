@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build e2e
 // +build e2e
 
 package e2e
@@ -18,6 +19,7 @@ package e2e
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -415,6 +417,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		"--xds-address="+d.localContourHost,
 		"--xds-port="+d.localContourPort,
 		"--xds-resource-version=v3",
+		"--admin-address=/admin/admin.sock",
 	)
 	session, err := gexec.Start(bootstrapCmd, d.cmdOutputWriter, d.cmdOutputWriter)
 	if err != nil {
@@ -444,30 +447,93 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		return err
 	}
 
-	// Add bootstrap ConfigMap as volume on Envoy pods (also removes cert volume).
-	d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = []v1.Volume{
-		{
-			Name: "envoy-config",
-			VolumeSource: v1.VolumeSource{
-				ConfigMap: &v1.ConfigMapVolumeSource{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: "envoy-bootstrap",
-					},
+	// Add bootstrap ConfigMap as volume and add envoy admin volume on Envoy pods (also removes cert volume).
+	d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = []v1.Volume{{
+		Name: "envoy-config",
+		VolumeSource: v1.VolumeSource{
+			ConfigMap: &v1.ConfigMapVolumeSource{
+				LocalObjectReference: v1.LocalObjectReference{
+					Name: "envoy-bootstrap",
 				},
 			},
 		},
-	}
+	}, {
+		Name: "envoy-admin",
+		VolumeSource: v1.VolumeSource{
+			EmptyDir: &v1.EmptyDirVolumeSource{},
+		},
+	}}
 
 	// Remove cert volume mount.
-	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[0]}
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{
+		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[0], // Config mount
+		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[2], // Admin mount
+	}
 
 	// Remove init container.
 	d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers = nil
+
 	// Remove shutdown-manager container.
 	d.EnvoyDaemonSet.Spec.Template.Spec.Containers = d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1:]
 
+	// Expose the metrics & admin interfaces via host port to test from outside the kind cluster.
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports,
+		v1.ContainerPort{
+			Name:          "metrics",
+			ContainerPort: 8002,
+			HostPort:      8002,
+			Protocol:      v1.ProtocolTCP,
+		})
 	if err := d.EnsureEnvoyDaemonSet(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// DeleteResourcesForLocalContour ensures deletion of all resources
+// created in the projectcontour namespace for running a local contour.
+// This is done instead of deleting the entire namespace as a performance
+// optimization, because deleting non-empty namespaces can take up to a
+// couple minutes to complete.
+func (d *Deployment) DeleteResourcesForLocalContour() error {
+	ensureDeleted := func(obj client.Object) error {
+		// Delete the object; if it already doesn't exist,
+		// then we're done.
+		err := d.client.Delete(context.Background(), obj)
+		if api_errors.IsNotFound(err) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("error deleting resource %T %s/%s: %v", obj, obj.GetNamespace(), obj.GetName(), err)
+		}
+
+		// Wait to ensure it's fully deleted.
+		if err := wait.PollImmediate(100*time.Millisecond, time.Minute, func() (bool, error) {
+			err := d.client.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+			if api_errors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, nil
+		}); err != nil {
+			return fmt.Errorf("error waiting for deletion of resource %T %s/%s: %v", obj, obj.GetNamespace(), obj.GetName(), err)
+		}
+
+		return nil
+	}
+
+	for _, r := range []client.Object{
+		d.EnvoyDaemonSet,
+		d.ContourConfigMap,
+		d.EnvoyService,
+		d.TLSCertDelegationCRD,
+		d.ExtensionServiceCRD,
+		d.HTTPProxyCRD,
+		d.EnvoyServiceAccount,
+	} {
+		if err := ensureDeleted(r); err != nil {
+			return err
+		}
 	}
 
 	return nil
