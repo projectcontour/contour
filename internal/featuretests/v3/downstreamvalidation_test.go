@@ -102,7 +102,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPS,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	}).Status(proxy).IsValid()
@@ -148,7 +148,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPSSkipVerify,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	}).Status(proxy).IsValid()
@@ -198,7 +198,7 @@ func TestDownstreamTLSCertificateValidation(t *testing.T) {
 		Resources: resources(t,
 			defaultHTTPListener(),
 			ingressHTTPSSkipVerifyWithCA,
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	}).Status(proxy).IsValid()

@@ -108,7 +108,7 @@ func authzResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contou
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
 
-			staticListener()),
+			statsListener()),
 	}).Status(p).IsValid()
 }
 
@@ -135,7 +135,7 @@ func authzInvalidResponseTimeout(t *testing.T, rh cache.ResourceEventHandler, c 
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl:   listenerType,
-		Resources: resources(t, staticListener()),
+		Resources: resources(t, statsListener()),
 	}).Status(p).HasError(contour_api_v1.ConditionTypeAuthError, "AuthResponseTimeoutInvalid", `Spec.Virtualhost.Authorization.ResponseTimeout is invalid: unable to parse timeout string "invalid-timeout": time: invalid duration "invalid-timeout"`)
 }
 
@@ -194,7 +194,7 @@ func authzFailOpen(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 				},
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener()),
+			statsListener()),
 	}).Status(p).IsValid()
 }
 
@@ -220,7 +220,7 @@ func authzFallbackIncompat(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl:   listenerType,
-		Resources: resources(t, staticListener()),
+		Resources: resources(t, statsListener()),
 	}).Status(p).HasError(contour_api_v1.ConditionTypeTLSError, "TLSIncompatibleFeatures", "Spec.Virtualhost.TLS fallback & client authorization are incompatible")
 }
 
@@ -450,7 +450,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl:   listenerType,
-		Resources: resources(t, staticListener()),
+		Resources: resources(t, statsListener()),
 	}).Status(invalid).HasError(contour_api_v1.ConditionTypeAuthError, "AuthBadResourceVersion", `Spec.Virtualhost.Authorization.extensionRef specifies an unsupported resource version "foo/bar"`)
 
 	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_api_v1.ExtensionServiceReference{
@@ -464,7 +464,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl:   listenerType,
-		Resources: resources(t, staticListener()),
+		Resources: resources(t, statsListener()),
 	}).Status(invalid).HasError(contour_api_v1.ConditionTypeAuthError, "ExtensionServiceNotFound", `Spec.Virtualhost.Authorization.ServiceRef extension service "missing/extension" not found`)
 
 	invalid.Spec.VirtualHost.Authorization.ExtensionServiceRef = contour_api_v1.ExtensionServiceReference{
@@ -509,7 +509,7 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 				},
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener()),
+			statsListener()),
 	}).Status(invalid).IsValid()
 }
 
