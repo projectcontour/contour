@@ -16,6 +16,8 @@
 package envoy
 
 import (
+	"fmt"
+	"net"
 	"os"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -40,12 +42,12 @@ type BootstrapConfig struct {
 	// Defaults to /dev/null.
 	AdminAccessLogPath string
 
-	// AdminAddress is the TCP address that the administration server will listen on.
-	// Defaults to 127.0.0.1.
+	// AdminAddress is the Unix Socket address that the administration server will listen on.
+	// Defaults to /admin/admin.sock.
 	AdminAddress string
 
+	// Deprecated
 	// AdminPort is the port that the administration server will listen on.
-	// Defaults to 9001.
 	AdminPort int
 
 	// XDSAddress is the TCP address of the gRPC XDS management server.
@@ -93,7 +95,7 @@ type BootstrapConfig struct {
 func (c *BootstrapConfig) GetXdsAddress() string { return stringOrDefault(c.XDSAddress, "127.0.0.1") }
 func (c *BootstrapConfig) GetXdsGRPCPort() int   { return intOrDefault(c.XDSGRPCPort, 8001) }
 func (c *BootstrapConfig) GetAdminAddress() string {
-	return stringOrDefault(c.AdminAddress, "127.0.0.1")
+	return stringOrDefault(c.AdminAddress, "/admin/admin.sock")
 }
 func (c *BootstrapConfig) GetAdminPort() int { return intOrDefault(c.AdminPort, 9001) }
 func (c *BootstrapConfig) GetAdminAccessLogPath() string {
@@ -102,6 +104,18 @@ func (c *BootstrapConfig) GetAdminAccessLogPath() string {
 func (c *BootstrapConfig) GetDNSLookupFamily() string {
 	return stringOrDefault(c.DNSLookupFamily, "auto")
 }
+
+// ValidAdminAddress checks if the address supplied is
+// "localhost" or an IP address. Only a Unix Socket
+// is supported for this address to mitigate security.
+func ValidAdminAddress(address string) error {
+	// Value of "localhost" is invalid.
+	if address == "localhost" || net.ParseIP(address) != nil {
+		return fmt.Errorf("invalid value %q, cannot be `localhost` or an ip address", address)
+	}
+	return nil
+}
+
 func stringOrDefault(s, def string) string {
 	if s == "" {
 		return def

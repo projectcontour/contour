@@ -89,7 +89,7 @@ func TestIngressWildcardHostHTTP(t *testing.T) {
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			defaultHTTPListener(),
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
@@ -219,7 +219,7 @@ func TestIngressWildcardHostHTTPSWildcardSecret(t *testing.T) {
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			},
-			staticListener(),
+			statsListener(),
 		),
 		TypeUrl: listenerType,
 	})
