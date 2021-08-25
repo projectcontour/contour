@@ -18,6 +18,7 @@ import (
 
 	resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/build"
+	"github.com/projectcontour/contour/internal/envoy"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
@@ -69,9 +70,11 @@ func main() {
 	case sdmShutdown.FullCommand():
 		sdmShutdownCtx.shutdownHandler()
 	case bootstrap.FullCommand():
-		err := bootstrapCtx.XDSResourceVersion.Validate()
-		if err != nil {
+		if err := bootstrapCtx.XDSResourceVersion.Validate(); err != nil {
 			log.WithError(err).Fatal("failed to parse bootstrap args")
+		}
+		if err := envoy.ValidAdminAddress(bootstrapCtx.AdminAddress); err != nil {
+			log.WithField("flag", "--admin-address").WithError(err).Fatal("failed to parse bootstrap args")
 		}
 		if err := envoy_v3.WriteBootstrap(bootstrapCtx); err != nil {
 			log.WithError(err).Fatal("failed to write bootstrap configuration")
