@@ -725,6 +725,36 @@ type HeaderHashOptions struct {
 	HeaderName string `json:"headerName,omitempty"`
 }
 
+// CookieHashOptions contains options to configure a HTTP Cookie on which to hash
+// used in request attribute hash based load balancing.
+type CookieHashOptions struct {
+	// UseDefaultSessionAffinity
+	UseDefaultSessionAffinity bool `json:"useDefaultSessionAffinity,omitempty"`
+
+	// CookieName is the name of the HTTP Cookie that will be used to
+	// calculate the hash key. If the cookie specified is not present on a
+	// request and the Passive field is true, no hash will be produced.
+	// If the cookie specified is not present on a request and the Passive
+	// field is false, a hash will be produced and sent in the Set-Cookie
+	// header of the response.
+	// This field will be ignored if useDefaultSessionAffinity is set to true.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	CookieName string `json:"headerName,omitempty"`
+
+	// Passive configures if Envoy should generate and return a hash when
+	// the specified cookie is not present on a request. By default when
+	// Passive is false, Envoy will be configured to generate a hash for
+	// a request without the specified cookie and return it in the
+	// Set-Cookie header in the response. Setting Passive to true ensures
+	// responses to requests without the specified cookie do not contain
+	// a hash that can be used for session-affinity. Setting Passive to true
+	// can be used to implement session-affinity with application generated
+	// cookies.
+	// This field will be ignored if useDefaultSessionAffinity is set to true.
+	Passive bool `json:"passive,omitempty"`
+}
+
 // RequestHashPolicy contains configuration for an individual hash policy
 // on a request attribute.
 type RequestHashPolicy struct {
@@ -737,8 +767,14 @@ type RequestHashPolicy struct {
 	// HeaderHashOptions should be set when request header hash based load
 	// balancing is desired. It must be the only hash option field set,
 	// otherwise this request hash policy object will be ignored.
-	// +kubebuilder:validation:Required
+	// +optional
 	HeaderHashOptions *HeaderHashOptions `json:"headerHashOptions,omitempty"`
+
+	// CookieHashOptions should be set when cookie based load
+	// balancing is desired. It must be the only hash option field set,
+	// otherwise this request hash policy object will be ignored.
+	// +optional
+	CookieHashOptions *CookieHashOptions `json:"cookieHashOptions,omitempty"`
 }
 
 // LoadBalancerPolicy defines the load balancing policy.

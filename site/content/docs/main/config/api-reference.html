@@ -574,6 +574,77 @@ the secret will be delegated to all namespaces.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.CookieHashOptions">CookieHashOptions
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.RequestHashPolicy">RequestHashPolicy</a>)
+</p>
+<p>
+<p>CookieHashOptions contains options to configure a HTTP Cookie on which to hash
+used in request attribute hash based load balancing.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>useDefaultSessionAffinity</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>UseDefaultSessionAffinity</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>headerName</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>CookieName is the name of the HTTP Cookie that will be used to
+calculate the hash key. If the cookie specified is not present on a
+request and the Passive field is true, no hash will be produced.
+If the cookie specified is not present on a request and the Passive
+field is false, a hash will be produced and sent in the Set-Cookie
+header of the response.
+This field will be ignored if useDefaultSessionAffinity is set to true.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>passive</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Passive configures if Envoy should generate and return a hash when
+the specified cookie is not present on a request. By default when
+Passive is false, Envoy will be configured to generate a hash for
+a request without the specified cookie and return it in the
+Set-Cookie header in the response. Setting Passive to true ensures
+responses to requests without the specified cookie do not contain
+a hash that can be used for session-affinity. Setting Passive to true
+can be used to implement session-affinity with application generated
+cookies.
+This field will be ignored if useDefaultSessionAffinity is set to true.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.DetailedCondition">DetailedCondition
 </h3>
 <p>
@@ -1968,7 +2039,25 @@ HeaderHashOptions
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>HeaderHashOptions should be set when request header hash based load
+balancing is desired. It must be the only hash option field set,
+otherwise this request hash policy object will be ignored.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>cookieHashOptions</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.CookieHashOptions">
+CookieHashOptions
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CookieHashOptions should be set when cookie based load
 balancing is desired. It must be the only hash option field set,
 otherwise this request hash policy object will be ignored.</p>
 </td>
