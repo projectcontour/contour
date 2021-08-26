@@ -36,7 +36,7 @@ rules:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: contour-certgen-v1.15.1
+  name: contour-certgen-v1.15.2
   namespace: projectcontour
 spec:
   ttlSecondsAfterFinished: 0
@@ -47,7 +47,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: docker.io/projectcontour/contour:v1.15.1
+        image: docker.io/projectcontour/contour:v1.15.2
         imagePullPolicy: Always
         command:
         - contour

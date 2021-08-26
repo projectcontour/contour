@@ -29,7 +29,7 @@ spec:
         args:
           - envoy
           - shutdown-manager
-        image: docker.io/projectcontour/contour:v1.15.1
+        image: docker.io/projectcontour/contour:v1.15.2
         imagePullPolicy: Always
         lifecycle:
           preStop:
@@ -113,7 +113,7 @@ spec:
         - --envoy-key-file=/certs/tls.key
         command:
         - contour
-        image: docker.io/projectcontour/contour:v1.15.1
+        image: docker.io/projectcontour/contour:v1.15.2
         imagePullPolicy: Always
         name: envoy-initconfig
         volumeMounts:
