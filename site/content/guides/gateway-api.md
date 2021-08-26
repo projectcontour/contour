@@ -58,32 +58,12 @@ This command creates:
 - Contour Deployment / Service
 - Envoy Daemonset / Service
 - Properly configured Configuration file for Gateway API
+- GatewayAPI Gateway
+- GatewayAPI Gateway Class
 
-Create the Gateway API resources:
+Create the Gateway API HTTPRoute to define how traffic should be routed:
 
 ```yaml
-kind: GatewayClass
-apiVersion: networking.x-k8s.io/v1alpha1
-metadata:
-  name: contour-class
-spec: 
-  controller: projectcontour.io/projectcontour/contour
----
-kind: Gateway
-apiVersion: networking.x-k8s.io/v1alpha1
-metadata:
-  name: contour
-  namespace: projectcontour
-spec:
-  gatewayClassName: contour-class
-  listeners:
-    - protocol: HTTP
-      port: 80
-      routes:
-        kind: HTTPRoute
-        namespaces:
-          from: "All"
----
 kind: HTTPRoute
 apiVersion: networking.x-k8s.io/v1alpha1
 metadata:
