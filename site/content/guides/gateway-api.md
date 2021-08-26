@@ -35,69 +35,9 @@ The following prerequisites must be met before using Gateway API with Contour:
 - A working [Kubernetes][2] cluster. Refer to the [compatibility matrix][3] for cluster version requirements.
 - The [kubectl][4] command-line tool, installed and configured to access your cluster.
 
-### Option #1: Using Gateway API with Contour Operator
+### Option #1: Gateway API with Contour
 
-One method for using Gateway API is with [Contour Operator][5]. Refer to the [contour][6] and
-[operator][7] designs for additional background on the gateway API implementation.
-
-Run the operator:
-```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/operator.yaml
-```
-This command creates:
-
-- Namespace `contour-operator` to run the operator.
-- Operator and Contour CRDs.
-- Operator RBAC resources for the operator.
-- A Deployment to manage the operator.
-- A Service to front-end the operator’s metrics endpoint.
-
-Create the Gateway API resources:
-
-Option 1: Using a LoadBalancer Service:
-```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/gateway.yaml
-```
-
-Option 2: Using a NodePort Service:
-```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/gateway-nodeport.yaml
-```
-
-Either of the above options create:
-
-- Namespace `projectcontour` to run the Gateway and child resources, i.e. Envoy DaemonSet.
-- A Contour custom resource named `contour-gateway-sample` in the operator's namespace. This resource exposes
-  infrastructure-specific configuration and is referenced by the GatewayClass.
-- A GatewayClass named `sample-gatewayclass` that abstracts the infrastructure-specific configuration from Gateways.
-- A Gateway named `contour` in namespace `projectcontour`. This gateway will serve the test application through routing
-  rules deployed in the next step.
-
-### Option #2: Using Gateway API, only Contour
-
-Gateway API can be used without the Operator as well. Refer to the [contour][6] design for additional background on the Gateway API implementation.
-
-Deploy Contour:
-```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/contour.yaml
-```
-This command creates:
-
-- Namespace `projectcontour` to run Contour.
-- Contour CRDs.
-- Contour RBAC resources.
-
-Edit the Contour config to enable Gateway API:
-
-```shell
-$ kubectl edit configmap -n projectcontour contour
-
-# Uncomment the following three line:
-gateway:
-  controllerName: projectcontour.io/projectcontour/contour
-  name: contour
-  namespace: projectcontour
-```
+Refer to the [contour][6] design for additional background on the Gateway API implementation.
 
 Install the Gateway CRDs:
 
@@ -106,11 +46,18 @@ $ kubectl kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v0.3.
 | kubectl apply -f -
 ```
 
-Restart Contour:
-
+Deploy Contour:
 ```shell
-$ kubectl delete po -n projectcontour -l app=contour
+$ kubectl apply -f {{< param base_url >}}/quickstart/contour-gateway.yaml
 ```
+This command creates:
+
+- Namespace `projectcontour` to run Contour.
+- Contour CRDs
+- Contour RBAC resources
+- Contour Deployment / Service
+- Envoy Daemonset / Service
+- Properly configured Configuration file for Gateway API
 
 Create the Gateway API resources:
 
@@ -156,6 +103,43 @@ spec:
         - serviceName: rootapp
           port: 80
 ```
+
+### Option #2: Using Gateway API with Contour Operator
+
+Refer to the [contour][6] and [operator][7] designs for additional background on the gateway API implementation.
+
+Run the operator:
+```shell
+$ kubectl apply -f {{< param base_url >}}/quickstart/operator.yaml
+```
+This command creates:
+
+- Namespace `contour-operator` to run the operator.
+- Operator and Contour CRDs.
+- Operator RBAC resources for the operator.
+- A Deployment to manage the operator.
+- A Service to front-end the operator’s metrics endpoint.
+
+Create the Gateway API resources:
+
+Option 1: Using a LoadBalancer Service:
+```shell
+$ kubectl apply -f {{< param base_url >}}/quickstart/gateway.yaml
+```
+
+Option 2: Using a NodePort Service:
+```shell
+$ kubectl apply -f {{< param base_url >}}/quickstart/gateway-nodeport.yaml
+```
+
+Either of the above options create:
+
+- Namespace `projectcontour` to run the Gateway and child resources, i.e. Envoy DaemonSet.
+- A Contour custom resource named `contour-gateway-sample` in the operator's namespace. This resource exposes
+  infrastructure-specific configuration and is referenced by the GatewayClass.
+- A GatewayClass named `sample-gatewayclass` that abstracts the infrastructure-specific configuration from Gateways.
+- A Gateway named `contour` in namespace `projectcontour`. This gateway will serve the test application through routing
+  rules deployed in the next step.
 
 ### Testing the Gateway API
 
