@@ -6545,6 +6545,5 @@ spec:
       port: 80
       routes:
         kind: HTTPRoute
-        selector:
-          matchLabels:
-            app: kuard
+        namespaces:
+          from: "All"
