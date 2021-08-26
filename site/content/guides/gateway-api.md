@@ -35,10 +35,9 @@ The following prerequisites must be met before using Gateway API with Contour:
 - A working [Kubernetes][2] cluster. Refer to the [compatibility matrix][3] for cluster version requirements.
 - The [kubectl][4] command-line tool, installed and configured to access your cluster.
 
-### Using Gateway API with Contour Operator
+### Option #1: Using Gateway API with Contour Operator
 
-The preferred method for using Gateway API is with [Contour Operator][5]. This is because the GatewayClass and Gateway
-resources should be managed by active controllers that are implemented by the operator. Refer to the [contour][6] and
+One method for using Gateway API is with [Contour Operator][5]. Refer to the [contour][6] and
 [operator][7] designs for additional background on the gateway API implementation.
 
 Run the operator:
@@ -73,6 +72,90 @@ Either of the above options create:
 - A GatewayClass named `sample-gatewayclass` that abstracts the infrastructure-specific configuration from Gateways.
 - A Gateway named `contour` in namespace `projectcontour`. This gateway will serve the test application through routing
   rules deployed in the next step.
+
+### Option #2: Using Gateway API, only Contour
+
+Gateway API can be used without the Operator as well. Refer to the [contour][6] design for additional background on the Gateway API implementation.
+
+Deploy Contour:
+```shell
+$ kubectl apply -f {{< param base_url >}}/quickstart/contour.yaml
+```
+This command creates:
+
+- Namespace `projectcontour` to run Contour.
+- Contour CRDs.
+- Contour RBAC resources.
+
+Edit the Contour config to enable Gateway API:
+
+```shell
+$ kubectl edit configmap -n projectcontour contour
+
+# Uncomment the following three line:
+gateway:
+  controllerName: projectcontour.io/projectcontour/contour
+  name: contour
+  namespace: projectcontour
+```
+
+Install the Gateway CRDs:
+
+```shell
+$ kubectl kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v0.3.0" \
+| kubectl apply -f -
+```
+
+Restart Contour:
+
+```shell
+$ kubectl delete po -n projectcontour -l app=contour
+```
+
+Create the Gateway API resources:
+
+```yaml
+kind: GatewayClass
+apiVersion: networking.x-k8s.io/v1alpha1
+metadata:
+  name: contour-class
+spec: 
+  controller: projectcontour.io/projectcontour/contour
+---
+kind: Gateway
+apiVersion: networking.x-k8s.io/v1alpha1
+metadata:
+  name: contour
+  namespace: projectcontour
+spec:
+  gatewayClassName: contour-class
+  listeners:
+    - protocol: HTTP
+      port: 80
+      routes:
+        kind: HTTPRoute
+        namespaces:
+          from: "All"
+---
+kind: HTTPRoute
+apiVersion: networking.x-k8s.io/v1alpha1
+metadata:
+  name: root
+  namespace: projectcontour
+spec:
+  gateways:
+    allow: All
+  hostnames:
+    - local.projectcontour.io
+  rules:
+    - matches:
+        - path:
+            type: Prefix
+            value: /
+      forwardTo:
+        - serviceName: rootapp
+          port: 80
+```
 
 ### Testing the Gateway API
 
