@@ -116,8 +116,8 @@ httpproxy "basic" deleted
 ## Status Reporting
 
 There are many misconfigurations that could cause an HTTPProxy or delegation to be invalid.
-To aid users in resolving these issues, Contour updates a `status` field in all HTTPProxy objects.
-In the current specification, invalid HTTPProxy are ignored by Contour and will not be used in the ingress routing configuration.
+Contour will make its best effort to process even partially valid configuration and allow traffic to be served for the valid parts.
+To aid users in resolving any issues, Contour updates a `status` field in all HTTPProxy objects.
 
 If an HTTPProxy object is valid, it will have a status property that looks like this:
 
@@ -150,6 +150,40 @@ Some examples of invalid configurations that Contour provides statuses for:
 - Multiple prefixes cannot be specified on the same set of route conditions.
 - Multiple header conditions of type "exact match" with the same header key.
 - Contradictory header conditions on a route, e.g. a "contains" and "notcontains" condition for the same header and value.
+
+Invalid configuration is ignored and will be not used in the ingress routing configuration.
+Envoy will respond with an error when HTTP request is received on route with invalid configuration on following cases:
+
+* `502 Bad Gateway` response is sent when HTTPProxy has an include that refers to an HTTPProxy that does not exist.
+* `503 Service Unavailable` response is sent when HTTPProxy refers to a service that does not exist.
+
+### Example
+
+Following example has two routes: the first one is valid, the second one refers to a service that does not exist.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: multiple-routes-with-a-missing-service
+spec:
+  virtualhost:
+    fqdn: www.example.com
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: valid-service
+          port: 80
+    - conditions:
+      - prefix: /subpage
+      services:
+        - name: service-that-does-not-exist
+          port: 80
+```
+
+The status of the `HTTPProxy` will be `failed` and the conditions will have detailed error message: `Spec.Routes unresolved service reference: service "default/service-that-does-not-exist" not found`.
+Requests received for `http://www.example.com/` will be forwarded to `valid-service` but requests received for `http://www.example.com/subpage` will result in error `503 Service Unavailable` response from Envoy.
 
 ## HTTPProxy API Specification
 
