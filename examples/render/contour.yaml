@@ -90,6 +90,10 @@ data:
     # Please see the advisory at https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for the details.
     # enableExternalNameService: false
     ##
+    # Address to be placed in status.loadbalancer field of Ingress objects.
+    # May be either a literal IP address or a host name.
+    # The value will be placed directly into the relevant field inside the status.loadBalancer struct.
+    # ingress-status-address: local.projectcontour.io
     ### Logging options
     # Default setting
     accesslog-format: envoy
