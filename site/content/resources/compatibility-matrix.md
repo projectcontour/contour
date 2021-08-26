@@ -10,7 +10,7 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version |
 | --------------- | :------------------- | ------------------- | ---------------- |
-| main            | [1.19.0][14]         | 1.22, 1.21, 1.20    | [main][50]       |
+| main            | [1.19.1][17]         | 1.22, 1.21, 1.20    | [main][50]       |
 | 1.18.1          | [1.19.1][17]         | 1.21, 1.20, 1.19    | N/A              |
 | 1.18.0          | [1.19.0][14]         | 1.21, 1.20, 1.19    | [1.18.0][61]     |
 | 1.17.2          | [1.18.4][16]         | 1.21, 1.20, 1.19    | N/A              |
