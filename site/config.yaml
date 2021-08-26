@@ -28,7 +28,7 @@ params:
   twitter_url: "https://twitter.com/projectcontour"
   github_url: "https://github.com/projectcontour/contour"
   slack_url: "https://kubernetes.slack.com/messages/contour"
-  latest_version: v1.18.0
+  latest_version: v1.18.1
   use_advanced_docs: true
   docs_right_sidebar: true
   docs_search: true
@@ -37,12 +37,17 @@ params:
   docs_versioning: true
   docs_versions:
     - main
+    - v1.18.1
     - v1.18.0
+    - v1.17.2
     - v1.17.1
     - v1.17.0
+    - v1.16.1
     - v1.16.0
+    - v1.15.2
     - v1.15.1
     - v1.15.0
+    - v1.14.2
     - v1.14.1
     - v1.14.0
     - v1.13.1
