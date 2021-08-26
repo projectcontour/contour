@@ -5,7 +5,7 @@ The other are flags which are passed to Contour.
 
 Contour's configmap configuration file has grown to the point where moving to a CRD will enable a better user experience as well as allowing Contour to react to changes in its configuration faster.
 
-This design proposes two new CRDs, one that represents a `ContourConfig` and another which represents a `ContourDeployment`.
+This design proposes two new CRDs, one that represents a `ContourConfiguration` (Short name `ContourConfig`) and another which represents a `ContourDeployment`.
 The Contour configuration mirrors how the configmap functions today. 
 A Contour Deployment is managed by a controller (aka Operator) which uses the details of the CRD spec to deploy a fully managed instance of Contour inside a cluster.
 
@@ -14,6 +14,7 @@ A Contour Deployment is managed by a controller (aka Operator) which uses the de
 - Allows for a place to surface information about configuration errors - the CRD status, in addition to the Contour log files
 - Allows the Operator workflow to match a non-operator workflow (i.e. you start with a Contour configuration CRD)
 - Provides better validation to avoid errors in the configuration file
+- Dynamic restarting of Contour when configuration changes
 
 ## Contour Configuration
 
@@ -87,6 +88,8 @@ Some fields will be moved around and others added to complete the configuration:
 - logging: The logging configuration bits are now moved into a common struct
 - envoy: This manages the Envoy configuration of how it should be deployed and exposed from the cluster
 - ingressClassName: Adds the `ingress-class-name` flag to the configuration file
+- incluster (Removed)
+- kubeconfig (Removed)
 
 ## New CRD Spec
 
@@ -106,8 +109,6 @@ spec:
       tolerations:
   gateway:
       controllerName: projectcontour.io/projectcontour/contour
-  incluster: true
-  kubeconfig: /path/to/.kube/config
   disableAllowChunkedLength: false
   disablePermitInsecure: false
   tls:
@@ -189,8 +190,6 @@ spec:
         tolerations:
     gateway:
         controllerName: projectcontour.io/projectcontour/contour
-    incluster: true
-    kubeconfig: /path/to/.kube/config
     disableAllowChunkedLength: false
     disablePermitInsecure: false
     tls:
@@ -243,8 +242,30 @@ spec:
 status:
 ```
 
+## Processing Logic
+
+Contour will require a new flag (`--contour-config`), which will allow for customizing the name of the `ContourConfiguration` CRD that is it to use.
+It will default to one named `contour`, but could be overridden if desired.
+The current flag `--config-path`/`-c` will continue to point to the Configmap file, but over time could eventually be deprecated and the short code `-c` be used for the CRD location (i.e. `--contour-config`) for simplicity.
+The Contour configuration CRD will still remain optional.
+In its absence, Contour will operate with reasonable defaults.
+Where Contour settings can also be specified with command-line flags, the command-line value takes precedence over the configuration file.
+
+On startup, Contour will look for a `ContourConfiguration` CRD named `contour` or using the value of the flag `--contour-config` in the same namespace which Contour is running in, Contour won't support referencing from a different namespace.
+If the `ContourConfiguration` CRD is not found Contour will start up with reasonable defaults.
+
+Contour will set status on the object informing the user if there are any errors or issues with the config file or that is all fine and processing correctly.
+
+Once Contour begins using a Configuration file, it will add a finalizer to it such that if that config file is going to get deleted, Contour is aware of it.
+Should the Configuration CRD be deleted while it is in use, Contour will default back to reasonable defaults and log the issue.
+
+When config in the CRD changes we will gracefully stop the dependent ingress/gateway controllers and restart them with new config, or dynamically update some in-memory data that the controllers use.
+
 ## Versioning
 
 Initially, the CRDs will use the `v1alpha1` api group to allow for changes to the specs before they are released as a full `v1` spec. 
 It's possible that we find issues along the way developing the new controllers and migrating to this new configuration method. 
 Having a way to change the spec should we need to will be helpful on the path to a full v1 version. 
+
+Once we get to `v1` we have hard compatibility requirements - no more breaking changes without a major version rev.
+This should result in increased review scrutiny for proposed changes to the CRD spec.
