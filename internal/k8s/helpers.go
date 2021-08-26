@@ -18,6 +18,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	networking_v1 "k8s.io/api/networking/v1"
+	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
 // isStatusEqual checks that two objects of supported Kubernetes types
@@ -25,9 +26,9 @@ import (
 //
 // Currently supports:
 // networking.k8s.io/ingress/v1
-// projectcontour.io/v1
+// projectcontour.io/v1 (HTTPProxy only)
+// networking.x-k8s.io/v1alpha1 (GatewayClass only)
 func isStatusEqual(objA, objB interface{}) bool {
-
 	switch a := objA.(type) {
 	case *networking_v1.Ingress:
 		switch b := objB.(type) {
@@ -45,6 +46,13 @@ func isStatusEqual(objA, objB interface{}) bool {
 			// are always different for each DAG rebuild (Issue #2979).
 			if cmp.Equal(a.Status, b.Status,
 				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
+				return true
+			}
+		}
+	case *gatewayapi_v1alpha1.GatewayClass:
+		switch b := objB.(type) {
+		case *gatewayapi_v1alpha1.GatewayClass:
+			if cmp.Equal(a.Status, b.Status) {
 				return true
 			}
 		}

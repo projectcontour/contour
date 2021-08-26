@@ -17,13 +17,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/projectcontour/contour/internal/errors"
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
-	"github.com/projectcontour/contour/internal/validation"
-
 	"github.com/sirupsen/logrus"
-	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -35,22 +34,30 @@ import (
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
+var gatewayClassGVR = schema.GroupVersionResource{
+	Group:    gatewayapi_v1alpha1.GroupVersion.Group,
+	Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+	Resource: "gatewayclasses",
+}
+
 type gatewayClassReconciler struct {
-	client       client.Client
-	eventHandler cache.ResourceEventHandler
-	log          logrus.FieldLogger
-	controller   string
+	client        client.Client
+	eventHandler  cache.ResourceEventHandler
+	statusUpdater k8s.StatusUpdater
+	log           logrus.FieldLogger
+	controller    string
 }
 
 // NewGatewayClassController creates the gatewayclass controller. The controller
 // will be pre-configured to watch for cluster-scoped GatewayClass objects with
 // a controller field that matches name.
-func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger, name string) (controller.Controller, error) {
+func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, statusUpdater k8s.StatusUpdater, log logrus.FieldLogger, name string) (controller.Controller, error) {
 	r := &gatewayClassReconciler{
-		client:       mgr.GetClient(),
-		eventHandler: eventHandler,
-		log:          log,
-		controller:   name,
+		client:        mgr.GetClient(),
+		eventHandler:  eventHandler,
+		statusUpdater: statusUpdater,
+		log:           log,
+		controller:    name,
 	}
 
 	c, err := controller.New("gatewayclass-controller", mgr, controller.Options{Reconciler: r})
@@ -96,10 +103,27 @@ func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
 func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.log.WithField("name", request.Name).Info("reconciling gatewayclass")
 
-	// Fetch the Gateway from the cache.
-	gc := &gatewayapi_v1alpha1.GatewayClass{}
-	if err := r.client.Get(ctx, request.NamespacedName, gc); api_errors.IsNotFound(err) {
-		// Not-found error, so trigger an OnDelete.
+	var gatewayClasses gatewayapi_v1alpha1.GatewayClassList
+	if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
+		return reconcile.Result{}, fmt.Errorf("error listing gatewayclasses: %w", err)
+	}
+
+	var controlledClasses controlledClasses
+
+	for i := range gatewayClasses.Items {
+		// avoid loop pointer issues
+		gc := gatewayClasses.Items[i]
+
+		if gc.Spec.Controller != r.controller {
+			// different controller, ignore.
+			continue
+		}
+
+		controlledClasses.add(&gc)
+	}
+
+	// no controlled gatewayclasses, trigger a delete
+	if controlledClasses.len() == 0 {
 		r.log.WithField("name", request.Name).Info("failed to find gatewayclass")
 
 		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.GatewayClass{
@@ -108,24 +132,96 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 				Name:      request.Name,
 			}})
 		return reconcile.Result{}, nil
-	} else if err != nil {
-		// Error reading the object, so requeue the request.
-		return reconcile.Result{}, fmt.Errorf("failed to get gatewayclass %q: %w", request.Name, err)
 	}
 
-	// The gatewayclass is safe to process, so check if it's valid.
-	errs := validation.ValidateGatewayClass(ctx, r.client, gc, r.controller)
-	if errs != nil {
-		r.log.WithField("name", gc.Name).Error("invalid gatewayclass: ", errors.ParseFieldErrors(errs))
+	for _, gc := range controlledClasses.notAdmittedClasses() {
+		if r.statusUpdater != nil {
+			r.statusUpdater.Send(k8s.StatusUpdate{
+				NamespacedName: types.NamespacedName{Name: gc.Name},
+				Resource:       gatewayClassGVR,
+				Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+					gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
+					if !ok {
+						panic(fmt.Sprintf("unsupported object type %T", obj))
+					}
+
+					copy := gc.DeepCopy()
+					return status.SetGatewayClassAdmitted(context.Background(), r.client, copy, false)
+				}),
+			})
+		} else {
+			// this branch makes testing easier by not going through the StatusUpdater.
+			copy := status.SetGatewayClassAdmitted(context.Background(), r.client, gc.DeepCopy(), false)
+
+			if err := r.client.Status().Update(context.Background(), copy); err != nil {
+				return reconcile.Result{}, fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
+			}
+		}
 	}
 
-	// Pass the new changed object off to the eventHandler.
-	r.eventHandler.OnAdd(gc)
+	if r.statusUpdater != nil {
+		r.statusUpdater.Send(k8s.StatusUpdate{
+			NamespacedName: types.NamespacedName{Name: controlledClasses.admittedClass().Name},
+			Resource:       gatewayClassGVR,
+			Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+				gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
+				if !ok {
+					panic(fmt.Sprintf("unsupported object type %T", obj))
+				}
 
-	if err := status.SyncGatewayClass(ctx, r.client, gc, errs); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to sync gatewayclass %q status: %w", gc.Name, err)
+				copy := gc.DeepCopy()
+				return status.SetGatewayClassAdmitted(context.Background(), r.client, copy, true)
+			}),
+		})
+	} else {
+		// this branch makes testing easier by not going through the StatusUpdater.
+		copy := status.SetGatewayClassAdmitted(context.Background(), r.client, controlledClasses.admittedClass().DeepCopy(), true)
+		if err := r.client.Status().Update(context.Background(), copy); err != nil {
+			return reconcile.Result{}, fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
+		}
 	}
-	r.log.WithField("name", gc.Name).Info("synced gatewayclass status")
+
+	r.eventHandler.OnAdd(controlledClasses.admittedClass())
 
 	return reconcile.Result{}, nil
+}
+
+// controlledClasses helps organize a list of GatewayClasses
+// with the same controller string.
+type controlledClasses struct {
+	allClasses  []*gatewayapi_v1alpha1.GatewayClass
+	oldestClass *gatewayapi_v1alpha1.GatewayClass
+}
+
+func (cc *controlledClasses) len() int {
+	return len(cc.allClasses)
+}
+
+func (cc *controlledClasses) add(class *gatewayapi_v1alpha1.GatewayClass) {
+	cc.allClasses = append(cc.allClasses, class)
+
+	if cc.oldestClass == nil {
+		cc.oldestClass = class
+	} else if class.CreationTimestamp.Time.Before(cc.oldestClass.CreationTimestamp.Time) {
+		cc.oldestClass = class
+	} else if class.CreationTimestamp.Time.Equal(cc.oldestClass.CreationTimestamp.Time) && class.Name < cc.oldestClass.Name {
+		// tie-breaker: first one in alphabetical order is considered oldest/admitted
+		cc.oldestClass = class
+	}
+}
+
+func (cc *controlledClasses) admittedClass() *gatewayapi_v1alpha1.GatewayClass {
+	return cc.oldestClass
+}
+
+func (cc *controlledClasses) notAdmittedClasses() []*gatewayapi_v1alpha1.GatewayClass {
+	var res []*gatewayapi_v1alpha1.GatewayClass
+	for _, gc := range cc.allClasses {
+		// skip the oldest one since it will be admitted.
+		if gc.Name != cc.oldestClass.Name {
+			res = append(res, gc)
+		}
+	}
+
+	return res
 }

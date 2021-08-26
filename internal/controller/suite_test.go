@@ -72,7 +72,7 @@ var _ = BeforeSuite(func() {
 	mgr, err = ctrl.NewManager(cfg, ctrl.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = NewGatewayClassController(mgr, &StubEventHandler{}, log, gcController)
+	_, err = NewGatewayClassController(mgr, &StubEventHandler{}, nil, log, gcController)
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
