@@ -35,11 +35,54 @@ The following prerequisites must be met before using Gateway API with Contour:
 - A working [Kubernetes][2] cluster. Refer to the [compatibility matrix][3] for cluster version requirements.
 - The [kubectl][4] command-line tool, installed and configured to access your cluster.
 
-### Using Gateway API with Contour Operator
+### Option #1: Gateway API with Contour
 
-The preferred method for using Gateway API is with [Contour Operator][5]. This is because the GatewayClass and Gateway
-resources should be managed by active controllers that are implemented by the operator. Refer to the [contour][6] and
-[operator][7] designs for additional background on the gateway API implementation.
+Refer to the [contour][6] design for additional background on the Gateway API implementation.
+
+Deploy Contour:
+```shell
+$ kubectl apply -f {{< param base_url >}}/quickstart/contour-gateway.yaml
+```
+This command creates:
+
+- Namespace `projectcontour` to run Contour.
+- Contour CRDs
+- Gateway API CRDs
+- Contour RBAC resources
+- Contour Deployment / Service
+- Envoy Daemonset / Service
+- Properly configured Configuration file for Gateway API
+- GatewayAPI Gateway
+- GatewayAPI Gateway Class
+
+Create the Gateway API HTTPRoute to define how traffic should be routed:
+
+```yaml
+kind: HTTPRoute
+apiVersion: networking.x-k8s.io/v1alpha1
+metadata:
+  name: root
+  namespace: projectcontour
+spec:
+  gateways:
+    allow: All
+  hostnames:
+    - local.projectcontour.io
+  rules:
+    - matches:
+        - path:
+            type: Prefix
+            value: /
+      forwardTo:
+        - serviceName: kuard
+          port: 80
+```
+
+See the last section (Testing the Gateway API) on how to test it all out!
+
+### Option #2: Using Gateway API with Contour Operator
+
+Refer to the [contour][6] and [operator][7] designs for additional background on the gateway API implementation.
 
 Run the operator:
 ```shell
@@ -73,6 +116,8 @@ Either of the above options create:
 - A GatewayClass named `sample-gatewayclass` that abstracts the infrastructure-specific configuration from Gateways.
 - A Gateway named `contour` in namespace `projectcontour`. This gateway will serve the test application through routing
   rules deployed in the next step.
+
+See the next section (Testing the Gateway API) on how to test it all out!
 
 ### Testing the Gateway API
 
