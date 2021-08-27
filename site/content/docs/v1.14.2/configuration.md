@@ -162,7 +162,7 @@ The network configuration block can be used to configure various parameters netw
 | Field Name | Type| Default  | Description |
 |------------|-----|----------|-------------|
 | num-trusted-hops | int | 0 | Configures the number of additional ingress proxy hops from the right side of the x-forwarded-for HTTP header to trust. |
-
+| admin-port | int | 9001 | Configures the Envoy Admin read-only listener on Envoy. Set to `0` to disable. |
 
 ### Listener Configuration
 
@@ -340,6 +340,8 @@ data:
     #   Configure the number of additional ingress proxy hops from the
     #   right side of the x-forwarded-for HTTP header to trust.
     #   num-trusted-hops: 0
+    #   Configure the port used to access the Envoy Admin interface.
+    #   admin-port: 9001
     #
     # Configure an optional global rate limit service.
     # rateLimitService:
@@ -409,8 +411,8 @@ connects to Contour:
 | Flag | Default  | Description |
 |------------|----------|-------------|
 | <nobr>--resources-dir</nobr> | "" | Directory where resource files will be written.  |
-| <nobr>--admin-address</nobr> | 127.0.0.1 | Address the Envoy admin webpage will listen on.  |
-| <nobr>--admin-port</nobr> | 9001 | Port the Envoy admin webpage will listen on.  |
+| <nobr>--admin-address</nobr> | /admin/admin.sock | Path to Envoy admin unix domain socket.  |
+| <nobr>--admin-port (Deprecated)</nobr> | 9001 | Deprecated: Port is now configured as a Contour flag.  |
 | <nobr>--xds-address</nobr> | 127.0.0.1 | Address to connect to Contour xDS server on.  |
 | <nobr>--xds-port</nobr> | 8001 | Port to connect to Contour xDS server on. |
 | <nobr>--envoy-cafile</nobr> | "" | CA filename for Envoy secure xDS gRPC communication.  |
