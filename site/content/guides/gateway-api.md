@@ -39,13 +39,6 @@ The following prerequisites must be met before using Gateway API with Contour:
 
 Refer to the [contour][6] design for additional background on the Gateway API implementation.
 
-Install the Gateway CRDs:
-
-```shell
-$ kubectl kustomize "github.com/kubernetes-sigs/gateway-api/config/crd?ref=v0.3.0" \
-| kubectl apply -f -
-```
-
 Deploy Contour:
 ```shell
 $ kubectl apply -f {{< param base_url >}}/quickstart/contour-gateway.yaml
@@ -54,6 +47,7 @@ This command creates:
 
 - Namespace `projectcontour` to run Contour.
 - Contour CRDs
+- Gateway API CRDs
 - Contour RBAC resources
 - Contour Deployment / Service
 - Envoy Daemonset / Service
@@ -80,9 +74,11 @@ spec:
             type: Prefix
             value: /
       forwardTo:
-        - serviceName: rootapp
+        - serviceName: kuard
           port: 80
 ```
+
+See the last section (Testing the Gateway API) on how to test it all out!
 
 ### Option #2: Using Gateway API with Contour Operator
 
@@ -120,6 +116,8 @@ Either of the above options create:
 - A GatewayClass named `sample-gatewayclass` that abstracts the infrastructure-specific configuration from Gateways.
 - A Gateway named `contour` in namespace `projectcontour`. This gateway will serve the test application through routing
   rules deployed in the next step.
+
+See the next section (Testing the Gateway API) on how to test it all out!
 
 ### Testing the Gateway API
 
