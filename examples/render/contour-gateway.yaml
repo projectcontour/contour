@@ -80,10 +80,10 @@ data:
     # SNI defined for a vhost.
       fallback-certificate:
     #   name: fallback-secret-name
-      namespace: projectcontour
+    #   namespace: projectcontour
       envoy-client-certificate:
     #   name: envoy-client-cert-secret-name
-      namespace: projectcontour
+    #   namespace: projectcontour
     # The following config shows the defaults for the leader election.
     # leaderelection:
     #   configmap-name: leader-elect
