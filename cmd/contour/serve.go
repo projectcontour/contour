@@ -396,7 +396,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// Build the core Kubernetes event handler.
-	eventHandler := &contour.EventHandler{
+	contourHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
@@ -404,9 +404,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		FieldLogger:     log.WithField("context", "contourEventHandler"),
 	}
 
-	// Wrap eventHandler in an EventRecorder which tracks API server events.
-	recordingHandler := &contour.EventRecorder{
-		Next:    eventHandler,
+	// Wrap contourHandler in an EventRecorder which tracks API server events.
+	eventHandler := &contour.EventRecorder{
+		Next:    contourHandler,
 		Counter: contourMetrics.EventHandlerOperations,
 	}
 
@@ -422,13 +422,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Inform on DefaultResources.
 	for _, r := range k8s.DefaultResources() {
-		if err := informOnResource(clients, r, recordingHandler, mgr.GetCache()); err != nil {
+		if err := informOnResource(clients, r, eventHandler, mgr.GetCache()); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
 
 	for _, r := range k8s.IngressV1Resources() {
-		if err := informOnResource(clients, r, recordingHandler, mgr.GetCache()); err != nil {
+		if err := informOnResource(clients, r, eventHandler, mgr.GetCache()); err != nil {
 			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
@@ -440,7 +440,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			gatewayClassControllerName := ctx.Config.GatewayConfig.ControllerName
 			if _, err := controller.NewGatewayClassController(
 				mgr,
-				recordingHandler,
+				eventHandler,
 				sh.Writer(),
 				log.WithField("context", "gatewayclass-controller"),
 				gatewayClassControllerName,
@@ -449,23 +449,23 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			}
 
 			// Create and register the NewGatewayController controller with the manager.
-			if _, err := controller.NewGatewayController(mgr, recordingHandler,
+			if _, err := controller.NewGatewayController(mgr, eventHandler,
 				log.WithField("context", "gateway-controller"), gatewayClassControllerName); err != nil {
 				log.WithError(err).Fatal("failed to create gateway-controller")
 			}
 
 			// Create and register the NewHTTPRouteController controller with the manager.
-			if _, err := controller.NewHTTPRouteController(mgr, recordingHandler, log.WithField("context", "httproute-controller")); err != nil {
+			if _, err := controller.NewHTTPRouteController(mgr, eventHandler, log.WithField("context", "httproute-controller")); err != nil {
 				log.WithError(err).Fatal("failed to create httproute-controller")
 			}
 
 			// Create and register the NewTLSRouteController controller with the manager.
-			if _, err := controller.NewTLSRouteController(mgr, recordingHandler, log.WithField("context", "tlsroute-controller")); err != nil {
+			if _, err := controller.NewTLSRouteController(mgr, eventHandler, log.WithField("context", "tlsroute-controller")); err != nil {
 				log.WithError(err).Fatal("failed to create tlsroute-controller")
 			}
 
 			// Inform on Namespaces.
-			if err := informOnResource(clients, k8s.NamespacesResource(), recordingHandler, mgr.GetCache()); err != nil {
+			if err := informOnResource(clients, k8s.NamespacesResource(), eventHandler, mgr.GetCache()); err != nil {
 				log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
 			}
 		} else {
@@ -475,11 +475,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Inform on secrets, filtering by root namespaces.
 	for _, r := range k8s.SecretsResources() {
-		var handler cache.ResourceEventHandler = recordingHandler
+		var handler cache.ResourceEventHandler = eventHandler
 
 		// If root namespaces are defined, filter for secrets in only those namespaces.
 		if len(informerNamespaces) > 0 {
-			handler = k8s.NewNamespaceFilter(informerNamespaces, recordingHandler)
+			handler = k8s.NewNamespaceFilter(informerNamespaces, eventHandler)
 		}
 
 		if err := informOnResource(clients, r, handler, mgr.GetCache()); err != nil {
@@ -498,7 +498,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// Register our event handler with the workgroup.
-	g.Add(eventHandler.Start())
+	g.Add(contourHandler.Start())
 
 	// Create metrics service and register with workgroup.
 	metricsvc := httpsvc.Service{
@@ -540,39 +540,39 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			Port:        ctx.debugPort,
 			FieldLogger: log.WithField("context", "debugsvc"),
 		},
-		Builder: &eventHandler.Builder,
+		Builder: &contourHandler.Builder,
 	}
 	g.Add(debugsvc.Start)
 
 	// Register leadership election.
 	if ctx.DisableLeaderElection {
-		eventHandler.IsLeader = disableLeaderElection(log)
+		contourHandler.IsLeader = disableLeaderElection(log)
 	} else {
-		eventHandler.IsLeader = setupLeadershipElection(&g, log, &ctx.Config.LeaderElection, clients, eventHandler.UpdateNow)
+		contourHandler.IsLeader = setupLeadershipElection(&g, log, &ctx.Config.LeaderElection, clients, contourHandler.UpdateNow)
 	}
 
 	// Once we have the leadership detection channel, we can
 	// push DAG rebuild metrics onto the observer stack.
-	eventHandler.Observer = &contour.RebuildMetricsObserver{
+	contourHandler.Observer = &contour.RebuildMetricsObserver{
 		Metrics:      contourMetrics,
-		IsLeader:     eventHandler.IsLeader,
-		NextObserver: eventHandler.Observer,
+		IsLeader:     contourHandler.IsLeader,
+		NextObserver: contourHandler.Observer,
 	}
 
 	// Finish setting up the StatusUpdateHandler and
 	// add it to the work group.
-	sh.LeaderElected = eventHandler.IsLeader
+	sh.LeaderElected = contourHandler.IsLeader
 	g.Add(sh.Start)
 
 	// Now we have the statusUpdateHandler, we can create the event handler's StatusUpdater, which will take the
 	// status updates from the DAG, and send them to the status update handler.
-	eventHandler.StatusUpdater = sh.Writer()
+	contourHandler.StatusUpdater = sh.Writer()
 
 	// Set up ingress load balancer status writer.
 	lbsw := loadBalancerStatusWriter{
 		log:              log.WithField("context", "loadBalancerStatusWriter"),
 		cache:            mgr.GetCache(),
-		isLeader:         eventHandler.IsLeader,
+		isLeader:         contourHandler.IsLeader,
 		lbStatus:         make(chan corev1.LoadBalancerStatus, 1),
 		ingressClassName: ctx.ingressClassName,
 		statusUpdater:    sh.Writer(),
