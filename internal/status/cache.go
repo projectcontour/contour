@@ -33,13 +33,14 @@ type ConditionType string
 const ValidCondition ConditionType = "Valid"
 
 // NewCache creates a new Cache for holding status updates.
-func NewCache(gateway types.NamespacedName) Cache {
+func NewCache(gateway types.NamespacedName, gatewayController string) Cache {
 	return Cache{
-		proxyUpdates:   make(map[types.NamespacedName]*ProxyUpdate),
-		gatewayRef:     gateway,
-		gatewayUpdates: make(map[types.NamespacedName]*GatewayConditionsUpdate),
-		routeUpdates:   make(map[types.NamespacedName]*RouteConditionsUpdate),
-		entries:        make(map[string]map[types.NamespacedName]CacheEntry),
+		gatewayRef:        gateway,
+		gatewayController: gatewayController,
+		proxyUpdates:      make(map[types.NamespacedName]*ProxyUpdate),
+		gatewayUpdates:    make(map[types.NamespacedName]*GatewayConditionsUpdate),
+		routeUpdates:      make(map[types.NamespacedName]*RouteConditionsUpdate),
+		entries:           make(map[string]map[types.NamespacedName]CacheEntry),
 	}
 }
 
@@ -52,9 +53,10 @@ type CacheEntry interface {
 // It holds a per-Kind cache, and is intended to be accessed with a
 // KindAccessor.
 type Cache struct {
-	proxyUpdates map[types.NamespacedName]*ProxyUpdate
+	gatewayRef        types.NamespacedName
+	gatewayController string
 
-	gatewayRef     types.NamespacedName
+	proxyUpdates   map[types.NamespacedName]*ProxyUpdate
 	gatewayUpdates map[types.NamespacedName]*GatewayConditionsUpdate
 	routeUpdates   map[types.NamespacedName]*RouteConditionsUpdate
 

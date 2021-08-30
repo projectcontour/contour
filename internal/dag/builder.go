@@ -53,9 +53,13 @@ func (b *Builder) Build() *DAG {
 	if b.Source.gateway != nil {
 		gatewayNSName = k8s.NamespacedNameOf(b.Source.gateway)
 	}
+	var gatewayController string
+	if b.Source.gatewayclass != nil {
+		gatewayController = b.Source.gatewayclass.Spec.Controller
+	}
 
 	dag := DAG{
-		StatusCache: status.NewCache(gatewayNSName),
+		StatusCache: status.NewCache(gatewayNSName, gatewayController),
 	}
 
 	for _, p := range b.Processors {

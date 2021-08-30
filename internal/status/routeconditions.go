@@ -48,6 +48,7 @@ type RouteConditionsUpdate struct {
 	Conditions         map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
 	ExistingConditions map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition
 	GatewayRef         types.NamespacedName
+	GatewayController  string
 	Resource           string
 	Generation         int64
 	TransitionTime     metav1.Time
@@ -82,6 +83,7 @@ func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation 
 		Conditions:         make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition),
 		ExistingConditions: c.getRouteGatewayConditions(gateways),
 		GatewayRef:         c.gatewayRef,
+		GatewayController:  c.gatewayController,
 		Generation:         generation,
 		TransitionTime:     metav1.NewTime(clock.Now()),
 		Resource:           resource,
@@ -136,13 +138,9 @@ func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 
 	gatewayStatuses = append(gatewayStatuses, gatewayapi_v1alpha1.RouteGatewayStatus{
 		GatewayRef: gatewayapi_v1alpha1.RouteStatusGatewayReference{
-			Name:      routeUpdate.GatewayRef.Name,
-			Namespace: routeUpdate.GatewayRef.Namespace,
-
-			// TODO(3689) the value of this field should probably come from
-			// the GatewayClass. Plumb that through once Contour handles
-			// GatewayClasses.
-			Controller: pointer.String("projectcontour.io/contour"),
+			Name:       routeUpdate.GatewayRef.Name,
+			Namespace:  routeUpdate.GatewayRef.Namespace,
+			Controller: pointer.String(routeUpdate.GatewayController),
 		},
 		Conditions: conditionsToWrite,
 	})

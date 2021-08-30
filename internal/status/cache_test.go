@@ -52,7 +52,7 @@ func TestCacheAcquisition(t *testing.T) {
 	httpRoute := &gatewayapi_v1alpha1.HTTPRoute{
 		ObjectMeta: fixture.ObjectMeta("test/httproute"),
 	}
-	cache := NewCache(types.NamespacedName{Name: "contour", Namespace: "projectcontour"})
+	cache := NewCache(types.NamespacedName{Name: "contour", Namespace: "projectcontour"}, "")
 
 	// Initial acquisition should be nil.
 	assert.Nil(t, cache.Get(proxy))
