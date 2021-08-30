@@ -23,7 +23,7 @@ jobs:
       uses: docker/setup-buildx-action@v1
       with:
         version: latest
-    - name: Build and Push to registry
+    - name: Build and Push to Docker Hub
       env:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -32,6 +32,18 @@ jobs:
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         ./hack/actions/build-and-push-release-images.sh
         docker logout
+    - name: Log in to GHCR
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and Push to GHCR
+      env:
+        REGISTRY: ghcr.io/${{ github.repository_owner }}
+        TAG_LATEST: "false"
+      run: |
+        ./hack/actions/build-and-push-release-images.sh
     - uses: act10ns/slack@v1
       with:
         status: ${{ job.status }}
