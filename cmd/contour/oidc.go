@@ -1,3 +1,4 @@
+//go:build oidc
 // +build oidc
 
 // Copyright Project Contour Authors
