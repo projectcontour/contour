@@ -82,7 +82,6 @@ rules:
 - apiGroups:
   - networking.x-k8s.io
   resources:
-  - backendpolicies
   - gatewayclasses
   - gateways
   - httproutes
@@ -96,7 +95,6 @@ rules:
 - apiGroups:
   - networking.x-k8s.io
   resources:
-  - backendpolicies/status
   - gatewayclasses/status
   - gateways/status
   - httproutes/status
