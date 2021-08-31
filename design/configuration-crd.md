@@ -65,8 +65,10 @@ spec:
     address: 0.0.0.0
     port: 8002    
   envoy:
-    useProxyProtocol: false
-    disableAllowChunkedLength: false
+    listener:
+      useProxyProtocol: false
+      disableAllowChunkedLength: false
+      connectionBalancer: exact
     tls:
       minimumProtocolVersion: "1.2"
       cipherSuites:
@@ -74,7 +76,9 @@ spec:
         - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
         - 'ECDHE-ECDSA-AES256-GCM-SHA384'
         - 'ECDHE-RSA-AES256-GCM-SHA384'
-    services:
+    service:
+      name: contour
+      namespace: projectcontour
       http: 
           address: 0.0.0.0
           port: 80
