@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/client-go/tools/cache"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 )
 
@@ -326,5 +325,3 @@ func TestConvertUnstructured(t *testing.T) {
 	})
 
 }
-
-var _ cache.ResourceEventHandler = &DynamicClientHandler{}

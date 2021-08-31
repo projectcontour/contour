@@ -16,57 +16,9 @@ package k8s
 import (
 	"context"
 
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/cache"
 )
-
-// DynamicClientHandler converts *unstructured.Unstructured from the
-// k8s dynamic client to the types registered with the supplied Converter
-// and forwards them to the next Handler in the chain.
-type DynamicClientHandler struct {
-
-	// Next is the next handler in the chain.
-	Next cache.ResourceEventHandler
-
-	// Converter is the registered converter.
-	Converter Converter
-
-	Logger logrus.FieldLogger
-}
-
-func (d *DynamicClientHandler) OnAdd(obj interface{}) {
-	obj, err := d.Converter.FromUnstructured(obj)
-	if err != nil {
-		d.Logger.Error(err)
-		return
-	}
-	d.Next.OnAdd(obj)
-}
-
-func (d *DynamicClientHandler) OnUpdate(oldObj, newObj interface{}) {
-	oldObj, err := d.Converter.FromUnstructured(oldObj)
-	if err != nil {
-		d.Logger.Error(err)
-		return
-	}
-	newObj, err = d.Converter.FromUnstructured(newObj)
-	if err != nil {
-		d.Logger.Error(err)
-		return
-	}
-	d.Next.OnUpdate(oldObj, newObj)
-}
-
-func (d *DynamicClientHandler) OnDelete(obj interface{}) {
-	obj, err := d.Converter.FromUnstructured(obj)
-	if err != nil {
-		d.Logger.Error(err)
-		return
-	}
-	d.Next.OnDelete(obj)
-}
 
 type Converter interface {
 	FromUnstructured(obj interface{}) (interface{}, error)
