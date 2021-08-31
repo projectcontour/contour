@@ -891,15 +891,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert gateway-api BackendPolicy": {
-			obj: &gatewayapi_v1alpha1.BackendPolicy{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "backendpolicy",
-					Namespace: "default",
-				},
-			},
-			want: true,
-		},
 		"insert extension service": {
 			obj: &contour_api_v1alpha1.ExtensionService{
 				ObjectMeta: fixture.ObjectMeta("default/extension"),
@@ -1198,21 +1189,6 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			obj: &gatewayapi_v1alpha1.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tlsroute",
-					Namespace: "default",
-				},
-			},
-			want: true,
-		},
-		"remove gateway-api BackendPolicy": {
-			cache: cache(&gatewayapi_v1alpha1.BackendPolicy{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "backendpolicy",
-					Namespace: "default",
-				},
-			}),
-			obj: &gatewayapi_v1alpha1.BackendPolicy{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "backendpolicy",
 					Namespace: "default",
 				},
 			},
