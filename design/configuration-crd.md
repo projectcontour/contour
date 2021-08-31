@@ -5,7 +5,7 @@ The other are flags which are passed to Contour.
 
 Contour's configmap configuration file has grown to the point where moving to a CRD will enable a better user experience as well as allowing Contour to react to changes in its configuration faster.
 
-This design proposes two new CRDs, one that represents a `ContourConfiguration` (Short name `ContourConfig`) and another which represents a `ContourDeployment`.
+This design proposes two new CRDs, one that represents a `ContourConfiguration` (Short name `ContourConfig`) and another which represents a `ContourDeployment`, both which are namespaced.
 The Contour configuration mirrors how the configmap functions today. 
 A Contour Deployment is managed by a controller (aka Operator) which uses the details of the CRD spec to deploy a fully managed instance of Contour inside a cluster.
 
@@ -18,74 +18,16 @@ A Contour Deployment is managed by a controller (aka Operator) which uses the de
 
 ## Contour Configuration
 
-The Contour configuration file wil be migrated into a Contour Configuration CRD named `Contour`.
-The current config file looks like this:
-
-```yaml
-server:
-  xds-server-type: contour
-gateway:
-  controllerName: projectcontour.io/projectcontour/contour
-incluster: true
-kubeconfig: /path/to/.kube/config
-disableAllowChunkedLength: false
-disablePermitInsecure: false
-tls:
-  minimum-protocol-version: "1.2"
-  cipher-suites:
-  - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-  - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-  - 'ECDHE-ECDSA-AES256-GCM-SHA384'
-  - 'ECDHE-RSA-AES256-GCM-SHA384'
-fallback-certificate:
-  name: fallback-secret-name
-  namespace: projectcontour
-envoy-client-certificate:
-  name: envoy-client-cert-secret-name
-  namespace: projectcontour
-leaderelection:
-  configmap-name: leader-elect
-  configmap-namespace: projectcontour
-enableExternalNameService: false
-accesslog-format: envoy
-accesslog-format-string: "...\n"
-json-fields:
-  - <Fields Omitted)
-default-http-versions:
-  - "HTTP/2"
-  - "HTTP/1.1"
-timeouts:
-  request-timeout: infinity
-  connection-idle-timeout: 60s
-  stream-idle-timeout: 5m
-  max-connection-duration: infinity
-  delayed-close-timeout: 1s
-  connection-shutdown-grace-period: 5s
-cluster:
-  dns-lookup-family: auto
-network:
-  num-trusted-hops: 0
-  admin-port: 9001
-rateLimitService:
-  extensionService: projectcontour/ratelimit
-  domain: contour
-  failOpen: false
-  enableXRateLimitHeaders: false
-policy:
-  request-headers:
-    set:
-  response-headers:
-    set:
-```
-
-The contents of this file has grown over time and some fields need to be better categorized. 
-The new ContourConfiguration CRD will move the logging options into a `logging` struct. 
+The contents of current configuration file has grown over time and some fields need to be better categorized. 
+The new `ContourConfiguration` CRD will move the logging options into a `logging` struct. 
 All other fields will stay the same where they currently exist in the configmap.
+Any field that was not previously `camelCased` will be renamed to match.
 
 ### New fields:
 
 Some fields will be moved around and others added to complete the configuration:
 - logging: The logging configuration bits are now moved into a common struct
+- ingress: There are some ingress configuration items that are now moved into a common struct.
 - envoy: This manages the Envoy configuration of how it should be deployed and exposed from the cluster
 - ingressClassName: Adds the `ingress-class-name` flag to the configuration file
 - incluster (Removed)
@@ -99,67 +41,109 @@ kind: ContourConfiguration
 metadata:
   name: contour
 spec:
-  server:
-    xds-server-type: contour
-  ingressClassName: contour
-  envoy:  
-    networkPublishing:
-    nodePlacement:
-      nodeSelector:
-      tolerations:
+  xdsServer:
+    type: contour
+    address: 0.0.0.0
+    port: 8001
+    insecure: false
+    tls:
+      caFile: 
+      certFile:
+      keyFile:
+  ingress:
+    className: contour
+    statusAddress: local.projectcontour.io
+  debug:
+    address: 127.0.0.1
+    port: 6060
+    debug: false 
+    kubernetes-debug: 0
+  health:
+    address: 0.0.0.0
+    port: 8000
+  metrics:
+    address: 0.0.0.0
+    port: 8002    
+  envoy:
+    useProxyProtocol: false
+    disableAllowChunkedLength: false
+    tls:
+      minimumProtocolVersion: "1.2"
+      cipherSuites:
+        - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+        - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+        - 'ECDHE-ECDSA-AES256-GCM-SHA384'
+        - 'ECDHE-RSA-AES256-GCM-SHA384'
+    services:
+      http: 
+          address: 0.0.0.0
+          port: 80
+          accessLog: /dev/STDOUT
+      https:
+          address: 0.0.0.0
+          port: 443
+          accessLog: /dev/STDOUT
+    metrics:
+      address: 0.0.0.0
+      port: 8002
+    clientCertificate:
+      name: envoy-client-cert-secret-name
+      namespace: projectcontour
+    managed:
+      networkPublishing:
+      nodePlacement:
+        nodeSelector:
+        tolerations:
+    logging:
+      accesslogFormat: envoy
+      accesslogFormatString: "...\n"
+      jsonFields:
+        - <Fields Omitted)
+    defaultHTTPVersions:
+      - "HTTP/2"
+      - "HTTP/1.1"
+    timeouts:
+      requestTimeout: infinity
+      connectionIdleTimeout: 60s
+      streamIdleTimeout: 5m
+      maxConnectionDuration: infinity
+      delayedCloseTimeout: 1s
+      connectionShutdownGracePeriod: 5s
+    cluster:
+      dnsLookupFamily: auto
   gateway:
       controllerName: projectcontour.io/projectcontour/contour
-  disableAllowChunkedLength: false
-  disablePermitInsecure: false
-  tls:
-    minimum-protocol-version: "1.2"
-    cipher-suites:
-      - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-      - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-      - 'ECDHE-ECDSA-AES256-GCM-SHA384'
-      - 'ECDHE-RSA-AES256-GCM-SHA384'
-  fallback-certificate:
-    name: fallback-secret-name
-    namespace: projectcontour
-  envoy-client-certificate:
-    name: envoy-client-cert-secret-name
-    namespace: projectcontour
+  httpproxy:
+    disablePermitInsecure: false
+    rootNamespaces: foo,bar
+    fallbackCertificate:
+      name: fallback-secret-name
+      namespace: projectcontour
   leaderelection:
-    configmap-name: leader-elect
-    configmap-namespace: projectcontour
+    configmapName: leader-elect
+    configmapNamespace: projectcontour
+    disableLeaderElection: false
   enableExternalNameService: false
-  logging: 
-    accesslog-format: envoy
-    accesslog-format-string: "...\n"
-    json-fields:
-      - <Fields Omitted)
-  default-http-versions:
-    - "HTTP/2"
-    - "HTTP/1.1"
-  timeouts:
-    request-timeout: infinity
-    connection-idle-timeout: 60s
-    stream-idle-timeout: 5m
-    max-connection-duration: infinity
-    delayed-close-timeout: 1s
-    connection-shutdown-grace-period: 5s
-  cluster:
-    dns-lookup-family: auto
   network:
-    num-trusted-hops: 0
-    admin-port: 9001
+    numTrustedHops: 0
+    adminPort: 9001
   rateLimitService:
     extensionService: projectcontour/ratelimit
     domain: contour
     failOpen: false
     enableXRateLimitHeaders: false
   policy:
-    request-headers:
+    requestHeaders:
       set:
-    response-headers:
+    responseHeaders:
       set:
 status:
 ```
+
+## Converting from Configmap
+
+Contour will provide a way internally to move to the new CRD and not require users to manually migrate to the new CRD format.
+Contour will provide a new command or external tool (similar to ir2proxy) which will migrate between the specs accordingly. 
 
 ## Contour Deployment
 
@@ -256,7 +240,7 @@ If the `ContourConfiguration` CRD is not found Contour will start up with reason
 
 Contour will set status on the object informing the user if there are any errors or issues with the config file or that is all fine and processing correctly.
 
-Once Contour begins using a Configuration file, it will add a finalizer to it such that if that config file is going to get deleted, Contour is aware of it.
+Once Contour begins using a Configuration CRD, it will add a finalizer to it such that if that resource is going to get deleted, Contour is aware of it.
 Should the Configuration CRD be deleted while it is in use, Contour will default back to reasonable defaults and log the issue.
 
 When config in the CRD changes we will gracefully stop the dependent ingress/gateway controllers and restart them with new config, or dynamically update some in-memory data that the controllers use.
