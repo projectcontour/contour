@@ -1,3 +1,4 @@
+//go:build gcp
 // +build gcp
 
 // Copyright Project Contour Authors
