@@ -2591,6 +2591,13 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}),
 			}
 
+			// Since we're using a single static GatewayClass,
+			// set the expected controller string here for all
+			// test cases.
+			for _, u := range tc.wantRouteConditions {
+				u.GatewayController = builder.Source.gatewayclass.Spec.Controller
+			}
+
 			if diff := cmp.Diff(tc.wantRouteConditions, gotRouteUpdates, ops...); diff != "" {
 				t.Fatalf("expected route status: %v, got %v", tc.wantRouteConditions, diff)
 			}
@@ -3551,6 +3558,13 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
 					return i.Message < j.Message
 				}),
+			}
+
+			// Since we're using a single static GatewayClass,
+			// set the expected controller string here for all
+			// test cases.
+			for _, u := range tc.wantRouteConditions {
+				u.GatewayController = builder.Source.gatewayclass.Spec.Controller
 			}
 
 			if diff := cmp.Diff(tc.wantRouteConditions, gotRouteUpdates, ops...); diff != "" {
