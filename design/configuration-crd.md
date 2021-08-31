@@ -150,6 +150,7 @@ Contour will provide a new command or external tool (similar to ir2proxy) which 
 A managed version of Contour was made available with the `Contour Operator`.
 Since Contour will manage Envoy instances, the Operator will now manage instances of Contour.
 The details of how an instance of Contour should be deployed within a cluster will be defined in the second CRD named `ContourDeployment`. 
+The `spec.confguration` of this object will be the same struct defined in the `ContourConfiguration`. 
 
 A controller will watch for these objects to be created and take action on them accordingly to make desired state in the cluster match the configuration on the spec. 
 
@@ -164,65 +165,7 @@ spec:
     nodeSelector:
     tolerations:
   configuration:
-    server:
-      xds-server-type: contour
-    ingressClassName: contour
-    envoy:
-      networkPublishing:
-      nodePlacement:
-        nodeSelector:
-        tolerations:
-    gateway:
-        controllerName: projectcontour.io/projectcontour/contour
-    disableAllowChunkedLength: false
-    disablePermitInsecure: false
-    tls:
-      minimum-protocol-version: "1.2"
-      cipher-suites:
-      - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-      - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-      - 'ECDHE-ECDSA-AES256-GCM-SHA384'
-      - 'ECDHE-RSA-AES256-GCM-SHA384'
-    fallback-certificate:
-      name: fallback-secret-name
-      namespace: projectcontour
-    envoy-client-certificate:
-      name: envoy-client-cert-secret-name
-      namespace: projectcontour
-    leaderelection:
-      configmap-name: leader-elect
-      configmap-namespace: projectcontour
-    enableExternalNameService: false
-    logging: 
-      accesslog-format: envoy
-      accesslog-format-string: "...\n"
-      json-fields:
-        - <Fields Omitted)
-    default-http-versions:
-      - "HTTP/2"
-      - "HTTP/1.1"
-    timeouts:
-      request-timeout: infinity
-      connection-idle-timeout: 60s
-      stream-idle-timeout: 5m
-      max-connection-duration: infinity
-      delayed-close-timeout: 1s
-      connection-shutdown-grace-period: 5s
-    cluster:
-      dns-lookup-family: auto
-    network:
-      num-trusted-hops: 0
-      admin-port: 9001
-    rateLimitService:
-      extensionService: projectcontour/ratelimit
-      domain: contour
-      failOpen: false
-      enableXRateLimitHeaders: false
-    policy:
-      request-headers:
-        set:
-      response-headers:
-        set:
+    <same config as above>
 status:
 ```
 
@@ -230,6 +173,7 @@ status:
 
 Contour will require a new flag (`--contour-config`), which will allow for customizing the name of the `ContourConfiguration` CRD that is it to use.
 It will default to one named `contour`, but could be overridden if desired.
+The ContourConfiguration referenced must also be in the same namespace as Contour is running, it's not valid to reference a configuration from another namespace.
 The current flag `--config-path`/`-c` will continue to point to the Configmap file, but over time could eventually be deprecated and the short code `-c` be used for the CRD location (i.e. `--contour-config`) for simplicity.
 The Contour configuration CRD will still remain optional.
 In its absence, Contour will operate with reasonable defaults.
