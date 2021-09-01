@@ -99,8 +99,8 @@ spec:
         nodeSelector:
         tolerations:
     logging:
-      accesslogFormat: envoy
-      accesslogFormatString: "...\n"
+      accessLogFormat: envoy
+      accessLogFormatString: "...\n"
       jsonFields:
         - <Fields Omitted)
     defaultHTTPVersions:
@@ -125,9 +125,10 @@ spec:
     fallbackCertificate:
       name: fallback-secret-name
       namespace: projectcontour
-  leaderelection:
-    configmapName: leader-elect
-    configmapNamespace: projectcontour
+  leaderElection:
+    configmap:
+      name: leader-elect
+      namespace: projectcontour
     disableLeaderElection: false
   enableExternalNameService: false
   network:
@@ -189,16 +190,18 @@ On startup, Contour will look for a `ContourConfiguration` CRD named `contour` o
 If the `ContourConfiguration` CRD is not found Contour will start up with reasonable defaults.
 
 Contour will set status on the object informing the user if there are any errors or issues with the config file or that is all fine and processing correctly.
+If the configuration file is not valid, Contour will not start up its controllers, and will fail its readiness probe.
+Once the configuration is valid again, Contour will start its controllers with the valid configuration.
 
 Once Contour begins using a Configuration CRD, it will add a finalizer to it such that if that resource is going to get deleted, Contour is aware of it.
 Should the Configuration CRD be deleted while it is in use, Contour will default back to reasonable defaults and log the issue.
 
 When config in the CRD changes we will gracefully stop the dependent ingress/gateway controllers and restart them with new config, or dynamically update some in-memory data that the controllers use.
-
-If the configuration changes, Contour will first validate the new Configuration.
-If that new change set results in the object being invalid, Contour won't restart its controllers but set status and still try and serve the old configuration.
-Should a new Contour instance start up, or the existing be restarted and the configuration is still invalid, then it will not become ready and not serve any xDS traffic.
+Contour will first validate the new Configuration, ff that new change set results in the object being invalid, Contour will stop its Controller and will become not ready, and not serve any xDS traffic.
 As soon as the configuration does become valid, Contour will start up its controllers and begin processing as normal.
+
+Contour will initially start implementing this dynamic nature by restarting all Controllers when the config file changes.
+It's possible later on that this could be better optimized to keep the last working configuration, as well as only restarting specific controllers.
 
 ## Versioning
 
