@@ -119,7 +119,9 @@ spec:
       controllerName: projectcontour.io/projectcontour/contour
   httpproxy:
     disablePermitInsecure: false
-    rootNamespaces: foo,bar
+    rootNamespaces: 
+      - foo
+      - bar
     fallbackCertificate:
       name: fallback-secret-name
       namespace: projectcontour
@@ -192,6 +194,11 @@ Once Contour begins using a Configuration CRD, it will add a finalizer to it suc
 Should the Configuration CRD be deleted while it is in use, Contour will default back to reasonable defaults and log the issue.
 
 When config in the CRD changes we will gracefully stop the dependent ingress/gateway controllers and restart them with new config, or dynamically update some in-memory data that the controllers use.
+
+If the configuration changes, Contour will first validate the new Configuration.
+If that new change set results in the object being invalid, Contour won't restart its controllers but set status and still try and serve the old configuration.
+Should a new Contour instance start up, or the existing be restarted and the configuration is still invalid, then it will not become ready and not serve any xDS traffic.
+As soon as the configuration does become valid, Contour will start up its controllers and begin processing as normal.
 
 ## Versioning
 
