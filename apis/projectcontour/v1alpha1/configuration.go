@@ -13,5 +13,8 @@
 
 package v1alpha1
 
+// ContourConfig represents a configuration of a Contour controller.
+// It contains most of all the options that can be customized, the
+// other remaining options being command line flags.
 type ContourConfig struct {
 }
