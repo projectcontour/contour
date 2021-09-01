@@ -87,16 +87,16 @@ func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
 
 	gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
 	if !ok {
-		log.Info("invalid object, bypassing reconciliation.")
+		log.Debugf("unexpected object type %T, bypassing reconciliation.", obj)
 		return false
 	}
 
 	if gc.Spec.Controller == r.controller {
-		log.Info("enqueueing gatewayclass")
+		log.Debug("enqueueing gatewayclass")
 		return true
 	}
 
-	log.Infof("controller is not %s; bypassing reconciliation", r.controller)
+	log.Debugf("controller is not %s; bypassing reconciliation", r.controller)
 	return false
 }
 
@@ -169,8 +169,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 					panic(fmt.Sprintf("unsupported object type %T", obj))
 				}
 
-				copy := gc.DeepCopy()
-				return status.SetGatewayClassAdmitted(context.Background(), r.client, copy, true)
+				return status.SetGatewayClassAdmitted(context.Background(), r.client, gc.DeepCopy(), true)
 			}),
 		})
 	} else {

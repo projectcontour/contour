@@ -27,7 +27,7 @@ import (
 // Currently supports:
 // networking.k8s.io/ingress/v1
 // projectcontour.io/v1 (HTTPProxy only)
-// networking.x-k8s.io/v1alpha1 (GatewayClass only)
+// networking.x-k8s.io/v1alpha1 (GatewayClass and Gateway only)
 func isStatusEqual(objA, objB interface{}) bool {
 	switch a := objA.(type) {
 	case *networking_v1.Ingress:
@@ -52,7 +52,16 @@ func isStatusEqual(objA, objB interface{}) bool {
 	case *gatewayapi_v1alpha1.GatewayClass:
 		switch b := objB.(type) {
 		case *gatewayapi_v1alpha1.GatewayClass:
-			if cmp.Equal(a.Status, b.Status) {
+			if cmp.Equal(a.Status, b.Status,
+				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
+				return true
+			}
+		}
+	case *gatewayapi_v1alpha1.Gateway:
+		switch b := objB.(type) {
+		case *gatewayapi_v1alpha1.Gateway:
+			if cmp.Equal(a.Status, b.Status,
+				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
