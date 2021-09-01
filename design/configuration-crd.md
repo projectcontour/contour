@@ -57,7 +57,7 @@ spec:
     address: 127.0.0.1
     port: 6060
     logLevel: Info 
-    kubernetes-debug: 0
+    kubernetesLogLevel: 0
   health:
     address: 0.0.0.0
     port: 8000
