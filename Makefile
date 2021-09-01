@@ -1,7 +1,7 @@
 ORG = projectcontour
 PROJECT = contour
 MODULE = github.com/$(ORG)/$(PROJECT)
-REGISTRY ?= projectcontour
+REGISTRY ?= ghcr.io/projectcontour
 IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
@@ -19,7 +19,7 @@ LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | hea
 CONTOUR_E2E_LOCAL_HOST ?= $(LOCALIP)
 # Variables needed for running upgrade tests.
 CONTOUR_UPGRADE_FROM_VERSION ?= $(shell ./test/scripts/get-contour-upgrade-from-version.sh)
-CONTOUR_UPGRADE_TO_IMAGE ?= projectcontour/contour:main
+CONTOUR_UPGRADE_TO_IMAGE ?= ghcr.io/projectcontour/contour:main
 
 TAG_LATEST ?= false
 

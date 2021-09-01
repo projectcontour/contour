@@ -244,7 +244,7 @@ xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 Before a change is submitted it should pass all the pre commit CI jobs.
 If there are unrelated test failures the change can be merged so long as a reference to an issue that tracks the test failures is provided.
 
-Once a change lands in main it will be built and available at this tag, `docker.io/projectcontour/contour:main`.
+Once a change lands in main it will be built and available at this tag, `ghcr.io/projectcontour/contour:main`.
 You can read more about the available contour images in the [tagging][7] document.
 
 ### Build an image
@@ -252,16 +252,16 @@ You can read more about the available contour images in the [tagging][7] documen
 To build an image of your change using Contour's `Dockerfile`, run these commands (replacing the repository host and tag with your own):
 
 ```
-docker build -t docker.io/davecheney/contour:latest .
-docker push docker.io/davecheney/contour:latest
+docker build -t ghcr.io/davecheney/contour:latest .
+docker push ghcr.io/davecheney/contour:latest
 ```
 or, you can use the make helper, like so:
 
 ```
-REGISTRY=docker.io/davecheney VERSION=latest make push
+REGISTRY=ghcr.io/davecheney VERSION=latest make push
 ```
 
-This will push to `:latest` in `docker.io/davecheney` obviously you'll also need to replace the repo host with your own here too. If you don't specify `VERSION`, `make push` will push to a git hash tag (the output of ` git rev-parse --short=8 --verify HEAD`).
+This will push to `:latest` in `ghcr.io/davecheney` obviously you'll also need to replace the repo host with your own here too. If you don't specify `VERSION`, `make push` will push to a git hash tag (the output of ` git rev-parse --short=8 --verify HEAD`).
 
 ### Verify your change
 

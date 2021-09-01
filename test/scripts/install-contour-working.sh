@@ -68,10 +68,10 @@ if [ "${LOAD_PREBUILT_IMAGE}" = "true" ]; then
 else
     # Build the current version of Contour.
     VERSION="v$$"
-    make -C ${REPO} container IMAGE=docker.io/projectcontour/contour VERSION=$VERSION
+    make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=$VERSION
 
     # Push the Contour build image into the cluster.
-    kind::cluster::load::docker docker.io/projectcontour/contour:${VERSION}
+    kind::cluster::load::docker ghcr.io/projectcontour/contour:${VERSION}
 fi
 
 
@@ -94,7 +94,7 @@ for file in ${REPO}/examples/contour/02-job-certgen.yaml ${REPO}/examples/contou
   # Set the image tag to $VERSION to unambiguously use the image
   # we built above.
   run::sed \
-    "-es|image: docker.io/projectcontour/contour:.*$|image: docker.io/projectcontour/contour:${VERSION}|" \
+    "-es|image: ghcr.io/projectcontour/contour:.*$|image: ghcr.io/projectcontour/contour:${VERSION}|" \
     "$file"
 
   ${KUBECTL} apply -f "$file"
