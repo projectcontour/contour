@@ -93,6 +93,9 @@ spec:
     clientCertificate:
       name: envoy-client-cert-secret-name
       namespace: projectcontour
+    network:
+      numTrustedHops: 0
+      adminPort: 9001
     managed:
       networkPublishing:
       nodePlacement:
@@ -131,9 +134,6 @@ spec:
       namespace: projectcontour
     disableLeaderElection: false
   enableExternalNameService: false
-  network:
-    numTrustedHops: 0
-    adminPort: 9001
   rateLimitService:
     extensionService: projectcontour/ratelimit
     domain: contour
