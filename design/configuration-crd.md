@@ -69,13 +69,13 @@ spec:
       useProxyProtocol: false
       disableAllowChunkedLength: false
       connectionBalancer: exact
-    tls:
-      minimumProtocolVersion: "1.2"
-      cipherSuites:
-        - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-        - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-        - 'ECDHE-ECDSA-AES256-GCM-SHA384'
-        - 'ECDHE-RSA-AES256-GCM-SHA384'
+      tls:
+        minimumProtocolVersion: "1.2"
+        cipherSuites:
+          - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+          - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+          - 'ECDHE-ECDSA-AES256-GCM-SHA384'
+          - 'ECDHE-RSA-AES256-GCM-SHA384'
     service:
       name: contour
       namespace: projectcontour
