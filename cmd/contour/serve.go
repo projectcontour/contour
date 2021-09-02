@@ -410,6 +410,13 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		Counter: contourMetrics.EventHandlerOperations,
 	}
 
+	// Register leadership election.
+	if ctx.DisableLeaderElection {
+		contourHandler.IsLeader = disableLeaderElection(log)
+	} else {
+		contourHandler.IsLeader = setupLeadershipElection(&g, log, &ctx.Config.LeaderElection, clients, contourHandler.UpdateNow)
+	}
+
 	// Start setting up StatusUpdateHandler since we need it in
 	// the Gateway API controllers. Will finish setting it up and
 	// start it later.
@@ -444,6 +451,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				sh.Writer(),
 				log.WithField("context", "gatewayclass-controller"),
 				gatewayClassControllerName,
+				contourHandler.IsLeader,
 			); err != nil {
 				log.WithError(err).Fatal("failed to create gatewayclass-controller")
 			}
@@ -455,6 +463,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				sh.Writer(),
 				log.WithField("context", "gateway-controller"),
 				gatewayClassControllerName,
+				contourHandler.IsLeader,
 			); err != nil {
 				log.WithError(err).Fatal("failed to create gateway-controller")
 			}
@@ -548,13 +557,6 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		Builder: &contourHandler.Builder,
 	}
 	g.Add(debugsvc.Start)
-
-	// Register leadership election.
-	if ctx.DisableLeaderElection {
-		contourHandler.IsLeader = disableLeaderElection(log)
-	} else {
-		contourHandler.IsLeader = setupLeadershipElection(&g, log, &ctx.Config.LeaderElection, clients, contourHandler.UpdateNow)
-	}
 
 	// Once we have the leadership detection channel, we can
 	// push DAG rebuild metrics onto the observer stack.

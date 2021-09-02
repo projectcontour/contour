@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -51,7 +52,14 @@ type gatewayClassReconciler struct {
 // NewGatewayClassController creates the gatewayclass controller. The controller
 // will be pre-configured to watch for cluster-scoped GatewayClass objects with
 // a controller field that matches name.
-func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, statusUpdater k8s.StatusUpdater, log logrus.FieldLogger, name string) (controller.Controller, error) {
+func NewGatewayClassController(
+	mgr manager.Manager,
+	eventHandler cache.ResourceEventHandler,
+	statusUpdater k8s.StatusUpdater,
+	log logrus.FieldLogger,
+	name string,
+	isLeader <-chan struct{},
+) (controller.Controller, error) {
 	r := &gatewayClassReconciler{
 		client:        mgr.GetClient(),
 		eventHandler:  eventHandler,
@@ -68,6 +76,34 @@ func NewGatewayClassController(mgr manager.Manager, eventHandler cache.ResourceE
 	// Only enqueue GatewayClass objects that match name.
 	if err := c.Watch(
 		&source.Kind{Type: &gatewayapi_v1alpha1.GatewayClass{}},
+		&handler.EnqueueRequestForObject{},
+		predicate.NewPredicateFuncs(r.hasMatchingController),
+	); err != nil {
+		return nil, err
+	}
+
+	// Set up a source.Channel that will trigger reconciles
+	// for all GatewayClasses when this Contour process is
+	// elected leader, to ensure that their statuses are up
+	// to date.
+	eventSource := make(chan event.GenericEvent)
+	go func() {
+		<-isLeader
+		log.Info("elected leader, triggering reconciles for all gatewayclasses")
+
+		var gatewayClasses gatewayapi_v1alpha1.GatewayClassList
+		if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
+			log.WithError(err).Error("error listing gatewayclasses")
+			return
+		}
+
+		for i := range gatewayClasses.Items {
+			eventSource <- event.GenericEvent{Object: &gatewayClasses.Items[i]}
+		}
+	}()
+
+	if err := c.Watch(
+		&source.Channel{Source: eventSource},
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
