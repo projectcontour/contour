@@ -79,14 +79,14 @@ spec:
     service:
       name: contour
       namespace: projectcontour
-      http: 
-          address: 0.0.0.0
-          port: 80
-          accessLog: /dev/STDOUT
-      https:
-          address: 0.0.0.0
-          port: 443
-          accessLog: /dev/STDOUT
+    http: 
+      address: 0.0.0.0
+      port: 80
+      accessLog: /dev/STDOUT
+    https:
+      address: 0.0.0.0
+      port: 443
+      accessLog: /dev/STDOUT
     metrics:
       address: 0.0.0.0
       port: 8002
