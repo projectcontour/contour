@@ -1,4 +1,7 @@
-# Contour Threat Model, Security Posture and vulnerability process
+---
+title: Contour Threat Model and Security Posture
+layout: page
+---
 
 Contour is an ingress controller that works as an Envoy control plane, configuring the Envoy data plane, which actually carries traffic from outside to inside the cluster.
 
@@ -34,8 +37,8 @@ The last remaining areas to discuss are:
 - RBAC and privilege escalation prevention: We can't control what owners of Contour do in their own clusters, but we do provide an example installation that codifies what we believe to be best practice in terms of Kubernetes privilege limitations. We provide limited roles that only grant access to the things required for the component (Contour or Envoy) to run, and ensure that the deployments use those roles. In addition, we've attempted to ensure that both the Contour and Envoy containers can safely be run as nonroot.
 - Static checking and code quality: We maintain a CI pipeline that runs golangci-lint including the usual set of Go static security checking, and enforce PR review for all merges to our main branch. Substantial changes are also subject to design review via a formal design document process.
 
-This document is also available at https://projectcontour.io/resources/threat-model.
-
 ## Reporting Security issues
-For reporting security issues, please see the reporting process documentation available at https://projectcontour.io/resources/security-process.
+For reporting security issues, please see the [reporting process documentation][1].
  
+
+[1]: /resources/security-process
