@@ -16,24 +16,12 @@ A Contour Deployment is managed by a controller (aka Operator) which uses the de
 - Provides better validation to avoid errors in the configuration file
 - Dynamic restarting of Contour when configuration changes
 
-## Contour Configuration
-
-The contents of current configuration file has grown over time and some fields need to be better categorized. 
-The new `ContourConfiguration` CRD will move the logging options into a `logging` struct. 
-All other fields will stay the same where they currently exist in the configmap.
-Any field that was not previously `camelCased` will be renamed to match.
-
-### New fields:
-
-Some fields will be moved around and others added to complete the configuration:
-- logging: The logging configuration bits are now moved into a common struct
-- ingress: There are some ingress configuration items that are now moved into a common struct.
-- envoy: This manages the Envoy configuration of how it should be deployed and exposed from the cluster
-- ingressClassName: Adds the `ingress-class-name` flag to the configuration file
-- incluster (Removed)
-- kubeconfig (Removed)
-
 ## New CRD Spec
+
+The contents of current configuration file has grown over time and some fields need to be better categorized.
+- Any field that was not previously `camelCased` will be renamed to match.
+- All the non-startup required command flags have been moved to the configuration CRD.
+- New groupings of similar fields have been created to make the file flow better.
 
 ```yaml
 apiVersion: projectcontour.io/v1alpha1
