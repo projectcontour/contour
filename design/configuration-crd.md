@@ -200,8 +200,11 @@ When config in the CRD changes we will gracefully stop the dependent ingress/gat
 Contour will first validate the new Configuration, ff that new change set results in the object being invalid, Contour will stop its Controller and will become not ready, and not serve any xDS traffic.
 As soon as the configuration does become valid, Contour will start up its controllers and begin processing as normal.
 
-Contour will initially start implementing this dynamic nature by restarting all Controllers when the config file changes.
-It's possible later on that this could be better optimized to keep the last working configuration, as well as only restarting specific controllers.
+### Initial Implementation
+
+Contour will initially start implementation by restarting the Contour pod and allowing Kubernetes to restart itself when the config file changes.
+Should the configuration be invalid, Contour will start up, set status on the ContourConfig CRD and then crash.
+Kubernetes will crash-loop until the configuration is valid, however, due to the nature of the exponential backoff, updates to the Configuration CRD will not be realized until the next restart loop, or Contour is restarted manually. 
 
 ## Versioning
 
