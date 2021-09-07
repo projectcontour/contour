@@ -59,8 +59,8 @@ type ContourDeployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ContourConfigurationSpec `json:"spec,omitempty"`
-	Status ContourDeploymentStatus  `json:"status,omitempty"`
+	Spec   ContourDeploymentSpec   `json:"spec,omitempty"`
+	Status ContourDeploymentStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
