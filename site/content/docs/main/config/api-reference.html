@@ -3276,8 +3276,8 @@ Refer to the Kubernetes API documentation for the fields of the
 <code>spec</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.ContourConfig">
-ContourConfig
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
+ContourConfigurationSpec
 </a>
 </em>
 </td>
@@ -3355,8 +3355,8 @@ Refer to the Kubernetes API documentation for the fields of the
 <code>spec</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.ContourConfig">
-ContourConfig
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
+ContourConfigurationSpec
 </a>
 </em>
 </td>
@@ -3372,8 +3372,8 @@ ContourConfig
 <code>status</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationStatus">
-ContourConfigurationStatus
+<a href="#projectcontour.io/v1alpha1.ContourDeploymentStatus">
+ContourDeploymentStatus
 </a>
 </em>
 </td>
@@ -3563,7 +3563,7 @@ ExtensionServiceStatus
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.ContourConfig">ContourConfig
+<h3 id="projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec
 </h3>
 <p>
 (<em>Appears on:</em>
@@ -3572,7 +3572,7 @@ ExtensionServiceStatus
 <a href="#projectcontour.io/v1alpha1.ContourDeploymentSpec">ContourDeploymentSpec</a>)
 </p>
 <p>
-<p>ContourConfig represents a configuration of a Contour controller.
+<p>ContourConfigurationSpec represents a configuration of a Contour controller.
 It contains most of all the options that can be customized, the
 other remaining options being command line flags.</p>
 </p>
@@ -3580,8 +3580,7 @@ other remaining options being command line flags.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration</a>, 
-<a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>)
+<a href="#projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration</a>)
 </p>
 <p>
 <p>ContourConfigurationStatus defines the observed state of a ContourConfiguration resource.</p>
@@ -3646,8 +3645,8 @@ defaults to 2.</p>
 <code>Config</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.ContourConfig">
-ContourConfig
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
+ContourConfigurationSpec
 </a>
 </em>
 </td>
@@ -3659,6 +3658,10 @@ ContourConfig
 </table>
 <h3 id="projectcontour.io/v1alpha1.ContourDeploymentStatus">ContourDeploymentStatus
 </h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>)
+</p>
 <p>
 <p>ContourDeploymentStatus defines the observed state of a ContourDeployment resource.</p>
 </p>

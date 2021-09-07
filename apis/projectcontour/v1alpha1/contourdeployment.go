@@ -29,7 +29,7 @@ type ContourDeploymentSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// Config is the config that the instances of Contour are to utilize.
-	Config ContourConfig `yaml:"config"`
+	Config ContourConfigurationSpec `yaml:"config"`
 }
 
 // ContourDeploymentStatus defines the observed state of a ContourDeployment resource.
@@ -59,8 +59,8 @@ type ContourDeployment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ContourConfig              `json:"spec,omitempty"`
-	Status ContourConfigurationStatus `json:"status,omitempty"`
+	Spec   ContourConfigurationSpec `json:"spec,omitempty"`
+	Status ContourDeploymentStatus  `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true

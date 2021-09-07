@@ -18,6 +18,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ContourConfigurationSpec represents a configuration of a Contour controller.
+// It contains most of all the options that can be customized, the
+// other remaining options being command line flags.
+type ContourConfigurationSpec struct {
+}
+
 // ContourConfigurationStatus defines the observed state of a ContourConfiguration resource.
 type ContourConfigurationStatus struct {
 	// Conditions contains the current status of the Contour resource.
@@ -45,7 +51,7 @@ type ContourConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ContourConfig              `json:"spec,omitempty"`
+	Spec   ContourConfigurationSpec   `json:"spec,omitempty"`
 	Status ContourConfigurationStatus `json:"status,omitempty"`
 }
 
