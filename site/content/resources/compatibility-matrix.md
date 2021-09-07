@@ -10,36 +10,27 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version |
 | --------------- | :------------------- | ------------------- | ---------------- |
-| main            | [1.19.1][17]         | 1.22, 1.21, 1.20    | [main][50]       |
-| 1.18.1          | [1.19.1][17]         | 1.21, 1.20, 1.19    | [1.18.1][62]     |
-| 1.18.0          | [1.19.0][14]         | 1.21, 1.20, 1.19    | [1.18.0][61]     |
-| 1.17.2          | [1.18.4][16]         | 1.21, 1.20, 1.19    | N/A              |
-| 1.17.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | N/A              |
-| 1.17.0          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.17.0][60]     |
-| 1.16.1          | [1.18.4][16]         | 1.21, 1.20, 1.19    | N/A              |
-| 1.16.0          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.16.0][59]     |
-| 1.15.2          | [1.18.4][16]         | 1.21, 1.20, 1.19    | N/A              |
-| 1.15.1          | [1.18.3][13]         | 1.21, 1.20, 1.19    | [1.15.1][58]     |
-| 1.15.0          | [1.18.2][12]         | 1.21, 1.20, 1.19    | [1.15.0][57]     |
-| 1.14.2          | [1.17.4][15]         | 1.20, 1.19, 1.18    | N/A              |
-| 1.14.1          | [1.17.2][11]         | 1.20, 1.19, 1.18    | [1.14.1][56]     |
-| 1.14.0          | [1.17.1][10]         | 1.20, 1.19, 1.18    | [1.14.0][55]     |
-| 1.13.1          | [1.17.1][10]         | 1.20, 1.19, 1.18    | [1.13.1][54]     |
-| 1.13.0          | [1.17.0][9]          | 1.20, 1.19, 1.18    | [1.13.0][53]     |
-| 1.12.0          | [1.17.0][9]          | 1.19, 1.18, 1.17    | [1.12.0][52]     |
-| 1.11.0          | [1.16.2][8]          | 1.19, 1.18, 1.17    | [1.11.0][51]     |
-| 1.10.1          | [1.16.2][8]          | 1.19, 1.18, 1.17    | N/A              |
-| 1.10.0          | [1.16.0][7]          | 1.19, 1.18, 1.17    | N/A              |
-| 1.9.0           | [1.15.1][6]          | 1.18, 1.17, 1.16    | N/A              |
-| 1.8.2           | [1.15.1][6]          | 1.18, 1.17, 1.16    | N/A              |
-| 1.8.1           | [1.15.0][5]          | 1.18, 1.17, 1.16    | N/A              |
-| 1.8.0           | [1.15.0][5]          | 1.18, 1.17, 1.16    | N/A              |
-| 1.7.0           | [1.15.0][5]          | 1.18, 1.17, 1.16    | N/A              |
-| 1.6.1           | [1.14.3][4]          | 1.18, 1.17, 1.16    | N/A              |
-| 1.6.0           | [1.14.2][3]          | 1.18, 1.17, 1.16    | N/A              |
-| 1.5.1           | [1.14.2][3]          | 1.18, 1.17, 1.16    | N/A              |
-| 1.5.0           | [1.14.1][2]          | 1.18, 1.17, 1.16    | N/A              |
-| 1.4.0           | [1.14.1][2]          | 1.17, 1.16, 1.15    | N/A              |
+| main            | [1.19.1][13]         | 1.22, 1.21, 1.20    | [main][50]       |
+| 1.18.1          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [1.18.1][62]     |
+| 1.18.0          | [1.19.0][10]         | 1.21, 1.20, 1.19    | [1.18.0][61]     |
+| 1.17.2          | [1.18.4][12]         | 1.21, 1.20, 1.19    | N/A              |
+| 1.17.1          | [1.18.3][9]          | 1.21, 1.20, 1.19    | N/A              |
+| 1.17.0          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [1.17.0][60]     |
+| 1.16.1          | [1.18.4][12]         | 1.21, 1.20, 1.19    | N/A              |
+| 1.16.0          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [1.16.0][59]     |
+| 1.15.2          | [1.18.4][12]         | 1.21, 1.20, 1.19    | N/A              |
+| 1.15.1          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [1.15.1][58]     |
+| 1.15.0          | [1.18.2][8]          | 1.21, 1.20, 1.19    | [1.15.0][57]     |
+| 1.14.2          | [1.17.4][11]         | 1.20, 1.19, 1.18    | N/A              |
+| 1.14.1          | [1.17.2][7]          | 1.20, 1.19, 1.18    | [1.14.1][56]     |
+| 1.14.0          | [1.17.1][6]          | 1.20, 1.19, 1.18    | [1.14.0][55]     |
+| 1.13.1          | [1.17.1][6]          | 1.20, 1.19, 1.18    | [1.13.1][54]     |
+| 1.13.0          | [1.17.0][5]          | 1.20, 1.19, 1.18    | [1.13.0][53]     |
+| 1.12.0          | [1.17.0][5]          | 1.19, 1.18, 1.17    | [1.12.0][52]     |
+| 1.11.0          | [1.16.2][4]          | 1.19, 1.18, 1.17    | [1.11.0][51]     |
+| 1.10.1          | [1.16.2][4]          | 1.19, 1.18, 1.17    | N/A              |
+| 1.10.0          | [1.16.0][3]          | 1.19, 1.18, 1.17    | N/A              |
+| 1.9.0           | [1.15.1][2]          | 1.18, 1.17, 1.16    | N/A              |
 
 <br />
 
@@ -100,23 +91,18 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 
 [1]: {{< param github_url >}}/tree/{{< param latest_version >}}/examples/contour
 
-[2]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.14.1
-[3]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.14.2
-[4]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.14.3
-[5]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.15.0
-[6]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.15.1
-[7]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.16.0
-[8]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.16.2
-[9]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.17.0
-[10]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.17.1
-[11]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.17.2
-[12]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.18.2
-[13]: https://www.envoyproxy.io/docs/envoy/v1.18.3/version_history/current
-[14]: https://www.envoyproxy.io/docs/envoy/v1.19.0/version_history/current
-[15]: https://www.envoyproxy.io/docs/envoy/v1.17.4/version_history/current
-[16]: https://www.envoyproxy.io/docs/envoy/v1.18.4/version_history/current
-[17]: https://www.envoyproxy.io/docs/envoy/v1.19.1/version_history/current
-
+[2]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.15.1
+[3]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.16.0
+[4]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.16.2
+[5]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.17.0
+[6]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.17.1
+[7]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.17.2
+[8]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.18.2
+[9]: https://www.envoyproxy.io/docs/envoy/v1.18.3/version_history/current
+[10]: https://www.envoyproxy.io/docs/envoy/v1.19.0/version_history/current
+[11]: https://www.envoyproxy.io/docs/envoy/v1.17.4/version_history/current
+[12]: https://www.envoyproxy.io/docs/envoy/v1.18.4/version_history/current
+[13]: https://www.envoyproxy.io/docs/envoy/v1.19.1/version_history/current
 
 [50]: https://github.com/projectcontour/contour-operator
 [51]: https://github.com/projectcontour/contour-operator/releases/tag/v1.11.0
