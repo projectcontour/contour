@@ -47,7 +47,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: docker.io/projectcontour/contour:main
+        image: ghcr.io/projectcontour/contour:main
         imagePullPolicy: Always
         command:
         - contour

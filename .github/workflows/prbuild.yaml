@@ -142,7 +142,7 @@ jobs:
           NODEIMAGE: ${{ matrix.node_image }}
           LOAD_PREBUILT_IMAGE: "true"
         run: |
-          export CONTOUR_UPGRADE_TO_IMAGE="projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
+          export CONTOUR_UPGRADE_TO_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make upgrade
       - uses: act10ns/slack@v1
         with:

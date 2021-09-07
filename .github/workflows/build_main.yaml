@@ -20,7 +20,7 @@ jobs:
       env:
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        REGISTRY: projectcontour
+        REGISTRY: docker.io/projectcontour
         VERSION: main
         TAG_LATEST: "false"
         PUSH_IMAGE: "true"

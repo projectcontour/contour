@@ -25,6 +25,7 @@ jobs:
         version: latest
     - name: Build and Push to Docker Hub
       env:
+        REGISTRY: docker.io/projectcontour
         DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         TAG_LATEST: "false"

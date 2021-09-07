@@ -18,7 +18,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-readonly IMG="docker.io/projectcontour/contour:$NEWVERS"
+readonly IMG="ghcr.io/projectcontour/contour:$NEWVERS"
 
 if [ -n "$(git tag --list "$NEWVERS")" ]; then
     printf "%s: tag '%s' already exists\n" "$PROGNAME" "$NEWVERS"
@@ -39,8 +39,8 @@ for example in examples/contour/03-envoy.yaml examples/contour/03-contour.yaml e
     # The version might be main or OLDVERS depending on whether we are
     # tagging from the release branch or from main.
     run::sed \
-        "-es|docker.io/projectcontour/contour:main|$IMG|" \
-        "-es|docker.io/projectcontour/contour:$OLDVERS|$IMG|" \
+        "-es|ghcr.io/projectcontour/contour:main|$IMG|" \
+        "-es|ghcr.io/projectcontour/contour:$OLDVERS|$IMG|" \
         "$example"
 done
 
