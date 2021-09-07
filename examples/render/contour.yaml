@@ -473,7 +473,7 @@ spec:
     listKind: ContourDeploymentList
     plural: contourdeployments
     shortNames:
-    - contourconfig
+    - contourdeploy
     singular: contourdeployment
   scope: Namespaced
   versions:
@@ -495,9 +495,22 @@ spec:
           metadata:
             type: object
           spec:
-            description: ContourConfigurationSpec represents a configuration of a
-              Contour controller. It contains most of all the options that can be
-              customized, the other remaining options being command line flags.
+            description: ContourDeploymentSpec defines the parameters of how a Contour
+              instance should be configured.
+            properties:
+              config:
+                description: Config is the config that the instances of Contour are
+                  to utilize.
+                type: object
+              replicas:
+                default: 2
+                description: Replicas is the desired number of Contour replicas. If
+                  unset, defaults to 2.
+                format: int32
+                minimum: 0
+                type: integer
+            required:
+            - config
             type: object
           status:
             description: ContourDeploymentStatus defines the observed state of a ContourDeployment

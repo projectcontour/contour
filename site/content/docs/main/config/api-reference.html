@@ -3355,8 +3355,8 @@ Refer to the Kubernetes API documentation for the fields of the
 <code>spec</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
-ContourConfigurationSpec
+<a href="#projectcontour.io/v1alpha1.ContourDeploymentSpec">
+ContourDeploymentSpec
 </a>
 </em>
 </td>
@@ -3364,6 +3364,33 @@ ContourConfigurationSpec
 <br>
 <br>
 <table style="border:none">
+<tr>
+<td style="white-space:nowrap">
+<code>replicas</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Replicas is the desired number of Contour replicas. If unset,
+defaults to 2.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>config</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
+ContourConfigurationSpec
+</a>
+</em>
+</td>
+<td>
+<p>Config is the config that the instances of Contour are to utilize.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -3568,7 +3595,6 @@ ExtensionServiceStatus
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration</a>, 
-<a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>, 
 <a href="#projectcontour.io/v1alpha1.ContourDeploymentSpec">ContourDeploymentSpec</a>)
 </p>
 <p>
@@ -3616,6 +3642,10 @@ in case some other controller wants to add a Condition.</p>
 <h3 id="projectcontour.io/v1alpha1.ContourDeploymentSpec">ContourDeploymentSpec
 </h3>
 <p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>)
+</p>
+<p>
 <p>ContourDeploymentSpec defines the parameters of how a Contour
 instance should be configured.</p>
 </p>
@@ -3642,7 +3672,7 @@ defaults to 2.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>Config</code>
+<code>config</code>
 <br>
 <em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
