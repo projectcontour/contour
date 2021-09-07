@@ -52,7 +52,7 @@ type ContourDeploymentStatus struct {
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Namespaced,shortName=contourconfig
+// +kubebuilder:resource:scope=Namespaced,shortName=contourdeploy
 
 // ContourDeployment is the schema for a Contour Deployment.
 type ContourDeployment struct {
