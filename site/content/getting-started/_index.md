@@ -213,7 +213,14 @@ $ kubectl get po,svc,ing -l app=kuard
 You should see the following:
 - 3 instances of pods/kuard, each with status **Running** and 1/1 **Ready**
 - 1 service/kuard CLUSTER-IP listed on port 80
-- 1 ingress on port 80
+- 1 Ingress on port 80
+
+The Helm install configures Contour to filter Ingress and HTTPProxy objects based on the `contour` IngressClass name.
+To ensure Contour reconciles the created Ingress, edit the `spec` to add an `ingressClassName` field as below:
+```yaml
+spec:
+  ingressClassName: contour
+```
 
 Verify web access by browsing to [127.0.0.1](http://127.0.0.1). You can refresh multiple times to cycle through each pod workload.  
 
