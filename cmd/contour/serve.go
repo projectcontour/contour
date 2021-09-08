@@ -75,7 +75,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve := app.Command("serve", "Serve xDS API traffic.")
 
 	// The precedence of configuration for contour serve is as follows:
-	// config file, overridden by env vars, overridden by cli flags.
+	// If ContourConfiguration file is specified, it takes precedence,
+	// otherwise config file, overridden by env vars, overridden by cli flags.
 	// however, as -c is a cli flag, we don't know its value til cli flags
 	// have been parsed. To correct this ordering we assign a post parse
 	// action to -c, then parse cli flags twice (see main.main). On the second
@@ -88,11 +89,17 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	ctx := newServeContext()
 
 	parseConfig := func(_ *kingpin.ParseContext) error {
+
+		if ctx.contourConfigurationName != "" && configFile != "" {
+			return fmt.Errorf("cannot specify both %s and %s", "--contour-config", "-c/--config-path")
+		}
+
 		if parsed || configFile == "" {
 			// if there is no config file supplied, or we've
 			// already parsed it, return immediately.
 			return nil
 		}
+
 		f, err := os.Open(configFile)
 		if err != nil {
 			return err
@@ -115,6 +122,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	}
 
 	serve.Flag("config-path", "Path to base configuration.").Short('c').PlaceHolder("/path/to/file").Action(parseConfig).ExistingFileVar(&configFile)
+	serve.Flag("contour-config-name", "Name of ContourConfiguration CRD.").PlaceHolder("contour").Action(parseConfig).StringVar(&ctx.contourConfigurationName)
 
 	serve.Flag("incluster", "Use in cluster configuration.").BoolVar(&ctx.Config.InCluster)
 	serve.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").PlaceHolder("/path/to/file").StringVar(&ctx.Config.Kubeconfig)
@@ -210,6 +218,29 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	scheme, err := k8s.NewContourScheme()
 	if err != nil {
 		log.WithError(err).Fatal("unable to create scheme")
+	}
+
+	// Get the ContourConfiguration CRD if specified
+	if len(ctx.contourConfigurationName) > 0 {
+
+		// Determine the name/namespace of the configuration file utilizing the environment
+		// variable "CONTOUR_NAMESPACE" which should exist on the Contour deployment.
+		//
+		// If the env variable is not present, it will return "" and still fail the lookup
+		// of the ContourConfiguration in the cluster.
+		namespacedName := types.NamespacedName{Name: ctx.contourConfigurationName, Namespace: os.Getenv("CONTOUR_NAMESPACE")}
+		client := clients.DynamicClient().Resource(contour_api_v1alpha1.ContourConfigurationGVR).Namespace(namespacedName.Namespace)
+
+		// ensure the specified ContourConfiguration exists
+		res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("error getting contour configuration %s: %v", namespacedName, err)
+		}
+
+		var contourConfiguration contour_api_v1alpha1.ContourConfiguration
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &contourConfiguration); err != nil {
+			return fmt.Errorf("error converting contour configuration %s: %v", namespacedName, err)
+		}
 	}
 
 	// Instantiate a controller-runtime manager. We need this regardless of whether

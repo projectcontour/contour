@@ -19,6 +19,7 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | Flag Name         | Description        |
 |-------------------|--------------------|
 | `--config-path`       | Path to base configuration |
+| `--contour-config-name`       | Name of the ContourConfiguration file to use |
 | `--incluster`         | Use in cluster configuration |
 | `--kubeconfig=</path/to/file>` |    Path to kubeconfig (if not in running inside a cluster) |
 | `--xds-address=<ipaddr>` | xDS gRPC API address |
