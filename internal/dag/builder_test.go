@@ -11463,6 +11463,203 @@ func TestHTTPProxyConficts(t *testing.T) {
 	})
 }
 
+func TestDefaultHeadersPolicies(t *testing.T) {
+	// i2V1 is functionally identical to i1V1
+	i2V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: networking_v1.IngressSpec{
+			Rules: []networking_v1.IngressRule{{
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+			}},
+		},
+	}
+
+	proxyMultipleBackends := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}, {
+					Name: "kuarder",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	s1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuard",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	// s2 is like s1 but with a different name
+	s2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kuarder",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	tests := []struct {
+		name            string
+		objs            []interface{}
+		want            []Vertex
+		ingressReqHp    *HeadersPolicy
+		ingressRespHp   *HeadersPolicy
+		httpProxyReqHp  *HeadersPolicy
+		httpProxyRespHp *HeadersPolicy
+		wantErr         error
+	}{{
+		name: "empty is fine",
+	}, {
+		name: "ingressv1: insert ingress w/ single unnamed backend",
+		objs: []interface{}{
+			i2V1,
+			s1,
+		},
+		want: listeners(
+			&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("*", &Route{
+						PathMatchCondition: prefixString("/"),
+						Clusters:           clusterHeadersUnweighted(map[string]string{"Custom-Header-Set": "foo-bar"}, nil, []string{"K-Nada"}, "", service(s1)),
+					},
+					),
+				),
+			},
+		),
+		ingressReqHp: &HeadersPolicy{
+			// Add not currently siupported
+			// Add: map[string]string{
+			// 	"Custom-Header-Add": "foo-bar",
+			// },
+			Set: map[string]string{
+				"Custom-Header-Set": "foo-bar",
+			},
+			Remove: []string{"K-Nada"},
+		},
+		ingressRespHp: &HeadersPolicy{
+			// Add not currently siupported
+			// Add: map[string]string{
+			// 	"Custom-Header-Add": "foo-bar",
+			// },
+			Set: map[string]string{
+				"Custom-Header-Set": "foo-bar",
+			},
+			Remove: []string{"K-Nada"},
+		},
+	}, {
+		name: "insert httpproxy referencing two backends",
+		objs: []interface{}{
+			proxyMultipleBackends, s1, s2,
+		},
+		want: listeners(
+			&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("example.com", &Route{
+						PathMatchCondition: prefixString("/"),
+						Clusters:           clusterHeadersUnweighted(map[string]string{"Custom-Header-Set": "foo-bar"}, nil, []string{"K-Nada"}, "", service(s1), service(s2)),
+					},
+					),
+				),
+			},
+		),
+		httpProxyReqHp: &HeadersPolicy{
+			// Add not currently siupported
+			// Add: map[string]string{
+			// 	"Custom-Header-Add": "foo-bar",
+			// },
+			Set: map[string]string{
+				"Custom-Header-Set": "foo-bar",
+			},
+			Remove: []string{"K-Nada"},
+		},
+		httpProxyRespHp: &HeadersPolicy{
+			// Add not currently siupported
+			// Add: map[string]string{
+			// 	"Custom-Header-Add": "foo-bar",
+			// },
+			Set: map[string]string{
+				"Custom-Header-Set": "foo-bar",
+			},
+			Remove: []string{"K-Nada"},
+		},
+	},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			builder := Builder{
+				Source: KubernetesCache{
+					FieldLogger: fixture.NewTestLogger(t),
+				},
+				Processors: []Processor{
+					&IngressProcessor{
+						FieldLogger:           fixture.NewTestLogger(t),
+						RequestHeadersPolicy:  tc.ingressReqHp,
+						ResponseHeadersPolicy: tc.ingressRespHp,
+					},
+					&HTTPProxyProcessor{
+						RequestHeadersPolicy:  tc.httpProxyReqHp,
+						ResponseHeadersPolicy: tc.httpProxyRespHp,
+					},
+					&ListenerProcessor{},
+				},
+			}
+
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			dag := builder.Build()
+
+			got := make(map[int]*Listener)
+			dag.Visit(listenerMap(got).Visit)
+
+			want := make(map[int]*Listener)
+			for _, v := range tc.want {
+				if l, ok := v.(*Listener); ok {
+					want[l.Port] = l
+				}
+			}
+			assert.Equal(t, want, got)
+		})
+	}
+}
+
 func routes(routes ...*Route) map[string]*Route {
 	if len(routes) == 0 {
 		return nil

@@ -42,6 +42,12 @@ type IngressProcessor struct {
 	// This is normally disabled for security reasons.
 	// See https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for details.
 	EnableExternalNameService bool
+
+	// Request headers that will be set on all routes (optional).
+	RequestHeadersPolicy *HeadersPolicy
+
+	// Response headers that will be set on all routes (optional).
+	ResponseHeadersPolicy *HeadersPolicy
 }
 
 // Run translates Ingresses into DAG objects and
