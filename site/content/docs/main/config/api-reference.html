@@ -580,6 +580,8 @@ the secret will be delegated to all namespaces.</p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1.HTTPProxyStatus">HTTPProxyStatus</a>, 
 <a href="#projectcontour.io/v1.TLSCertificateDelegationStatus">TLSCertificateDelegationStatus</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationStatus">ContourConfigurationStatus</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourDeploymentStatus">ContourDeploymentStatus</a>, 
 <a href="#projectcontour.io/v1alpha1.ExtensionServiceStatus">ExtensionServiceStatus</a>)
 </p>
 <p>
@@ -3216,8 +3218,197 @@ RateLimitPolicy
 </p>
 Resource Types:
 <ul><li>
+<a href="#projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration</a>
+</li><li>
+<a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>
+</li><li>
 <a href="#projectcontour.io/v1alpha1.ExtensionService">ExtensionService</a>
 </li></ul>
+<h3 id="projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration
+</h3>
+<p>
+<p>ContourConfiguration is the schema for a Contour instance.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td>
+<code>apiVersion</code>
+<br>
+string</td>
+<td>
+<code>
+projectcontour.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code>
+<br>
+string
+</td>
+<td><code>ContourConfiguration</code></td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>metadata</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>spec</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
+ContourConfigurationSpec
+</a>
+</em>
+</td>
+<td>
+<br>
+<br>
+<table style="border:none">
+</table>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>status</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationStatus">
+ContourConfigurationStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment
+</h3>
+<p>
+<p>ContourDeployment is the schema for a Contour Deployment.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td>
+<code>apiVersion</code>
+<br>
+string</td>
+<td>
+<code>
+projectcontour.io/v1alpha1
+</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>kind</code>
+<br>
+string
+</td>
+<td><code>ContourDeployment</code></td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>metadata</code>
+<br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>spec</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ContourDeploymentSpec">
+ContourDeploymentSpec
+</a>
+</em>
+</td>
+<td>
+<br>
+<br>
+<table style="border:none">
+<tr>
+<td style="white-space:nowrap">
+<code>replicas</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Replicas is the desired number of Contour replicas. If unset,
+defaults to 2.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>config</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
+ContourConfigurationSpec
+</a>
+</em>
+</td>
+<td>
+<p>Config is the config that the instances of Contour are to utilize.</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>status</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ContourDeploymentStatus">
+ContourDeploymentStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.ExtensionService">ExtensionService
 </h3>
 <p>
@@ -3395,6 +3586,139 @@ ExtensionServiceStatus
 </em>
 </td>
 <td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration</a>, 
+<a href="#projectcontour.io/v1alpha1.ContourDeploymentSpec">ContourDeploymentSpec</a>)
+</p>
+<p>
+<p>ContourConfigurationSpec represents a configuration of a Contour controller.
+It contains most of all the options that can be customized, the
+other remaining options being command line flags.</p>
+</p>
+<h3 id="projectcontour.io/v1alpha1.ContourConfigurationStatus">ContourConfigurationStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourConfiguration">ContourConfiguration</a>)
+</p>
+<p>
+<p>ContourConfigurationStatus defines the observed state of a ContourConfiguration resource.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>conditions</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.DetailedCondition">
+[]DetailedCondition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Conditions contains the current status of the Contour resource.</p>
+<p>Contour will update a single condition, <code>Valid</code>, that is in normal-true polarity.</p>
+<p>Contour will not modify any other Conditions set in this block,
+in case some other controller wants to add a Condition.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.ContourDeploymentSpec">ContourDeploymentSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>)
+</p>
+<p>
+<p>ContourDeploymentSpec defines the parameters of how a Contour
+instance should be configured.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>replicas</code>
+<br>
+<em>
+int32
+</em>
+</td>
+<td>
+<p>Replicas is the desired number of Contour replicas. If unset,
+defaults to 2.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>config</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">
+ContourConfigurationSpec
+</a>
+</em>
+</td>
+<td>
+<p>Config is the config that the instances of Contour are to utilize.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.ContourDeploymentStatus">ContourDeploymentStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourDeployment">ContourDeployment</a>)
+</p>
+<p>
+<p>ContourDeploymentStatus defines the observed state of a ContourDeployment resource.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>conditions</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.DetailedCondition">
+[]DetailedCondition
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Conditions contains the current status of the Contour resource.</p>
+<p>Contour will update a single condition, <code>Valid</code>, that is in normal-true polarity.</p>
+<p>Contour will not modify any other Conditions set in this block,
+in case some other controller wants to add a Condition.</p>
 </td>
 </tr>
 </tbody>
