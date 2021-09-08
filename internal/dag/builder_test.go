@@ -11816,6 +11816,28 @@ func clusterHeaders(requestSet map[string]string, requestAdd map[string]string, 
 	return c
 }
 
+func clusterHeadersUnweighted(headersSet map[string]string, headersAdd map[string]string, headersRemove []string, hostRewrite string, services ...*Service) (c []*Cluster) {
+	for _, s := range services {
+		c = append(c, &Cluster{
+			Upstream: s,
+			Protocol: s.Protocol,
+			RequestHeadersPolicy: &HeadersPolicy{
+				Set:         headersSet,
+				Add:         headersAdd,
+				Remove:      headersRemove,
+				HostRewrite: hostRewrite,
+			},
+			ResponseHeadersPolicy: &HeadersPolicy{
+				Set:         headersSet,
+				Add:         headersAdd,
+				Remove:      headersRemove,
+				HostRewrite: hostRewrite,
+			},
+		})
+	}
+	return c
+}
+
 func clusters(services ...*Service) (c []*Cluster) {
 	for _, s := range services {
 		c = append(c, &Cluster{
