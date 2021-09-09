@@ -374,12 +374,8 @@ func (in *EnvoyLogging) DeepCopyInto(out *EnvoyLogging) {
 	}
 	if in.AccessLogFields != nil {
 		in, out := &in.AccessLogFields, &out.AccessLogFields
-		*out = new([]string)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]string, len(*in))
-			copy(*out, *in)
-		}
+		*out = make(AccessLogFields, len(*in))
+		copy(*out, *in)
 	}
 }
 

@@ -1,3 +1,4 @@
+---
 apiVersion: projectcontour.io/v1alpha1
 kind: ContourConfiguration
 metadata:
@@ -8,18 +9,18 @@ spec:
     address: 0.0.0.0
     port: 8001
     insecure: true
-#    tls:
-#      caFile: /certs/ca.crt
-#      certFile: /certs/tls.crt
-#      keyFile:	/certs/tls.key
+    tls:
+      caFile: "/certs/ca.crt"
+      certFile: "/certs/tls.crt"
+      keyFile: "/certs/tls.key"
   ingress:
     className: contour
     statusAddress: local.projectcontour.io
-#  debug:
-#    address: 127.0.0.1
-#    port: 6060
-#    logLevel: info
-#    kubernetesLogLevel: 0
+  debug:
+    address: 127.0.0.1
+    port: 6060
+    logLevel: info
+    kubernetesLogLevel: 0
   health:
     address: 0.0.0.0
     port: 8000
@@ -44,11 +45,11 @@ spec:
     http:
       address: 0.0.0.0
       port: 80
-      accessLog: /dev/STDOUT
+      accessLog: "/dev/STDOUT"
     https:
       address: 0.0.0.0
       port: 443
-      accessLog: /dev/STDOUT
+      accessLog: "/dev/STDOUT"
     metrics:
       address: 0.0.0.0
       port: 8002
@@ -58,11 +59,6 @@ spec:
     network:
       numTrustedHops: 0
       adminPort: 9001
-#    managed:
-#      networkPublishing:
-#      nodePlacement:
-#        nodeSelector:
-#        tolerations:
     logging:
       accessLogFormat: envoy
       accessLogFormatString: "...\n"
@@ -78,8 +74,8 @@ spec:
       connectionShutdownGracePeriod: 5s
     cluster:
       dnsLookupFamily: auto
-#  gateway:
-#    controllerName: projectcontour.io/projectcontour/contour
+  gateway:
+    controllerName: projectcontour.io/projectcontour/contour
   httpproxy:
     disablePermitInsecure: false
     rootNamespaces:

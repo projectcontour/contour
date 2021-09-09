@@ -345,7 +345,7 @@ type EnvoyLogging struct {
 	// AccessLogFields sets the fields that JSON logging will
 	// output when AccessLogFormat is json.
 	// +optional
-	AccessLogFields *AccessLogFields `json:"jsonFields,omitempty"`
+	AccessLogFields AccessLogFields `json:"jsonFields,omitempty"`
 }
 
 // TimeoutParameters holds various configurable proxy timeout values.
