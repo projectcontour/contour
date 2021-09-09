@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func TestHTTPRouteAddCondition(t *testing.T) {
@@ -30,7 +30,7 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 	var testGeneration int64 = 7
 
 	simpleValidCondition := metav1.Condition{
-		Type:               string(gatewayapi_v1alpha1.ConditionRouteAdmitted),
+		Type:               string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
 		Status:             projectcontour.ConditionTrue,
 		Reason:             "Valid",
 		Message:            "Valid HTTPRoute",
@@ -40,10 +40,10 @@ func TestHTTPRouteAddCondition(t *testing.T) {
 	httpRouteUpdate := RouteConditionsUpdate{
 		FullName:   k8s.NamespacedNameFrom("test/test"),
 		Generation: testGeneration,
-		Conditions: make(map[gatewayapi_v1alpha1.RouteConditionType]metav1.Condition),
+		Conditions: make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition),
 	}
 
-	got := httpRouteUpdate.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionTrue, "Valid", "Valid HTTPRoute")
+	got := httpRouteUpdate.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionTrue, "Valid", "Valid HTTPRoute")
 
 	assert.Equal(t, simpleValidCondition.Message, got.Message)
 	assert.Equal(t, simpleValidCondition.Reason, got.Reason)

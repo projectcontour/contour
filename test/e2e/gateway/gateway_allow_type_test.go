@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func testGatewayAllowType(namespace string) {
@@ -37,34 +37,34 @@ func testGatewayAllowType(namespace string) {
 
 		// This route allows gateways from a list, and the actual gateway
 		// is included in the list.
-		gatewayInAllowedListRoute := &gatewayv1alpha1.HTTPRoute{
+		gatewayInAllowedListRoute := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "gateway-in-allowed-list",
 				Labels:    map[string]string{"app": "filter"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowFromList),
-					GatewayRefs: []gatewayv1alpha1.GatewayReference{
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowFromList),
+					GatewayRefs: []gatewayapi_v1alpha2.GatewayReference{
 						{
 							Name:      "http",
 							Namespace: namespace,
 						},
 					},
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchExact),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
 									Value: stringPtr("/gateway-in-allowed-list"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo-blue"),
 								Port:        portNumPtr(80),
@@ -88,34 +88,34 @@ func testGatewayAllowType(namespace string) {
 
 		// This route allows gateways from a list, and the actual gateway
 		// is *NOT* included in the list.
-		gatewayNotInAllowedListRoute := &gatewayv1alpha1.HTTPRoute{
+		gatewayNotInAllowedListRoute := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "gateway-not-in-allowed-list",
 				Labels:    map[string]string{"app": "filter"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowFromList),
-					GatewayRefs: []gatewayv1alpha1.GatewayReference{
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowFromList),
+					GatewayRefs: []gatewayapi_v1alpha2.GatewayReference{
 						{
 							Name:      "invalid-name",
 							Namespace: "invalid-ns",
 						},
 					},
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchExact),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
 									Value: stringPtr("/gateway-not-in-allowed-list"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo-blue"),
 								Port:        portNumPtr(80),
@@ -138,28 +138,28 @@ func testGatewayAllowType(namespace string) {
 
 		// This route allows gateways in the same namespace, and the actual
 		// gateway is in the same namespace.
-		gatewayInSameNamespaceRoute := &gatewayv1alpha1.HTTPRoute{
+		gatewayInSameNamespaceRoute := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "gateway-in-same-namespace",
 				Labels:    map[string]string{"app": "filter"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowSameNamespace),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowSameNamespace),
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchExact),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
 									Value: stringPtr("/gateway-in-same-namespace"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo"),
 								Port:        portNumPtr(80),
@@ -183,28 +183,28 @@ func testGatewayAllowType(namespace string) {
 		// gateway is *NOT* in the same namespace.
 		f.CreateNamespace("gateway-allow-type-invalid")
 		defer f.DeleteNamespace("gateway-allow-type-invalid", false)
-		gatewayNotInSameNamespaceRoute := &gatewayv1alpha1.HTTPRoute{
+		gatewayNotInSameNamespaceRoute := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: "gateway-allow-type-invalid",
 				Name:      "gateway-not-in-same-namespace",
 				Labels:    map[string]string{"app": "filter"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowSameNamespace),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowSameNamespace),
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchExact),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
 									Value: stringPtr("/gateway-not-in-same-namespace"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo-blue"),
 								Port:        portNumPtr(80),

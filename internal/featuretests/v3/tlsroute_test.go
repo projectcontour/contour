@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func TestTLSRoute(t *testing.T) {
@@ -43,39 +43,39 @@ func TestTLSRoute(t *testing.T) {
 	rh.OnAdd(svc)
 	rh.OnAdd(svcAnother)
 
-	rh.OnAdd(&gatewayapi_v1alpha1.GatewayClass{
+	rh.OnAdd(&gatewayapi_v1alpha2.GatewayClass{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-gc",
 		},
-		Spec: gatewayapi_v1alpha1.GatewayClassSpec{
+		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
 			Controller: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1alpha1.GatewayClassStatus{
+		Status: gatewayapi_v1alpha2.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
 					Status: metav1.ConditionTrue,
 				},
 			},
 		},
 	})
 
-	gatewayPassthrough := &gatewayapi_v1alpha1.Gateway{
+	gatewayPassthrough := &gatewayapi_v1alpha2.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1alpha1.GatewaySpec{
-			Listeners: []gatewayapi_v1alpha1.Listener{{
+		Spec: gatewayapi_v1alpha2.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha2.Listener{{
 				Port:     443,
 				Protocol: "TLS",
-				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
-					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModePassthrough),
+				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+					Mode: tlsModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
 				},
-				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+				Routes: gatewayapi_v1alpha2.RouteBindingSelector{
+					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectAll),
 					},
 					Kind: dag.KindTLSRoute,
 				},
@@ -85,19 +85,19 @@ func TestTLSRoute(t *testing.T) {
 
 	rh.OnAdd(gatewayPassthrough)
 
-	route1 := &gatewayapi_v1alpha1.TLSRoute{
+	route1 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1alpha1.TLSRouteSpec{
-			Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
-				Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
-					SNIs: []gatewayapi_v1alpha1.Hostname{
+		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+				Matches: []gatewayapi_v1alpha2.TLSRouteMatch{{
+					SNIs: []gatewayapi_v1alpha2.Hostname{
 						"tcp.projectcontour.io",
 					},
 				}},
-				ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+				ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{{
 					ServiceName: pointer.StringPtr("correct-backend"),
 					Port:        gatewayPort(80),
 				}},
@@ -139,14 +139,14 @@ func TestTLSRoute(t *testing.T) {
 	})
 
 	// Route2 doesn't define any SNIs, so this should become the default backend.
-	route2 := &gatewayapi_v1alpha1.TLSRoute{
+	route2 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1alpha1.TLSRouteSpec{
-			Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
-				ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+				ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{{
 					ServiceName: pointer.StringPtr("correct-backend"),
 					Port:        gatewayPort(80),
 				}},
@@ -187,19 +187,19 @@ func TestTLSRoute(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	route3 := &gatewayapi_v1alpha1.TLSRoute{
+	route3 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1alpha1.TLSRouteSpec{
-			Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
-				Matches: []gatewayapi_v1alpha1.TLSRouteMatch{{
-					SNIs: []gatewayapi_v1alpha1.Hostname{
+		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+				Matches: []gatewayapi_v1alpha2.TLSRouteMatch{{
+					SNIs: []gatewayapi_v1alpha2.Hostname{
 						"tcp.projectcontour.io",
 					},
 				}},
-				ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+				ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{{
 					ServiceName: pointer.StringPtr("correct-backend"),
 					Port:        gatewayPort(80),
 				}},
@@ -207,14 +207,14 @@ func TestTLSRoute(t *testing.T) {
 		},
 	}
 
-	route4 := &gatewayapi_v1alpha1.TLSRoute{
+	route4 := &gatewayapi_v1alpha2.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic-wildcard",
 			Namespace: "default",
 		},
-		Spec: gatewayapi_v1alpha1.TLSRouteSpec{
-			Rules: []gatewayapi_v1alpha1.TLSRouteRule{{
-				ForwardTo: []gatewayapi_v1alpha1.RouteForwardTo{{
+		Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+				ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{{
 					ServiceName: pointer.StringPtr("another-backend"),
 					Port:        gatewayPort(80),
 				}},
@@ -280,26 +280,26 @@ func TestTLSRoute(t *testing.T) {
 	}
 
 	// Validate TLSTerminate.
-	gatewayTerminate := &gatewayapi_v1alpha1.Gateway{
+	gatewayTerminate := &gatewayapi_v1alpha2.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1alpha1.GatewaySpec{
-			Listeners: []gatewayapi_v1alpha1.Listener{{
+		Spec: gatewayapi_v1alpha2.GatewaySpec{
+			Listeners: []gatewayapi_v1alpha2.Listener{{
 				Port:     443,
 				Protocol: "TLS",
-				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
-					Mode: tlsModeTypePtr(gatewayapi_v1alpha1.TLSModeTerminate),
-					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+					Mode: tlsModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+					CertificateRef: &gatewayapi_v1alpha2.LocalObjectReference{
 						Group: "core",
 						Kind:  "Secret",
 						Name:  "tlscert",
 					},
 				},
-				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+				Routes: gatewayapi_v1alpha2.RouteBindingSelector{
+					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectAll),
 					},
 					Kind: dag.KindTLSRoute,
 				},
@@ -338,6 +338,6 @@ func TestTLSRoute(t *testing.T) {
 	})
 }
 
-func tlsModeTypePtr(mode gatewayapi_v1alpha1.TLSModeType) *gatewayapi_v1alpha1.TLSModeType {
+func tlsModeTypePtr(mode gatewayapi_v1alpha2.TLSModeType) *gatewayapi_v1alpha2.TLSModeType {
 	return &mode
 }

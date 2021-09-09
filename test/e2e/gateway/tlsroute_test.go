@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func testTLSRoutePassthrough(namespace string) {
@@ -39,24 +39,24 @@ func testTLSRoutePassthrough(namespace string) {
 		f.Certs.CreateSelfSignedCert(namespace, "backend-server-cert", "backend-server-cert", "tlsroute.gatewayapi.projectcontour.io")
 
 		// TLSRoute that doesn't define the termination type.
-		route := &gatewayv1alpha1.TLSRoute{
+		route := &gatewayapi_v1alpha2.TLSRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "tls-route-1",
 			},
-			Spec: gatewayv1alpha1.TLSRouteSpec{
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
 				},
-				Rules: []gatewayv1alpha1.TLSRouteRule{{
-					Matches: []gatewayv1alpha1.TLSRouteMatch{
+				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+					Matches: []gatewayapi_v1alpha2.TLSRouteMatch{
 						{
-							SNIs: []gatewayv1alpha1.Hostname{
-								gatewayv1alpha1.Hostname("tlsroute.gatewayapi.projectcontour.io"),
+							SNIs: []gatewayapi_v1alpha2.Hostname{
+								gatewayapi_v1alpha2.Hostname("tlsroute.gatewayapi.projectcontour.io"),
 							},
 						},
 					},
-					ForwardTo: []gatewayv1alpha1.RouteForwardTo{
+					ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{
 						{
 							ServiceName: stringPtr("echo"),
 							Port:        portNumPtr(443),
@@ -80,9 +80,9 @@ func testTLSRoutePassthrough(namespace string) {
 				return err
 			}
 
-			route.Spec.Rules = []gatewayv1alpha1.TLSRouteRule{
+			route.Spec.Rules = []gatewayapi_v1alpha2.TLSRouteRule{
 				{
-					ForwardTo: []gatewayv1alpha1.RouteForwardTo{
+					ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{
 						{
 							ServiceName: stringPtr("echo"),
 							Port:        portNumPtr(443),
@@ -110,22 +110,22 @@ func testTLSRouteTerminate(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		route := &gatewayv1alpha1.TLSRoute{
+		route := &gatewayapi_v1alpha2.TLSRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "tls-route-1",
 			},
-			Spec: gatewayv1alpha1.TLSRouteSpec{
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
 				},
-				Rules: []gatewayv1alpha1.TLSRouteRule{{
-					Matches: []gatewayv1alpha1.TLSRouteMatch{{
-						SNIs: []gatewayv1alpha1.Hostname{
-							gatewayv1alpha1.Hostname("tlsroute.gatewayapi.projectcontour.io"),
+				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+					Matches: []gatewayapi_v1alpha2.TLSRouteMatch{{
+						SNIs: []gatewayapi_v1alpha2.Hostname{
+							gatewayapi_v1alpha2.Hostname("tlsroute.gatewayapi.projectcontour.io"),
 						},
 					}},
-					ForwardTo: []gatewayv1alpha1.RouteForwardTo{{
+					ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{{
 						ServiceName: stringPtr("echo"),
 						Port:        portNumPtr(80),
 					}},
@@ -162,9 +162,9 @@ func testTLSRouteTerminate(namespace string) {
 				return err
 			}
 
-			route.Spec.Rules = []gatewayv1alpha1.TLSRouteRule{
+			route.Spec.Rules = []gatewayapi_v1alpha2.TLSRouteRule{
 				{
-					ForwardTo: []gatewayv1alpha1.RouteForwardTo{
+					ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{
 						{
 							ServiceName: stringPtr("echo"),
 							Port:        portNumPtr(80),

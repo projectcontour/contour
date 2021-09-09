@@ -18,7 +18,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 const ResourceGateway = "gateways"
@@ -32,8 +32,8 @@ const MessageValidGateway = "Valid Gateway"
 
 type GatewayConditionsUpdate struct {
 	FullName           types.NamespacedName
-	Conditions         map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition
-	ExistingConditions map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition
+	Conditions         map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
+	ExistingConditions map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
 	GatewayRef         types.NamespacedName
 	Resource           string
 	Generation         int64
@@ -41,7 +41,7 @@ type GatewayConditionsUpdate struct {
 }
 
 // AddCondition returns a metav1.Condition for a given GatewayConditionType.
-func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alpha1.GatewayConditionType, status metav1.ConditionStatus, reason GatewayReasonType, message string) metav1.Condition {
+func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alpha2.GatewayConditionType, status metav1.ConditionStatus, reason GatewayReasonType, message string) metav1.Condition {
 
 	if c, ok := gatewayUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
@@ -63,10 +63,10 @@ func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alp
 // metav1.Conditions as well as a function to commit the change back to the cache when everything
 // is done. The commit function pattern is used so that the GatewayConditionsUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gs *gatewayapi_v1alpha1.GatewayStatus) (*GatewayConditionsUpdate, func()) {
+func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gs *gatewayapi_v1alpha2.GatewayStatus) (*GatewayConditionsUpdate, func()) {
 	gu := &GatewayConditionsUpdate{
 		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition),
+		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
 		ExistingConditions: getGatewayConditions(gs),
 		GatewayRef:         c.gatewayRef,
 		Generation:         generation,
@@ -86,11 +86,11 @@ func (c *Cache) commitGateway(gu *GatewayConditionsUpdate) {
 	c.gatewayUpdates[gu.FullName] = gu
 }
 
-func getGatewayConditions(gs *gatewayapi_v1alpha1.GatewayStatus) map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition {
-	conditions := make(map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition)
+func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition {
+	conditions := make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition)
 	for _, cond := range gs.Conditions {
-		if val, ok := conditions[gatewayapi_v1alpha1.GatewayConditionType(cond.Type)]; !ok {
-			conditions[gatewayapi_v1alpha1.GatewayConditionType(cond.Type)] = val
+		if val, ok := conditions[gatewayapi_v1alpha2.GatewayConditionType(cond.Type)]; !ok {
+			conditions[gatewayapi_v1alpha2.GatewayConditionType(cond.Type)] = val
 		}
 	}
 	return conditions
@@ -131,9 +131,9 @@ func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj interface{}) interface{
 	}
 
 	switch o := obj.(type) {
-	case *gatewayapi_v1alpha1.Gateway:
+	case *gatewayapi_v1alpha2.Gateway:
 		gw := o.DeepCopy()
-		gw.Status = gatewayapi_v1alpha1.GatewayStatus{
+		gw.Status = gatewayapi_v1alpha2.GatewayStatus{
 			Conditions: conditionsToWrite,
 			// TODO: Manage addresses and listeners.
 			// xref: https://github.com/projectcontour/contour/issues/3828

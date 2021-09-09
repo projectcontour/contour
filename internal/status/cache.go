@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // ConditionType is used to ensure we only use a limited set of possible values
@@ -108,8 +108,8 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
 			Resource: schema.GroupVersionResource{
-				Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-				Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+				Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+				Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 				Resource: routeUpdate.Resource,
 			},
 			Mutator: routeUpdate,
@@ -122,8 +122,8 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
 			Resource: schema.GroupVersionResource{
-				Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-				Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+				Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+				Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 				Resource: gwUpdate.Resource,
 			},
 			Mutator: gwUpdate,

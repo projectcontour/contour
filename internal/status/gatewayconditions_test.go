@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func TestGatewayAddCondition(t *testing.T) {
@@ -29,7 +29,7 @@ func TestGatewayAddCondition(t *testing.T) {
 	var testGeneration int64 = 7
 
 	simpleValidCondition := metav1.Condition{
-		Type:               string(gatewayapi_v1alpha1.GatewayConditionScheduled),
+		Type:               string(gatewayapi_v1alpha2.GatewayConditionScheduled),
 		Status:             metav1.ConditionTrue,
 		Reason:             ReasonValidGateway,
 		Message:            "Valid Gateway",
@@ -38,7 +38,7 @@ func TestGatewayAddCondition(t *testing.T) {
 
 	gatewayUpdate := GatewayConditionsUpdate{
 		FullName:           k8s.NamespacedNameFrom("test/test"),
-		Conditions:         make(map[gatewayapi_v1alpha1.GatewayConditionType]metav1.Condition),
+		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
 		ExistingConditions: nil,
 		GatewayRef:         types.NamespacedName{},
 		Resource:           "",
@@ -46,7 +46,7 @@ func TestGatewayAddCondition(t *testing.T) {
 		TransitionTime:     metav1.Time{},
 	}
 
-	got := gatewayUpdate.AddCondition(gatewayapi_v1alpha1.GatewayConditionScheduled, metav1.ConditionTrue, ReasonValidGateway,
+	got := gatewayUpdate.AddCondition(gatewayapi_v1alpha2.GatewayConditionScheduled, metav1.ConditionTrue, ReasonValidGateway,
 		"Valid Gateway")
 
 	assert.Equal(t, simpleValidCondition.Message, got.Message)

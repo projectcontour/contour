@@ -21,19 +21,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func TestComputeHosts(t *testing.T) {
 	tests := map[string]struct {
-		listenerHost *gatewayapi_v1alpha1.Hostname
-		hostnames    []gatewayapi_v1alpha1.Hostname
+		listenerHost *gatewayapi_v1alpha2.Hostname
+		hostnames    []gatewayapi_v1alpha2.Hostname
 		want         map[string]struct{}
 		wantError    []error
 	}{
 		"single host": {
 			listenerHost: nil,
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"test.projectcontour.io",
 			},
 			want: map[string]struct{}{
@@ -43,7 +43,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"single DNS label hostname": {
 			listenerHost: nil,
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"projectcontour",
 			},
 			want: map[string]struct{}{
@@ -53,7 +53,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"multiple hosts": {
 			listenerHost: nil,
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"test.projectcontour.io",
 				"test1.projectcontour.io",
 				"test2.projectcontour.io",
@@ -69,7 +69,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"no host": {
 			listenerHost: nil,
-			hostnames:    []gatewayapi_v1alpha1.Hostname{},
+			hostnames:    []gatewayapi_v1alpha2.Hostname{},
 			want: map[string]struct{}{
 				"*": {},
 			},
@@ -77,7 +77,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"IP in host": {
 			listenerHost: nil,
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"1.2.3.4",
 			},
 			want: map[string]struct{}{},
@@ -87,7 +87,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"valid wildcard hostname": {
 			listenerHost: nil,
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*.projectcontour.io",
 			},
 			want: map[string]struct{}{
@@ -97,7 +97,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"invalid wildcard hostname": {
 			listenerHost: nil,
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*.*.projectcontour.io",
 			},
 			want: map[string]struct{}{},
@@ -107,7 +107,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"invalid hostname": {
 			listenerHost: nil,
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"#projectcontour.io",
 			},
 			want: map[string]struct{}{},
@@ -117,7 +117,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"invalid listener hostname": {
 			listenerHost: listenerHostname("#projectcontour.io"),
-			hostnames:    []gatewayapi_v1alpha1.Hostname{},
+			hostnames:    []gatewayapi_v1alpha2.Hostname{},
 			want:         map[string]struct{}{},
 			wantError: []error{
 				fmt.Errorf("invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
@@ -125,7 +125,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"invalid listener wildcard hostname": {
 			listenerHost: listenerHostname("*.*.projectcontour.io"),
-			hostnames:    []gatewayapi_v1alpha1.Hostname{},
+			hostnames:    []gatewayapi_v1alpha2.Hostname{},
 			want:         map[string]struct{}{},
 			wantError: []error{
 				fmt.Errorf("invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]"),
@@ -133,7 +133,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostnames host do not exactly match": {
 			listenerHost: listenerHostname("listener.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"http.projectcontour.io",
 			},
 			want:      map[string]struct{}{},
@@ -141,7 +141,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostnames host exactly match": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"http.projectcontour.io",
 			},
 			want: map[string]struct{}{
@@ -151,7 +151,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & multi hostnames host exactly match one host": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"http.projectcontour.io",
 				"http2.projectcontour.io",
 				"http3.projectcontour.io",
@@ -166,7 +166,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostnames host match wildcard host": {
 			listenerHost: listenerHostname("*.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"http.projectcontour.io",
 			},
 			want: map[string]struct{}{
@@ -176,7 +176,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostnames host do not match wildcard host": {
 			listenerHost: listenerHostname("*.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"http.example.com",
 			},
 			want:      map[string]struct{}{},
@@ -184,7 +184,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & wildcard hostnames host do not match": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*.projectcontour.io",
 			},
 			want:      map[string]struct{}{},
@@ -192,7 +192,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & wildcard hostname and matching hostname match": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*.projectcontour.io",
 				"http.projectcontour.io",
 			},
@@ -203,7 +203,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & wildcard hostname and non-matching hostname don't match": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*.projectcontour.io",
 				"not.matching.io",
 			},
@@ -215,7 +215,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host wildcard & wildcard hostnames host match": {
 			listenerHost: listenerHostname("*.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*.projectcontour.io",
 			},
 			want: map[string]struct{}{
@@ -225,7 +225,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener wildcard matchall host & host match": {
 			listenerHost: listenerHostname("*"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"http.projectcontour.io",
 			},
 			want: map[string]struct{}{
@@ -235,7 +235,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener wildcard matchall host & multiple host match": {
 			listenerHost: listenerHostname("*"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"http.projectcontour.io",
 				"http2.projectcontour.io",
 				"http3.projectcontour.io",
@@ -249,7 +249,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host & hostname not defined match": {
 			listenerHost: listenerHostname("http.projectcontour.io"),
-			hostnames:    []gatewayapi_v1alpha1.Hostname{},
+			hostnames:    []gatewayapi_v1alpha2.Hostname{},
 			want: map[string]struct{}{
 				"http.projectcontour.io": {},
 			},
@@ -257,7 +257,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener host with many labels doesn't match hostnames wildcard host": {
 			listenerHost: listenerHostname("too.many.labels.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*.projectcontour.io",
 			},
 			want:      map[string]struct{}{},
@@ -265,7 +265,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener wildcard host doesn't match hostnames with many labels host": {
 			listenerHost: listenerHostname("*.projectcontour.io"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"too.many.labels.projectcontour.io",
 			},
 			want:      map[string]struct{}{},
@@ -273,7 +273,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener wildcard host with wildcard hostname": {
 			listenerHost: listenerHostname("*"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*.projectcontour.io",
 			},
 			want: map[string]struct{}{
@@ -283,7 +283,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener wildcard host with invalid wildcard hostname": {
 			listenerHost: listenerHostname("*"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"*",
 			},
 			want:      map[string]struct{}{},
@@ -291,7 +291,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener wildcard host with bare hostname": {
 			listenerHost: listenerHostname("*"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"foo",
 			},
 			want: map[string]struct{}{
@@ -301,7 +301,7 @@ func TestComputeHosts(t *testing.T) {
 		},
 		"listener wildcard host with bare hostname is invalid": {
 			listenerHost: listenerHostname("*.foo"),
-			hostnames: []gatewayapi_v1alpha1.Hostname{
+			hostnames: []gatewayapi_v1alpha2.Hostname{
 				"foo",
 			},
 			want:      map[string]struct{}{},
@@ -323,14 +323,14 @@ func TestComputeHosts(t *testing.T) {
 	}
 }
 
-func listenerHostname(host string) *gatewayapi_v1alpha1.Hostname {
-	h := gatewayapi_v1alpha1.Hostname(host)
+func listenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
+	h := gatewayapi_v1alpha2.Hostname(host)
 	return &h
 }
 
 func TestNamespaceMatches(t *testing.T) {
 	tests := map[string]struct {
-		namespaces *gatewayapi_v1alpha1.RouteNamespaces
+		namespaces *gatewayapi_v1alpha2.RouteNamespaces
 		namespace  string
 		valid      bool
 		wantError  bool
@@ -342,7 +342,7 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError:  false,
 		},
 		"nil From matches all": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 				From: nil,
 			},
 			namespace: "projectcontour",
@@ -350,32 +350,32 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.RouteSelectAll matches all": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectAll),
 			},
 			namespace: "projectcontour",
 			valid:     true,
 			wantError: false,
 		},
 		"From.RouteSelectSame matches": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSame),
 			},
 			namespace: "projectcontour",
 			valid:     true,
 			wantError: false,
 		},
 		"From.RouteSelectSame doesn't match": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSame),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSame),
 			},
 			namespace: "custom",
 			valid:     false,
 			wantError: false,
 		},
 		"From.RouteSelectSelector matches labels, same ns as gateway": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "production",
@@ -387,8 +387,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.RouteSelectSelector matches labels, different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"something": "special",
@@ -400,8 +400,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.RouteSelectSelector doesn't matches labels, different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"something": "special",
@@ -413,8 +413,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.RouteSelectSelector matches expression 'In', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -428,8 +428,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.RouteSelectSelector matches expression 'DoesNotExist', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "notthere",
@@ -442,8 +442,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.RouteSelectSelector doesn't match expression 'DoesNotExist', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -456,8 +456,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.RouteSelectSelector matches expression 'Exists', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "notthere",
@@ -470,8 +470,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.RouteSelectSelector doesn't match expression 'Exists', different ns as gateway": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -484,8 +484,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: false,
 		},
 		"From.RouteSelectSelector match expression 'Exists', cannot specify values": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -499,8 +499,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: true,
 		},
 		"From.RouteSelectSelector match expression 'NotExists', cannot specify values": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{{
 						Key:      "something",
@@ -514,8 +514,8 @@ func TestNamespaceMatches(t *testing.T) {
 			wantError: true,
 		},
 		"From.RouteSelectSelector must define matchLabels or matchExpression": {
-			namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-				From:     routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectSelector),
+			namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+				From:     routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSelector),
 				Selector: &metav1.LabelSelector{},
 			},
 			namespace: "custom",
@@ -530,7 +530,7 @@ func TestNamespaceMatches(t *testing.T) {
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{
-					gateway: &gatewayapi_v1alpha1.Gateway{
+					gateway: &gatewayapi_v1alpha2.Gateway{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "contour",
 							Namespace: "projectcontour",
@@ -576,21 +576,21 @@ func TestNamespaceMatches(t *testing.T) {
 
 func TestGatewayMatches(t *testing.T) {
 	tests := map[string]struct {
-		routeGateways *gatewayapi_v1alpha1.RouteGateways
+		routeGateways *gatewayapi_v1alpha2.RouteGateways
 		namespace     string
 		want          bool
 	}{
 		"gateway allow all is always valid": {
-			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+			routeGateways: &gatewayapi_v1alpha2.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
 			},
 			namespace: "",
 			want:      true,
 		},
 		"gateway allow from list matches configured gateway": {
-			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
-				GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
+			routeGateways: &gatewayapi_v1alpha2.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowFromList),
+				GatewayRefs: []gatewayapi_v1alpha2.GatewayReference{{
 					Name:      "contour",
 					Namespace: "projectcontour",
 				}},
@@ -599,9 +599,9 @@ func TestGatewayMatches(t *testing.T) {
 			want:      true,
 		},
 		"gateway allow from list doesn't match configured gateway": {
-			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowFromList),
-				GatewayRefs: []gatewayapi_v1alpha1.GatewayReference{{
+			routeGateways: &gatewayapi_v1alpha2.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowFromList),
+				GatewayRefs: []gatewayapi_v1alpha2.GatewayReference{{
 					Name:      "different",
 					Namespace: "gateway",
 				}},
@@ -610,15 +610,15 @@ func TestGatewayMatches(t *testing.T) {
 			want:      false,
 		},
 		"gateway allow same namespace matches configured gateway": {
-			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
+			routeGateways: &gatewayapi_v1alpha2.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowSameNamespace),
 			},
 			namespace: "projectcontour",
 			want:      true,
 		},
 		"gateway allow same namespace doesn't match configured gateway": {
-			routeGateways: &gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowSameNamespace),
+			routeGateways: &gatewayapi_v1alpha2.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowSameNamespace),
 			},
 			namespace: "different",
 			want:      false,
@@ -631,7 +631,7 @@ func TestGatewayMatches(t *testing.T) {
 			processor := &GatewayAPIProcessor{
 				FieldLogger: fixture.NewTestLogger(t),
 				source: &KubernetesCache{
-					gateway: &gatewayapi_v1alpha1.Gateway{
+					gateway: &gatewayapi_v1alpha2.Gateway{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "contour",
 							Namespace: "projectcontour",
