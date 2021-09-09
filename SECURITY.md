@@ -2,6 +2,11 @@
 
 Contour is an ingress controller that works as an Envoy control plane, configuring the Envoy data plane, which actually carries traffic from outside to inside the cluster.
 
+## Reporting Security issues
+For reporting security issues, please see the reporting process documentation available at https://projectcontour.io/resources/security-process.
+
+The rest of this document discusses Contour's threat model and security posture.
+
 ## Inputs
 
 Contour's inputs are:
@@ -18,9 +23,9 @@ The expected users of of Contour are:
 ## Attack surface and mitigations
 
 ### Primary expected attack vectors
-As you can see from the above, Contour does not have a web interface of any sort, and never directly participates in requests that transit the data plane, so the only way it is vulnerable to web attacks is via misconfiguring Envoy. As such, it is not directly susceptible to common web application security risks like the OWASP top ten. (*Envoy* is, but not Contour directly, and we rely on thye Envoy project's vigilance heavily.)
+As you can see from the above, Contour does not have a web interface of any sort, and never directly participates in requests that transit the data plane, so the only way it is vulnerable to web attacks is via misconfiguring Envoy. As such, it is not directly susceptible to common web application security risks like the OWASP top ten. (*Envoy* is, but not Contour directly, and we rely on the Envoy project's vigilance heavily.)
 
-We anticpate that the most likely attacks are created by the relatively untrusted application developer users, whether they are malicious or not. We expect the most likely attacks to be:
+We anticipate that the most likely attacks are created by the relatively untrusted application developer users, whether they are malicious or not. We expect the most likely attacks to be:
 - Confused deputy attacks - since Contour is trusted to build config and send to Envoy, that access can be misused to produce insecure Envoy configurations. [ExternalName Services can be used to gain access to Envoy's admin interface](https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc) was an example of this attack in action, and was specifically dealt with by disallowing ExternalName services by default, and by removing the Envoy admin interface from use across any network, even localhost.
 - Insecure or conflicting configurations produced my manipulation of Kubernetes objects used for configuration.
 
@@ -33,10 +38,12 @@ For other classes of attacks, Contour does what it can to mitigate risks.
 Contour exposes an xDS server so that it can function as a control plane for Envoy.
 This xDS server knows everything that Contour does about the cluster's config, including the name and values of all the secrets relevant to ingress configuration, like TLS keypairs.
 In order to ensure this information is as tightly controlled as possible, Contour defaults to requiring a mutual TLS authentication between Contour and Envoy, so that another cluster user cannot simply connect to the xDS service and retrieve all the details.
-Obviously, access to the namespace that contains Contour and/or Envoy will expose access to the TLS keypairs used for this authentication, so Contour expects that access to the Contour installation namespace (`projectcontour` by default) will be tightly controlled, since access to that namespace equals access to all the secrets Contour can see (which is, by default, all the secrets relevant to ingress config in the cluster).
+Obviously, access to the namespace that contains Contour and/or Envoy will expose access to the TLS keypairs used for this authentication, so Contour expects that access to the Contour installation namespace (`projectcontour` by default) will be tightly controlled, since access to that namespace can eventually equal access to all the secrets Contour can see if Contour is compromised (which is, by default, all the secrets in the cluster).
+This risk can also be mitigated by only allowing the Contour deployments ServiceAccount access to a limited set of namespaces, which will mean that Contour can only access objects in those namespaces.
+It's generally expected that an ingress controller can read configuration from anywhere in the cluster, so doing this may produce unusual results.
 
 #### Endpoints and EndpointSlices
-As seen in [CVE-2021-25740](https://github.com/kubernetes/kubernetes/issues/103675), it's possible to manipulate Endpoints and EndpointSlices to access services in other clusters.
+As seen in [CVE-2021-25740](https://github.com/kubernetes/kubernetes/issues/103675), it's possible to manipulate Endpoints and EndpointSlices to access services in other namespaces in the cluster.
 This is particularly important for Ingress controllers, as the confused deputy problem means that manually-managed Endpoints attached to a headless Service can be used to bypass security people might attach to ingress config, of whatever type.
 Contour is unable to do much about this, and we expect administrators the use the recommended default RBAC for Endpoints and EndpointSlices, which only grants the ability to manually manage them to cluster administrators.
 
@@ -47,7 +54,7 @@ The ReferencePolicy object in the Gateway API is also based on this idea, that c
 #### Insider access
 In general, Contour adheres to the Kubernetes security model, that makes the minimum size security boundary the namespace (or at least, the RBAC around objects in that namespace).
 For Contour's primary use cases to work, application developers and other ingress configuration owners *must* have access to create or modify ingress config objects (whether they are Ingress, HTTPProxy, or Gateway API) inside their own namespace.
-Because of this, it's not really possible for Contour to prevent a user who has access to a namespace from modifying objects in that namespace, or trivially bypassing configuration like authentication on ingress config.
+Because of this, it's not really possible for Contour to prevent a user who has access to a namespace from modifying objects in that namespace, or trivially bypassing configuration like authentication on ingress config for objects in the same namespace.
 Contour expects that access to namespaces containing ingress config will be managed in a least-privilege manner, and that everyone who has access to a namespace has full access to ingress configuration within that namespace.
 In short, there's not much Contour can do about inside-namespace threats.
 
@@ -61,7 +68,9 @@ Because access logging is a key part of auditing access to a service, it's impor
 The Contour project expects that access logging will be carefully configured and that the owner of Contour will ensure that access logs cannot be easily modified or disabled via Contour's config.
 
 #### External access to Envoy
-External application consumers have no access to Contour, and relatively small access to Envoy. However, any vulnerabilities in Envoy itself also apply to Contour's installation of Envoy, so the Contour team issues Contour patch releases each time an Envoy security release is issued, in which we update the expected version of Envoy in our example deployment and make the community aware of the fix for the vulnerability.
+External application consumers have no access to Contour, and relatively small access to Envoy. However, any vulnerabilities in Envoy's traffic processing (which external users do have access to) also apply to Contour's installation of Envoy, so the Contour team issues Contour patch releases each time an Envoy security release is issued, in which we update the expected version of Envoy in our example deployment and make the community aware of the fix for the vulnerability.
+
+Aside from ensuring that Envoy is patched regularly, Contour ensures that external access to Envoy is limited to only the ports that are designed to pass traffic.
 
 #### Contour owner attacks
 In general, we expect the operator of Contour to have full control over the installation, and so assume positive intent on their part, because a malicious administrator is not possible to deal with in this scope.
@@ -71,6 +80,9 @@ What mitigations we place around Contour's per-installation configuration is gea
 
 #### Bounds checking and input validation
 The Kubernetes apiserver is very good at bounds checking and input validation for fields in Kubernetes objects, so we delegate a lot of that there, and assume generally that the values for any specific object are unlikely to be malicious in themselves. In short, we don't need to worry too much about length checking for fields in objects, removing invalid characters, etc, as the apiserver does that for us.
+
+As of this writing, Contour's config file is vulnerable to some bound checking errors, but our planned mitigation for this is to move to a Config CRD.
+
 #### RBAC and privilege escalation prevention
 We can't control what owners of Contour do in their own clusters, but we do provide an example installation that codifies what we believe to be best practice in terms of Kubernetes privilege limitations. We provide limited roles that only grant access to the things required for the component (Contour or Envoy) to run, and ensure that the deployments use those roles. In addition, we've attempted to ensure that both the Contour and Envoy containers can safely be run as nonroot.
 #### Static checking and code quality
@@ -85,6 +97,4 @@ We aim for secure-by-default as far as possible, and where we do have to allow r
 
 This document is also available at https://projectcontour.io/resources/threat-model.
 
-## Reporting Security issues
-For reporting security issues, please see the reporting process documentation available at https://projectcontour.io/resources/security-process.
- 
+
