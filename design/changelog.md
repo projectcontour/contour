@@ -81,6 +81,7 @@ We'll do the following:
   * Infra - These ones get put into a separate infrastructure updates section.
 * A CI check will ensure that the files are present in the `/changelogs/unreleased` directory.
   * The stretch goal here is to be able to tag PRs with `release-note/<category>` and have the check ensure that you have the right category, and vice versa.
+  If this works, then we should also have a `release-note/not-required` for tiny changes.
 
 
 ### Pros
@@ -90,3 +91,4 @@ We'll do the following:
 
 ### Cons
 - Can't determine PR number before PR is open
+  - Hoping to make this a little easier by having the CI check tell you what the name should be.
