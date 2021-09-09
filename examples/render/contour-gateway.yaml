@@ -3,7 +3,6 @@
 #
 # Generated from:
 #       examples/contour/00-common.yaml
-#       examples/contour/01-contour-config-crd.yaml
 #       examples/contour/01-contour-config.yaml
 #       examples/contour/01-crds.yaml
 #       examples/contour/02-job-certgen.yaml
@@ -35,111 +34,6 @@ kind: ServiceAccount
 metadata:
   name: envoy
   namespace: projectcontour
-
----
-apiVersion: projectcontour.io/v1alpha1
-kind: ContourConfiguration
-metadata:
-  name: contour
-spec:
-  xdsServer:
-    type: contour
-    address: 0.0.0.0
-    port: 8001
-    insecure: true
-    tls:
-      caFile: "/certs/ca.crt"
-      certFile: "/certs/tls.crt"
-      keyFile: "/certs/tls.key"
-  ingress:
-    className: contour
-    statusAddress: local.projectcontour.io
-  debug:
-    address: 127.0.0.1
-    port: 6060
-    logLevel: info
-    kubernetesLogLevel: 0
-  health:
-    address: 0.0.0.0
-    port: 8000
-  metrics:
-    address: 0.0.0.0
-    port: 8002
-  envoy:
-    listener:
-      useProxyProtocol: false
-      disableAllowChunkedLength: false
-      connectionBalancer: exact
-      tls:
-        minimumProtocolVersion: "1.2"
-        cipherSuites:
-          - "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]"
-          - "[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]"
-          - "ECDHE-ECDSA-AES256-GCM-SHA384"
-          - "ECDHE-RSA-AES256-GCM-SHA384"
-    service:
-      name: contour
-      namespace: projectcontour
-    http:
-      address: 0.0.0.0
-      port: 80
-      accessLog: "/dev/STDOUT"
-    https:
-      address: 0.0.0.0
-      port: 443
-      accessLog: "/dev/STDOUT"
-    metrics:
-      address: 0.0.0.0
-      port: 8002
-    clientCertificate:
-      name: envoy-client-cert-secret-name
-      namespace: projectcontour
-    network:
-      numTrustedHops: 0
-      adminPort: 9001
-    logging:
-      accessLogFormat: envoy
-      accessLogFormatString: "...\n"
-    defaultHTTPVersions:
-      - "http/2"
-      - "http/1.1"
-    timeouts:
-      requestTimeout: infinity
-      connectionIdleTimeout: 60s
-      streamIdleTimeout: 5m
-      maxConnectionDuration: infinity
-      delayedCloseTimeout: 1s
-      connectionShutdownGracePeriod: 5s
-    cluster:
-      dnsLookupFamily: auto
-  gateway:
-    controllerName: projectcontour.io/projectcontour/contour
-  httpproxy:
-    disablePermitInsecure: false
-    rootNamespaces:
-      - foo
-      - bar
-    fallbackCertificate:
-      name: fallback-secret-name
-      namespace: projectcontour
-  leaderElection:
-    configmap:
-      name: leader-elect
-      namespace: projectcontour
-    disableLeaderElection: false
-  enableExternalNameService: false
-  rateLimitService:
-    extensionService:
-      name: ratelimit
-      namespace: projectcontour
-    domain: contour
-    failOpen: false
-    enableXRateLimitHeaders: false
-  policy:
-    requestHeaders:
-      set:
-    responseHeaders:
-      set:
 
 ---
 apiVersion: v1
