@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/pointer"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // A KubernetesCache holds Kubernetes objects and associated configuration and produces
@@ -56,12 +56,12 @@ type KubernetesCache struct {
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
 	services                  map[types.NamespacedName]*v1.Service
 	namespaces                map[string]*v1.Namespace
-	gatewayclass              *gatewayapi_v1alpha1.GatewayClass
-	gateway                   *gatewayapi_v1alpha1.Gateway
-	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute
-	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute
-	tcproutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.TCPRoute
-	udproutes                 map[types.NamespacedName]*gatewayapi_v1alpha1.UDPRoute
+	gatewayclass              *gatewayapi_v1alpha2.GatewayClass
+	gateway                   *gatewayapi_v1alpha2.Gateway
+	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha2.HTTPRoute
+	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
+	tcproutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute
+	udproutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.UDPRoute
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
 	initialize sync.Once
@@ -77,10 +77,10 @@ func (kc *KubernetesCache) init() {
 	kc.tlscertificatedelegations = make(map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation)
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
-	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.HTTPRoute)
-	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.TCPRoute)
-	kc.udproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.UDPRoute)
-	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha1.TLSRoute)
+	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.HTTPRoute)
+	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute)
+	kc.udproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.UDPRoute)
+	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
 
@@ -188,22 +188,22 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	case *contour_api_v1.TLSCertificateDelegation:
 		kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
 		return true
-	case *gatewayapi_v1alpha1.GatewayClass:
+	case *gatewayapi_v1alpha2.GatewayClass:
 		kc.gatewayclass = obj
 		return true
-	case *gatewayapi_v1alpha1.Gateway:
+	case *gatewayapi_v1alpha2.Gateway:
 		kc.gateway = obj
 		return true
-	case *gatewayapi_v1alpha1.HTTPRoute:
+	case *gatewayapi_v1alpha2.HTTPRoute:
 		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
-	case *gatewayapi_v1alpha1.TCPRoute:
+	case *gatewayapi_v1alpha2.TCPRoute:
 		kc.tcproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
-	case *gatewayapi_v1alpha1.UDPRoute:
+	case *gatewayapi_v1alpha2.UDPRoute:
 		kc.udproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
-	case *gatewayapi_v1alpha1.TLSRoute:
+	case *gatewayapi_v1alpha2.TLSRoute:
 		kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
 	case *contour_api_v1alpha1.ExtensionService:
@@ -269,28 +269,28 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.tlscertificatedelegations[m]
 		delete(kc.tlscertificatedelegations, m)
 		return ok
-	case *gatewayapi_v1alpha1.GatewayClass:
+	case *gatewayapi_v1alpha2.GatewayClass:
 		kc.gatewayclass = nil
 		return true
-	case *gatewayapi_v1alpha1.Gateway:
+	case *gatewayapi_v1alpha2.Gateway:
 		kc.gateway = nil
 		return true
-	case *gatewayapi_v1alpha1.HTTPRoute:
+	case *gatewayapi_v1alpha2.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httproutes[m]
 		delete(kc.httproutes, m)
 		return ok
-	case *gatewayapi_v1alpha1.TCPRoute:
+	case *gatewayapi_v1alpha2.TCPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.tcproutes[m]
 		delete(kc.tcproutes, m)
 		return ok
-	case *gatewayapi_v1alpha1.UDPRoute:
+	case *gatewayapi_v1alpha2.UDPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.udproutes[m]
 		delete(kc.udproutes, m)
 		return ok
-	case *gatewayapi_v1alpha1.TLSRoute:
+	case *gatewayapi_v1alpha2.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.tlsroutes[m]
 		delete(kc.tlsroutes, m)

@@ -18,7 +18,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	networking_v1 "k8s.io/api/networking/v1"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // isStatusEqual checks that two objects of supported Kubernetes types
@@ -49,17 +49,17 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
-	case *gatewayapi_v1alpha1.GatewayClass:
+	case *gatewayapi_v1alpha2.GatewayClass:
 		switch b := objB.(type) {
-		case *gatewayapi_v1alpha1.GatewayClass:
+		case *gatewayapi_v1alpha2.GatewayClass:
 			if cmp.Equal(a.Status, b.Status,
 				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
 				return true
 			}
 		}
-	case *gatewayapi_v1alpha1.Gateway:
+	case *gatewayapi_v1alpha2.Gateway:
 		switch b := objB.(type) {
-		case *gatewayapi_v1alpha1.Gateway:
+		case *gatewayapi_v1alpha2.Gateway:
 			if cmp.Equal(a.Status, b.Status,
 				cmpopts.IgnoreFields(contour_api_v1.Condition{}, "LastTransitionTime")) {
 				return true

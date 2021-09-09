@@ -32,12 +32,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 var gatewayGVR = schema.GroupVersionResource{
-	Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-	Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+	Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+	Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 	Resource: "gateways",
 }
 
@@ -76,7 +76,7 @@ func NewGatewayController(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1alpha1.Gateway{}},
+		&source.Kind{Type: &gatewayapi_v1alpha2.Gateway{}},
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
@@ -86,7 +86,7 @@ func NewGatewayController(
 	// Watch GatewayClasses and reconcile their associated Gateways
 	// to handle changes in the GatewayClasses' "Admitted" conditions.
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1alpha1.GatewayClass{}},
+		&source.Kind{Type: &gatewayapi_v1alpha2.GatewayClass{}},
 		handler.EnqueueRequestsFromMapFunc(r.mapGatewayClassToGateways),
 		predicate.NewPredicateFuncs(r.gatewayClassHasMatchingController),
 	); err != nil {
@@ -102,7 +102,7 @@ func NewGatewayController(
 		<-isLeader
 		log.Info("elected leader, triggering reconciles for all gateways")
 
-		var gateways gatewayapi_v1alpha1.GatewayList
+		var gateways gatewayapi_v1alpha2.GatewayList
 		if err := r.client.List(context.Background(), &gateways); err != nil {
 			log.WithError(err).Error("error listing gateways")
 			return
@@ -125,7 +125,7 @@ func NewGatewayController(
 }
 
 func (r *gatewayReconciler) mapGatewayClassToGateways(gatewayClass client.Object) []reconcile.Request {
-	var gateways gatewayapi_v1alpha1.GatewayList
+	var gateways gatewayapi_v1alpha2.GatewayList
 	if err := r.client.List(context.Background(), &gateways); err != nil {
 		r.log.WithError(err).Error("error listing gateways")
 		return nil
@@ -155,7 +155,7 @@ func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
 		"name":      obj.GetName(),
 	})
 
-	gw, ok := obj.(*gatewayapi_v1alpha1.Gateway)
+	gw, ok := obj.(*gatewayapi_v1alpha2.Gateway)
 	if !ok {
 		log.Debugf("unexpected object type %T, bypassing reconciliation.", obj)
 		return false
@@ -177,8 +177,8 @@ func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
 
 // hasContourOwnedClass returns true if the class referenced by gateway exists
 // and matches the configured controllerName.
-func (r *gatewayReconciler) hasContourOwnedClass(gw *gatewayapi_v1alpha1.Gateway) (bool, error) {
-	gc := &gatewayapi_v1alpha1.GatewayClass{}
+func (r *gatewayReconciler) hasContourOwnedClass(gw *gatewayapi_v1alpha2.Gateway) (bool, error) {
+	gc := &gatewayapi_v1alpha2.GatewayClass{}
 	if err := r.client.Get(r.ctx, types.NamespacedName{Name: gw.Spec.GatewayClassName}, gc); err != nil {
 		return false, fmt.Errorf("failed to get gatewayclass %s: %w", gw.Spec.GatewayClassName, err)
 	}
@@ -189,7 +189,7 @@ func (r *gatewayReconciler) hasContourOwnedClass(gw *gatewayapi_v1alpha1.Gateway
 }
 
 func (r *gatewayReconciler) gatewayClassHasMatchingController(obj client.Object) bool {
-	gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
+	gc, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
 	if !ok {
 		r.log.Infof("expected GatewayClass, got %T", obj)
 		return false
@@ -204,13 +204,13 @@ func (r *gatewayReconciler) gatewayClassHasMatchingController(obj client.Object)
 func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.log.WithField("namespace", request.Namespace).WithField("name", request.Name).Info("reconciling gateway")
 
-	var gatewayClasses gatewayapi_v1alpha1.GatewayClassList
+	var gatewayClasses gatewayapi_v1alpha2.GatewayClassList
 	if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
 		return reconcile.Result{}, fmt.Errorf("error listing gateway classes")
 	}
 
 	// Find the GatewayClass for this controller with Admitted=true.
-	var admittedGatewayClass *gatewayapi_v1alpha1.GatewayClass
+	var admittedGatewayClass *gatewayapi_v1alpha2.GatewayClass
 	for i := range gatewayClasses.Items {
 		gatewayClass := &gatewayClasses.Items[i]
 
@@ -227,7 +227,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 	if admittedGatewayClass == nil {
 		r.log.Info("No admitted gateway class found")
-		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.Gateway{
+		r.eventHandler.OnDelete(&gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
@@ -235,13 +235,13 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, nil
 	}
 
-	var allGateways gatewayapi_v1alpha1.GatewayList
+	var allGateways gatewayapi_v1alpha2.GatewayList
 	if err := r.client.List(context.Background(), &allGateways); err != nil {
 		return reconcile.Result{}, fmt.Errorf("error listing gateways")
 	}
 
 	// Get all the Gateways for the Admitted=true GatewayClass.
-	var gatewaysForClass []*gatewayapi_v1alpha1.Gateway
+	var gatewaysForClass []*gatewayapi_v1alpha2.Gateway
 	for i := range allGateways.Items {
 		if allGateways.Items[i].Spec.GatewayClassName == admittedGatewayClass.Name {
 			gatewaysForClass = append(gatewaysForClass, &allGateways.Items[i])
@@ -250,7 +250,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 	if len(gatewaysForClass) == 0 {
 		r.log.Info("No gateways found for admitted gateway class")
-		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.Gateway{
+		r.eventHandler.OnDelete(&gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
@@ -260,7 +260,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 	// Find the oldest Gateway, using alphabetical order
 	// as a tiebreaker.
-	var oldest *gatewayapi_v1alpha1.Gateway
+	var oldest *gatewayapi_v1alpha2.Gateway
 	for _, gw := range gatewaysForClass {
 		if oldest == nil {
 			oldest = gw
@@ -286,7 +286,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 				NamespacedName: k8s.NamespacedNameOf(gw),
 				Resource:       gatewayGVR,
 				Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
-					gw, ok := obj.(*gatewayapi_v1alpha1.Gateway)
+					gw, ok := obj.(*gatewayapi_v1alpha2.Gateway)
 					if !ok {
 						panic(fmt.Sprintf("unsupported object type %T", obj))
 					}
@@ -312,7 +312,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	return reconcile.Result{}, nil
 }
 
-func isAdmitted(gatewayClass *gatewayapi_v1alpha1.GatewayClass) bool {
+func isAdmitted(gatewayClass *gatewayapi_v1alpha2.GatewayClass) bool {
 	for _, cond := range gatewayClass.Status.Conditions {
 		if cond.Type == "Admitted" && cond.Status == metav1.ConditionTrue {
 			return true
@@ -322,7 +322,7 @@ func isAdmitted(gatewayClass *gatewayapi_v1alpha1.GatewayClass) bool {
 	return false
 }
 
-func setGatewayNotScheduled(gateway *gatewayapi_v1alpha1.Gateway) *gatewayapi_v1alpha1.Gateway {
+func setGatewayNotScheduled(gateway *gatewayapi_v1alpha2.Gateway) *gatewayapi_v1alpha2.Gateway {
 	newCond := metav1.Condition{
 		Type:               "Scheduled",
 		Status:             metav1.ConditionFalse,

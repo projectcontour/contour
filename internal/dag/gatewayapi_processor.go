@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 const (
@@ -91,13 +91,13 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 	for _, listener := range p.source.gateway.Spec.Listeners {
 
-		var matchingHTTPRoutes []*gatewayapi_v1alpha1.HTTPRoute
-		var matchingTLSRoutes []*gatewayapi_v1alpha1.TLSRoute
+		var matchingHTTPRoutes []*gatewayapi_v1alpha2.HTTPRoute
+		var matchingTLSRoutes []*gatewayapi_v1alpha2.TLSRoute
 		var listenerSecret *Secret
 
 		// Validate the Protocol on the selector is a supported type.
 		switch listener.Protocol {
-		case gatewayapi_v1alpha1.HTTPSProtocolType:
+		case gatewayapi_v1alpha2.HTTPSProtocolType:
 			// Validate that if protocol is type HTTPS, that TLS is defined.
 			if listener.TLS == nil {
 				p.Errorf("Listener.TLS is required when protocol is %q.", listener.Protocol)
@@ -110,7 +110,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				// routes to be bound to this listener since it can't serve TLS traffic.
 				continue
 			}
-		case gatewayapi_v1alpha1.TLSProtocolType:
+		case gatewayapi_v1alpha2.TLSProtocolType:
 
 			// TLS is required for the type TLS.
 			if listener.TLS == nil {
@@ -120,21 +120,21 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 			if listener.TLS.Mode != nil {
 				switch *listener.TLS.Mode {
-				case gatewayapi_v1alpha1.TLSModeTerminate:
+				case gatewayapi_v1alpha2.TLSModeTerminate:
 					// Check for TLS on the Gateway.
 					if listenerSecret = p.validGatewayTLS(listener); listenerSecret == nil {
 						// If TLS was configured on the Listener, but it's invalid, don't allow any
 						// routes to be bound to this listener since it can't serve TLS traffic.
 						continue
 					}
-				case gatewayapi_v1alpha1.TLSModePassthrough:
+				case gatewayapi_v1alpha2.TLSModePassthrough:
 					if listener.TLS.CertificateRef != nil {
 						p.Errorf("Listener.TLS.CertificateRef cannot be defined when TLS Mode is %q.", *listener.TLS.Mode)
 						continue
 					}
 				}
 			}
-		case gatewayapi_v1alpha1.HTTPProtocolType:
+		case gatewayapi_v1alpha2.HTTPProtocolType:
 			break
 		default:
 			p.Errorf("Listener.Protocol %q is not supported.", listener.Protocol)
@@ -143,7 +143,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 		// Validate the Group on the selector is a supported type.
 		if listener.Routes.Group != nil {
-			if *listener.Routes.Group != gatewayapi_v1alpha1.GroupName {
+			if *listener.Routes.Group != gatewayapi_v1alpha2.GroupName {
 				p.Errorf("Listener.Routes.Group %q is not supported.", listener.Routes.Group)
 				continue
 			}
@@ -188,7 +188,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						// If a label selector or namespace selector matches, but the gateway Allow doesn't
 						// then set the "Admitted: false" for the route.
 						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
-						routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+						routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
 						commit()
 						continue
 					}
@@ -200,7 +200,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		case KindTLSRoute:
 
 			// Validate the listener protocol is type=TLS.
-			if listener.Protocol != gatewayapi_v1alpha1.TLSProtocolType {
+			if listener.Protocol != gatewayapi_v1alpha2.TLSProtocolType {
 				p.Errorf("invalid listener protocol %q for Kind: TLSRoute", listener.Protocol)
 				continue
 			}
@@ -233,7 +233,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						// If a label selector or namespace selector matches, but the gateway Allow doesn't
 						// then set the "Admitted: false" for the route.
 						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
-						routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+						routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
 						commit()
 						continue
 					}
@@ -260,7 +260,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	p.computeGateway(p.source.gateway, gatewayErrors)
 }
 
-func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha1.Listener) *Secret {
+func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha2.Listener) *Secret {
 
 	// Validate the CertificateRef is configured.
 	if listener.TLS == nil || listener.TLS.CertificateRef == nil {
@@ -283,14 +283,14 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha1.Liste
 	return listenerSecret
 }
 
-func isSecretRef(certificateRef *gatewayapi_v1alpha1.LocalObjectReference) bool {
+func isSecretRef(certificateRef *gatewayapi_v1alpha2.LocalObjectReference) bool {
 	return strings.ToLower(certificateRef.Kind) == "secret" && strings.ToLower(certificateRef.Group) == "core"
 }
 
 // computeHosts validates the hostnames for a HTTPRoute as well as validating
 // that the hostname on the HTTPRoute matches what is optionally defined on the
 // listener.hostname.
-func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostname, listenerHostname *gatewayapi_v1alpha1.Hostname) (map[string]struct{}, []error) {
+func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha2.Hostname, listenerHostname *gatewayapi_v1alpha2.Hostname) (map[string]struct{}, []error) {
 
 	hosts := make(map[string]struct{})
 	var errors []error
@@ -382,7 +382,7 @@ func validHostName(hostname string) error {
 
 // namespaceMatches returns true if the namespaces selector matches
 // the HTTPRoute that is being processed.
-func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.RouteNamespaces, namespace string) (bool, error) {
+func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha2.RouteNamespaces, namespace string) (bool, error) {
 	// From indicates where Routes will be selected for this Gateway.
 	// Possible values are:
 	//   * All: Routes in all namespaces may be used by this Gateway.
@@ -399,12 +399,12 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.R
 	}
 
 	switch *namespaces.From {
-	case gatewayapi_v1alpha1.RouteSelectAll:
+	case gatewayapi_v1alpha2.RouteSelectAll:
 		return true, nil
-	case gatewayapi_v1alpha1.RouteSelectSame:
+	case gatewayapi_v1alpha2.RouteSelectSame:
 		gatewayNSName := k8s.NamespacedNameOf(p.source.gateway)
 		return gatewayNSName.Namespace == namespace, nil
-	case gatewayapi_v1alpha1.RouteSelectSelector:
+	case gatewayapi_v1alpha2.RouteSelectSelector:
 		if len(namespaces.Selector.MatchLabels) == 0 && len(namespaces.Selector.MatchExpressions) == 0 {
 			return false, fmt.Errorf("RouteNamespaces selector must be specified when `RouteSelectType=Selector`")
 		}
@@ -429,7 +429,7 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha1.R
 // gatewayMatches returns true if "AllowAll" is set, the "SameNamespace" is set and the HTTPRoute
 // matches the Gateway's namespace, or the "FromList" is set and the gateway Contour is watching
 // matches one from the list.
-func (p *GatewayAPIProcessor) gatewayMatches(routeGateways *gatewayapi_v1alpha1.RouteGateways, namespace string) bool {
+func (p *GatewayAPIProcessor) gatewayMatches(routeGateways *gatewayapi_v1alpha2.RouteGateways, namespace string) bool {
 
 	if routeGateways == nil || routeGateways.Allow == nil {
 		return true
@@ -441,15 +441,15 @@ func (p *GatewayAPIProcessor) gatewayMatches(routeGateways *gatewayapi_v1alpha1.
 	}
 
 	switch *routeGateways.Allow {
-	case gatewayapi_v1alpha1.GatewayAllowAll:
+	case gatewayapi_v1alpha2.GatewayAllowAll:
 		return true
-	case gatewayapi_v1alpha1.GatewayAllowFromList:
+	case gatewayapi_v1alpha2.GatewayAllowFromList:
 		for _, gateway := range routeGateways.GatewayRefs {
 			if gateway.Name == gatewayNSName.Name && gateway.Namespace == gatewayNSName.Namespace {
 				return true
 			}
 		}
-	case gatewayapi_v1alpha1.GatewayAllowSameNamespace:
+	case gatewayapi_v1alpha2.GatewayAllowSameNamespace:
 		return gatewayNSName.Namespace == namespace
 	}
 	return false
@@ -476,7 +476,7 @@ func selectorMatches(selector *metav1.LabelSelector, objLabels map[string]string
 	return true, nil
 }
 
-func (p *GatewayAPIProcessor) computeGateway(gateway *gatewayapi_v1alpha1.Gateway, fieldErrs field.ErrorList) {
+func (p *GatewayAPIProcessor) computeGateway(gateway *gatewayapi_v1alpha2.Gateway, fieldErrs field.ErrorList) {
 
 	gwAccessor, commit := p.dag.StatusCache.GatewayConditionsAccessor(k8s.NamespacedNameOf(gateway), gateway.Generation, status.ResourceGateway, &gateway.Status)
 	defer commit()
@@ -484,20 +484,20 @@ func (p *GatewayAPIProcessor) computeGateway(gateway *gatewayapi_v1alpha1.Gatewa
 	// Determine the gateway status based on fieldErrs.
 	switch len(fieldErrs) {
 	case 0:
-		gwAccessor.AddCondition(gatewayapi_v1alpha1.GatewayConditionReady, metav1.ConditionTrue, status.ReasonValidGateway, "Valid Gateway")
+		gwAccessor.AddCondition(gatewayapi_v1alpha2.GatewayConditionReady, metav1.ConditionTrue, status.ReasonValidGateway, "Valid Gateway")
 	default:
-		gwAccessor.AddCondition(gatewayapi_v1alpha1.GatewayConditionReady, metav1.ConditionFalse, status.ReasonInvalidGateway, errors.ParseFieldErrors(fieldErrs))
+		gwAccessor.AddCondition(gatewayapi_v1alpha2.GatewayConditionReady, metav1.ConditionFalse, status.ReasonInvalidGateway, errors.ParseFieldErrors(fieldErrs))
 	}
 }
 
-func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRoute, validGateway bool, listenerSecret *Secret) {
+func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, validGateway bool, listenerSecret *Secret) {
 
 	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
 	defer commit()
 
 	// If the Gateway is invalid, set status on the route.
 	if !validGateway {
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 		return
 	}
 
@@ -594,19 +594,19 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha1.TLSRout
 	// condition accordingly.
 	switch len(routeAccessor.Conditions) {
 	case 0:
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionTrue, status.ReasonValid, "Valid TLSRoute")
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionTrue, status.ReasonValid, "Valid TLSRoute")
 	default:
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 	}
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha1.Hostname, validGateway bool) {
+func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname, validGateway bool) {
 	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
 	defer commit()
 
 	// If the Gateway is invalid, set status on the route.
 	if !validGateway {
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
 		return
 	}
 
@@ -617,7 +617,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 
 	// Check if all the hostnames are invalid.
 	if len(hosts) == 0 {
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 		return
 	}
 
@@ -662,7 +662,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 			var headerPolicy *HeadersPolicy
 			for _, filter := range forward.Filters {
 				switch filter.Type {
-				case gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier:
+				case gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier:
 					var err error
 					headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
 					if err != nil {
@@ -691,7 +691,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 		var headerPolicy *HeadersPolicy
 		for _, filter := range rule.Filters {
 			switch filter.Type {
-			case gatewayapi_v1alpha1.HTTPRouteFilterRequestHeaderModifier:
+			case gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier:
 				var err error
 				headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
 				if err != nil {
@@ -748,15 +748,15 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha1.HTTPRo
 	// condition accordingly.
 	switch len(routeAccessor.Conditions) {
 	case 0:
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionTrue, status.ReasonValid, "Valid HTTPRoute")
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionTrue, status.ReasonValid, "Valid HTTPRoute")
 	default:
-		routeAccessor.AddCondition(gatewayapi_v1alpha1.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 	}
 }
 
 // validateForwardTo verifies that the specified forwardTo is valid.
 // Returns an error if not or the service found in the cache.
-func (p *GatewayAPIProcessor) validateForwardTo(serviceName *string, port *gatewayapi_v1alpha1.PortNumber, namespace string) (*Service, error) {
+func (p *GatewayAPIProcessor) validateForwardTo(serviceName *string, port *gatewayapi_v1alpha2.PortNumber, namespace string) (*Service, error) {
 	// Verify the service is valid
 	if serviceName == nil {
 		return nil, fmt.Errorf("Spec.Rules.ForwardTo.ServiceName must be specified")
@@ -778,7 +778,7 @@ func (p *GatewayAPIProcessor) validateForwardTo(serviceName *string, port *gatew
 	return service, nil
 }
 
-func pathMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPPathMatch) error {
+func pathMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha2.HTTPPathMatch) error {
 
 	if match == nil {
 		mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: "/"})
@@ -792,9 +792,9 @@ func pathMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPPath
 		mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: path})
 	} else {
 		switch *match.Type {
-		case gatewayapi_v1alpha1.PathMatchPrefix:
+		case gatewayapi_v1alpha2.PathMatchPrefix:
 			mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: path})
-		case gatewayapi_v1alpha1.PathMatchExact:
+		case gatewayapi_v1alpha2.PathMatchExact:
 			mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: path})
 		default:
 			return fmt.Errorf("HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported")
@@ -803,7 +803,7 @@ func pathMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPPath
 	return nil
 }
 
-func headerMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPHeaderMatch) error {
+func headerMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha2.HTTPHeaderMatch) error {
 	if match == nil {
 		return nil
 	}
@@ -812,7 +812,7 @@ func headerMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha1.HTTPHe
 	headerMatchType := HeaderMatchTypeExact
 	if match.Type != nil {
 		switch *match.Type {
-		case gatewayapi_v1alpha1.HeaderMatchExact:
+		case gatewayapi_v1alpha2.HeaderMatchExact:
 			headerMatchType = HeaderMatchTypeExact
 		default:
 			return fmt.Errorf("HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported")
@@ -855,14 +855,14 @@ func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Serv
 	}
 }
 
-func pathMatchTypePtr(pmt gatewayapi_v1alpha1.PathMatchType) *gatewayapi_v1alpha1.PathMatchType {
+func pathMatchTypePtr(pmt gatewayapi_v1alpha2.PathMatchType) *gatewayapi_v1alpha2.PathMatchType {
 	return &pmt
 }
 
-func headerMatchTypePtr(hmt gatewayapi_v1alpha1.HeaderMatchType) *gatewayapi_v1alpha1.HeaderMatchType {
+func headerMatchTypePtr(hmt gatewayapi_v1alpha2.HeaderMatchType) *gatewayapi_v1alpha2.HeaderMatchType {
 	return &hmt
 }
 
-func gatewayAllowTypePtr(gwType gatewayapi_v1alpha1.GatewayAllowType) *gatewayapi_v1alpha1.GatewayAllowType {
+func gatewayAllowTypePtr(gwType gatewayapi_v1alpha2.GatewayAllowType) *gatewayapi_v1alpha2.GatewayAllowType {
 	return &gwType
 }

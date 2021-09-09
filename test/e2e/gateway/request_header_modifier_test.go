@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func testRequestHeaderModifierForwardTo(namespace string) {
@@ -34,35 +34,35 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-filter")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-nofilter")
 
-		route := &gatewayv1alpha1.HTTPRoute{
+		route := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
 				Labels:    map[string]string{"app": "filter"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"requestheadermodifierforwardto.gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierforwardto.gateway.projectcontour.io"},
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
 									Value: stringPtr("/filter"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo-header-filter"),
 								Port:        portNumPtr(80),
-								Filters: []gatewayv1alpha1.HTTPRouteFilter{
+								Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
 									{
-										Type: gatewayv1alpha1.HTTPRouteFilterRequestHeaderModifier,
-										RequestHeaderModifier: &gatewayv1alpha1.HTTPRequestHeaderFilter{
+										Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
+										RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
 											Add: map[string]string{
 												"My-Header": "Foo",
 											},
@@ -77,15 +77,15 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 						},
 					},
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
 									Value: stringPtr("/nofilter"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo-header-nofilter"),
 								Port:        portNumPtr(80),
@@ -148,31 +148,31 @@ func testRequestHeaderModifierRule(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-filter")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-nofilter")
 
-		route := &gatewayv1alpha1.HTTPRoute{
+		route := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
 				Labels:    map[string]string{"app": "filter"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"requestheadermodifierrule.gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierrule.gateway.projectcontour.io"},
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
 									Value: stringPtr("/filter"),
 								},
 							},
 						},
-						Filters: []gatewayv1alpha1.HTTPRouteFilter{
+						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
 							{
-								Type: gatewayv1alpha1.HTTPRouteFilterRequestHeaderModifier,
-								RequestHeaderModifier: &gatewayv1alpha1.HTTPRequestHeaderFilter{
+								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
+								RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
 									Add: map[string]string{
 										"My-Header": "Foo",
 									},
@@ -183,7 +183,7 @@ func testRequestHeaderModifierRule(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo-header-filter"),
 								Port:        portNumPtr(80),
@@ -191,15 +191,15 @@ func testRequestHeaderModifierRule(namespace string) {
 						},
 					},
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
 									Value: stringPtr("/nofilter"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo-header-nofilter"),
 								Port:        portNumPtr(80),

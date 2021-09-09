@@ -22,7 +22,7 @@ import (
 	"time"
 
 	networking_v1 "k8s.io/api/networking/v1"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
@@ -192,7 +192,7 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 
 // headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPRequestHeaderFilter.
 // TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
-func headersPolicyGatewayAPI(hf *gatewayapi_v1alpha1.HTTPRequestHeaderFilter) (*HeadersPolicy, error) {
+func headersPolicyGatewayAPI(hf *gatewayapi_v1alpha2.HTTPRequestHeaderFilter) (*HeadersPolicy, error) {
 	set, add := make(map[string]string, len(hf.Set)), make(map[string]string, len(hf.Add))
 	hostRewrite := ""
 	errlist := []error{}

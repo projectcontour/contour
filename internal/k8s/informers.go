@@ -19,7 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch
@@ -54,28 +54,28 @@ func IngressV1Resources() []schema.GroupVersionResource {
 // GatewayAPIResources returns a list of Gateway API group/version resources.
 func GatewayAPIResources() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{{
-		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 		Resource: "gatewayclasses",
 	}, {
-		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 		Resource: "gateways",
 	}, {
-		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 		Resource: "httproutes",
 	}, {
-		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 		Resource: "tlsroutes",
 	}, {
-		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 		Resource: "tcproutes",
 	}, {
-		Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-		Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+		Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 		Resource: "udproutes",
 	}}
 }

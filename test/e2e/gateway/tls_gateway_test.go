@@ -21,7 +21,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func testTLSGateway(namespace string) {
@@ -31,28 +31,28 @@ func testTLSGateway(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-insecure")
 		f.Fixtures.Echo.Deploy(namespace, "echo-secure")
 
-		route := &gatewayv1alpha1.HTTPRoute{
+		route := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-1",
 				Labels:    map[string]string{"type": "insecure"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"tls-gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
 									Value: stringPtr("/"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo-insecure"),
 								Port:        portNumPtr(80),
@@ -64,28 +64,28 @@ func testTLSGateway(namespace string) {
 		}
 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
 
-		route = &gatewayv1alpha1.HTTPRoute{
+		route = &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-2",
 				Labels:    map[string]string{"type": "secure"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"tls-gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
+				Gateways: &gatewayapi_v1alpha2.RouteGateways{
+					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
 									Value: stringPtr("/"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
 							{
 								ServiceName: stringPtr("echo-secure"),
 								Port:        portNumPtr(80),

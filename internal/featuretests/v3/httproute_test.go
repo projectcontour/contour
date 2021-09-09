@@ -27,56 +27,56 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 var (
-	gc = &gatewayapi_v1alpha1.GatewayClass{
+	gc = &gatewayapi_v1alpha2.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "contour",
 		},
-		Spec: gatewayapi_v1alpha1.GatewayClassSpec{
+		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
 			Controller: "projectcontour.io/contour",
 		},
-		Status: gatewayapi_v1alpha1.GatewayClassStatus{
+		Status: gatewayapi_v1alpha2.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
 					Status: metav1.ConditionTrue,
 				},
 			},
 		},
 	}
 
-	gateway = &gatewayapi_v1alpha1.Gateway{
+	gateway = &gatewayapi_v1alpha2.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
 			Namespace: "projectcontour",
 		},
-		Spec: gatewayapi_v1alpha1.GatewaySpec{
+		Spec: gatewayapi_v1alpha2.GatewaySpec{
 			GatewayClassName: gc.Name,
-			Listeners: []gatewayapi_v1alpha1.Listener{{
+			Listeners: []gatewayapi_v1alpha2.Listener{{
 				Port:     80,
 				Protocol: "HTTP",
-				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+				Routes: gatewayapi_v1alpha2.RouteBindingSelector{
+					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectAll),
 					},
 					Kind: dag.KindHTTPRoute,
 				},
 			}, {
 				Port:     443,
 				Protocol: "HTTPS",
-				TLS: &gatewayapi_v1alpha1.GatewayTLSConfig{
-					CertificateRef: &gatewayapi_v1alpha1.LocalObjectReference{
+				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+					CertificateRef: &gatewayapi_v1alpha2.LocalObjectReference{
 						Group: "core",
 						Kind:  "Secret",
 						Name:  "tlscert",
 					},
 				},
-				Routes: gatewayapi_v1alpha1.RouteBindingSelector{
-					Namespaces: &gatewayapi_v1alpha1.RouteNamespaces{
-						From: routeSelectTypePtr(gatewayapi_v1alpha1.RouteSelectAll),
+				Routes: gatewayapi_v1alpha2.RouteBindingSelector{
+					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+						From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectAll),
 					},
 					Kind: dag.KindHTTPRoute,
 				},
@@ -112,7 +112,7 @@ func TestGateway_TLS(t *testing.T) {
 
 	rh.OnAdd(gateway)
 
-	rh.OnAdd(&gatewayapi_v1alpha1.HTTPRoute{
+	rh.OnAdd(&gatewayapi_v1alpha2.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "basic",
 			Namespace: "default",
@@ -121,33 +121,33 @@ func TestGateway_TLS(t *testing.T) {
 				"type": "controller",
 			},
 		},
-		Spec: gatewayapi_v1alpha1.HTTPRouteSpec{
-			Gateways: &gatewayapi_v1alpha1.RouteGateways{
-				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha1.GatewayAllowAll),
+		Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+			Gateways: &gatewayapi_v1alpha2.RouteGateways{
+				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
 			},
-			Hostnames: []gatewayapi_v1alpha1.Hostname{
+			Hostnames: []gatewayapi_v1alpha2.Hostname{
 				"test.projectcontour.io",
 			},
-			Rules: []gatewayapi_v1alpha1.HTTPRouteRule{{
-				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-					Path: &gatewayapi_v1alpha1.HTTPPathMatch{
-						Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+			Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+				Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+					Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+						Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
 						Value: pointer.StringPtr("/blog"),
 					},
 				}},
-				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+				ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{{
 					ServiceName: pointer.StringPtr("svc2"),
 					Port:        gatewayPort(80),
 					Weight:      pointer.Int32Ptr(1),
 				}},
 			}, {
-				Matches: []gatewayapi_v1alpha1.HTTPRouteMatch{{
-					Path: &gatewayapi_v1alpha1.HTTPPathMatch{
-						Type:  pathMatchTypePtr(gatewayapi_v1alpha1.PathMatchPrefix),
+				Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+					Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+						Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
 						Value: pointer.StringPtr("/"),
 					},
 				}},
-				ForwardTo: []gatewayapi_v1alpha1.HTTPRouteForwardTo{{
+				ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{{
 					ServiceName: pointer.StringPtr("svc1"),
 					Port:        gatewayPort(80),
 					Weight:      pointer.Int32Ptr(10),
@@ -204,19 +204,19 @@ func TestGateway_TLS(t *testing.T) {
 	})
 }
 
-func gatewayPort(port int) *gatewayapi_v1alpha1.PortNumber {
-	p := gatewayapi_v1alpha1.PortNumber(port)
+func gatewayPort(port int) *gatewayapi_v1alpha2.PortNumber {
+	p := gatewayapi_v1alpha2.PortNumber(port)
 	return &p
 }
 
-func pathMatchTypePtr(pmt gatewayapi_v1alpha1.PathMatchType) *gatewayapi_v1alpha1.PathMatchType {
+func pathMatchTypePtr(pmt gatewayapi_v1alpha2.PathMatchType) *gatewayapi_v1alpha2.PathMatchType {
 	return &pmt
 }
 
-func routeSelectTypePtr(rst gatewayapi_v1alpha1.RouteSelectType) *gatewayapi_v1alpha1.RouteSelectType {
+func routeSelectTypePtr(rst gatewayapi_v1alpha2.RouteSelectType) *gatewayapi_v1alpha2.RouteSelectType {
 	return &rst
 }
 
-func gatewayAllowTypePtr(gwType gatewayapi_v1alpha1.GatewayAllowType) *gatewayapi_v1alpha1.GatewayAllowType {
+func gatewayAllowTypePtr(gwType gatewayapi_v1alpha2.GatewayAllowType) *gatewayapi_v1alpha2.GatewayAllowType {
 	return &gwType
 }
