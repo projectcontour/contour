@@ -141,7 +141,7 @@ We should be able to generate code to simply iterate through and rewrite attribu
 
 We may choose to do everything with inline Lua or use the Lua filter's ability to supply a map of named source codes for the various scripts we need to generate.
 
-In addition, parallel implementaion on a [native Envoy feature](https://github.com/envoyproxy/envoy/issues/15612) may provide us the ability to remove Lua completely in the future.
+In addition, parallel implementation on a [native Envoy feature](https://github.com/envoyproxy/envoy/issues/15612) may provide us the ability to remove Lua completely in the future.
 
 ### Cookie load balancing
 If/when we want to provide convenience fields to customize Contour/Envoy generated session affinity cookies, we can provide them in to the relevant configuration structs for those features.
@@ -156,7 +156,7 @@ This would give users a very powerful tool.
 However, currently the design for this feature is such that we are only allowing configuration of things an app or app developer might not know to be able to program correctly.
 Attributes that are related to web security and the infrastructure an app runs with are currently made available to users only.
 
-Other things like `Max-Age` and `Expires` are harder for a platform to justify setting and seem like they should be under control of the app, as they are likely applicatin logic dependent.
+Other things like `Max-Age` and `Expires` are harder for a platform to justify setting and seem like they should be under control of the app, as they are likely application logic dependent.
 
 However, this design does not limit us from adding the ability to manipulate these fields in the future.
 
