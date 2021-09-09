@@ -1,0 +1,196 @@
+metadata:
+  name: Contour
+  description: "Contour is a Kubernetes ingress controller using Envoy proxy."
+  website: "https://projectcontour.io"
+  repository: "https://github.com/projectcontour/contour"
+versions:
+  - version: "main"
+    dependencies:
+      envoy: "1.19.1"
+      kubernetes:
+        - "1.22"
+        - "1.21"
+        - "1.20"
+      gateway-api: v1alpha1
+      contour-operator: main
+  - version: "v1.18.1"
+    dependencies:
+      envoy: "1.19.1"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: v1.18.1
+  - version: "v1.18.0"
+    dependencies:
+      envoy: "1.19.0"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: v1.18.0
+  - version: "v1.17.2"
+    dependencies:
+      envoy: "1.18.4"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: NA
+  - version: "v1.17.1"
+    dependencies:
+      envoy: "1.18.3"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: NA
+  - version: "v1.17.0"
+    dependencies:
+      envoy: "1.18.3"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: v1.17.0
+  - version: "v1.16.1"
+    dependencies:
+      envoy: "1.18.4"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: NA
+  - version: "v1.16.0"
+    dependencies:
+      envoy: "1.18.3"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: v1.16.0
+  - version: "v1.15.2"
+    dependencies:
+      envoy: "1.18.4"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: NA
+  - version: "v1.15.1"
+    dependencies:
+      envoy: "1.18.3"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: v1.15.1
+  - version: "v1.15.0"
+    dependencies:
+      envoy: "1.18.2"
+      kubernetes:
+        - "1.21"
+        - "1.20"
+        - "1.19"
+      gateway-api: v1alpha1
+      contour-operator: v1.15.0
+  - version: "v1.14.2"
+    dependencies:
+      envoy: "1.17.4"
+      kubernetes:
+        - "1.20"
+        - "1.19"
+        - "1.18"
+      gateway-api: v1alpha1
+      contour-operator: NA
+  - version: "1.14.1"
+    dependencies:
+      envoy: "1.17.2"
+      kubernetes:
+        - "1.20"
+        - "1.19"
+        - "1.18"
+      gateway-api: v1alpha1
+      contour-operator: v1.14.1
+  - version: "v1.14.0"
+    dependencies:
+      envoy: "1.17.1"
+      kubernetes:
+        - "1.20"
+        - "1.19"
+        - "1.18"
+      gateway-api: v1alpha1
+      contour-operator: v1.14.0
+  - version: "1.13.1"
+    dependencies:
+      envoy: "1.17.1"
+      kubernetes:
+        - "1.20"
+        - "1.19"
+        - "1.18"
+      gateway-api: v1alpha1
+      contour-operator: v1.13.1
+  - version: "v1.13.0"
+    dependencies:
+      envoy: "1.17.0"
+      kubernetes:
+        - "1.20"
+        - "1.19"
+        - "1.18"
+      gateway-api: v1alpha1
+      contour-operator: v1.13.0
+  - version: "v1.12.0"
+    dependencies:
+      envoy: "1.17.0"
+      kubernetes:
+        - "1.19"
+        - "1.18"
+        - "1.17"
+      gateway-api: NA
+      contour-operator: v1.12.0
+  - version: "v1.11.0"
+    dependencies:
+      envoy: "1.16.2"
+      kubernetes:
+        - "1.19"
+        - "1.18"
+        - "1.17"
+      gateway-api: NA
+      contour-operator: v1.11.0
+  - version: "v1.10.1"
+    dependencies:
+      envoy: "1.16.2"
+      kubernetes:
+        - "1.19"
+        - "1.18"
+        - "1.17"
+      gateway-api: NA
+      contour-operator: NA
+  - version: "v1.10.0"
+    dependencies:
+      envoy: "1.16.0"
+      kubernetes:
+        - "1.19"
+        - "1.18"
+        - "1.17"
+      gateway-api: NA
+      contour-operator: NA
+  - version: "v1.9.0"
+    dependencies:
+      envoy: "1.15.1"
+      kubernetes:
+        - "1.18"
+        - "1.17"
+        - "1.16"
+      gateway-api: NA
+      contour-operator: NA
+
