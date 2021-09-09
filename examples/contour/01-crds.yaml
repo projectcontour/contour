@@ -208,6 +208,11 @@ spec:
                           values.
                         properties:
                           cipherSuites:
+                            default:
+                            - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+                            - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+                            - ECDHE-ECDSA-AES256-GCM-SHA384
+                            - ECDHE-RSA-AES256-GCM-SHA384
                             description: "CipherSuites defines the TLS ciphers to
                               be supported by Envoy TLS listeners when negotiating
                               TLS 1.2. Ciphers are validated against the set that
@@ -216,22 +221,22 @@ spec:
                               when TLS 1.3 is in use. \n See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
                               Note: This list is a superset of what is valid for stock
                               Envoy builds and those using BoringSSL FIPS."
-                            enum:
-                            - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-                            - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-                            - ECDHE-ECDSA-AES128-GCM-SHA256
-                            - ECDHE-RSA-AES128-GCM-SHA256
-                            - ECDHE-ECDSA-AES128-SHA
-                            - ECDHE-RSA-AES128-SHA
-                            - AES128-GCM-SHA256
-                            - AES128-SHA
-                            - ECDHE-ECDSA-AES256-GCM-SHA384
-                            - ECDHE-RSA-AES256-GCM-SHA384
-                            - ECDHE-ECDSA-AES256-SHA
-                            - ECDHE-RSA-AES256-SHA
-                            - AES256-GCM-SHA384
-                            - AES256-SHA
                             items:
+                              enum:
+                              - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+                              - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+                              - ECDHE-ECDSA-AES128-GCM-SHA256
+                              - ECDHE-RSA-AES128-GCM-SHA256
+                              - ECDHE-ECDSA-AES128-SHA
+                              - ECDHE-RSA-AES128-SHA
+                              - AES128-GCM-SHA256
+                              - AES128-SHA
+                              - ECDHE-ECDSA-AES256-GCM-SHA384
+                              - ECDHE-RSA-AES256-GCM-SHA384
+                              - ECDHE-ECDSA-AES256-SHA
+                              - ECDHE-RSA-AES256-SHA
+                              - AES256-GCM-SHA384
+                              - AES256-SHA
                               type: string
                             type: array
                           minimumProtocolVersion:
@@ -1087,6 +1092,11 @@ spec:
                               listener values.
                             properties:
                               cipherSuites:
+                                default:
+                                - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+                                - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+                                - ECDHE-ECDSA-AES256-GCM-SHA384
+                                - ECDHE-RSA-AES256-GCM-SHA384
                                 description: "CipherSuites defines the TLS ciphers
                                   to be supported by Envoy TLS listeners when negotiating
                                   TLS 1.2. Ciphers are validated against the set that
@@ -1096,22 +1106,22 @@ spec:
                                   https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
                                   Note: This list is a superset of what is valid for
                                   stock Envoy builds and those using BoringSSL FIPS."
-                                enum:
-                                - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-                                - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-                                - ECDHE-ECDSA-AES128-GCM-SHA256
-                                - ECDHE-RSA-AES128-GCM-SHA256
-                                - ECDHE-ECDSA-AES128-SHA
-                                - ECDHE-RSA-AES128-SHA
-                                - AES128-GCM-SHA256
-                                - AES128-SHA
-                                - ECDHE-ECDSA-AES256-GCM-SHA384
-                                - ECDHE-RSA-AES256-GCM-SHA384
-                                - ECDHE-ECDSA-AES256-SHA
-                                - ECDHE-RSA-AES256-SHA
-                                - AES256-GCM-SHA384
-                                - AES256-SHA
                                 items:
+                                  enum:
+                                  - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
+                                  - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
+                                  - ECDHE-ECDSA-AES128-GCM-SHA256
+                                  - ECDHE-RSA-AES128-GCM-SHA256
+                                  - ECDHE-ECDSA-AES128-SHA
+                                  - ECDHE-RSA-AES128-SHA
+                                  - AES128-GCM-SHA256
+                                  - AES128-SHA
+                                  - ECDHE-ECDSA-AES256-GCM-SHA384
+                                  - ECDHE-RSA-AES256-GCM-SHA384
+                                  - ECDHE-ECDSA-AES256-SHA
+                                  - ECDHE-RSA-AES256-SHA
+                                  - AES256-GCM-SHA384
+                                  - AES256-SHA
                                   type: string
                                 type: array
                               minimumProtocolVersion:

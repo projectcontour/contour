@@ -78,8 +78,8 @@ spec:
       connectionShutdownGracePeriod: 5s
     cluster:
       dnsLookupFamily: auto
-  gateway:
-    controllerName: projectcontour.io/projectcontour/contour
+#  gateway:
+#    controllerName: projectcontour.io/projectcontour/contour
   httpproxy:
     disablePermitInsecure: false
     rootNamespaces:
