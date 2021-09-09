@@ -15,7 +15,7 @@ readonly HERE=$(cd "$(dirname "$0")" && pwd)
 readonly REPO=$(cd "${HERE}/.." && pwd)
 
 # Optional first arg is the package root to scan for documentation.
-readonly PKGROOT="${1:-github.com/projectcontour/contour/apis/projectcontour/v1:github.com/projectcontour/contour/apis/projectcontour/v1alpha1}"
+readonly PKGROOT="${1:-github.com/projectcontour/contour/apis/projectcontour}"
 
 gendoc::build() {
     go install github.com/ahmetb/gen-crd-api-reference-docs

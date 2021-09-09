@@ -14,9 +14,6 @@
 package v1alpha1
 
 import (
-	"errors"
-	"strings"
-
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,149 +23,238 @@ import (
 // other remaining options being command line flags.
 type ContourConfigurationSpec struct {
 	// XDSServer contains parameters for the xDS server.
+	XDSServer XDSServerConfig `json:"xdsServer"`
+
+	// Ingress contains parameters for ingress options.
 	// +optional
-	XDSServer ServerParameters `json:"xdsServer,omitempty"`
+	Ingress *IngressConfig `json:"ingress,omitempty"`
 
-	// IngressOptions contains parameters for ingress options.
+	// Debug contains parameters to enable debug logging
+	// and debug interfaces inside Contour.
 	// +optional
-	IngressOptions Ingress `json:"ingress,omitempty"`
+	Debug *DebugConfig `json:"debug,omitempty"`
 
-	EnvoyConfig Envoy `json:"envoy,omitempty"`
+	// Health contains parameters to configure endpoints which Contour
+	// exposes to respond to Kubernetes health checks.
+	Health HealthConfig `json:"health"`
 
-	// GatewayConfig contains parameters for the gateway-api Gateway that Contour
+	// Envoy contains parameters for Envoy as well
+	// as how to optionally configure a managed Envoy fleet.
+	Envoy EnvoyConfig `json:"envoy"`
+
+	// Gateway contains parameters for the gateway-api Gateway that Contour
 	// is configured to serve traffic.
 	// +optional
-	GatewayConfig *GatewayParameters `json:"gateway,omitempty"`
+	Gateway *GatewayConfig `json:"gateway,omitempty"`
 
 	// HTTPProxy defines parameters on HTTPProxy.
 	// +optional
 	HTTPProxy *HTTPProxyConfig `json:"httpproxy,omitempty"`
 
 	// LeaderElection contains leader election parameters.
-	// +optional
-	LeaderElection LeaderElectionParameters `json:"leaderelection,omitempty"`
+	LeaderElection LeaderElectionConfig `json:"leaderElection"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
 	// +optional
+	// +kubebuilder:default:false
 	EnableExternalNameService bool `json:"enableExternalNameService,omitempty"`
 
 	// RateLimitService optionally holds properties of the Rate Limit Service
 	// to be used for global rate limiting.
-	RateLimitService RateLimitService `json:"rateLimitService,omitempty"`
+	RateLimitService RateLimitServiceConfig `json:"rateLimitService,omitempty"`
 
 	// Policy specifies default policy applied if not overridden by the user
-	Policy PolicyParameters `json:"policy,omitempty"`
+	Policy PolicyConfig `json:"policy,omitempty"`
+
+	// Metrics defines the endpoints Envoy use to serve to metrics.
+	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
+	Metrics MetricsConfig `json:"metrics"`
+}
+
+// XDSServerType is the type of xDS server implementation.
+type XDSServerType string
+
+const ContourServerType XDSServerType = "contour"
+const EnvoyServerType XDSServerType = "envoy"
+
+// XDSServerConfig holds the config for the Contour xDS server.
+type XDSServerConfig struct {
+	// Defines the XDSServer to use for `contour serve`.
+	// +kubebuilder:default=contour
+	// +kubebuilder:validation:Enum=contour;envoy
+	Type XDSServerType `json:"type"`
+
+	// Defines the xDS gRPC API address which Contour will serve.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:default="0.0.0.0"
+	Address string `json:"address"`
+
+	// Defines the xDS gRPC API port which Contour will serve.
+	// +kubebuilder:default=8001
+	Port int `json:"port"`
+
+	// Allow serving the xDS gRPC API without TLS.
+	// +kubebuilder:default=false
+	Insecure bool `json:"insecure"`
+
+	// TLS holds TLS file config details.
+	//  +optional
+	TLS *TLS `json:"tls,omitempty"`
+}
+
+// GatewayConfig holds the config for Gateway API controllers.
+type GatewayConfig struct {
+	// ControllerName is used to determine whether Contour should reconcile a
+	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
+	// If unset, the gatewayclass controller will not be started.
+	// +kubebuilder:default="projectcontour.io/projectcontour/contour"
+	ControllerName string `json:"controllerName"`
 }
 
 // TLS holds TLS file config details.
 type TLS struct {
 	// CA filename.
-	CAFile string `json:"caFile,omitempty"`
+	CAFile string `json:"caFile"`
 
 	// Client certificate filename.
-	CertFile string `json:"certFile,omitempty"`
+	CertFile string `json:"certFile"`
 
 	// Client key filename.
-	KeyFile string `json:"keyFile,omitempty"`
+	KeyFile string `json:"keyFile"`
 }
 
-// Ingress defines ingress specific config items.
-type Ingress struct {
+// IngressConfig defines ingress specific config items.
+type IngressConfig struct {
 	// Ingress Class Name Contour should use.
 	// +optional
-	ClassName string `json:"className,omitempty"`
+	ClassName *string `json:"className,omitempty"`
 
 	// Address to set in Ingress object status.
 	// +optional
-	StatusAddress string `json:"statusAddress,omitempty"`
+	StatusAddress *string `json:"statusAddress,omitempty"`
 }
 
-// Health defines the endpoints Contour will serve to enable health checks.
-type Health struct {
+// HealthConfig defines the endpoints Contour will serve to enable health checks.
+type HealthConfig struct {
 	// Defines the Contour health address interface.
-	//  +optional
 	// +kubebuilder:default:"0.0.0.0"
 	// +kubebuilder:validation:MinLength=1
-	Address string `json:"address,omitempty"`
+	Address string `json:"address"`
 
 	// Defines the Contour health port.
-	// Defaults to 8000.
-	//  +optional
 	// +kubebuilder:default=8000
-	Port int `json:"port,omitempty"`
+	Port int `json:"port"`
 }
 
-// Metrics defines the endpoints for metrics.
-type Metrics struct {
-	// Defines the Contour metrics address interface.
-	//  +optional
+// MetricsConfig defines the metrics endpoint.
+type MetricsConfig struct {
+	// Defines the metrics address interface.
 	// +kubebuilder:validation:MinLength=1
-	Address string `json:"address,omitempty"`
+	// +kubebuilder:validation:MaxLength=253
+	Address string `json:"address"`
 
-	// Defines the Contour metrics port.
-	// Defaults to 8000.
-	//  +optional
-	Port int `json:"port,omitempty"`
+	// Defines the metrics port.
+	Port int `json:"port"`
 }
 
-type Envoy struct {
+// HTTPVersionType is the name of a supported HTTP version.
+// +kubebuilder:validation:Enum="http/1.1";"http/2"
+type HTTPVersionType string
+
+const HTTPVersion1 HTTPVersionType = "http/1.1"
+const HTTPVersion2 HTTPVersionType = "http/2"
+
+// EnvoyConfig defines how Envoy is to be Configured from Contour.
+type EnvoyConfig struct {
 	// Listener hold various configurable Envoy listener values.
-	//  +optional
-	Listener EnvoyListenerConfig `json:"listener,omitempty"`
+	Listener EnvoyListenerConfig `json:"listener"`
 
 	// Service holds Envoy service parameters for setting Ingress status.
-	// +optional
-	Service NamespacedName `json:"service,omitempty"`
+	// +kubebuilder:default={name: "envoy", namespace: "projectcontour"}
+	Service NamespacedName `json:"service"`
 
 	// Defines the HTTP Listener for Envoy.
-	// +optional
-	HTTPListener EnvoyListener `json:"http,omitempty"`
+	// +kubebuilder:default={address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}
+	HTTPListener EnvoyListener `json:"http"`
 
 	// Defines the HTTP Listener for Envoy.
-	// +optional
-	HTTPSListener EnvoyListener `json:"https,omitempty"`
+	// +kubebuilder:default={address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}
+	HTTPSListener EnvoyListener `json:"https"`
 
-	// Metrics defines the endpoints Contour will serve to enable metrics.
-	Metrics *Metrics `json:"metrics,omitempty"`
+	// Metrics defines the endpoints Envoy use to serve to metrics.
+	// +kubebuilder:default={address: "0.0.0.0", port: 8002}
+	Metrics MetricsConfig `json:"metrics"`
 
 	// ClientCertificate defines the namespace/name of the Kubernetes
 	// secret containing the client certificate and private key
 	// to be used when establishing TLS connection to upstream
 	// cluster.
 	// +optional
-	ClientCertificate NamespacedName `json:"clientCertificate,omitempty"`
+	ClientCertificate *NamespacedName `json:"clientCertificate,omitempty"`
 
 	// Logging defines how Envoy's logs can be configured.
-	// +optional
-	Logging EnvoyLogging `json:"logging,omitempty"`
+	Logging EnvoyLogging `json:"logging"`
 
 	// DefaultHTTPVersions defines the default set of HTTPS
 	// versions the proxy should accept. HTTP versions are
 	// strings of the form "HTTP/xx". Supported versions are
 	// "HTTP/1.1" and "HTTP/2".
 	//
-	// If this field not specified, all supported versions are accepted.
+	// +kubebuilder:default="http/1.1";"http/2"
 	DefaultHTTPVersions []HTTPVersionType `json:"defaultHTTPVersions"`
 
 	// Timeouts holds various configurable timeouts that can
 	// be set in the config file.
-	Timeouts TimeoutParameters `json:"timeouts,omitempty"`
+	// +optional
+	Timeouts *TimeoutParameters `json:"timeouts,omitempty"`
 
 	// Cluster holds various configurable Envoy cluster values that can
 	// be set in the config file.
-	Cluster ClusterParameters `json:"cluster,omitempty"`
+	Cluster ClusterParameters `json:"cluster"`
 
 	// Network holds various configurable Envoy network values.
-	Network NetworkParameters `json:"network,omitempty"`
+	Network NetworkParameters `json:"network"`
+}
+
+// LogLevel is the logging levels available.
+type LogLevel string
+
+const InfoLog LogLevel = "info"
+const DebugLog LogLevel = "debug"
+
+// DebugConfig contains Contour specific troubleshooting options.
+type DebugConfig struct {
+	// Defines the Contour debug address interface.
+	// +kubebuilder:default="0.0.0.0"
+	Address string `json:"address"`
+
+	// Defines the xDS gRPC API port which Contour will serve.
+	// +kubebuilder:default=8001
+	Port int `json:"port"`
+
+	// DebugLogLevel defines the log level which Contour will
+	// use when outputting log information.
+	// +kubebuilder:default=info
+	// +kubebuilder:validation:Enum=info;debug
+	DebugLogLevel LogLevel `json:"logLevel"`
+
+	// KubernetesDebugLogLevel defines the log level which Contour will
+	// use when outputting Kubernetes specific log information.
+	//
+	// Details: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
+	// +optional
+	// +kubebuilder:default=0
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=9
+	KubernetesDebugLogLevel int `json:"kubernetesLogLevel"`
 }
 
 // EnvoyListenerConfig hold various configurable Envoy listener values.
 type EnvoyListenerConfig struct {
 	// Use PROXY protocol for all listeners.
-	//  +optional
 	// +kubebuilder:default=false
-	UseProxyProto bool `json:"useProxyProtocol,omitempty"`
+	UseProxyProto bool `json:"useProxyProtocol"`
 
 	// DisableAllowChunkedLength disables the RFC-compliant Envoy behavior to
 	// strip the "Content-Length" header if "Transfer-Encoding: chunked" is
@@ -176,14 +262,15 @@ type EnvoyListenerConfig struct {
 	// default behavior in case of failures. Please file an issue if failures
 	// are encountered.
 	// See: https://github.com/projectcontour/contour/issues/3221
-	//  +optional
-	DisableAllowChunkedLength bool `json:"disableAllowChunkedLength,omitempty"`
+	// +kubebuilder:default=false
+	DisableAllowChunkedLength bool `json:"disableAllowChunkedLength"`
 
 	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
 	// for more information.
-	//  +optional
-	ConnectionBalancer string `json:"connection-balancer"`
+	// +kubebuilder:default=""
+	// +kubebuilder:validation:Enum="";"exact"
+	ConnectionBalancer string `json:"connectionBalancer"`
 
 	// TLS holds various configurable Envoy TLS listener values.
 	//  +optional
@@ -194,19 +281,24 @@ type EnvoyListenerConfig struct {
 type EnvoyTLS struct {
 	// MinimumProtocolVersion is the minimum TLS version this vhost should
 	// negotiate. Valid options are `1.2` (default) and `1.3`.
-	// +optional
 	// +kubebuilder:default="1.2"
 	// +kubebuilder:validation:Enum="1.2";"1.3"
-	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
+	MinimumProtocolVersion string `json:"minimumProtocolVersion"`
 
 	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
 	// listeners when negotiating TLS 1.2. Ciphers are validated against the
 	// set that Envoy supports by default. This parameter should only be used
 	// by advanced users. Note that these will be ignored when TLS 1.3 is in
 	// use.
-	// +optional
-	CipherSuites TLSCiphers `json:"cipherSuites,omitempty"`
+	//
+	//See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
+	// Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
+	// +kubebuilder:validation:Enum="[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES128-GCM-SHA256";"ECDHE-RSA-AES128-GCM-SHA256";"ECDHE-ECDSA-AES128-SHA";"ECDHE-RSA-AES128-SHA";"AES128-GCM-SHA256";"AES128-SHA";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384";"ECDHE-ECDSA-AES256-SHA";"ECDHE-RSA-AES256-SHA";"AES256-GCM-SHA384";"AES256-SHA";
+	CipherSuites []TLSCipher `json:"cipherSuites"`
 }
+
+// +kubebuilder:default="[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384"
+type TLSCipher string
 
 // EnvoyListener defines parameters for an Envoy Listener.
 type EnvoyListener struct {
@@ -218,24 +310,26 @@ type EnvoyListener struct {
 	Port int `json:"port"`
 
 	// AccessLog defines where Envoy logs are outputted for this listener.
-	// +optional
-	// +kubebuilder:default=/dev/stdout
-	AccessLog string `json:"access_log,omitempty"`
+	AccessLog string `json:"accessLog"`
 }
 
 // EnvoyLogging defines how Envoy's logs can be configured.
 type EnvoyLogging struct {
 	// AccessLogFormat sets the global access log format.
 	// Valid options are 'envoy' or 'json'
-	AccessLogFormat AccessLogType `json:"accesslogFormat,omitempty"`
+	// +kubebuilder:default="envoy"
+	// +kubebuilder:validation:Enum="envoy";"json"
+	AccessLogFormat AccessLogType `json:"accessLogFormat"`
 
 	// AccessLogFormatString sets the access log format when format is set to `envoy`.
 	// When empty, Envoy's default format is used.
-	AccessLogFormatString string `json:"accesslogFormatString,omitempty"`
+	// +optional
+	AccessLogFormatString *string `json:"accessLogFormatString,omitempty"`
 
 	// AccessLogFields sets the fields that JSON logging will
 	// output when AccessLogFormat is json.
-	AccessLogFields AccessLogFields `json:"jsonFields,omitempty"`
+	// +optional
+	AccessLogFields *AccessLogFields `json:"jsonFields,omitempty"`
 }
 
 // TimeoutParameters holds various configurable proxy timeout values.
@@ -247,7 +341,7 @@ type TimeoutParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-request-timeout
 	// for more information.
 	// +optional
-	RequestTimeout string `json:"requestTimeout,omitempty"`
+	RequestTimeout *string `json:"requestTimeout,omitempty"`
 
 	// ConnectionIdleTimeout defines how long the proxy should wait while there are
 	// no active requests (for HTTP/1.1) or streams (for HTTP/2) before terminating
@@ -256,7 +350,7 @@ type TimeoutParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-idle-timeout
 	// for more information.
 	// +optional
-	ConnectionIdleTimeout string `json:"connectionIdleTimeout,omitempty"`
+	ConnectionIdleTimeout *string `json:"connectionIdleTimeout,omitempty"`
 
 	// StreamIdleTimeout defines how long the proxy should wait while there is no
 	// request activity (for HTTP/1.1) or stream activity (for HTTP/2) before
@@ -266,7 +360,7 @@ type TimeoutParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-stream-idle-timeout
 	// for more information.
 	// +optional
-	StreamIdleTimeout string `json:"streamIdleTimeout,omitempty"`
+	StreamIdleTimeout *string `json:"streamIdleTimeout,omitempty"`
 
 	// MaxConnectionDuration defines the maximum period of time after an HTTP connection
 	// has been established from the client to the proxy before it is closed by the proxy,
@@ -276,7 +370,7 @@ type TimeoutParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-max-connection-duration
 	// for more information.
 	// +optional
-	MaxConnectionDuration string `json:"maxConnectionDuration,omitempty"`
+	MaxConnectionDuration *string `json:"maxConnectionDuration,omitempty"`
 
 	// DelayedCloseTimeout defines how long envoy will wait, once connection
 	// close processing has been initiated, for the downstream peer to close
@@ -288,7 +382,7 @@ type TimeoutParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-delayed-close-timeout
 	// for more information.
 	// +optional
-	DelayedCloseTimeout string `json:"delayedCloseTimeout,omitempty"`
+	DelayedCloseTimeout *string `json:"delayedCloseTimeout,omitempty"`
 
 	// ConnectionShutdownGracePeriod defines how long the proxy will wait between sending an
 	// initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection.
@@ -298,8 +392,16 @@ type TimeoutParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-drain-timeout
 	// for more information.
 	// +optional
-	ConnectionShutdownGracePeriod string `json:"connectionShutdownGracePeriod,omitempty"`
+	ConnectionShutdownGracePeriod *string `json:"connectionShutdownGracePeriod,omitempty"`
 }
+
+// ClusterDNSFamilyType is the Ip family to use for resolving DNS
+// names in an Envoy cluster config.
+type ClusterDNSFamilyType string
+
+const AutoClusterDNSFamily ClusterDNSFamilyType = "auto"
+const IPv4ClusterDNSFamily ClusterDNSFamilyType = "v4"
+const IPv6ClusterDNSFamily ClusterDNSFamilyType = "v6"
 
 // ClusterParameters holds various configurable cluster values.
 type ClusterParameters struct {
@@ -314,6 +416,8 @@ type ClusterParameters struct {
 	//
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
 	// for more information.
+	// +kubebuilder:default="auto"
+	// +kubebuilder:validation:Enum="auto";"v4";"v6"
 	DNSLookupFamily ClusterDNSFamilyType `json:"dnsLookupFamily"`
 }
 
@@ -321,24 +425,36 @@ type ClusterParameters struct {
 type HTTPProxyConfig struct {
 	// DisablePermitInsecure disables the use of the
 	// permitInsecure field in HTTPProxy.
-	DisablePermitInsecure bool `json:"disablePermitInsecure,omitempty"`
+	// +kubebuilder:default=false
+	DisablePermitInsecure bool `json:"disablePermitInsecure"`
 
 	// Restrict Contour to searching these namespaces for root ingress routes.
+	// +optional
 	RootNamespaces []string `json:"rootNamespaces,omitempty"`
 
 	// FallbackCertificate defines the namespace/name of the Kubernetes secret to
 	// use as fallback when a non-SNI request is received.
-	FallbackCertificate NamespacedName `json:"fallbackCertificate,omitempty"`
+	// +optional
+	FallbackCertificate *NamespacedName `json:"fallbackCertificate,omitempty"`
 }
 
-// LeaderElectionParameters holds the config bits for leader election
+// LeaderElectionConfig holds the config bits for leader election
 // inside the  config file.
-type LeaderElectionParameters struct {
-	LeaseDuration         string         `json:"leaseDuration,omitempty"`
-	RenewDeadline         string         `json:"renewDeadline,omitempty"`
-	RetryPeriod           string         `json:"retryPeriod,omitempty"`
-	Configmap             NamespacedName `json:"configmap,omitempty"`
-	DisableLeaderElection bool           `json:"disableLeaderElection,omitempty"`
+type LeaderElectionConfig struct {
+	// +kubebuilder:default="15s"
+	LeaseDuration string `json:"leaseDuration,omitempty"`
+
+	// +kubebuilder:default="10s"
+	RenewDeadline string `json:"renewDeadline,omitempty"`
+
+	// +kubebuilder:default="2s"
+	RetryPeriod string `json:"retryPeriod,omitempty"`
+
+	// +kubebuilder:default={name: "leader-elect", namespace: "projectcontour"}
+	Configmap NamespacedName `json:"configmap,omitempty"`
+
+	// +kubebuilder:default=false
+	DisableLeaderElection bool `json:"disableLeaderElection,omitempty"`
 }
 
 // NetworkParameters hold various configurable network values.
@@ -349,26 +465,27 @@ type NetworkParameters struct {
 	//
 	// See https://www.envoyproxy.io/docs/envoy/v1.17.0/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=xff_num_trusted_hops
 	// for more information.
-	XffNumTrustedHops uint32 `json:"numTrustedHops,omitempty"`
+	// +kubebuilder:default=0
+	XffNumTrustedHops uint32 `json:"numTrustedHops"`
 
 	// Configure the port used to access the Envoy Admin interface.
 	// If configured to port "0" then the admin interface is disabled.
-	EnvoyAdminPort int `json:"adminPort,omitempty"`
+	// +kubebuilder:default=9001
+	EnvoyAdminPort int `json:"adminPort"`
 }
 
-// RateLimitService defines properties of a global Rate Limit Service.
-type RateLimitService struct {
-	// ExtensionService identifies the extension service defining the RLS,
-	// formatted as <namespace>/<name>.
-	ExtensionService string `json:"extensionService,omitempty"`
+// RateLimitServiceConfig defines properties of a global Rate Limit Service.
+type RateLimitServiceConfig struct {
+	// ExtensionService identifies the extension service defining the RLS.
+	ExtensionService NamespacedName `json:"extensionService,omitempty"`
 
 	// Domain is passed to the Rate Limit Service.
-	Domain string `json:"domain,omitempty"`
+	Domain string `json:"domain"`
 
 	// FailOpen defines whether to allow requests to proceed when the
 	// Rate Limit Service fails to respond with a valid rate limit
 	// decision within the timeout defined on the extension service.
-	FailOpen bool `json:"failOpen,omitempty"`
+	FailOpen bool `json:"failOpen"`
 
 	// EnableXRateLimitHeaders defines whether to include the X-RateLimit
 	// headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset
@@ -376,21 +493,26 @@ type RateLimitService struct {
 	// to clients when the Rate Limit Service is consulted for a request.
 	//
 	// ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
-	EnableXRateLimitHeaders bool `json:"enableXRateLimitHeaders,omitempty"`
+	EnableXRateLimitHeaders bool `json:"enableXRateLimitHeaders"`
 }
 
-// PolicyParameters holds default policy used if not explicitly set by the user
-type PolicyParameters struct {
+// PolicyConfig holds default policy used if not explicitly set by the user
+type PolicyConfig struct {
 	// RequestHeadersPolicy defines the request headers set/removed on all routes
-	RequestHeadersPolicy HeadersPolicy `json:"requestHeaders,omitempty"`
+	// +optional
+	RequestHeadersPolicy *HeadersPolicy `json:"requestHeaders,omitempty"`
 
 	// ResponseHeadersPolicy defines the response headers set/removed on all routes
-	ResponseHeadersPolicy HeadersPolicy `json:"responseHeaders,omitempty"`
+	// +optional
+	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeaders,omitempty"`
 }
 
 type HeadersPolicy struct {
-	Set    map[string]string `json:"set,omitempty"`
-	Remove []string          `json:"remove,omitempty"`
+	// +optional
+	Set map[string]string `json:"set,omitempty"`
+
+	// +optional
+	Remove []string `json:"remove,omitempty"`
 }
 
 // NamespacedName defines the namespace/name of the Kubernetes resource referred from the config file.
@@ -398,23 +520,6 @@ type HeadersPolicy struct {
 type NamespacedName struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
-}
-
-// Validate that both name fields are present, or neither are.
-func (n NamespacedName) Validate() error {
-	if len(strings.TrimSpace(n.Name)) == 0 && len(strings.TrimSpace(n.Namespace)) == 0 {
-		return nil
-	}
-
-	if len(strings.TrimSpace(n.Namespace)) == 0 {
-		return errors.New("namespace must be defined")
-	}
-
-	if len(strings.TrimSpace(n.Name)) == 0 {
-		return errors.New("name must be defined")
-	}
-
-	return nil
 }
 
 // ContourConfigurationStatus defines the observed state of a ContourConfiguration resource.

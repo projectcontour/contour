@@ -3290,13 +3290,12 @@ ContourConfigurationSpec
 <code>xdsServer</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.ServerParameters">
-ServerParameters
+<a href="#projectcontour.io/v1alpha1.XDSServerConfig">
+XDSServerConfig
 </a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>XDSServer contains parameters for the xDS server.</p>
 </td>
 </tr>
@@ -3305,14 +3304,45 @@ ServerParameters
 <code>ingress</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.Ingress">
-Ingress
+<a href="#projectcontour.io/v1alpha1.IngressConfig">
+IngressConfig
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>IngressOptions contains parameters for ingress options.</p>
+<p>Ingress contains parameters for ingress options.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>debug</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.DebugConfig">
+DebugConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Debug contains parameters to enable debug logging
+and debug interfaces inside Contour.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>health</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.HealthConfig">
+HealthConfig
+</a>
+</em>
+</td>
+<td>
+<p>Health contains parameters to configure endpoints which Contour
+exposes to respond to Kubernetes health checks.</p>
 </td>
 </tr>
 <tr>
@@ -3320,12 +3350,14 @@ Ingress
 <code>envoy</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.Envoy">
-Envoy
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">
+EnvoyConfig
 </a>
 </em>
 </td>
 <td>
+<p>Envoy contains parameters for Envoy as well
+as how to optionally configure a managed Envoy fleet.</p>
 </td>
 </tr>
 <tr>
@@ -3333,14 +3365,14 @@ Envoy
 <code>gateway</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.GatewayParameters">
-GatewayParameters
+<a href="#projectcontour.io/v1alpha1.GatewayConfig">
+GatewayConfig
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>GatewayConfig contains parameters for the gateway-api Gateway that Contour
+<p>Gateway contains parameters for the gateway-api Gateway that Contour
 is configured to serve traffic.</p>
 </td>
 </tr>
@@ -3361,16 +3393,15 @@ HTTPProxyConfig
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>leaderelection</code>
+<code>leaderElection</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.LeaderElectionParameters">
-LeaderElectionParameters
+<a href="#projectcontour.io/v1alpha1.LeaderElectionConfig">
+LeaderElectionConfig
 </a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>LeaderElection contains leader election parameters.</p>
 </td>
 </tr>
@@ -3393,8 +3424,8 @@ Defaults to disabled for security reasons.</p>
 <code>rateLimitService</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.RateLimitService">
-RateLimitService
+<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">
+RateLimitServiceConfig
 </a>
 </em>
 </td>
@@ -3408,13 +3439,27 @@ to be used for global rate limiting.</p>
 <code>policy</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.PolicyParameters">
-PolicyParameters
+<a href="#projectcontour.io/v1alpha1.PolicyConfig">
+PolicyConfig
 </a>
 </em>
 </td>
 <td>
 <p>Policy specifies default policy applied if not overridden by the user</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>metrics</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.MetricsConfig">
+MetricsConfig
+</a>
+</em>
+</td>
+<td>
+<p>Metrics defines the endpoints Envoy use to serve to metrics.</p>
 </td>
 </tr>
 </table>
@@ -3753,7 +3798,7 @@ names in an Envoy cluster config.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Envoy">Envoy</a>)
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
 <p>ClusterParameters holds various configurable cluster values.</p>
@@ -3816,13 +3861,12 @@ other remaining options being command line flags.</p>
 <code>xdsServer</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.ServerParameters">
-ServerParameters
+<a href="#projectcontour.io/v1alpha1.XDSServerConfig">
+XDSServerConfig
 </a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>XDSServer contains parameters for the xDS server.</p>
 </td>
 </tr>
@@ -3831,14 +3875,45 @@ ServerParameters
 <code>ingress</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.Ingress">
-Ingress
+<a href="#projectcontour.io/v1alpha1.IngressConfig">
+IngressConfig
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>IngressOptions contains parameters for ingress options.</p>
+<p>Ingress contains parameters for ingress options.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>debug</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.DebugConfig">
+DebugConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Debug contains parameters to enable debug logging
+and debug interfaces inside Contour.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>health</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.HealthConfig">
+HealthConfig
+</a>
+</em>
+</td>
+<td>
+<p>Health contains parameters to configure endpoints which Contour
+exposes to respond to Kubernetes health checks.</p>
 </td>
 </tr>
 <tr>
@@ -3846,12 +3921,14 @@ Ingress
 <code>envoy</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.Envoy">
-Envoy
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">
+EnvoyConfig
 </a>
 </em>
 </td>
 <td>
+<p>Envoy contains parameters for Envoy as well
+as how to optionally configure a managed Envoy fleet.</p>
 </td>
 </tr>
 <tr>
@@ -3859,14 +3936,14 @@ Envoy
 <code>gateway</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.GatewayParameters">
-GatewayParameters
+<a href="#projectcontour.io/v1alpha1.GatewayConfig">
+GatewayConfig
 </a>
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>GatewayConfig contains parameters for the gateway-api Gateway that Contour
+<p>Gateway contains parameters for the gateway-api Gateway that Contour
 is configured to serve traffic.</p>
 </td>
 </tr>
@@ -3887,16 +3964,15 @@ HTTPProxyConfig
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>leaderelection</code>
+<code>leaderElection</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.LeaderElectionParameters">
-LeaderElectionParameters
+<a href="#projectcontour.io/v1alpha1.LeaderElectionConfig">
+LeaderElectionConfig
 </a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>LeaderElection contains leader election parameters.</p>
 </td>
 </tr>
@@ -3919,8 +3995,8 @@ Defaults to disabled for security reasons.</p>
 <code>rateLimitService</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.RateLimitService">
-RateLimitService
+<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">
+RateLimitServiceConfig
 </a>
 </em>
 </td>
@@ -3934,13 +4010,27 @@ to be used for global rate limiting.</p>
 <code>policy</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.PolicyParameters">
-PolicyParameters
+<a href="#projectcontour.io/v1alpha1.PolicyConfig">
+PolicyConfig
 </a>
 </em>
 </td>
 <td>
 <p>Policy specifies default policy applied if not overridden by the user</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>metrics</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.MetricsConfig">
+MetricsConfig
+</a>
+</em>
+</td>
+<td>
+<p>Metrics defines the endpoints Envoy use to serve to metrics.</p>
 </td>
 </tr>
 </tbody>
@@ -4066,10 +4156,14 @@ in case some other controller wants to add a Condition.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.Debug">Debug
+<h3 id="projectcontour.io/v1alpha1.DebugConfig">DebugConfig
 </h3>
 <p>
-<p>Debug contains Contour specific troubleshooting options.</p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+</p>
+<p>
+<p>DebugConfig contains Contour specific troubleshooting options.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -4088,7 +4182,6 @@ string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Defines the Contour debug address interface.</p>
 </td>
 </tr>
@@ -4101,9 +4194,7 @@ int
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>Defines the xDS gRPC API port which Contour will serve.
-Defaults to 8001.</p>
+<p>Defines the xDS gRPC API port which Contour will serve.</p>
 </td>
 </tr>
 <tr>
@@ -4117,7 +4208,6 @@ LogLevel
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>DebugLogLevel defines the log level which Contour will
 use when outputting log information.</p>
 </td>
@@ -4139,13 +4229,14 @@ use when outputting Kubernetes specific log information.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.Envoy">Envoy
+<h3 id="projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
+<p>EnvoyConfig defines how Envoy is to be Configured from Contour.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -4166,7 +4257,6 @@ EnvoyListenerConfig
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Listener hold various configurable Envoy listener values.</p>
 </td>
 </tr>
@@ -4181,7 +4271,6 @@ NamespacedName
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Service holds Envoy service parameters for setting Ingress status.</p>
 </td>
 </tr>
@@ -4196,7 +4285,6 @@ EnvoyListener
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Defines the HTTP Listener for Envoy.</p>
 </td>
 </tr>
@@ -4211,7 +4299,6 @@ EnvoyListener
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Defines the HTTP Listener for Envoy.</p>
 </td>
 </tr>
@@ -4220,13 +4307,13 @@ EnvoyListener
 <code>metrics</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.Metrics">
-Metrics
+<a href="#projectcontour.io/v1alpha1.MetricsConfig">
+MetricsConfig
 </a>
 </em>
 </td>
 <td>
-<p>Metrics defines the endpoints Contour will serve to enable metrics.</p>
+<p>Metrics defines the endpoints Envoy use to serve to metrics.</p>
 </td>
 </tr>
 <tr>
@@ -4258,7 +4345,6 @@ EnvoyLogging
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Logging defines how Envoy&rsquo;s logs can be configured.</p>
 </td>
 </tr>
@@ -4277,7 +4363,6 @@ EnvoyLogging
 versions the proxy should accept. HTTP versions are
 strings of the form &ldquo;HTTP/xx&rdquo;. Supported versions are
 &ldquo;HTTP/1.1&rdquo; and &ldquo;HTTP/2&rdquo;.</p>
-<p>If this field not specified, all supported versions are accepted.</p>
 </td>
 </tr>
 <tr>
@@ -4291,6 +4376,7 @@ TimeoutParameters
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Timeouts holds various configurable timeouts that can
 be set in the config file.</p>
 </td>
@@ -4330,7 +4416,7 @@ NetworkParameters
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Envoy">Envoy</a>)
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
 <p>EnvoyListener defines parameters for an Envoy Listener.</p>
@@ -4369,14 +4455,13 @@ int
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>access_log</code>
+<code>accessLog</code>
 <br>
 <em>
 string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>AccessLog defines where Envoy logs are outputted for this listener.</p>
 </td>
 </tr>
@@ -4386,7 +4471,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Envoy">Envoy</a>)
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
 <p>EnvoyListenerConfig hold various configurable Envoy listener values.</p>
@@ -4408,7 +4493,6 @@ bool
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Use PROXY protocol for all listeners.</p>
 </td>
 </tr>
@@ -4421,7 +4505,6 @@ bool
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>DisableAllowChunkedLength disables the RFC-compliant Envoy behavior to
 strip the &ldquo;Content-Length&rdquo; header if &ldquo;Transfer-Encoding: chunked&rdquo; is
 also set. This is an emergency off-switch to revert back to Envoy&rsquo;s
@@ -4432,14 +4515,13 @@ See: <a href="https://github.com/projectcontour/contour/issues/3221">https://git
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>connection-balancer</code>
+<code>connectionBalancer</code>
 <br>
 <em>
 string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 See <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig">https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig</a>
 for more information.</p>
@@ -4466,7 +4548,7 @@ EnvoyTLS
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Envoy">Envoy</a>)
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
 <p>EnvoyLogging defines how Envoy&rsquo;s logs can be configured.</p>
@@ -4481,7 +4563,7 @@ EnvoyTLS
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>accesslogFormat</code>
+<code>accessLogFormat</code>
 <br>
 <em>
 <a href="#projectcontour.io/v1alpha1.AccessLogType">
@@ -4496,13 +4578,14 @@ Valid options are &lsquo;envoy&rsquo; or &lsquo;json&rsquo;</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>accesslogFormatString</code>
+<code>accessLogFormatString</code>
 <br>
 <em>
 string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>AccessLogFormatString sets the access log format when format is set to <code>envoy</code>.
 When empty, Envoy&rsquo;s default format is used.</p>
 </td>
@@ -4518,6 +4601,7 @@ AccessLogFields
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>AccessLogFields sets the fields that JSON logging will
 output when AccessLogFormat is json.</p>
 </td>
@@ -4550,7 +4634,6 @@ string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>MinimumProtocolVersion is the minimum TLS version this vhost should
 negotiate. Valid options are <code>1.2</code> (default) and <code>1.3</code>.</p>
 </td>
@@ -4560,18 +4643,19 @@ negotiate. Valid options are <code>1.2</code> (default) and <code>1.3</code>.</p
 <code>cipherSuites</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.TLSCiphers">
-TLSCiphers
+<a href="#projectcontour.io/v1alpha1.TLSCipher">
+[]TLSCipher
 </a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>CipherSuites defines the TLS ciphers to be supported by Envoy TLS
 listeners when negotiating TLS 1.2. Ciphers are validated against the
 set that Envoy supports by default. This parameter should only be used
 by advanced users. Note that these will be ignored when TLS 1.3 is in
 use.</p>
+<p>See: <a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters">https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters</a>
+Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.</p>
 </td>
 </tr>
 </tbody>
@@ -4801,14 +4885,14 @@ uint32
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.GatewayParameters">GatewayParameters
+<h3 id="projectcontour.io/v1alpha1.GatewayConfig">GatewayConfig
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
-<p>GatewayParameters holds the config for Gateway API controllers.</p>
+<p>GatewayConfig holds the config for Gateway API controllers.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -4873,6 +4957,7 @@ permitInsecure field in HTTPProxy.</p>
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Restrict Contour to searching these namespaces for root ingress routes.</p>
 </td>
 </tr>
@@ -4887,6 +4972,7 @@ NamespacedName
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>FallbackCertificate defines the namespace/name of the Kubernetes secret to
 use as fallback when a non-SNI request is received.</p>
 </td>
@@ -4897,7 +4983,7 @@ use as fallback when a non-SNI request is received.</p>
 (<code>string</code> alias)</h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Envoy">Envoy</a>)
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
 <p>HTTPVersionType is the name of a supported HTTP version.</p>
@@ -4906,7 +4992,7 @@ use as fallback when a non-SNI request is received.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.PolicyParameters">PolicyParameters</a>)
+<a href="#projectcontour.io/v1alpha1.PolicyConfig">PolicyConfig</a>)
 </p>
 <p>
 </p>
@@ -4927,6 +5013,7 @@ map[string]string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 </td>
 </tr>
 <tr>
@@ -4938,18 +5025,19 @@ map[string]string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 </td>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.Health">Health
+<h3 id="projectcontour.io/v1alpha1.HealthConfig">HealthConfig
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ServerParameters">ServerParameters</a>)
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
-<p>Health defines the endpoints Contour will serve to enable health checks.</p>
+<p>HealthConfig defines the endpoints Contour will serve to enable health checks.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -4968,7 +5056,6 @@ string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Defines the Contour health address interface.</p>
 </td>
 </tr>
@@ -4981,21 +5068,19 @@ int
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>Defines the Contour health port.
-Defaults to 8000.</p>
+<p>Defines the Contour health port.</p>
 </td>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.Ingress">Ingress
+<h3 id="projectcontour.io/v1alpha1.IngressConfig">IngressConfig
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
-<p>Ingress defines ingress specific config items.</p>
+<p>IngressConfig defines ingress specific config items.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -5033,14 +5118,14 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.LeaderElectionParameters">LeaderElectionParameters
+<h3 id="projectcontour.io/v1alpha1.LeaderElectionConfig">LeaderElectionConfig
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
-<p>LeaderElectionParameters holds the config bits for leader election
+<p>LeaderElectionConfig holds the config bits for leader election
 inside the  config file.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
@@ -5114,20 +5199,20 @@ bool
 (<code>string</code> alias)</h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Debug">Debug</a>)
+<a href="#projectcontour.io/v1alpha1.DebugConfig">DebugConfig</a>)
 </p>
 <p>
 <p>LogLevel is the logging levels available.</p>
 </p>
-<h3 id="projectcontour.io/v1alpha1.Metrics">Metrics
+<h3 id="projectcontour.io/v1alpha1.MetricsConfig">MetricsConfig
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Envoy">Envoy</a>, 
-<a href="#projectcontour.io/v1alpha1.ServerParameters">ServerParameters</a>)
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>, 
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
-<p>Metrics defines the endpoints for metrics.</p>
+<p>MetricsConfig defines the metrics endpoint.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -5146,8 +5231,7 @@ string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>Defines the Contour metrics address interface.</p>
+<p>Defines the metrics address interface.</p>
 </td>
 </tr>
 <tr>
@@ -5159,9 +5243,7 @@ int
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>Defines the Contour metrics port.
-Defaults to 8000.</p>
+<p>Defines the metrics port.</p>
 </td>
 </tr>
 </tbody>
@@ -5170,9 +5252,10 @@ Defaults to 8000.</p>
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Envoy">Envoy</a>, 
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>, 
 <a href="#projectcontour.io/v1alpha1.HTTPProxyConfig">HTTPProxyConfig</a>, 
-<a href="#projectcontour.io/v1alpha1.LeaderElectionParameters">LeaderElectionParameters</a>)
+<a href="#projectcontour.io/v1alpha1.LeaderElectionConfig">LeaderElectionConfig</a>, 
+<a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>)
 </p>
 <p>
 <p>NamespacedName defines the namespace/name of the Kubernetes resource referred from the config file.
@@ -5214,7 +5297,7 @@ string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Envoy">Envoy</a>)
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
 <p>NetworkParameters hold various configurable network values.</p>
@@ -5258,14 +5341,14 @@ If configured to port &ldquo;0&rdquo; then the admin interface is disabled.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.PolicyParameters">PolicyParameters
+<h3 id="projectcontour.io/v1alpha1.PolicyConfig">PolicyConfig
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
-<p>PolicyParameters holds default policy used if not explicitly set by the user</p>
+<p>PolicyConfig holds default policy used if not explicitly set by the user</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -5286,6 +5369,7 @@ HeadersPolicy
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>RequestHeadersPolicy defines the request headers set/removed on all routes</p>
 </td>
 </tr>
@@ -5300,19 +5384,20 @@ HeadersPolicy
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>ResponseHeadersPolicy defines the response headers set/removed on all routes</p>
 </td>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.RateLimitService">RateLimitService
+<h3 id="projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
 </p>
 <p>
-<p>RateLimitService defines properties of a global Rate Limit Service.</p>
+<p>RateLimitServiceConfig defines properties of a global Rate Limit Service.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -5327,12 +5412,13 @@ HeadersPolicy
 <code>extensionService</code>
 <br>
 <em>
-string
+<a href="#projectcontour.io/v1alpha1.NamespacedName">
+NamespacedName
+</a>
 </em>
 </td>
 <td>
-<p>ExtensionService identifies the extension service defining the RLS,
-formatted as <namespace>/<name>.</p>
+<p>ExtensionService identifies the extension service defining the RLS.</p>
 </td>
 </tr>
 <tr>
@@ -5379,130 +5465,11 @@ to clients when the Rate Limit Service is consulted for a request.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.ServerParameters">ServerParameters
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
-</p>
-<p>
-<p>ServerParameters holds the config for the Contour xDS server.</p>
-</p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody class="border-top">
-<tr>
-<td style="white-space:nowrap">
-<code>type</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.XDSServerType">
-XDSServerType
-</a>
-</em>
-</td>
-<td>
-<p>Defines the XDSServer to use for <code>contour serve</code>.
-Defaults to &ldquo;contour&rdquo;</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>address</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Defines the xDS gRPC API address which Contour will serve.
-Defaults to &ldquo;0.0.0.0&rdquo;.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>port</code>
-<br>
-<em>
-int
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Defines the xDS gRPC API port which Contour will serve.
-Defaults to 8001.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>insecure</code>
-<br>
-<em>
-bool
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Allow serving the xDS gRPC API without TLS.
-Defaults to false.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>tls</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.TLS">
-TLS
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>TLS holds TLS file config details.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>health</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.Health">
-Health
-</a>
-</em>
-</td>
-<td>
-<p>Health defines the endpoints Contour will serve to enable health checks.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>metrics</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.Metrics">
-Metrics
-</a>
-</em>
-</td>
-<td>
-<p>Metrics defines the endpoints Contour will serve to enable metrics.</p>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="projectcontour.io/v1alpha1.TLS">TLS
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ServerParameters">ServerParameters</a>)
+<a href="#projectcontour.io/v1alpha1.XDSServerConfig">XDSServerConfig</a>)
 </p>
 <p>
 <p>TLS holds TLS file config details.</p>
@@ -5553,20 +5520,19 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.TLSCiphers">TLSCiphers
-(<code>[]string</code> alias)</h3>
+<h3 id="projectcontour.io/v1alpha1.TLSCipher">TLSCipher
+(<code>string</code> alias)</h3>
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoyTLS">EnvoyTLS</a>)
 </p>
 <p>
-<p>TLSCiphers holds a list of TLS ciphers</p>
 </p>
 <h3 id="projectcontour.io/v1alpha1.TimeoutParameters">TimeoutParameters
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.Envoy">Envoy</a>)
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
 <p>TimeoutParameters holds various configurable proxy timeout values.</p>
@@ -5688,11 +5654,95 @@ for more information.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.XDSServerConfig">XDSServerConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+</p>
+<p>
+<p>XDSServerConfig holds the config for the Contour xDS server.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>type</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.XDSServerType">
+XDSServerType
+</a>
+</em>
+</td>
+<td>
+<p>Defines the XDSServer to use for <code>contour serve</code>.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>address</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Defines the xDS gRPC API address which Contour will serve.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>port</code>
+<br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>Defines the xDS gRPC API port which Contour will serve.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>insecure</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Allow serving the xDS gRPC API without TLS.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tls</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.TLS">
+TLS
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TLS holds TLS file config details.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.XDSServerType">XDSServerType
 (<code>string</code> alias)</h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ServerParameters">ServerParameters</a>)
+<a href="#projectcontour.io/v1alpha1.XDSServerConfig">XDSServerConfig</a>)
 </p>
 <p>
 <p>XDSServerType is the type of xDS server implementation.</p>
