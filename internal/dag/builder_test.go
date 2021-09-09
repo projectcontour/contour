@@ -22,6 +22,7 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -6380,13 +6381,8 @@ func TestDAGInsert(t *testing.T) {
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			Routes: []contour_api_v1.Route{{
-				Conditions: []contour_api_v1.MatchCondition{{
-					Prefix: "/v1",
-				}, {
-					Prefix: "/api",
-				}},
 				Services: []contour_api_v1.Service{{
-					Name: s1.Name,
+					Name: s12.Name,
 					Port: 8080,
 				}},
 			}},
@@ -6946,8 +6942,8 @@ func TestDAGInsert(t *testing.T) {
 					Prefix: "/",
 				}},
 				Services: []contour_api_v1.Service{{
-					Name: "kuard",
-					Port: 8080,
+					Name: "nginx",
+					Port: 80,
 				}},
 				ResponseHeadersPolicy: &contour_api_v1.HeadersPolicy{
 					Set: []contour_api_v1.HeaderValue{{
@@ -6973,8 +6969,8 @@ func TestDAGInsert(t *testing.T) {
 					Prefix: "/",
 				}},
 				Services: []contour_api_v1.Service{{
-					Name: "kuard",
-					Port: 8080,
+					Name: "nginx",
+					Port: 80,
 					ResponseHeadersPolicy: &contour_api_v1.HeadersPolicy{
 						Set: []contour_api_v1.HeaderValue{{
 							Name:  "Host",
@@ -7640,7 +7636,14 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				proxyMultipleBackends, s2,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", prefixroute("/", service(s2))),
+					),
+				},
+			),
 		},
 		"insert httpproxy referencing two backends": {
 			objs: []interface{}{
@@ -8290,7 +8293,19 @@ func TestDAGInsert(t *testing.T) {
 					},
 				},
 			},
-			want: nil, // no listener created
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/finance"),
+							DirectResponse: &DirectResponse{
+								StatusCode: http.StatusBadGateway,
+							},
+						}),
+					),
+				},
+			),
 		},
 		"insert httproxy w/ conditions": {
 			objs: []interface{}{
@@ -9196,9 +9211,17 @@ func TestDAGInsert(t *testing.T) {
 		},
 		"insert httpproxy with multiple prefix conditions on include": {
 			objs: []interface{}{
-				proxy103, proxy103a, s1,
+				proxy103, proxy103a, s1, s12,
 			},
-			want: listeners(),
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						// route on root proxy is served, includes is ignored since condition is invalid
+						virtualhost("example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
 		},
 		"insert httpproxy duplicate conditions on include": {
 			objs: []interface{}{
@@ -10327,6 +10350,7 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"multiple services with weight and missing service reference": {},
 	}
 
 	for name, tc := range tests {
@@ -10991,6 +11015,452 @@ func TestBuilderRunsProcessorsInOrder(t *testing.T) {
 	b.Build()
 
 	assert.Equal(t, []string{"foo", "bar", "baz", "abc", "def"}, got)
+}
+
+func TestHTTPProxyConficts(t *testing.T) {
+	type testcase struct {
+		objs          []interface{}
+		wantListeners []Vertex
+		wantStatus    map[types.NamespacedName]contour_api_v1.DetailedCondition
+	}
+
+	run := func(t *testing.T, name string, tc testcase) {
+		t.Helper()
+		t.Run(name, func(t *testing.T) {
+			builder := Builder{
+				Source: KubernetesCache{
+					FieldLogger: fixture.NewTestLogger(t),
+				},
+				Processors: []Processor{
+					&HTTPProxyProcessor{},
+					&ListenerProcessor{},
+				},
+			}
+
+			for _, o := range tc.objs {
+				builder.Source.Insert(o)
+			}
+			dag := builder.Build()
+
+			gotListeners := make(map[int]*Listener)
+			dag.Visit(listenerMap(gotListeners).Visit)
+
+			want := make(map[int]*Listener)
+			for _, v := range tc.wantListeners {
+				if l, ok := v.(*Listener); ok {
+					want[l.Port] = l
+				}
+			}
+			assert.Equal(t, want, gotListeners)
+
+			gotStatus := make(map[types.NamespacedName]contour_api_v1.DetailedCondition)
+			for _, pu := range dag.StatusCache.GetProxyUpdates() {
+				gotStatus[pu.Fullname] = *pu.Conditions[status.ValidCondition]
+			}
+
+			assert.Equal(t, tc.wantStatus, gotStatus)
+		})
+	}
+
+	existingService1 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "existing-service-1",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	existingService2 := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "existing-service-2",
+			Namespace: "default",
+		},
+		Spec: v1.ServiceSpec{
+			Ports: []v1.ServicePort{{
+				Name:       "http",
+				Protocol:   "TCP",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+			}},
+		},
+	}
+
+	run(t, "root proxy with no route conditions refers to a missing service", testcase{
+		objs: []interface{}{
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "root-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "example.com",
+					},
+					Routes: []contour_api_v1.Route{{
+						Services: []contour_api_v1.Service{{
+							Name: "missing-service",
+							Port: 8080,
+						}},
+					}},
+				},
+			},
+		},
+		wantListeners: listeners(
+			&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("example.com", directResponseRoute("/", http.StatusServiceUnavailable)),
+				),
+			},
+		),
+		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+		},
+	})
+
+	run(t, "root proxy with no route conditions refers to a missing include", testcase{
+		objs: []interface{}{
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "root-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "example.com",
+					},
+					Includes: []contour_api_v1.Include{{
+						Name:      "missing-httpproxy",
+						Namespace: "default",
+					}},
+				},
+			},
+		},
+		wantListeners: listeners(), // No listeners and direct response since we have no route conditions to program.
+		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "IncludeNotFound", `include default/missing-httpproxy not found`),
+		},
+	})
+
+	run(t, "root proxy with prefix route condition refers to a missing include", testcase{
+		objs: []interface{}{
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "root-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "example.com",
+					},
+					Includes: []contour_api_v1.Include{{
+						Conditions: []contour_api_v1.MatchCondition{{
+							Prefix: "/",
+						}},
+						Name:      "missing-child-proxy",
+						Namespace: "default",
+					}},
+				},
+			},
+		},
+		wantListeners: listeners(
+			&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("example.com", directResponseRoute("/", http.StatusBadGateway)),
+				),
+			},
+		),
+		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "IncludeNotFound", `include default/missing-child-proxy not found`),
+		},
+	})
+
+	run(t, "root proxy refers to two services, one is missing", testcase{
+		objs: []interface{}{
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "root-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "example.com",
+					},
+					Routes: []contour_api_v1.Route{{
+						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/"}},
+						Services: []contour_api_v1.Service{{
+							Name: "missing-service",
+							Port: 8080,
+						}}}, {
+						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/valid"}},
+						Services: []contour_api_v1.Service{{
+							Name: "existing-service-1",
+							Port: 8080,
+						}}},
+					},
+				},
+			},
+			existingService1,
+		},
+		wantListeners: listeners(
+			&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("example.com",
+						directResponseRoute("/", http.StatusServiceUnavailable),
+						prefixroute("/valid", service(existingService1))),
+				),
+			},
+		),
+		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+		},
+	})
+
+	run(t, "root proxy refers to three services with weights, one is missing", testcase{
+		objs: []interface{}{
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "root-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "example.com",
+					},
+					Routes: []contour_api_v1.Route{{
+						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/"}},
+						Services: []contour_api_v1.Service{{
+							Name:   "missing-service",
+							Port:   8080,
+							Weight: 50,
+						}, {
+							Name:   "existing-service-1",
+							Port:   8080,
+							Weight: 30,
+						}, {
+							Name:   "existing-service-2",
+							Port:   8080,
+							Weight: 20,
+						}}},
+					},
+				},
+			},
+			existingService1,
+			existingService2,
+		},
+		wantListeners: listeners(
+			&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("example.com",
+						routeCluster("/",
+							&Cluster{
+								Upstream: service(existingService1),
+								Weight:   30,
+							}, &Cluster{
+								Upstream: service(existingService2),
+								Weight:   20,
+							},
+						),
+					),
+				),
+			},
+		),
+		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+		},
+	})
+
+	run(t, "root proxy with two includes, one refers to a missing child proxy", testcase{
+		objs: []interface{}{
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "root-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "example.com",
+					},
+					Includes: []contour_api_v1.Include{{
+						Conditions: []contour_api_v1.MatchCondition{{
+							Prefix: "/",
+						}},
+						Name:      "missing-child-proxy",
+						Namespace: "default",
+					}, {
+						Conditions: []contour_api_v1.MatchCondition{{
+							Prefix: "/valid",
+						}},
+						Name:      "valid-child-proxy",
+						Namespace: "default",
+					}},
+				},
+			},
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-child-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					Routes: []contour_api_v1.Route{{
+						Services: []contour_api_v1.Service{{
+							Name: "existing-service-1",
+							Port: 8080,
+						}},
+					}},
+				},
+			},
+			existingService1,
+		},
+		wantListeners: listeners(
+			&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("example.com",
+						directResponseRoute("/", http.StatusBadGateway),
+						prefixroute("/valid", service(existingService1)),
+					),
+				),
+			},
+		),
+		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: "valid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().Valid(),
+			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeIncludeError, "IncludeNotFound", `include default/missing-child-proxy not found`),
+		},
+	})
+
+	run(t, "root proxy includes child proxy that refers to a missing service", testcase{
+		objs: []interface{}{
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "root-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "example.com",
+					},
+					Includes: []contour_api_v1.Include{{
+						Name:       "invalid-child-proxy",
+						Namespace:  "default",
+						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/missing"}},
+					}},
+				},
+			},
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "invalid-child-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					Routes: []contour_api_v1.Route{{
+						Services: []contour_api_v1.Service{{
+							Name: "missing-service",
+							Port: 8080,
+						}},
+					}},
+				},
+			}},
+		wantListeners: listeners(
+			&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("example.com", directResponseRoute("/missing", http.StatusServiceUnavailable)),
+				),
+			},
+		),
+		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: "invalid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+			{Name: "root-proxy", Namespace: "default"}: fixture.NewValidCondition().Valid(),
+		},
+	})
+
+	run(t, "root proxy includes two child proxies, one refers to a missing service", testcase{
+		objs: []interface{}{
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "root-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					VirtualHost: &contour_api_v1.VirtualHost{
+						Fqdn: "example.com",
+					},
+					Includes: []contour_api_v1.Include{{
+						Name:       "invalid-child-proxy",
+						Namespace:  "default",
+						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/missing"}},
+					}, {
+						Name:       "valid-child-proxy",
+						Namespace:  "default",
+						Conditions: []contour_api_v1.MatchCondition{{Prefix: "/existing"}},
+					}},
+				},
+			},
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "invalid-child-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					Routes: []contour_api_v1.Route{{
+						Services: []contour_api_v1.Service{{
+							Name: "missing-service",
+							Port: 8080,
+						}},
+					}},
+				},
+			},
+			&contour_api_v1.HTTPProxy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "valid-child-proxy",
+					Namespace: "default",
+				},
+				Spec: contour_api_v1.HTTPProxySpec{
+					Routes: []contour_api_v1.Route{{
+						Services: []contour_api_v1.Service{{
+							Name: "existing-service-1",
+							Port: 8080,
+						}},
+					}},
+				},
+			},
+			existingService1,
+		},
+		wantListeners: listeners(
+			&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("example.com",
+						directResponseRoute("/missing", http.StatusServiceUnavailable),
+						prefixroute("/existing", service(existingService1))),
+				),
+			},
+		),
+		wantStatus: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: "invalid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeServiceError, "ServiceUnresolvedReference", `Spec.Routes unresolved service reference: service "default/missing-service" not found`),
+			{Name: "valid-child-proxy", Namespace: "default"}: fixture.NewValidCondition().Valid(),
+			{Name: "root-proxy", Namespace: "default"}:        fixture.NewValidCondition().Valid(),
+		},
+	})
 }
 
 func routes(routes ...*Route) map[string]*Route {
