@@ -23,7 +23,10 @@ The expected users of of Contour are:
 ## Attack surface and mitigations
 
 ### Primary expected attack vectors
-As you can see from the above, Contour does not have a web interface of any sort, and never directly participates in requests that transit the data plane, so the only way it is vulnerable to web attacks is via misconfiguring Envoy. As such, it is not directly susceptible to common web application security risks like the OWASP top ten. (*Envoy* is, but not Contour directly, and we rely on the Envoy project's vigilance heavily.)
+As you can see from the above, Contour does not have a web interface of any sort, and never directly participates in requests that transit the data plane, so the only way it is vulnerable to web attacks is via misconfiguring Envoy.
+As such, it is not directly susceptible to common web application security risks like the OWASP top ten. (*Envoy* is, but not Contour directly, and we rely on the Envoy project's vigilance heavily.)
+Effectively, this means that we don't spend a lot of effort on checking everything about the data path, aside from ensuring we configure it correctly and that we keep the supported TLS cipher suites up to date.
+(We also provide you with a way to customise the cipher suites if you require that.)
 
 We anticipate that the most likely attacks are created by the relatively untrusted application developer users, whether they are malicious or not. We expect the most likely attacks to be:
 - Confused deputy attacks - since Contour is trusted to build config and send to Envoy, that access can be misused to produce insecure Envoy configurations. [ExternalName Services can be used to gain access to Envoy's admin interface](https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc) was an example of this attack in action, and was specifically dealt with by disallowing ExternalName services by default, and by removing the Envoy admin interface from use across any network, even localhost.
@@ -31,7 +34,7 @@ We anticipate that the most likely attacks are created by the relatively untrust
 
 Our general method of mitigating both of these styles of attack is to be proscriptive about what configurations Contour will accept. Obviously, in cases like the ExternalName issue above, it's possible for a syntatically and allowed configuration to produce an insecure Envoy config, and this is therefore a primary focus of our thread model.
 
-### Other expected attack vectors
+### Other expected attack vectors and mitigations
 For other classes of attacks, Contour does what it can to mitigate risks.
 
 #### xDS server
