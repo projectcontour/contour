@@ -77,23 +77,37 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 
 	switch c.Protocol {
 	case "tls":
-		cluster.TransportSocket = UpstreamTLSTransportSocket(
-			UpstreamTLSContext(
-				c.UpstreamValidation,
-				c.SNI,
-				c.ClientCertificate,
-			),
-		)
+		if len(c.MinimumProtocolVersion) == 0 {
+			cluster.TransportSocket = UpstreamTLSTransportSocket(
+				UpstreamTLSContext(
+					c.UpstreamValidation,
+					c.SNI,
+					c.ClientCertificate,
+				),
+			)
+		} else {
+			cluster.TransportSocket = UpstreamTLSTransportSocket(
+				UpstreamTLSContextWithMinProtocolVersion(
+					c.UpstreamValidation, c.SNI, c.ClientCertificate, c.MinimumProtocolVersion, c.CipherSuites),
+			)
+		}
 	case "h2":
 		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
-		cluster.TransportSocket = UpstreamTLSTransportSocket(
-			UpstreamTLSContext(
-				c.UpstreamValidation,
-				c.SNI,
-				c.ClientCertificate,
-				"h2",
-			),
-		)
+		if len(c.MinimumProtocolVersion) == 0 {
+			cluster.TransportSocket = UpstreamTLSTransportSocket(
+				UpstreamTLSContext(
+					c.UpstreamValidation,
+					c.SNI,
+					c.ClientCertificate,
+					"h2",
+				),
+			)
+		} else {
+			cluster.TransportSocket = UpstreamTLSTransportSocket(
+				UpstreamTLSContextWithMinProtocolVersion(
+					c.UpstreamValidation, c.SNI, c.ClientCertificate, c.MinimumProtocolVersion, c.CipherSuites, "h2"),
+			)
+		}
 	case "h2c":
 		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
 	}
@@ -131,14 +145,21 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 	switch ext.Protocol {
 	case "h2":
 		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
-		cluster.TransportSocket = UpstreamTLSTransportSocket(
-			UpstreamTLSContext(
-				ext.UpstreamValidation,
-				ext.SNI,
-				ext.ClientCertificate,
-				"h2",
-			),
-		)
+		if len(ext.MinimumProtocolVersion) == 0 {
+			cluster.TransportSocket = UpstreamTLSTransportSocket(
+				UpstreamTLSContext(
+					ext.UpstreamValidation,
+					ext.SNI,
+					ext.ClientCertificate,
+					"h2",
+				),
+			)
+		} else {
+			cluster.TransportSocket = UpstreamTLSTransportSocket(
+				UpstreamTLSContextWithMinProtocolVersion(
+					ext.UpstreamValidation, ext.SNI, ext.ClientCertificate, ext.MinimumProtocolVersion, ext.CipherSuites, "h2"),
+			)
+		}
 	case "h2c":
 		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
 	}

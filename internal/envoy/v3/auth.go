@@ -60,6 +60,44 @@ func UpstreamTLSContext(peerValidationContext *dag.PeerValidationContext, sni st
 	return context
 }
 
+func UpstreamTLSContextWithMinProtocolVersion(
+	peerValidationContext *dag.PeerValidationContext, sni string, clientSecret *dag.Secret, minProtocolVersion string, cipherSuites []string,
+	alpnProtocols ...string) *envoy_v3_tls.UpstreamTlsContext {
+	var clientSecretConfigs []*envoy_v3_tls.SdsSecretConfig
+	if clientSecret != nil {
+		clientSecretConfigs = []*envoy_v3_tls.SdsSecretConfig{{
+			Name:      envoy.Secretname(clientSecret),
+			SdsConfig: ConfigSource("contour"),
+		}}
+	}
+
+	context := &envoy_v3_tls.UpstreamTlsContext{
+		CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+			AlpnProtocols:                  alpnProtocols,
+			TlsCertificateSdsSecretConfigs: clientSecretConfigs,
+			TlsParams: &envoy_v3_tls.TlsParameters{
+				TlsMinimumProtocolVersion: ParseTLSVersion(minProtocolVersion),
+				CipherSuites:              cipherSuites,
+			},
+		},
+		Sni: sni,
+	}
+
+	if peerValidationContext.GetCACertificate() != nil && len(peerValidationContext.GetSubjectName()) > 0 {
+		// We have to explicitly assign the value from validationContext
+		// to context.CommonTlsContext.ValidationContextType because the
+		// latter is an interface. Returning nil from validationContext
+		// directly into this field boxes the nil into the unexported
+		// type of this grpc OneOf field which causes proto marshaling
+		// to explode later on.
+		vc := validationContext(peerValidationContext.GetCACertificate(), peerValidationContext.GetSubjectName(), false)
+		if vc != nil {
+			context.CommonTlsContext.ValidationContextType = vc
+		}
+	}
+
+	return context
+}
 func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool) *envoy_v3_tls.CommonTlsContext_ValidationContext {
 	vc := &envoy_v3_tls.CommonTlsContext_ValidationContext{
 		ValidationContext: &envoy_v3_tls.CertificateValidationContext{

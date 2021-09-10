@@ -701,6 +701,12 @@ type Cluster struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *Secret
+
+	// MinTLSProtocolVersion is the minimum TLS Protocol version to use for upstream connections
+	MinimumProtocolVersion string
+
+	// CipherSuites defines the TLS Ciphers to be used for upstream connections
+	CipherSuites []string
 }
 
 func (c Cluster) Visit(f func(Vertex)) {
@@ -881,6 +887,12 @@ type ExtensionCluster struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *Secret
+
+	// MinTLSProtocolVersion is the minimum TLS Protocol version to use for upstream connections
+	MinimumProtocolVersion string
+
+	// CipherSuites defines the TLS Ciphers to be used for upstream connections
+	CipherSuites []string
 }
 
 // Visit processes extension clusters.

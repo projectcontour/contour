@@ -321,6 +321,10 @@ type TLSParameters struct {
 	// by advanced users. Note that these will be ignored when TLS 1.3 is in
 	// use.
 	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
+
+	// EnableGlobalTLS will apply MinimumProtocolVersion and CipherSuites on
+	// Envoy -> UpstreamCluster communication and Envoy -> ExternalServiceCluster communication
+	EnableGlobalTLS bool `yaml:"enable-global-tls"`
 }
 
 // Validate TLS fallback certificate, client certificate, and cipher suites
