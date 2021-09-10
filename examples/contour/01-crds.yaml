@@ -75,6 +75,7 @@ spec:
                 - port
                 type: object
               enableExternalNameService:
+                default: false
                 description: EnableExternalNameService allows processing of ExternalNameServices
                   Defaults to disabled for security reasons.
                 type: boolean
@@ -441,10 +442,11 @@ spec:
                 - port
                 type: object
               httpproxy:
+                default:
+                  disablePermitInsecure: false
                 description: HTTPProxy defines parameters on HTTPProxy.
                 properties:
                   disablePermitInsecure:
-                    default: false
                     description: DisablePermitInsecure disables the use of the permitInsecure
                       field in HTTPProxy.
                     type: boolean
@@ -481,12 +483,17 @@ spec:
                     type: string
                 type: object
               leaderElection:
+                default:
+                  configmap:
+                    name: leader-elect
+                    namespace: projectcontour
+                  disableLeaderElection: false
+                  leaseDuration: 15s
+                  renewDeadline: 10s
+                  retryPeriod: 2s
                 description: LeaderElection contains leader election parameters.
                 properties:
                   configmap:
-                    default:
-                      name: leader-elect
-                      namespace: projectcontour
                     description: NamespacedName defines the namespace/name of the
                       Kubernetes resource referred from the config file. Used for
                       Contour config YAML file parsing, otherwise we could use K8s
@@ -501,17 +508,15 @@ spec:
                     - namespace
                     type: object
                   disableLeaderElection:
-                    default: false
                     type: boolean
                   leaseDuration:
-                    default: 15s
                     type: string
                   renewDeadline:
-                    default: 10s
                     type: string
                   retryPeriod:
-                    default: 2s
                     type: string
+                required:
+                - disableLeaderElection
                 type: object
               metrics:
                 default:
@@ -599,20 +604,22 @@ spec:
                 - failOpen
                 type: object
               xdsServer:
+                default:
+                  address: 0.0.0.0
+                  insecure: false
+                  port: 8001
+                  type: contour
                 description: XDSServer contains parameters for the xDS server.
                 properties:
                   address:
-                    default: 0.0.0.0
                     description: Defines the xDS gRPC API address which Contour will
                       serve.
                     minLength: 1
                     type: string
                   insecure:
-                    default: false
                     description: Allow serving the xDS gRPC API without TLS.
                     type: boolean
                   port:
-                    default: 8001
                     description: Defines the xDS gRPC API port which Contour will
                       serve.
                     type: integer
@@ -620,21 +627,19 @@ spec:
                     description: TLS holds TLS file config details.
                     properties:
                       caFile:
+                        default: /certs/ca.crt
                         description: CA filename.
                         type: string
                       certFile:
+                        default: /certs/tls.crt
                         description: Client certificate filename.
                         type: string
                       keyFile:
+                        default: /certs/tls.key
                         description: Client key filename.
                         type: string
-                    required:
-                    - caFile
-                    - certFile
-                    - keyFile
                     type: object
                   type:
-                    default: contour
                     description: Defines the XDSServer to use for `contour serve`.
                     enum:
                     - contour
@@ -647,11 +652,10 @@ spec:
                 - type
                 type: object
             required:
+            - enableExternalNameService
             - envoy
             - health
-            - leaderElection
             - metrics
-            - xdsServer
             type: object
           status:
             description: ContourConfigurationStatus defines the observed state of
@@ -957,6 +961,7 @@ spec:
                     - port
                     type: object
                   enableExternalNameService:
+                    default: false
                     description: EnableExternalNameService allows processing of ExternalNameServices
                       Defaults to disabled for security reasons.
                     type: boolean
@@ -1329,10 +1334,11 @@ spec:
                     - port
                     type: object
                   httpproxy:
+                    default:
+                      disablePermitInsecure: false
                     description: HTTPProxy defines parameters on HTTPProxy.
                     properties:
                       disablePermitInsecure:
-                        default: false
                         description: DisablePermitInsecure disables the use of the
                           permitInsecure field in HTTPProxy.
                         type: boolean
@@ -1369,12 +1375,17 @@ spec:
                         type: string
                     type: object
                   leaderElection:
+                    default:
+                      configmap:
+                        name: leader-elect
+                        namespace: projectcontour
+                      disableLeaderElection: false
+                      leaseDuration: 15s
+                      renewDeadline: 10s
+                      retryPeriod: 2s
                     description: LeaderElection contains leader election parameters.
                     properties:
                       configmap:
-                        default:
-                          name: leader-elect
-                          namespace: projectcontour
                         description: NamespacedName defines the namespace/name of
                           the Kubernetes resource referred from the config file. Used
                           for Contour config YAML file parsing, otherwise we could
@@ -1389,17 +1400,15 @@ spec:
                         - namespace
                         type: object
                       disableLeaderElection:
-                        default: false
                         type: boolean
                       leaseDuration:
-                        default: 15s
                         type: string
                       renewDeadline:
-                        default: 10s
                         type: string
                       retryPeriod:
-                        default: 2s
                         type: string
+                    required:
+                    - disableLeaderElection
                     type: object
                   metrics:
                     default:
@@ -1489,20 +1498,22 @@ spec:
                     - failOpen
                     type: object
                   xdsServer:
+                    default:
+                      address: 0.0.0.0
+                      insecure: false
+                      port: 8001
+                      type: contour
                     description: XDSServer contains parameters for the xDS server.
                     properties:
                       address:
-                        default: 0.0.0.0
                         description: Defines the xDS gRPC API address which Contour
                           will serve.
                         minLength: 1
                         type: string
                       insecure:
-                        default: false
                         description: Allow serving the xDS gRPC API without TLS.
                         type: boolean
                       port:
-                        default: 8001
                         description: Defines the xDS gRPC API port which Contour will
                           serve.
                         type: integer
@@ -1510,21 +1521,19 @@ spec:
                         description: TLS holds TLS file config details.
                         properties:
                           caFile:
+                            default: /certs/ca.crt
                             description: CA filename.
                             type: string
                           certFile:
+                            default: /certs/tls.crt
                             description: Client certificate filename.
                             type: string
                           keyFile:
+                            default: /certs/tls.key
                             description: Client key filename.
                             type: string
-                        required:
-                        - caFile
-                        - certFile
-                        - keyFile
                         type: object
                       type:
-                        default: contour
                         description: Defines the XDSServer to use for `contour serve`.
                         enum:
                         - contour
@@ -1537,11 +1546,10 @@ spec:
                     - type
                     type: object
                 required:
+                - enableExternalNameService
                 - envoy
                 - health
-                - leaderElection
                 - metrics
-                - xdsServer
                 type: object
               replicas:
                 default: 2

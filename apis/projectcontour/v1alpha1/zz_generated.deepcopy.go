@@ -146,8 +146,16 @@ func (in *ContourConfigurationSpec) DeepCopyInto(out *ContourConfigurationSpec) 
 		(*in).DeepCopyInto(*out)
 	}
 	out.LeaderElection = in.LeaderElection
-	out.RateLimitService = in.RateLimitService
-	in.Policy.DeepCopyInto(&out.Policy)
+	if in.RateLimitService != nil {
+		in, out := &in.RateLimitService, &out.RateLimitService
+		*out = new(RateLimitServiceConfig)
+		**out = **in
+	}
+	if in.Policy != nil {
+		in, out := &in.Policy, &out.Policy
+		*out = new(PolicyConfig)
+		(*in).DeepCopyInto(*out)
+	}
 	out.Metrics = in.Metrics
 }
 

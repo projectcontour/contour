@@ -23,6 +23,8 @@ import (
 // other remaining options being command line flags.
 type ContourConfigurationSpec struct {
 	// XDSServer contains parameters for the xDS server.
+	// +optional
+	// +kubebuilder:default={type: "contour", address: "0.0.0.0", port: 8001, insecure: false}
 	XDSServer XDSServerConfig `json:"xdsServer"`
 
 	// Ingress contains parameters for ingress options.
@@ -49,23 +51,25 @@ type ContourConfigurationSpec struct {
 
 	// HTTPProxy defines parameters on HTTPProxy.
 	// +optional
+	// +kubebuilder:default={disablePermitInsecure: false}
 	HTTPProxy *HTTPProxyConfig `json:"httpproxy,omitempty"`
 
 	// LeaderElection contains leader election parameters.
+	// +optional
+	// +kubebuilder:default={leaseDuration: "15s", renewDeadline: "10s", retryPeriod: "2s", disableLeaderElection: false, configmap: {name: "leader-elect", namespace: "projectcontour"}}
 	LeaderElection LeaderElectionConfig `json:"leaderElection"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
-	// +optional
-	// +kubebuilder:default:false
-	EnableExternalNameService bool `json:"enableExternalNameService,omitempty"`
+	// +kubebuilder:default=false
+	EnableExternalNameService bool `json:"enableExternalNameService"`
 
 	// RateLimitService optionally holds properties of the Rate Limit Service
 	// to be used for global rate limiting.
-	RateLimitService RateLimitServiceConfig `json:"rateLimitService,omitempty"`
+	RateLimitService *RateLimitServiceConfig `json:"rateLimitService,omitempty"`
 
 	// Policy specifies default policy applied if not overridden by the user
-	Policy PolicyConfig `json:"policy,omitempty"`
+	Policy *PolicyConfig `json:"policy,omitempty"`
 
 	// Metrics defines the endpoints Envoy use to serve to metrics.
 	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
@@ -81,25 +85,21 @@ const EnvoyServerType XDSServerType = "envoy"
 // XDSServerConfig holds the config for the Contour xDS server.
 type XDSServerConfig struct {
 	// Defines the XDSServer to use for `contour serve`.
-	// +kubebuilder:default=contour
 	// +kubebuilder:validation:Enum=contour;envoy
 	Type XDSServerType `json:"type"`
 
 	// Defines the xDS gRPC API address which Contour will serve.
 	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:default="0.0.0.0"
 	Address string `json:"address"`
 
 	// Defines the xDS gRPC API port which Contour will serve.
-	// +kubebuilder:default=8001
 	Port int `json:"port"`
 
 	// Allow serving the xDS gRPC API without TLS.
-	// +kubebuilder:default=false
 	Insecure bool `json:"insecure"`
 
 	// TLS holds TLS file config details.
-	//  +optional
+	// +optional
 	TLS *TLS `json:"tls,omitempty"`
 }
 
@@ -115,12 +115,18 @@ type GatewayConfig struct {
 // TLS holds TLS file config details.
 type TLS struct {
 	// CA filename.
+	// +optional
+	// +kubebuilder:default="/certs/ca.crt"
 	CAFile string `json:"caFile"`
 
 	// Client certificate filename.
+	// +optional
+	// +kubebuilder:default="/certs/tls.crt"
 	CertFile string `json:"certFile"`
 
 	// Client key filename.
+	// +optional
+	// +kubebuilder:default="/certs/tls.key"
 	KeyFile string `json:"keyFile"`
 }
 
@@ -441,7 +447,6 @@ type ClusterParameters struct {
 type HTTPProxyConfig struct {
 	// DisablePermitInsecure disables the use of the
 	// permitInsecure field in HTTPProxy.
-	// +kubebuilder:default=false
 	DisablePermitInsecure bool `json:"disablePermitInsecure"`
 
 	// Restrict Contour to searching these namespaces for root ingress routes.
@@ -457,20 +462,15 @@ type HTTPProxyConfig struct {
 // LeaderElectionConfig holds the config bits for leader election
 // inside the  config file.
 type LeaderElectionConfig struct {
-	// +kubebuilder:default="15s"
 	LeaseDuration string `json:"leaseDuration,omitempty"`
 
-	// +kubebuilder:default="10s"
 	RenewDeadline string `json:"renewDeadline,omitempty"`
 
-	// +kubebuilder:default="2s"
 	RetryPeriod string `json:"retryPeriod,omitempty"`
 
-	// +kubebuilder:default={name: "leader-elect", namespace: "projectcontour"}
 	Configmap NamespacedName `json:"configmap,omitempty"`
 
-	// +kubebuilder:default=false
-	DisableLeaderElection bool `json:"disableLeaderElection,omitempty"`
+	DisableLeaderElection bool `json:"disableLeaderElection"`
 }
 
 // NetworkParameters hold various configurable network values.
