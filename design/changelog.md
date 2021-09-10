@@ -21,7 +21,7 @@ The Contour team has got feedback on a few occasions that our current release no
 
 ## Background research
 
-As part of pulling this together, I looked into a few other projects that are either similar to Contour or are depdendencies.
+As part of pulling this together, I looked into a few other projects that are either similar to Contour or are dependencies.
 
 ### Envoy
 
