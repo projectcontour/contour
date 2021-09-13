@@ -543,6 +543,9 @@ type ListenerParameters struct {
 // Parameters contains the configuration file parameters for the
 // Contour ingress controller.
 type Parameters struct {
+	// Path for file based logging.
+	ContourLogFile string `yaml:"contour-log-file,omitempty"`
+
 	// Enable debug logging
 	Debug bool
 

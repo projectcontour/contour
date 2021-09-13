@@ -136,6 +136,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("contour-cafile", "CA bundle file name for serving gRPC with TLS.").Envar("CONTOUR_CAFILE").StringVar(&ctx.caFile)
 	serve.Flag("contour-cert-file", "Contour certificate file name for serving gRPC over TLS.").PlaceHolder("/path/to/file").Envar("CONTOUR_CERT_FILE").StringVar(&ctx.contourCert)
 	serve.Flag("contour-key-file", "Contour key file name for serving gRPC over TLS.").PlaceHolder("/path/to/file").Envar("CONTOUR_KEY_FILE").StringVar(&ctx.contourKey)
+	serve.Flag("contour-log-file", "Optional Logging file path for the controller.").PlaceHolder("/path/to/file").Envar("CONTOUR_LOG_FILE").StringVar(&ctx.Config.ContourLogFile)
 	serve.Flag("insecure", "Allow serving without TLS secured gRPC.").BoolVar(&ctx.PermitInsecureGRPC)
 	serve.Flag("root-namespaces", "Restrict contour to searching these namespaces for root ingress routes.").PlaceHolder("<ns,ns>").StringVar(&ctx.rootNamespaces)
 
@@ -195,6 +196,15 @@ func validateCRDs(dynamicClient dynamic.Interface, log logrus.FieldLogger) {
 
 // doServe runs the contour serve subcommand.
 func doServe(log logrus.FieldLogger, ctx *serveContext) error {
+	// Set log target.
+	if ctx.Config.ContourLogFile != "" {
+		contourLogFile, err := os.OpenFile(ctx.Config.ContourLogFile, os.O_WRONLY|os.O_CREATE, 0755)
+		if err != nil {
+			fmt.Println(err)
+		}
+		logrus.SetOutput(contourLogFile)
+	}
+
 	// Establish k8s core & dynamic client connections.
 	clients, err := k8s.NewClients(ctx.Config.Kubeconfig, ctx.Config.InCluster)
 	if err != nil {
