@@ -27,6 +27,7 @@ const ResourceTLSRoute = "tlsroutes"
 
 const ConditionNotImplemented gatewayapi_v1alpha2.RouteConditionType = "NotImplemented"
 const ConditionResolvedRefs gatewayapi_v1alpha2.RouteConditionType = "ResolvedRefs"
+const ConditionValidBackendRefs gatewayapi_v1alpha2.RouteConditionType = "ValidBackendRefs"
 
 type RouteReasonType string
 
@@ -38,6 +39,7 @@ const ReasonDegraded RouteReasonType = "Degraded"
 const ReasonValid RouteReasonType = "Valid"
 const ReasonErrorsExist RouteReasonType = "ErrorsExist"
 const ReasonGatewayAllowMismatch RouteReasonType = "GatewayAllowMismatch"
+const ReasonAllBackendRefsHaveZeroWeights = "AllBackendRefsHaveZeroWeights"
 
 // clock is used to set lastTransitionTime on status conditions.
 var clock utilclock.Clock = utilclock.RealClock{}

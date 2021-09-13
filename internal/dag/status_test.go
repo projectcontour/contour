@@ -4136,5 +4136,46 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 			}},
 			wantGatewayConditions: validGatewayConditionsUpdate,
 		})
+
+		run(t, "TLSRoute: spec.rules.backendRefs has 0 weight", testcase{
+			gateway: gw,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+								gatewayapi.GatewayParentRef(gw.Namespace, gw.Name),
+							},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef(kuardService.Name, 8080, pointer.Int32(0)),
+						}},
+					},
+				}},
+			wantRouteConditions: []*status.RouteConditionsUpdate{{
+				FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+				Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+					status.ConditionValidBackendRefs: {
+						Type:    string(status.ConditionValidBackendRefs),
+						Status:  contour_api_v1.ConditionFalse,
+						Reason:  string(status.ReasonAllBackendRefsHaveZeroWeights),
+						Message: "At least one Spec.Rules.BackendRef must have a non-zero weight.",
+					},
+					gatewayapi_v1alpha2.ConditionRouteAccepted: {
+						Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+						Status:  contour_api_v1.ConditionFalse,
+						Reason:  "ErrorsExist",
+						Message: "Errors found, check other Conditions for details.",
+					},
+				},
+			}},
+			wantGatewayConditions: validGatewayConditionsUpdate,
+		})
 	}
 }
