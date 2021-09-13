@@ -3058,8 +3058,8 @@ string
 </td>
 <td>
 <em>(Optional)</em>
-<p>Timeout after which, if there are no active requests for this route, the connection between
-Envoy and the backend or Envoy and the external client will be closed.
+<p>Timeout for how long the proxy should wait while there is no activity during single request/response (for HTTP/1.1) or stream (for HTTP/2).
+Timeout will not trigger while HTTP/1.1 connection is idle between two consecutive requests.
 If not specified, there is no per-route idle timeout, though a connection manager-wide
 stream_idle_timeout default of 5m still applies.</p>
 </td>

@@ -622,8 +622,8 @@ type TimeoutPolicy struct {
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
 	Response string `json:"response,omitempty"`
 
-	// Timeout after which, if there are no active requests for this route, the connection between
-	// Envoy and the backend or Envoy and the external client will be closed.
+	// Timeout for how long the proxy should wait while there is no activity during single request/response (for HTTP/1.1) or stream (for HTTP/2).
+	// Timeout will not trigger while HTTP/1.1 connection is idle between two consecutive requests.
 	// If not specified, there is no per-route idle timeout, though a connection manager-wide
 	// stream_idle_timeout default of 5m still applies.
 	// +optional
