@@ -35,6 +35,14 @@ type ExtensionServiceProcessor struct {
 	// secret containing client certificate and private key to be
 	// used when establishing TLS connection to upstream cluster.
 	ClientCertificate *types.NamespacedName
+
+	// MinimumTLSVersion is optional minimumTLSVersion to be used for client
+	// connections to upstream ExtensionCluster
+	MinimumTLSVersion string
+
+	// CipherSuites is optional cipher suites to be used for client connections
+	// to upstream ExtensionCluster
+	CipherSuites []string
 }
 
 var _ Processor = &ExtensionServiceProcessor{}
@@ -108,6 +116,11 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		TimeoutPolicy:      tp,
 		SNI:                "",
 		ClientCertificate:  clientCertSecret,
+	}
+
+	if len(p.MinimumTLSVersion) != 0 {
+		extension.MinimumProtocolVersion = p.MinimumTLSVersion
+		extension.CipherSuites = p.CipherSuites
 	}
 
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)

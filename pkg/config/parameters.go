@@ -322,9 +322,9 @@ type TLSParameters struct {
 	// use.
 	CipherSuites TLSCiphers `yaml:"cipher-suites,omitempty"`
 
-	// EnableGlobalTLS will apply MinimumProtocolVersion and CipherSuites on
+	// EnableUpstreamTLS will apply MinimumProtocolVersion and CipherSuites on every
 	// Envoy -> UpstreamCluster communication and Envoy -> ExternalServiceCluster communication
-	EnableGlobalTLS bool `yaml:"enable-global-tls"`
+	EnableUpstreamTLS bool `yaml:"enable-upstream-tls"`
 }
 
 // Validate TLS fallback certificate, client certificate, and cipher suites
@@ -342,6 +342,9 @@ func (t TLSParameters) Validate() error {
 		return fmt.Errorf("invalid TLS cipher suites: %w", err)
 	}
 
+	if t.EnableUpstreamTLS && len(t.CipherSuites) == 0 {
+		return fmt.Errorf("enable-upstream-tls is set; TLS cipher suites can't be empty")
+	}
 	return nil
 }
 

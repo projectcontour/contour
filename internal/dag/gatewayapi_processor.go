@@ -52,6 +52,14 @@ type GatewayAPIProcessor struct {
 	// This is normally disabled for security reasons.
 	// See https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for details.
 	EnableExternalNameService bool
+
+	// MinimumTLSVersion is optional minimumTLSVersion to be used for client
+	// connections to upstream ExtensionCluster
+	MinimumTLSVersion string
+
+	// CipherSuites is optional cipher suites to be used for client connections
+	// to upstream ExtensionCluster
+	CipherSuites []string
 }
 
 // matchConditions holds match rules.
@@ -847,6 +855,16 @@ func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, headerP
 
 // cluster builds a *dag.Cluster for the supplied set of headerPolicy and service.
 func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Service, weight uint32) *Cluster {
+	if len(p.MinimumTLSVersion) != 0 {
+		return &Cluster{
+			Upstream:               service,
+			Weight:                 weight,
+			Protocol:               service.Protocol,
+			RequestHeadersPolicy:   headerPolicy,
+			MinimumProtocolVersion: p.MinimumTLSVersion,
+			CipherSuites:           p.CipherSuites,
+		}
+	}
 	return &Cluster{
 		Upstream:             service,
 		Weight:               weight,

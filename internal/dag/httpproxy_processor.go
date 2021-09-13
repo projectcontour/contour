@@ -82,6 +82,14 @@ type HTTPProxyProcessor struct {
 
 	// Response headers that will be set on all routes (optional).
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// MinimumTLSVersion is optional minimumTLSVersion to be used for client
+	// connections to upstream ExtensionCluster
+	MinimumTLSVersion string
+
+	// CipherSuites is optional cipher suites to be used for client connections
+	// to upstream ExtensionCluster
+	CipherSuites []string
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -659,6 +667,11 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
 				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
+			}
+
+			if len(p.MinimumTLSVersion) != 0 {
+				c.MinimumProtocolVersion = p.MinimumTLSVersion
+				c.CipherSuites = p.CipherSuites
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
