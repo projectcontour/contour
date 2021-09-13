@@ -188,7 +188,8 @@ versions:
         - "1.19"
         - "1.18"
         - "1.17"
-      gateway-api: NA
+      gateway-api:
+        - NA
       contour-operator: v1.12.0
   - version: v1.11.0
     supported: "false"
@@ -198,7 +199,8 @@ versions:
         - "1.19"
         - "1.18"
         - "1.17"
-      gateway-api: NA
+      gateway-api:
+        - NA
       contour-operator: v1.11.0
   - version: v1.10.1
     supported: "false"
@@ -208,7 +210,8 @@ versions:
         - "1.19"
         - "1.18"
         - "1.17"
-      gateway-api: NA
+      gateway-api:
+        - NA
       contour-operator: NA
   - version: v1.10.0
     supported: "false"
@@ -218,7 +221,8 @@ versions:
         - "1.19"
         - "1.18"
         - "1.17"
-      gateway-api: NA
+      gateway-api:
+        - NA
       contour-operator: NA
   - version: v1.9.0
     supported: "false"
@@ -228,6 +232,7 @@ versions:
         - "1.18"
         - "1.17"
         - "1.16"
-      gateway-api: NA
+      gateway-api:
+        - NA
       contour-operator: NA
 
