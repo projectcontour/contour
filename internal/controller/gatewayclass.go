@@ -46,7 +46,7 @@ type gatewayClassReconciler struct {
 	eventHandler  cache.ResourceEventHandler
 	statusUpdater k8s.StatusUpdater
 	log           logrus.FieldLogger
-	controller    string
+	controller    gatewayapi_v1alpha2.GatewayController
 }
 
 // NewGatewayClassController creates the gatewayclass controller. The controller
@@ -65,7 +65,7 @@ func NewGatewayClassController(
 		eventHandler:  eventHandler,
 		statusUpdater: statusUpdater,
 		log:           log,
-		controller:    name,
+		controller:    gatewayapi_v1alpha2.GatewayController(name),
 	}
 
 	c, err := controller.New("gatewayclass-controller", mgr, controller.Options{Reconciler: r})

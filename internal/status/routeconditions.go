@@ -47,7 +47,7 @@ type RouteConditionsUpdate struct {
 	Conditions         map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition
 	ExistingConditions map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition
 	GatewayRef         types.NamespacedName
-	GatewayController  string
+	GatewayController  gatewayapi_v1alpha2.GatewayController
 	Resource           string
 	Generation         int64
 	TransitionTime     metav1.Time
@@ -137,7 +137,7 @@ func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 
 	gatewayStatuses = append(gatewayStatuses, gatewayapi_v1alpha2.RouteParentStatus{
 		ParentRef:  parentRefForGateway(routeUpdate.GatewayRef),
-		Controller: gatewayapi_v1alpha2.GatewayController(routeUpdate.GatewayController), // TODO
+		Controller: routeUpdate.GatewayController,
 		Conditions: conditionsToWrite,
 	})
 
