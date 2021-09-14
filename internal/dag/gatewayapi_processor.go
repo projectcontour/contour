@@ -492,7 +492,7 @@ func (p *GatewayAPIProcessor) computeGateway(gateway *gatewayapi_v1alpha2.Gatewa
 
 func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, validGateway bool, listenerSecret *Secret) {
 
-	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
+	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Parents)
 	defer commit()
 
 	// If the Gateway is invalid, set status on the route.
@@ -601,7 +601,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 }
 
 func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname, validGateway bool) {
-	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
+	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Parents)
 	defer commit()
 
 	// If the Gateway is invalid, set status on the route.
