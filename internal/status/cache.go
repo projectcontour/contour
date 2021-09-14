@@ -33,7 +33,7 @@ type ConditionType string
 const ValidCondition ConditionType = "Valid"
 
 // NewCache creates a new Cache for holding status updates.
-func NewCache(gateway types.NamespacedName, gatewayController string) Cache {
+func NewCache(gateway types.NamespacedName, gatewayController gatewayapi_v1alpha2.GatewayController) Cache {
 	return Cache{
 		gatewayRef:        gateway,
 		gatewayController: gatewayController,
@@ -54,7 +54,7 @@ type CacheEntry interface {
 // KindAccessor.
 type Cache struct {
 	gatewayRef        types.NamespacedName
-	gatewayController string
+	gatewayController gatewayapi_v1alpha2.GatewayController
 
 	proxyUpdates   map[types.NamespacedName]*ProxyUpdate
 	gatewayUpdates map[types.NamespacedName]*GatewayConditionsUpdate

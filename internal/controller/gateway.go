@@ -49,7 +49,7 @@ type gatewayReconciler struct {
 	log           logrus.FieldLogger
 
 	// gatewayClassControllerName is the configured controller of managed gatewayclasses.
-	gatewayClassControllerName string
+	gatewayClassControllerName gatewayapi_v1alpha2.GatewayController
 }
 
 // NewGatewayController creates the gateway controller from mgr. The controller will be pre-configured
@@ -68,7 +68,7 @@ func NewGatewayController(
 		eventHandler:               eventHandler,
 		statusUpdater:              statusUpdater,
 		log:                        log,
-		gatewayClassControllerName: gatewayClassControllerName,
+		gatewayClassControllerName: gatewayapi_v1alpha2.GatewayController(gatewayClassControllerName),
 	}
 	c, err := controller.New("gateway-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
