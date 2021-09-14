@@ -297,6 +297,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				} else {
 					svhost.AuthorizationResponseTimeout = timeout
 				}
+
+				if auth.BufferSettings != nil {
+					svhost.AuthorizationBufferSettingsEnabled = true
+					svhost.AuthorizationBufferSettingsAllowPartialMessage = auth.BufferSettings.AllowPartialMessage
+					svhost.AuthorizationBufferSettingsMaxRequestBytes = auth.BufferSettings.MaxRequestBytes
+					svhost.AuthorizationBufferSettingsPackAsBytes = auth.BufferSettings.PackAsBytes
+				}
 			}
 		}
 	}

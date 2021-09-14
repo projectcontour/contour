@@ -636,10 +636,8 @@ end
 	}
 }
 
-// FilterExternalAuthz returns an `ext_authz` filter configured with the
-// requested parameters.
-func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting) *http.HttpFilter {
-	authConfig := envoy_config_filter_http_ext_authz_v3.ExtAuthz{
+func getExtAuthzConfig(authzClusterName string, failOpen bool, timeout timeout.Setting) envoy_config_filter_http_ext_authz_v3.ExtAuthz {
+	return envoy_config_filter_http_ext_authz_v3.ExtAuthz{
 		Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
 			GrpcService: &envoy_core_v3.GrpcService{
 				TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
@@ -668,6 +666,27 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 		// `transport_api_version` from ExtensionServiceSpec ProtocolVersion.
 		TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 	}
+}
+
+func FilterExternalAuthzWithBufferSettings(authzClusterName string, failOpen bool, timeout timeout.Setting, maxRequestBytes uint32, allowPartialMessage bool, packAsBytes bool) *http.HttpFilter {
+	authConfig := getExtAuthzConfig(authzClusterName, failOpen, timeout)
+	authConfig.WithRequestBody = &envoy_config_filter_http_ext_authz_v3.BufferSettings{
+		MaxRequestBytes:     maxRequestBytes,
+		AllowPartialMessage: allowPartialMessage,
+		PackAsBytes:         packAsBytes,
+	}
+	return &http.HttpFilter{
+		Name: "envoy.filters.http.ext_authz",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&authConfig),
+		},
+	}
+}
+
+// FilterExternalAuthz returns an `ext_authz` filter configured with the
+// requested parameters.
+func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting) *http.HttpFilter {
+	authConfig := getExtAuthzConfig(authzClusterName, failOpen, timeout)
 
 	return &http.HttpFilter{
 		Name: "envoy.filters.http.ext_authz",

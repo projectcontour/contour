@@ -171,6 +171,25 @@ type AuthorizationServer struct {
 	//
 	// +optional
 	FailOpen bool `json:"failOpen,omitempty"`
+
+	// BufferSettings specifies configuration for buffering request data sent to AuthorizationServer
+	// +optional
+	BufferSettings *AuthorizationServerBufferSettings `json:"bufferSettings,omitempty"`
+}
+
+// AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client request data and send it as part of authorization request
+type AuthorizationServerBufferSettings struct {
+	// MaxRequestBytes sets the maximum size of message body ExtAuthz filter will hold in-memory.
+	// +optional
+	MaxRequestBytes uint32 `json:"maxRequestBytes,omitempty"`
+
+	// If AllowPartialMessage is true, then Envoy will buffer the body until MaxRequestBytes are reached.
+	// +optional
+	AllowPartialMessage bool `json:"allowPartialMessage,omitempty"`
+
+	// If PackAsBytes is true, the body sent to Authorization Server is in raw bytes.
+	// +optional
+	PackAsBytes bool `json:"packAsBytes,omitempty"`
 }
 
 // AuthorizationPolicy modifies how client requests are authenticated.

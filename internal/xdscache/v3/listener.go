@@ -397,11 +397,23 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				var authFilter *http.HttpFilter
 
 				if vh.AuthorizationService != nil {
-					authFilter = envoy_v3.FilterExternalAuthz(
-						vh.AuthorizationService.Name,
-						vh.AuthorizationFailOpen,
-						vh.AuthorizationResponseTimeout,
-					)
+					if vh.AuthorizationBufferSettingsEnabled {
+						authFilter = envoy_v3.FilterExternalAuthzWithBufferSettings(
+							vh.AuthorizationService.Name,
+							vh.AuthorizationFailOpen,
+							vh.AuthorizationResponseTimeout,
+							vh.AuthorizationBufferSettingsMaxRequestBytes,
+							vh.AuthorizationBufferSettingsAllowPartialMessage,
+							vh.AuthorizationBufferSettingsPackAsBytes,
+						)
+
+					} else {
+						authFilter = envoy_v3.FilterExternalAuthz(
+							vh.AuthorizationService.Name,
+							vh.AuthorizationFailOpen,
+							vh.AuthorizationResponseTimeout,
+						)
+					}
 				}
 
 				// Create a uniquely named HTTP connection manager for

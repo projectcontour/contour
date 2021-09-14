@@ -409,6 +409,79 @@ set in most cases. It is intended for use only while migrating applications
 from internal authorization to Contour external authorization.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>bufferSettings</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.AuthorizationServerBufferSettings">
+AuthorizationServerBufferSettings
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>BufferSettings specifies configuration for buffering request data sent to AuthorizationServer</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.AuthorizationServerBufferSettings">AuthorizationServerBufferSettings
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.AuthorizationServer">AuthorizationServer</a>)
+</p>
+<p>
+<p>AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client request data and send it as part of authorization request</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>maxRequestBytes</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxRequestBytes sets the maximum size of message body ExtAuthz filter will hold in-memory.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>allowPartialMessage</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If AllowPartialMessage is true, then Envoy will buffer the body until MaxRequestBytes are reached.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>packAsBytes</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>If PackAsBytes is true, the body sent to Authorization Server is in raw bytes.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.CORSHeaderValue">CORSHeaderValue

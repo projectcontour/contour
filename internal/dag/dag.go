@@ -532,6 +532,18 @@ type SecureVirtualHost struct {
 	// only reason to set this to `true` is when you are migrating
 	// from internal to external authorization.
 	AuthorizationFailOpen bool
+
+	// AuthorizationBufferSettingsEnabled sets whether buffer settings are set for buffering request data sent to AuthorizationServer
+	AuthorizationBufferSettingsEnabled bool
+
+	// AuthorizationBufferSettingsMaxRequestBytes sets the maximum size of message body ExtAuthz filter will hold in-memory.
+	AuthorizationBufferSettingsMaxRequestBytes uint32
+
+	// If AuthorizationBufferSettingsAllowPartialMessage is true, then Envoy will buffer the body until MaxRequestBytes are reached.
+	AuthorizationBufferSettingsAllowPartialMessage bool
+
+	// If AuthorizationBufferSettingsPackAsBytes is true, the body sent to Authorization Server is in raw bytes.
+	AuthorizationBufferSettingsPackAsBytes bool
 }
 
 func (s *SecureVirtualHost) Valid() bool {
