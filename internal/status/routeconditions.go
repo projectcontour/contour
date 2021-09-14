@@ -19,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilclock "k8s.io/apimachinery/pkg/util/clock"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -77,7 +76,7 @@ func (routeUpdate *RouteConditionsUpdate) AddCondition(cond gatewayapi_v1alpha2.
 // metav1.Conditions as well as a function to commit the change back to the cache when everything
 // is done. The commit function pattern is used so that the RouteConditionsUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gateways []gatewayapi_v1alpha2.RouteGatewayStatus) (*RouteConditionsUpdate, func()) {
+func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gateways []gatewayapi_v1alpha2.RouteParentStatus) (*RouteConditionsUpdate, func()) {
 	pu := &RouteConditionsUpdate{
 		FullName:           nsName,
 		Conditions:         make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition),
@@ -103,7 +102,7 @@ func (c *Cache) commitRoute(pu *RouteConditionsUpdate) {
 
 func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 
-	var gatewayStatuses []gatewayapi_v1alpha2.RouteGatewayStatus
+	var gatewayStatuses []gatewayapi_v1alpha2.RouteParentStatus
 	var conditionsToWrite []metav1.Condition
 
 	for _, cond := range routeUpdate.Conditions {
@@ -136,12 +135,9 @@ func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 		}
 	}
 
-	gatewayStatuses = append(gatewayStatuses, gatewayapi_v1alpha2.RouteGatewayStatus{
-		GatewayRef: gatewayapi_v1alpha2.RouteStatusGatewayReference{
-			Name:       routeUpdate.GatewayRef.Name,
-			Namespace:  routeUpdate.GatewayRef.Namespace,
-			Controller: pointer.String(routeUpdate.GatewayController),
-		},
+	gatewayStatuses = append(gatewayStatuses, gatewayapi_v1alpha2.RouteParentStatus{
+		ParentRef:  parentRefForGateway(routeUpdate.GatewayRef),
+		Controller: gatewayapi_v1alpha2.GatewayController(routeUpdate.GatewayController), // TODO
 		Conditions: conditionsToWrite,
 	})
 
@@ -150,15 +146,15 @@ func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 		route := o.DeepCopy()
 
 		// Set the HTTPRoute status.
-		gatewayStatuses = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
-		route.Status.RouteStatus.Gateways = gatewayStatuses
+		gatewayStatuses = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Parents)...)
+		route.Status.RouteStatus.Parents = gatewayStatuses
 		return route
 	case *gatewayapi_v1alpha2.TLSRoute:
 		route := o.DeepCopy()
 
 		// Set the TLSRoute status.
-		gatewayStatuses = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
-		route.Status.RouteStatus.Gateways = gatewayStatuses
+		gatewayStatuses = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Parents)...)
+		route.Status.RouteStatus.Parents = gatewayStatuses
 		return route
 	default:
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in RouteConditionsUpdate status mutator",
@@ -167,16 +163,15 @@ func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 	}
 }
 
-func (routeUpdate *RouteConditionsUpdate) combineConditions(gwStatus []gatewayapi_v1alpha2.RouteGatewayStatus) []gatewayapi_v1alpha2.RouteGatewayStatus {
-
-	var gatewayStatuses []gatewayapi_v1alpha2.RouteGatewayStatus
+// combineConditions (due for a rename) returns all RouteParentStatuses
+// from gwStatus that are *not* for the routeUpdate's Gateway.
+func (routeUpdate *RouteConditionsUpdate) combineConditions(gwStatus []gatewayapi_v1alpha2.RouteParentStatus) []gatewayapi_v1alpha2.RouteParentStatus {
+	var gatewayStatuses []gatewayapi_v1alpha2.RouteParentStatus
 
 	// Now that we have all the conditions, add them back to the object
 	// to get written out.
 	for _, rgs := range gwStatus {
-		if rgs.GatewayRef.Name == routeUpdate.GatewayRef.Name && rgs.GatewayRef.Namespace == routeUpdate.GatewayRef.Namespace {
-			continue
-		} else {
+		if !isRefToGateway(rgs.ParentRef, routeUpdate.GatewayRef) {
 			gatewayStatuses = append(gatewayStatuses, rgs)
 		}
 	}
@@ -184,10 +179,38 @@ func (routeUpdate *RouteConditionsUpdate) combineConditions(gwStatus []gatewayap
 	return gatewayStatuses
 }
 
-func (c *Cache) getRouteGatewayConditions(gatewayStatus []gatewayapi_v1alpha2.RouteGatewayStatus) map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition {
+// isRefToGateway returns whether or not ref is a reference
+// to a Gateway with the given namespace & name.
+func isRefToGateway(ref gatewayapi_v1alpha2.ParentRef, gateway types.NamespacedName) bool {
+	// TODO(stevek) do we need to handle nil/empty group, kind, namespace?
+	// I don't think so since we're the only ones writing this and we'll
+	// always populate these.
+	return ref.Group != nil && *ref.Group == gatewayapi_v1alpha2.GroupName &&
+		ref.Kind != nil && *ref.Kind == "Gateway" &&
+		ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(gateway.Namespace) &&
+		ref.Name == gateway.Name
+}
+
+// parentRefForGateway returns a ParentRef for a Gateway with
+// the given namespace and name.
+func parentRefForGateway(gateway types.NamespacedName) gatewayapi_v1alpha2.ParentRef {
+	var (
+		group     = gatewayapi_v1alpha2.Group(gatewayapi_v1alpha2.GroupName)
+		kind      = gatewayapi_v1alpha2.Kind("Gateway")
+		namespace = gatewayapi_v1alpha2.Namespace(gateway.Namespace)
+	)
+
+	return gatewayapi_v1alpha2.ParentRef{
+		Group:     &group,
+		Kind:      &kind,
+		Namespace: &namespace,
+		Name:      gateway.Name,
+	}
+}
+
+func (c *Cache) getRouteGatewayConditions(gatewayStatus []gatewayapi_v1alpha2.RouteParentStatus) map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition {
 	for _, gs := range gatewayStatus {
-		if c.gatewayRef.Name == gs.GatewayRef.Name &&
-			c.gatewayRef.Namespace == gs.GatewayRef.Namespace {
+		if isRefToGateway(gs.ParentRef, c.gatewayRef) {
 
 			conditions := make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition)
 			for _, gsCondition := range gs.Conditions {
