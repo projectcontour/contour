@@ -143,109 +143,122 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 		// --------------- BEGIN ROUTE SELECTION SECTION ----------------------
 
-		// Validate the Group on the selector is a supported type.
-		if listener.Routes.Group != nil {
-			if *listener.Routes.Group != gatewayapi_v1alpha2.GroupName {
-				p.Errorf("Listener.Routes.Group %q is not supported.", listener.Routes.Group)
-				continue
+		validRouteKinds := true
+		var routeKinds []string
+		for _, routeKind := range listener.AllowedRoutes.Kinds {
+			if !(routeKind.Group != nil && *routeKind.Group == gatewayapi_v1alpha2.GroupName) {
+				p.Errorf("Listener.AllowedRoutes.Group %q not supported.", *routeKind.Group) // TODO NPE
+				validRouteKinds = false
+				break
 			}
+			if routeKind.Kind != gatewayapi_v1alpha2.Kind(KindHTTPRoute) && routeKind.Kind != gatewayapi_v1alpha2.Kind(KindTLSRoute) {
+				p.Errorf("Listener.AllowedRoutes.Kind %q not supported.", routeKind.Kind)
+				validRouteKinds = false
+				break
+			}
+			routeKinds = append(routeKinds, string(routeKind.Kind))
 		}
-
-		// Validate the Kind on the selector is a supported type.
-		if listener.Routes.Kind != KindHTTPRoute && listener.Routes.Kind != KindTLSRoute {
-			p.Errorf("Listener.Routes.Kind %q is not supported.", listener.Routes.Kind)
+		if !validRouteKinds {
 			continue
 		}
 
-		// TODO default/validate listener.AllowedRoutes.Kinds
-		//		- if empty, default based on listener protocol (HTTP -> HTTPRoute, HTTPS -> HTTPRoute(?), TLS -> TLSRoute)
-		//		- if an invalid combo, set the "ResolvedRefs" condition to False for this Listener with the
-		// 		  "InvalidRoutesRef" reason.
-
-		switch listener.Routes.Kind {
-		case KindHTTPRoute:
-			for _, route := range p.source.httproutes {
-
-				// Filter the HTTPRoutes that match the gateway which Contour is configured to watch.
-				// RouteBindingSelector defines a schema for associating routes with the Gateway.
-				// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
-
-				// ## RouteBindingSelector ##
-				//
-				// Selector specifies a set of route labels used for selecting routes to associate
-				// with the Gateway. If this Selector is defined, only routes matching the Selector
-				// are associated with the Gateway. An empty Selector matches all routes.
-
-				// THIS SECTION CHECKS WHETHER THE GATEWAY/LISTENER'S SELECTOR MATCHES THE ROUTE.
-
-				nsMatches, err := p.namespaceMatches(listener.AllowedRoutes.Namespaces, route.Namespace)
-				if err != nil {
-					p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
-					// TODO continue?
-				}
-
-				if !nsMatches {
-					continue
-				}
-
-				// If the Gateway selects the HTTPRoute, check to see if the HTTPRoute selects
-				// the Gateway.
-
-				// THIS SECTION CHECKS WHETHER THE ROUTE'S SELECTOR MATCHES THE GATEWAY.
-
-				if !p.gatewayMatches(route.Spec.ParentRefs, route.Namespace) {
-
-					// If a label selector or namespace selector matches, but the gateway Allow doesn't
-					// then set the "Admitted: false" for the route.
-					routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Parents)
-					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
-					commit()
-					continue
-				}
-
-				// Empty Selector matches all routes.
-				matchingHTTPRoutes = append(matchingHTTPRoutes, route)
+		if len(listener.AllowedRoutes.Kinds) == 0 {
+			switch listener.Protocol {
+			case gatewayapi_v1alpha2.HTTPProtocolType:
+				routeKinds = append(routeKinds, KindHTTPRoute)
+			case gatewayapi_v1alpha2.HTTPSProtocolType:
+				routeKinds = append(routeKinds, KindHTTPRoute)
+			case gatewayapi_v1alpha2.TLSProtocolType:
+				routeKinds = append(routeKinds, KindTLSRoute)
 			}
-		case KindTLSRoute:
+		}
 
-			// Validate the listener protocol is type=TLS.
-			if listener.Protocol != gatewayapi_v1alpha2.TLSProtocolType {
-				p.Errorf("invalid listener protocol %q for Kind: TLSRoute", listener.Protocol)
-				continue
-			}
+		for _, routeKind := range routeKinds {
+			switch routeKind {
+			case KindHTTPRoute:
+				for _, route := range p.source.httproutes {
 
-			for _, route := range p.source.tlsroutes {
-				// Filter the TLSRoutes that match the gateway which Contour is configured to watch.
-				// RouteBindingSelector defines a schema for associating routes with the Gateway.
-				// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
+					// Filter the HTTPRoutes that match the gateway which Contour is configured to watch.
+					// RouteBindingSelector defines a schema for associating routes with the Gateway.
+					// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
 
-				// ## RouteBindingSelector ##
-				//
-				// Selector specifies a set of route labels used for selecting routes to associate
-				// with the Gateway. If this Selector is defined, only routes matching the Selector
-				// are associated with the Gateway. An empty Selector matches all routes.
+					// ## RouteBindingSelector ##
+					//
+					// Selector specifies a set of route labels used for selecting routes to associate
+					// with the Gateway. If this Selector is defined, only routes matching the Selector
+					// are associated with the Gateway. An empty Selector matches all routes.
 
-				nsMatches, err := p.namespaceMatches(listener.AllowedRoutes.Namespaces, route.Namespace)
-				if err != nil {
-					p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
+					// THIS SECTION CHECKS WHETHER THE GATEWAY/LISTENER'S SELECTOR MATCHES THE ROUTE.
+
+					nsMatches, err := p.namespaceMatches(listener.AllowedRoutes.Namespaces, route.Namespace)
+					if err != nil {
+						p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
+						// TODO continue?
+					}
+
+					if !nsMatches {
+						continue
+					}
+
+					// If the Gateway selects the HTTPRoute, check to see if the HTTPRoute selects
+					// the Gateway.
+
+					// THIS SECTION CHECKS WHETHER THE ROUTE'S SELECTOR MATCHES THE GATEWAY.
+
+					if !p.gatewayMatches(route.Spec.ParentRefs, route.Namespace) {
+
+						// If a label selector or namespace selector matches, but the gateway Allow doesn't
+						// then set the "Admitted: false" for the route.
+						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Parents)
+						routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+						commit()
+						continue
+					}
+
+					// Empty Selector matches all routes.
+					matchingHTTPRoutes = append(matchingHTTPRoutes, route)
 				}
+			case KindTLSRoute:
 
-				if !nsMatches {
+				// Validate the listener protocol is type=TLS.
+				if listener.Protocol != gatewayapi_v1alpha2.TLSProtocolType {
+					p.Errorf("invalid listener protocol %q for Kind: TLSRoute", listener.Protocol)
 					continue
 				}
 
-				if !p.gatewayMatches(route.Spec.ParentRefs, route.Namespace) {
+				for _, route := range p.source.tlsroutes {
+					// Filter the TLSRoutes that match the gateway which Contour is configured to watch.
+					// RouteBindingSelector defines a schema for associating routes with the Gateway.
+					// If Namespaces and Selector are defined, only routes matching both selectors are associated with the Gateway.
 
-					// If a label selector or namespace selector matches, but the gateway Allow doesn't
-					// then set the "Admitted: false" for the route.
-					routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Parents)
-					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
-					commit()
-					continue
+					// ## RouteBindingSelector ##
+					//
+					// Selector specifies a set of route labels used for selecting routes to associate
+					// with the Gateway. If this Selector is defined, only routes matching the Selector
+					// are associated with the Gateway. An empty Selector matches all routes.
+
+					nsMatches, err := p.namespaceMatches(listener.AllowedRoutes.Namespaces, route.Namespace)
+					if err != nil {
+						p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
+					}
+
+					if !nsMatches {
+						continue
+					}
+
+					if !p.gatewayMatches(route.Spec.ParentRefs, route.Namespace) {
+
+						// If a label selector or namespace selector matches, but the gateway Allow doesn't
+						// then set the "Admitted: false" for the route.
+						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Parents)
+						routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+						commit()
+						continue
+					}
+
+					// Empty Selector matches all routes.
+					matchingTLSRoutes = append(matchingTLSRoutes, route)
 				}
-
-				// Empty Selector matches all routes.
-				matchingTLSRoutes = append(matchingTLSRoutes, route)
 			}
 		}
 
