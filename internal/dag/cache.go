@@ -355,21 +355,23 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 	}
 
 	for _, route := range kc.httproutes {
-		if route.Namespace != service.Namespace {
-			continue
-		}
 		for _, rule := range route.Spec.Rules {
-			for _, forward := range rule.ForwardTo {
-				if forward.ServiceName != nil {
-					if *forward.ServiceName == service.Name {
-						return true
-					}
+			for _, backend := range rule.BackendRefs {
+				if isRefToService(backend.BackendObjectReference, service, route.Namespace) {
+					return true
 				}
 			}
 		}
 	}
 
 	return false
+}
+
+func isRefToService(ref gatewayapi_v1alpha2.BackendObjectReference, service *v1.Service, routeNamespace string) bool {
+	return ref.Group != nil && (*ref.Group == "" || *ref.Group == "core") &&
+		ref.Kind != nil && *ref.Kind == "Service" &&
+		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(service.Namespace)) || (ref.Namespace == nil && routeNamespace == service.Namespace)) &&
+		ref.Name == service.Name
 }
 
 // secretTriggersRebuild returns true if this secret is referenced by an Ingress
@@ -464,16 +466,20 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 				continue
 			}
 
-			ref := listener.TLS.CertificateRef
-			if ref.Kind == "Secret" && ref.Group == "core" {
-				if kc.gateway.Namespace == secret.Namespace && ref.Name == secret.Name {
-					return true
-				}
+			if isRefToSecret(*listener.TLS.CertificateRef, secret, kc.gateway.Namespace) {
+				return true
 			}
 		}
 	}
 
 	return false
+}
+
+func isRefToSecret(ref gatewayapi_v1alpha2.SecretObjectReference, secret *v1.Secret, gatewayNamespace string) bool {
+	return ref.Group != nil && (*ref.Group == "" || *ref.Group == "core") &&
+		ref.Kind != nil && *ref.Kind == "Secret" &&
+		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(secret.Namespace)) || (ref.Namespace == nil && gatewayNamespace == secret.Namespace)) &&
+		ref.Name == secret.Name
 }
 
 // LookupSecret returns a Secret if present or nil if the underlying kubernetes

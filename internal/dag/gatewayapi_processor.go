@@ -537,17 +537,17 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 			hosts = []string{"*"}
 		}
 
-		if len(rule.ForwardTo) == 0 {
-			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.ForwardTo must be specified.")
+		if len(rule.BackendRefs) == 0 {
+			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 			continue
 		}
 
 		var proxy TCPProxy
 		var totalWeight uint32
 
-		for _, forward := range rule.ForwardTo {
+		for _, backendRef := range rule.BackendRefs {
 
-			service, err := p.validateForwardTo(forward.ServiceName, forward.Port, route.Namespace)
+			service, err := p.validateBackendRef(backendRef, route.Namespace)
 			if err != nil {
 				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 				continue
@@ -555,8 +555,8 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 
 			// Route defaults to a weight of "1" unless otherwise specified.
 			routeWeight := uint32(1)
-			if forward.Weight != nil {
-				routeWeight = uint32(*forward.Weight)
+			if backendRef.Weight != nil {
+				routeWeight = uint32(*backendRef.Weight)
 			}
 
 			// Keep track of all the weights for this set of forwardTos. This will be
@@ -642,8 +642,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 			matchconditions = append(matchconditions, mc)
 		}
 
-		if len(rule.ForwardTo) == 0 {
-			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.ForwardTo must be specified.")
+		if len(rule.BackendRefs) == 0 {
+			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 			continue
 		}
 
@@ -651,16 +651,16 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 
 		// Validate the ForwardTos.
 		totalWeight := uint32(0)
-		for _, forward := range rule.ForwardTo {
+		for _, backendRef := range rule.BackendRefs {
 
-			service, err := p.validateForwardTo(forward.ServiceName, forward.Port, route.Namespace)
+			service, err := p.validateBackendRef(backendRef.BackendRef, route.Namespace)
 			if err != nil {
 				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 				continue
 			}
 
 			var headerPolicy *HeadersPolicy
-			for _, filter := range forward.Filters {
+			for _, filter := range backendRef.Filters {
 				switch filter.Type {
 				case gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier:
 					var err error
@@ -675,8 +675,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 
 			// Route defaults to a weight of "1" unless otherwise specified.
 			routeWeight := uint32(1)
-			if forward.Weight != nil {
-				routeWeight = uint32(*forward.Weight)
+			if backendRef.Weight != nil {
+				routeWeight = uint32(*backendRef.Weight)
 			}
 
 			// Keep track of all the weights for this set of forwardTos. This will be
@@ -754,23 +754,36 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 	}
 }
 
-// validateForwardTo verifies that the specified forwardTo is valid.
+// validateBackendRef verifies that the specified BackendRef is valid.
 // Returns an error if not or the service found in the cache.
-func (p *GatewayAPIProcessor) validateForwardTo(serviceName *string, port *gatewayapi_v1alpha2.PortNumber, namespace string) (*Service, error) {
-	// Verify the service is valid
-	if serviceName == nil {
-		return nil, fmt.Errorf("Spec.Rules.ForwardTo.ServiceName must be specified")
+func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.BackendRef, routeNamespace string) (*Service, error) {
+	if !(backendRef.Group == nil || *backendRef.Group == "" || *backendRef.Group == "core") {
+		return nil, fmt.Errorf("Spec.Rules.BackendRef.Group must be empty or 'core'")
+	}
+
+	if !(backendRef.Kind != nil && *backendRef.Kind == "Service") {
+		return nil, fmt.Errorf("Spec.Rules.BackendRef.Kind must be 'Service'")
 	}
 
 	// TODO: Do not require port to be present (#3352).
-	if port == nil {
-		return nil, fmt.Errorf("Spec.Rules.ForwardTo.ServicePort must be specified")
+	if backendRef.Port == nil {
+		return nil, fmt.Errorf("Spec.Rules.BackendRef.Port must be specified")
 	}
 
-	meta := types.NamespacedName{Name: *serviceName, Namespace: namespace}
+	// If the BackendRef does not specify a namespace,
+	// the Service must be in the same namespace as
+	// the route itself. If the BackendRef specifies
+	// a namespace then the Service must be in that
+	// namespace.
+	namespace := routeNamespace
+	if backendRef.Namespace != nil {
+		namespace = string(*backendRef.Namespace)
+	}
+
+	meta := types.NamespacedName{Name: backendRef.Name, Namespace: namespace}
 
 	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
-	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*port)), p.source, p.EnableExternalNameService)
+	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendRef.Port)), p.source, p.EnableExternalNameService)
 	if err != nil {
 		return nil, fmt.Errorf("service %q is invalid: %s", meta.Name, err)
 	}
@@ -861,8 +874,4 @@ func pathMatchTypePtr(pmt gatewayapi_v1alpha2.PathMatchType) *gatewayapi_v1alpha
 
 func headerMatchTypePtr(hmt gatewayapi_v1alpha2.HeaderMatchType) *gatewayapi_v1alpha2.HeaderMatchType {
 	return &hmt
-}
-
-func gatewayAllowTypePtr(gwType gatewayapi_v1alpha2.GatewayAllowType) *gatewayapi_v1alpha2.GatewayAllowType {
-	return &gwType
 }
