@@ -224,79 +224,81 @@ var _ = Describe("Gateway API", func() {
 	// 	// f.NamespacedTest("gateway-httproute-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
 	// })
 
-	// Describe("TLSRoute Gateway: Mode: Passthrough", func() {
-	// 	gatewayClass := getGatewayClass()
-	// 	gw := &gatewayapi_v1alpha2.Gateway{
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name: "tls-passthrough",
-	// 		},
-	// 		Spec: gatewayapi_v1alpha2.GatewaySpec{
-	// 			GatewayClassName: gatewayClass.Name,
-	// 			Listeners: []gatewayapi_v1alpha2.Listener{
-	// 				{
-	// 					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
-	// 					Port:     gatewayapi_v1alpha2.PortNumber(443),
-	// 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-	// 						Mode: tlsModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
-	// 					},
-	// 					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-	// 						Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-	// 							{Kind: "TLSRoute"},
-	// 						},
-	// 						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-	// 							From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
-	// 						},
-	// 					},
-	// 				},
-	// 			},
-	// 		},
-	// 	}
-	// 	// f.NamespacedTest("gateway-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
-	// })
+	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
+		gatewayClass := getGatewayClass()
+		gw := &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "tls-passthrough",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				GatewayClassName: gatewayClass.Name,
+				Listeners: []gatewayapi_v1alpha2.Listener{
+					{
+						Name:     "tls-passthrough",
+						Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+						Port:     gatewayapi_v1alpha2.PortNumber(443),
+						TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+							Mode: tlsModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
+						},
+						AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+							Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+								{Kind: "TLSRoute"},
+							},
+							Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+								From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+							},
+						},
+					},
+				},
+			},
+		}
+		f.NamespacedTest("gateway-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
+	})
 
-	// Describe("TLSRoute Gateway: Mode: Terminate", func() {
+	Describe("TLSRoute Gateway: Mode: Terminate", func() {
 
-	// 	testWithTLSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
-	// 		gatewayClass := getGatewayClass()
-	// 		gw := &gatewayapi_v1alpha2.Gateway{
-	// 			ObjectMeta: metav1.ObjectMeta{
-	// 				Name: "tls-terminate",
-	// 			},
-	// 			Spec: gatewayapi_v1alpha2.GatewaySpec{
-	// 				GatewayClassName: gatewayClass.Name,
-	// 				Listeners: []gatewayapi_v1alpha2.Listener{
-	// 					{
-	// 						Protocol: gatewayapi_v1alpha2.TLSProtocolType,
-	// 						Port:     gatewayapi_v1alpha2.PortNumber(443),
-	// 						TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-	// 							Mode:           tlsModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-	// 							CertificateRef: certificateRef("tlscert"),
-	// 						},
-	// 						AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-	// 							Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-	// 								{Kind: "TLSRoute"},
-	// 							},
-	// 							Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-	// 								From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
-	// 							},
-	// 						},
-	// 					},
-	// 				},
-	// 			},
-	// 		}
-	// 		return testWithGateway(gw, gatewayClass, func(namespace string) {
-	// 			Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
-	// 				BeforeEach(func() {
-	// 					f.Certs.CreateSelfSignedCert(namespace, "tlscert", "tlscert", hostname)
-	// 				})
+		testWithTLSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
+			gatewayClass := getGatewayClass()
+			gw := &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "tls-terminate",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayClass.Name,
+					Listeners: []gatewayapi_v1alpha2.Listener{
+						{
+							Name:     "tls-terminate",
+							Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+							Port:     gatewayapi_v1alpha2.PortNumber(443),
+							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+								Mode:           tlsModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+								CertificateRef: certificateRef("tlscert"),
+							},
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+									{Kind: "TLSRoute"},
+								},
+								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+								},
+							},
+						},
+					},
+				},
+			}
+			return testWithGateway(gw, gatewayClass, func(namespace string) {
+				Context(fmt.Sprintf("with TLS secret %s/tlscert for hostname %s", namespace, hostname), func() {
+					BeforeEach(func() {
+						f.Certs.CreateSelfSignedCert(namespace, "tlscert", "tlscert", hostname)
+					})
 
-	// 				body(namespace)
-	// 			})
-	// 		})
-	// 	}
+					body(namespace)
+				})
+			})
+		}
 
-	// 	// f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
-	// })
+		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
+	})
 })
 
 func stringPtr(s string) *string {
