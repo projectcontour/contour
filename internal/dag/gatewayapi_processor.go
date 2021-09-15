@@ -95,7 +95,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		var matchingTLSRoutes []*gatewayapi_v1alpha2.TLSRoute
 		var listenerSecret *Secret
 
-		// Validate the Protocol on the selector is a supported type.
+		// Validate the listener protocol is a supported type.
 		switch listener.Protocol {
 		case gatewayapi_v1alpha2.HTTPSProtocolType:
 			// Validate that if protocol is type HTTPS, that TLS is defined.
@@ -141,6 +141,8 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			continue
 		}
 
+		// --------------- BEGIN ROUTE SELECTION SECTION ----------------------
+
 		// Validate the Group on the selector is a supported type.
 		if listener.Routes.Group != nil {
 			if *listener.Routes.Group != gatewayapi_v1alpha2.GroupName {
@@ -154,6 +156,11 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			p.Errorf("Listener.Routes.Kind %q is not supported.", listener.Routes.Kind)
 			continue
 		}
+
+		// TODO default/validate listener.AllowedRoutes.Kinds
+		//		- if empty, default based on listener protocol (HTTP -> HTTPRoute, HTTPS -> HTTPRoute(?), TLS -> TLSRoute)
+		//		- if an invalid combo, set the "ResolvedRefs" condition to False for this Listener with the
+		// 		  "InvalidRoutesRef" reason.
 
 		switch listener.Routes.Kind {
 		case KindHTTPRoute:
@@ -169,33 +176,35 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				// with the Gateway. If this Selector is defined, only routes matching the Selector
 				// are associated with the Gateway. An empty Selector matches all routes.
 
-				nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route.Namespace)
+				// THIS SECTION CHECKS WHETHER THE GATEWAY/LISTENER'S SELECTOR MATCHES THE ROUTE.
+
+				nsMatches, err := p.namespaceMatches(listener.AllowedRoutes.Namespaces, route.Namespace)
 				if err != nil {
 					p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
+					// TODO continue?
 				}
 
-				selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
-				if err != nil {
-					p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+				if !nsMatches {
+					continue
 				}
 
-				// If all the match criteria for this HTTPRoute match the Gateway, then add
-				// the route to the set of matchingRoutes.
-				if selMatches && nsMatches {
+				// If the Gateway selects the HTTPRoute, check to see if the HTTPRoute selects
+				// the Gateway.
 
-					if !p.gatewayMatches(route.Spec.Gateways, route.Namespace) {
+				// THIS SECTION CHECKS WHETHER THE ROUTE'S SELECTOR MATCHES THE GATEWAY.
 
-						// If a label selector or namespace selector matches, but the gateway Allow doesn't
-						// then set the "Admitted: false" for the route.
-						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Gateways)
-						routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
-						commit()
-						continue
-					}
+				if !p.gatewayMatches(route.Spec.ParentRefs, route.Namespace) {
 
-					// Empty Selector matches all routes.
-					matchingHTTPRoutes = append(matchingHTTPRoutes, route)
+					// If a label selector or namespace selector matches, but the gateway Allow doesn't
+					// then set the "Admitted: false" for the route.
+					routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Parents)
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+					commit()
+					continue
 				}
+
+				// Empty Selector matches all routes.
+				matchingHTTPRoutes = append(matchingHTTPRoutes, route)
 			}
 		case KindTLSRoute:
 
@@ -216,31 +225,27 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 				// with the Gateway. If this Selector is defined, only routes matching the Selector
 				// are associated with the Gateway. An empty Selector matches all routes.
 
-				nsMatches, err := p.namespaceMatches(listener.Routes.Namespaces, route.Namespace)
+				nsMatches, err := p.namespaceMatches(listener.AllowedRoutes.Namespaces, route.Namespace)
 				if err != nil {
 					p.Errorf("error validating namespaces against Listener.Routes.Namespaces: %s", err)
 				}
 
-				selMatches, err := selectorMatches(listener.Routes.Selector, route.Labels)
-				if err != nil {
-					p.Errorf("error validating routes against Listener.Routes.Selector: %s", err)
+				if !nsMatches {
+					continue
 				}
 
-				if selMatches && nsMatches {
+				if !p.gatewayMatches(route.Spec.ParentRefs, route.Namespace) {
 
-					if !p.gatewayMatches(route.Spec.Gateways, route.Namespace) {
-
-						// If a label selector or namespace selector matches, but the gateway Allow doesn't
-						// then set the "Admitted: false" for the route.
-						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Gateways)
-						routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
-						commit()
-						continue
-					}
-
-					// Empty Selector matches all routes.
-					matchingTLSRoutes = append(matchingTLSRoutes, route)
+					// If a label selector or namespace selector matches, but the gateway Allow doesn't
+					// then set the "Admitted: false" for the route.
+					routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Parents)
+					routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
+					commit()
+					continue
 				}
+
+				// Empty Selector matches all routes.
+				matchingTLSRoutes = append(matchingTLSRoutes, route)
 			}
 		}
 
@@ -251,13 +256,13 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			p.computeHTTPRoute(matchingRoute, listenerSecret, listener.Hostname, validGateway)
 		}
 
-		// Process all the routes that match this Gateway.
+		// Process all the TLSRoutes that match this Gateway.
 		for _, matchingRoute := range matchingTLSRoutes {
 			p.computeTLSRoute(matchingRoute, validGateway, listenerSecret)
 		}
 	}
 
-	p.computeGateway(p.source.gateway, gatewayErrors)
+	p.computeGatewayConditions(p.source.gateway, gatewayErrors)
 }
 
 func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha2.Listener) *Secret {
@@ -270,7 +275,7 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha2.Liste
 
 	// Validate a v1.Secret is referenced which can be kind: secret & group: core.
 	// ref: https://github.com/kubernetes-sigs/gateway-api/pull/562
-	if !isSecretRef(listener.TLS.CertificateRef) {
+	if !isSecretRef(*listener.TLS.CertificateRef) {
 		p.Error("Spec.VirtualHost.TLS Secret must be type core.Secret")
 		return nil
 	}
@@ -283,8 +288,9 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha2.Liste
 	return listenerSecret
 }
 
-func isSecretRef(certificateRef *gatewayapi_v1alpha2.LocalObjectReference) bool {
-	return strings.ToLower(certificateRef.Kind) == "secret" && strings.ToLower(certificateRef.Group) == "core"
+func isSecretRef(certificateRef gatewayapi_v1alpha2.SecretObjectReference) bool {
+	return certificateRef.Group != nil && (*certificateRef.Group == "" || *certificateRef.Group == "core") &&
+		certificateRef.Kind != nil && *certificateRef.Kind == "Secret"
 }
 
 // computeHosts validates the hostnames for a HTTPRoute as well as validating
@@ -399,12 +405,12 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha2.R
 	}
 
 	switch *namespaces.From {
-	case gatewayapi_v1alpha2.RouteSelectAll:
+	case gatewayapi_v1alpha2.NamespacesFromAll:
 		return true, nil
-	case gatewayapi_v1alpha2.RouteSelectSame:
+	case gatewayapi_v1alpha2.NamespacesFromSame:
 		gatewayNSName := k8s.NamespacedNameOf(p.source.gateway)
 		return gatewayNSName.Namespace == namespace, nil
-	case gatewayapi_v1alpha2.RouteSelectSelector:
+	case gatewayapi_v1alpha2.NamespacesFromSelector:
 		if len(namespaces.Selector.MatchLabels) == 0 && len(namespaces.Selector.MatchExpressions) == 0 {
 			return false, fmt.Errorf("RouteNamespaces selector must be specified when `RouteSelectType=Selector`")
 		}
@@ -429,30 +435,32 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha2.R
 // gatewayMatches returns true if "AllowAll" is set, the "SameNamespace" is set and the HTTPRoute
 // matches the Gateway's namespace, or the "FromList" is set and the gateway Contour is watching
 // matches one from the list.
-func (p *GatewayAPIProcessor) gatewayMatches(routeGateways *gatewayapi_v1alpha2.RouteGateways, namespace string) bool {
+func (p *GatewayAPIProcessor) gatewayMatches(routeParentRefs []gatewayapi_v1alpha2.ParentRef, routeNamespace string) bool {
+	gateway := p.source.gateway
 
-	if routeGateways == nil || routeGateways.Allow == nil {
-		return true
-	}
-
-	gatewayNSName := types.NamespacedName{}
-	if p.source.gateway != nil {
-		gatewayNSName = k8s.NamespacedNameOf(p.source.gateway)
-	}
-
-	switch *routeGateways.Allow {
-	case gatewayapi_v1alpha2.GatewayAllowAll:
-		return true
-	case gatewayapi_v1alpha2.GatewayAllowFromList:
-		for _, gateway := range routeGateways.GatewayRefs {
-			if gateway.Name == gatewayNSName.Name && gateway.Namespace == gatewayNSName.Namespace {
-				return true
-			}
+	for _, ref := range routeParentRefs {
+		if ref.Group == nil || ref.Kind == nil {
+			continue
 		}
-	case gatewayapi_v1alpha2.GatewayAllowSameNamespace:
-		return gatewayNSName.Namespace == namespace
+
+		// If the ParentRef does not specify a namespace,
+		// the Gateway must be in the same namespace as
+		// the route itself. If the ParentRef specifies
+		// a namespace then the Gateway must be in that
+		// namespace.
+		refNamespace := routeNamespace
+		if ref.Namespace != nil {
+			refNamespace = string(*ref.Namespace)
+		}
+
+		if *ref.Group == gatewayapi_v1alpha2.GroupName && *ref.Kind == "Gateway" && refNamespace == gateway.Namespace && ref.Name == gateway.Name {
+			return true
+		}
 	}
+
 	return false
+
+	// TODO per-listener selection based on SectionName
 }
 
 // selectorMatches returns true if the selector matches the labels on the object or is not defined.
@@ -476,7 +484,7 @@ func selectorMatches(selector *metav1.LabelSelector, objLabels map[string]string
 	return true, nil
 }
 
-func (p *GatewayAPIProcessor) computeGateway(gateway *gatewayapi_v1alpha2.Gateway, fieldErrs field.ErrorList) {
+func (p *GatewayAPIProcessor) computeGatewayConditions(gateway *gatewayapi_v1alpha2.Gateway, fieldErrs field.ErrorList) {
 
 	gwAccessor, commit := p.dag.StatusCache.GatewayConditionsAccessor(k8s.NamespacedNameOf(gateway), gateway.Generation, status.ResourceGateway, &gateway.Status)
 	defer commit()
