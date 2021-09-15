@@ -21,13 +21,12 @@ import (
 	"fmt"
 	"time"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/test/e2e"
-
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/gomega/gexec"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/pkg/config"
+	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -92,13 +91,13 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 						Name: name,
 					},
 					Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-						Controller: controller,
+						Controller: gatewayapi_v1alpha2.GatewayController(controller),
 					},
 				}
 			}
 
 			// create a non-matching GC: should not be admitted
-			nonMatching := newGatewayClass("non-matching-gatewayclass", "non-matching-controller")
+			nonMatching := newGatewayClass("non-matching-gatewayclass", "projectcontour.io/non-matching-controller")
 
 			require.NoError(f.T(), f.Client.Create(context.Background(), nonMatching))
 			require.Never(f.T(), func() bool {
@@ -151,7 +150,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Name: "contour-gatewayclass",
 				},
 				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					Controller: controllerName,
+					Controller: gatewayapi_v1alpha2.GatewayController(controllerName),
 				},
 			}
 			_, valid := f.CreateGatewayClassAndWaitFor(gc, gatewayClassValid)
@@ -167,12 +166,15 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					GatewayClassName: gc.Name,
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
+							Name:     "http",
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							Routes: gatewayapi_v1alpha2.RouteBindingSelector{
-								Kind: "HTTPRoute",
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+									{Kind: "HTTPRoute"},
+								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSame),
+									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -192,12 +194,15 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					GatewayClassName: gc.Name,
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
+							Name:     "http",
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							Routes: gatewayapi_v1alpha2.RouteBindingSelector{
-								Kind: "HTTPRoute",
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+									{Kind: "HTTPRoute"},
+								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSame),
+									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -240,7 +245,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Name: "older-gc",
 				},
 				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					Controller: controllerName,
+					Controller: gatewayapi_v1alpha2.GatewayController(controllerName),
 				},
 			}
 			_, valid := f.CreateGatewayClassAndWaitFor(olderGC, gatewayClassValid)
@@ -256,12 +261,15 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					GatewayClassName: olderGC.Name,
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
+							Name:     "http",
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							Routes: gatewayapi_v1alpha2.RouteBindingSelector{
-								Kind: "HTTPRoute",
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+									{Kind: "HTTPRoute"},
+								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSame),
+									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -278,7 +286,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Name: "newer-gc",
 				},
 				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					Controller: controllerName,
+					Controller: gatewayapi_v1alpha2.GatewayController(controllerName),
 				},
 			}
 			require.NoError(f.T(), f.Client.Create(context.Background(), newerGC))
@@ -298,12 +306,15 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					GatewayClassName: newerGC.Name,
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
+							Name:     "http",
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							Routes: gatewayapi_v1alpha2.RouteBindingSelector{
-								Kind: "HTTPRoute",
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+									{Kind: "HTTPRoute"},
+								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSame),
+									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -327,12 +338,15 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					GatewayClassName: newerGC.Name,
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
+							Name:     "http",
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
-							Routes: gatewayapi_v1alpha2.RouteBindingSelector{
-								Kind: "HTTPRoute",
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
+									{Kind: "HTTPRoute"},
+								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectSame),
+									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},

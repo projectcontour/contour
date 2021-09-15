@@ -24,6 +24,43 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
+func gatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentRef {
+	parentRef := gatewayapi_v1alpha2.ParentRef{
+		Group: groupPtr(gatewayapi_v1alpha2.GroupName),
+		Kind:  kindPtr("Gateway"),
+		Name:  name,
+	}
+
+	if namespace != "" {
+		parentRef.Namespace = namespacePtr(namespace)
+	}
+
+	return parentRef
+}
+
+func groupPtr(group string) *gatewayapi_v1alpha2.Group {
+	gwGroup := gatewayapi_v1alpha2.Group(group)
+	return &gwGroup
+}
+
+func kindPtr(kind string) *gatewayapi_v1alpha2.Kind {
+	gwKind := gatewayapi_v1alpha2.Kind(kind)
+	return &gwKind
+}
+
+func namespacePtr(namespace string) *gatewayapi_v1alpha2.Namespace {
+	gwNamespace := gatewayapi_v1alpha2.Namespace(namespace)
+	return &gwNamespace
+}
+
+func serviceBackendObjectRef(name string, port int) gatewayapi_v1alpha2.BackendObjectReference {
+	return gatewayapi_v1alpha2.BackendObjectReference{
+		Kind: kindPtr("Service"),
+		Name: name,
+		Port: portNumPtr(port),
+	}
+}
+
 func testGatewayPathConditionMatch(namespace string) {
 	Specify("path match routing works", func() {
 		t := f.T()
@@ -37,12 +74,13 @@ func testGatewayPathConditionMatch(namespace string) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
-				Labels:    map[string]string{"app": "filter"},
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewaypathconditions.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
@@ -54,10 +92,11 @@ func testGatewayPathConditionMatch(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-slash-prefix"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-slash-prefix", 80),
+								},
 							},
 						},
 					},
@@ -71,10 +110,11 @@ func testGatewayPathConditionMatch(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-slash-noprefix"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-slash-noprefix", 80),
+								},
 							},
 						},
 					},
@@ -88,10 +128,11 @@ func testGatewayPathConditionMatch(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-slash-exact"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-slash-exact", 80),
+								},
 							},
 						},
 					},
@@ -105,10 +146,11 @@ func testGatewayPathConditionMatch(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-slash-default"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-slash-default", 80),
+								},
 							},
 						},
 					},

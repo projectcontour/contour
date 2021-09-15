@@ -37,12 +37,16 @@ func testTLSWildcardHost(namespace string) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-1",
-				Labels:    map[string]string{"type": "secure"},
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"*.wildcardhost.gateway.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						{
+							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
+							SectionName: sectionNamePtr("secure"),
+						},
+					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
@@ -52,10 +56,13 @@ func testTLSWildcardHost(namespace string) {
 								Value: stringPtr("/"),
 							},
 						}},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{{
-							ServiceName: stringPtr("echo"),
-							Port:        portNumPtr(80),
-						}},
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
+							{
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo", 80),
+								},
+							},
+						},
 					},
 				},
 			},

@@ -45,22 +45,15 @@ func testTLSRoutePassthrough(namespace string) {
 				Name:      "tls-route-1",
 			},
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
-				},
-				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-					Matches: []gatewayapi_v1alpha2.TLSRouteMatch{
-						{
-							SNIs: []gatewayapi_v1alpha2.Hostname{
-								gatewayapi_v1alpha2.Hostname("tlsroute.gatewayapi.projectcontour.io"),
-							},
-						},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "tls-passthrough"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
-					ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{
-						{
-							ServiceName: stringPtr("echo"),
-							Port:        portNumPtr(443),
-						},
+				},
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"tlsroute.gatewayapi.projectcontour.io"},
+				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+					BackendRefs: []gatewayapi_v1alpha2.BackendRef{
+						{BackendObjectReference: serviceBackendObjectRef("echo", 443)},
 					},
 				}},
 			},
@@ -75,21 +68,24 @@ func testTLSRoutePassthrough(namespace string) {
 		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
 
+		// Ensure request doesn't route when non-matching SNI is provided
+		require.Never(f.T(), func() bool {
+			_, err := f.HTTP.SecureRequest(&e2e.HTTPSRequestOpts{
+				Host: "something.else.not.matching",
+				TLSConfigOpts: []func(*tls.Config){
+					e2e.OptSetSNI("something.else.not.matching"),
+				},
+			})
+			return err == nil
+		}, time.Second*5, time.Millisecond*200)
+
+		// Update the TLSRoute to remove the Hostnames section which will allow it to match any SNI.
 		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), route); err != nil {
 				return err
 			}
 
-			route.Spec.Rules = []gatewayapi_v1alpha2.TLSRouteRule{
-				{
-					ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{
-						{
-							ServiceName: stringPtr("echo"),
-							Port:        portNumPtr(443),
-						},
-					},
-				},
-			}
+			route.Spec.Hostnames = nil
 
 			return f.Client.Update(context.TODO(), route)
 		}))
@@ -116,19 +112,16 @@ func testTLSRouteTerminate(namespace string) {
 				Name:      "tls-route-1",
 			},
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "tls-terminate"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"tlsroute.gatewayapi.projectcontour.io"},
 				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-					Matches: []gatewayapi_v1alpha2.TLSRouteMatch{{
-						SNIs: []gatewayapi_v1alpha2.Hostname{
-							gatewayapi_v1alpha2.Hostname("tlsroute.gatewayapi.projectcontour.io"),
-						},
-					}},
-					ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{{
-						ServiceName: stringPtr("echo"),
-						Port:        portNumPtr(80),
-					}},
+					BackendRefs: []gatewayapi_v1alpha2.BackendRef{
+						{BackendObjectReference: serviceBackendObjectRef("echo", 80)},
+					},
 				}},
 			},
 		}
@@ -145,7 +138,7 @@ func testTLSRouteTerminate(namespace string) {
 		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
 
-		// Ensure request doesn't route to non-matching SNI: tlsroute.gatewayapi.projectcontour.io
+		// Ensure request doesn't route when non-matching SNI is provided
 		require.Never(f.T(), func() bool {
 			_, err := f.HTTP.SecureRequest(&e2e.HTTPSRequestOpts{
 				Host: "something.else.not.matching",
@@ -156,22 +149,13 @@ func testTLSRouteTerminate(namespace string) {
 			return err == nil
 		}, time.Second*5, time.Millisecond*200)
 
-		// Update the TLSRoute to remove the Matches section which will allow it to match any SNI.
+		// Update the TLSRoute to remove the Hostnames section which will allow it to match any SNI.
 		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), route); err != nil {
 				return err
 			}
 
-			route.Spec.Rules = []gatewayapi_v1alpha2.TLSRouteRule{
-				{
-					ForwardTo: []gatewayapi_v1alpha2.RouteForwardTo{
-						{
-							ServiceName: stringPtr("echo"),
-							Port:        portNumPtr(80),
-						},
-					},
-				},
-			}
+			route.Spec.Hostnames = nil
 
 			return f.Client.Update(context.TODO(), route)
 		}))

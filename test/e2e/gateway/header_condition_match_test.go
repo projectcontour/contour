@@ -36,12 +36,13 @@ func testGatewayHeaderConditionMatch(namespace string) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
-				Labels:    map[string]string{"app": "filter"},
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayheaderconditions.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
@@ -51,18 +52,20 @@ func testGatewayHeaderConditionMatch(namespace string) {
 									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
 									Value: stringPtr("/"),
 								},
-								Headers: &gatewayapi_v1alpha2.HTTPHeaderMatch{
-									Type: headerMatchTypePtr(gatewayapi_v1alpha2.HeaderMatchExact),
-									Values: map[string]string{
-										"My-Header": "Foo",
+								Headers: []gatewayapi_v1alpha2.HTTPHeaderMatch{
+									{
+										Type:  headerMatchTypePtr(gatewayapi_v1alpha2.HeaderMatchExact),
+										Name:  gatewayapi_v1alpha2.HTTPHeaderName("My-Header"),
+										Value: "Foo",
 									},
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-header-exact"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-header-exact", 80),
+								},
 							},
 						},
 					},

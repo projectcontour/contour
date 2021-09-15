@@ -35,12 +35,13 @@ func testHostRewrite(namespace string) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "host-rewrite",
-				Labels:    map[string]string{"app": "filter"},
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"hostrewrite.gateway.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
@@ -56,16 +57,17 @@ func testHostRewrite(namespace string) {
 							{
 								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
 								RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
-									Add: map[string]string{
-										"Host": "rewritten.com",
+									Add: []gatewayapi_v1alpha2.HTTPHeader{
+										{Name: gatewayapi_v1alpha2.HTTPHeaderName("Host"), Value: "rewritten.com"},
 									},
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo", 80),
+								},
 							},
 						},
 					},
