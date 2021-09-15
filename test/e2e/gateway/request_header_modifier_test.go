@@ -38,12 +38,13 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
-				Labels:    map[string]string{"app": "filter"},
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierforwardto.gateway.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
@@ -55,19 +56,20 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-header-filter"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-header-filter", 80),
+								},
 								Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
 									{
 										Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
 										RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
-											Add: map[string]string{
-												"My-Header": "Foo",
+											Add: []gatewayapi_v1alpha2.HTTPHeader{
+												{Name: gatewayapi_v1alpha2.HTTPHeaderName("My-Header"), Value: "Foo"},
 											},
-											Set: map[string]string{
-												"Replace-Header": "Bar",
+											Set: []gatewayapi_v1alpha2.HTTPHeader{
+												{Name: gatewayapi_v1alpha2.HTTPHeaderName("Replace-Header"), Value: "Bar"},
 											},
 											Remove: []string{"Other-Header"},
 										},
@@ -85,10 +87,11 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-header-nofilter"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-header-nofilter", 80),
+								},
 							},
 						},
 					},
@@ -152,12 +155,13 @@ func testRequestHeaderModifierRule(namespace string) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
-				Labels:    map[string]string{"app": "filter"},
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierrule.gateway.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
@@ -173,20 +177,21 @@ func testRequestHeaderModifierRule(namespace string) {
 							{
 								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
 								RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
-									Add: map[string]string{
-										"My-Header": "Foo",
+									Add: []gatewayapi_v1alpha2.HTTPHeader{
+										{Name: gatewayapi_v1alpha2.HTTPHeaderName("My-Header"), Value: "Foo"},
 									},
-									Set: map[string]string{
-										"Replace-Header": "Bar",
+									Set: []gatewayapi_v1alpha2.HTTPHeader{
+										{Name: gatewayapi_v1alpha2.HTTPHeaderName("Replace-Header"), Value: "Bar"},
 									},
 									Remove: []string{"Other-Header"},
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-header-filter"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-header-filter", 80),
+								},
 							},
 						},
 					},
@@ -199,10 +204,11 @@ func testRequestHeaderModifierRule(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-header-nofilter"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-header-nofilter", 80),
+								},
 							},
 						},
 					},

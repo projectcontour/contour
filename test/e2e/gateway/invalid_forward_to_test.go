@@ -35,12 +35,13 @@ func testInvalidForwardTo(namespace string) {
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
-				Labels:    map[string]string{"app": "filter"},
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"invalidforwardto.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
@@ -52,10 +53,11 @@ func testInvalidForwardTo(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("invalid"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("invalid", 80),
+								},
 							},
 						},
 					},
@@ -69,9 +71,14 @@ func testInvalidForwardTo(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-slash-default"),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind: kindPtr("Service"),
+										Name: "echo-slash-default",
+									},
+								},
 							},
 						},
 					},
@@ -85,10 +92,15 @@ func testInvalidForwardTo(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr(""),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind: kindPtr("Service"),
+										Name: "non-existent-service",
+										Port: portNumPtr(80),
+									},
+								},
 							},
 						},
 					},
@@ -102,10 +114,15 @@ func testInvalidForwardTo(namespace string) {
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-slash-default"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind: kindPtr("Service"),
+										Name: "echo-slash-default",
+										Port: portNumPtr(80),
+									},
+								},
 							},
 						},
 					},
@@ -114,16 +131,16 @@ func testInvalidForwardTo(namespace string) {
 		}
 
 		f.CreateHTTPRouteAndWaitFor(route, func(route *gatewayapi_v1alpha2.HTTPRoute) bool {
-			if len(route.Status.Gateways) != 1 {
+			if len(route.Status.Parents) != 1 {
 				return false
 			}
 
-			if len(route.Status.Gateways[0].Conditions) != 2 {
+			if len(route.Status.Parents[0].Conditions) != 2 {
 				return false
 			}
 
 			var hasAdmitted, hasResolvedRefs bool
-			for _, cond := range route.Status.Gateways[0].Conditions {
+			for _, cond := range route.Status.Parents[0].Conditions {
 				if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAdmitted) && cond.Status == metav1.ConditionFalse {
 					hasAdmitted = true
 				}

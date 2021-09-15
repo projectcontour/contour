@@ -27,31 +27,25 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-func testGatewayAllowType(namespace string) {
-	Specify("allowtype on route is respected", func() {
+func testRouteParentRefs(namespace string) {
+	Specify("route parentRefs are respected", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-blue")
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		// This route allows gateways from a list, and the actual gateway
-		// is included in the list.
-		gatewayInAllowedListRoute := &gatewayapi_v1alpha2.HTTPRoute{
+		// This route has a parentRef to the gateway.
+		gatewayInParentRefsRoute := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "gateway-in-allowed-list",
-				Labels:    map[string]string{"app": "filter"},
+				Name:      "gateway-in-parent-refs",
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowFromList),
-					GatewayRefs: []gatewayapi_v1alpha2.GatewayReference{
-						{
-							Name:      "http",
-							Namespace: namespace,
-						},
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"routeparentrefs.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
@@ -60,48 +54,43 @@ func testGatewayAllowType(namespace string) {
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
 									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
-									Value: stringPtr("/gateway-in-allowed-list"),
+									Value: stringPtr("/gateway-in-parent-refs"),
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-blue"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-blue", 80),
+								},
 							},
 						},
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(gatewayInAllowedListRoute, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(gatewayInParentRefsRoute, httpRouteAdmitted)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      string(gatewayInAllowedListRoute.Spec.Hostnames[0]),
-			Path:      "/gateway-in-allowed-list",
+			Host:      string(gatewayInParentRefsRoute.Spec.Hostnames[0]),
+			Path:      "/gateway-in-parent-refs",
 			Condition: e2e.HasStatusCode(200),
 		})
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		body := f.GetEchoResponseBody(res.Body)
 		assert.Equal(t, "echo-blue", body.Service)
 
-		// This route allows gateways from a list, and the actual gateway
-		// is *NOT* included in the list.
-		gatewayNotInAllowedListRoute := &gatewayapi_v1alpha2.HTTPRoute{
+		// This route does not have a parentRef to the gateway.
+		gatewayNotInParentRefsRoute := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "gateway-not-in-allowed-list",
-				Labels:    map[string]string{"app": "filter"},
+				Name:      "gateway-not-in-parent-refs",
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowFromList),
-					GatewayRefs: []gatewayapi_v1alpha2.GatewayReference{
-						{
-							Name:      "invalid-name",
-							Namespace: "invalid-ns",
-						},
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"routeparentrefs.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayParentRef("", "invalid-name"),
 					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
@@ -110,14 +99,15 @@ func testGatewayAllowType(namespace string) {
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
 									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
-									Value: stringPtr("/gateway-not-in-allowed-list"),
+									Value: stringPtr("/gateway-not-in-parent-refs"),
 								},
 							},
 						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-blue"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-blue", 80),
+								},
 							},
 						},
 					},
@@ -125,98 +115,11 @@ func testGatewayAllowType(namespace string) {
 			},
 		}
 		// can't wait for admitted because it'll be invalid
-		require.NoError(t, f.Client.Create(context.TODO(), gatewayNotInAllowedListRoute))
+		require.NoError(t, f.Client.Create(context.TODO(), gatewayNotInParentRefsRoute))
 
 		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      string(gatewayNotInAllowedListRoute.Spec.Hostnames[0]),
-			Path:      "/gateway-not-in-allowed-list",
-			Condition: e2e.HasStatusCode(404),
-		})
-		require.Truef(t, ok, "expected 404 response code, got %d", res.StatusCode)
-
-		// This route allows gateways in the same namespace, and the actual
-		// gateway is in the same namespace.
-		gatewayInSameNamespaceRoute := &gatewayapi_v1alpha2.HTTPRoute{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "gateway-in-same-namespace",
-				Labels:    map[string]string{"app": "filter"},
-			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowSameNamespace),
-				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
-					{
-						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
-							{
-								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
-									Value: stringPtr("/gateway-in-same-namespace"),
-								},
-							},
-						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
-							{
-								ServiceName: stringPtr("echo"),
-								Port:        portNumPtr(80),
-							},
-						},
-					},
-				},
-			},
-		}
-		f.CreateHTTPRouteAndWaitFor(gatewayInSameNamespaceRoute, httpRouteAdmitted)
-
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      string(gatewayInSameNamespaceRoute.Spec.Hostnames[0]),
-			Path:      "/gateway-in-same-namespace",
-			Condition: e2e.HasStatusCode(200),
-		})
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-		// This route allows gateways in the same namespace, and the actual
-		// gateway is *NOT* in the same namespace.
-		f.CreateNamespace("gateway-allow-type-invalid")
-		defer f.DeleteNamespace("gateway-allow-type-invalid", false)
-		gatewayNotInSameNamespaceRoute := &gatewayapi_v1alpha2.HTTPRoute{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "gateway-allow-type-invalid",
-				Name:      "gateway-not-in-same-namespace",
-				Labels:    map[string]string{"app": "filter"},
-			},
-			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayallowtype.gateway.projectcontour.io"},
-				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowSameNamespace),
-				},
-				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
-					{
-						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
-							{
-								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
-									Value: stringPtr("/gateway-not-in-same-namespace"),
-								},
-							},
-						},
-						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
-							{
-								ServiceName: stringPtr("echo-blue"),
-								Port:        portNumPtr(80),
-							},
-						},
-					},
-				},
-			},
-		}
-		// can't wait for admitted because it'll be invalid
-		require.NoError(t, f.Client.Create(context.TODO(), gatewayNotInSameNamespaceRoute))
-
-		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-			Host:      string(gatewayNotInSameNamespaceRoute.Spec.Hostnames[0]),
-			Path:      "/gateway-not-in-same-namespace",
+			Host:      string(gatewayNotInParentRefsRoute.Spec.Hostnames[0]),
+			Path:      "/gateway-not-in-parent-refs",
 			Condition: e2e.HasStatusCode(404),
 		})
 		require.Truef(t, ok, "expected 404 response code, got %d", res.StatusCode)
