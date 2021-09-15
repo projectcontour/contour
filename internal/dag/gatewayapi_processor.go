@@ -258,7 +258,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 		// Process all the TLSRoutes that match this Gateway.
 		for _, matchingRoute := range matchingTLSRoutes {
-			p.computeTLSRoute(matchingRoute, validGateway, listenerSecret)
+			p.computeTLSRoute(matchingRoute, validGateway, listenerSecret, listener.Hostname)
 		}
 	}
 
@@ -498,7 +498,7 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gateway *gatewayapi_v1alp
 	}
 }
 
-func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, validGateway bool, listenerSecret *Secret) {
+func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, validGateway bool, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname) {
 
 	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Parents)
 	defer commit()
@@ -509,42 +509,18 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 		return
 	}
 
+	hosts, errs := p.computeHosts(route.Spec.Hostnames, listenerHostname)
+	for _, err := range errs {
+		routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+	}
+
+	// Check if all the hostnames are invalid.
+	if len(hosts) == 0 {
+		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
+		return
+	}
+
 	for _, rule := range route.Spec.Rules {
-		var hosts []string
-		var matchErrors []error
-		totalSnis := 0
-
-		// Build the set of SNIs that are applied to this TLSRoute.
-		for _, match := range rule.Matches {
-			for _, snis := range match.SNIs {
-				totalSnis++
-				if err := validHostName(string(snis)); err != nil {
-					matchErrors = append(matchErrors, err)
-					continue
-				}
-				hosts = append(hosts, string(snis))
-			}
-		}
-
-		// If there are any errors with the supplied hostnames, then
-		// add a condition to the route.
-		for _, err := range matchErrors {
-			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
-		}
-
-		// If all the supplied SNIs are invalid, then this route is invalid
-		// and should be dropped.
-		if len(matchErrors) != 0 && len(matchErrors) == totalSnis {
-			continue
-		}
-
-		// If SNIs is unspecified, then all
-		// requests associated with the gateway TLS listener will match.
-		// This can be used to define a default backend for a TLS listener.
-		if len(hosts) == 0 {
-			hosts = []string{"*"}
-		}
-
 		if len(rule.BackendRefs) == 0 {
 			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
 			continue
@@ -586,7 +562,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 			continue
 		}
 
-		for _, host := range hosts {
+		for host := range hosts {
 			secure := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
 
 			if listenerSecret != nil {
@@ -627,11 +603,6 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 	if len(hosts) == 0 {
 		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 		return
-	}
-
-	// Validate TLS Configuration
-	if route.Spec.TLS != nil {
-		routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonNotImplemented, "HTTPRoute.Spec.TLS: Not yet implemented.")
 	}
 
 	for _, rule := range route.Spec.Rules {
