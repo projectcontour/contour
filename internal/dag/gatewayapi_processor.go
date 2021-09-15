@@ -795,24 +795,21 @@ func pathMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha2.HTTPPath
 	return nil
 }
 
-func headerMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha2.HTTPHeaderMatch) error {
-	if match == nil {
-		return nil
-	}
+func headerMatchCondition(mc *matchConditions, matches []gatewayapi_v1alpha2.HTTPHeaderMatch) error {
 
-	// HeaderMatchTypeExact is the default if not defined in the object.
-	headerMatchType := HeaderMatchTypeExact
-	if match.Type != nil {
-		switch *match.Type {
-		case gatewayapi_v1alpha2.HeaderMatchExact:
-			headerMatchType = HeaderMatchTypeExact
-		default:
-			return fmt.Errorf("HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported")
+	for _, match := range matches {
+		// HeaderMatchTypeExact is the default if not defined in the object.
+		headerMatchType := HeaderMatchTypeExact
+		if match.Type != nil {
+			switch *match.Type {
+			case gatewayapi_v1alpha2.HeaderMatchExact:
+				headerMatchType = HeaderMatchTypeExact
+			default:
+				return fmt.Errorf("HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported")
+			}
 		}
-	}
 
-	for k, v := range match.Values {
-		mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: headerMatchType, Name: k, Value: v})
+		mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: headerMatchType, Name: string(match.Name), Value: match.Value})
 	}
 
 	return nil
