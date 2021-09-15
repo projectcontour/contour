@@ -16,101 +16,111 @@
 
 package gateway
 
-// import (
-// 	. "github.com/onsi/ginkgo"
-// 	"github.com/projectcontour/contour/test/e2e"
-// 	"github.com/stretchr/testify/assert"
-// 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-// 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-// )
+import (
+	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/test/e2e"
+	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+)
 
-// func testTLSGateway(namespace string) {
-// 	Specify("routes bound to port 443 listener are HTTPS and routes bound to port 80 listener are HTTP", func() {
-// 		t := f.T()
+func testTLSGateway(namespace string) {
+	Specify("routes bound to port 443 listener are HTTPS and routes bound to port 80 listener are HTTP", func() {
+		t := f.T()
 
-// 		f.Fixtures.Echo.Deploy(namespace, "echo-insecure")
-// 		f.Fixtures.Echo.Deploy(namespace, "echo-secure")
+		f.Fixtures.Echo.Deploy(namespace, "echo-insecure")
+		f.Fixtures.Echo.Deploy(namespace, "echo-secure")
 
-// 		route := &gatewayapi_v1alpha2.HTTPRoute{
-// 			ObjectMeta: metav1.ObjectMeta{
-// 				Namespace: namespace,
-// 				Name:      "http-route-1",
-// 				Labels:    map[string]string{"type": "insecure"},
-// 			},
-// 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-// 				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
-// 				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-// 					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
-// 				},
-// 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
-// 					{
-// 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
-// 							{
-// 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-// 									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-// 									Value: stringPtr("/"),
-// 								},
-// 							},
-// 						},
-// 						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
-// 							{
-// 								ServiceName: stringPtr("echo-insecure"),
-// 								Port:        portNumPtr(80),
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 		}
-// 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		route := &gatewayapi_v1alpha2.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "http-route-1",
+			},
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						{
+							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
+							SectionName: sectionNamePtr("insecure"),
+						},
+					},
+				},
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+					{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
+							{
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: stringPtr("/"),
+								},
+							},
+						},
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
+							{
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-insecure", 80),
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
 
-// 		route = &gatewayapi_v1alpha2.HTTPRoute{
-// 			ObjectMeta: metav1.ObjectMeta{
-// 				Namespace: namespace,
-// 				Name:      "http-route-2",
-// 				Labels:    map[string]string{"type": "secure"},
-// 			},
-// 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-// 				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
-// 				Gateways: &gatewayapi_v1alpha2.RouteGateways{
-// 					Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
-// 				},
-// 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
-// 					{
-// 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
-// 							{
-// 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-// 									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-// 									Value: stringPtr("/"),
-// 								},
-// 							},
-// 						},
-// 						ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{
-// 							{
-// 								ServiceName: stringPtr("echo-secure"),
-// 								Port:        portNumPtr(80),
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 		}
-// 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		route = &gatewayapi_v1alpha2.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "http-route-2",
+			},
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						{
+							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
+							SectionName: sectionNamePtr("secure"),
+						},
+					},
+				},
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
+					{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
+							{
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: stringPtr("/"),
+								},
+							},
+						},
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
+							{
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: serviceBackendObjectRef("echo-secure", 80),
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
 
-// 		// Ensure http (insecure) request routes to echo-insecure.
-// 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-// 			Host:      "tls-gateway.projectcontour.io",
-// 			Condition: e2e.HasStatusCode(200),
-// 		})
-// 		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-// 		assert.Equal(t, "echo-insecure", f.GetEchoResponseBody(res.Body).Service)
+		// Ensure http (insecure) request routes to echo-insecure.
+		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+			Host:      "tls-gateway.projectcontour.io",
+			Condition: e2e.HasStatusCode(200),
+		})
+		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+		assert.Equal(t, "echo-insecure", f.GetEchoResponseBody(res.Body).Service)
 
-// 		// Ensure https (secure) request routes to echo-secure.
-// 		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-// 			Host:      "tls-gateway.projectcontour.io",
-// 			Condition: e2e.HasStatusCode(200),
-// 		})
-// 		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-// 		assert.Equal(t, "echo-secure", f.GetEchoResponseBody(res.Body).Service)
-// 	})
-// }
+		// Ensure https (secure) request routes to echo-secure.
+		res, ok = f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
+			Host:      "tls-gateway.projectcontour.io",
+			Condition: e2e.HasStatusCode(200),
+		})
+		assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
+		assert.Equal(t, "echo-secure", f.GetEchoResponseBody(res.Body).Service)
+	})
+}

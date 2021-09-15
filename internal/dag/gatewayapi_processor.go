@@ -205,8 +205,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 					// THIS SECTION CHECKS WHETHER THE ROUTE'S SELECTOR MATCHES THE GATEWAY.
 
-					if !p.gatewayMatches(route.Spec.ParentRefs, route.Namespace) {
-
+					if !routeSelectsGatewayListener(p.source.gateway, listener, route.Spec.ParentRefs, route.Namespace) {
 						// If a label selector or namespace selector matches, but the gateway Allow doesn't
 						// then set the "Admitted: false" for the route.
 						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Parents)
@@ -246,8 +245,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						continue
 					}
 
-					if !p.gatewayMatches(route.Spec.ParentRefs, route.Namespace) {
-
+					if !routeSelectsGatewayListener(p.source.gateway, listener, route.Spec.ParentRefs, route.Namespace) {
 						// If a label selector or namespace selector matches, but the gateway Allow doesn't
 						// then set the "Admitted: false" for the route.
 						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Parents)
@@ -445,12 +443,9 @@ func (p *GatewayAPIProcessor) namespaceMatches(namespaces *gatewayapi_v1alpha2.R
 	return true, nil
 }
 
-// gatewayMatches returns true if "AllowAll" is set, the "SameNamespace" is set and the HTTPRoute
-// matches the Gateway's namespace, or the "FromList" is set and the gateway Contour is watching
-// matches one from the list.
-func (p *GatewayAPIProcessor) gatewayMatches(routeParentRefs []gatewayapi_v1alpha2.ParentRef, routeNamespace string) bool {
-	gateway := p.source.gateway
-
+// routeSelectsGatewayListener determines whether a route selects
+// a given Gateway+Listener.
+func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener gatewayapi_v1alpha2.Listener, routeParentRefs []gatewayapi_v1alpha2.ParentRef, routeNamespace string) bool {
 	for _, ref := range routeParentRefs {
 		if ref.Group == nil || ref.Kind == nil {
 			continue
@@ -467,13 +462,17 @@ func (p *GatewayAPIProcessor) gatewayMatches(routeParentRefs []gatewayapi_v1alph
 		}
 
 		if *ref.Group == gatewayapi_v1alpha2.GroupName && *ref.Kind == "Gateway" && refNamespace == gateway.Namespace && ref.Name == gateway.Name {
-			return true
+			// no section name specified: it's a match
+			if ref.SectionName == nil || *ref.SectionName == "" {
+				return true
+			}
+
+			// section name specified: it must match the listener name
+			return *ref.SectionName == listener.Name
 		}
 	}
 
 	return false
-
-	// TODO per-listener selection based on SectionName
 }
 
 // selectorMatches returns true if the selector matches the labels on the object or is not defined.
