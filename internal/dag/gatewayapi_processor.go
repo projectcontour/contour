@@ -164,14 +164,6 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 					// If the Gateway selects the HTTPRoute, check to see if the HTTPRoute selects
 					// the Gateway/listener.
 					if !routeSelectsGatewayListener(p.source.gateway, listener, route.Spec.ParentRefs, route.Namespace) {
-						// If a label selector or namespace selector matches, but the gateway Allow doesn't
-						// then set the "Admitted: false" for the route.
-
-						// TODO this is no longer right since a route can select an
-						// individual listener on a Gateway.
-						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceHTTPRoute, route.Status.Parents)
-						routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
-						commit()
 						continue
 					}
 
@@ -198,14 +190,6 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 					// If the Gateway selects the TLSRoute, check to see if the TLSRoute selects
 					// the Gateway/listener.
 					if !routeSelectsGatewayListener(p.source.gateway, listener, route.Spec.ParentRefs, route.Namespace) {
-						// If a label selector or namespace selector matches, but the gateway Allow doesn't
-						// then set the "Admitted: false" for the route.
-
-						// TODO this is no longer right since a route can select an
-						// individual listener on a Gateway.
-						routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, status.ResourceTLSRoute, route.Status.Parents)
-						routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAdmitted, metav1.ConditionFalse, status.ReasonGatewayAllowMismatch, "Gateway RouteSelector matches, but GatewayAllow has mismatch.")
-						commit()
 						continue
 					}
 
@@ -461,27 +445,6 @@ func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener 
 	}
 
 	return false
-}
-
-// selectorMatches returns true if the selector matches the labels on the object or is not defined.
-func selectorMatches(selector *metav1.LabelSelector, objLabels map[string]string) (bool, error) {
-
-	if selector == nil {
-		return true, nil
-	}
-
-	// If a selector is defined then check that it matches the labels on the object.
-	if len(selector.MatchLabels) > 0 || len(selector.MatchExpressions) > 0 {
-		l, err := metav1.LabelSelectorAsSelector(selector)
-		if err != nil {
-			return false, err
-		}
-
-		// Look for matching labels on Selector.
-		return l.Matches(labels.Set(objLabels)), nil
-	}
-	// If no selector is defined then it matches by default.
-	return true, nil
 }
 
 func (p *GatewayAPIProcessor) computeGatewayConditions(gateway *gatewayapi_v1alpha2.Gateway, fieldErrs field.ErrorList) {
