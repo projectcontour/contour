@@ -24,6 +24,7 @@ import (
 // +kubebuilder:default=xdsServer: {type: "contour", address: "0.0.0.0", port: 8001, insecure: false}, debug: {logLevel: "info", kubernetesLogLevel: 0}, health: {address: "0.0.0.0", port: 8000}, envoy: {listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "http/1.1";"http/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}, httpproxy: {disablePermitInsecure: false}, leaderElection: {leaseDuration: "15s", renewDeadline: "10s", retryPeriod: "2s", disableLeaderElection: false, configmap: {name: "leader-elect", namespace: "projectcontour"}}, enableExternalNameService: false, metrics: {address: "0.0.0.0", port: 8000}
 type ContourConfigurationSpec struct {
 	// XDSServer contains parameters for the xDS server.
+	// +optional
 	// +kubebuilder:default={type: "contour", address: "0.0.0.0", port: 8001, insecure: false}
 	XDSServer XDSServerConfig `json:"xdsServer"`
 
@@ -33,16 +34,19 @@ type ContourConfigurationSpec struct {
 
 	// Debug contains parameters to enable debug logging
 	// and debug interfaces inside Contour.
+	// +optional
 	// +kubebuilder:default={logLevel: "info", kubernetesLogLevel: 0}
 	Debug DebugConfig `json:"debug"`
 
 	// Health contains parameters to configure endpoints which Contour
 	// exposes to respond to Kubernetes health checks.
+	// +optional
 	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
 	Health HealthConfig `json:"health"`
 
 	// Envoy contains parameters for Envoy as well
 	// as how to optionally configure a managed Envoy fleet.
+	// +optional
 	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "http/1.1";"http/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
 	Envoy EnvoyConfig `json:"envoy"`
 
@@ -52,26 +56,32 @@ type ContourConfigurationSpec struct {
 	Gateway *GatewayConfig `json:"gateway,omitempty"`
 
 	// HTTPProxy defines parameters on HTTPProxy.
+	// +optional
 	// +kubebuilder:default={disablePermitInsecure: false}
 	HTTPProxy HTTPProxyConfig `json:"httpproxy"`
 
 	// LeaderElection contains leader election parameters.
+	// +optional
 	// +kubebuilder:default={leaseDuration: "15s", renewDeadline: "10s", retryPeriod: "2s", disableLeaderElection: false, configmap: {name: "leader-elect", namespace: "projectcontour"}}
 	LeaderElection LeaderElectionConfig `json:"leaderElection"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
+	// +optional
 	// +kubebuilder:default=false
 	EnableExternalNameService bool `json:"enableExternalNameService"`
 
 	// RateLimitService optionally holds properties of the Rate Limit Service
 	// to be used for global rate limiting.
+	// +optional
 	RateLimitService *RateLimitServiceConfig `json:"rateLimitService,omitempty"`
 
 	// Policy specifies default policy applied if not overridden by the user
+	// +optional
 	Policy *PolicyConfig `json:"policy,omitempty"`
 
 	// Metrics defines the endpoints Envoy use to serve to metrics.
+	// +optional
 	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
 	Metrics MetricsConfig `json:"metrics"`
 }

@@ -868,15 +868,6 @@ spec:
                 - port
                 - type
                 type: object
-            required:
-            - debug
-            - enableExternalNameService
-            - envoy
-            - health
-            - httpproxy
-            - leaderElection
-            - metrics
-            - xdsServer
             type: object
           status:
             description: ContourConfigurationStatus defines the observed state of
@@ -1789,15 +1780,6 @@ spec:
                     - port
                     - type
                     type: object
-                required:
-                - debug
-                - enableExternalNameService
-                - envoy
-                - health
-                - httpproxy
-                - leaderElection
-                - metrics
-                - xdsServer
                 type: object
               replicas:
                 default: 2
