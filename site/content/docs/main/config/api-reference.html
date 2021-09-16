@@ -5508,6 +5508,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>CA filename.</p>
 </td>
 </tr>
@@ -5520,6 +5521,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Client certificate filename.</p>
 </td>
 </tr>
@@ -5532,7 +5534,20 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Client key filename.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>insecure</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<p>Allow serving the xDS gRPC API without TLS.</p>
 </td>
 </tr>
 </tbody>
@@ -5724,18 +5739,6 @@ int
 </td>
 <td>
 <p>Defines the xDS gRPC API port which Contour will serve.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>insecure</code>
-<br>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Allow serving the xDS gRPC API without TLS.</p>
 </td>
 </tr>
 <tr>
