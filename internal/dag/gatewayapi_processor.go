@@ -706,7 +706,6 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 		return nil, fmt.Errorf("Spec.Rules.BackendRef.Kind must be 'Service'")
 	}
 
-	// TODO: Do not require port to be present (#3352).
 	if backendRef.Port == nil {
 		return nil, fmt.Errorf("Spec.Rules.BackendRef.Port must be specified")
 	}
@@ -804,12 +803,4 @@ func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Serv
 		Protocol:             service.Protocol,
 		RequestHeadersPolicy: headerPolicy,
 	}
-}
-
-func pathMatchTypePtr(pmt gatewayapi_v1alpha2.PathMatchType) *gatewayapi_v1alpha2.PathMatchType {
-	return &pmt
-}
-
-func headerMatchTypePtr(hmt gatewayapi_v1alpha2.HeaderMatchType) *gatewayapi_v1alpha2.HeaderMatchType {
-	return &hmt
 }

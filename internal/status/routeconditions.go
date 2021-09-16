@@ -180,9 +180,6 @@ func (routeUpdate *RouteConditionsUpdate) combineConditions(gwStatus []gatewayap
 // isRefToGateway returns whether or not ref is a reference
 // to a Gateway with the given namespace & name.
 func isRefToGateway(ref gatewayapi_v1alpha2.ParentRef, gateway types.NamespacedName) bool {
-	// TODO(stevek) do we need to handle nil/empty group, kind, namespace?
-	// I don't think so since we're the only ones writing this and we'll
-	// always populate these.
 	return ref.Group != nil && *ref.Group == gatewayapi_v1alpha2.GroupName &&
 		ref.Kind != nil && *ref.Kind == "Gateway" &&
 		ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(gateway.Namespace) &&
