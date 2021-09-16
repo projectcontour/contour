@@ -149,7 +149,6 @@ var _ = Describe("Gateway API", func() {
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
-								// TODO remove "app": "filter" label from routes since it's not needed anymore
 							},
 						},
 					},
