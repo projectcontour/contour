@@ -3296,7 +3296,6 @@ XDSServerConfig
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>XDSServer contains parameters for the xDS server.</p>
 </td>
 </tr>
@@ -3326,7 +3325,6 @@ DebugConfig
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Debug contains parameters to enable debug logging
 and debug interfaces inside Contour.</p>
 </td>
@@ -3388,7 +3386,6 @@ HTTPProxyConfig
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>HTTPProxy defines parameters on HTTPProxy.</p>
 </td>
 </tr>
@@ -3403,7 +3400,6 @@ LeaderElectionConfig
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>LeaderElection contains leader election parameters.</p>
 </td>
 </tr>
@@ -3868,7 +3864,6 @@ XDSServerConfig
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>XDSServer contains parameters for the xDS server.</p>
 </td>
 </tr>
@@ -3898,7 +3893,6 @@ DebugConfig
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Debug contains parameters to enable debug logging
 and debug interfaces inside Contour.</p>
 </td>
@@ -3960,7 +3954,6 @@ HTTPProxyConfig
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>HTTPProxy defines parameters on HTTPProxy.</p>
 </td>
 </tr>
@@ -3975,7 +3968,6 @@ LeaderElectionConfig
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>LeaderElection contains leader election parameters.</p>
 </td>
 </tr>
@@ -4184,6 +4176,7 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>Defines the Contour debug address interface.</p>
 </td>
 </tr>
@@ -4196,7 +4189,8 @@ int
 </em>
 </td>
 <td>
-<p>Defines the xDS gRPC API port which Contour will serve.</p>
+<em>(Optional)</em>
+<p>Defines the Contour debug address port.</p>
 </td>
 </tr>
 <tr>
@@ -4540,7 +4534,6 @@ EnvoyTLS
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>TLS holds various configurable Envoy TLS listener values.</p>
 </td>
 </tr>
@@ -5321,6 +5314,7 @@ uint32
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>XffNumTrustedHops defines the number of additional ingress proxy hops from the
 right side of the x-forwarded-for HTTP header to trust when determining the origin
 client’s IP address.</p>
@@ -5493,7 +5487,6 @@ string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>CA filename.</p>
 </td>
 </tr>
@@ -5506,7 +5499,6 @@ string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Client certificate filename.</p>
 </td>
 </tr>
@@ -5519,7 +5511,6 @@ string
 </em>
 </td>
 <td>
-<em>(Optional)</em>
 <p>Client key filename.</p>
 </td>
 </tr>

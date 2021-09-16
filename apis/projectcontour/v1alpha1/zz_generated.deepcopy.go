@@ -128,11 +128,7 @@ func (in *ContourConfigurationSpec) DeepCopyInto(out *ContourConfigurationSpec) 
 		*out = new(IngressConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Debug != nil {
-		in, out := &in.Debug, &out.Debug
-		*out = new(DebugConfig)
-		**out = **in
-	}
+	out.Debug = in.Debug
 	out.Health = in.Health
 	in.Envoy.DeepCopyInto(&out.Envoy)
 	if in.Gateway != nil {
@@ -140,11 +136,7 @@ func (in *ContourConfigurationSpec) DeepCopyInto(out *ContourConfigurationSpec) 
 		*out = new(GatewayConfig)
 		**out = **in
 	}
-	if in.HTTPProxy != nil {
-		in, out := &in.HTTPProxy, &out.HTTPProxy
-		*out = new(HTTPProxyConfig)
-		(*in).DeepCopyInto(*out)
-	}
+	in.HTTPProxy.DeepCopyInto(&out.HTTPProxy)
 	out.LeaderElection = in.LeaderElection
 	if in.RateLimitService != nil {
 		in, out := &in.RateLimitService, &out.RateLimitService
