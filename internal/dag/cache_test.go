@@ -20,6 +20,7 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1424,9 +1425,7 @@ func TestServiceTriggersRebuild(t *testing.T) {
 			},
 			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-					ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{{
-						ServiceName: pointer.StringPtr(name),
-					}},
+					BackendRefs: gatewayapi.HTTPBackendRef(name, 80, 1),
 				}},
 			},
 		}
@@ -1766,11 +1765,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 					Spec: gatewayapi_v1alpha2.GatewaySpec{
 						Listeners: []gatewayapi_v1alpha2.Listener{{
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRef: &gatewayapi_v1alpha2.LocalObjectReference{
-									Group: "core",
-									Kind:  "Secret",
-									Name:  "tlscert",
-								},
+								CertificateRef: gatewayapi.CertificateRef("tlscert"),
 							},
 						}},
 					},
@@ -1789,11 +1784,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 					Spec: gatewayapi_v1alpha2.GatewaySpec{
 						Listeners: []gatewayapi_v1alpha2.Listener{{
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRef: &gatewayapi_v1alpha2.LocalObjectReference{
-									Group: "core",
-									Kind:  "Secret",
-									Name:  "tlscert",
-								},
+								CertificateRef: gatewayapi.CertificateRef("tlscert"),
 							},
 						}},
 					},
