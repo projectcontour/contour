@@ -7,7 +7,7 @@ This document describes which versions of Contour are supported by the Contour t
 
 ## Supported releases
 
-Contour is in the process of changing both to quarterly releases and three supported releases.
+Contour is changing both to quarterly releases and three supported releases.
 
 The first Contour version covered by the quarterly release cadence will be Contour v1.20, scheduled for late October 2021.
 
@@ -28,24 +28,24 @@ They are our best guess as to when each version will be released.
 
 ## What does a release being "supported" mean?
 
-In short, "supported" means that we will issue fixes for security and other critical bugs for that release's supported lifetime.
+In short, "supported" means that Contour will issue fixes for security and other critical bugs for that release's supported lifetime.
 
-However, we will require users to upgrade to the most recent patch release for a version to be supported.
+However, the project will require users to upgrade to the most recent patch release for a version to be supported.
 
 That is:
 - The latest patch version in each release is the supported version.
-- If you are not running the supported version from your release train, we will ask you to upgrade first if you have any problems.
+- If you are not running the supported version from your release train, you'll need to upgrade first if you have any problems.
 - When a new patch is cut, that will become the supported version for that release.
 
-So, if Contour 1.20.0 is the only supported version, and we release Contour 1.20.1, then the supported version will change to 1.20.1.
+So, if Contour 1.20.0 is the only supported version, and Contour 1.20.1 is released, then the supported version will change to 1.20.1.
 
-If, later on, the supported versions are 1.21, 1.22, and 1.23, and we release 1.21.1, 1.22.1, and 1.23.1, then the patch releases will be the only supported versions.
+If, later on, the supported versions are 1.21, 1.22, and 1.23, and 1.21.1, 1.22.1, and 1.23.1 are released, then the patch releases will be the only supported versions.
 
 ## Latest version and the `:latest` tag
 The latest stable release is identified by the [Docker tag `:latest`][1].
 `:latest` is an alias for {{< param latest_version >}} which is the current stable release.
 
-When required we may release a patch release to address security issues, serious problems with no suitable workaround, or documentation issues.
+When required the project may release a patch release to address security issues, serious problems with no suitable workaround, or documentation issues.
 At that point the patch release will become the :latest stable release.
 
 For example, prior to a patch release version Contour 1.20.0 was the `:latest` stable release.
