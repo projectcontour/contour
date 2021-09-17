@@ -20,10 +20,12 @@ import (
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -43,7 +45,7 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierforwardto.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
-						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
@@ -51,15 +53,15 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/filter"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/filter"),
 								},
 							},
 						},
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("echo-header-filter", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-header-filter", 80),
 								},
 								Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
 									{
@@ -82,15 +84,15 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/nofilter"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/nofilter"),
 								},
 							},
 						},
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("echo-header-nofilter", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-header-nofilter", 80),
 								},
 							},
 						},
@@ -162,7 +164,7 @@ func testRequestHeaderModifierRule(namespace string) {
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierrule.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
-						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
@@ -170,8 +172,8 @@ func testRequestHeaderModifierRule(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/filter"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/filter"),
 								},
 							},
 						},
@@ -192,7 +194,7 @@ func testRequestHeaderModifierRule(namespace string) {
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("echo-header-filter", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-header-filter", 80),
 								},
 							},
 						},
@@ -201,15 +203,15 @@ func testRequestHeaderModifierRule(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/nofilter"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/nofilter"),
 								},
 							},
 						},
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("echo-header-nofilter", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-header-nofilter", 80),
 								},
 							},
 						},

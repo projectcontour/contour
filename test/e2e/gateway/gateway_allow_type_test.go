@@ -20,10 +20,12 @@ import (
 	"context"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -45,7 +47,7 @@ func testRouteParentRefs(namespace string) {
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"routeparentrefs.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
-						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
@@ -53,15 +55,15 @@ func testRouteParentRefs(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
-									Value: stringPtr("/gateway-in-parent-refs"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
+									Value: pointer.StringPtr("/gateway-in-parent-refs"),
 								},
 							},
 						},
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("echo-blue", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-blue", 80),
 								},
 							},
 						},
@@ -91,7 +93,7 @@ func testRouteParentRefs(namespace string) {
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"routeparentrefs.gateway.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
-						gatewayParentRef("", "invalid-name"),
+						gatewayapi.GatewayParentRef("", "invalid-name"),
 					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
@@ -99,15 +101,15 @@ func testRouteParentRefs(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
-									Value: stringPtr("/gateway-not-in-parent-refs"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
+									Value: pointer.StringPtr("/gateway-not-in-parent-refs"),
 								},
 							},
 						},
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("echo-blue", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-blue", 80),
 								},
 							},
 						},

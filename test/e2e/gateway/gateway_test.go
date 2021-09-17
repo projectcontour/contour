@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
@@ -147,7 +148,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -193,7 +194,7 @@ var _ = Describe("Gateway API", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -202,14 +203,14 @@ var _ = Describe("Gateway API", func() {
 							Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRef: certificateRef("tlscert"),
+								CertificateRef: gatewayapi.CertificateRef("tlscert"),
 							},
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -246,14 +247,14 @@ var _ = Describe("Gateway API", func() {
 						Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 						Port:     gatewayapi_v1alpha2.PortNumber(443),
 						TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-							Mode: tlsModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
+							Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
 						},
 						AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 							Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
 								{Kind: "TLSRoute"},
 							},
 							Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-								From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 							},
 						},
 					},
@@ -279,15 +280,15 @@ var _ = Describe("Gateway API", func() {
 							Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								Mode:           tlsModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-								CertificateRef: certificateRef("tlscert"),
+								Mode:           gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+								CertificateRef: gatewayapi.CertificateRef("tlscert"),
 							},
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
 									{Kind: "TLSRoute"},
 								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -308,44 +309,6 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
 	})
 })
-
-func sectionNamePtr(sectionName string) *gatewayapi_v1alpha2.SectionName {
-	gwSectionName := gatewayapi_v1alpha2.SectionName(sectionName)
-	return &gwSectionName
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-func portNumPtr(port int) *gatewayapi_v1alpha2.PortNumber {
-	pn := gatewayapi_v1alpha2.PortNumber(port)
-	return &pn
-}
-
-func fromNamespacesPtr(val gatewayapi_v1alpha2.FromNamespaces) *gatewayapi_v1alpha2.FromNamespaces {
-	return &val
-}
-
-func pathMatchTypePtr(val gatewayapi_v1alpha2.PathMatchType) *gatewayapi_v1alpha2.PathMatchType {
-	return &val
-}
-
-func headerMatchTypePtr(val gatewayapi_v1alpha2.HeaderMatchType) *gatewayapi_v1alpha2.HeaderMatchType {
-	return &val
-}
-
-func tlsModeTypePtr(mode gatewayapi_v1alpha2.TLSModeType) *gatewayapi_v1alpha2.TLSModeType {
-	return &mode
-}
-
-func certificateRef(name string) *gatewayapi_v1alpha2.SecretObjectReference {
-	return &gatewayapi_v1alpha2.SecretObjectReference{
-		Group: groupPtr("core"),
-		Kind:  kindPtr("Secret"),
-		Name:  name,
-	}
-}
 
 // httpRouteAdmitted returns true if the route has a .status.conditions
 // entry of "Admitted: true".

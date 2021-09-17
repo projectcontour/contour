@@ -1,0 +1,139 @@
+// Copyright Project Contour Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package gatewayapi
+
+import (
+	"k8s.io/utils/pointer"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+)
+
+func SectionNamePtr(sectionName string) *gatewayapi_v1alpha2.SectionName {
+	gwSectionName := gatewayapi_v1alpha2.SectionName(sectionName)
+	return &gwSectionName
+}
+
+func PortNumPtr(port int) *gatewayapi_v1alpha2.PortNumber {
+	pn := gatewayapi_v1alpha2.PortNumber(port)
+	return &pn
+}
+
+func FromNamespacesPtr(val gatewayapi_v1alpha2.FromNamespaces) *gatewayapi_v1alpha2.FromNamespaces {
+	return &val
+}
+
+func PathMatchTypePtr(val gatewayapi_v1alpha2.PathMatchType) *gatewayapi_v1alpha2.PathMatchType {
+	return &val
+}
+
+func HeaderMatchTypePtr(val gatewayapi_v1alpha2.HeaderMatchType) *gatewayapi_v1alpha2.HeaderMatchType {
+	return &val
+}
+
+func TLSModeTypePtr(mode gatewayapi_v1alpha2.TLSModeType) *gatewayapi_v1alpha2.TLSModeType {
+	return &mode
+}
+
+func CertificateRef(name string) *gatewayapi_v1alpha2.SecretObjectReference {
+	return &gatewayapi_v1alpha2.SecretObjectReference{
+		Group: GroupPtr("core"),
+		Kind:  KindPtr("Secret"),
+		Name:  name,
+	}
+}
+
+func GatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentRef {
+	parentRef := gatewayapi_v1alpha2.ParentRef{
+		Group: GroupPtr(gatewayapi_v1alpha2.GroupName),
+		Kind:  KindPtr("Gateway"),
+		Name:  name,
+	}
+
+	if namespace != "" {
+		parentRef.Namespace = NamespacePtr(namespace)
+	}
+
+	return parentRef
+}
+
+func GroupPtr(group string) *gatewayapi_v1alpha2.Group {
+	gwGroup := gatewayapi_v1alpha2.Group(group)
+	return &gwGroup
+}
+
+func KindPtr(kind string) *gatewayapi_v1alpha2.Kind {
+	gwKind := gatewayapi_v1alpha2.Kind(kind)
+	return &gwKind
+}
+
+func NamespacePtr(namespace string) *gatewayapi_v1alpha2.Namespace {
+	gwNamespace := gatewayapi_v1alpha2.Namespace(namespace)
+	return &gwNamespace
+}
+
+func ServiceBackendObjectRef(name string, port int) gatewayapi_v1alpha2.BackendObjectReference {
+	return gatewayapi_v1alpha2.BackendObjectReference{
+		Group: GroupPtr(""),
+		Kind:  KindPtr("Service"),
+		Name:  name,
+		Port:  PortNumPtr(port),
+	}
+}
+
+func GatewayAddressTypePtr(addr gatewayapi_v1alpha2.AddressType) *gatewayapi_v1alpha2.AddressType {
+	return &addr
+}
+
+func HTTPRouteMatch(pathType gatewayapi_v1alpha2.PathMatchType, value string) []gatewayapi_v1alpha2.HTTPRouteMatch {
+	return []gatewayapi_v1alpha2.HTTPRouteMatch{{
+		Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+			Type:  PathMatchTypePtr(pathType),
+			Value: pointer.StringPtr(value),
+		},
+	}}
+}
+
+func HTTPBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.HTTPBackendRef) []gatewayapi_v1alpha2.HTTPBackendRef {
+	var res []gatewayapi_v1alpha2.HTTPBackendRef
+
+	for _, ref := range backendRefs {
+		res = append(res, ref...)
+	}
+	return res
+}
+
+func HTTPBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1alpha2.HTTPBackendRef {
+	return []gatewayapi_v1alpha2.HTTPBackendRef{{
+		BackendRef: gatewayapi_v1alpha2.BackendRef{
+			BackendObjectReference: ServiceBackendObjectRef(serviceName, port),
+			Weight:                 &weight,
+		},
+	}}
+}
+
+// func tcpRouteForwards(forwards ...[]gatewayapi_v1alpha2.RouteForwardTo) []gatewayapi_v1alpha2.RouteForwardTo {
+// 	var fwds []gatewayapi_v1alpha2.RouteForwardTo
+
+// 	for _, f := range forwards {
+// 		fwds = append(fwds, f...)
+// 	}
+// 	return fwds
+// }
+
+// func tcpRouteForwardTo(serviceName string, port int, weight *int32) []gatewayapi_v1alpha2.RouteForwardTo {
+// 	return []gatewayapi_v1alpha2.RouteForwardTo{{
+// 		ServiceName: pointer.StringPtr(serviceName),
+// 		Port:        gatewayPort(port),
+// 		Weight:      weight,
+// 	}}
+// }
