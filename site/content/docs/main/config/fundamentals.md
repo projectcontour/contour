@@ -182,7 +182,7 @@ spec:
           port: 80
 ```
 
-The status of the `HTTPProxy` will be `failed` and the conditions will have detailed error message: `Spec.Routes unresolved service reference: service "default/service-that-does-not-exist" not found`.
+The `HTTPProxy` will have condition `Valid=false` with detailed error message: `Spec.Routes unresolved service reference: service "default/service-that-does-not-exist" not found`.
 Requests received for `http://www.example.com/` will be forwarded to `valid-service` but requests received for `http://www.example.com/subpage` will result in error `503 Service Unavailable` response from Envoy.
 
 ## HTTPProxy API Specification
