@@ -728,6 +728,37 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	// singleNameFQDN is valid
+	singleNameFQDN := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "roots",
+			Name:      "example",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/foo",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "home",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
+	run(t, "proxy valid single FQDN", testcase{
+		objs: []interface{}{singleNameFQDN, fixture.ServiceRootsHome},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: singleNameFQDN.Name, Namespace: singleNameFQDN.Namespace}: fixture.NewValidCondition().
+				WithGeneration(singleNameFQDN.Generation).
+				Valid(),
+		},
+	})
+
 	// proxyInvalidServiceInvalid is invalid because it references an invalid service
 	proxyInvalidServiceInvalid := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
