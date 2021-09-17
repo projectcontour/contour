@@ -22,6 +22,7 @@ import (
 	"time"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,13 +48,13 @@ func testTLSRoutePassthrough(namespace string) {
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
-						gatewayParentRef("", "tls-passthrough"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRef("", "tls-passthrough"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"tlsroute.gatewayapi.projectcontour.io"},
 				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 					BackendRefs: []gatewayapi_v1alpha2.BackendRef{
-						{BackendObjectReference: serviceBackendObjectRef("echo", 443)},
+						{BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo", 443)},
 					},
 				}},
 			},
@@ -114,13 +115,13 @@ func testTLSRouteTerminate(namespace string) {
 			Spec: gatewayapi_v1alpha2.TLSRouteSpec{
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
-						gatewayParentRef("", "tls-terminate"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRef("", "tls-terminate"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"tlsroute.gatewayapi.projectcontour.io"},
 				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 					BackendRefs: []gatewayapi_v1alpha2.BackendRef{
-						{BackendObjectReference: serviceBackendObjectRef("echo", 80)},
+						{BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo", 80)},
 					},
 				}},
 			},

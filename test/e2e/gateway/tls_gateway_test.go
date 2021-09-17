@@ -18,9 +18,11 @@ package gateway
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -42,7 +44,7 @@ func testTLSGateway(namespace string) {
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
 						{
 							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
-							SectionName: sectionNamePtr("insecure"),
+							SectionName: gatewayapi.SectionNamePtr("insecure"),
 						},
 					},
 				},
@@ -51,15 +53,15 @@ func testTLSGateway(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/"),
 								},
 							},
 						},
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("echo-insecure", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-insecure", 80),
 								},
 							},
 						},
@@ -80,7 +82,7 @@ func testTLSGateway(namespace string) {
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
 						{
 							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
-							SectionName: sectionNamePtr("secure"),
+							SectionName: gatewayapi.SectionNamePtr("secure"),
 						},
 					},
 				},
@@ -89,15 +91,15 @@ func testTLSGateway(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/"),
 								},
 							},
 						},
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("echo-secure", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-secure", 80),
 								},
 							},
 						},

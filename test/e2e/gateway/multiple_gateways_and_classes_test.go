@@ -23,6 +23,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/gomega/gexec"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/require"
@@ -165,7 +166,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -193,7 +194,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -260,7 +261,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -305,7 +306,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},
@@ -337,7 +338,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 									{Kind: "HTTPRoute"},
 								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-									From: fromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
 							},
 						},

@@ -20,9 +20,11 @@ import (
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -41,7 +43,7 @@ func testGatewayHeaderConditionMatch(namespace string) {
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"gatewayheaderconditions.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
-						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
@@ -49,12 +51,12 @@ func testGatewayHeaderConditionMatch(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/"),
 								},
 								Headers: []gatewayapi_v1alpha2.HTTPHeaderMatch{
 									{
-										Type:  headerMatchTypePtr(gatewayapi_v1alpha2.HeaderMatchExact),
+										Type:  gatewayapi.HeaderMatchTypePtr(gatewayapi_v1alpha2.HeaderMatchExact),
 										Name:  gatewayapi_v1alpha2.HTTPHeaderName("My-Header"),
 										Value: "Foo",
 									},
@@ -64,7 +66,7 @@ func testGatewayHeaderConditionMatch(namespace string) {
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("echo-header-exact", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-header-exact", 80),
 								},
 							},
 						},

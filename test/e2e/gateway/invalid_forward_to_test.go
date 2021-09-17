@@ -18,10 +18,12 @@ package gateway
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -40,7 +42,7 @@ func testInvalidForwardTo(namespace string) {
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"invalidforwardto.projectcontour.io"},
 				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
 					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
-						gatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
 					},
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
@@ -48,15 +50,15 @@ func testInvalidForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/invalidref"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/invalidref"),
 								},
 							},
 						},
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: serviceBackendObjectRef("invalid", 80),
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("invalid", 80),
 								},
 							},
 						},
@@ -66,8 +68,8 @@ func testInvalidForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/invalidport"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/invalidport"),
 								},
 							},
 						},
@@ -75,7 +77,7 @@ func testInvalidForwardTo(namespace string) {
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind: kindPtr("Service"),
+										Kind: gatewayapi.KindPtr("Service"),
 										Name: "echo-slash-default",
 									},
 								},
@@ -87,8 +89,8 @@ func testInvalidForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/invalidservicename"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/invalidservicename"),
 								},
 							},
 						},
@@ -96,9 +98,9 @@ func testInvalidForwardTo(namespace string) {
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind: kindPtr("Service"),
+										Kind: gatewayapi.KindPtr("Service"),
 										Name: "non-existent-service",
-										Port: portNumPtr(80),
+										Port: gatewayapi.PortNumPtr(80),
 									},
 								},
 							},
@@ -109,8 +111,8 @@ func testInvalidForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: stringPtr("/"),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Value: pointer.StringPtr("/"),
 								},
 							},
 						},
@@ -118,9 +120,9 @@ func testInvalidForwardTo(namespace string) {
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
-										Kind: kindPtr("Service"),
+										Kind: gatewayapi.KindPtr("Service"),
 										Name: "echo-slash-default",
-										Port: portNumPtr(80),
+										Port: gatewayapi.PortNumPtr(80),
 									},
 								},
 							},
