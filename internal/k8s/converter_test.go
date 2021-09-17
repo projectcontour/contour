@@ -180,7 +180,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	gatewayClassUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x-k8s.io/v1alpha1",
+			"apiVersion": "gateway.networking.k8s.io/v1alpha2",
 			"kind":       "GatewayClass",
 			"metadata": map[string]interface{}{
 				"name":      "gatewayclass",
@@ -198,7 +198,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	gatewayUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x-k8s.io/v1alpha1",
+			"apiVersion": "gateway.networking.k8s.io/v1alpha2",
 			"kind":       "Gateway",
 			"metadata": map[string]interface{}{
 				"name":      "gateway",
@@ -216,7 +216,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	httpRouteUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x-k8s.io/v1alpha1",
+			"apiVersion": "gateway.networking.k8s.io/v1alpha2",
 			"kind":       "HTTPRoute",
 			"metadata": map[string]interface{}{
 				"name":      "httproute",
@@ -234,7 +234,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	tcpRouteUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x-k8s.io/v1alpha1",
+			"apiVersion": "gateway.networking.k8s.io/v1alpha2",
 			"kind":       "TCPRoute",
 			"metadata": map[string]interface{}{
 				"name":      "tcproute",
