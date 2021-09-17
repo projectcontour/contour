@@ -195,13 +195,13 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 					}},
 				},
 			}, {
-				Name:                 "service-stats",
-				AltStatName:          strings.Join([]string{c.Namespace, "service-stats", strconv.Itoa(c.GetAdminPort())}, "_"),
+				Name:                 "envoy-admin",
+				AltStatName:          strings.Join([]string{c.Namespace, "envoy-admin", strconv.Itoa(c.GetAdminPort())}, "_"),
 				ConnectTimeout:       protobuf.Duration(250 * time.Millisecond),
 				ClusterDiscoveryType: ClusterDiscoveryTypeForAddress(c.GetAdminAddress(), envoy_cluster_v3.Cluster_STATIC),
 				LbPolicy:             envoy_cluster_v3.Cluster_ROUND_ROBIN,
 				LoadAssignment: &envoy_endpoint_v3.ClusterLoadAssignment{
-					ClusterName: "service-stats",
+					ClusterName: "envoy-admin",
 					Endpoints: Endpoints(
 						UnixSocketAddress(c.GetAdminAddress(), c.GetAdminPort()),
 					),

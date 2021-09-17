@@ -99,12 +99,12 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9001",
+        "name": "envoy-admin",
+        "alt_stat_name": "testing-ns_envoy-admin_9001",
         "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service-stats",
+          "cluster_name": "envoy-admin",
           "endpoints": [
             {
               "lb_endpoints": [
@@ -233,12 +233,12 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9001",
+        "name": "envoy-admin",
+        "alt_stat_name": "testing-ns_envoy-admin_9001",
         "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service-stats",
+          "cluster_name": "envoy-admin",
           "endpoints": [
             {
               "lb_endpoints": [
@@ -367,12 +367,12 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9001",
+        "name": "envoy-admin",
+        "alt_stat_name": "testing-ns_envoy-admin_9001",
         "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service-stats",
+          "cluster_name": "envoy-admin",
           "endpoints": [
             {
               "lb_endpoints": [
@@ -502,12 +502,12 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9001",
+        "name": "envoy-admin",
+        "alt_stat_name": "testing-ns_envoy-admin_9001",
         "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service-stats",
+          "cluster_name": "envoy-admin",
           "endpoints": [
             {
               "lb_endpoints": [
@@ -637,12 +637,12 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9001",
+        "name": "envoy-admin",
+        "alt_stat_name": "testing-ns_envoy-admin_9001",
         "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service-stats",
+          "cluster_name": "envoy-admin",
           "endpoints": [
             {
               "lb_endpoints": [
@@ -772,12 +772,12 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9001",
+        "name": "envoy-admin",
+        "alt_stat_name": "testing-ns_envoy-admin_9001",
         "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service-stats",
+          "cluster_name": "envoy-admin",
           "endpoints": [
             {
               "lb_endpoints": [
@@ -909,12 +909,12 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9001",
+        "name": "envoy-admin",
+        "alt_stat_name": "testing-ns_envoy-admin_9001",
         "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service-stats",
+          "cluster_name": "envoy-admin",
           "endpoints": [
             {
               "lb_endpoints": [
@@ -1074,12 +1074,12 @@ func TestBootstrap(t *testing.T) {
         }
       },
       {
-        "name": "service-stats",
-        "alt_stat_name": "testing-ns_service-stats_9001",
+        "name": "envoy-admin",
+        "alt_stat_name": "testing-ns_envoy-admin_9001",
         "type": "STATIC",
         "connect_timeout": "0.250s",
         "load_assignment": {
-          "cluster_name": "service-stats",
+          "cluster_name": "envoy-admin",
           "endpoints": [
             {
               "lb_endpoints": [
@@ -1236,12 +1236,12 @@ func TestBootstrap(t *testing.T) {
               }
             },
             {
-              "name": "service-stats",
-              "alt_stat_name": "testing-ns_service-stats_9001",
+              "name": "envoy-admin",
+              "alt_stat_name": "testing-ns_envoy-admin_9001",
               "type": "STATIC",
               "connect_timeout": "0.250s",
               "load_assignment": {
-                "cluster_name": "service-stats",
+                "cluster_name": "envoy-admin",
                 "endpoints": [
                   {
                     "lb_endpoints": [

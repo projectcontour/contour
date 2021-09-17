@@ -157,7 +157,7 @@ func serviceStatsRoute(prefix string) *envoy_route_v3.Route {
 		Action: &envoy_route_v3.Route_Route{
 			Route: &envoy_route_v3.RouteAction{
 				ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
-					Cluster: "service-stats",
+					Cluster: "envoy-admin",
 				},
 			},
 		},
