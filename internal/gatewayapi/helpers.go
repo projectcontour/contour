@@ -44,6 +44,11 @@ func TLSModeTypePtr(mode gatewayapi_v1alpha2.TLSModeType) *gatewayapi_v1alpha2.T
 	return &mode
 }
 
+func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
+	h := gatewayapi_v1alpha2.Hostname(host)
+	return &h
+}
+
 func CertificateRef(name string) *gatewayapi_v1alpha2.SecretObjectReference {
 	return &gatewayapi_v1alpha2.SecretObjectReference{
 		Group: GroupPtr("core"),
@@ -61,6 +66,16 @@ func GatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentRef {
 
 	if namespace != "" {
 		parentRef.Namespace = NamespacePtr(namespace)
+	}
+
+	return parentRef
+}
+
+func GatewayListenerParentRef(namespace, name, listener string) gatewayapi_v1alpha2.ParentRef {
+	parentRef := GatewayParentRef(namespace, name)
+
+	if listener != "" {
+		parentRef.SectionName = SectionNamePtr(listener)
 	}
 
 	return parentRef
