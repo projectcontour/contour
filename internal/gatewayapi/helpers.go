@@ -49,12 +49,18 @@ func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
 	return &h
 }
 
-func CertificateRef(name string) *gatewayapi_v1alpha2.SecretObjectReference {
-	return &gatewayapi_v1alpha2.SecretObjectReference{
+func CertificateRef(name, namespace string) *gatewayapi_v1alpha2.SecretObjectReference {
+	ref := &gatewayapi_v1alpha2.SecretObjectReference{
 		Group: GroupPtr("core"),
 		Kind:  KindPtr("Secret"),
 		Name:  name,
 	}
+
+	if namespace != "" {
+		ref.Namespace = NamespacePtr(namespace)
+	}
+
+	return ref
 }
 
 func GatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentRef {
@@ -110,12 +116,24 @@ func GatewayAddressTypePtr(addr gatewayapi_v1alpha2.AddressType) *gatewayapi_v1a
 }
 
 func HTTPRouteMatch(pathType gatewayapi_v1alpha2.PathMatchType, value string) []gatewayapi_v1alpha2.HTTPRouteMatch {
-	return []gatewayapi_v1alpha2.HTTPRouteMatch{{
-		Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-			Type:  PathMatchTypePtr(pathType),
-			Value: pointer.StringPtr(value),
+	return []gatewayapi_v1alpha2.HTTPRouteMatch{
+		{
+			Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+				Type:  PathMatchTypePtr(pathType),
+				Value: pointer.StringPtr(value),
+			},
 		},
-	}}
+	}
+}
+
+func HTTPHeaderMatch(matchType gatewayapi_v1alpha2.HeaderMatchType, name, value string) []gatewayapi_v1alpha2.HTTPHeaderMatch {
+	return []gatewayapi_v1alpha2.HTTPHeaderMatch{
+		{
+			Type:  HeaderMatchTypePtr(gatewayapi_v1alpha2.HeaderMatchExact),
+			Name:  gatewayapi_v1alpha2.HTTPHeaderName(name),
+			Value: value,
+		},
+	}
 }
 
 func HTTPBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.HTTPBackendRef) []gatewayapi_v1alpha2.HTTPBackendRef {
@@ -128,27 +146,30 @@ func HTTPBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.HTTPBackendRef) []gate
 }
 
 func HTTPBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1alpha2.HTTPBackendRef {
-	return []gatewayapi_v1alpha2.HTTPBackendRef{{
-		BackendRef: gatewayapi_v1alpha2.BackendRef{
-			BackendObjectReference: ServiceBackendObjectRef(serviceName, port),
-			Weight:                 &weight,
+	return []gatewayapi_v1alpha2.HTTPBackendRef{
+		{
+			BackendRef: gatewayapi_v1alpha2.BackendRef{
+				BackendObjectReference: ServiceBackendObjectRef(serviceName, port),
+				Weight:                 &weight,
+			},
 		},
-	}}
+	}
 }
 
-// func tcpRouteForwards(forwards ...[]gatewayapi_v1alpha2.RouteForwardTo) []gatewayapi_v1alpha2.RouteForwardTo {
-// 	var fwds []gatewayapi_v1alpha2.RouteForwardTo
+func TCPRouteBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.BackendRef) []gatewayapi_v1alpha2.BackendRef {
+	var res []gatewayapi_v1alpha2.BackendRef
 
-// 	for _, f := range forwards {
-// 		fwds = append(fwds, f...)
-// 	}
-// 	return fwds
-// }
+	for _, ref := range backendRefs {
+		res = append(res, ref...)
+	}
+	return res
+}
 
-// func tcpRouteForwardTo(serviceName string, port int, weight *int32) []gatewayapi_v1alpha2.RouteForwardTo {
-// 	return []gatewayapi_v1alpha2.RouteForwardTo{{
-// 		ServiceName: pointer.StringPtr(serviceName),
-// 		Port:        gatewayPort(port),
-// 		Weight:      weight,
-// 	}}
-// }
+func TCPRouteBackendRef(serviceName string, port int, weight *int32) []gatewayapi_v1alpha2.BackendRef {
+	return []gatewayapi_v1alpha2.BackendRef{
+		{
+			BackendObjectReference: ServiceBackendObjectRef(serviceName, port),
+			Weight:                 weight,
+		},
+	}
+}
