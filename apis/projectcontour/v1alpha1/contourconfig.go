@@ -456,12 +456,16 @@ type HTTPProxyConfig struct {
 // LeaderElectionConfig holds the config bits for leader election
 // inside the  config file.
 type LeaderElectionConfig struct {
+	// +optional
 	LeaseDuration string `json:"leaseDuration,omitempty"`
 
+	// +optional
 	RenewDeadline string `json:"renewDeadline,omitempty"`
 
+	// +optional
 	RetryPeriod string `json:"retryPeriod,omitempty"`
 
+	// +optional
 	Configmap NamespacedName `json:"configmap,omitempty"`
 
 	DisableLeaderElection bool `json:"disableLeaderElection"`
