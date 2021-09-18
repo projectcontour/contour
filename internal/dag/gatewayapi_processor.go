@@ -855,22 +855,17 @@ func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, headerP
 
 // cluster builds a *dag.Cluster for the supplied set of headerPolicy and service.
 func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Service, weight uint32) *Cluster {
-	if len(p.MinimumTLSVersion) != 0 {
-		return &Cluster{
-			Upstream:               service,
-			Weight:                 weight,
-			Protocol:               service.Protocol,
-			RequestHeadersPolicy:   headerPolicy,
-			MinimumProtocolVersion: p.MinimumTLSVersion,
-			CipherSuites:           p.CipherSuites,
-		}
-	}
-	return &Cluster{
+	cluster := &Cluster{
 		Upstream:             service,
 		Weight:               weight,
 		Protocol:             service.Protocol,
 		RequestHeadersPolicy: headerPolicy,
 	}
+	if len(p.MinimumTLSVersion) != 0 {
+		cluster.MinimumProtocolVersion = p.MinimumTLSVersion
+		cluster.CipherSuites = p.CipherSuites
+	}
+	return cluster
 }
 
 func pathMatchTypePtr(pmt gatewayapi_v1alpha1.PathMatchType) *gatewayapi_v1alpha1.PathMatchType {

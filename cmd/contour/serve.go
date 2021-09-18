@@ -716,47 +716,29 @@ func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallback
 			ClientCertificate:         clientCert,
 		},
 	}
-	if !ctx.Config.TLS.EnableUpstreamTLS {
-		dagProcessors = append(dagProcessors,
-			&dag.ExtensionServiceProcessor{
-				// Note that ExtensionService does not support ExternalName, if it does get added,
-				// need to bring EnableExternalNameService in here too.
-				FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
-				ClientCertificate: clientCert,
-			},
-			&dag.HTTPProxyProcessor{
-				EnableExternalNameService: ctx.Config.EnableExternalNameService,
-				DisablePermitInsecure:     ctx.Config.DisablePermitInsecure,
-				FallbackCertificate:       fallbackCert,
-				DNSLookupFamily:           ctx.Config.Cluster.DNSLookupFamily,
-				ClientCertificate:         clientCert,
-				RequestHeadersPolicy:      &requestHeadersPolicy,
-				ResponseHeadersPolicy:     &responseHeadersPolicy,
-			},
-		)
-	} else {
-		dagProcessors = append(dagProcessors,
-			&dag.ExtensionServiceProcessor{
-				// Note that ExtensionService does not support ExternalName, if it does get added,
-				// need to bring EnableExternalNameService in here too.
-				FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
-				ClientCertificate: clientCert,
-				MinimumTLSVersion: ctx.Config.TLS.MinimumProtocolVersion,
-				CipherSuites:      ctx.Config.TLS.CipherSuites,
-			},
-			&dag.HTTPProxyProcessor{
-				EnableExternalNameService: ctx.Config.EnableExternalNameService,
-				DisablePermitInsecure:     ctx.Config.DisablePermitInsecure,
-				FallbackCertificate:       fallbackCert,
-				DNSLookupFamily:           ctx.Config.Cluster.DNSLookupFamily,
-				ClientCertificate:         clientCert,
-				RequestHeadersPolicy:      &requestHeadersPolicy,
-				ResponseHeadersPolicy:     &responseHeadersPolicy,
-				MinimumTLSVersion:         ctx.Config.TLS.MinimumProtocolVersion,
-				CipherSuites:              ctx.Config.TLS.CipherSuites,
-			},
-		)
+
+	httpProcessor := &dag.HTTPProxyProcessor{
+		EnableExternalNameService: ctx.Config.EnableExternalNameService,
+		DisablePermitInsecure:     ctx.Config.DisablePermitInsecure,
+		FallbackCertificate:       fallbackCert,
+		DNSLookupFamily:           ctx.Config.Cluster.DNSLookupFamily,
+		ClientCertificate:         clientCert,
+		RequestHeadersPolicy:      &requestHeadersPolicy,
+		ResponseHeadersPolicy:     &responseHeadersPolicy,
 	}
+	extSvcProcessor := &dag.ExtensionServiceProcessor{
+		// Note that ExtensionService does not support ExternalName, if it does get added,
+		// need to bring EnableExternalNameService in here too.
+		FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
+		ClientCertificate: clientCert,
+	}
+	if ctx.Config.TLS.EnableUpstreamTLS {
+		extSvcProcessor.MinimumTLSVersion = ctx.Config.TLS.MinimumProtocolVersion
+		extSvcProcessor.CipherSuites = ctx.Config.TLS.CipherSuites
+		httpProcessor.MinimumTLSVersion = ctx.Config.TLS.MinimumProtocolVersion
+		httpProcessor.CipherSuites = ctx.Config.TLS.CipherSuites
+	}
+	dagProcessors = append(dagProcessors, httpProcessor, extSvcProcessor)
 
 	if ctx.Config.GatewayConfig != nil && clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 		if !ctx.Config.TLS.EnableUpstreamTLS {
