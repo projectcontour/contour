@@ -75,7 +75,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve := app.Command("serve", "Serve xDS API traffic.")
 
 	// The precedence of configuration for contour serve is as follows:
-	// If ContourConfiguration file is specified, it takes precedence,
+	// If ContourConfiguration resource is specified, it takes precedence,
 	// otherwise config file, overridden by env vars, overridden by cli flags.
 	// however, as -c is a cli flag, we don't know its value til cli flags
 	// have been parsed. To correct this ordering we assign a post parse
@@ -223,7 +223,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Get the ContourConfiguration CRD if specified
 	if len(ctx.contourConfigurationName) > 0 {
 
-		// Determine the name/namespace of the configuration file utilizing the environment
+		// Determine the name/namespace of the configuration resource utilizing the environment
 		// variable "CONTOUR_NAMESPACE" which should exist on the Contour deployment.
 		//
 		// If the env variable is not present, it will return "" and still fail the lookup
