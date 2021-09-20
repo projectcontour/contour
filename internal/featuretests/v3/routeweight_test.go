@@ -302,7 +302,7 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TCPRouteBackendRef("svc1", 443, pointer.Int32(1)),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("svc1", 443, pointer.Int32(1)),
 			}},
 		},
 	}
@@ -358,9 +358,9 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TCPRouteBackendRefs(
-					gatewayapi.TCPRouteBackendRef("svc1", 443, pointer.Int32(1)),
-					gatewayapi.TCPRouteBackendRef("svc2", 443, pointer.Int32(7)),
+				BackendRefs: gatewayapi.TLSRouteBackendRefs(
+					gatewayapi.TLSRouteBackendRef("svc1", 443, pointer.Int32(1)),
+					gatewayapi.TLSRouteBackendRef("svc2", 443, pointer.Int32(7)),
 				),
 			}},
 		},

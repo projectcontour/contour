@@ -96,7 +96,7 @@ func TestTLSRoute(t *testing.T) {
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TCPRouteBackendRef("correct-backend", 80, nil),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("correct-backend", 80, nil),
 			}},
 		},
 	}
@@ -147,7 +147,7 @@ func TestTLSRoute(t *testing.T) {
 				},
 			},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TCPRouteBackendRef("correct-backend", 80, nil),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("correct-backend", 80, nil),
 			}},
 		},
 	}
@@ -198,7 +198,7 @@ func TestTLSRoute(t *testing.T) {
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TCPRouteBackendRef("correct-backend", 80, nil),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("correct-backend", 80, nil),
 			}},
 		},
 	}
@@ -215,7 +215,7 @@ func TestTLSRoute(t *testing.T) {
 				},
 			},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TCPRouteBackendRef("another-backend", 80, nil),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("another-backend", 80, nil),
 			}},
 		},
 	}

@@ -455,7 +455,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 			Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-				BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+				BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 			}},
 		},
 	}
@@ -666,7 +666,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -704,7 +704,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -742,7 +742,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -771,7 +771,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -815,7 +815,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -849,7 +849,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -2380,7 +2380,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -2422,7 +2422,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"thing.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -2482,7 +2482,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"thing.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -2533,7 +2533,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 							"!!thing.projectcontour.io",
 						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -2556,7 +2556,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
 							Matches:     []gatewayapi_v1alpha2.TLSRouteMatch{{}},
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -2593,7 +2593,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
 						}},
 					},
 				},
@@ -2618,10 +2618,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRefs(
-								gatewayapi.TCPRouteBackendRef("kuard", 8080, pointer.Int32Ptr(1)),
-								gatewayapi.TCPRouteBackendRef("kuard2", 8080, pointer.Int32Ptr(2)),
-								gatewayapi.TCPRouteBackendRef("kuard3", 8080, pointer.Int32Ptr(3)),
+							BackendRefs: gatewayapi.TLSRouteBackendRefs(
+								gatewayapi.TLSRouteBackendRef("kuard", 8080, pointer.Int32Ptr(1)),
+								gatewayapi.TLSRouteBackendRef("kuard2", 8080, pointer.Int32Ptr(2)),
+								gatewayapi.TLSRouteBackendRef("kuard3", 8080, pointer.Int32Ptr(3)),
 							),
 						}},
 					},
@@ -2667,10 +2667,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRefs(
-								gatewayapi.TCPRouteBackendRef("kuard", 8080, pointer.Int32Ptr(1)),
-								gatewayapi.TCPRouteBackendRef("kuard2", 8080, pointer.Int32Ptr(0)),
-								gatewayapi.TCPRouteBackendRef("kuard3", 8080, pointer.Int32Ptr(3)),
+							BackendRefs: gatewayapi.TLSRouteBackendRefs(
+								gatewayapi.TLSRouteBackendRef("kuard", 8080, pointer.Int32Ptr(1)),
+								gatewayapi.TLSRouteBackendRef("kuard2", 8080, pointer.Int32Ptr(0)),
+								gatewayapi.TLSRouteBackendRef("kuard3", 8080, pointer.Int32Ptr(3)),
 							),
 						}},
 					},
@@ -2716,10 +2716,10 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						},
 						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
 						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TCPRouteBackendRefs(
-								gatewayapi.TCPRouteBackendRef("kuard", 8080, nil),
-								gatewayapi.TCPRouteBackendRef("kuard2", 8080, nil),
-								gatewayapi.TCPRouteBackendRef("kuard3", 8080, nil),
+							BackendRefs: gatewayapi.TLSRouteBackendRefs(
+								gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
+								gatewayapi.TLSRouteBackendRef("kuard2", 8080, nil),
+								gatewayapi.TLSRouteBackendRef("kuard3", 8080, nil),
 							),
 						}},
 					},

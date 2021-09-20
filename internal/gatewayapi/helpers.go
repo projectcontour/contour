@@ -156,7 +156,7 @@ func HTTPBackendRef(serviceName string, port int, weight int32) []gatewayapi_v1a
 	}
 }
 
-func TCPRouteBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.BackendRef) []gatewayapi_v1alpha2.BackendRef {
+func TLSRouteBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.BackendRef) []gatewayapi_v1alpha2.BackendRef {
 	var res []gatewayapi_v1alpha2.BackendRef
 
 	for _, ref := range backendRefs {
@@ -165,7 +165,7 @@ func TCPRouteBackendRefs(backendRefs ...[]gatewayapi_v1alpha2.BackendRef) []gate
 	return res
 }
 
-func TCPRouteBackendRef(serviceName string, port int, weight *int32) []gatewayapi_v1alpha2.BackendRef {
+func TLSRouteBackendRef(serviceName string, port int, weight *int32) []gatewayapi_v1alpha2.BackendRef {
 	return []gatewayapi_v1alpha2.BackendRef{
 		{
 			BackendObjectReference: ServiceBackendObjectRef(serviceName, port),
