@@ -65,13 +65,7 @@ func testHostRewrite(namespace string) {
 								},
 							},
 						},
-						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
-							{
-								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo", 80),
-								},
-							},
-						},
+						BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 					},
 				},
 			},

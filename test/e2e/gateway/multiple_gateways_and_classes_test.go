@@ -171,9 +171,6 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-									{Kind: "HTTPRoute"},
-								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
@@ -199,9 +196,6 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-									{Kind: "HTTPRoute"},
-								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
@@ -266,9 +260,6 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-									{Kind: "HTTPRoute"},
-								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
@@ -311,9 +302,6 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-									{Kind: "HTTPRoute"},
-								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
@@ -343,9 +331,6 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-									{Kind: "HTTPRoute"},
-								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},

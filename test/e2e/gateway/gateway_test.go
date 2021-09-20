@@ -144,9 +144,6 @@ var _ = Describe("Gateway API", func() {
 							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(80),
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-									{Kind: "HTTPRoute"},
-								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},
@@ -203,7 +200,7 @@ var _ = Describe("Gateway API", func() {
 							Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRef: gatewayapi.CertificateRef("tlscert"),
+								CertificateRef: gatewayapi.CertificateRef("tlscert", ""),
 							},
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
@@ -250,9 +247,6 @@ var _ = Describe("Gateway API", func() {
 							Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
 						},
 						AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-							Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-								{Kind: "TLSRoute"},
-							},
 							Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 								From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 							},
@@ -281,12 +275,9 @@ var _ = Describe("Gateway API", func() {
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 								Mode:           gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-								CertificateRef: gatewayapi.CertificateRef("tlscert"),
+								CertificateRef: gatewayapi.CertificateRef("tlscert", ""),
 							},
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
-									{Kind: "TLSRoute"},
-								},
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
 									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
 								},

@@ -63,13 +63,7 @@ func testGatewayHeaderConditionMatch(namespace string) {
 								},
 							},
 						},
-						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
-							{
-								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-header-exact", 80),
-								},
-							},
-						},
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-exact", 80, 1),
 					},
 				},
 			},

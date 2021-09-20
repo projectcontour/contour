@@ -24,7 +24,6 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -52,19 +51,8 @@ func testTLSWildcardHost(namespace string) {
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
-							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-								Value: pointer.StringPtr("/"),
-							},
-						}},
-						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
-							{
-								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo", 80),
-								},
-							},
-						},
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 					},
 				},
 			},

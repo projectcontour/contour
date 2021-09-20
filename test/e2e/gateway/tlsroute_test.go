@@ -53,9 +53,7 @@ func testTLSRoutePassthrough(namespace string) {
 				},
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"tlsroute.gatewayapi.projectcontour.io"},
 				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-					BackendRefs: []gatewayapi_v1alpha2.BackendRef{
-						{BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo", 443)},
-					},
+					BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 443, nil),
 				}},
 			},
 		}
@@ -120,9 +118,7 @@ func testTLSRouteTerminate(namespace string) {
 				},
 				Hostnames: []gatewayapi_v1alpha2.Hostname{"tlsroute.gatewayapi.projectcontour.io"},
 				Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-					BackendRefs: []gatewayapi_v1alpha2.BackendRef{
-						{BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo", 80)},
-					},
+					BackendRefs: gatewayapi.TLSRouteBackendRef("echo", 80, nil),
 				}},
 			},
 		}

@@ -22,7 +22,6 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -49,75 +48,23 @@ func testGatewayPathConditionMatch(namespace string) {
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
-							{
-								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: pointer.StringPtr("/path/prefix/"),
-								},
-							},
-						},
-						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
-							{
-								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-slash-prefix", 80),
-								},
-							},
-						},
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/path/prefix/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-prefix", 80, 1),
 					},
 
 					{
-						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
-							{
-								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: pointer.StringPtr("/path/prefix"),
-								},
-							},
-						},
-						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
-							{
-								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-slash-noprefix", 80),
-								},
-							},
-						},
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/path/prefix"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-noprefix", 80, 1),
 					},
 
 					{
-						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
-							{
-								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
-									Value: pointer.StringPtr("/path/exact"),
-								},
-							},
-						},
-						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
-							{
-								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-slash-exact", 80),
-								},
-							},
-						},
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchExact, "/path/exact"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-exact", 80, 1),
 					},
 
 					{
-						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
-							{
-								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-									Value: pointer.StringPtr("/"),
-								},
-							},
-						},
-						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
-							{
-								BackendRef: gatewayapi_v1alpha2.BackendRef{
-									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-slash-default", 80),
-								},
-							},
-						},
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-default", 80, 1),
 					},
 				},
 			},
