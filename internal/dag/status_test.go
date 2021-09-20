@@ -697,15 +697,15 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
-	// proxyWildCardFQDN is invalid because it contains a wildcarded fqdn
-	proxyWildCardFQDN := &contour_api_v1.HTTPProxy{
+	// singleNameFQDN is valid
+	singleNameFQDN := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "roots",
 			Name:      "example",
 		},
 		Spec: contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{
-				Fqdn: "example.*.com",
+				Fqdn: "example",
 			},
 			Routes: []contour_api_v1.Route{{
 				Conditions: []contour_api_v1.MatchCondition{{
@@ -719,12 +719,12 @@ func TestDAGStatus(t *testing.T) {
 		},
 	}
 
-	run(t, "proxy invalid FQDN contains wildcard", testcase{
-		objs: []interface{}{proxyWildCardFQDN},
+	run(t, "proxy valid single FQDN", testcase{
+		objs: []interface{}{singleNameFQDN, fixture.ServiceRootsHome},
 		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
-			{Name: proxyWildCardFQDN.Name, Namespace: proxyWildCardFQDN.Namespace}: fixture.NewValidCondition().
-				WithGeneration(proxyWildCardFQDN.Generation).
-				WithError(contour_api_v1.ConditionTypeVirtualHostError, "WildCardNotAllowed", `Spec.VirtualHost.Fqdn "example.*.com" cannot use wildcards`),
+			{Name: singleNameFQDN.Name, Namespace: singleNameFQDN.Namespace}: fixture.NewValidCondition().
+				WithGeneration(singleNameFQDN.Generation).
+				Valid(),
 		},
 	})
 

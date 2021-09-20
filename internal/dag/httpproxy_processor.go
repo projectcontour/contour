@@ -132,6 +132,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 			"Spec.VirtualHost.Fqdn must be specified")
 		return
 	}
+
 	pa.Vhost = host
 
 	// Ensure root httpproxy lives in allowed namespace.
@@ -139,12 +140,6 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	if !p.rootAllowed(proxy.Namespace) {
 		validCond.AddError(contour_api_v1.ConditionTypeRootNamespaceError, "RootProxyNotAllowedInNamespace",
 			"root HTTPProxy cannot be defined in this namespace")
-		return
-	}
-
-	if strings.Contains(host, "*") {
-		validCond.AddErrorf(contour_api_v1.ConditionTypeVirtualHostError, "WildCardNotAllowed",
-			"Spec.VirtualHost.Fqdn %q cannot use wildcards", host)
 		return
 	}
 
