@@ -242,6 +242,11 @@ func (f *Framework) Test(body TestBody) {
 	body()
 }
 
+// CreateHTTPProxy creates the provided HTTPProxy and returns any relevant error.
+func (f *Framework) CreateHTTPProxy(proxy *contourv1.HTTPProxy) error {
+	return f.Client.Create(context.TODO(), proxy)
+}
+
 // CreateHTTPProxyAndWaitFor creates the provided HTTPProxy in the Kubernetes API
 // and then waits for the specified condition to be true.
 func (f *Framework) CreateHTTPProxyAndWaitFor(proxy *contourv1.HTTPProxy, condition func(*contourv1.HTTPProxy) bool) (*contourv1.HTTPProxy, bool) {

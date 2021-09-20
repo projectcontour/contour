@@ -15,13 +15,10 @@ package dag
 
 import (
 	"fmt"
-	"net"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
-
-	"k8s.io/apimachinery/pkg/util/validation"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -133,16 +130,6 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	if isBlank(host) {
 		validCond.AddError(contour_api_v1.ConditionTypeVirtualHostError, "FQDNNotSpecified",
 			"Spec.VirtualHost.Fqdn must be specified")
-		return
-	}
-	if strings.Contains(host, "*") {
-		validCond.AddErrorf(contour_api_v1.ConditionTypeVirtualHostError, "WildCardNotAllowed",
-			"Spec.VirtualHost.Fqdn %q cannot use wildcards", host)
-		return
-	}
-	if !validHTTPProxyFQDN(host) {
-		validCond.AddError(contour_api_v1.ConditionTypeVirtualHostError, "FQDNInvalid",
-			"Spec.VirtualHost.Fqdn must be be a valid DNS name")
 		return
 	}
 
@@ -1056,14 +1043,4 @@ func directResponse(statusCode uint32) *DirectResponse {
 	return &DirectResponse{
 		StatusCode: statusCode,
 	}
-}
-
-func validHTTPProxyFQDN(hostname string) bool {
-	if isIP := net.ParseIP(hostname) != nil; isIP {
-		return false
-	}
-	if errs := validation.IsDNS1123Subdomain(hostname); errs != nil {
-		return false
-	}
-	return true
 }

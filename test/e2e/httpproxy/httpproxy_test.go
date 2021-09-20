@@ -110,6 +110,9 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-retry-policy-validation", testRetryPolicyValidation)
 
+	f.NamespacedTest("httpproxy-invalid-wildcard-subdomain-fqdn", testWildcardSubdomainFQDN)
+	f.NamespacedTest("httpproxy-invalid-wildcard-fqdn", testWildcardFQDN)
+
 	f.NamespacedTest("httpproxy-https-fallback-certificate", func(namespace string) {
 		Context("with fallback certificate", func() {
 			BeforeEach(func() {
