@@ -611,7 +611,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 						routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 					}
 				default:
-					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.ForwardTo.Filters: Only RequestHeaderModifier type is supported.")
+					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier type is supported.")
 				}
 			}
 
@@ -705,6 +705,10 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 
 	if !(backendRef.Kind != nil && *backendRef.Kind == "Service") {
 		return nil, fmt.Errorf("Spec.Rules.BackendRef.Kind must be 'Service'")
+	}
+
+	if backendRef.Name == "" {
+		return nil, fmt.Errorf("Spec.Rules.BackendRef.Name must be specified")
 	}
 
 	if backendRef.Port == nil {
