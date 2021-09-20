@@ -13,210 +13,173 @@
 
 package v3
 
-// import (
-// 	"testing"
+import (
+	"testing"
 
-// 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-// 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-// 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-// 	"github.com/projectcontour/contour/internal/dag"
-// 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
-// 	"github.com/projectcontour/contour/internal/featuretests"
-// 	"github.com/projectcontour/contour/internal/fixture"
-// 	v1 "k8s.io/api/core/v1"
-// 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-// 	"k8s.io/apimachinery/pkg/util/intstr"
-// 	"k8s.io/utils/pointer"
-// 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-// )
+	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
+	"github.com/projectcontour/contour/internal/featuretests"
+	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/gatewayapi"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+)
 
-// var (
-// 	gc = &gatewayapi_v1alpha2.GatewayClass{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name: "contour",
-// 		},
-// 		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-// 			Controller: "projectcontour.io/contour",
-// 		},
-// 		Status: gatewayapi_v1alpha2.GatewayClassStatus{
-// 			Conditions: []metav1.Condition{
-// 				{
-// 					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
-// 					Status: metav1.ConditionTrue,
-// 				},
-// 			},
-// 		},
-// 	}
+var (
+	gc = &gatewayapi_v1alpha2.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "contour",
+		},
+		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
+			Controller: "projectcontour.io/contour",
+		},
+		Status: gatewayapi_v1alpha2.GatewayClassStatus{
+			Conditions: []metav1.Condition{
+				{
+					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+					Status: metav1.ConditionTrue,
+				},
+			},
+		},
+	}
 
-// 	gateway = &gatewayapi_v1alpha2.Gateway{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name:      "contour",
-// 			Namespace: "projectcontour",
-// 		},
-// 		Spec: gatewayapi_v1alpha2.GatewaySpec{
-// 			GatewayClassName: gc.Name,
-// 			Listeners: []gatewayapi_v1alpha2.Listener{{
-// 				Port:     80,
-// 				Protocol: "HTTP",
-// 				Routes: gatewayapi_v1alpha2.RouteBindingSelector{
-// 					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-// 						From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectAll),
-// 					},
-// 					Kind: dag.KindHTTPRoute,
-// 				},
-// 			}, {
-// 				Port:     443,
-// 				Protocol: "HTTPS",
-// 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-// 					CertificateRef: &gatewayapi_v1alpha2.LocalObjectReference{
-// 						Group: "core",
-// 						Kind:  "Secret",
-// 						Name:  "tlscert",
-// 					},
-// 				},
-// 				Routes: gatewayapi_v1alpha2.RouteBindingSelector{
-// 					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-// 						From: routeSelectTypePtr(gatewayapi_v1alpha2.RouteSelectAll),
-// 					},
-// 					Kind: dag.KindHTTPRoute,
-// 				},
-// 			}},
-// 		},
-// 	}
-// )
+	gateway = &gatewayapi_v1alpha2.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha2.GatewaySpec{
+			GatewayClassName: gc.Name,
+			Listeners: []gatewayapi_v1alpha2.Listener{
+				{
+					Port:     80,
+					Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				},
+				{
+					Port:     443,
+					Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
+					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+						CertificateRef: gatewayapi.CertificateRef("tlscert", ""),
+					},
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				},
+			},
+		},
+	}
+)
 
-// func TestGateway_TLS(t *testing.T) {
-// 	rh, c, done := setup(t)
-// 	defer done()
+func TestGateway_TLS(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
 
-// 	rh.OnAdd(fixture.NewService("svc1").
-// 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
-// 	)
+	rh.OnAdd(fixture.NewService("svc1").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
 
-// 	rh.OnAdd(fixture.NewService("svc2").
-// 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
-// 	)
+	rh.OnAdd(fixture.NewService("svc2").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
+	)
 
-// 	sec1 := &v1.Secret{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name:      "tlscert",
-// 			Namespace: "projectcontour",
-// 		},
-// 		Type: v1.SecretTypeTLS,
-// 		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
-// 	}
+	sec1 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tlscert",
+			Namespace: "projectcontour",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+	}
 
-// 	rh.OnAdd(sec1)
+	rh.OnAdd(sec1)
 
-// 	rh.OnAdd(gc)
+	rh.OnAdd(gc)
 
-// 	rh.OnAdd(gateway)
+	rh.OnAdd(gateway)
 
-// 	rh.OnAdd(&gatewayapi_v1alpha2.HTTPRoute{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name:      "basic",
-// 			Namespace: "default",
-// 			Labels: map[string]string{
-// 				"app":  "contour",
-// 				"type": "controller",
-// 			},
-// 		},
-// 		Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-// 			Gateways: &gatewayapi_v1alpha2.RouteGateways{
-// 				Allow: gatewayAllowTypePtr(gatewayapi_v1alpha2.GatewayAllowAll),
-// 			},
-// 			Hostnames: []gatewayapi_v1alpha2.Hostname{
-// 				"test.projectcontour.io",
-// 			},
-// 			Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-// 				Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
-// 					Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-// 						Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-// 						Value: pointer.StringPtr("/blog"),
-// 					},
-// 				}},
-// 				ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{{
-// 					ServiceName: pointer.StringPtr("svc2"),
-// 					Port:        gatewayPort(80),
-// 					Weight:      pointer.Int32Ptr(1),
-// 				}},
-// 			}, {
-// 				Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
-// 					Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-// 						Type:  pathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
-// 						Value: pointer.StringPtr("/"),
-// 					},
-// 				}},
-// 				ForwardTo: []gatewayapi_v1alpha2.HTTPRouteForwardTo{{
-// 					ServiceName: pointer.StringPtr("svc1"),
-// 					Port:        gatewayPort(80),
-// 					Weight:      pointer.Int32Ptr(10),
-// 				}},
-// 			}},
-// 		},
-// 	})
+	rh.OnAdd(&gatewayapi_v1alpha2.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "basic",
+			Namespace: "default",
+			Labels: map[string]string{
+				"app":  "contour",
+				"type": "controller",
+			},
+		},
+		Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+			CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+				ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+					gatewayapi.GatewayParentRef("projectcontour", "contour"),
+				},
+			},
+			Hostnames: []gatewayapi_v1alpha2.Hostname{
+				"test.projectcontour.io",
+			},
+			Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/blog"),
+				BackendRefs: gatewayapi.HTTPBackendRef("svc2", 80, 1),
+			}, {
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 10),
+			}},
+		},
+	})
 
-// 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-// 		Resources: resources(t,
-// 			envoy_v3.RouteConfiguration("https/test.projectcontour.io",
-// 				envoy_v3.VirtualHost("test.projectcontour.io",
-// 					&envoy_route_v3.Route{
-// 						Match:  routePrefix("/blog"),
-// 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
-// 					}, &envoy_route_v3.Route{
-// 						Match:  routePrefix("/"),
-// 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
-// 					},
-// 				),
-// 			),
-// 			envoy_v3.RouteConfiguration("ingress_http",
-// 				envoy_v3.VirtualHost("test.projectcontour.io",
-// 					&envoy_route_v3.Route{
-// 						Match:  routePrefix("/blog"),
-// 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
-// 					}, &envoy_route_v3.Route{
-// 						Match:  routePrefix("/"),
-// 						Action: routeCluster("default/svc1/80/da39a3ee5e"),
-// 					},
-// 				),
-// 			),
-// 		),
-// 		TypeUrl: routeType,
-// 	})
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("https/test.projectcontour.io",
+				envoy_v3.VirtualHost("test.projectcontour.io",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/blog"),
+						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					}, &envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/svc1/80/da39a3ee5e"),
+					},
+				),
+			),
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("test.projectcontour.io",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/blog"),
+						Action: routeCluster("default/svc2/80/da39a3ee5e"),
+					}, &envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: routeCluster("default/svc1/80/da39a3ee5e"),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
 
-// 	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
-// 		TypeUrl: listenerType,
-// 		Resources: resources(t,
-// 			&envoy_listener_v3.Listener{
-// 				Name:    "ingress_https",
-// 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
-// 				ListenerFilters: envoy_v3.ListenerFilters(
-// 					envoy_v3.TLSInspector(),
-// 				),
-// 				FilterChains: appendFilterChains(
-// 					filterchaintls("test.projectcontour.io", sec1,
-// 						httpsFilterFor("test.projectcontour.io"),
-// 						nil, "h2", "http/1.1"),
-// 				),
-// 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
-// 			},
-// 		),
-// 	})
-// }
-
-// func gatewayPort(port int) *gatewayapi_v1alpha2.PortNumber {
-// 	p := gatewayapi_v1alpha2.PortNumber(port)
-// 	return &p
-// }
-
-// func pathMatchTypePtr(pmt gatewayapi_v1alpha2.PathMatchType) *gatewayapi_v1alpha2.PathMatchType {
-// 	return &pmt
-// }
-
-// func routeSelectTypePtr(rst gatewayapi_v1alpha2.RouteSelectType) *gatewayapi_v1alpha2.RouteSelectType {
-// 	return &rst
-// }
-
-// func gatewayAllowTypePtr(gwType gatewayapi_v1alpha2.GatewayAllowType) *gatewayapi_v1alpha2.GatewayAllowType {
-// 	return &gwType
-// }
+	c.Request(listenerType, "ingress_https").Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: appendFilterChains(
+					filterchaintls("test.projectcontour.io", sec1,
+						httpsFilterFor("test.projectcontour.io"),
+						nil, "h2", "http/1.1"),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+		),
+	})
+}
