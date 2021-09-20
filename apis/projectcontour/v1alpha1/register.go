@@ -20,6 +20,8 @@ import (
 )
 
 var ExtensionServiceGVR = GroupVersion.WithResource("extensionservices")
+var ContourConfigurationGVR = GroupVersion.WithResource("contourconfigurations")
+var ContourDeploymentGVR = GroupVersion.WithResource("contourdeployments")
 
 var (
 	// GroupVersion is group version used to register these objects
@@ -37,6 +39,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		GroupVersion,
 		&ExtensionService{},
 		&ExtensionServiceList{},
+		&ContourConfiguration{},
+		&ContourConfigurationList{},
+		&ContourDeployment{},
+		&ContourDeploymentList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, GroupVersion)
