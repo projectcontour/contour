@@ -193,14 +193,14 @@ func TestParseOpenConnections(t *testing.T) {
 
 // nolint:revive
 const (
-	VALIDHTTP = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_upstream_rq_pending_active{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_high_rq_retry_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_high_cx_pool_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_upstream_cx_tx_bytes_buffered{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_version{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_default_cx_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
+	VALIDHTTP = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_rq_pending_active{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_rq_retry_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_cx_tx_bytes_buffered{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_version{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_default_cx_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
 # TYPE envoy_http_downstream_cx_ssl_active gauge
 envoy_http_downstream_cx_ssl_active{envoy_http_conn_manager_prefix="admin"} 0
 # TYPE envoy_server_total_connections gauge
@@ -220,14 +220,14 @@ envoy_server_hot_restart_epoch{} 0
 # TYPE envoy_http_downstream_cx_active gauge
 envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="ingress_http"} 4
 `
-	VALIDHTTPS = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_upstream_rq_pending_active{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_high_rq_retry_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_high_cx_pool_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_upstream_cx_tx_bytes_buffered{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_version{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_default_cx_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
+	VALIDHTTPS = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_rq_pending_active{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_rq_retry_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_cx_tx_bytes_buffered{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_version{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_default_cx_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
 # TYPE envoy_http_downstream_cx_ssl_active gauge
 envoy_http_downstream_cx_ssl_active{envoy_http_conn_manager_prefix="admin"} 0
 # TYPE envoy_server_total_connections gauge
@@ -247,14 +247,14 @@ envoy_server_hot_restart_epoch{} 0
 # TYPE envoy_http_downstream_cx_active gauge
 envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="ingress_http"} 4
 `
-	VALIDBOTH = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_upstream_rq_pending_active{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_high_rq_retry_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_high_cx_pool_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_upstream_cx_tx_bytes_buffered{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_version{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_default_cx_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
+	VALIDBOTH = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_rq_pending_active{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_rq_retry_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_cx_tx_bytes_buffered{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_version{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_default_cx_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
 # TYPE envoy_http_downstream_cx_ssl_active gauge
 envoy_http_downstream_cx_ssl_active{envoy_http_conn_manager_prefix="admin"} 0
 # TYPE envoy_server_total_connections gauge
@@ -276,14 +276,14 @@ envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="ingress_http"} 4
 envoy_http_downstream_cx_active{envoy_http_conn_manager_prefix="ingress_https"} 4
 `
 
-	MISSING_STATS = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_upstream_rq_pending_active{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_high_rq_retry_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_high_cx_pool_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_upstream_cx_tx_bytes_buffered{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_version{envoy_cluster_name="projectcontour_service-stats_9001"} 0
-envoy_cluster_circuit_breakers_default_cx_open{envoy_cluster_name="projectcontour_service-stats_9001"} 0
+	MISSING_STATS = `envoy_cluster_circuit_breakers_default_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_max_host_weight{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_rq_pending_active{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_rq_retry_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_high_cx_pool_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_upstream_cx_tx_bytes_buffered{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_version{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
+envoy_cluster_circuit_breakers_default_cx_open{envoy_cluster_name="projectcontour_envoy-admin_9001"} 0
 # TYPE envoy_http_downstream_cx_ssl_active gauge
 envoy_http_downstream_cx_ssl_active{envoy_http_conn_manager_prefix="admin"} 0
 # TYPE envoy_server_total_connections gauge
