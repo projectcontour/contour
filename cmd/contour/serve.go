@@ -21,16 +21,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"syscall"
 	"time"
-
-	"github.com/projectcontour/contour/internal/controller"
 
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/controller"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
 	"github.com/projectcontour/contour/internal/health"
@@ -54,6 +54,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/pointer"
 	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	controller_config "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -110,6 +111,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 		}
 
 		parsed = true
+
 		ctx.Config = *params
 
 		return nil
@@ -169,6 +171,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return fmt.Errorf("failed to create Kubernetes clients: %w", err)
 	}
 
+	// Convert the Contour ServeContext into a ContourConfiguration
+	contourConfiguration := convertServeContext(ctx)
+
 	// Set up workgroup runner.
 	var g workgroup.Group
 
@@ -218,26 +223,26 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// informerNamespaces is a list of namespaces that we should start informers for.
 	var informerNamespaces []string
 
-	fallbackCert := namespacedNameOf(ctx.Config.TLS.FallbackCertificate)
-	clientCert := namespacedNameOf(ctx.Config.TLS.ClientCertificate)
+	fallbackCert := contourConfiguration.HTTPProxy.FallbackCertificate.NamespacedNameOf()
+	clientCert := contourConfiguration.Envoy.ClientCertificate.NamespacedNameOf()
 
-	if rootNamespaces := ctx.proxyRootNamespaces(); len(rootNamespaces) > 0 {
-		informerNamespaces = append(informerNamespaces, rootNamespaces...)
+	if len(contourConfiguration.HTTPProxy.RootNamespaces) > 0 {
+		informerNamespaces = append(informerNamespaces, contourConfiguration.HTTPProxy.RootNamespaces...)
 
 		// Add the FallbackCertificateNamespace to informerNamespaces if it isn't present.
-		if !contains(informerNamespaces, ctx.Config.TLS.FallbackCertificate.Namespace) && fallbackCert != nil {
-			informerNamespaces = append(informerNamespaces, ctx.Config.TLS.FallbackCertificate.Namespace)
+		if !contains(informerNamespaces, fallbackCert.Namespace) && fallbackCert != nil {
+			informerNamespaces = append(informerNamespaces, fallbackCert.Namespace)
 			log.WithField("context", "fallback-certificate").
 				Infof("fallback certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",
-					ctx.Config.TLS.FallbackCertificate.Namespace)
+					fallbackCert.Namespace)
 		}
 
 		// Add the client certificate namespace to informerNamespaces if it isn't present.
-		if !contains(informerNamespaces, ctx.Config.TLS.ClientCertificate.Namespace) && clientCert != nil {
-			informerNamespaces = append(informerNamespaces, ctx.Config.TLS.ClientCertificate.Namespace)
+		if !contains(informerNamespaces, clientCert.Namespace) && clientCert != nil {
+			informerNamespaces = append(informerNamespaces, clientCert.Namespace)
 			log.WithField("context", "envoy-client-certificate").
 				Infof("client certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",
-					ctx.Config.TLS.ClientCertificate.Namespace)
+					clientCert.Namespace)
 		}
 	}
 
@@ -253,79 +258,106 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		return err
 	}
 
-	// XXX(jpeach) we know the config file validated, so all
-	// the timeouts will parse. Shall we add a `timeout.MustParse()`
-	// and use it here?
+	var connectionIdleTimeout timeout.Setting
+	var streamIdleTimeout timeout.Setting
+	var delayedCloseTimeout timeout.Setting
+	var maxConnectionDuration timeout.Setting
+	var connectionShutdownGracePeriod timeout.Setting
+	var requestTimeout timeout.Setting
 
-	connectionIdleTimeout, err := timeout.Parse(ctx.Config.Timeouts.ConnectionIdleTimeout)
-	if err != nil {
-		return fmt.Errorf("error parsing connection idle timeout: %w", err)
-	}
-	streamIdleTimeout, err := timeout.Parse(ctx.Config.Timeouts.StreamIdleTimeout)
-	if err != nil {
-		return fmt.Errorf("error parsing stream idle timeout: %w", err)
-	}
-	delayedCloseTimeout, err := timeout.Parse(ctx.Config.Timeouts.DelayedCloseTimeout)
-	if err != nil {
-		return fmt.Errorf("error parsing delayed close timeout: %w", err)
-	}
-	maxConnectionDuration, err := timeout.Parse(ctx.Config.Timeouts.MaxConnectionDuration)
-	if err != nil {
-		return fmt.Errorf("error parsing max connection duration: %w", err)
-	}
-	connectionShutdownGracePeriod, err := timeout.Parse(ctx.Config.Timeouts.ConnectionShutdownGracePeriod)
-	if err != nil {
-		return fmt.Errorf("error parsing connection shutdown grace period: %w", err)
-	}
-	requestTimeout, err := timeout.Parse(ctx.Config.Timeouts.RequestTimeout)
-	if err != nil {
-		return fmt.Errorf("error parsing request timeout: %w", err)
+	if contourConfiguration.Envoy.Timeouts != nil {
+		if contourConfiguration.Envoy.Timeouts.ConnectionIdleTimeout != nil {
+			connectionIdleTimeout, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.ConnectionIdleTimeout)
+			if err != nil {
+				return fmt.Errorf("error parsing connection idle timeout: %w", err)
+			}
+		}
+		if contourConfiguration.Envoy.Timeouts.StreamIdleTimeout != nil {
+			streamIdleTimeout, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.StreamIdleTimeout)
+			if err != nil {
+				return fmt.Errorf("error parsing stream idle timeout: %w", err)
+			}
+		}
+		if contourConfiguration.Envoy.Timeouts.DelayedCloseTimeout != nil {
+			delayedCloseTimeout, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.DelayedCloseTimeout)
+			if err != nil {
+				return fmt.Errorf("error parsing delayed close timeout: %w", err)
+			}
+		}
+		if contourConfiguration.Envoy.Timeouts.MaxConnectionDuration != nil {
+			maxConnectionDuration, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.MaxConnectionDuration)
+			if err != nil {
+				return fmt.Errorf("error parsing max connection duration: %w", err)
+			}
+		}
+		if contourConfiguration.Envoy.Timeouts.ConnectionShutdownGracePeriod != nil {
+			connectionShutdownGracePeriod, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.ConnectionShutdownGracePeriod)
+			if err != nil {
+				return fmt.Errorf("error parsing connection shutdown grace period: %w", err)
+			}
+		}
+		if contourConfiguration.Envoy.Timeouts.RequestTimeout != nil {
+			requestTimeout, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.RequestTimeout)
+			if err != nil {
+				return fmt.Errorf("error parsing request timeout: %w", err)
+			}
+		}
 	}
 
 	// connection balancer
-	if ok := ctx.Config.Listener.ConnectionBalancer == "exact" || ctx.Config.Listener.ConnectionBalancer == ""; !ok {
-		log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", ctx.Config.Listener.ConnectionBalancer)
-		ctx.Config.Listener.ConnectionBalancer = ""
+	if ok := contourConfiguration.Envoy.Listener.ConnectionBalancer == "exact" || contourConfiguration.Envoy.Listener.ConnectionBalancer == ""; !ok {
+		log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", contourConfiguration.Envoy.Listener.ConnectionBalancer)
+		contourConfiguration.Envoy.Listener.ConnectionBalancer = ""
+	}
+
+	accessLogFormatString := ""
+	if contourConfiguration.Envoy.Logging.AccessLogFormatString != nil {
+		accessLogFormatString = *contourConfiguration.Envoy.Logging.AccessLogFormatString
+	}
+
+	cipherSuites := []string{}
+	for _, cs := range contourConfiguration.Envoy.Listener.TLS.CipherSuites {
+		cipherSuites = append(cipherSuites, string(cs))
 	}
 
 	listenerConfig := xdscache_v3.ListenerConfig{
-		UseProxyProto: ctx.useProxyProto,
+		UseProxyProto: contourConfiguration.Envoy.Listener.UseProxyProto,
 		HTTPListeners: map[string]xdscache_v3.Listener{
 			"ingress_http": {
 				Name:    "ingress_http",
-				Address: ctx.httpAddr,
-				Port:    ctx.httpPort,
+				Address: contourConfiguration.Envoy.HTTPListener.Address,
+				Port:    contourConfiguration.Envoy.HTTPListener.Port,
 			},
 		},
 		HTTPSListeners: map[string]xdscache_v3.Listener{
 			"ingress_https": {
 				Name:    "ingress_https",
-				Address: ctx.httpsAddr,
-				Port:    ctx.httpsPort,
+				Address: contourConfiguration.Envoy.HTTPSListener.Address,
+				Port:    contourConfiguration.Envoy.HTTPSListener.Port,
 			},
 		},
-		HTTPAccessLog:                 ctx.httpAccessLog,
-		HTTPSAccessLog:                ctx.httpsAccessLog,
-		AccessLogType:                 ctx.Config.AccessLogFormat,
-		AccessLogFields:               ctx.Config.AccessLogFields,
-		AccessLogFormatString:         ctx.Config.AccessLogFormatString,
-		AccessLogFormatterExtensions:  ctx.Config.AccessLogFormatterExtensions(),
-		MinimumTLSVersion:             annotation.MinTLSVersion(ctx.Config.TLS.MinimumProtocolVersion, "1.2"),
-		CipherSuites:                  config.SanitizeCipherSuites(ctx.Config.TLS.CipherSuites),
+		HTTPAccessLog:                 contourConfiguration.Envoy.HTTPListener.AccessLog,
+		HTTPSAccessLog:                contourConfiguration.Envoy.HTTPSListener.AccessLog,
+		AccessLogType:                 contourConfiguration.Envoy.Logging.AccessLogFormat,
+		AccessLogFields:               contourConfiguration.Envoy.Logging.AccessLogFields,
+		AccessLogFormatString:         accessLogFormatString,
+		AccessLogFormatterExtensions:  AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, accessLogFormatString),
+		MinimumTLSVersion:             annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
+		CipherSuites:                  config.SanitizeCipherSuites(cipherSuites),
 		RequestTimeout:                requestTimeout,
 		ConnectionIdleTimeout:         connectionIdleTimeout,
 		StreamIdleTimeout:             streamIdleTimeout,
 		DelayedCloseTimeout:           delayedCloseTimeout,
 		MaxConnectionDuration:         maxConnectionDuration,
 		ConnectionShutdownGracePeriod: connectionShutdownGracePeriod,
-		DefaultHTTPVersions:           parseDefaultHTTPVersions(ctx.Config.DefaultHTTPVersions),
-		AllowChunkedLength:            !ctx.Config.DisableAllowChunkedLength,
-		XffNumTrustedHops:             ctx.Config.Network.XffNumTrustedHops,
-		ConnectionBalancer:            ctx.Config.Listener.ConnectionBalancer,
+		DefaultHTTPVersions:           parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
+		AllowChunkedLength:            !contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
+		XffNumTrustedHops:             contourConfiguration.Envoy.Network.XffNumTrustedHops,
+		ConnectionBalancer:            contourConfiguration.Envoy.Listener.ConnectionBalancer,
 	}
 
-	if ctx.Config.RateLimitService.ExtensionService != "" {
-		namespacedName := k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService)
+	if contourConfiguration.RateLimitService != nil {
+		namespacedName := contourConfiguration.RateLimitService.ExtensionService.NamespacedNameOf()
 		client := clients.DynamicClient().Resource(contour_api_v1alpha1.ExtensionServiceGVR).Namespace(namespacedName.Namespace)
 
 		// ensure the specified ExtensionService exists
@@ -347,11 +379,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 
 		listenerConfig.RateLimitConfig = &xdscache_v3.RateLimitConfig{
-			ExtensionService:        namespacedName,
-			Domain:                  ctx.Config.RateLimitService.Domain,
+			ExtensionService:        *namespacedName,
+			Domain:                  contourConfiguration.RateLimitService.Domain,
 			Timeout:                 responseTimeout,
-			FailOpen:                ctx.Config.RateLimitService.FailOpen,
-			EnableXRateLimitHeaders: ctx.Config.RateLimitService.EnableXRateLimitHeaders,
+			FailOpen:                contourConfiguration.RateLimitService.FailOpen,
+			EnableXRateLimitHeaders: contourConfiguration.RateLimitService.EnableXRateLimitHeaders,
 		}
 	}
 
@@ -362,7 +394,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	endpointHandler := xdscache_v3.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
 
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(listenerConfig, ctx.statsAddr, ctx.statsPort, ctx.Config.Network.EnvoyAdminPort),
+		xdscache_v3.NewListenerCache(listenerConfig, contourConfiguration.Envoy.Metrics.Address, contourConfiguration.Envoy.Metrics.Port, contourConfiguration.Envoy.Network.EnvoyAdminPort),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},
@@ -383,13 +415,27 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", clientCert)
 	}
 
+	ingressClassName := ""
+	if contourConfiguration.Ingress.ClassName != nil {
+		ingressClassName = *contourConfiguration.Ingress.ClassName
+	}
+
 	// Build the core Kubernetes event handler.
 	contourHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
-		Builder:         getDAGBuilder(ctx, clients, clientCert, fallbackCert, log),
-		FieldLogger:     log.WithField("context", "contourEventHandler"),
+		Builder: getDAGBuilder(
+			ingressClassName,
+			contourConfiguration.HTTPProxy.RootNamespaces,
+			contourConfiguration.Gateway != nil,
+			contourConfiguration.HTTPProxy.DisablePermitInsecure,
+			contourConfiguration.EnableExternalNameService,
+			contourConfiguration.Envoy.Cluster.DNSLookupFamily,
+			contourConfiguration.Policy.RequestHeadersPolicy,
+			contourConfiguration.Policy.ResponseHeadersPolicy,
+			clients, clientCert, fallbackCert, log),
+		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
 	// Wrap contourHandler in an EventRecorder which tracks API server events.
@@ -399,10 +445,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// Register leadership election.
-	if ctx.DisableLeaderElection {
+	if contourConfiguration.LeaderElection.DisableLeaderElection {
 		contourHandler.IsLeader = disableLeaderElection(log)
 	} else {
-		contourHandler.IsLeader = setupLeadershipElection(&g, log, &ctx.Config.LeaderElection, clients, contourHandler.UpdateNow)
+		contourHandler.IsLeader = setupLeadershipElection(&g, log, contourConfiguration.LeaderElection, clients, contourHandler.UpdateNow)
 	}
 
 	// Start setting up StatusUpdateHandler since we need it in
@@ -429,10 +475,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// Only inform on Gateway API resources if Gateway API is found.
-	if ctx.Config.GatewayConfig != nil {
+	if contourConfiguration.Gateway != nil {
 		if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 			// Create and register the gatewayclass controller with the manager.
-			gatewayClassControllerName := ctx.Config.GatewayConfig.ControllerName
+			gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
 			if _, err := controller.NewGatewayClassController(
 				mgr,
 				eventHandler,
@@ -504,15 +550,15 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Create metrics service and register with workgroup.
 	metricsvc := httpsvc.Service{
-		Addr:        ctx.metricsAddr,
-		Port:        ctx.metricsPort,
+		Addr:        contourConfiguration.Metrics.Address,
+		Port:        contourConfiguration.Metrics.Port,
 		FieldLogger: log.WithField("context", "metricsvc"),
 		ServeMux:    http.ServeMux{},
 	}
 
 	metricsvc.ServeMux.Handle("/metrics", metrics.Handler(registry))
 
-	if ctx.healthAddr == ctx.metricsAddr && ctx.healthPort == ctx.metricsPort {
+	if contourConfiguration.Health.Address == contourConfiguration.Metrics.Address && contourConfiguration.Health.Port == contourConfiguration.Metrics.Port {
 		h := health.Handler(clients.ClientSet())
 		metricsvc.ServeMux.Handle("/health", h)
 		metricsvc.ServeMux.Handle("/healthz", h)
@@ -521,10 +567,10 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	g.Add(metricsvc.Start)
 
 	// Create a separate health service if required.
-	if ctx.healthAddr != ctx.metricsAddr || ctx.healthPort != ctx.metricsPort {
+	if contourConfiguration.Health.Address != contourConfiguration.Metrics.Address || contourConfiguration.Health.Port != contourConfiguration.Metrics.Port {
 		healthsvc := httpsvc.Service{
-			Addr:        ctx.healthAddr,
-			Port:        ctx.healthPort,
+			Addr:        contourConfiguration.Health.Address,
+			Port:        contourConfiguration.Health.Port,
 			FieldLogger: log.WithField("context", "healthsvc"),
 		}
 
@@ -538,8 +584,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Create debug service and register with workgroup.
 	debugsvc := debug.Service{
 		Service: httpsvc.Service{
-			Addr:        ctx.debugAddr,
-			Port:        ctx.debugPort,
+			Addr:        contourConfiguration.Debug.Address,
+			Port:        contourConfiguration.Debug.Port,
 			FieldLogger: log.WithField("context", "debugsvc"),
 		},
 		Builder: &contourHandler.Builder,
@@ -569,19 +615,19 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		cache:            mgr.GetCache(),
 		isLeader:         contourHandler.IsLeader,
 		lbStatus:         make(chan corev1.LoadBalancerStatus, 1),
-		ingressClassName: ctx.ingressClassName,
+		ingressClassName: ingressClassName,
 		statusUpdater:    sh.Writer(),
 		Converter:        converter,
 	}
 	g.Add(lbsw.Start)
 
 	// Register an informer to watch envoy's service if we haven't been given static details.
-	if lbAddr := ctx.Config.IngressStatusAddress; lbAddr != "" {
-		log.WithField("loadbalancer-address", lbAddr).Info("Using supplied information for Ingress status")
-		lbsw.lbStatus <- parseStatusFlag(lbAddr)
+	if contourConfiguration.Ingress.StatusAddress != nil {
+		log.WithField("loadbalancer-address", *contourConfiguration.Ingress.StatusAddress).Info("Using supplied information for Ingress status")
+		lbsw.lbStatus <- parseStatusFlag(*contourConfiguration.Ingress.StatusAddress)
 	} else {
 		serviceHandler := &k8s.ServiceStatusLoadBalancerWatcher{
-			ServiceName: ctx.Config.EnvoyServiceName,
+			ServiceName: contourConfiguration.Envoy.Service.Name,
 			LBStatus:    lbsw.lbStatus,
 			Log:         log.WithField("context", "serviceStatusLoadBalancerWatcher"),
 		}
@@ -589,8 +635,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		for _, r := range k8s.ServicesResources() {
 			var handler cache.ResourceEventHandler = serviceHandler
 
-			if ctx.Config.EnvoyServiceNamespace != "" {
-				handler = k8s.NewNamespaceFilter([]string{ctx.Config.EnvoyServiceNamespace}, handler)
+			if contourConfiguration.Envoy.Service.Namespace != "" {
+				handler = k8s.NewNamespaceFilter([]string{contourConfiguration.Envoy.Service.Namespace}, handler)
 			}
 
 			if err := informOnResource(clients, r, handler, mgr.GetCache()); err != nil {
@@ -598,8 +644,8 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			}
 		}
 
-		log.WithField("envoy-service-name", ctx.Config.EnvoyServiceName).
-			WithField("envoy-service-namespace", ctx.Config.EnvoyServiceNamespace).
+		log.WithField("envoy-service-name", contourConfiguration.Envoy.Service.Name).
+			WithField("envoy-service-namespace", contourConfiguration.Envoy.Service.Namespace).
 			Info("Watching Service for Ingress status")
 	}
 
@@ -614,30 +660,32 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		grpcServer := xds.NewServer(registry, ctx.grpcOptions(log)...)
 
-		switch ctx.Config.Server.XDSServerType {
-		case config.EnvoyServerType:
+		switch contourConfiguration.XDSServer.Type {
+		case contour_api_v1alpha1.EnvoyServerType:
 			v3cache := contour_xds_v3.NewSnapshotCache(false, log)
 			snapshotHandler.AddSnapshotter(v3cache)
 			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(taskCtx, v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
-		case config.ContourServerType:
+		case contour_api_v1alpha1.ContourServerType:
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 		default:
 			// This can't happen due to config validation.
-			log.Fatalf("invalid xDS server type %q", ctx.Config.Server.XDSServerType)
+			log.Fatalf("invalid xDS server type %q", contourConfiguration.XDSServer.Type)
 		}
 
-		addr := net.JoinHostPort(ctx.xdsAddr, strconv.Itoa(ctx.xdsPort))
+		addr := net.JoinHostPort(contourConfiguration.XDSServer.Address, strconv.Itoa(contourConfiguration.XDSServer.Port))
 		l, err := net.Listen("tcp", addr)
 		if err != nil {
 			return err
 		}
 
 		log = log.WithField("address", addr)
-		if ctx.PermitInsecureGRPC {
-			log = log.WithField("insecure", true)
+		if tls := contourConfiguration.XDSServer.TLS; tls != nil {
+			if tls.Insecure {
+				log = log.WithField("insecure", true)
+			}
 		}
 
-		log.Infof("started xDS server type: %q", ctx.Config.Server.XDSServerType)
+		log.Infof("started xDS server type: %q", contourConfiguration.XDSServer.Type)
 		defer log.Info("stopped xDS server")
 
 		go func() {
@@ -670,29 +718,37 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	return g.Run(context.Background())
 }
 
-func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallbackCert *types.NamespacedName, log logrus.FieldLogger) dag.Builder {
+func getDAGBuilder(ingressClassName string, rootNamespaces []string, gatewayAPIConfigured bool, disablePermitInsecure bool, enableExternalNameService bool,
+	dnsLookupFamily contour_api_v1alpha1.ClusterDNSFamilyType, requestHP *contour_api_v1alpha1.HeadersPolicy, responseHP *contour_api_v1alpha1.HeadersPolicy,
+	clients *k8s.Clients, clientCert, fallbackCert *types.NamespacedName, log logrus.FieldLogger) dag.Builder {
+
 	var requestHeadersPolicy dag.HeadersPolicy
-	if ctx.Config.Policy.RequestHeadersPolicy.Set != nil {
-		requestHeadersPolicy.Set = make(map[string]string)
-		for k, v := range ctx.Config.Policy.RequestHeadersPolicy.Set {
-			requestHeadersPolicy.Set[k] = v
+	var responseHeadersPolicy dag.HeadersPolicy
+
+	if requestHP != nil {
+		if requestHP.Set != nil {
+			requestHeadersPolicy.Set = make(map[string]string)
+			for k, v := range requestHP.Set {
+				requestHeadersPolicy.Set[k] = v
+			}
 		}
-	}
-	if ctx.Config.Policy.RequestHeadersPolicy.Remove != nil {
-		requestHeadersPolicy.Remove = make([]string, 0, len(ctx.Config.Policy.RequestHeadersPolicy.Remove))
-		requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, ctx.Config.Policy.RequestHeadersPolicy.Remove...)
+		if requestHP.Remove != nil {
+			requestHeadersPolicy.Remove = make([]string, 0, len(requestHP.Remove))
+			requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, requestHP.Remove...)
+		}
 	}
 
-	var responseHeadersPolicy dag.HeadersPolicy
-	if ctx.Config.Policy.ResponseHeadersPolicy.Set != nil {
-		responseHeadersPolicy.Set = make(map[string]string)
-		for k, v := range ctx.Config.Policy.ResponseHeadersPolicy.Set {
-			responseHeadersPolicy.Set[k] = v
+	if responseHP != nil {
+		if responseHP.Set != nil {
+			responseHeadersPolicy.Set = make(map[string]string)
+			for k, v := range responseHP.Set {
+				responseHeadersPolicy.Set[k] = v
+			}
 		}
-	}
-	if ctx.Config.Policy.ResponseHeadersPolicy.Remove != nil {
-		responseHeadersPolicy.Remove = make([]string, 0, len(ctx.Config.Policy.ResponseHeadersPolicy.Remove))
-		responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, ctx.Config.Policy.ResponseHeadersPolicy.Remove...)
+		if responseHP.Remove != nil {
+			responseHeadersPolicy.Remove = make([]string, 0, len(responseHP.Remove))
+			responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, responseHP.Remove...)
+		}
 	}
 
 	var requestHeadersPolicyIngress dag.HeadersPolicy
@@ -702,11 +758,12 @@ func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallback
 		responseHeadersPolicyIngress = responseHeadersPolicy
 	}
 
-	log.Debugf("EnableExternalNameService is set to %t", ctx.Config.EnableExternalNameService)
+	log.Debugf("EnableExternalNameService is set to %t", enableExternalNameService)
+
 	// Get the appropriate DAG processors.
 	dagProcessors := []dag.Processor{
 		&dag.IngressProcessor{
-			EnableExternalNameService: ctx.Config.EnableExternalNameService,
+			EnableExternalNameService: enableExternalNameService,
 			FieldLogger:               log.WithField("context", "IngressProcessor"),
 			ClientCertificate:         clientCert,
 			RequestHeadersPolicy:      &requestHeadersPolicyIngress,
@@ -719,19 +776,19 @@ func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallback
 			ClientCertificate: clientCert,
 		},
 		&dag.HTTPProxyProcessor{
-			EnableExternalNameService: ctx.Config.EnableExternalNameService,
-			DisablePermitInsecure:     ctx.Config.DisablePermitInsecure,
+			EnableExternalNameService: enableExternalNameService,
+			DisablePermitInsecure:     disablePermitInsecure,
 			FallbackCertificate:       fallbackCert,
-			DNSLookupFamily:           ctx.Config.Cluster.DNSLookupFamily,
+			DNSLookupFamily:           dnsLookupFamily,
 			ClientCertificate:         clientCert,
 			RequestHeadersPolicy:      &requestHeadersPolicy,
 			ResponseHeadersPolicy:     &responseHeadersPolicy,
 		},
 	}
 
-	if ctx.Config.GatewayConfig != nil && clients.ResourcesExist(k8s.GatewayAPIResources()...) {
+	if gatewayAPIConfigured && clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-			EnableExternalNameService: ctx.Config.EnableExternalNameService,
+			EnableExternalNameService: enableExternalNameService,
 			FieldLogger:               log.WithField("context", "GatewayAPIProcessor"),
 		})
 	}
@@ -750,8 +807,8 @@ func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallback
 
 	builder := dag.Builder{
 		Source: dag.KubernetesCache{
-			RootNamespaces:       ctx.proxyRootNamespaces(),
-			IngressClassName:     ctx.ingressClassName,
+			RootNamespaces:       rootNamespaces,
+			IngressClassName:     ingressClassName,
 			ConfiguredSecretRefs: configuredSecretRefs,
 			FieldLogger:          log.WithField("context", "KubernetesCache"),
 		},
@@ -786,4 +843,266 @@ func informOnResource(clients *k8s.Clients, gvr schema.GroupVersionResource, han
 
 	inf.AddEventHandler(handler)
 	return nil
+}
+
+func convertServeContext(ctx *serveContext) contour_api_v1alpha1.ContourConfigurationSpec {
+	ingress := &contour_api_v1alpha1.IngressConfig{}
+	if len(ctx.ingressClassName) > 0 {
+		ingress.ClassName = pointer.StringPtr(ctx.ingressClassName)
+	}
+	if len(ctx.Config.IngressStatusAddress) > 0 {
+		ingress.StatusAddress = pointer.StringPtr(ctx.Config.IngressStatusAddress)
+	}
+
+	debugLogLevel := contour_api_v1alpha1.InfoLog
+	switch ctx.Config.Debug {
+	case true:
+		debugLogLevel = contour_api_v1alpha1.DebugLog
+	case false:
+		debugLogLevel = contour_api_v1alpha1.InfoLog
+	}
+
+	var gateway *contour_api_v1alpha1.GatewayConfig
+	if ctx.Config.GatewayConfig != nil {
+		gateway = &contour_api_v1alpha1.GatewayConfig{
+			ControllerName: ctx.Config.GatewayConfig.ControllerName,
+		}
+	}
+
+	var cipherSuites []contour_api_v1alpha1.TLSCipherType
+	for _, suite := range ctx.Config.TLS.CipherSuites {
+		cipherSuites = append(cipherSuites, contour_api_v1alpha1.TLSCipherType(suite))
+	}
+
+	var accessLogFormat contour_api_v1alpha1.AccessLogType
+	switch ctx.Config.AccessLogFormat {
+	case config.EnvoyAccessLog:
+		accessLogFormat = contour_api_v1alpha1.EnvoyAccessLog
+	case config.JSONAccessLog:
+		accessLogFormat = contour_api_v1alpha1.JSONAccessLog
+	}
+
+	var accessLogFields contour_api_v1alpha1.AccessLogFields
+	for _, alf := range ctx.Config.AccessLogFields {
+		accessLogFields = append(accessLogFields, alf)
+	}
+
+	var defaultHTTPVersions []contour_api_v1alpha1.HTTPVersionType
+	for _, version := range ctx.Config.DefaultHTTPVersions {
+		defaultHTTPVersions = append(defaultHTTPVersions, contour_api_v1alpha1.HTTPVersionType(version))
+	}
+
+	timeoutParams := &contour_api_v1alpha1.TimeoutParameters{}
+	if len(ctx.Config.Timeouts.RequestTimeout) > 0 {
+		timeoutParams.RequestTimeout = pointer.StringPtr(ctx.Config.Timeouts.RequestTimeout)
+	}
+	if len(ctx.Config.Timeouts.ConnectionIdleTimeout) > 0 {
+		timeoutParams.ConnectionIdleTimeout = pointer.StringPtr(ctx.Config.Timeouts.ConnectionIdleTimeout)
+	}
+	if len(ctx.Config.Timeouts.StreamIdleTimeout) > 0 {
+		timeoutParams.StreamIdleTimeout = pointer.StringPtr(ctx.Config.Timeouts.StreamIdleTimeout)
+	}
+	if len(ctx.Config.Timeouts.MaxConnectionDuration) > 0 {
+		timeoutParams.MaxConnectionDuration = pointer.StringPtr(ctx.Config.Timeouts.MaxConnectionDuration)
+	}
+	if len(ctx.Config.Timeouts.DelayedCloseTimeout) > 0 {
+		timeoutParams.DelayedCloseTimeout = pointer.StringPtr(ctx.Config.Timeouts.DelayedCloseTimeout)
+	}
+	if len(ctx.Config.Timeouts.ConnectionShutdownGracePeriod) > 0 {
+		timeoutParams.ConnectionShutdownGracePeriod = pointer.StringPtr(ctx.Config.Timeouts.ConnectionShutdownGracePeriod)
+	}
+
+	var dnsLookupFamily contour_api_v1alpha1.ClusterDNSFamilyType
+	switch ctx.Config.Cluster.DNSLookupFamily {
+	case config.AutoClusterDNSFamily:
+		dnsLookupFamily = contour_api_v1alpha1.AutoClusterDNSFamily
+	case config.IPv6ClusterDNSFamily:
+		dnsLookupFamily = contour_api_v1alpha1.IPv6ClusterDNSFamily
+	case config.IPv4ClusterDNSFamily:
+		dnsLookupFamily = contour_api_v1alpha1.IPv4ClusterDNSFamily
+	}
+
+	var rateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
+	if ctx.Config.RateLimitService.ExtensionService != "" {
+		rateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
+			ExtensionService: contour_api_v1alpha1.NamespacedName{
+				Name:      k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService).Name,
+				Namespace: k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService).Namespace,
+			},
+			Domain:                  ctx.Config.RateLimitService.Domain,
+			FailOpen:                ctx.Config.RateLimitService.FailOpen,
+			EnableXRateLimitHeaders: ctx.Config.RateLimitService.EnableXRateLimitHeaders,
+		}
+	}
+
+	policy := &contour_api_v1alpha1.PolicyConfig{
+		RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+			Set:    ctx.Config.Policy.RequestHeadersPolicy.Set,
+			Remove: ctx.Config.Policy.RequestHeadersPolicy.Remove,
+		},
+		ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+			Set:    ctx.Config.Policy.ResponseHeadersPolicy.Set,
+			Remove: ctx.Config.Policy.ResponseHeadersPolicy.Remove,
+		},
+	}
+
+	// Convert serveContext to a ContourConfiguration
+	contourConfiguration := contour_api_v1alpha1.ContourConfigurationSpec{
+		Ingress: ingress,
+		Debug: contour_api_v1alpha1.DebugConfig{
+			Address:                 ctx.debugAddr,
+			Port:                    ctx.debugPort,
+			DebugLogLevel:           debugLogLevel,
+			KubernetesDebugLogLevel: ctx.KubernetesDebug,
+		},
+		Health: contour_api_v1alpha1.HealthConfig{
+			Address: ctx.healthAddr,
+			Port:    ctx.healthPort,
+		},
+		Envoy: contour_api_v1alpha1.EnvoyConfig{
+			Listener: contour_api_v1alpha1.EnvoyListenerConfig{
+				UseProxyProto:             ctx.useProxyProto,
+				DisableAllowChunkedLength: ctx.Config.DisableAllowChunkedLength,
+				ConnectionBalancer:        ctx.Config.Listener.ConnectionBalancer,
+				TLS: contour_api_v1alpha1.EnvoyTLS{
+					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
+					CipherSuites:           cipherSuites,
+				},
+			},
+			Service: contour_api_v1alpha1.NamespacedName{
+				Name:      ctx.Config.EnvoyServiceName,
+				Namespace: ctx.Config.EnvoyServiceNamespace,
+			},
+			HTTPListener: contour_api_v1alpha1.EnvoyListener{
+				Address:   ctx.httpAddr,
+				Port:      ctx.httpPort,
+				AccessLog: ctx.httpAccessLog,
+			},
+			HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+				Address:   ctx.httpsAddr,
+				Port:      ctx.httpsPort,
+				AccessLog: ctx.httpsAccessLog,
+			},
+			Metrics: contour_api_v1alpha1.MetricsConfig{
+				Address: ctx.statsAddr,
+				Port:    ctx.statsPort,
+			},
+			ClientCertificate: &contour_api_v1alpha1.NamespacedName{
+				Name:      ctx.Config.TLS.ClientCertificate.Name,
+				Namespace: ctx.Config.TLS.ClientCertificate.Namespace,
+			},
+			Logging: contour_api_v1alpha1.EnvoyLogging{
+				AccessLogFormat:       accessLogFormat,
+				AccessLogFormatString: pointer.StringPtr(ctx.Config.AccessLogFormatString),
+				AccessLogFields:       accessLogFields,
+			},
+			DefaultHTTPVersions: defaultHTTPVersions,
+			Timeouts:            timeoutParams,
+			Cluster: contour_api_v1alpha1.ClusterParameters{
+				DNSLookupFamily: dnsLookupFamily,
+			},
+			Network: contour_api_v1alpha1.NetworkParameters{
+				XffNumTrustedHops: ctx.Config.Network.XffNumTrustedHops,
+				EnvoyAdminPort:    ctx.Config.Network.EnvoyAdminPort,
+			},
+		},
+		Gateway: gateway,
+		HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+			DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
+			RootNamespaces:        ctx.proxyRootNamespaces(),
+			FallbackCertificate: &contour_api_v1alpha1.NamespacedName{
+				Name:      ctx.Config.TLS.FallbackCertificate.Name,
+				Namespace: ctx.Config.TLS.FallbackCertificate.Namespace,
+			},
+		},
+		LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+			LeaseDuration: ctx.Config.LeaderElection.LeaseDuration.String(),
+			RenewDeadline: ctx.Config.LeaderElection.RenewDeadline.String(),
+			RetryPeriod:   ctx.Config.LeaderElection.RetryPeriod.String(),
+			Configmap: contour_api_v1alpha1.NamespacedName{
+				Name:      ctx.Config.LeaderElection.Name,
+				Namespace: ctx.Config.LeaderElection.Namespace,
+			},
+			DisableLeaderElection: ctx.DisableLeaderElection,
+		},
+		EnableExternalNameService: ctx.Config.EnableExternalNameService,
+		RateLimitService:          rateLimitService,
+		Policy:                    policy,
+		Metrics: contour_api_v1alpha1.MetricsConfig{
+			Address: ctx.metricsAddr,
+			Port:    ctx.metricsPort,
+		},
+	}
+
+	xdsServerType := contour_api_v1alpha1.ContourServerType
+	switch ctx.Config.Server.XDSServerType {
+	case config.EnvoyServerType:
+		xdsServerType = contour_api_v1alpha1.EnvoyServerType
+	}
+
+	contourConfiguration.XDSServer = contour_api_v1alpha1.XDSServerConfig{
+		Type:    xdsServerType,
+		Address: ctx.xdsAddr,
+		Port:    ctx.xdsPort,
+		TLS: &contour_api_v1alpha1.TLS{
+			CAFile:   ctx.caFile,
+			CertFile: ctx.contourCert,
+			KeyFile:  ctx.contourKey,
+			Insecure: ctx.PermitInsecureGRPC,
+		},
+	}
+
+	return contourConfiguration
+}
+
+// commandOperatorRegexp parses the command operators used in Envoy access log configuration
+//
+// Capture Groups:
+// Given string "the start time is %START_TIME(%s):3% wow!"
+//
+//   0. Whole match "%START_TIME(%s):3%"
+//   1. Full operator: "START_TIME(%s):3%"
+//   2. Operator Name: "START_TIME"
+//   3. Arguments: "(%s)"
+//   4. Truncation length: ":3"
+var commandOperatorRegexp = regexp.MustCompile(`%(([A-Z_]+)(\([^)]+\)(:[0-9]+)?)?%)?`)
+
+// AccessLogFormatterExtensions returns a list of formatter extension names required by the access log format.
+//
+// Note: When adding support for new formatter, update the list of extensions here and
+// add corresponding configuration in internal/envoy/v3/accesslog.go extensionConfig().
+// Currently only one extension exist in Envoy.
+func AccessLogFormatterExtensions(accessLogFormat contour_api_v1alpha1.AccessLogType, accessLogFields contour_api_v1alpha1.AccessLogFields,
+	accessLogFormatString string) []string {
+	// Function that finds out if command operator is present in a format string.
+	contains := func(format, command string) bool {
+		tokens := commandOperatorRegexp.FindAllStringSubmatch(format, -1)
+		for _, t := range tokens {
+			if t[2] == command {
+				return true
+			}
+		}
+		return false
+	}
+
+	extensionsMap := make(map[string]bool)
+	switch accessLogFormat {
+	case contour_api_v1alpha1.EnvoyAccessLog:
+		if contains(accessLogFormatString, "REQ_WITHOUT_QUERY") {
+			extensionsMap["envoy.formatter.req_without_query"] = true
+		}
+	case contour_api_v1alpha1.JSONAccessLog:
+		for _, f := range accessLogFields.AsFieldMap() {
+			if contains(f, "REQ_WITHOUT_QUERY") {
+				extensionsMap["envoy.formatter.req_without_query"] = true
+			}
+		}
+	}
+
+	var extensions []string
+	for k := range extensionsMap {
+		extensions = append(extensions, k)
+	}
+
+	return extensions
 }

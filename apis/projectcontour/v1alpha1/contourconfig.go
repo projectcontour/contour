@@ -14,8 +14,11 @@
 package v1alpha1
 
 import (
+	"strings"
+
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // ContourConfigurationSpec represents a configuration of a Contour controller.
@@ -254,7 +257,7 @@ type DebugConfig struct {
 	// +kubebuilder:default=0
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=9
-	KubernetesDebugLogLevel int `json:"kubernetesLogLevel"`
+	KubernetesDebugLogLevel uint `json:"kubernetesLogLevel"`
 }
 
 // EnvoyListenerConfig hold various configurable Envoy listener values.
@@ -282,21 +285,6 @@ type EnvoyListenerConfig struct {
 
 // +kubebuilder:validation:Enum="[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES128-GCM-SHA256";"ECDHE-RSA-AES128-GCM-SHA256";"ECDHE-ECDSA-AES128-SHA";"ECDHE-RSA-AES128-SHA";"AES128-GCM-SHA256";"AES128-SHA";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384";"ECDHE-ECDSA-AES256-SHA";"ECDHE-RSA-AES256-SHA";"AES256-GCM-SHA384";"AES256-SHA"
 type TLSCipherType string
-
-const CIPHER1 TLSCipherType = "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]"
-const CIPHER2 TLSCipherType = "[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]"
-const CIPHER3 TLSCipherType = "ECDHE-ECDSA-AES128-GCM-SHA256"
-const CIPHER4 TLSCipherType = "ECDHE-RSA-AES128-GCM-SHA256"
-const CIPHER5 TLSCipherType = "ECDHE-ECDSA-AES128-SHA"
-const CIPHER6 TLSCipherType = "ECDHE-RSA-AES128-SHA"
-const CIPHER7 TLSCipherType = "AES128-GCM-SHA256"
-const CIPHER8 TLSCipherType = "AES128-SHA"
-const CIPHER9 TLSCipherType = "ECDHE-ECDSA-AES256-GCM-SHA384"
-const CIPHER10 TLSCipherType = "ECDHE-RSA-AES256-GCM-SHA384"
-const CIPHER11 TLSCipherType = "ECDHE-ECDSA-AES256-SHA"
-const CIPHER12 TLSCipherType = "ECDHE-RSA-AES256-SHA"
-const CIPHER13 TLSCipherType = "AES256-GCM-SHA384"
-const CIPHER14 TLSCipherType = "AES256-SHA"
 
 // EnvoyTLS describes tls parameters for Envoy listneners.
 type EnvoyTLS struct {
@@ -533,6 +521,17 @@ type HeadersPolicy struct {
 type NamespacedName struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
+}
+
+func (n NamespacedName) NamespacedNameOf() *types.NamespacedName {
+	if len(strings.TrimSpace(n.Name)) == 0 && len(strings.TrimSpace(n.Namespace)) == 0 {
+		return nil
+	}
+
+	return &types.NamespacedName{
+		Namespace: n.Namespace,
+		Name:      n.Name,
+	}
 }
 
 // ContourConfigurationStatus defines the observed state of a ContourConfiguration resource.

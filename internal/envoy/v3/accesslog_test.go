@@ -22,8 +22,8 @@ import (
 	envoy_req_without_query_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/formatter/req_without_query/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	_struct "github.com/golang/protobuf/ptypes/struct"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/protobuf"
-	"github.com/projectcontour/contour/pkg/config"
 )
 
 func TestFileAccessLog(t *testing.T) {
@@ -107,12 +107,12 @@ func TestFileAccessLog(t *testing.T) {
 func TestJSONFileAccessLog(t *testing.T) {
 	tests := map[string]struct {
 		path    string
-		headers config.AccessLogFields
+		headers contour_api_v1alpha1.AccessLogFields
 		want    []*envoy_accesslog_v3.AccessLog
 	}{
 		"only timestamp": {
 			path:    "/dev/stdout",
-			headers: config.AccessLogFields([]string{"@timestamp"}),
+			headers: contour_api_v1alpha1.AccessLogFields([]string{"@timestamp"}),
 			want: []*envoy_accesslog_v3.AccessLog{{
 				Name: wellknown.FileAccessLog,
 				ConfigType: &envoy_accesslog_v3.AccessLog_TypedConfig{
@@ -136,7 +136,7 @@ func TestJSONFileAccessLog(t *testing.T) {
 		},
 		"custom fields should appear": {
 			path: "/dev/stdout",
-			headers: config.AccessLogFields([]string{
+			headers: contour_api_v1alpha1.AccessLogFields([]string{
 				"@timestamp",
 				"method",
 				"custom1=%REQ(X-CUSTOM-HEADER)%",

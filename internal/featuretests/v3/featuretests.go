@@ -62,8 +62,6 @@ const (
 	routeType    = resource.RouteType
 	listenerType = resource.ListenerType
 	secretType   = resource.SecretType
-	statsAddress = "0.0.0.0"
-	statsPort    = 8002
 )
 
 func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Contour, func()) {
@@ -82,7 +80,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	}
 
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(conf, statsAddress, statsPort, 0),
+		xdscache_v3.NewListenerCache(conf, "0.0.0.0", 8002, 0),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},

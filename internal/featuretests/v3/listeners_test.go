@@ -36,7 +36,7 @@ func customAdminPort(t *testing.T, port int) []xdscache.ResourceCache {
 	et := xdscache_v3.NewEndpointsTranslator(log)
 	conf := xdscache_v3.ListenerConfig{}
 	return []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(conf, statsAddress, statsPort, port),
+		xdscache_v3.NewListenerCache(conf, "0.0.0.0", 8002, port),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},

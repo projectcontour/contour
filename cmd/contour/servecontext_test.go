@@ -26,9 +26,9 @@ import (
 	"testing"
 	"time"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
@@ -326,25 +326,25 @@ func peekError(conn net.Conn) error {
 
 func TestParseHTTPVersions(t *testing.T) {
 	cases := map[string]struct {
-		versions      []config.HTTPVersionType
+		versions      []contour_api_v1alpha1.HTTPVersionType
 		parseVersions []envoy_v3.HTTPVersionType
 	}{
 		"empty": {
-			versions:      []config.HTTPVersionType{},
+			versions:      []contour_api_v1alpha1.HTTPVersionType{},
 			parseVersions: nil,
 		},
 		"http/1.1": {
-			versions:      []config.HTTPVersionType{config.HTTPVersion1},
+			versions:      []contour_api_v1alpha1.HTTPVersionType{contour_api_v1alpha1.HTTPVersion1},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1},
 		},
 		"http/1.1+http/2": {
-			versions:      []config.HTTPVersionType{config.HTTPVersion1, config.HTTPVersion2},
+			versions:      []contour_api_v1alpha1.HTTPVersionType{contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
 		"http/1.1+http/2 duplicated": {
-			versions: []config.HTTPVersionType{
-				config.HTTPVersion1, config.HTTPVersion2,
-				config.HTTPVersion1, config.HTTPVersion2},
+			versions: []contour_api_v1alpha1.HTTPVersionType{
+				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2,
+				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
 	}

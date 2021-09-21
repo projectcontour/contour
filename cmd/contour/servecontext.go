@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	"github.com/projectcontour/contour/pkg/config"
@@ -30,7 +31,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type serveContext struct {
@@ -230,14 +230,14 @@ func (ctx *serveContext) proxyRootNamespaces() []string {
 
 // parseDefaultHTTPVersions parses a list of supported HTTP versions
 //  (of the form "HTTP/xx") into a slice of unique version constants.
-func parseDefaultHTTPVersions(versions []config.HTTPVersionType) []envoy_v3.HTTPVersionType {
+func parseDefaultHTTPVersions(versions []contour_api_v1alpha1.HTTPVersionType) []envoy_v3.HTTPVersionType {
 	wanted := map[envoy_v3.HTTPVersionType]struct{}{}
 
 	for _, v := range versions {
 		switch v {
-		case config.HTTPVersion1:
+		case contour_api_v1alpha1.HTTPVersion1:
 			wanted[envoy_v3.HTTPVersion1] = struct{}{}
-		case config.HTTPVersion2:
+		case contour_api_v1alpha1.HTTPVersion2:
 			wanted[envoy_v3.HTTPVersion2] = struct{}{}
 		}
 	}
@@ -249,15 +249,4 @@ func parseDefaultHTTPVersions(versions []config.HTTPVersionType) []envoy_v3.HTTP
 	}
 
 	return parsed
-}
-
-func namespacedNameOf(n config.NamespacedName) *types.NamespacedName {
-	if len(strings.TrimSpace(n.Name)) == 0 && len(strings.TrimSpace(n.Namespace)) == 0 {
-		return nil
-	}
-
-	return &types.NamespacedName{
-		Namespace: n.Namespace,
-		Name:      n.Name,
-	}
 }
