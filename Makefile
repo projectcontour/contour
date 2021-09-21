@@ -6,7 +6,6 @@ IMAGE := $(REGISTRY)/$(PROJECT)
 SRCDIRS := ./cmd ./internal ./apis
 LOCAL_BOOTSTRAP_CONFIG = localenvoyconfig.yaml
 SECURE_LOCAL_BOOTSTRAP_CONFIG = securelocalenvoyconfig.yaml
-PHONY = gencerts
 ENVOY_IMAGE = docker.io/envoyproxy/envoy:v1.19.1
 GATEWAY_API_VERSION = $(shell grep "sigs.k8s.io/gateway-api" go.mod | awk '{print $$2}')
 
@@ -247,67 +246,6 @@ generate-metrics-docs:
 .PHONY: check-generate
 check-generate: generate
 	@./hack/actions/check-uncommitted-codegen.sh
-
-
-
-####
-# This method of certificate generation is DEPRECATED and will be removed soon.
-####
-
-gencerts: certs/contourcert.pem certs/envoycert.pem
-	@echo "certs are generated."
-
-applycerts: gencerts
-	@kubectl create secret -n projectcontour generic cacert --from-file=./certs/CAcert.pem
-	@kubectl create secret -n projectcontour tls contourcert --key=./certs/contourkey.pem --cert=./certs/contourcert.pem
-	@kubectl create secret -n projectcontour tls envoycert --key=./certs/envoykey.pem --cert=./certs/envoycert.pem
-
-cleancerts:
-	@kubectl delete secret -n projectcontour cacert contourcert envoycert
-
-certs:
-	@mkdir -p certs
-
-certs/CAkey.pem: | certs
-	@echo No CA keypair present, generating
-	openssl req -x509 -new -nodes -keyout certs/CAkey.pem \
-		-sha256 -days 1825 -out certs/CAcert.pem \
-		-subj "/O=Project Contour/CN=Contour CA"
-
-certs/contourkey.pem:
-	@echo Generating new contour key
-	openssl genrsa -out certs/contourkey.pem 2048
-
-certs/contourcert.pem: certs/CAkey.pem certs/contourkey.pem
-	@echo Generating new contour cert
-	openssl req -new -key certs/contourkey.pem \
-		-out certs/contour.csr \
-		-subj "/O=Project Contour/CN=contour"
-	openssl x509 -req -in certs/contour.csr \
-		-CA certs/CAcert.pem \
-		-CAkey certs/CAkey.pem \
-		-CAcreateserial \
-		-out certs/contourcert.pem \
-		-days 1825 -sha256 \
-		-extfile certs/cert-contour.ext
-
-certs/envoykey.pem:
-	@echo Generating new Envoy key
-	openssl genrsa -out certs/envoykey.pem 2048
-
-certs/envoycert.pem: certs/CAkey.pem certs/envoykey.pem
-	@echo generating new Envoy Cert
-	openssl req -new -key certs/envoykey.pem \
-		-out certs/envoy.csr \
-		-subj "/O=Project Contour/CN=envoy"
-	openssl x509 -req -in certs/envoy.csr \
-		-CA certs/CAcert.pem \
-		-CAkey certs/CAkey.pem \
-		-CAcreateserial \
-		-out certs/envoycert.pem \
-		-days 1825 -sha256 \
-		-extfile certs/cert-envoy.ext
-
 
 # Site development targets
 
