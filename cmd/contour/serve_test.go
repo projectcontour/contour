@@ -16,6 +16,8 @@ package main
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/pkg/config"
+
 	"k8s.io/utils/pointer"
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -39,7 +41,7 @@ func TestGetDAGBuilder(t *testing.T) {
 	}
 
 	t.Run("all default options", func(t *testing.T) {
-		got := getDAGBuilder("", []string{}, false, false, false, contour_api_v1alpha1.AutoClusterDNSFamily, nil, nil, nil, nil, nil, logrus.StandardLogger())
+		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily}, logrus.StandardLogger())
 		commonAssertions(t, &got)
 		assert.Empty(t, got.Source.ConfiguredSecretRefs)
 	})
@@ -47,7 +49,7 @@ func TestGetDAGBuilder(t *testing.T) {
 	t.Run("client cert specified", func(t *testing.T) {
 		clientCert := &types.NamespacedName{Namespace: "client-ns", Name: "client-name"}
 
-		got := getDAGBuilder("", []string{}, false, false, false, contour_api_v1alpha1.AutoClusterDNSFamily, nil, nil, nil, clientCert, nil, logrus.StandardLogger())
+		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert}, logrus.StandardLogger())
 		commonAssertions(t, &got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert})
 	})
@@ -55,7 +57,7 @@ func TestGetDAGBuilder(t *testing.T) {
 	t.Run("fallback cert specified", func(t *testing.T) {
 		fallbackCert := &types.NamespacedName{Namespace: "fallback-ns", Name: "fallback-name"}
 
-		got := getDAGBuilder("", []string{}, false, false, false, contour_api_v1alpha1.AutoClusterDNSFamily, nil, nil, nil, nil, fallbackCert, logrus.StandardLogger())
+		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, fallbackCert: fallbackCert}, logrus.StandardLogger())
 		commonAssertions(t, &got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{fallbackCert})
 	})
@@ -64,7 +66,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		clientCert := &types.NamespacedName{Namespace: "client-ns", Name: "client-name"}
 		fallbackCert := &types.NamespacedName{Namespace: "fallback-ns", Name: "fallback-name"}
 
-		got := getDAGBuilder("", []string{}, false, false, false, contour_api_v1alpha1.AutoClusterDNSFamily, nil, nil, nil, clientCert, fallbackCert, logrus.StandardLogger())
+		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert, fallbackCert: fallbackCert}, logrus.StandardLogger())
 		commonAssertions(t, &got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert, fallbackCert})
 	})
@@ -87,7 +89,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 		}
 
-		got := getDAGBuilder("", []string{}, false, false, false, contour_api_v1alpha1.AutoClusterDNSFamily, requestHP, responseHP, nil, nil, nil, logrus.StandardLogger())
+		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, requestHP: requestHP, responseHP: responseHP}, logrus.StandardLogger())
 		commonAssertions(t, &got)
 
 		httpProxyProcessor := mustGetHTTPProxyProcessor(t, &got)
@@ -121,6 +123,13 @@ func TestConvertServeContext(t *testing.T) {
 	defaultContext.contourCert = "/certs/cert.crt"
 	defaultContext.ingressClassName = "coolclass"
 	defaultContext.Config.IngressStatusAddress = "1.2.3.4"
+	defaultContext.Config.GatewayConfig = &config.GatewayParameters{
+		ControllerName: "projectcontour.io/projectcontour/contour",
+	}
+	defaultContext.Config.TLS.ClientCertificate = config.NamespacedName{
+		Name:      "cert",
+		Namespace: "secretplace",
+	}
 
 	cases := map[string]struct {
 		serveContext  *serveContext
@@ -173,7 +182,10 @@ func TestConvertServeContext(t *testing.T) {
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					ClientCertificate: nil,
+					ClientCertificate: &contour_api_v1alpha1.NamespacedName{
+						Name:      "cert",
+						Namespace: "secretplace",
+					},
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 						AccessLogFormatString: nil,
@@ -212,7 +224,9 @@ func TestConvertServeContext(t *testing.T) {
 						EnvoyAdminPort: 9001,
 					},
 				},
-				Gateway: nil,
+				Gateway: &contour_api_v1alpha1.GatewayConfig{
+					ControllerName: "projectcontour.io/projectcontour/contour",
+				},
 				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,

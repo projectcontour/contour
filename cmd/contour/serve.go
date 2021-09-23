@@ -425,16 +425,19 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
-		Builder: getDAGBuilder(
-			ingressClassName,
-			contourConfiguration.HTTPProxy.RootNamespaces,
-			contourConfiguration.Gateway != nil,
-			contourConfiguration.HTTPProxy.DisablePermitInsecure,
-			contourConfiguration.EnableExternalNameService,
-			contourConfiguration.Envoy.Cluster.DNSLookupFamily,
-			contourConfiguration.Policy.RequestHeadersPolicy,
-			contourConfiguration.Policy.ResponseHeadersPolicy,
-			clients, clientCert, fallbackCert, log),
+		Builder: getDAGBuilder(dagBuilderConfig{
+			ingressClassName:          ingressClassName,
+			rootNamespaces:            contourConfiguration.HTTPProxy.RootNamespaces,
+			gatewayAPIConfigured:      contourConfiguration.Gateway != nil,
+			disablePermitInsecure:     contourConfiguration.HTTPProxy.DisablePermitInsecure,
+			enableExternalNameService: contourConfiguration.EnableExternalNameService,
+			dnsLookupFamily:           contourConfiguration.Envoy.Cluster.DNSLookupFamily,
+			requestHP:                 contourConfiguration.Policy.RequestHeadersPolicy,
+			responseHP:                contourConfiguration.Policy.ResponseHeadersPolicy,
+			clients:                   clients,
+			clientCert:                clientCert,
+			fallbackCert:              fallbackCert,
+		}, log),
 		FieldLogger: log.WithField("context", "contourEventHandler"),
 	}
 
@@ -718,36 +721,48 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	return g.Run(context.Background())
 }
 
-func getDAGBuilder(ingressClassName string, rootNamespaces []string, gatewayAPIConfigured bool, disablePermitInsecure bool, enableExternalNameService bool,
-	dnsLookupFamily contour_api_v1alpha1.ClusterDNSFamilyType, requestHP *contour_api_v1alpha1.HeadersPolicy, responseHP *contour_api_v1alpha1.HeadersPolicy,
-	clients *k8s.Clients, clientCert, fallbackCert *types.NamespacedName, log logrus.FieldLogger) dag.Builder {
+type dagBuilderConfig struct {
+	ingressClassName          string
+	rootNamespaces            []string
+	gatewayAPIConfigured      bool
+	disablePermitInsecure     bool
+	enableExternalNameService bool
+	dnsLookupFamily           contour_api_v1alpha1.ClusterDNSFamilyType
+	requestHP                 *contour_api_v1alpha1.HeadersPolicy
+	responseHP                *contour_api_v1alpha1.HeadersPolicy
+	clients                   *k8s.Clients
+	clientCert                *types.NamespacedName
+	fallbackCert              *types.NamespacedName
+}
+
+func getDAGBuilder(dbc dagBuilderConfig, log logrus.FieldLogger) dag.Builder {
 
 	var requestHeadersPolicy dag.HeadersPolicy
 	var responseHeadersPolicy dag.HeadersPolicy
 
-	if requestHP != nil {
-		if requestHP.Set != nil {
+	if dbc.requestHP != nil {
+		if dbc.requestHP.Set != nil {
 			requestHeadersPolicy.Set = make(map[string]string)
-			for k, v := range requestHP.Set {
+			for k, v := range dbc.requestHP.Set {
 				requestHeadersPolicy.Set[k] = v
 			}
 		}
-		if requestHP.Remove != nil {
-			requestHeadersPolicy.Remove = make([]string, 0, len(requestHP.Remove))
-			requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, requestHP.Remove...)
+		if dbc.requestHP.Remove != nil {
+			requestHeadersPolicy.Remove = make([]string, 0, len(dbc.requestHP.Remove))
+			requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, dbc.requestHP.Remove...)
 		}
 	}
 
-	if responseHP != nil {
-		if responseHP.Set != nil {
+	if dbc.responseHP != nil {
+		if dbc.responseHP.Set != nil {
 			responseHeadersPolicy.Set = make(map[string]string)
-			for k, v := range responseHP.Set {
+			for k, v := range dbc.responseHP.Set {
 				responseHeadersPolicy.Set[k] = v
 			}
 		}
-		if responseHP.Remove != nil {
-			responseHeadersPolicy.Remove = make([]string, 0, len(responseHP.Remove))
-			responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, responseHP.Remove...)
+		if dbc.responseHP.Remove != nil {
+			responseHeadersPolicy.Remove = make([]string, 0, len(dbc.responseHP.Remove))
+			responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, dbc.responseHP.Remove...)
 		}
 	}
 
@@ -758,14 +773,14 @@ func getDAGBuilder(ingressClassName string, rootNamespaces []string, gatewayAPIC
 		responseHeadersPolicyIngress = responseHeadersPolicy
 	}
 
-	log.Debugf("EnableExternalNameService is set to %t", enableExternalNameService)
+	log.Debugf("EnableExternalNameService is set to %t", dbc.enableExternalNameService)
 
 	// Get the appropriate DAG processors.
 	dagProcessors := []dag.Processor{
 		&dag.IngressProcessor{
-			EnableExternalNameService: enableExternalNameService,
+			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               log.WithField("context", "IngressProcessor"),
-			ClientCertificate:         clientCert,
+			ClientCertificate:         dbc.clientCert,
 			RequestHeadersPolicy:      &requestHeadersPolicyIngress,
 			ResponseHeadersPolicy:     &responseHeadersPolicyIngress,
 		},
@@ -773,22 +788,22 @@ func getDAGBuilder(ingressClassName string, rootNamespaces []string, gatewayAPIC
 			// Note that ExtensionService does not support ExternalName, if it does get added,
 			// need to bring EnableExternalNameService in here too.
 			FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
-			ClientCertificate: clientCert,
+			ClientCertificate: dbc.clientCert,
 		},
 		&dag.HTTPProxyProcessor{
-			EnableExternalNameService: enableExternalNameService,
-			DisablePermitInsecure:     disablePermitInsecure,
-			FallbackCertificate:       fallbackCert,
-			DNSLookupFamily:           dnsLookupFamily,
-			ClientCertificate:         clientCert,
+			EnableExternalNameService: dbc.enableExternalNameService,
+			DisablePermitInsecure:     dbc.disablePermitInsecure,
+			FallbackCertificate:       dbc.fallbackCert,
+			DNSLookupFamily:           dbc.dnsLookupFamily,
+			ClientCertificate:         dbc.clientCert,
 			RequestHeadersPolicy:      &requestHeadersPolicy,
 			ResponseHeadersPolicy:     &responseHeadersPolicy,
 		},
 	}
 
-	if gatewayAPIConfigured && clients.ResourcesExist(k8s.GatewayAPIResources()...) {
+	if dbc.gatewayAPIConfigured && dbc.clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
-			EnableExternalNameService: enableExternalNameService,
+			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               log.WithField("context", "GatewayAPIProcessor"),
 		})
 	}
@@ -798,17 +813,17 @@ func getDAGBuilder(ingressClassName string, rootNamespaces []string, gatewayAPIC
 	dagProcessors = append(dagProcessors, &dag.ListenerProcessor{})
 
 	var configuredSecretRefs []*types.NamespacedName
-	if fallbackCert != nil {
-		configuredSecretRefs = append(configuredSecretRefs, fallbackCert)
+	if dbc.fallbackCert != nil {
+		configuredSecretRefs = append(configuredSecretRefs, dbc.fallbackCert)
 	}
-	if clientCert != nil {
-		configuredSecretRefs = append(configuredSecretRefs, clientCert)
+	if dbc.clientCert != nil {
+		configuredSecretRefs = append(configuredSecretRefs, dbc.clientCert)
 	}
 
 	builder := dag.Builder{
 		Source: dag.KubernetesCache{
-			RootNamespaces:       rootNamespaces,
-			IngressClassName:     ingressClassName,
+			RootNamespaces:       dbc.rootNamespaces,
+			IngressClassName:     dbc.ingressClassName,
 			ConfiguredSecretRefs: configuredSecretRefs,
 			FieldLogger:          log.WithField("context", "KubernetesCache"),
 		},
