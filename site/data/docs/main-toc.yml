@@ -103,6 +103,8 @@ toc:
         link: /resources/tagging
   - title: Security
     subfolderitems:
+      - page: Threat Model and Security Posture
+        link: /resources/security-threat-model
       - page: Security Report Process
         link: /resources/security-process
       - page: Security Fix Checklist
