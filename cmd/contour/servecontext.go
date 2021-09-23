@@ -34,6 +34,9 @@ import (
 )
 
 type serveContext struct {
+	// Name of the ContourConfiguration CRD to use for configuration.
+	contourConfigurationName string
+
 	Config config.Parameters
 
 	ServerConfig

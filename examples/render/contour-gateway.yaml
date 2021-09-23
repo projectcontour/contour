@@ -4699,6 +4699,22 @@ rules:
 - apiGroups:
   - projectcontour.io
   resources:
+  - contourconfigurations
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - projectcontour.io
+  resources:
+  - contourconfigurations/status
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - projectcontour.io
+  resources:
   - extensionservices
   verbs:
   - get
