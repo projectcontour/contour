@@ -346,4 +346,36 @@ default:
       target: issues
       addedBy: anyone
 
+# Labels about what category a PR is in terms of the release notes
+    - color: "164175"
+      description: A major change that needs more than a paragraph of explanation in the release notes.
+      name: release-note/major
+      target: prs
+      addedBy: prow
+    - color: "164175"
+      description: A minor change that needs about a paragraph of explanation in the release notes.
+      name: release-note/minor
+      target: prs
+      addedBy: prow
+    - color: "164175"
+      description: A small change that needs one line of explanation in the release notes.
+      name: release-note/small
+      target: prs
+      addedBy: prow
+    - color: "164175"
+      description: A documentation change for the release notes.
+      name: release-note/docs
+      target: prs
+      addedBy: prow
+    - color: "164175"
+      description: An infrastructure update for the release notes.
+      name: release-note/docs
+      target: prs
+      addedBy: prow
+    - color: "164175"
+      description: Marks a PR as not requiring a release note. Should only be used for very small changes.
+      name: release-note/none-required
+      target: prs
+      addedBy: prow
+    
 repos:
