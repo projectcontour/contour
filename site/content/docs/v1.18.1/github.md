@@ -2,7 +2,7 @@ This document outlines how we use GitHub.
 
 ## Milestones
 
-Contour attempts to ship on a monthly-ish, generally every four to six weeks, basis.
+Contour attempts to ship on a quarterly basis.
 These releases are tracked with a milestone.
 The _current_ release is the milestone with the closest delivery date.
 
