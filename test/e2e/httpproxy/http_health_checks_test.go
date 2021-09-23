@@ -32,7 +32,7 @@ func testHTTPHealthChecks(namespace string) {
 	Specify("HTTP healthchecks are configurable", func() {
 		t := f.T()
 
-		f.Fixtures.HTTPBin.Deploy(namespace, "httpbin")
+		f.Fixtures.Echo.Deploy(namespace, "echo")
 
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
@@ -47,7 +47,7 @@ func testHTTPHealthChecks(namespace string) {
 					{
 						Services: []contourv1.Service{
 							{
-								Name: "httpbin",
+								Name: "echo",
 								Port: 80,
 							},
 						},

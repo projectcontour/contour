@@ -190,10 +190,6 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 				client: crClient,
 				t:      t,
 			},
-			HTTPBin: &HTTPBin{
-				client: crClient,
-				t:      t,
-			},
 		},
 		HTTP: &HTTP{
 			HTTPURLBase:        httpURLBase,
