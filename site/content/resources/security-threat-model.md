@@ -33,7 +33,7 @@ We anticipate that the most likely attacks are created by the relatively untrust
 - Confused deputy attacks - since Contour is trusted to build config and send to Envoy, that access can be misused to produce insecure Envoy configurations. [ExternalName Services can be used to gain access to Envoy's admin interface](https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc) was an example of this attack in action, and was specifically dealt with by disallowing ExternalName services by default, and by removing the Envoy admin interface from use across any network, even localhost.
 - Insecure or conflicting configurations produced my manipulation of Kubernetes objects used for configuration.
 
-Our general method of mitigating both of these styles of attack is to be proscriptive about what configurations Contour will accept. Obviously, in cases like the ExternalName issue above, it's possible for a syntatically and allowed configuration to produce an insecure Envoy config, and this is therefore a primary focus of our thread model.
+Our general method of mitigating both of these styles of attack is to be proscriptive about what configurations Contour will accept. Obviously, in cases like the ExternalName issue above, it's possible for a syntactically and allowed configuration to produce an insecure Envoy config, and this is therefore a primary focus of our threat model.
 
 ### Other expected attack vectors and mitigations
 For other classes of attacks, Contour does what it can to mitigate risks.
