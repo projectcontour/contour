@@ -369,7 +369,7 @@ default:
       addedBy: prow
     - color: "164175"
       description: An infrastructure update for the release notes.
-      name: release-note/docs
+      name: release-note/infra
       target: prs
       addedBy: prow
     - color: "164175"
