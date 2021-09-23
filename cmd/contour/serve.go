@@ -946,6 +946,27 @@ func convertServeContext(ctx *serveContext) contour_api_v1alpha1.ContourConfigur
 		},
 	}
 
+	var clientCertificate *contour_api_v1alpha1.NamespacedName
+	if len(ctx.Config.TLS.ClientCertificate.Name) > 0 {
+		clientCertificate = &contour_api_v1alpha1.NamespacedName{
+			Name:      ctx.Config.TLS.ClientCertificate.Name,
+			Namespace: ctx.Config.TLS.ClientCertificate.Namespace,
+		}
+	}
+
+	var accessLogFormatString *string
+	if len(ctx.Config.AccessLogFormatString) > 0 {
+		accessLogFormatString = pointer.StringPtr(ctx.Config.AccessLogFormatString)
+	}
+
+	var fallbackCertificate *contour_api_v1alpha1.NamespacedName
+	if len(ctx.Config.TLS.FallbackCertificate.Name) > 0 {
+		fallbackCertificate = &contour_api_v1alpha1.NamespacedName{
+			Name:      ctx.Config.TLS.FallbackCertificate.Name,
+			Namespace: ctx.Config.TLS.FallbackCertificate.Namespace,
+		}
+	}
+
 	// Convert serveContext to a ContourConfiguration
 	contourConfiguration := contour_api_v1alpha1.ContourConfigurationSpec{
 		Ingress: ingress,
@@ -987,13 +1008,10 @@ func convertServeContext(ctx *serveContext) contour_api_v1alpha1.ContourConfigur
 				Address: ctx.statsAddr,
 				Port:    ctx.statsPort,
 			},
-			ClientCertificate: &contour_api_v1alpha1.NamespacedName{
-				Name:      ctx.Config.TLS.ClientCertificate.Name,
-				Namespace: ctx.Config.TLS.ClientCertificate.Namespace,
-			},
+			ClientCertificate: clientCertificate,
 			Logging: contour_api_v1alpha1.EnvoyLogging{
 				AccessLogFormat:       accessLogFormat,
-				AccessLogFormatString: pointer.StringPtr(ctx.Config.AccessLogFormatString),
+				AccessLogFormatString: accessLogFormatString,
 				AccessLogFields:       accessLogFields,
 			},
 			DefaultHTTPVersions: defaultHTTPVersions,
@@ -1010,10 +1028,7 @@ func convertServeContext(ctx *serveContext) contour_api_v1alpha1.ContourConfigur
 		HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
 			DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
 			RootNamespaces:        ctx.proxyRootNamespaces(),
-			FallbackCertificate: &contour_api_v1alpha1.NamespacedName{
-				Name:      ctx.Config.TLS.FallbackCertificate.Name,
-				Namespace: ctx.Config.TLS.FallbackCertificate.Namespace,
-			},
+			FallbackCertificate:   fallbackCertificate,
 		},
 		LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
 			LeaseDuration: ctx.Config.LeaderElection.LeaseDuration.String(),
