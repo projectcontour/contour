@@ -515,7 +515,10 @@ end
 	`
 
 	t := new(bytes.Buffer)
-	template.Must(template.New("code").Parse(codeTemplate)).Execute(t, policies)
+	if err := template.Must(template.New("code").Parse(codeTemplate)).Execute(t, policies); err != nil {
+		// If template execution fails, return empty filter.
+		return nil
+	}
 
 	c := &lua.LuaPerRoute{
 		Override: &lua.LuaPerRoute_SourceCode{
