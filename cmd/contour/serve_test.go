@@ -41,7 +41,10 @@ func TestGetDAGBuilder(t *testing.T) {
 	}
 
 	t.Run("all default options", func(t *testing.T) {
-		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily}, logrus.StandardLogger())
+		serve := &Serve{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily})
 		commonAssertions(t, &got)
 		assert.Empty(t, got.Source.ConfiguredSecretRefs)
 	})
@@ -49,7 +52,10 @@ func TestGetDAGBuilder(t *testing.T) {
 	t.Run("client cert specified", func(t *testing.T) {
 		clientCert := &types.NamespacedName{Namespace: "client-ns", Name: "client-name"}
 
-		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert}, logrus.StandardLogger())
+		serve := &Serve{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert})
 		commonAssertions(t, &got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert})
 	})
@@ -57,7 +63,10 @@ func TestGetDAGBuilder(t *testing.T) {
 	t.Run("fallback cert specified", func(t *testing.T) {
 		fallbackCert := &types.NamespacedName{Namespace: "fallback-ns", Name: "fallback-name"}
 
-		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, fallbackCert: fallbackCert}, logrus.StandardLogger())
+		serve := &Serve{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, fallbackCert: fallbackCert})
 		commonAssertions(t, &got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{fallbackCert})
 	})
@@ -66,7 +75,10 @@ func TestGetDAGBuilder(t *testing.T) {
 		clientCert := &types.NamespacedName{Namespace: "client-ns", Name: "client-name"}
 		fallbackCert := &types.NamespacedName{Namespace: "fallback-ns", Name: "fallback-name"}
 
-		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert, fallbackCert: fallbackCert}, logrus.StandardLogger())
+		serve := &Serve{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert, fallbackCert: fallbackCert})
 		commonAssertions(t, &got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert, fallbackCert})
 	})
@@ -89,7 +101,10 @@ func TestGetDAGBuilder(t *testing.T) {
 			Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 		}
 
-		got := getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, requestHP: requestHP, responseHP: responseHP}, logrus.StandardLogger())
+		serve := &Serve{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, requestHP: requestHP, responseHP: responseHP})
 		commonAssertions(t, &got)
 
 		httpProxyProcessor := mustGetHTTPProxyProcessor(t, &got)

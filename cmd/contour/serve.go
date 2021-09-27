@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -163,35 +164,70 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	return serve, ctx
 }
 
-// doServe runs the contour serve subcommand.
-func doServe(log logrus.FieldLogger, ctx *serveContext) error {
+type Serve struct {
+	group    workgroup.Group
+	log      logrus.FieldLogger
+	ctx      *serveContext
+	clients  *k8s.Clients
+	mgr      manager.Manager
+	registry *prometheus.Registry
+}
+
+func NewServe(log logrus.FieldLogger, ctx *serveContext) (*Serve, error) {
+
+	// Set up workgroup runner.
+	var group workgroup.Group
+
 	// Establish k8s core & dynamic client connections.
 	clients, err := k8s.NewClients(ctx.Config.Kubeconfig, ctx.Config.InCluster)
 	if err != nil {
-		return fmt.Errorf("failed to create Kubernetes clients: %w", err)
+		return nil, fmt.Errorf("failed to create Kubernetes clients: %w", err)
 	}
-
-	// Convert the Contour ServeContext into a ContourConfiguration
-	contourConfiguration := convertServeContext(ctx)
-
-	// Set up workgroup runner.
-	var g workgroup.Group
 
 	scheme, err := k8s.NewContourScheme()
 	if err != nil {
 		log.WithError(err).Fatal("unable to create scheme")
 	}
 
+	// Instantiate a controller-runtime manager.
+	mgr, err := manager.New(controller_config.GetConfigOrDie(), manager.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		log.WithError(err).Fatal("unable to set up controller manager")
+	}
+
+	// Set up Prometheus registry and register base metrics.
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	registry.MustRegister(collectors.NewGoCollector())
+
+	return &Serve{
+		group:    group,
+		log:      log,
+		ctx:      ctx,
+		clients:  clients,
+		mgr:      mgr,
+		registry: registry,
+	}, nil
+}
+
+// doServe runs the contour serve subcommand.
+func (s *Serve) doServe() error {
+
+	// Convert the Contour ServeContext into a ContourConfiguration
+	contourConfiguration := convertServeContext(s.ctx)
+
 	// Get the ContourConfiguration CRD if specified
-	if len(ctx.contourConfigurationName) > 0 {
+	if len(s.ctx.contourConfigurationName) > 0 {
 
 		// Determine the name/namespace of the configuration resource utilizing the environment
 		// variable "CONTOUR_NAMESPACE" which should exist on the Contour deployment.
 		//
 		// If the env variable is not present, it will return "" and still fail the lookup
 		// of the ContourConfiguration in the cluster.
-		namespacedName := types.NamespacedName{Name: ctx.contourConfigurationName, Namespace: os.Getenv("CONTOUR_NAMESPACE")}
-		client := clients.DynamicClient().Resource(contour_api_v1alpha1.ContourConfigurationGVR).Namespace(namespacedName.Namespace)
+		namespacedName := types.NamespacedName{Name: s.ctx.contourConfigurationName, Namespace: os.Getenv("CONTOUR_NAMESPACE")}
+		client := s.clients.DynamicClient().Resource(contour_api_v1alpha1.ContourConfigurationGVR).Namespace(namespacedName.Namespace)
 
 		// ensure the specified ContourConfiguration exists
 		res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
@@ -205,19 +241,9 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	}
 
-	// Instantiate a controller-runtime manager. We need this regardless of whether
-	// we're running the Gateway API controllers or not, because we use its cache
-	// everywhere.
-	mgr, err := manager.New(controller_config.GetConfigOrDie(), manager.Options{
-		Scheme: scheme,
-	})
-	if err != nil {
-		log.WithError(err).Fatal("unable to set up controller manager")
-	}
-
 	// Register the manager with the workgroup.
-	g.AddContext(func(taskCtx context.Context) error {
-		return mgr.Start(signals.SetupSignalHandler())
+	s.group.AddContext(func(taskCtx context.Context) error {
+		return s.mgr.Start(signals.SetupSignalHandler())
 	})
 
 	// informerNamespaces is a list of namespaces that we should start informers for.
@@ -232,7 +258,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		// Add the FallbackCertificateNamespace to informerNamespaces if it isn't present.
 		if !contains(informerNamespaces, fallbackCert.Namespace) && fallbackCert != nil {
 			informerNamespaces = append(informerNamespaces, fallbackCert.Namespace)
-			log.WithField("context", "fallback-certificate").
+			s.log.WithField("context", "fallback-certificate").
 				Infof("fallback certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",
 					fallbackCert.Namespace)
 		}
@@ -240,16 +266,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		// Add the client certificate namespace to informerNamespaces if it isn't present.
 		if !contains(informerNamespaces, clientCert.Namespace) && clientCert != nil {
 			informerNamespaces = append(informerNamespaces, clientCert.Namespace)
-			log.WithField("context", "envoy-client-certificate").
+			s.log.WithField("context", "envoy-client-certificate").
 				Infof("client certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",
 					clientCert.Namespace)
 		}
 	}
-
-	// Set up Prometheus registry and register base metrics.
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
-	registry.MustRegister(collectors.NewGoCollector())
 
 	// Before we can build the event handler, we need to initialize the converter we'll
 	// use to convert from Unstructured.
@@ -306,7 +327,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// connection balancer
 	if ok := contourConfiguration.Envoy.Listener.ConnectionBalancer == "exact" || contourConfiguration.Envoy.Listener.ConnectionBalancer == ""; !ok {
-		log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", contourConfiguration.Envoy.Listener.ConnectionBalancer)
+		s.log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", contourConfiguration.Envoy.Listener.ConnectionBalancer)
 		contourConfiguration.Envoy.Listener.ConnectionBalancer = ""
 	}
 
@@ -358,7 +379,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	if contourConfiguration.RateLimitService != nil {
 		namespacedName := contourConfiguration.RateLimitService.ExtensionService.NamespacedNameOf()
-		client := clients.DynamicClient().Resource(contour_api_v1alpha1.ExtensionServiceGVR).Namespace(namespacedName.Namespace)
+		client := s.clients.DynamicClient().Resource(contour_api_v1alpha1.ExtensionServiceGVR).Namespace(namespacedName.Namespace)
 
 		// ensure the specified ExtensionService exists
 		res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
@@ -387,11 +408,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 	}
 
-	contourMetrics := metrics.NewMetrics(registry)
+	contourMetrics := metrics.NewMetrics(s.registry)
 
 	// Endpoints updates are handled directly by the EndpointsTranslator
 	// due to their high update rate and their orthogonal nature.
-	endpointHandler := xdscache_v3.NewEndpointsTranslator(log.WithField("context", "endpointstranslator"))
+	endpointHandler := xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
 
 	resources := []xdscache.ResourceCache{
 		xdscache_v3.NewListenerCache(listenerConfig, contourConfiguration.Envoy.Metrics.Address, contourConfiguration.Envoy.Metrics.Port, contourConfiguration.Envoy.Network.EnvoyAdminPort),
@@ -402,17 +423,17 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	}
 
 	// snapshotHandler is used to produce new snapshots when the internal state changes for any xDS resource.
-	snapshotHandler := xdscache.NewSnapshotHandler(resources, log.WithField("context", "snapshotHandler"))
+	snapshotHandler := xdscache.NewSnapshotHandler(resources, s.log.WithField("context", "snapshotHandler"))
 
 	// register observer for endpoints updates.
 	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
 
 	// Log that we're using the fallback certificate if configured.
 	if fallbackCert != nil {
-		log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
+		s.log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
 	}
 	if clientCert != nil {
-		log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", clientCert)
+		s.log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", clientCert)
 	}
 
 	ingressClassName := ""
@@ -425,7 +446,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
-		Builder: getDAGBuilder(dagBuilderConfig{
+		Builder: s.getDAGBuilder(dagBuilderConfig{
 			ingressClassName:          ingressClassName,
 			rootNamespaces:            contourConfiguration.HTTPProxy.RootNamespaces,
 			gatewayAPIConfigured:      contourConfiguration.Gateway != nil,
@@ -434,11 +455,11 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			dnsLookupFamily:           contourConfiguration.Envoy.Cluster.DNSLookupFamily,
 			requestHP:                 contourConfiguration.Policy.RequestHeadersPolicy,
 			responseHP:                contourConfiguration.Policy.ResponseHeadersPolicy,
-			clients:                   clients,
+			clients:                   s.clients,
 			clientCert:                clientCert,
 			fallbackCert:              fallbackCert,
-		}, log),
-		FieldLogger: log.WithField("context", "contourEventHandler"),
+		}),
+		FieldLogger: s.log.WithField("context", "contourEventHandler"),
 	}
 
 	// Wrap contourHandler in an EventRecorder which tracks API server events.
@@ -449,80 +470,30 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Register leadership election.
 	if contourConfiguration.LeaderElection.DisableLeaderElection {
-		contourHandler.IsLeader = disableLeaderElection(log)
+		contourHandler.IsLeader = disableLeaderElection(s.log)
 	} else {
-		contourHandler.IsLeader = setupLeadershipElection(&g, log, contourConfiguration.LeaderElection, clients, contourHandler.UpdateNow)
+		contourHandler.IsLeader = setupLeadershipElection(&s.group, s.log, contourConfiguration.LeaderElection, s.clients, contourHandler.UpdateNow)
 	}
 
 	// Start setting up StatusUpdateHandler since we need it in
 	// the Gateway API controllers. Will finish setting it up and
 	// start it later.
 	sh := k8s.StatusUpdateHandler{
-		Log:       log.WithField("context", "StatusUpdateHandler"),
-		Clients:   clients,
-		Cache:     mgr.GetCache(),
+		Log:       s.log.WithField("context", "StatusUpdateHandler"),
+		Clients:   s.clients,
+		Cache:     s.mgr.GetCache(),
 		Converter: converter,
 	}
 
 	// Inform on DefaultResources.
 	for _, r := range k8s.DefaultResources() {
-		if err := informOnResource(clients, r, eventHandler, mgr.GetCache()); err != nil {
-			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
+		if err := informOnResource(s.clients, r, eventHandler, s.mgr.GetCache()); err != nil {
+			s.log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
 
-	for _, r := range k8s.IngressV1Resources() {
-		if err := informOnResource(clients, r, eventHandler, mgr.GetCache()); err != nil {
-			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
-		}
-	}
-
-	// Only inform on Gateway API resources if Gateway API is found.
-	if contourConfiguration.Gateway != nil {
-		if clients.ResourcesExist(k8s.GatewayAPIResources()...) {
-			// Create and register the gatewayclass controller with the manager.
-			gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
-			if _, err := controller.NewGatewayClassController(
-				mgr,
-				eventHandler,
-				sh.Writer(),
-				log.WithField("context", "gatewayclass-controller"),
-				gatewayClassControllerName,
-				contourHandler.IsLeader,
-			); err != nil {
-				log.WithError(err).Fatal("failed to create gatewayclass-controller")
-			}
-
-			// Create and register the NewGatewayController controller with the manager.
-			if _, err := controller.NewGatewayController(
-				mgr,
-				eventHandler,
-				sh.Writer(),
-				log.WithField("context", "gateway-controller"),
-				gatewayClassControllerName,
-				contourHandler.IsLeader,
-			); err != nil {
-				log.WithError(err).Fatal("failed to create gateway-controller")
-			}
-
-			// Create and register the NewHTTPRouteController controller with the manager.
-			if _, err := controller.NewHTTPRouteController(mgr, eventHandler, log.WithField("context", "httproute-controller")); err != nil {
-				log.WithError(err).Fatal("failed to create httproute-controller")
-			}
-
-			// Create and register the NewTLSRouteController controller with the manager.
-			if _, err := controller.NewTLSRouteController(mgr, eventHandler, log.WithField("context", "tlsroute-controller")); err != nil {
-				log.WithError(err).Fatal("failed to create tlsroute-controller")
-			}
-
-			// Inform on Namespaces.
-			if err := informOnResource(clients, k8s.NamespacesResource(), eventHandler, mgr.GetCache()); err != nil {
-				log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
-			}
-		} else {
-			log.Fatalf("Gateway API Gateway configured but APIs not installed in cluster.")
-		}
-	}
+	// Inform on Gateway API resources.
+	s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler, sh, contourHandler.IsLeader)
 
 	// Inform on secrets, filtering by root namespaces.
 	for _, r := range k8s.SecretsResources() {
@@ -533,67 +504,32 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 			handler = k8s.NewNamespaceFilter(informerNamespaces, eventHandler)
 		}
 
-		if err := informOnResource(clients, r, handler, mgr.GetCache()); err != nil {
-			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
+		if err := informOnResource(s.clients, r, handler, s.mgr.GetCache()); err != nil {
+			s.log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
 
 	// Inform on endpoints.
 	for _, r := range k8s.EndpointsResources() {
-		if err := informOnResource(clients, r, &contour.EventRecorder{
+		if err := informOnResource(s.clients, r, &contour.EventRecorder{
 			Next:    endpointHandler,
 			Counter: contourMetrics.EventHandlerOperations,
-		}, mgr.GetCache()); err != nil {
-			log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
+		}, s.mgr.GetCache()); err != nil {
+			s.log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 		}
 	}
 
 	// Register our event handler with the workgroup.
-	g.Add(contourHandler.Start())
+	s.group.Add(contourHandler.Start())
 
-	// Create metrics service and register with workgroup.
-	metricsvc := httpsvc.Service{
-		Addr:        contourConfiguration.Metrics.Address,
-		Port:        contourConfiguration.Metrics.Port,
-		FieldLogger: log.WithField("context", "metricsvc"),
-		ServeMux:    http.ServeMux{},
-	}
-
-	metricsvc.ServeMux.Handle("/metrics", metrics.Handler(registry))
-
-	if contourConfiguration.Health.Address == contourConfiguration.Metrics.Address && contourConfiguration.Health.Port == contourConfiguration.Metrics.Port {
-		h := health.Handler(clients.ClientSet())
-		metricsvc.ServeMux.Handle("/health", h)
-		metricsvc.ServeMux.Handle("/healthz", h)
-	}
-
-	g.Add(metricsvc.Start)
+	// Create metrics service.
+	s.setupMetrics(contourConfiguration.Metrics, contourConfiguration.Health, s.registry)
 
 	// Create a separate health service if required.
-	if contourConfiguration.Health.Address != contourConfiguration.Metrics.Address || contourConfiguration.Health.Port != contourConfiguration.Metrics.Port {
-		healthsvc := httpsvc.Service{
-			Addr:        contourConfiguration.Health.Address,
-			Port:        contourConfiguration.Health.Port,
-			FieldLogger: log.WithField("context", "healthsvc"),
-		}
-
-		h := health.Handler(clients.ClientSet())
-		healthsvc.ServeMux.Handle("/health", h)
-		healthsvc.ServeMux.Handle("/healthz", h)
-
-		g.Add(healthsvc.Start)
-	}
+	s.setupHealth(contourConfiguration.Health, contourConfiguration.Metrics)
 
 	// Create debug service and register with workgroup.
-	debugsvc := debug.Service{
-		Service: httpsvc.Service{
-			Addr:        contourConfiguration.Debug.Address,
-			Port:        contourConfiguration.Debug.Port,
-			FieldLogger: log.WithField("context", "debugsvc"),
-		},
-		Builder: &contourHandler.Builder,
-	}
-	g.Add(debugsvc.Start)
+	s.setupDebugService(contourConfiguration.Debug, contourHandler)
 
 	// Once we have the leadership detection channel, we can
 	// push DAG rebuild metrics onto the observer stack.
@@ -606,7 +542,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 	// Finish setting up the StatusUpdateHandler and
 	// add it to the work group.
 	sh.LeaderElected = contourHandler.IsLeader
-	g.Add(sh.Start)
+	s.group.Add(sh.Start)
 
 	// Now we have the statusUpdateHandler, we can create the event handler's StatusUpdater, which will take the
 	// status updates from the DAG, and send them to the status update handler.
@@ -614,25 +550,25 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 	// Set up ingress load balancer status writer.
 	lbsw := loadBalancerStatusWriter{
-		log:              log.WithField("context", "loadBalancerStatusWriter"),
-		cache:            mgr.GetCache(),
+		log:              s.log.WithField("context", "loadBalancerStatusWriter"),
+		cache:            s.mgr.GetCache(),
 		isLeader:         contourHandler.IsLeader,
 		lbStatus:         make(chan corev1.LoadBalancerStatus, 1),
 		ingressClassName: ingressClassName,
 		statusUpdater:    sh.Writer(),
 		Converter:        converter,
 	}
-	g.Add(lbsw.Start)
+	s.group.Add(lbsw.Start)
 
 	// Register an informer to watch envoy's service if we haven't been given static details.
 	if contourConfiguration.Ingress.StatusAddress != nil {
-		log.WithField("loadbalancer-address", *contourConfiguration.Ingress.StatusAddress).Info("Using supplied information for Ingress status")
+		s.log.WithField("loadbalancer-address", *contourConfiguration.Ingress.StatusAddress).Info("Using supplied information for Ingress status")
 		lbsw.lbStatus <- parseStatusFlag(*contourConfiguration.Ingress.StatusAddress)
 	} else {
 		serviceHandler := &k8s.ServiceStatusLoadBalancerWatcher{
 			ServiceName: contourConfiguration.Envoy.Service.Name,
 			LBStatus:    lbsw.lbStatus,
-			Log:         log.WithField("context", "serviceStatusLoadBalancerWatcher"),
+			Log:         s.log.WithField("context", "serviceStatusLoadBalancerWatcher"),
 		}
 
 		for _, r := range k8s.ServicesResources() {
@@ -642,18 +578,53 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 				handler = k8s.NewNamespaceFilter([]string{contourConfiguration.Envoy.Service.Namespace}, handler)
 			}
 
-			if err := informOnResource(clients, r, handler, mgr.GetCache()); err != nil {
-				log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
+			if err := informOnResource(s.clients, r, handler, s.mgr.GetCache()); err != nil {
+				s.log.WithError(err).WithField("resource", r).Fatal("failed to create informer")
 			}
 		}
 
-		log.WithField("envoy-service-name", contourConfiguration.Envoy.Service.Name).
+		s.log.WithField("envoy-service-name", contourConfiguration.Envoy.Service.Name).
 			WithField("envoy-service-namespace", contourConfiguration.Envoy.Service.Namespace).
 			Info("Watching Service for Ingress status")
 	}
 
-	g.AddContext(func(taskCtx context.Context) error {
-		log := log.WithField("context", "xds")
+	// TODO: Remove ctx
+	s.setupXDSServer(s.mgr, s.registry, contourConfiguration, snapshotHandler, resources)
+
+	// Set up SIGTERM handler for graceful shutdown.
+	s.group.Add(func(stop <-chan struct{}) error {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+		select {
+		case sig := <-c:
+			s.log.WithField("context", "sigterm-handler").WithField("signal", sig).Info("shutting down")
+		case <-stop:
+			// Do nothing. The group is shutting down.
+		}
+		return nil
+	})
+
+	// GO!
+	return s.group.Run(context.Background())
+}
+
+func (s *Serve) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, contourHandler *contour.EventHandler) {
+	debugsvc := debug.Service{
+		Service: httpsvc.Service{
+			Addr:        debugConfig.Address,
+			Port:        debugConfig.Port,
+			FieldLogger: s.log.WithField("context", "debugsvc"),
+		},
+		Builder: &contourHandler.Builder,
+	}
+	s.group.Add(debugsvc.Start)
+}
+
+func (s *Serve) setupXDSServer(mgr manager.Manager, registry *prometheus.Registry, contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
+	snapshotHandler *xdscache.SnapshotHandler, resources []xdscache.ResourceCache) {
+
+	s.group.AddContext(func(taskCtx context.Context) error {
+		log := s.log.WithField("context", "xds")
 
 		log.Printf("waiting for informer caches to sync")
 		if !mgr.GetCache().WaitForCacheSync(taskCtx) {
@@ -661,7 +632,7 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 		}
 		log.Printf("informer caches synced")
 
-		grpcServer := xds.NewServer(registry, ctx.grpcOptions(log)...)
+		grpcServer := xds.NewServer(registry, s.ctx.grpcOptions(log)...)
 
 		switch contourConfiguration.XDSServer.Type {
 		case contour_api_v1alpha1.EnvoyServerType:
@@ -703,22 +674,99 @@ func doServe(log logrus.FieldLogger, ctx *serveContext) error {
 
 		return grpcServer.Serve(l)
 	})
+}
 
-	// Set up SIGTERM handler for graceful shutdown.
-	g.Add(func(stop <-chan struct{}) error {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
-		select {
-		case sig := <-c:
-			log.WithField("context", "sigterm-handler").WithField("signal", sig).Info("shutting down")
-		case <-stop:
-			// Do nothing. The group is shutting down.
+func (s *Serve) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, healthConfig contour_api_v1alpha1.HealthConfig,
+	registry *prometheus.Registry) {
+
+	// Create metrics service and register with workgroup.
+	metricsvc := httpsvc.Service{
+		Addr:        metricsConfig.Address,
+		Port:        metricsConfig.Port,
+		FieldLogger: s.log.WithField("context", "metricsvc"),
+		ServeMux:    http.ServeMux{},
+	}
+
+	metricsvc.ServeMux.Handle("/metrics", metrics.Handler(registry))
+
+	if healthConfig.Address == metricsConfig.Address && healthConfig.Port == metricsConfig.Port {
+		h := health.Handler(s.clients.ClientSet())
+		metricsvc.ServeMux.Handle("/health", h)
+		metricsvc.ServeMux.Handle("/healthz", h)
+	}
+
+	s.group.Add(metricsvc.Start)
+}
+
+func (s *Serve) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
+	metricsConfig contour_api_v1alpha1.MetricsConfig) {
+
+	if healthConfig.Address != metricsConfig.Address || healthConfig.Port != metricsConfig.Port {
+		healthsvc := httpsvc.Service{
+			Addr:        healthConfig.Address,
+			Port:        healthConfig.Port,
+			FieldLogger: s.log.WithField("context", "healthsvc"),
 		}
-		return nil
-	})
 
-	// GO!
-	return g.Run(context.Background())
+		h := health.Handler(s.clients.ClientSet())
+		healthsvc.ServeMux.Handle("/health", h)
+		healthsvc.ServeMux.Handle("/healthz", h)
+
+		s.group.Add(healthsvc.Start)
+	}
+}
+
+func (s *Serve) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
+	mgr manager.Manager, eventHandler *contour.EventRecorder, sh k8s.StatusUpdateHandler, isLeader chan struct{}) {
+
+	// Check if GatewayAPI is configured.
+	if contourConfiguration.Gateway != nil {
+
+		// Only inform on GatewayAPI if found in the cluster.
+		if s.clients.ResourcesExist(k8s.GatewayAPIResources()...) {
+			// Create and register the gatewayclass controller with the manager.
+			gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
+			if _, err := controller.NewGatewayClassController(
+				mgr,
+				eventHandler,
+				sh.Writer(),
+				s.log.WithField("context", "gatewayclass-controller"),
+				gatewayClassControllerName,
+				isLeader,
+			); err != nil {
+				s.log.WithError(err).Fatal("failed to create gatewayclass-controller")
+			}
+
+			// Create and register the NewGatewayController controller with the manager.
+			if _, err := controller.NewGatewayController(
+				mgr,
+				eventHandler,
+				sh.Writer(),
+				s.log.WithField("context", "gateway-controller"),
+				gatewayClassControllerName,
+				isLeader,
+			); err != nil {
+				s.log.WithError(err).Fatal("failed to create gateway-controller")
+			}
+
+			// Create and register the NewHTTPRouteController controller with the manager.
+			if _, err := controller.NewHTTPRouteController(mgr, eventHandler, s.log.WithField("context", "httproute-controller")); err != nil {
+				s.log.WithError(err).Fatal("failed to create httproute-controller")
+			}
+
+			// Create and register the NewTLSRouteController controller with the manager.
+			if _, err := controller.NewTLSRouteController(mgr, eventHandler, s.log.WithField("context", "tlsroute-controller")); err != nil {
+				s.log.WithError(err).Fatal("failed to create tlsroute-controller")
+			}
+
+			// Inform on Namespaces.
+			if err := informOnResource(s.clients, k8s.NamespacesResource(), eventHandler, mgr.GetCache()); err != nil {
+				s.log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")
+			}
+		} else {
+			log.Fatalf("Gateway API Gateway configured but APIs not installed in cluster.")
+		}
+	}
 }
 
 type dagBuilderConfig struct {
@@ -735,7 +783,7 @@ type dagBuilderConfig struct {
 	fallbackCert              *types.NamespacedName
 }
 
-func getDAGBuilder(dbc dagBuilderConfig, log logrus.FieldLogger) dag.Builder {
+func (s *Serve) getDAGBuilder(dbc dagBuilderConfig) dag.Builder {
 
 	var requestHeadersPolicy dag.HeadersPolicy
 	var responseHeadersPolicy dag.HeadersPolicy
@@ -766,6 +814,8 @@ func getDAGBuilder(dbc dagBuilderConfig, log logrus.FieldLogger) dag.Builder {
 		}
 	}
 
+	s.log.Debugf("EnableExternalNameService is set to %t", dbc.enableExternalNameService)
+
 	var requestHeadersPolicyIngress dag.HeadersPolicy
 	var responseHeadersPolicyIngress dag.HeadersPolicy
 	if ctx.Config.Policy.ApplyToIngress {
@@ -773,13 +823,11 @@ func getDAGBuilder(dbc dagBuilderConfig, log logrus.FieldLogger) dag.Builder {
 		responseHeadersPolicyIngress = responseHeadersPolicy
 	}
 
-	log.Debugf("EnableExternalNameService is set to %t", dbc.enableExternalNameService)
-
 	// Get the appropriate DAG processors.
 	dagProcessors := []dag.Processor{
 		&dag.IngressProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
-			FieldLogger:               log.WithField("context", "IngressProcessor"),
+			FieldLogger:               s.log.WithField("context", "IngressProcessor"),
 			ClientCertificate:         dbc.clientCert,
 			RequestHeadersPolicy:      &requestHeadersPolicyIngress,
 			ResponseHeadersPolicy:     &responseHeadersPolicyIngress,
@@ -787,7 +835,7 @@ func getDAGBuilder(dbc dagBuilderConfig, log logrus.FieldLogger) dag.Builder {
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
 			// need to bring EnableExternalNameService in here too.
-			FieldLogger:       log.WithField("context", "ExtensionServiceProcessor"),
+			FieldLogger:       s.log.WithField("context", "ExtensionServiceProcessor"),
 			ClientCertificate: dbc.clientCert,
 		},
 		&dag.HTTPProxyProcessor{
@@ -804,7 +852,7 @@ func getDAGBuilder(dbc dagBuilderConfig, log logrus.FieldLogger) dag.Builder {
 	if dbc.gatewayAPIConfigured && dbc.clients.ResourcesExist(k8s.GatewayAPIResources()...) {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
-			FieldLogger:               log.WithField("context", "GatewayAPIProcessor"),
+			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
 		})
 	}
 
@@ -825,7 +873,7 @@ func getDAGBuilder(dbc dagBuilderConfig, log logrus.FieldLogger) dag.Builder {
 			RootNamespaces:       dbc.rootNamespaces,
 			IngressClassName:     dbc.ingressClassName,
 			ConfiguredSecretRefs: configuredSecretRefs,
-			FieldLogger:          log.WithField("context", "KubernetesCache"),
+			FieldLogger:          s.log.WithField("context", "KubernetesCache"),
 		},
 		Processors: dagProcessors,
 	}
