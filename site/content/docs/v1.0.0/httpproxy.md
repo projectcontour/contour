@@ -51,7 +51,7 @@ spec:
           port: 80
 {% endhighlight %}
 
-**Lines 1-5**: As with all other Kubernetes objects, an HTTPProxy needs apiVersion, kind, and metadata fields. Note that the HTTPProxy API is currently considered beta.
+**Lines 1-5**: As with all other Kubernetes objects, an HTTPProxy needs apiVersion, kind, and metadata fields.
 
 **Lines 7-8**: The presence of the `virtualhost` field indicates that this is a root HTTPProxy that is the top level entry point for this domain.
 The `fqdn` field specifies the fully qualified domain name that will be used to match against `Host:` HTTP headers.
