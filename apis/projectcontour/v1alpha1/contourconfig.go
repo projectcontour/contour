@@ -523,7 +523,11 @@ type NamespacedName struct {
 	Namespace string `json:"namespace"`
 }
 
-func (n NamespacedName) NamespacedNameOf() *types.NamespacedName {
+func (n *NamespacedName) NamespacedNameOf() *types.NamespacedName {
+	if n == nil {
+		return nil
+	}
+
 	if len(strings.TrimSpace(n.Name)) == 0 && len(strings.TrimSpace(n.Namespace)) == 0 {
 		return nil
 	}

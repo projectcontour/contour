@@ -18,6 +18,8 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/sirupsen/logrus"
+
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
@@ -155,6 +157,117 @@ type RateLimitConfig struct {
 	Timeout                 timeout.Setting
 	FailOpen                bool
 	EnableXRateLimitHeaders bool
+}
+
+func NewListenerConfig(
+	useProxyProto bool,
+	httpListener contour_api_v1alpha1.EnvoyListener,
+	httpsListener contour_api_v1alpha1.EnvoyListener,
+	accessLogType contour_api_v1alpha1.AccessLogType,
+	accessLogFields contour_api_v1alpha1.AccessLogFields,
+	accessLogFormatString string,
+	accessLogFormatterExtensions []string,
+	minimumTLSVersion string,
+	cipherSuites []string,
+	requestTimeout *string,
+	connectionIdleTimeout *string,
+	streamIdleTimeout *string,
+	delayedCloseTimeout *string,
+	maxConnectionDuration *string,
+	connectionShutdownGracePeriod *string,
+	defaultHTTPVersions []envoy_v3.HTTPVersionType,
+	allowChunkedLength bool,
+	xffNumTrustedHops uint32,
+	connectionBalancer string,
+	log logrus.FieldLogger) ListenerConfig {
+
+	// connection balancer
+	if ok := connectionBalancer == "exact" || connectionBalancer == ""; !ok {
+		log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", connectionBalancer)
+		connectionBalancer = ""
+	}
+
+	var connectionIdleTimeoutSetting timeout.Setting
+	var streamIdleTimeoutSetting timeout.Setting
+	var delayedCloseTimeoutSetting timeout.Setting
+	var maxConnectionDurationSetting timeout.Setting
+	var connectionShutdownGracePeriodSetting timeout.Setting
+	var requestTimeoutSetting timeout.Setting
+	var err error
+
+	if connectionIdleTimeout != nil {
+		connectionIdleTimeoutSetting, err = timeout.Parse(*connectionIdleTimeout)
+		if err != nil {
+			log.Errorf("error parsing connection idle timeout: %w", err)
+		}
+	}
+	if streamIdleTimeout != nil {
+		streamIdleTimeoutSetting, err = timeout.Parse(*streamIdleTimeout)
+		if err != nil {
+			log.Errorf("error parsing stream idle timeout: %w", err)
+		}
+	}
+	if delayedCloseTimeout != nil {
+		delayedCloseTimeoutSetting, err = timeout.Parse(*delayedCloseTimeout)
+		if err != nil {
+			log.Errorf("error parsing delayed close timeout: %w", err)
+		}
+	}
+	if maxConnectionDuration != nil {
+		maxConnectionDurationSetting, _ = timeout.Parse(*maxConnectionDuration)
+		if err != nil {
+			log.Errorf("error parsing max connection duration: %w", err)
+		}
+	}
+	if connectionShutdownGracePeriod != nil {
+		connectionShutdownGracePeriodSetting, _ = timeout.Parse(*connectionShutdownGracePeriod)
+		if err != nil {
+			log.Errorf("error parsing connection shutdown grace period: %w", err)
+		}
+	}
+	if requestTimeout != nil {
+		requestTimeoutSetting, _ = timeout.Parse(*requestTimeout)
+		if err != nil {
+			log.Errorf("error parsing request timeout: %w", err)
+		}
+	}
+
+	lc := ListenerConfig{
+		UseProxyProto: useProxyProto,
+		HTTPListeners: map[string]Listener{
+			"ingress_http": {
+				Name:    "ingress_http",
+				Address: httpListener.Address,
+				Port:    httpListener.Port,
+			},
+		},
+		HTTPSListeners: map[string]Listener{
+			"ingress_https": {
+				Name:    "ingress_https",
+				Address: httpsListener.Address,
+				Port:    httpsListener.Port,
+			},
+		},
+		HTTPAccessLog:                 httpListener.AccessLog,
+		HTTPSAccessLog:                httpsListener.AccessLog,
+		AccessLogType:                 accessLogType,
+		AccessLogFields:               accessLogFields,
+		AccessLogFormatString:         accessLogFormatString,
+		AccessLogFormatterExtensions:  accessLogFormatterExtensions,
+		MinimumTLSVersion:             minimumTLSVersion,
+		CipherSuites:                  cipherSuites,
+		RequestTimeout:                requestTimeoutSetting,
+		ConnectionIdleTimeout:         connectionIdleTimeoutSetting,
+		StreamIdleTimeout:             streamIdleTimeoutSetting,
+		DelayedCloseTimeout:           delayedCloseTimeoutSetting,
+		MaxConnectionDuration:         maxConnectionDurationSetting,
+		ConnectionShutdownGracePeriod: connectionShutdownGracePeriodSetting,
+		DefaultHTTPVersions:           defaultHTTPVersions,
+		AllowChunkedLength:            !allowChunkedLength,
+		XffNumTrustedHops:             xffNumTrustedHops,
+		ConnectionBalancer:            connectionBalancer,
+	}
+	return lc
 }
 
 // DefaultListeners returns the configured Listeners or a single

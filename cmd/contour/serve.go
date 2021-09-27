@@ -249,26 +249,23 @@ func (s *Serve) doServe() error {
 	// informerNamespaces is a list of namespaces that we should start informers for.
 	var informerNamespaces []string
 
-	fallbackCert := contourConfiguration.HTTPProxy.FallbackCertificate.NamespacedNameOf()
-	clientCert := contourConfiguration.Envoy.ClientCertificate.NamespacedNameOf()
-
 	if len(contourConfiguration.HTTPProxy.RootNamespaces) > 0 {
 		informerNamespaces = append(informerNamespaces, contourConfiguration.HTTPProxy.RootNamespaces...)
 
 		// Add the FallbackCertificateNamespace to informerNamespaces if it isn't present.
-		if !contains(informerNamespaces, fallbackCert.Namespace) && fallbackCert != nil {
-			informerNamespaces = append(informerNamespaces, fallbackCert.Namespace)
+		if !contains(informerNamespaces, contourConfiguration.HTTPProxy.FallbackCertificate.Namespace) && contourConfiguration.HTTPProxy.FallbackCertificate != nil {
+			informerNamespaces = append(informerNamespaces, contourConfiguration.HTTPProxy.FallbackCertificate.Namespace)
 			s.log.WithField("context", "fallback-certificate").
 				Infof("fallback certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",
-					fallbackCert.Namespace)
+					contourConfiguration.HTTPProxy.FallbackCertificate.Namespace)
 		}
 
 		// Add the client certificate namespace to informerNamespaces if it isn't present.
-		if !contains(informerNamespaces, clientCert.Namespace) && clientCert != nil {
-			informerNamespaces = append(informerNamespaces, clientCert.Namespace)
+		if !contains(informerNamespaces, contourConfiguration.Envoy.ClientCertificate.Namespace) && contourConfiguration.Envoy.ClientCertificate != nil {
+			informerNamespaces = append(informerNamespaces, contourConfiguration.Envoy.ClientCertificate.Namespace)
 			s.log.WithField("context", "envoy-client-certificate").
 				Infof("client certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",
-					clientCert.Namespace)
+					contourConfiguration.Envoy.ClientCertificate.Namespace)
 		}
 	}
 
@@ -277,58 +274,6 @@ func (s *Serve) doServe() error {
 	converter, err := k8s.NewUnstructuredConverter()
 	if err != nil {
 		return err
-	}
-
-	var connectionIdleTimeout timeout.Setting
-	var streamIdleTimeout timeout.Setting
-	var delayedCloseTimeout timeout.Setting
-	var maxConnectionDuration timeout.Setting
-	var connectionShutdownGracePeriod timeout.Setting
-	var requestTimeout timeout.Setting
-
-	if contourConfiguration.Envoy.Timeouts != nil {
-		if contourConfiguration.Envoy.Timeouts.ConnectionIdleTimeout != nil {
-			connectionIdleTimeout, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.ConnectionIdleTimeout)
-			if err != nil {
-				return fmt.Errorf("error parsing connection idle timeout: %w", err)
-			}
-		}
-		if contourConfiguration.Envoy.Timeouts.StreamIdleTimeout != nil {
-			streamIdleTimeout, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.StreamIdleTimeout)
-			if err != nil {
-				return fmt.Errorf("error parsing stream idle timeout: %w", err)
-			}
-		}
-		if contourConfiguration.Envoy.Timeouts.DelayedCloseTimeout != nil {
-			delayedCloseTimeout, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.DelayedCloseTimeout)
-			if err != nil {
-				return fmt.Errorf("error parsing delayed close timeout: %w", err)
-			}
-		}
-		if contourConfiguration.Envoy.Timeouts.MaxConnectionDuration != nil {
-			maxConnectionDuration, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.MaxConnectionDuration)
-			if err != nil {
-				return fmt.Errorf("error parsing max connection duration: %w", err)
-			}
-		}
-		if contourConfiguration.Envoy.Timeouts.ConnectionShutdownGracePeriod != nil {
-			connectionShutdownGracePeriod, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.ConnectionShutdownGracePeriod)
-			if err != nil {
-				return fmt.Errorf("error parsing connection shutdown grace period: %w", err)
-			}
-		}
-		if contourConfiguration.Envoy.Timeouts.RequestTimeout != nil {
-			requestTimeout, err = timeout.Parse(*contourConfiguration.Envoy.Timeouts.RequestTimeout)
-			if err != nil {
-				return fmt.Errorf("error parsing request timeout: %w", err)
-			}
-		}
-	}
-
-	// connection balancer
-	if ok := contourConfiguration.Envoy.Listener.ConnectionBalancer == "exact" || contourConfiguration.Envoy.Listener.ConnectionBalancer == ""; !ok {
-		s.log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", contourConfiguration.Envoy.Listener.ConnectionBalancer)
-		contourConfiguration.Envoy.Listener.ConnectionBalancer = ""
 	}
 
 	accessLogFormatString := ""
@@ -341,41 +286,28 @@ func (s *Serve) doServe() error {
 		cipherSuites = append(cipherSuites, string(cs))
 	}
 
-	listenerConfig := xdscache_v3.ListenerConfig{
-		UseProxyProto: contourConfiguration.Envoy.Listener.UseProxyProto,
-		HTTPListeners: map[string]xdscache_v3.Listener{
-			"ingress_http": {
-				Name:    "ingress_http",
-				Address: contourConfiguration.Envoy.HTTPListener.Address,
-				Port:    contourConfiguration.Envoy.HTTPListener.Port,
-			},
-		},
-		HTTPSListeners: map[string]xdscache_v3.Listener{
-			"ingress_https": {
-				Name:    "ingress_https",
-				Address: contourConfiguration.Envoy.HTTPSListener.Address,
-				Port:    contourConfiguration.Envoy.HTTPSListener.Port,
-			},
-		},
-		HTTPAccessLog:                 contourConfiguration.Envoy.HTTPListener.AccessLog,
-		HTTPSAccessLog:                contourConfiguration.Envoy.HTTPSListener.AccessLog,
-		AccessLogType:                 contourConfiguration.Envoy.Logging.AccessLogFormat,
-		AccessLogFields:               contourConfiguration.Envoy.Logging.AccessLogFields,
-		AccessLogFormatString:         accessLogFormatString,
-		AccessLogFormatterExtensions:  AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, accessLogFormatString),
-		MinimumTLSVersion:             annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
-		CipherSuites:                  config.SanitizeCipherSuites(cipherSuites),
-		RequestTimeout:                requestTimeout,
-		ConnectionIdleTimeout:         connectionIdleTimeout,
-		StreamIdleTimeout:             streamIdleTimeout,
-		DelayedCloseTimeout:           delayedCloseTimeout,
-		MaxConnectionDuration:         maxConnectionDuration,
-		ConnectionShutdownGracePeriod: connectionShutdownGracePeriod,
-		DefaultHTTPVersions:           parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
-		AllowChunkedLength:            !contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
-		XffNumTrustedHops:             contourConfiguration.Envoy.Network.XffNumTrustedHops,
-		ConnectionBalancer:            contourConfiguration.Envoy.Listener.ConnectionBalancer,
-	}
+	listenerConfig := xdscache_v3.NewListenerConfig(
+		contourConfiguration.Envoy.Listener.UseProxyProto,
+		contourConfiguration.Envoy.HTTPListener,
+		contourConfiguration.Envoy.HTTPSListener,
+		contourConfiguration.Envoy.Logging.AccessLogFormat,
+		contourConfiguration.Envoy.Logging.AccessLogFields,
+		accessLogFormatString,
+		AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, accessLogFormatString),
+		annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
+		config.SanitizeCipherSuites(cipherSuites),
+		contourConfiguration.Envoy.Timeouts.RequestTimeout,
+		contourConfiguration.Envoy.Timeouts.ConnectionIdleTimeout,
+		contourConfiguration.Envoy.Timeouts.StreamIdleTimeout,
+		contourConfiguration.Envoy.Timeouts.DelayedCloseTimeout,
+		contourConfiguration.Envoy.Timeouts.MaxConnectionDuration,
+		contourConfiguration.Envoy.Timeouts.ConnectionShutdownGracePeriod,
+		parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
+		!contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
+		contourConfiguration.Envoy.Network.XffNumTrustedHops,
+		contourConfiguration.Envoy.Listener.ConnectionBalancer,
+		s.log,
+	)
 
 	if contourConfiguration.RateLimitService != nil {
 		namespacedName := contourConfiguration.RateLimitService.ExtensionService.NamespacedNameOf()
@@ -429,11 +361,11 @@ func (s *Serve) doServe() error {
 	endpointHandler.Observer = contour.ComposeObservers(snapshotHandler)
 
 	// Log that we're using the fallback certificate if configured.
-	if fallbackCert != nil {
-		s.log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", fallbackCert)
+	if contourConfiguration.HTTPProxy.FallbackCertificate != nil {
+		s.log.WithField("context", "fallback-certificate").Infof("enabled fallback certificate with secret: %q", contourConfiguration.HTTPProxy.FallbackCertificate)
 	}
-	if clientCert != nil {
-		s.log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", clientCert)
+	if contourConfiguration.Envoy.ClientCertificate != nil {
+		s.log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", contourConfiguration.Envoy.ClientCertificate)
 	}
 
 	ingressClassName := ""
@@ -456,8 +388,8 @@ func (s *Serve) doServe() error {
 			requestHP:                 contourConfiguration.Policy.RequestHeadersPolicy,
 			responseHP:                contourConfiguration.Policy.ResponseHeadersPolicy,
 			clients:                   s.clients,
-			clientCert:                clientCert,
-			fallbackCert:              fallbackCert,
+			clientCert:                contourConfiguration.Envoy.ClientCertificate.NamespacedNameOf(),
+			fallbackCert:              contourConfiguration.HTTPProxy.FallbackCertificate.NamespacedNameOf(),
 		}),
 		FieldLogger: s.log.WithField("context", "contourEventHandler"),
 	}
