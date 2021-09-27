@@ -18,6 +18,7 @@ package httpproxy
 
 import (
 	"context"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -222,7 +223,28 @@ func testExternalNameServiceLocalhostInvalid(namespace string) {
 				},
 			},
 		}
-		_, ok := f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
-		require.Falsef(t, ok, "ExternalName with hostname %s was accepted by Contour.", externalNameService.Spec.ExternalName)
+
+		// The HTTPProxy should be marked invalid due to the service
+		// using localhost.localdomain.
+		_, invalid := f.CreateHTTPProxyAndWaitFor(p, func(proxy *contourv1.HTTPProxy) bool {
+			validCond := proxy.Status.GetConditionFor(contourv1.ValidConditionType)
+			if validCond == nil {
+				return false
+			}
+			if validCond.Status != metav1.ConditionFalse {
+				return false
+			}
+
+			for _, err := range validCond.Errors {
+				if err.Type == contourv1.ConditionTypeServiceError &&
+					err.Reason == "ServiceUnresolvedReference" &&
+					strings.Contains(err.Message, "is an ExternalName service that points to localhost") {
+					return true
+				}
+			}
+
+			return false
+		})
+		require.Truef(t, invalid, "ExternalName with hostname %s was accepted by Contour.", externalNameService.Spec.ExternalName)
 	})
 }
