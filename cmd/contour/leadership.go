@@ -99,9 +99,18 @@ func newLeaderElector(
 
 	rl := newResourceLock(log, conf, clients)
 
-	leaseDuration, _ := time.ParseDuration(conf.LeaseDuration) // TODO;
+	leaseDuration, err := time.ParseDuration(conf.LeaseDuration)
+	if err != nil {
+		log.WithError(err).Fatalf("could not parse LeaseDuration: %q", conf.LeaseDuration)
+	}
 	renewDeadline, _ := time.ParseDuration(conf.RenewDeadline)
+	if err != nil {
+		log.WithError(err).Fatalf("could not parse RenewDeadline: %q", conf.RenewDeadline)
+	}
 	retryPeriod, _ := time.ParseDuration(conf.RetryPeriod)
+	if err != nil {
+		log.WithError(err).Fatalf("could not parse RetryPeriod: %q", conf.RetryPeriod)
+	}
 
 	// Make the leader elector, ready to be used in the Workgroup.
 	le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
