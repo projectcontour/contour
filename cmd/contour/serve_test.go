@@ -133,9 +133,14 @@ func mustGetHTTPProxyProcessor(t *testing.T, builder *dag.Builder) *dag.HTTPProx
 func TestConvertServeContext(t *testing.T) {
 
 	defaultContext := newServeContext()
-	defaultContext.caFile = "/certs/ca.crt"
-	defaultContext.contourKey = "/certs/cert.key"
-	defaultContext.contourCert = "/certs/cert.crt"
+	defaultContext.ServerConfig = ServerConfig{
+		xdsAddr:     "127.0.0.1",
+		xdsPort:     8001,
+		caFile:      "/certs/ca.crt",
+		contourCert: "/certs/cert.crt",
+		contourKey:  "/certs/cert.key",
+	}
+
 	defaultContext.ingressClassName = "coolclass"
 	defaultContext.Config.IngressStatusAddress = "1.2.3.4"
 	defaultContext.Config.GatewayConfig = &config.GatewayParameters{

@@ -86,6 +86,13 @@ type serveContext struct {
 	DisableLeaderElection bool
 }
 
+type ServerConfig struct {
+	// contour's xds service parameters
+	xdsAddr                         string
+	xdsPort                         int
+	caFile, contourCert, contourKey string
+}
+
 // newServeContext returns a serveContext initialized to defaults.
 func newServeContext() *serveContext {
 	// Set defaults for parameters which are then overridden via flags, ENV, or ConfigFile
@@ -108,23 +115,19 @@ func newServeContext() *serveContext {
 		PermitInsecureGRPC:    false,
 		DisableLeaderElection: false,
 		ServerConfig: ServerConfig{
-			xdsAddr: "127.0.0.1",
-			xdsPort: 8001,
+			xdsAddr:     "127.0.0.1",
+			xdsPort:     8001,
+			caFile:      "",
+			contourCert: "",
+			contourKey:  "",
 		},
 	}
-}
-
-type ServerConfig struct {
-	// contour's xds service parameters
-	xdsAddr                         string
-	xdsPort                         int
-	caFile, contourCert, contourKey string
 }
 
 // grpcOptions returns a slice of grpc.ServerOptions.
 // if ctx.PermitInsecureGRPC is false, the option set will
 // include TLS configuration.
-func (ctx *serveContext) grpcOptions(log logrus.FieldLogger) []grpc.ServerOption {
+func grpcOptions(log logrus.FieldLogger, contourXDSConfig *contour_api_v1alpha1.TLS) []grpc.ServerOption {
 	opts := []grpc.ServerOption{
 		// By default the Go grpc library defaults to a value of ~100 streams per
 		// connection. This number is likely derived from the HTTP/2 spec:
@@ -145,8 +148,8 @@ func (ctx *serveContext) grpcOptions(log logrus.FieldLogger) []grpc.ServerOption
 			Timeout: 20 * time.Second,
 		}),
 	}
-	if !ctx.PermitInsecureGRPC {
-		tlsconfig := ctx.tlsconfig(log)
+	if contourXDSConfig != nil && !contourXDSConfig.Insecure {
+		tlsconfig := tlsconfig(log, contourXDSConfig)
 		creds := credentials.NewTLS(tlsconfig)
 		opts = append(opts, grpc.Creds(creds))
 	}
@@ -155,8 +158,8 @@ func (ctx *serveContext) grpcOptions(log logrus.FieldLogger) []grpc.ServerOption
 
 // tlsconfig returns a new *tls.Config. If the context is not properly configured
 // for tls communication, tlsconfig returns nil.
-func (ctx *serveContext) tlsconfig(log logrus.FieldLogger) *tls.Config {
-	err := ctx.verifyTLSFlags()
+func tlsconfig(log logrus.FieldLogger, contourXDSTLS *contour_api_v1alpha1.TLS) *tls.Config {
+	err := verifyTLSFlags(contourXDSTLS)
 	if err != nil {
 		log.WithError(err).Fatal("failed to verify TLS flags")
 	}
@@ -164,19 +167,22 @@ func (ctx *serveContext) tlsconfig(log logrus.FieldLogger) *tls.Config {
 	// Define a closure that lazily loads certificates and key at TLS handshake
 	// to ensure that latest certificates are used in case they have been rotated.
 	loadConfig := func() (*tls.Config, error) {
-		cert, err := tls.LoadX509KeyPair(ctx.contourCert, ctx.contourKey)
+		if contourXDSTLS == nil {
+			return nil, nil
+		}
+		cert, err := tls.LoadX509KeyPair(contourXDSTLS.CertFile, contourXDSTLS.KeyFile)
 		if err != nil {
 			return nil, err
 		}
 
-		ca, err := ioutil.ReadFile(ctx.caFile)
+		ca, err := ioutil.ReadFile(contourXDSTLS.CAFile)
 		if err != nil {
 			return nil, err
 		}
 
 		certPool := x509.NewCertPool()
 		if ok := certPool.AppendCertsFromPEM(ca); !ok {
-			return nil, fmt.Errorf("unable to append certificate in %s to CA pool", ctx.caFile)
+			return nil, fmt.Errorf("unable to append certificate in %s to CA pool", contourXDSTLS.CAFile)
 		}
 
 		return &tls.Config{
@@ -203,12 +209,12 @@ func (ctx *serveContext) tlsconfig(log logrus.FieldLogger) *tls.Config {
 }
 
 // verifyTLSFlags indicates if the TLS flags are set up correctly.
-func (ctx *serveContext) verifyTLSFlags() error {
-	if ctx.caFile == "" && ctx.contourCert == "" && ctx.contourKey == "" {
+func verifyTLSFlags(contourXDSTLS *contour_api_v1alpha1.TLS) error {
+	if contourXDSTLS.CAFile == "" && contourXDSTLS.CertFile == "" && contourXDSTLS.KeyFile == "" {
 		return errors.New("no TLS parameters and --insecure not supplied. You must supply one or the other")
 	}
 	// If one of the three TLS commands is not empty, they all must be not empty
-	if !(ctx.caFile != "" && ctx.contourCert != "" && ctx.contourKey != "") {
+	if !(contourXDSTLS.CAFile != "" && contourXDSTLS.CertFile != "" && contourXDSTLS.KeyFile != "") {
 		return errors.New("you must supply all three TLS parameters - --contour-cafile, --contour-cert-file, --contour-key-file, or none of them")
 	}
 

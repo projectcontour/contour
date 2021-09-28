@@ -82,38 +82,36 @@ func TestServeContextProxyRootNamespaces(t *testing.T) {
 
 func TestServeContextTLSParams(t *testing.T) {
 	tests := map[string]struct {
-		ctx         serveContext
-		expecterror bool
+		tls         *contour_api_v1alpha1.TLS
+		expectError bool
 	}{
 		"tls supplied correctly": {
-			ctx: serveContext{
-				ServerConfig: ServerConfig{
-					caFile:      "cacert.pem",
-					contourCert: "contourcert.pem",
-					contourKey:  "contourkey.pem",
-				},
+			tls: &contour_api_v1alpha1.TLS{
+				CAFile:   "cacert.pem",
+				CertFile: "contourcert.pem",
+				KeyFile:  "contourkey.pem",
+				Insecure: false,
 			},
-			expecterror: false,
+			expectError: false,
 		},
 		"tls partially supplied": {
-			ctx: serveContext{
-				ServerConfig: ServerConfig{
-					contourCert: "contourcert.pem",
-					contourKey:  "contourkey.pem",
-				},
+			tls: &contour_api_v1alpha1.TLS{
+				CertFile: "contourcert.pem",
+				KeyFile:  "contourkey.pem",
+				Insecure: false,
 			},
-			expecterror: true,
+			expectError: true,
 		},
 		"tls not supplied": {
-			ctx:         serveContext{},
-			expecterror: true,
+			tls:         &contour_api_v1alpha1.TLS{},
+			expectError: true,
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := tc.ctx.verifyTLSFlags()
+			err := verifyTLSFlags(tc.tls)
 			goterror := err != nil
-			if goterror != tc.expecterror {
+			if goterror != tc.expectError {
 				t.Errorf("TLS Config: %s", err)
 			}
 		})
@@ -161,12 +159,11 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	checkFatalErr(t, err)
 	defer os.RemoveAll(configDir)
 
-	ctx := serveContext{
-		ServerConfig: ServerConfig{
-			caFile:      filepath.Join(configDir, "CAcert.pem"),
-			contourCert: filepath.Join(configDir, "contourcert.pem"),
-			contourKey:  filepath.Join(configDir, "contourkey.pem"),
-		},
+	contourTLS := &contour_api_v1alpha1.TLS{
+		CAFile:   filepath.Join(configDir, "CAcert.pem"),
+		CertFile: filepath.Join(configDir, "contourcert.pem"),
+		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
+		Insecure: false,
 	}
 
 	// Initial set of credentials must be linked into temp directory before
@@ -176,7 +173,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 
 	// Start a dummy server.
 	log := fixture.NewTestLogger(t)
-	opts := ctx.grpcOptions(log)
+	opts := grpcOptions(log, contourTLS)
 	g := grpc.NewServer(opts...)
 	if g == nil {
 		t.Error("failed to create server")
@@ -218,12 +215,11 @@ func TestTlsVersionDeprecation(t *testing.T) {
 	checkFatalErr(t, err)
 	defer os.RemoveAll(configDir)
 
-	ctx := serveContext{
-		ServerConfig: ServerConfig{
-			caFile:      filepath.Join(configDir, "CAcert.pem"),
-			contourCert: filepath.Join(configDir, "contourcert.pem"),
-			contourKey:  filepath.Join(configDir, "contourkey.pem"),
-		},
+	contourTLS := &contour_api_v1alpha1.TLS{
+		CAFile:   filepath.Join(configDir, "CAcert.pem"),
+		CertFile: filepath.Join(configDir, "contourcert.pem"),
+		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
+		Insecure: false,
 	}
 
 	err = linkFiles("testdata/1", configDir)
@@ -231,7 +227,7 @@ func TestTlsVersionDeprecation(t *testing.T) {
 
 	// Get preliminary TLS config from the serveContext.
 	log := fixture.NewTestLogger(t)
-	preliminaryTLSConfig := ctx.tlsconfig(log)
+	preliminaryTLSConfig := tlsconfig(log, contourTLS)
 
 	// Get actual TLS config that will be used during TLS handshake.
 	tlsConfig, err := preliminaryTLSConfig.GetConfigForClient(nil)

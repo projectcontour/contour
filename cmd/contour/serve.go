@@ -520,8 +520,7 @@ func (s *Serve) doServe() error {
 			Info("Watching Service for Ingress status")
 	}
 
-	// TODO: Remove ctx
-	s.setupXDSServer(s.mgr, s.registry, contourConfiguration, snapshotHandler, resources)
+	s.setupXDSServer(s.mgr, s.registry, contourConfiguration.XDSServer, snapshotHandler, resources)
 
 	// Set up SIGTERM handler for graceful shutdown.
 	s.group.Add(func(stop <-chan struct{}) error {
@@ -552,7 +551,7 @@ func (s *Serve) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, 
 	s.group.Add(debugsvc.Start)
 }
 
-func (s *Serve) setupXDSServer(mgr manager.Manager, registry *prometheus.Registry, contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
+func (s *Serve) setupXDSServer(mgr manager.Manager, registry *prometheus.Registry, contourConfiguration contour_api_v1alpha1.XDSServerConfig,
 	snapshotHandler *xdscache.SnapshotHandler, resources []xdscache.ResourceCache) {
 
 	s.group.AddContext(func(taskCtx context.Context) error {
@@ -564,9 +563,9 @@ func (s *Serve) setupXDSServer(mgr manager.Manager, registry *prometheus.Registr
 		}
 		log.Printf("informer caches synced")
 
-		grpcServer := xds.NewServer(registry, s.ctx.grpcOptions(log)...)
+		grpcServer := xds.NewServer(registry, grpcOptions(log, contourConfiguration.TLS)...)
 
-		switch contourConfiguration.XDSServer.Type {
+		switch contourConfiguration.Type {
 		case contour_api_v1alpha1.EnvoyServerType:
 			v3cache := contour_xds_v3.NewSnapshotCache(false, log)
 			snapshotHandler.AddSnapshotter(v3cache)
@@ -575,23 +574,23 @@ func (s *Serve) setupXDSServer(mgr manager.Manager, registry *prometheus.Registr
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
 		default:
 			// This can't happen due to config validation.
-			log.Fatalf("invalid xDS server type %q", contourConfiguration.XDSServer.Type)
+			log.Fatalf("invalid xDS server type %q", contourConfiguration.Type)
 		}
 
-		addr := net.JoinHostPort(contourConfiguration.XDSServer.Address, strconv.Itoa(contourConfiguration.XDSServer.Port))
+		addr := net.JoinHostPort(contourConfiguration.Address, strconv.Itoa(contourConfiguration.Port))
 		l, err := net.Listen("tcp", addr)
 		if err != nil {
 			return err
 		}
 
 		log = log.WithField("address", addr)
-		if tls := contourConfiguration.XDSServer.TLS; tls != nil {
+		if tls := contourConfiguration.TLS; tls != nil {
 			if tls.Insecure {
 				log = log.WithField("insecure", true)
 			}
 		}
 
-		log.Infof("started xDS server type: %q", contourConfiguration.XDSServer.Type)
+		log.Infof("started xDS server type: %q", contourConfiguration.Type)
 		defer log.Info("stopped xDS server")
 
 		go func() {
