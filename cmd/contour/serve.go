@@ -425,7 +425,7 @@ func (s *Serve) doServe() error {
 	}
 
 	// Inform on Gateway API resources.
-	s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler, sh, contourHandler.IsLeader)
+	s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler, &sh, contourHandler.IsLeader)
 
 	// Inform on secrets, filtering by root namespaces.
 	for _, r := range k8s.SecretsResources() {
@@ -649,13 +649,14 @@ func (s *Serve) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 }
 
 func (s *Serve) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
-	mgr manager.Manager, eventHandler *contour.EventRecorder, sh k8s.StatusUpdateHandler, isLeader chan struct{}) {
+	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler, isLeader chan struct{}) {
 
 	// Check if GatewayAPI is configured.
 	if contourConfiguration.Gateway != nil {
 
 		// Only inform on GatewayAPI if found in the cluster.
 		if s.clients.ResourcesExist(k8s.GatewayAPIResources()...) {
+
 			// Create and register the gatewayclass controller with the manager.
 			gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
 			if _, err := controller.NewGatewayClassController(
@@ -782,6 +783,7 @@ func (s *Serve) getDAGBuilder(dbc dagBuilderConfig) dag.Builder {
 	}
 
 	if dbc.gatewayAPIConfigured && dbc.clients.ResourcesExist(k8s.GatewayAPIResources()...) {
+		fmt.Println("--- gatewayapi is configured: ", dbc.gatewayAPIConfigured)
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
@@ -857,9 +859,9 @@ func convertServeContext(ctx *serveContext) contour_api_v1alpha1.ContourConfigur
 		debugLogLevel = contour_api_v1alpha1.InfoLog
 	}
 
-	var gateway *contour_api_v1alpha1.GatewayConfig
+	var gatewayConfig *contour_api_v1alpha1.GatewayConfig
 	if ctx.Config.GatewayConfig != nil {
-		gateway = &contour_api_v1alpha1.GatewayConfig{
+		gatewayConfig = &contour_api_v1alpha1.GatewayConfig{
 			ControllerName: ctx.Config.GatewayConfig.ControllerName,
 		}
 	}
@@ -1019,7 +1021,7 @@ func convertServeContext(ctx *serveContext) contour_api_v1alpha1.ContourConfigur
 				EnvoyAdminPort:    ctx.Config.Network.EnvoyAdminPort,
 			},
 		},
-		Gateway: gateway,
+		Gateway: gatewayConfig,
 		HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
 			DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
 			RootNamespaces:        ctx.proxyRootNamespaces(),
