@@ -277,7 +277,7 @@ func TestConvertServeContext(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			converted := convertServeContext(tc.serveContext)
+			converted := tc.serveContext.convertToContourConfigurationSpec()
 			assert.Equal(t, tc.contourConfig, converted)
 		})
 	}

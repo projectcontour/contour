@@ -165,7 +165,7 @@ func NewListenerConfig(
 	httpsListener contour_api_v1alpha1.EnvoyListener,
 	accessLogType contour_api_v1alpha1.AccessLogType,
 	accessLogFields contour_api_v1alpha1.AccessLogFields,
-	accessLogFormatString string,
+	accessLogFormatString *string,
 	accessLogFormatterExtensions []string,
 	minimumTLSVersion string,
 	cipherSuites []string,
@@ -232,6 +232,11 @@ func NewListenerConfig(
 		}
 	}
 
+	accessLogFormatStringConverted := ""
+	if accessLogFormatString != nil {
+		accessLogFormatStringConverted = *accessLogFormatString
+	}
+
 	lc := ListenerConfig{
 		UseProxyProto: useProxyProto,
 		HTTPListeners: map[string]Listener{
@@ -252,7 +257,7 @@ func NewListenerConfig(
 		HTTPSAccessLog:                httpsListener.AccessLog,
 		AccessLogType:                 accessLogType,
 		AccessLogFields:               accessLogFields,
-		AccessLogFormatString:         accessLogFormatString,
+		AccessLogFormatString:         accessLogFormatStringConverted,
 		AccessLogFormatterExtensions:  accessLogFormatterExtensions,
 		MinimumTLSVersion:             minimumTLSVersion,
 		CipherSuites:                  cipherSuites,

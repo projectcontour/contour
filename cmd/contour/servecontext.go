@@ -23,6 +23,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/projectcontour/contour/internal/k8s"
+	"k8s.io/utils/pointer"
+
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
@@ -255,4 +258,229 @@ func parseDefaultHTTPVersions(versions []contour_api_v1alpha1.HTTPVersionType) [
 	}
 
 	return parsed
+}
+
+func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha1.ContourConfigurationSpec {
+	ingress := &contour_api_v1alpha1.IngressConfig{}
+	if len(ctx.ingressClassName) > 0 {
+		ingress.ClassName = pointer.StringPtr(ctx.ingressClassName)
+	}
+	if len(ctx.Config.IngressStatusAddress) > 0 {
+		ingress.StatusAddress = pointer.StringPtr(ctx.Config.IngressStatusAddress)
+	}
+
+	debugLogLevel := contour_api_v1alpha1.InfoLog
+	switch ctx.Config.Debug {
+	case true:
+		debugLogLevel = contour_api_v1alpha1.DebugLog
+	case false:
+		debugLogLevel = contour_api_v1alpha1.InfoLog
+	}
+
+	var gatewayConfig *contour_api_v1alpha1.GatewayConfig
+	if ctx.Config.GatewayConfig != nil {
+		gatewayConfig = &contour_api_v1alpha1.GatewayConfig{
+			ControllerName: ctx.Config.GatewayConfig.ControllerName,
+		}
+	}
+
+	var cipherSuites []contour_api_v1alpha1.TLSCipherType
+	for _, suite := range ctx.Config.TLS.CipherSuites {
+		cipherSuites = append(cipherSuites, contour_api_v1alpha1.TLSCipherType(suite))
+	}
+
+	var accessLogFormat contour_api_v1alpha1.AccessLogType
+	switch ctx.Config.AccessLogFormat {
+	case config.EnvoyAccessLog:
+		accessLogFormat = contour_api_v1alpha1.EnvoyAccessLog
+	case config.JSONAccessLog:
+		accessLogFormat = contour_api_v1alpha1.JSONAccessLog
+	}
+
+	var accessLogFields contour_api_v1alpha1.AccessLogFields
+	for _, alf := range ctx.Config.AccessLogFields {
+		accessLogFields = append(accessLogFields, alf)
+	}
+
+	var defaultHTTPVersions []contour_api_v1alpha1.HTTPVersionType
+	for _, version := range ctx.Config.DefaultHTTPVersions {
+		defaultHTTPVersions = append(defaultHTTPVersions, contour_api_v1alpha1.HTTPVersionType(version))
+	}
+
+	timeoutParams := &contour_api_v1alpha1.TimeoutParameters{}
+	if len(ctx.Config.Timeouts.RequestTimeout) > 0 {
+		timeoutParams.RequestTimeout = pointer.StringPtr(ctx.Config.Timeouts.RequestTimeout)
+	}
+	if len(ctx.Config.Timeouts.ConnectionIdleTimeout) > 0 {
+		timeoutParams.ConnectionIdleTimeout = pointer.StringPtr(ctx.Config.Timeouts.ConnectionIdleTimeout)
+	}
+	if len(ctx.Config.Timeouts.StreamIdleTimeout) > 0 {
+		timeoutParams.StreamIdleTimeout = pointer.StringPtr(ctx.Config.Timeouts.StreamIdleTimeout)
+	}
+	if len(ctx.Config.Timeouts.MaxConnectionDuration) > 0 {
+		timeoutParams.MaxConnectionDuration = pointer.StringPtr(ctx.Config.Timeouts.MaxConnectionDuration)
+	}
+	if len(ctx.Config.Timeouts.DelayedCloseTimeout) > 0 {
+		timeoutParams.DelayedCloseTimeout = pointer.StringPtr(ctx.Config.Timeouts.DelayedCloseTimeout)
+	}
+	if len(ctx.Config.Timeouts.ConnectionShutdownGracePeriod) > 0 {
+		timeoutParams.ConnectionShutdownGracePeriod = pointer.StringPtr(ctx.Config.Timeouts.ConnectionShutdownGracePeriod)
+	}
+
+	var dnsLookupFamily contour_api_v1alpha1.ClusterDNSFamilyType
+	switch ctx.Config.Cluster.DNSLookupFamily {
+	case config.AutoClusterDNSFamily:
+		dnsLookupFamily = contour_api_v1alpha1.AutoClusterDNSFamily
+	case config.IPv6ClusterDNSFamily:
+		dnsLookupFamily = contour_api_v1alpha1.IPv6ClusterDNSFamily
+	case config.IPv4ClusterDNSFamily:
+		dnsLookupFamily = contour_api_v1alpha1.IPv4ClusterDNSFamily
+	}
+
+	var rateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
+	if ctx.Config.RateLimitService.ExtensionService != "" {
+		rateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
+			ExtensionService: contour_api_v1alpha1.NamespacedName{
+				Name:      k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService).Name,
+				Namespace: k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService).Namespace,
+			},
+			Domain:                  ctx.Config.RateLimitService.Domain,
+			FailOpen:                ctx.Config.RateLimitService.FailOpen,
+			EnableXRateLimitHeaders: ctx.Config.RateLimitService.EnableXRateLimitHeaders,
+		}
+	}
+
+	policy := &contour_api_v1alpha1.PolicyConfig{
+		RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+			Set:    ctx.Config.Policy.RequestHeadersPolicy.Set,
+			Remove: ctx.Config.Policy.RequestHeadersPolicy.Remove,
+		},
+		ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+			Set:    ctx.Config.Policy.ResponseHeadersPolicy.Set,
+			Remove: ctx.Config.Policy.ResponseHeadersPolicy.Remove,
+		},
+	}
+
+	var clientCertificate *contour_api_v1alpha1.NamespacedName
+	if len(ctx.Config.TLS.ClientCertificate.Name) > 0 {
+		clientCertificate = &contour_api_v1alpha1.NamespacedName{
+			Name:      ctx.Config.TLS.ClientCertificate.Name,
+			Namespace: ctx.Config.TLS.ClientCertificate.Namespace,
+		}
+	}
+
+	var accessLogFormatString *string
+	if len(ctx.Config.AccessLogFormatString) > 0 {
+		accessLogFormatString = pointer.StringPtr(ctx.Config.AccessLogFormatString)
+	}
+
+	var fallbackCertificate *contour_api_v1alpha1.NamespacedName
+	if len(ctx.Config.TLS.FallbackCertificate.Name) > 0 {
+		fallbackCertificate = &contour_api_v1alpha1.NamespacedName{
+			Name:      ctx.Config.TLS.FallbackCertificate.Name,
+			Namespace: ctx.Config.TLS.FallbackCertificate.Namespace,
+		}
+	}
+
+	// Convert serveContext to a ContourConfiguration
+	contourConfiguration := contour_api_v1alpha1.ContourConfigurationSpec{
+		Ingress: ingress,
+		Debug: contour_api_v1alpha1.DebugConfig{
+			Address:                 ctx.debugAddr,
+			Port:                    ctx.debugPort,
+			DebugLogLevel:           debugLogLevel,
+			KubernetesDebugLogLevel: ctx.KubernetesDebug,
+		},
+		Health: contour_api_v1alpha1.HealthConfig{
+			Address: ctx.healthAddr,
+			Port:    ctx.healthPort,
+		},
+		Envoy: contour_api_v1alpha1.EnvoyConfig{
+			Listener: contour_api_v1alpha1.EnvoyListenerConfig{
+				UseProxyProto:             ctx.useProxyProto,
+				DisableAllowChunkedLength: ctx.Config.DisableAllowChunkedLength,
+				ConnectionBalancer:        ctx.Config.Listener.ConnectionBalancer,
+				TLS: contour_api_v1alpha1.EnvoyTLS{
+					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
+					CipherSuites:           cipherSuites,
+				},
+			},
+			Service: contour_api_v1alpha1.NamespacedName{
+				Name:      ctx.Config.EnvoyServiceName,
+				Namespace: ctx.Config.EnvoyServiceNamespace,
+			},
+			HTTPListener: contour_api_v1alpha1.EnvoyListener{
+				Address:   ctx.httpAddr,
+				Port:      ctx.httpPort,
+				AccessLog: ctx.httpAccessLog,
+			},
+			HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+				Address:   ctx.httpsAddr,
+				Port:      ctx.httpsPort,
+				AccessLog: ctx.httpsAccessLog,
+			},
+			Metrics: contour_api_v1alpha1.MetricsConfig{
+				Address: ctx.statsAddr,
+				Port:    ctx.statsPort,
+			},
+			ClientCertificate: clientCertificate,
+			Logging: contour_api_v1alpha1.EnvoyLogging{
+				AccessLogFormat:       accessLogFormat,
+				AccessLogFormatString: accessLogFormatString,
+				AccessLogFields:       accessLogFields,
+			},
+			DefaultHTTPVersions: defaultHTTPVersions,
+			Timeouts:            timeoutParams,
+			Cluster: contour_api_v1alpha1.ClusterParameters{
+				DNSLookupFamily: dnsLookupFamily,
+			},
+			Network: contour_api_v1alpha1.NetworkParameters{
+				XffNumTrustedHops: ctx.Config.Network.XffNumTrustedHops,
+				EnvoyAdminPort:    ctx.Config.Network.EnvoyAdminPort,
+			},
+		},
+		Gateway: gatewayConfig,
+		HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+			DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
+			RootNamespaces:        ctx.proxyRootNamespaces(),
+			FallbackCertificate:   fallbackCertificate,
+		},
+		LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+			LeaseDuration: ctx.Config.LeaderElection.LeaseDuration.String(),
+			RenewDeadline: ctx.Config.LeaderElection.RenewDeadline.String(),
+			RetryPeriod:   ctx.Config.LeaderElection.RetryPeriod.String(),
+			Configmap: contour_api_v1alpha1.NamespacedName{
+				Name:      ctx.Config.LeaderElection.Name,
+				Namespace: ctx.Config.LeaderElection.Namespace,
+			},
+			DisableLeaderElection: ctx.DisableLeaderElection,
+		},
+		EnableExternalNameService: ctx.Config.EnableExternalNameService,
+		RateLimitService:          rateLimitService,
+		Policy:                    policy,
+		Metrics: contour_api_v1alpha1.MetricsConfig{
+			Address: ctx.metricsAddr,
+			Port:    ctx.metricsPort,
+		},
+	}
+
+	xdsServerType := contour_api_v1alpha1.ContourServerType
+	switch ctx.Config.Server.XDSServerType {
+	case config.EnvoyServerType:
+		xdsServerType = contour_api_v1alpha1.EnvoyServerType
+	}
+
+	contourConfiguration.XDSServer = contour_api_v1alpha1.XDSServerConfig{
+		Type:    xdsServerType,
+		Address: ctx.xdsAddr,
+		Port:    ctx.xdsPort,
+		TLS: &contour_api_v1alpha1.TLS{
+			CAFile:   ctx.caFile,
+			CertFile: ctx.contourCert,
+			KeyFile:  ctx.contourKey,
+			Insecure: ctx.PermitInsecureGRPC,
+		},
+	}
+
+	return contourConfiguration
 }
