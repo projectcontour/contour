@@ -107,6 +107,21 @@ foo: bad
 	require.Error(t, err)
 }
 
+func TestParseApplyToIngress(t *testing.T) {
+	yaml := `
+policy:
+  applyToIngress: true
+`
+
+	conf, err := Parse(strings.NewReader((yaml)))
+	require.NoError(t, err)
+
+	wanted := Defaults()
+	wanted.Policy.ApplyToIngress = true
+
+	assert.Equal(t, &wanted, conf)
+}
+
 func TestValidateClusterDNSFamilyType(t *testing.T) {
 	assert.Error(t, ClusterDNSFamilyType("").Validate())
 	assert.Error(t, ClusterDNSFamilyType("foo").Validate())

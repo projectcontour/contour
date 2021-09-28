@@ -15,6 +15,7 @@ package dag
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -42,6 +43,12 @@ type IngressProcessor struct {
 	// This is normally disabled for security reasons.
 	// See https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for details.
 	EnableExternalNameService bool
+
+	// Request headers that will be set on all routes (optional).
+	RequestHeadersPolicy *HeadersPolicy
+
+	// Response headers that will be set on all routes (optional).
+	ResponseHeadersPolicy *HeadersPolicy
 }
 
 // Run translates Ingresses into DAG objects and
@@ -159,7 +166,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 			continue
 		}
 
-		r, err := route(ing, rule.Host, path, pathType, s, clientCertSecret, p.FieldLogger)
+		r, err := p.route(ing, rule.Host, path, pathType, s, clientCertSecret, be.Service.Name, be.Service.Port.Number, p.FieldLogger)
 		if err != nil {
 			p.WithError(err).
 				WithField("name", ing.GetName()).
@@ -189,11 +196,27 @@ const singleDNSLabelWildcardRegex = "^[a-z0-9]([-a-z0-9]*[a-z0-9])?"
 var _ = regexp.MustCompile(singleDNSLabelWildcardRegex)
 
 // route builds a dag.Route for the supplied Ingress.
-func route(ingress *networking_v1.Ingress, host string, path string, pathType networking_v1.PathType, service *Service, clientCertSecret *Secret, log logrus.FieldLogger) (*Route, error) {
+func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, path string, pathType networking_v1.PathType, service *Service, clientCertSecret *Secret, serviceName string, servicePort int32, log logrus.FieldLogger) (*Route, error) {
 	log = log.WithFields(logrus.Fields{
 		"name":      ingress.Name,
 		"namespace": ingress.Namespace,
 	})
+
+	dynamicHeaders := map[string]string{
+		"CONTOUR_NAMESPACE": ingress.Namespace,
+	}
+	dynamicHeaders["CONTOUR_SERVICE_NAME"] = serviceName
+	dynamicHeaders["CONTOUR_SERVICE_PORT"] = strconv.Itoa(int(servicePort))
+
+	// Get default headersPolicies
+	reqHP, err := headersPolicyService(p.RequestHeadersPolicy, nil, dynamicHeaders)
+	if err != nil {
+		return nil, err
+	}
+	respHP, err := headersPolicyService(p.ResponseHeadersPolicy, nil, dynamicHeaders)
+	if err != nil {
+		return nil, err
+	}
 
 	r := &Route{
 		HTTPSUpgrade:  annotation.TLSRequired(ingress),
@@ -201,9 +224,11 @@ func route(ingress *networking_v1.Ingress, host string, path string, pathType ne
 		TimeoutPolicy: ingressTimeoutPolicy(ingress, log),
 		RetryPolicy:   ingressRetryPolicy(ingress, log),
 		Clusters: []*Cluster{{
-			Upstream:          service,
-			Protocol:          service.Protocol,
-			ClientCertificate: clientCertSecret,
+			Upstream:              service,
+			Protocol:              service.Protocol,
+			ClientCertificate:     clientCertSecret,
+			RequestHeadersPolicy:  reqHP,
+			ResponseHeadersPolicy: respHP,
 		}},
 	}
 
