@@ -506,6 +506,9 @@ type PolicyConfig struct {
 	// ResponseHeadersPolicy defines the response headers set/removed on all routes
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeaders,omitempty"`
+
+	// +optional
+	ApplyToIngress bool `json:"applyToIngress"`
 }
 
 type HeadersPolicy struct {

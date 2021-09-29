@@ -112,6 +112,39 @@ func TestGetDAGBuilder(t *testing.T) {
 		assert.ElementsMatch(t, requestHP.Remove, httpProxyProcessor.RequestHeadersPolicy.Remove)
 		assert.EqualValues(t, responseHP.Set, httpProxyProcessor.ResponseHeadersPolicy.Set)
 		assert.ElementsMatch(t, responseHP.Remove, httpProxyProcessor.ResponseHeadersPolicy.Remove)
+
+		ingressProcessor := mustGetIngressProcessor(t, &got)
+		assert.EqualValues(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Set)
+		assert.ElementsMatch(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Remove)
+		assert.EqualValues(t, map[string]string(nil), ingressProcessor.ResponseHeadersPolicy.Set)
+		assert.ElementsMatch(t, map[string]string(nil), ingressProcessor.ResponseHeadersPolicy.Remove)
+	})
+
+	t.Run("request and response headers policy specified for ingress", func(t *testing.T) {
+		ctx := newServeContext()
+		ctx.Config.Policy.RequestHeadersPolicy.Set = map[string]string{
+			"req-set-key-1": "req-set-val-1",
+			"req-set-key-2": "req-set-val-2",
+		}
+		ctx.Config.Policy.RequestHeadersPolicy.Remove = []string{"req-remove-key-1", "req-remove-key-2"}
+		ctx.Config.Policy.ResponseHeadersPolicy.Set = map[string]string{
+			"res-set-key-1": "res-set-val-1",
+			"res-set-key-2": "res-set-val-2",
+		}
+		ctx.Config.Policy.ResponseHeadersPolicy.Remove = []string{"res-remove-key-1", "res-remove-key-2"}
+		ctx.Config.Policy.ApplyToIngress = true
+
+		serve := &Serve{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily})
+		commonAssertions(t, &got)
+
+		ingressProcessor := mustGetIngressProcessor(t, &got)
+		assert.EqualValues(t, ctx.Config.Policy.RequestHeadersPolicy.Set, ingressProcessor.RequestHeadersPolicy.Set)
+		assert.ElementsMatch(t, ctx.Config.Policy.RequestHeadersPolicy.Remove, ingressProcessor.RequestHeadersPolicy.Remove)
+		assert.EqualValues(t, ctx.Config.Policy.ResponseHeadersPolicy.Set, ingressProcessor.ResponseHeadersPolicy.Set)
+		assert.ElementsMatch(t, ctx.Config.Policy.ResponseHeadersPolicy.Remove, ingressProcessor.ResponseHeadersPolicy.Remove)
 	})
 
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))
