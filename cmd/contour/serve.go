@@ -163,7 +163,7 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	return serve, ctx
 }
 
-type Serve struct {
+type Server struct {
 	group    workgroup.Group
 	log      logrus.FieldLogger
 	ctx      *serveContext
@@ -172,7 +172,7 @@ type Serve struct {
 	registry *prometheus.Registry
 }
 
-func NewServe(log logrus.FieldLogger, ctx *serveContext) (*Serve, error) {
+func NewServe(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
 	// Set up workgroup runner.
 	var group workgroup.Group
@@ -201,7 +201,7 @@ func NewServe(log logrus.FieldLogger, ctx *serveContext) (*Serve, error) {
 	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	registry.MustRegister(collectors.NewGoCollector())
 
-	return &Serve{
+	return &Server{
 		group:    group,
 		log:      log,
 		ctx:      ctx,
@@ -212,14 +212,12 @@ func NewServe(log logrus.FieldLogger, ctx *serveContext) (*Serve, error) {
 }
 
 // doServe runs the contour serve subcommand.
-func (s *Serve) doServe() error {
+func (s *Server) doServe() error {
 
-	// Convert the Contour ServeContext into a ContourConfiguration
-	contourConfiguration := s.ctx.convertToContourConfigurationSpec()
+	var contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec
 
 	// Get the ContourConfiguration CRD if specified
 	if len(s.ctx.contourConfigurationName) > 0 {
-
 		// Determine the name/namespace of the configuration resource utilizing the environment
 		// variable "CONTOUR_NAMESPACE" which should exist on the Contour deployment.
 		//
@@ -234,10 +232,12 @@ func (s *Serve) doServe() error {
 			return fmt.Errorf("error getting contour configuration %s: %v", namespacedName, err)
 		}
 
-		var contourConfiguration contour_api_v1alpha1.ContourConfiguration
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &contourConfiguration); err != nil {
 			return fmt.Errorf("error converting contour configuration %s: %v", namespacedName, err)
 		}
+	} else {
+		// No contour configuration passed, so convert the ServeContext into a ContourConfigurationSpec.
+		contourConfiguration = s.ctx.convertToContourConfigurationSpec()
 	}
 
 	// Register the manager with the workgroup.
@@ -506,7 +506,7 @@ func (s *Serve) doServe() error {
 	return s.group.Run(context.Background())
 }
 
-func (s *Serve) setupRateLimitService(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec, listenerConfig *xdscache_v3.ListenerConfig) error {
+func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec, listenerConfig *xdscache_v3.ListenerConfig) error {
 	if contourConfiguration.RateLimitService == nil {
 		return nil
 	}
@@ -543,7 +543,7 @@ func (s *Serve) setupRateLimitService(contourConfiguration contour_api_v1alpha1.
 	return nil
 }
 
-func (s *Serve) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, contourHandler *contour.EventHandler) {
+func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, contourHandler *contour.EventHandler) {
 	debugsvc := debug.Service{
 		Service: httpsvc.Service{
 			Addr:        debugConfig.Address,
@@ -555,7 +555,7 @@ func (s *Serve) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, 
 	s.group.Add(debugsvc.Start)
 }
 
-func (s *Serve) setupXDSServer(mgr manager.Manager, registry *prometheus.Registry, contourConfiguration contour_api_v1alpha1.XDSServerConfig,
+func (s *Server) setupXDSServer(mgr manager.Manager, registry *prometheus.Registry, contourConfiguration contour_api_v1alpha1.XDSServerConfig,
 	snapshotHandler *xdscache.SnapshotHandler, resources []xdscache.ResourceCache) {
 
 	s.group.AddContext(func(taskCtx context.Context) error {
@@ -611,7 +611,7 @@ func (s *Serve) setupXDSServer(mgr manager.Manager, registry *prometheus.Registr
 	})
 }
 
-func (s *Serve) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, healthConfig contour_api_v1alpha1.HealthConfig,
+func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, healthConfig contour_api_v1alpha1.HealthConfig,
 	registry *prometheus.Registry) {
 
 	// Create metrics service and register with workgroup.
@@ -633,7 +633,7 @@ func (s *Serve) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, h
 	s.group.Add(metricsvc.Start)
 }
 
-func (s *Serve) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
+func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 	metricsConfig contour_api_v1alpha1.MetricsConfig) {
 
 	if healthConfig.Address != metricsConfig.Address || healthConfig.Port != metricsConfig.Port {
@@ -651,7 +651,7 @@ func (s *Serve) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 	}
 }
 
-func (s *Serve) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
+func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
 	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler, isLeader chan struct{}) {
 
 	// Check if GatewayAPI is configured.
@@ -720,7 +720,7 @@ type dagBuilderConfig struct {
 	fallbackCert               *types.NamespacedName
 }
 
-func (s *Serve) getDAGBuilder(dbc dagBuilderConfig) dag.Builder {
+func (s *Server) getDAGBuilder(dbc dagBuilderConfig) dag.Builder {
 
 	var requestHeadersPolicy dag.HeadersPolicy
 	var responseHeadersPolicy dag.HeadersPolicy

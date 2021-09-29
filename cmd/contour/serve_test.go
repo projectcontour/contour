@@ -37,7 +37,7 @@ func TestGetDAGBuilder(t *testing.T) {
 	}
 
 	t.Run("all default options", func(t *testing.T) {
-		serve := &Serve{
+		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily})
@@ -48,7 +48,7 @@ func TestGetDAGBuilder(t *testing.T) {
 	t.Run("client cert specified", func(t *testing.T) {
 		clientCert := &types.NamespacedName{Namespace: "client-ns", Name: "client-name"}
 
-		serve := &Serve{
+		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert})
@@ -59,7 +59,7 @@ func TestGetDAGBuilder(t *testing.T) {
 	t.Run("fallback cert specified", func(t *testing.T) {
 		fallbackCert := &types.NamespacedName{Namespace: "fallback-ns", Name: "fallback-name"}
 
-		serve := &Serve{
+		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, fallbackCert: fallbackCert})
@@ -71,7 +71,7 @@ func TestGetDAGBuilder(t *testing.T) {
 		clientCert := &types.NamespacedName{Namespace: "client-ns", Name: "client-name"}
 		fallbackCert := &types.NamespacedName{Namespace: "fallback-ns", Name: "fallback-name"}
 
-		serve := &Serve{
+		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert, fallbackCert: fallbackCert})
@@ -97,7 +97,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 		}
 
-		serve := &Serve{
+		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, requestHP: requestHP, responseHP: responseHP})
@@ -134,7 +134,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 		}
 
-		serve := &Serve{
+		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
