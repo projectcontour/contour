@@ -760,13 +760,6 @@ func (s *Serve) getDAGBuilder(dbc dagBuilderConfig) dag.Builder {
 
 	s.log.Debugf("EnableExternalNameService is set to %t", dbc.enableExternalNameService)
 
-	var requestHeadersPolicyIngress dag.HeadersPolicy
-	var responseHeadersPolicyIngress dag.HeadersPolicy
-	if ctx.Config.Policy.ApplyToIngress {
-		requestHeadersPolicyIngress = requestHeadersPolicy
-		responseHeadersPolicyIngress = responseHeadersPolicy
-	}
-
 	// Get the appropriate DAG processors.
 	dagProcessors := []dag.Processor{
 		&dag.IngressProcessor{

@@ -359,6 +359,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			Set:    ctx.Config.Policy.ResponseHeadersPolicy.Set,
 			Remove: ctx.Config.Policy.ResponseHeadersPolicy.Remove,
 		},
+		ApplyToIngress: ctx.Config.Policy.ApplyToIngress,
 	}
 
 	var clientCertificate *contour_api_v1alpha1.NamespacedName

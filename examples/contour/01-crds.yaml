@@ -560,6 +560,8 @@ spec:
                 description: Policy specifies default policy applied if not overridden
                   by the user
                 properties:
+                  applyToIngress:
+                    type: boolean
                   requestHeaders:
                     description: RequestHeadersPolicy defines the request headers
                       set/removed on all routes
@@ -1472,6 +1474,8 @@ spec:
                     description: Policy specifies default policy applied if not overridden
                       by the user
                     properties:
+                      applyToIngress:
+                        type: boolean
                       requestHeaders:
                         description: RequestHeadersPolicy defines the request headers
                           set/removed on all routes
