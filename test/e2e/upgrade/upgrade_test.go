@@ -102,8 +102,8 @@ var _ = Describe("upgrading Contour", func() {
 			By("waiting for contour deployment to be updated")
 			require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
 
-			By("waiting for envoy daemonset to be updated")
-			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+			By("waiting for envoy deployment to be updated")
+			require.NoError(f.T(), f.Deployment.WaitForEnvoyDeploymentUpdated())
 
 			By("ensuring app is still routable")
 			checkRoutability(appHost)
@@ -180,13 +180,13 @@ func updateContourDeploymentResources() {
 	f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
 	require.NoError(f.T(), f.Deployment.EnsureContourDeployment())
 
-	By("updating envoy daemonset")
+	By("updating envoy deployment")
 	// Update container image.
-	require.Len(f.T(), f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.InitContainers, 1)
-	f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.InitContainers[0].Image = contourUpgradeToImage
-	f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.InitContainers[0].ImagePullPolicy = v1.PullIfNotPresent
-	require.Len(f.T(), f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers, 2)
-	f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Image = contourUpgradeToImage
-	f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
-	require.NoError(f.T(), f.Deployment.EnsureEnvoyDaemonSet())
+	require.Len(f.T(), f.Deployment.EnvoyDeployment.Spec.Template.Spec.InitContainers, 1)
+	f.Deployment.EnvoyDeployment.Spec.Template.Spec.InitContainers[0].Image = contourUpgradeToImage
+	f.Deployment.EnvoyDeployment.Spec.Template.Spec.InitContainers[0].ImagePullPolicy = v1.PullIfNotPresent
+	require.Len(f.T(), f.Deployment.EnvoyDeployment.Spec.Template.Spec.Containers, 2)
+	f.Deployment.EnvoyDeployment.Spec.Template.Spec.Containers[0].Image = contourUpgradeToImage
+	f.Deployment.EnvoyDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	require.NoError(f.T(), f.Deployment.EnsureEnvoyDeployment())
 }

@@ -81,7 +81,7 @@ var _ = Describe("HTTPProxy", func() {
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyDeploymentUpdated())
 	})
 
 	AfterEach(func() {

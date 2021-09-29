@@ -108,7 +108,7 @@ var _ = Describe("Gateway API", func() {
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyDeploymentUpdated())
 
 		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassValid)
 		f.CreateGatewayAndWaitFor(contourGateway, gatewayValid)

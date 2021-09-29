@@ -4889,17 +4889,20 @@ spec:
 
 ---
 apiVersion: apps/v1
-kind: DaemonSet
+kind: Deployment
 metadata:
   labels:
     app: envoy
   name: envoy
   namespace: projectcontour
 spec:
-  updateStrategy:
+  replicas: 2
+  strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 10%
+      # This value of maxSurge means that during a rolling update
+      # the new ReplicaSet will be created first.
+      maxSurge: 10%
   selector:
     matchLabels:
       app: envoy
@@ -4912,6 +4915,16 @@ spec:
       labels:
         app: envoy
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - envoy
+              topologyKey: "kubernetes.io/hostname"
       containers:
       - command:
         - /bin/contour
