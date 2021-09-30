@@ -169,12 +169,7 @@ func NewListenerConfig(
 	accessLogFormatterExtensions []string,
 	minimumTLSVersion string,
 	cipherSuites []string,
-	requestTimeout *string,
-	connectionIdleTimeout *string,
-	streamIdleTimeout *string,
-	delayedCloseTimeout *string,
-	maxConnectionDuration *string,
-	connectionShutdownGracePeriod *string,
+	timeoutParameters *contour_api_v1alpha1.TimeoutParameters,
 	defaultHTTPVersions []envoy_v3.HTTPVersionType,
 	allowChunkedLength bool,
 	xffNumTrustedHops uint32,
@@ -195,40 +190,42 @@ func NewListenerConfig(
 	var requestTimeoutSetting timeout.Setting
 	var err error
 
-	if connectionIdleTimeout != nil {
-		connectionIdleTimeoutSetting, err = timeout.Parse(*connectionIdleTimeout)
-		if err != nil {
-			log.Errorf("error parsing connection idle timeout: %w", err)
+	if timeoutParameters != nil {
+		if timeoutParameters.ConnectionIdleTimeout != nil {
+			connectionIdleTimeoutSetting, err = timeout.Parse(*timeoutParameters.ConnectionIdleTimeout)
+			if err != nil {
+				log.Errorf("error parsing connection idle timeout: %w", err)
+			}
 		}
-	}
-	if streamIdleTimeout != nil {
-		streamIdleTimeoutSetting, err = timeout.Parse(*streamIdleTimeout)
-		if err != nil {
-			log.Errorf("error parsing stream idle timeout: %w", err)
+		if timeoutParameters.StreamIdleTimeout != nil {
+			streamIdleTimeoutSetting, err = timeout.Parse(*timeoutParameters.StreamIdleTimeout)
+			if err != nil {
+				log.Errorf("error parsing stream idle timeout: %w", err)
+			}
 		}
-	}
-	if delayedCloseTimeout != nil {
-		delayedCloseTimeoutSetting, err = timeout.Parse(*delayedCloseTimeout)
-		if err != nil {
-			log.Errorf("error parsing delayed close timeout: %w", err)
+		if timeoutParameters.DelayedCloseTimeout != nil {
+			delayedCloseTimeoutSetting, err = timeout.Parse(*timeoutParameters.DelayedCloseTimeout)
+			if err != nil {
+				log.Errorf("error parsing delayed close timeout: %w", err)
+			}
 		}
-	}
-	if maxConnectionDuration != nil {
-		maxConnectionDurationSetting, _ = timeout.Parse(*maxConnectionDuration)
-		if err != nil {
-			log.Errorf("error parsing max connection duration: %w", err)
+		if timeoutParameters.MaxConnectionDuration != nil {
+			maxConnectionDurationSetting, _ = timeout.Parse(*timeoutParameters.MaxConnectionDuration)
+			if err != nil {
+				log.Errorf("error parsing max connection duration: %w", err)
+			}
 		}
-	}
-	if connectionShutdownGracePeriod != nil {
-		connectionShutdownGracePeriodSetting, _ = timeout.Parse(*connectionShutdownGracePeriod)
-		if err != nil {
-			log.Errorf("error parsing connection shutdown grace period: %w", err)
+		if timeoutParameters.ConnectionShutdownGracePeriod != nil {
+			connectionShutdownGracePeriodSetting, _ = timeout.Parse(*timeoutParameters.ConnectionShutdownGracePeriod)
+			if err != nil {
+				log.Errorf("error parsing connection shutdown grace period: %w", err)
+			}
 		}
-	}
-	if requestTimeout != nil {
-		requestTimeoutSetting, _ = timeout.Parse(*requestTimeout)
-		if err != nil {
-			log.Errorf("error parsing request timeout: %w", err)
+		if timeoutParameters.RequestTimeout != nil {
+			requestTimeoutSetting, _ = timeout.Parse(*timeoutParameters.RequestTimeout)
+			if err != nil {
+				log.Errorf("error parsing request timeout: %w", err)
+			}
 		}
 	}
 

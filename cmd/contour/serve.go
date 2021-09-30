@@ -232,9 +232,13 @@ func (s *Server) doServe() error {
 			return fmt.Errorf("error getting contour configuration %s: %v", namespacedName, err)
 		}
 
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &contourConfiguration); err != nil {
+		var contourConfig contour_api_v1alpha1.ContourConfiguration
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &contourConfig); err != nil {
 			return fmt.Errorf("error converting contour configuration %s: %v", namespacedName, err)
 		}
+
+		// Copy the Spec from the parsed Configuration
+		contourConfiguration = contourConfig.Spec
 	} else {
 		// No contour configuration passed, so convert the ServeContext into a ContourConfigurationSpec.
 		contourConfiguration = s.ctx.convertToContourConfigurationSpec()
@@ -290,12 +294,7 @@ func (s *Server) doServe() error {
 		AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, contourConfiguration.Envoy.Logging.AccessLogFormatString),
 		annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
 		config.SanitizeCipherSuites(cipherSuites),
-		contourConfiguration.Envoy.Timeouts.RequestTimeout,
-		contourConfiguration.Envoy.Timeouts.ConnectionIdleTimeout,
-		contourConfiguration.Envoy.Timeouts.StreamIdleTimeout,
-		contourConfiguration.Envoy.Timeouts.DelayedCloseTimeout,
-		contourConfiguration.Envoy.Timeouts.MaxConnectionDuration,
-		contourConfiguration.Envoy.Timeouts.ConnectionShutdownGracePeriod,
+		contourConfiguration.Envoy.Timeouts,
 		parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
 		!contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
 		contourConfiguration.Envoy.Network.XffNumTrustedHops,
@@ -336,7 +335,7 @@ func (s *Server) doServe() error {
 	}
 
 	ingressClassName := ""
-	if contourConfiguration.Ingress.ClassName != nil {
+	if contourConfiguration.Ingress != nil && contourConfiguration.Ingress.ClassName != nil {
 		ingressClassName = *contourConfiguration.Ingress.ClassName
 	}
 
@@ -352,8 +351,7 @@ func (s *Server) doServe() error {
 			disablePermitInsecure:     contourConfiguration.HTTPProxy.DisablePermitInsecure,
 			enableExternalNameService: contourConfiguration.EnableExternalNameService,
 			dnsLookupFamily:           contourConfiguration.Envoy.Cluster.DNSLookupFamily,
-			requestHP:                 contourConfiguration.Policy.RequestHeadersPolicy,
-			responseHP:                contourConfiguration.Policy.ResponseHeadersPolicy,
+			headersPolicy:             contourConfiguration.Policy,
 			clients:                   s.clients,
 			clientCert:                contourConfiguration.Envoy.ClientCertificate.NamespacedNameOf(),
 			fallbackCert:              contourConfiguration.HTTPProxy.FallbackCertificate.NamespacedNameOf(),
@@ -460,7 +458,7 @@ func (s *Server) doServe() error {
 	s.group.Add(lbsw.Start)
 
 	// Register an informer to watch envoy's service if we haven't been given static details.
-	if contourConfiguration.Ingress.StatusAddress != nil {
+	if contourConfiguration.Ingress != nil && contourConfiguration.Ingress.StatusAddress != nil {
 		s.log.WithField("loadbalancer-address", *contourConfiguration.Ingress.StatusAddress).Info("Using supplied information for Ingress status")
 		lbsw.lbStatus <- parseStatusFlag(*contourConfiguration.Ingress.StatusAddress)
 	} else {
@@ -712,8 +710,7 @@ type dagBuilderConfig struct {
 	disablePermitInsecure      bool
 	enableExternalNameService  bool
 	dnsLookupFamily            contour_api_v1alpha1.ClusterDNSFamilyType
-	requestHP                  *contour_api_v1alpha1.HeadersPolicy
-	responseHP                 *contour_api_v1alpha1.HeadersPolicy
+	headersPolicy              *contour_api_v1alpha1.PolicyConfig
 	applyHeaderPolicyToIngress bool
 	clients                    *k8s.Clients
 	clientCert                 *types.NamespacedName
@@ -725,29 +722,31 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) dag.Builder {
 	var requestHeadersPolicy dag.HeadersPolicy
 	var responseHeadersPolicy dag.HeadersPolicy
 
-	if dbc.requestHP != nil {
-		if dbc.requestHP.Set != nil {
-			requestHeadersPolicy.Set = make(map[string]string)
-			for k, v := range dbc.requestHP.Set {
-				requestHeadersPolicy.Set[k] = v
+	if dbc.headersPolicy != nil {
+		if dbc.headersPolicy.RequestHeadersPolicy != nil {
+			if dbc.headersPolicy.RequestHeadersPolicy.Set != nil {
+				requestHeadersPolicy.Set = make(map[string]string)
+				for k, v := range dbc.headersPolicy.RequestHeadersPolicy.Set {
+					requestHeadersPolicy.Set[k] = v
+				}
+			}
+			if dbc.headersPolicy.RequestHeadersPolicy.Remove != nil {
+				requestHeadersPolicy.Remove = make([]string, 0, len(dbc.headersPolicy.RequestHeadersPolicy.Remove))
+				requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, dbc.headersPolicy.RequestHeadersPolicy.Remove...)
 			}
 		}
-		if dbc.requestHP.Remove != nil {
-			requestHeadersPolicy.Remove = make([]string, 0, len(dbc.requestHP.Remove))
-			requestHeadersPolicy.Remove = append(requestHeadersPolicy.Remove, dbc.requestHP.Remove...)
-		}
-	}
 
-	if dbc.responseHP != nil {
-		if dbc.responseHP.Set != nil {
-			responseHeadersPolicy.Set = make(map[string]string)
-			for k, v := range dbc.responseHP.Set {
-				responseHeadersPolicy.Set[k] = v
+		if dbc.headersPolicy.ResponseHeadersPolicy != nil {
+			if dbc.headersPolicy.ResponseHeadersPolicy.Set != nil {
+				responseHeadersPolicy.Set = make(map[string]string)
+				for k, v := range dbc.headersPolicy.ResponseHeadersPolicy.Set {
+					responseHeadersPolicy.Set[k] = v
+				}
 			}
-		}
-		if dbc.responseHP.Remove != nil {
-			responseHeadersPolicy.Remove = make([]string, 0, len(dbc.responseHP.Remove))
-			responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, dbc.responseHP.Remove...)
+			if dbc.headersPolicy.ResponseHeadersPolicy.Remove != nil {
+				responseHeadersPolicy.Remove = make([]string, 0, len(dbc.headersPolicy.ResponseHeadersPolicy.Remove))
+				responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, dbc.headersPolicy.ResponseHeadersPolicy.Remove...)
+			}
 		}
 	}
 
@@ -787,7 +786,6 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) dag.Builder {
 	}
 
 	if dbc.gatewayAPIConfigured && dbc.clients.ResourcesExist(k8s.GatewayAPIResources()...) {
-		fmt.Println("--- gatewayapi is configured: ", dbc.gatewayAPIConfigured)
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
