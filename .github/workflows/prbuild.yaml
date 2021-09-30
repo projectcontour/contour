@@ -117,9 +117,9 @@ jobs:
       - codespell
       - codegen
       - check-changelog
-    # TODO uncomment the below once we're using the image
-    # or its binary for testing.
-    # needs: [build-image]
+      # TODO uncomment the below once we're using the image
+      # or its binary for testing.
+      # - build-image
     strategy:
       matrix:
         # use stable kubernetes_version values since they're included

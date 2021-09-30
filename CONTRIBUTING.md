@@ -172,15 +172,20 @@ In addition, the meeting will be used to go over untriaged issues, longer-term i
 - Have a short subject on the first line and a body. The body can be empty.
 - Use the imperative mood (ie "If applied, this commit will (subject)" should make sense).
 - There must be a DCO line ("Signed-off-by: David Cheney <cheneyd@vmware.com>"), see [DCO Sign Off](#dco-sign-off) below.
-- Put a summary of the main area affected by the commit at the start,
-with a colon as delimiter. For example 'docs:', 'internal/(packagename):', 'design:' or something similar.
 - Do not merge commits that don't relate to the affected issue (e.g. "Updating from PR comments", etc). Should
 the need to cherrypick a commit or rollback arise, it should be clear what a specific commit's purpose is.
+- Put a summary of the main area affected by the commit at the start,
+with a colon as delimiter. For example 'docs:', 'internal/(packagename):', 'design:' or something similar.
+- PRs *must* be labelled with a `release-note/category` label, where category is one of
+`major`, `minor`, `small`, `docs`, or `infra`, unless the change is really small, in which case
+it may have a `release-note/not-required` category.
+- PRs *must* include a file named `changelogs/unreleased/PR#-githubID-category.md`, which is a Markdown
+file with a description of the change. Please see `changelogs/unreleased/<category>-sample.md` for 
+sample changelogs.
 - If main has moved on, you'll need to rebase before we can merge,
 so merging upstream main or rebasing from upstream before opening your
 PR will probably save you some time.
-
-Pull requests *must* include a `Fixes #NNNN` or `Updates #NNNN` comment.
+- Pull requests *must* include a `Fixes #NNNN` or `Updates #NNNN` comment.
 Remember that `Fixes` will close the associated issue, and `Updates` will link the PR to it.
 
 #### Commit message template
