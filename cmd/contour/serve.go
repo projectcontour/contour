@@ -223,7 +223,13 @@ func (s *Server) doServe() error {
 		//
 		// If the env variable is not present, it will return "" and still fail the lookup
 		// of the ContourConfiguration in the cluster.
-		namespacedName := types.NamespacedName{Name: s.ctx.contourConfigurationName, Namespace: os.Getenv("CONTOUR_NAMESPACE")}
+
+		contourNamespace := os.Getenv("CONTOUR_NAMESPACE")
+		if len(contourNamespace) == 0 {
+			contourNamespace = "projectcontour"
+		}
+
+		namespacedName := types.NamespacedName{Name: s.ctx.contourConfigurationName, Namespace: contourNamespace}
 		client := s.clients.DynamicClient().Resource(contour_api_v1alpha1.ContourConfigurationGVR).Namespace(namespacedName.Namespace)
 
 		// ensure the specified ContourConfiguration exists

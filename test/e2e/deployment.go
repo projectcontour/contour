@@ -22,14 +22,16 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/onsi/gomega/gexec"
-	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/pkg/config"
 	"gopkg.in/yaml.v2"
 	apps_v1 "k8s.io/api/apps/v1"
@@ -84,7 +86,7 @@ type Deployment struct {
 	// Ratelimit deployment.
 	RateLimitDeployment       *apps_v1.Deployment
 	RateLimitService          *v1.Service
-	RateLimitExtensionService *contourv1alpha1.ExtensionService
+	RateLimitExtensionService *contour_api_v1alpha1.ExtensionService
 }
 
 // UnmarshalResources unmarshals resources from rendered Contour manifest in
@@ -180,7 +182,7 @@ func (d *Deployment) UnmarshalResources() error {
 	}
 	defer rLESFile.Close()
 	decoder = apimachinery_util_yaml.NewYAMLToJSONDecoder(rLESFile)
-	d.RateLimitExtensionService = new(contourv1alpha1.ExtensionService)
+	d.RateLimitExtensionService = new(contour_api_v1alpha1.ExtensionService)
 
 	return decoder.Decode(d.RateLimitExtensionService)
 }
@@ -382,7 +384,7 @@ func (d *Deployment) EnsureRateLimitResources(namespace string, configContents s
 
 	extSvc := d.RateLimitExtensionService.DeepCopy()
 	extSvc.Namespace = setNamespace
-	return d.ensureResource(extSvc, new(contourv1alpha1.ExtensionService))
+	return d.ensureResource(extSvc, new(contour_api_v1alpha1.ExtensionService))
 }
 
 // Convenience method for deploying the pieces of the deployment needed for
@@ -436,6 +438,7 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		"--xds-resource-version=v3",
 		"--admin-address=/admin/admin.sock",
 	)
+
 	session, err := gexec.Start(bootstrapCmd, d.cmdOutputWriter, d.cmdOutputWriter)
 	if err != nil {
 		return err
@@ -555,40 +558,113 @@ func (d *Deployment) DeleteResourcesForLocalContour() error {
 // Starts local contour, applying arguments and marshaling config into config
 // file. Returns running Contour command and config file so we can clean them
 // up.
-func (d *Deployment) StartLocalContour(config *config.Parameters, additionalArgs ...string) (*gexec.Session, string, error) {
-	configFile, err := ioutil.TempFile("", "contour-config-*.yaml")
-	if err != nil {
-		return nil, "", err
-	}
-	defer configFile.Close()
+func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfiguration *contour_api_v1alpha1.ContourConfiguration, additionalArgs ...string) (*gexec.Session, string, error) {
 
-	content, err := yaml.Marshal(config)
-	if err != nil {
-		return nil, "", err
-	}
-	if err := os.WriteFile(configFile.Name(), content, 0600); err != nil {
-		return nil, "", err
+	var content []byte
+	var configReferenceName string
+	var contourServeArgs []string
+	var err error
+
+	// Look for the ENV variable to tell if this test run should use
+	// the ContourConfiguration file or the ContourConfiguration CRD.
+	if _, useContourConfiguration := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); useContourConfiguration {
+		port, _ := strconv.Atoi(d.localContourPort)
+
+		contourConfiguration.Name = randomString(14)
+
+		// Set the xds server to the defined testing port as well as enable insecure communication.
+		contourConfiguration.Spec.XDSServer = contour_api_v1alpha1.XDSServerConfig{
+			Type:    contour_api_v1alpha1.ContourServerType,
+			Address: "0.0.0.0",
+			Port:    port,
+			TLS: &contour_api_v1alpha1.TLS{
+				Insecure: true,
+			},
+		}
+
+		// Disable leader election.
+		contourConfiguration.Spec.LeaderElection = contour_api_v1alpha1.LeaderElectionConfig{
+			DisableLeaderElection: true,
+		}
+
+		if err := d.client.Create(context.TODO(), contourConfiguration); err != nil {
+			fmt.Println("could not create ContourConfiguration: %v", err)
+		}
+
+		contourServeArgs = append([]string{
+			"serve",
+			"--kubeconfig=" + d.kubeConfig,
+			"--contour-config-name=" + contourConfiguration.Name,
+		}, additionalArgs...)
+
+		configReferenceName = contourConfiguration.Name
+	} else {
+
+		configFile, err := ioutil.TempFile("", "contour-config-*.yaml")
+		if err != nil {
+			return nil, "", err
+		}
+		defer configFile.Close()
+
+		content, err = yaml.Marshal(config)
+		if err != nil {
+			return nil, "", err
+		}
+		if err := os.WriteFile(configFile.Name(), content, 0600); err != nil {
+			return nil, "", err
+		}
+
+		contourServeArgs = append([]string{
+			"serve",
+			"--xds-address=0.0.0.0",
+			"--xds-port=" + d.localContourPort,
+			"--insecure",
+			"--kubeconfig=" + d.kubeConfig,
+			"--config-path=" + configFile.Name(),
+			"--disable-leader-election",
+		}, additionalArgs...)
+
+		configReferenceName = configFile.Name()
 	}
 
-	contourServeArgs := append([]string{
-		"serve",
-		"--xds-address=0.0.0.0",
-		"--xds-port=" + d.localContourPort,
-		"--insecure",
-		"--kubeconfig=" + d.kubeConfig,
-		"--config-path=" + configFile.Name(),
-		"--disable-leader-election",
-	}, additionalArgs...)
+	// Set the CONTOUR_NAMESPACE env variable so Contour can lookup the Configuration CRD in the proper namespace.
+	//os.Setenv("CONTOUR_NAMESPACE", "projectcontour")
 	session, err := gexec.Start(exec.Command(d.contourBin, contourServeArgs...), d.cmdOutputWriter, d.cmdOutputWriter) // nolint:gosec
 	if err != nil {
 		return nil, "", err
 	}
-	return session, configFile.Name(), nil
+	return session, configReferenceName, nil
 }
 
 func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile string) error {
+
+	// Look for the ENV variable to tell if this test run should use
+	// the ContourConfiguration file or the ContourConfiguration CRD.
+	if _, useContourConfiguration := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); useContourConfiguration {
+		cc := &contour_api_v1alpha1.ContourConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      configFile,
+				Namespace: "projectcontour",
+			},
+		}
+
+		if err := d.client.Delete(context.TODO(), cc); err != nil {
+			fmt.Errorf("could not delete ContourConfiguration: %v", err)
+		}
+	}
+
 	// Default timeout of 1s produces test flakes,
 	// a minute should be more than enough to avoid them.
 	contourCmd.Terminate().Wait(time.Minute)
 	return os.RemoveAll(configFile)
+}
+
+func randomString(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+
+	s := make([]rune, n)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
 }

@@ -20,6 +20,8 @@ import (
 	"context"
 	"testing"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	. "github.com/onsi/ginkgo"
@@ -55,6 +57,7 @@ var _ = Describe("Ingress", func() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
+		contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
 		contourConfigFile     string
 		additionalContourArgs []string
 	)
@@ -63,6 +66,8 @@ var _ = Describe("Ingress", func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
 		contourConfig = &config.Parameters{}
+
+		contourConfiguration = e2e.ContourConfigration.DeepCopy()
 
 		// Default contour serve command line arguments can be appended to in
 		// nested BeforeEach.
@@ -75,7 +80,7 @@ var _ = Describe("Ingress", func() {
 	// until here to start Contour.
 	JustBeforeEach(func() {
 		var err error
-		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, additionalContourArgs...)
+		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, contourConfiguration, additionalContourArgs...)
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
@@ -166,6 +171,10 @@ var _ = Describe("Ingress", func() {
 						Namespace: namespace,
 						Name:      "backend-client-cert",
 					},
+				}
+				contourConfiguration.Spec.Envoy.ClientCertificate = &contour_api_v1alpha1.NamespacedName{
+					Namespace: namespace,
+					Name:      "backend-client-cert",
 				}
 			})
 

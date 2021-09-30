@@ -81,33 +81,35 @@ func TestGetDAGBuilder(t *testing.T) {
 
 	t.Run("request and response headers policy specified", func(t *testing.T) {
 
-		requestHP := &contour_api_v1alpha1.HeadersPolicy{
-			Set: map[string]string{
-				"req-set-key-1": "req-set-val-1",
-				"req-set-key-2": "req-set-val-2",
+		policy := &contour_api_v1alpha1.PolicyConfig{
+			RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+				Set: map[string]string{
+					"req-set-key-1": "req-set-val-1",
+					"req-set-key-2": "req-set-val-2",
+				},
+				Remove: []string{"req-remove-key-1", "req-remove-key-2"},
 			},
-			Remove: []string{"req-remove-key-1", "req-remove-key-2"},
-		}
-
-		responseHP := &contour_api_v1alpha1.HeadersPolicy{
-			Set: map[string]string{
-				"res-set-key-1": "res-set-val-1",
-				"res-set-key-2": "res-set-val-2",
+			ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+				Set: map[string]string{
+					"res-set-key-1": "res-set-val-1",
+					"res-set-key-2": "res-set-val-2",
+				},
+				Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 			},
-			Remove: []string{"res-remove-key-1", "res-remove-key-2"},
+			ApplyToIngress: false,
 		}
 
 		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
-		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, requestHP: requestHP, responseHP: responseHP})
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, headersPolicy: policy})
 		commonAssertions(t, &got)
 
 		httpProxyProcessor := mustGetHTTPProxyProcessor(t, &got)
-		assert.EqualValues(t, requestHP.Set, httpProxyProcessor.RequestHeadersPolicy.Set)
-		assert.ElementsMatch(t, requestHP.Remove, httpProxyProcessor.RequestHeadersPolicy.Remove)
-		assert.EqualValues(t, responseHP.Set, httpProxyProcessor.ResponseHeadersPolicy.Set)
-		assert.ElementsMatch(t, responseHP.Remove, httpProxyProcessor.ResponseHeadersPolicy.Remove)
+		assert.EqualValues(t, policy.RequestHeadersPolicy.Set, httpProxyProcessor.RequestHeadersPolicy.Set)
+		assert.ElementsMatch(t, policy.RequestHeadersPolicy.Remove, httpProxyProcessor.RequestHeadersPolicy.Remove)
+		assert.EqualValues(t, policy.ResponseHeadersPolicy.Set, httpProxyProcessor.ResponseHeadersPolicy.Set)
+		assert.ElementsMatch(t, policy.ResponseHeadersPolicy.Remove, httpProxyProcessor.ResponseHeadersPolicy.Remove)
 
 		ingressProcessor := mustGetIngressProcessor(t, &got)
 		assert.EqualValues(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Set)
@@ -118,34 +120,36 @@ func TestGetDAGBuilder(t *testing.T) {
 
 	t.Run("request and response headers policy specified for ingress", func(t *testing.T) {
 
-		requestHP := &contour_api_v1alpha1.HeadersPolicy{
-			Set: map[string]string{
-				"req-set-key-1": "req-set-val-1",
-				"req-set-key-2": "req-set-val-2",
+		policy := &contour_api_v1alpha1.PolicyConfig{
+			RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+				Set: map[string]string{
+					"req-set-key-1": "req-set-val-1",
+					"req-set-key-2": "req-set-val-2",
+				},
+				Remove: []string{"req-remove-key-1", "req-remove-key-2"},
 			},
-			Remove: []string{"req-remove-key-1", "req-remove-key-2"},
-		}
-
-		responseHP := &contour_api_v1alpha1.HeadersPolicy{
-			Set: map[string]string{
-				"res-set-key-1": "res-set-val-1",
-				"res-set-key-2": "res-set-val-2",
+			ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+				Set: map[string]string{
+					"res-set-key-1": "res-set-val-1",
+					"res-set-key-2": "res-set-val-2",
+				},
+				Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 			},
-			Remove: []string{"res-remove-key-1", "res-remove-key-2"},
+			ApplyToIngress: false,
 		}
 
 		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
-			requestHP: requestHP, responseHP: responseHP, applyHeaderPolicyToIngress: true})
+			headersPolicy: policy, applyHeaderPolicyToIngress: true})
 		commonAssertions(t, &got)
 
 		ingressProcessor := mustGetIngressProcessor(t, &got)
-		assert.EqualValues(t, requestHP.Set, ingressProcessor.RequestHeadersPolicy.Set)
-		assert.ElementsMatch(t, requestHP.Remove, ingressProcessor.RequestHeadersPolicy.Remove)
-		assert.EqualValues(t, responseHP.Set, ingressProcessor.ResponseHeadersPolicy.Set)
-		assert.ElementsMatch(t, responseHP.Remove, ingressProcessor.ResponseHeadersPolicy.Remove)
+		assert.EqualValues(t, policy.RequestHeadersPolicy.Set, ingressProcessor.RequestHeadersPolicy.Set)
+		assert.ElementsMatch(t, policy.RequestHeadersPolicy.Remove, ingressProcessor.RequestHeadersPolicy.Remove)
+		assert.EqualValues(t, policy.ResponseHeadersPolicy.Set, ingressProcessor.ResponseHeadersPolicy.Set)
+		assert.ElementsMatch(t, policy.ResponseHeadersPolicy.Remove, ingressProcessor.ResponseHeadersPolicy.Remove)
 	})
 
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))

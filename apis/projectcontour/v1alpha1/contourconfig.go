@@ -49,7 +49,7 @@ type ContourConfigurationSpec struct {
 	// Envoy contains parameters for Envoy as well
 	// as how to optionally configure a managed Envoy fleet.
 	// +optional
-	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "http/1.1";"http/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
+	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "HTTP/1.1";"HTTP/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
 	Envoy EnvoyConfig `json:"envoy"`
 
 	// Gateway contains parameters for the gateway-api Gateway that Contour
@@ -172,11 +172,11 @@ type MetricsConfig struct {
 }
 
 // HTTPVersionType is the name of a supported HTTP version.
-// +kubebuilder:validation:Enum="http/1.1";"http/2"
+// +kubebuilder:validation:Enum="HTTP/1.1";"HTTP/2"
 type HTTPVersionType string
 
-const HTTPVersion1 HTTPVersionType = "http/1.1"
-const HTTPVersion2 HTTPVersionType = "http/2"
+const HTTPVersion1 HTTPVersionType = "HTTP/1.1"
+const HTTPVersion2 HTTPVersionType = "HTTP/2"
 
 // EnvoyConfig defines how Envoy is to be Configured from Contour.
 type EnvoyConfig struct {

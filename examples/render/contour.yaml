@@ -274,8 +274,8 @@ spec:
                   cluster:
                     dnsLookupFamily: auto
                   defaultHTTPVersions:
-                  - http/1.1
-                  - http/2
+                  - HTTP/1.1
+                  - HTTP/2
                   http:
                     accessLog: /dev/stdout
                     address: 0.0.0.0
@@ -355,8 +355,8 @@ spec:
                       description: HTTPVersionType is the name of a supported HTTP
                         version.
                       enum:
-                      - http/1.1
-                      - http/2
+                      - HTTP/1.1
+                      - HTTP/2
                       type: string
                     type: array
                   http:
@@ -1181,8 +1181,8 @@ spec:
                       cluster:
                         dnsLookupFamily: auto
                       defaultHTTPVersions:
-                      - http/1.1
-                      - http/2
+                      - HTTP/1.1
+                      - HTTP/2
                       http:
                         accessLog: /dev/stdout
                         address: 0.0.0.0
@@ -1262,8 +1262,8 @@ spec:
                           description: HTTPVersionType is the name of a supported
                             HTTP version.
                           enum:
-                          - http/1.1
-                          - http/2
+                          - HTTP/1.1
+                          - HTTP/2
                           type: string
                         type: array
                       http:

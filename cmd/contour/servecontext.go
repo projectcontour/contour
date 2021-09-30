@@ -254,7 +254,6 @@ func parseDefaultHTTPVersions(versions []contour_api_v1alpha1.HTTPVersionType) [
 	var parsed []envoy_v3.HTTPVersionType
 	for k := range wanted {
 		parsed = append(parsed, k)
-
 	}
 
 	return parsed
