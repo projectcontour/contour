@@ -24,7 +24,11 @@ import (
 func main() {
 
 	log := logrus.StandardLogger()
-
+	// Forcing colors makes the output nicer to read,
+	// and allows multiline strings to work properly.
+	log.SetFormatter(&logrus.TextFormatter{
+		ForceColors: true,
+	})
 	// We need a GITHUB_TOKEN and PR_NUMBER in the environment.
 	// These are set by the Action config file
 	// in .github/workflows/prbuild.yaml,
@@ -64,7 +68,7 @@ func main() {
 	if len(prDetails.Labels) == 0 {
 		log.Fatal(`
 Thanks for your PR.
-For PRs to be accepted to Contour, it must have:
+For a PR to be accepted to Contour, it must have:
 - at least one release-note label set
 - a file named changelogs/unreleased/PR#-author-category,
 	where category matches the relase-note/category label you apply`)
@@ -94,7 +98,7 @@ For PRs to be accepted to Contour, it must have:
 	if category == "" {
 		log.Fatal(`
 Thanks for your PR.
-For PRs to be accepted to Contour, it must have:
+For a PR to be accepted to Contour, it must have:
 - at least one release-note label set
 - a file named changelogs/unreleased/PR#-author-category,
   where category matches the relase-note/category label you apply.
@@ -113,18 +117,16 @@ There are some labels set, but there must be at least one release-note label.`)
 
 	if os.IsNotExist(err) {
 		log.Fatalf(`
-Thanks for your PR.
-For PRs to be accepted to Contour, it must have:
-- at least one release-note label set
-- a file named changelogs/unreleased/%d-%s-%s.md with a description of the change.`,
+Thanks for your PR, and thanks for labelling it with a release-note.
+For a PR to be accepted to Contour, it must have a file named
+changelogs/unreleased/%d-%s-%s.md with a description of the change.`,
 			pr, *prDetails.User.Login, category)
 	}
 
 	if changelogFile.Size() == 0 {
 		log.Fatalf(`
-Thanks for your PR.
-For PRs to be accepted to Contour, it must have:
-- at least one release-note label set
+		Thanks for your PR, and thanks for labelling it with a release-note.
+For a PR to be accepted to Contour, it must have:
 - a file named changelogs/unreleased/%d-%s-%s.md with a description of the change
 - the file must not be empty.`,
 			pr, *prDetails.User.Login, category)
