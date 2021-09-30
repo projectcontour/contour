@@ -8,6 +8,7 @@ env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 jobs:
   check-changelog:
+    name: Check for changelog file
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
