@@ -304,7 +304,7 @@ descriptors:
 		f.NamespacedTest("httpproxy-global-rate-limiting-route-tls", withRateLimitService(testGlobalRateLimitingRouteTLS))
 	})
 
-	FContext("cookie-rewriting", func() {
+	Context("cookie-rewriting", func() {
 		f.NamespacedTest("invalid-cookie-rewrite-fields", testInvalidCookieRewriteFields)
 
 		f.NamespacedTest("app-cookie-rewrite", testAppCookieRewrite)
