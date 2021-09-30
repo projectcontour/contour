@@ -1,6 +1,8 @@
 //go:build none
 // +build none
 
+// Versioning comment for rerunning jobs.
+
 package main
 
 import (
@@ -76,6 +78,22 @@ func main() {
 		log.Fatal("Labels present, but must have at least one release-note label set.")
 	}
 
-	fmt.Printf("PR file should be changelogs/%d-%s-%s.md", pr, *prDetails.User.Login, category)
+	if category == "none-required" {
+		log.Println("No changelog required.")
+		os.Exit(0)
+	}
+
+	log.Printf("PR file should be changelogs/%d-%s-%s.md", pr, *prDetails.User.Login, category)
+
+	changelogFile, err := os.Stat(fmt.Sprintf("./changelogs/unreleased/%d-%s-%s.md", pr, *prDetails.User.Login, category))
+
+	if os.IsNotExist(err) {
+		log.Fatalf("changelogs/unreleased/%d-%s-%s.md must exist", pr, *prDetails.User.Login, category)
+	}
+
+	if changelogFile.Size() == 0 {
+		log.Fatalf("changelogs/unreleased/%d-%s-%s.md must be non-empty", pr, *prDetails.User.Login, category)
+	}
+
 	os.Exit(0)
 }

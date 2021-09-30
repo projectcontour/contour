@@ -16,6 +16,7 @@ jobs:
         PR_NUMBER: ${{ github.event.number }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    
   build-image:
+    needs: [check-changelog]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -41,6 +42,7 @@ jobs:
       if: ${{ failure() && github.ref == 'refs/heads/main' }}
   e2e:
     runs-on: ubuntu-latest
+    needs: [check-changelog]
     # TODO uncomment the below once we're using the image
     # or its binary for testing.
     # needs: [build-image]
@@ -171,6 +173,7 @@ jobs:
   #       run: |
   #         make check-ingress-conformance
   test-linux:
+    needs: [check-changelog]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -206,6 +209,7 @@ jobs:
           channel: '#contour-ci-notifications'
         if: ${{ failure() && github.ref == 'refs/heads/main' }}
   test-osx:
+    needs: [check-changelog]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -260,7 +264,7 @@ jobs:
       - name: Codespell
         uses: codespell-project/actions-codespell@master
         with:
-          skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public
+          skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go
           ignore_words_file: './.codespell.ignorewords'
           check_filenames: true
           check_hidden: true
