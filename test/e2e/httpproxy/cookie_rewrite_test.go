@@ -182,6 +182,7 @@ func testInvalidCookieRewriteFields(namespace string) {
 func testAppCookieRewrite(namespace string) {
 	Specify("cookies from app can be rewritten", func() {
 		deployEchoServer(f.T(), f.Client, namespace, "echo")
+		deployEchoServer(f.T(), f.Client, namespace, "echo-other")
 
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
@@ -297,6 +298,50 @@ func testAppCookieRewrite(namespace string) {
 									},
 								},
 							},
+							{
+								Name: "echo-other",
+								Port: 80,
+								CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+									{
+										Name:        "service",
+										PathRewrite: &contourv1.CookiePathRewrite{Value: "/svc-new-other"},
+									},
+								},
+							},
+						},
+					},
+					{
+						Conditions: []contourv1.MatchCondition{
+							{Prefix: "/route-and-service"},
+						},
+						CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+							{
+								Name:          "route-service",
+								PathRewrite:   &contourv1.CookiePathRewrite{Value: "/route"},
+								DomainRewrite: &contourv1.CookieDomainRewrite{Value: "route.com"},
+							},
+							{
+								Name:        "route",
+								PathRewrite: &contourv1.CookiePathRewrite{Value: "/route"},
+							},
+						},
+						Services: []contourv1.Service{
+							{
+								Name: "echo",
+								Port: 80,
+								CookieRewritePolicies: []contourv1.CookieRewritePolicy{
+									{
+										Name:        "route-service",
+										PathRewrite: &contourv1.CookiePathRewrite{Value: "/service"},
+										Secure:      pointer.Bool(true),
+										SameSite:    pointer.String("Lax"),
+									},
+									{
+										Name:        "service",
+										PathRewrite: &contourv1.CookiePathRewrite{Value: "/service"},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -342,9 +387,36 @@ func testAppCookieRewrite(namespace string) {
 		// checkReturnedSetCookieHeader(headers, "multi-1", "bar", "/m1", "", "", false, nil)
 		// checkReturnedSetCookieHeader(headers, "multi-2", "bar", "", "m2.com", "", false, nil)
 
-		// Rewrite on a service.
-		headers = requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/service", "service=baz; Path=/svc")
-		checkReturnedSetCookieHeader(headers, "service", "baz", "/svc-new", "", "", false, nil)
+		// Rewrite on a service, balancing to multiple services.
+		services := map[string]struct{}{}
+		// Use a few attempts to make sure we hit both services.
+		for i := 0; i < 8; i++ {
+			headers = requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/service", "service=baz; Path=/svc")
+			for headerName, values := range headers {
+				if headerName != "Set-Cookie" {
+					continue
+				}
+				for _, v := range values {
+					switch v {
+					case "service=baz; Path=/svc-new":
+						services["echo"] = struct{}{}
+					case "service=baz; Path=/svc-new-other":
+						services["echo-other"] = struct{}{}
+					}
+				}
+			}
+		}
+		// Make sure both services/rewrites have been reached.
+		assert.Contains(f.T(), services, "echo")
+		assert.Contains(f.T(), services, "echo-other")
+
+		// Rewrite on a route and service.
+		headers = requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/route-and-service", "route-service=baz")
+		checkReturnedSetCookieHeader(headers, "route-service", "baz", "/service", "route.com", "Lax", true, nil)
+		headers = requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/route-and-service", "route=baz")
+		checkReturnedSetCookieHeader(headers, "route", "baz", "/route", "", "", false, nil)
+		headers = requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/route-and-service", "service=baz")
+		checkReturnedSetCookieHeader(headers, "service", "baz", "/service", "", "", false, nil)
 
 		// Error case, invalid cookie (invalid name=value pair) should be untouched.
 		headers = requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/rewrite-some", "rewrite-some")

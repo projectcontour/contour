@@ -149,13 +149,13 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 		)
 	}
 
-	if envoy.SingleSimpleCluster(r.Clusters) {
+	if envoy.SingleSimpleCluster(r) {
 		ra.ClusterSpecifier = &envoy_route_v3.RouteAction_Cluster{
 			Cluster: envoy.Clustername(r.Clusters[0]),
 		}
 	} else {
 		ra.ClusterSpecifier = &envoy_route_v3.RouteAction_WeightedClusters{
-			WeightedClusters: weightedClusters(r.Clusters),
+			WeightedClusters: weightedClusters(r),
 		}
 	}
 	return &envoy_route_v3.Route_Route{
@@ -261,10 +261,10 @@ func HeaderValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderVal
 }
 
 // weightedClusters returns a route.WeightedCluster for multiple services.
-func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
+func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 	var wc envoy_route_v3.WeightedCluster
 	var total uint32
-	for _, cluster := range clusters {
+	for _, cluster := range route.Clusters {
 		total += cluster.Weight
 
 		c := &envoy_route_v3.WeightedCluster_ClusterWeight{
@@ -279,11 +279,11 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
 			c.ResponseHeadersToAdd = HeaderValueList(cluster.ResponseHeadersPolicy.Set, false)
 			c.ResponseHeadersToRemove = cluster.ResponseHeadersPolicy.Remove
 		}
-		if len(cluster.CookieRewritePolicies) > 0 {
+		if len(route.CookieRewritePolicies) > 0 || len(cluster.CookieRewritePolicies) > 0 {
 			if c.TypedPerFilterConfig == nil {
 				c.TypedPerFilterConfig = map[string]*any.Any{}
 			}
-			c.TypedPerFilterConfig["envoy.filters.http.lua"] = CookieRewriteConfig(cluster.CookieRewritePolicies)
+			c.TypedPerFilterConfig["envoy.filters.http.lua"] = CookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
 		}
 		wc.Clusters = append(wc.Clusters, c)
 	}
@@ -292,7 +292,7 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
 		for _, c := range wc.Clusters {
 			c.Weight.Value = 1
 		}
-		total = uint32(len(clusters))
+		total = uint32(len(route.Clusters))
 	}
 	wc.TotalWeight = protobuf.UInt32(total)
 
@@ -412,7 +412,37 @@ func containsMatch(s string) *envoy_route_v3.HeaderMatcher_SafeRegexMatch {
 	}
 }
 
-func CookieRewriteConfig(policies []dag.CookieRewritePolicy) *any.Any {
+func CookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *any.Any {
+	// Merge route and cluster policies
+	mergedPolicies := map[string]dag.CookieRewritePolicy{}
+	for _, p := range append(routePolicies, clusterPolicies...) {
+		if _, ok := mergedPolicies[p.Name]; !ok {
+			mergedPolicies[p.Name] = p
+		} else {
+			merged := mergedPolicies[p.Name]
+			// Merge this policy with an existing one.
+			if p.Path != nil {
+				merged.Path = p.Path
+			}
+			if p.Domain != nil {
+				merged.Domain = p.Domain
+			}
+			if p.Secure != 0 {
+				merged.Secure = p.Secure
+			}
+			if p.SameSite != nil {
+				merged.SameSite = p.SameSite
+			}
+			mergedPolicies[p.Name] = merged
+		}
+	}
+	policies := make([]dag.CookieRewritePolicy, len(mergedPolicies))
+	i := 0
+	for _, p := range mergedPolicies {
+		policies[i] = p
+		i++
+	}
+
 	codeTemplate := `
 function envoy_on_response(response_handle)
 	rewrite_table = {}

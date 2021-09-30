@@ -304,27 +304,29 @@ descriptors:
 		f.NamespacedTest("httpproxy-global-rate-limiting-route-tls", withRateLimitService(testGlobalRateLimitingRouteTLS))
 	})
 
-	f.NamespacedTest("invalid-cookie-rewrite-fields", testInvalidCookieRewriteFields)
+	FContext("cookie-rewriting", func() {
+		f.NamespacedTest("invalid-cookie-rewrite-fields", testInvalidCookieRewriteFields)
 
-	f.NamespacedTest("app-cookie-rewrite", testAppCookieRewrite)
+		f.NamespacedTest("app-cookie-rewrite", testAppCookieRewrite)
 
-	f.NamespacedTest("cookie-rewrite-tls", testCookieRewriteTLS)
+		f.NamespacedTest("cookie-rewrite-tls", testCookieRewriteTLS)
 
-	Context("rewriting cookies from globally rewritten headers", func() {
-		BeforeEach(func() {
-			contourConfig.Policy = config.PolicyParameters{
-				ResponseHeadersPolicy: config.HeadersPolicy{
-					Set: map[string]string{
-						"Set-Cookie": "global=foo",
+		Context("rewriting cookies from globally rewritten headers", func() {
+			BeforeEach(func() {
+				contourConfig.Policy = config.PolicyParameters{
+					ResponseHeadersPolicy: config.HeadersPolicy{
+						Set: map[string]string{
+							"Set-Cookie": "global=foo",
+						},
 					},
-				},
-			}
+				}
+			})
+
+			f.NamespacedTest("global-rewrite-headers-cookie-rewrite", testHeaderGlobalRewriteCookieRewrite)
 		})
 
-		f.NamespacedTest("global-rewrite-headers-cookie-rewrite", testHeaderGlobalRewriteCookieRewrite)
+		f.NamespacedTest("rewrite-headers-cookie-rewrite", testHeaderRewriteCookieRewrite)
 	})
-
-	f.NamespacedTest("rewrite-headers-cookie-rewrite", testHeaderRewriteCookieRewrite)
 })
 
 // httpProxyValid returns true if the proxy has a .status.currentStatus

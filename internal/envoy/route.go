@@ -49,14 +49,19 @@ func Timeout(d timeout.Setting) *duration.Duration {
 
 // SingleSimpleCluster determines whether we can use a RouteAction_Cluster
 // or must use a RouteAction_WeighedCluster to encode additional routing data.
-func SingleSimpleCluster(clusters []*dag.Cluster) bool {
+func SingleSimpleCluster(route *dag.Route) bool {
 	// If there are multiple clusters, than we cannot simply dispatch
 	// to it by name.
-	if len(clusters) != 1 {
+	if len(route.Clusters) != 1 {
 		return false
 	}
-	cluster := clusters[0]
+	// If there are route cookie rewrite policies, we need to add a Lua
+	// filter configuration and cannot simply dispatch to it by name.
+	if len(route.CookieRewritePolicies) > 0 {
+		return false
+	}
 
+	cluster := route.Clusters[0]
 	// If the target cluster performs any kind of header manipulation,
 	// then we should use a WeightedCluster to encode the additional
 	// configuration.

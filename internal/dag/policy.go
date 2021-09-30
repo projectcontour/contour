@@ -324,11 +324,16 @@ func cookieRewritePolicies(policies []contour_api_v1.CookieRewritePolicy) ([]Coo
 			policiesSet++
 			domain = pointer.String(p.DomainRewrite.Value)
 		}
+		// We use a uint here since a pointer to bool cannot be
+		// distingiuished when unset or false in golang text templates.
+		// 0 means unset.
 		secure := uint(0)
 		if p.Secure != nil {
 			policiesSet++
+			// Increment to indicate it has been set.
 			secure++
 			if *p.Secure {
+				// Increment to indicate it is true.
 				secure++
 			}
 		}

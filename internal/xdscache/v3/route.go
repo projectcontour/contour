@@ -163,12 +163,6 @@ func (v *routeVisitor) onVirtualHost(vh *dag.VirtualHost) {
 			rt.ResponseHeadersToAdd = envoy_v3.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
 			rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
 		}
-		if len(route.CookieRewritePolicies) > 0 {
-			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*any.Any{}
-			}
-			rt.TypedPerFilterConfig["envoy.filters.http.lua"] = envoy_v3.CookieRewriteConfig(route.CookieRewritePolicies)
-		}
 		if route.RateLimitPolicy != nil && route.RateLimitPolicy.Local != nil {
 			if rt.TypedPerFilterConfig == nil {
 				rt.TypedPerFilterConfig = map[string]*any.Any{}
@@ -218,12 +212,6 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 		if route.ResponseHeadersPolicy != nil {
 			rt.ResponseHeadersToAdd = envoy_v3.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
 			rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
-		}
-		if len(route.CookieRewritePolicies) > 0 {
-			if rt.TypedPerFilterConfig == nil {
-				rt.TypedPerFilterConfig = map[string]*any.Any{}
-			}
-			rt.TypedPerFilterConfig["envoy.filters.http.lua"] = envoy_v3.CookieRewriteConfig(route.CookieRewritePolicies)
 		}
 		if route.RateLimitPolicy != nil && route.RateLimitPolicy.Local != nil {
 			if rt.TypedPerFilterConfig == nil {
