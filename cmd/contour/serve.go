@@ -695,6 +695,13 @@ func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallback
 		responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, ctx.Config.Policy.ResponseHeadersPolicy.Remove...)
 	}
 
+	var requestHeadersPolicyIngress dag.HeadersPolicy
+	var responseHeadersPolicyIngress dag.HeadersPolicy
+	if ctx.Config.Policy.ApplyToIngress {
+		requestHeadersPolicyIngress = requestHeadersPolicy
+		responseHeadersPolicyIngress = responseHeadersPolicy
+	}
+
 	log.Debugf("EnableExternalNameService is set to %t", ctx.Config.EnableExternalNameService)
 	// Get the appropriate DAG processors.
 	dagProcessors := []dag.Processor{
@@ -702,6 +709,8 @@ func getDAGBuilder(ctx *serveContext, clients *k8s.Clients, clientCert, fallback
 			EnableExternalNameService: ctx.Config.EnableExternalNameService,
 			FieldLogger:               log.WithField("context", "IngressProcessor"),
 			ClientCertificate:         clientCert,
+			RequestHeadersPolicy:      &requestHeadersPolicyIngress,
+			ResponseHeadersPolicy:     &responseHeadersPolicyIngress,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,

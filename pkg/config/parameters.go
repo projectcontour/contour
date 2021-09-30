@@ -491,6 +491,9 @@ type PolicyParameters struct {
 
 	// ResponseHeadersPolicy defines the response headers set/removed on all routes
 	ResponseHeadersPolicy HeadersPolicy `yaml:"response-headers,omitempty"`
+
+	// ApplyToIngress determines if the Policies will apply to ingress objects
+	ApplyToIngress bool `yaml:"applyToIngress,omitempty"`
 }
 
 // Validate the header parameters.
@@ -734,6 +737,7 @@ func Defaults() Parameters {
 		Policy: PolicyParameters{
 			RequestHeadersPolicy:  HeadersPolicy{},
 			ResponseHeadersPolicy: HeadersPolicy{},
+			ApplyToIngress:        false,
 		},
 		EnvoyServiceName:      "envoy",
 		EnvoyServiceNamespace: contourNamespace,

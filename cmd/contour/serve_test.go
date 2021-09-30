@@ -87,6 +87,36 @@ func TestGetDAGBuilder(t *testing.T) {
 		assert.ElementsMatch(t, ctx.Config.Policy.RequestHeadersPolicy.Remove, httpProxyProcessor.RequestHeadersPolicy.Remove)
 		assert.EqualValues(t, ctx.Config.Policy.ResponseHeadersPolicy.Set, httpProxyProcessor.ResponseHeadersPolicy.Set)
 		assert.ElementsMatch(t, ctx.Config.Policy.ResponseHeadersPolicy.Remove, httpProxyProcessor.ResponseHeadersPolicy.Remove)
+
+		ingressProcessor := mustGetIngressProcessor(t, &got)
+		assert.EqualValues(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Set)
+		assert.ElementsMatch(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Remove)
+		assert.EqualValues(t, map[string]string(nil), ingressProcessor.ResponseHeadersPolicy.Set)
+		assert.ElementsMatch(t, map[string]string(nil), ingressProcessor.ResponseHeadersPolicy.Remove)
+	})
+
+	t.Run("request and response headers policy specified for ingress", func(t *testing.T) {
+		ctx := newServeContext()
+		ctx.Config.Policy.RequestHeadersPolicy.Set = map[string]string{
+			"req-set-key-1": "req-set-val-1",
+			"req-set-key-2": "req-set-val-2",
+		}
+		ctx.Config.Policy.RequestHeadersPolicy.Remove = []string{"req-remove-key-1", "req-remove-key-2"}
+		ctx.Config.Policy.ResponseHeadersPolicy.Set = map[string]string{
+			"res-set-key-1": "res-set-val-1",
+			"res-set-key-2": "res-set-val-2",
+		}
+		ctx.Config.Policy.ResponseHeadersPolicy.Remove = []string{"res-remove-key-1", "res-remove-key-2"}
+		ctx.Config.Policy.ApplyToIngress = true
+
+		got := getDAGBuilder(ctx, nil, nil, nil, logrus.StandardLogger())
+		commonAssertions(t, &got)
+
+		ingressProcessor := mustGetIngressProcessor(t, &got)
+		assert.EqualValues(t, ctx.Config.Policy.RequestHeadersPolicy.Set, ingressProcessor.RequestHeadersPolicy.Set)
+		assert.ElementsMatch(t, ctx.Config.Policy.RequestHeadersPolicy.Remove, ingressProcessor.RequestHeadersPolicy.Remove)
+		assert.EqualValues(t, ctx.Config.Policy.ResponseHeadersPolicy.Set, ingressProcessor.ResponseHeadersPolicy.Set)
+		assert.ElementsMatch(t, ctx.Config.Policy.ResponseHeadersPolicy.Remove, ingressProcessor.ResponseHeadersPolicy.Remove)
 	})
 
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))
@@ -102,5 +132,18 @@ func mustGetHTTPProxyProcessor(t *testing.T, builder *dag.Builder) *dag.HTTPProx
 	}
 
 	require.FailNow(t, "HTTPProxyProcessor not found in list of DAG builder's processors")
+	return nil
+}
+
+func mustGetIngressProcessor(t *testing.T, builder *dag.Builder) *dag.IngressProcessor {
+	t.Helper()
+	for i := range builder.Processors {
+		found, ok := builder.Processors[i].(*dag.IngressProcessor)
+		if ok {
+			return found
+		}
+	}
+
+	require.FailNow(t, "IngressProcessor not found in list of DAG builder's processors")
 	return nil
 }
