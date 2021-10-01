@@ -46,7 +46,8 @@ func (p *ExtensionServiceProcessor) Run(dag *DAG, cache *KubernetesCache) {
 
 		if ext := p.buildExtensionService(cache, e, validCondition); ext != nil {
 			if len(validCondition.Errors) == 0 {
-				dag.AddRoot(ext)
+				// TODO accessor
+				dag.ExtensionClusters = append(dag.ExtensionClusters, ext)
 			}
 		}
 

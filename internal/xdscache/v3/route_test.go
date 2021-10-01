@@ -3057,9 +3057,9 @@ func TestRouteVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAGFallback(t, tc.fallbackCertificate, tc.objs...)
-			got := visitRoutes(root)
-			protobuf.ExpectEqual(t, tc.want, got)
+			var rc RouteCache
+			rc.OnChange(buildDAGFallback(t, tc.fallbackCertificate, tc.objs...))
+			protobuf.ExpectEqual(t, tc.want, rc.values)
 		})
 	}
 }

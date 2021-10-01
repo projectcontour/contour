@@ -487,7 +487,7 @@ type listenerVisitor struct {
 	httpListenerName string // Name of dag.VirtualHost encountered.
 }
 
-func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_listener_v3.Listener {
+func visitListeners(root *dag.DAG, lvc *ListenerConfig) map[string]*envoy_listener_v3.Listener {
 	lv := listenerVisitor{
 		ListenerConfig: lvc.DefaultListeners(),
 		listeners:      lvc.SecureListeners(),
@@ -576,7 +576,7 @@ func secureProxyProtocol(useProxy bool) []*envoy_listener_v3.ListenerFilter {
 	return append(proxyProtocol(useProxy), envoy_v3.TLSInspector())
 }
 
-func (v *listenerVisitor) visit(vertex dag.Vertex) {
+func (v *listenerVisitor) visit(root *dag.DAG) {
 	max := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
 		if a > b {
 			return a
@@ -584,126 +584,129 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 		return b
 	}
 
-	switch vh := vertex.(type) {
-	case *dag.VirtualHost:
-		// we only create on http listener so record the fact
-		// that we need to then double back at the end and add
-		// the listener properly
-		v.httpListenerName = vh.ListenerName
-	case *dag.SecureVirtualHost:
-		var alpnProtos []string
-		var filters []*envoy_listener_v3.Filter
+	// need to iterate through Listeners here because we only
+	// want the vhosts that have been attached to a listener
+	// by the listener processor. TODO this is an example of
+	// what needs to be cleaned up re: model building.
+	for _, listener := range root.Listeners {
+		if len(listener.VirtualHosts) > 0 {
+			// we only create one http listener so record the fact
+			// that we need to then double back at the end and add
+			// the listener properly
+			v.httpListenerName = listener.VirtualHosts[0].ListenerName
+		}
 
-		if vh.TCPProxy == nil {
-			var authFilter *http.HttpFilter
+		for _, vh := range listener.SecureVirtualHosts {
+			var alpnProtos []string
+			var filters []*envoy_listener_v3.Filter
 
-			if vh.AuthorizationService != nil {
-				authFilter = envoy_v3.FilterExternalAuthz(
-					vh.AuthorizationService.Name,
-					vh.AuthorizationFailOpen,
-					vh.AuthorizationResponseTimeout,
+			if vh.TCPProxy == nil {
+				var authFilter *http.HttpFilter
+
+				if vh.AuthorizationService != nil {
+					authFilter = envoy_v3.FilterExternalAuthz(
+						vh.AuthorizationService.Name,
+						vh.AuthorizationFailOpen,
+						vh.AuthorizationResponseTimeout,
+					)
+				}
+
+				// Create a uniquely named HTTP connection manager for
+				// this vhost, so that the SNI name the client requests
+				// only grants access to that host. See RFC 6066 for
+				// security advice. Note that we still use the generic
+				// metrics prefix to keep compatibility with previous
+				// Contour versions since the metrics prefix will be
+				// coded into monitoring dashboards.
+				cm := envoy_v3.HTTPConnectionManagerBuilder().
+					Codec(envoy_v3.CodecForVersions(v.DefaultHTTPVersions...)).
+					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
+					DefaultFilters().
+					AddFilter(authFilter).
+					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
+					MetricsPrefix(vh.ListenerName).
+					AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
+					RequestTimeout(v.ListenerConfig.RequestTimeout).
+					ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
+					StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
+					DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
+					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
+					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
+					AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
+					AddFilter(envoy_v3.OriginalIPDetectionFilter(v.ListenerConfig.XffNumTrustedHops)).
+					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(v.RateLimitConfig))).
+					Get()
+
+				filters = envoy_v3.Filters(cm)
+
+				alpnProtos = envoy_v3.ProtoNamesForVersions(v.DefaultHTTPVersions...)
+			} else {
+				filters = envoy_v3.Filters(
+					envoy_v3.TCPProxy(vh.ListenerName,
+						vh.TCPProxy,
+						v.ListenerConfig.newSecureAccessLog()),
 				)
+
+				// Do not offer ALPN for TCP proxying, since
+				// the protocols will be provided by the TCP
+				// backend in its ServerHello.
 			}
 
-			// Create a uniquely named HTTP connection manager for
-			// this vhost, so that the SNI name the client requests
-			// only grants access to that host. See RFC 6066 for
-			// security advice. Note that we still use the generic
-			// metrics prefix to keep compatibility with previous
-			// Contour versions since the metrics prefix will be
-			// coded into monitoring dashboards.
-			cm := envoy_v3.HTTPConnectionManagerBuilder().
-				Codec(envoy_v3.CodecForVersions(v.DefaultHTTPVersions...)).
-				AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
-				DefaultFilters().
-				AddFilter(authFilter).
-				RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
-				MetricsPrefix(vh.ListenerName).
-				AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
-				RequestTimeout(v.ListenerConfig.RequestTimeout).
-				ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
-				StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
-				DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
-				MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
-				ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
-				AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
-				AddFilter(envoy_v3.OriginalIPDetectionFilter(v.ListenerConfig.XffNumTrustedHops)).
-				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(v.RateLimitConfig))).
-				Get()
+			var downstreamTLS *envoy_tls_v3.DownstreamTlsContext
 
-			filters = envoy_v3.Filters(cm)
+			// Secret is provided when TLS is terminated and nil when TLS passthrough is used.
+			if vh.Secret != nil {
+				// Choose the higher of the configured or requested TLS version.
+				vers := max(v.ListenerConfig.minTLSVersion(), envoy_v3.ParseTLSVersion(vh.MinTLSVersion))
 
-			alpnProtos = envoy_v3.ProtoNamesForVersions(v.DefaultHTTPVersions...)
-		} else {
-			filters = envoy_v3.Filters(
-				envoy_v3.TCPProxy(vh.ListenerName,
-					vh.TCPProxy,
-					v.ListenerConfig.newSecureAccessLog()),
-			)
-
-			// Do not offer ALPN for TCP proxying, since
-			// the protocols will be provided by the TCP
-			// backend in its ServerHello.
-		}
-
-		var downstreamTLS *envoy_tls_v3.DownstreamTlsContext
-
-		// Secret is provided when TLS is terminated and nil when TLS passthrough is used.
-		if vh.Secret != nil {
-			// Choose the higher of the configured or requested TLS version.
-			vers := max(v.ListenerConfig.minTLSVersion(), envoy_v3.ParseTLSVersion(vh.MinTLSVersion))
-
-			downstreamTLS = envoy_v3.DownstreamTLSContext(
-				vh.Secret,
-				vers,
-				v.ListenerConfig.CipherSuites,
-				vh.DownstreamValidation,
-				alpnProtos...)
-		}
-
-		v.listeners[vh.ListenerName].FilterChains = append(v.listeners[vh.ListenerName].FilterChains,
-			envoy_v3.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
-
-		// If this VirtualHost has enabled the fallback certificate then set a default
-		// FilterChain which will allow routes with this vhost to accept non-SNI TLS requests.
-		// Note that we don't add the misdirected requests filter on this chain because at this
-		// point we don't actually know the full set of server names that will be bound to the
-		// filter chain through the ENVOY_FALLBACK_ROUTECONFIG route configuration.
-		if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(v.listeners[vh.ListenerName].FilterChains) {
-			// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
-			// the value defined in the Contour Configuration file if defined.
-			downstreamTLS = envoy_v3.DownstreamTLSContext(
-				vh.FallbackCertificate,
-				v.ListenerConfig.minTLSVersion(),
-				v.ListenerConfig.CipherSuites,
-				vh.DownstreamValidation,
-				alpnProtos...)
-
-			cm := envoy_v3.HTTPConnectionManagerBuilder().
-				DefaultFilters().
-				RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-				MetricsPrefix(vh.ListenerName).
-				AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
-				RequestTimeout(v.ListenerConfig.RequestTimeout).
-				ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
-				StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
-				DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
-				MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
-				ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
-				AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
-				AddFilter(envoy_v3.OriginalIPDetectionFilter(v.ListenerConfig.XffNumTrustedHops)).
-				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(v.RateLimitConfig))).
-				Get()
-
-			// Default filter chain
-			filters = envoy_v3.Filters(cm)
+				downstreamTLS = envoy_v3.DownstreamTLSContext(
+					vh.Secret,
+					vers,
+					v.ListenerConfig.CipherSuites,
+					vh.DownstreamValidation,
+					alpnProtos...)
+			}
 
 			v.listeners[vh.ListenerName].FilterChains = append(v.listeners[vh.ListenerName].FilterChains,
-				envoy_v3.FilterChainTLSFallback(downstreamTLS, filters))
-		}
+				envoy_v3.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
 
-	default:
-		// recurse
-		vertex.Visit(v.visit)
+			// If this VirtualHost has enabled the fallback certificate then set a default
+			// FilterChain which will allow routes with this vhost to accept non-SNI TLS requests.
+			// Note that we don't add the misdirected requests filter on this chain because at this
+			// point we don't actually know the full set of server names that will be bound to the
+			// filter chain through the ENVOY_FALLBACK_ROUTECONFIG route configuration.
+			if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(v.listeners[vh.ListenerName].FilterChains) {
+				// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
+				// the value defined in the Contour Configuration file if defined.
+				downstreamTLS = envoy_v3.DownstreamTLSContext(
+					vh.FallbackCertificate,
+					v.ListenerConfig.minTLSVersion(),
+					v.ListenerConfig.CipherSuites,
+					vh.DownstreamValidation,
+					alpnProtos...)
+
+				cm := envoy_v3.HTTPConnectionManagerBuilder().
+					DefaultFilters().
+					RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
+					MetricsPrefix(vh.ListenerName).
+					AccessLoggers(v.ListenerConfig.newSecureAccessLog()).
+					RequestTimeout(v.ListenerConfig.RequestTimeout).
+					ConnectionIdleTimeout(v.ListenerConfig.ConnectionIdleTimeout).
+					StreamIdleTimeout(v.ListenerConfig.StreamIdleTimeout).
+					DelayedCloseTimeout(v.ListenerConfig.DelayedCloseTimeout).
+					MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
+					ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
+					AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
+					AddFilter(envoy_v3.OriginalIPDetectionFilter(v.ListenerConfig.XffNumTrustedHops)).
+					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(v.RateLimitConfig))).
+					Get()
+
+				// Default filter chain
+				filters = envoy_v3.Filters(cm)
+
+				v.listeners[vh.ListenerName].FilterChains = append(v.listeners[vh.ListenerName].FilterChains,
+					envoy_v3.FilterChainTLSFallback(downstreamTLS, filters))
+			}
+		}
 	}
 }

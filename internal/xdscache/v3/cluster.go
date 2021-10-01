@@ -77,37 +77,20 @@ func (c *ClusterCache) Query(names []string) []proto.Message {
 func (*ClusterCache) TypeURL() string { return resource.ClusterType }
 
 func (c *ClusterCache) OnChange(root *dag.DAG) {
-	clusters := visitClusters(root)
-	c.Update(clusters)
-}
+	clusters := map[string]*envoy_cluster_v3.Cluster{}
 
-type clusterVisitor struct {
-	clusters map[string]*envoy_cluster_v3.Cluster
-}
-
-// visitCluster produces a map of *envoy_cluster_v3.Clusters.
-func visitClusters(root dag.Vertex) map[string]*envoy_cluster_v3.Cluster {
-	cv := clusterVisitor{
-		clusters: make(map[string]*envoy_cluster_v3.Cluster),
-	}
-	cv.visit(root)
-	return cv.clusters
-}
-
-func (v *clusterVisitor) visit(vertex dag.Vertex) {
-	switch cluster := vertex.(type) {
-	case *dag.Cluster:
+	for _, cluster := range root.GetClusters() {
 		name := envoy.Clustername(cluster)
-		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoy_v3.Cluster(cluster)
-		}
-	case *dag.ExtensionCluster:
-		name := cluster.Name
-		if _, ok := v.clusters[name]; !ok {
-			v.clusters[name] = envoy_v3.ExtensionCluster(cluster)
+		if _, ok := clusters[name]; !ok {
+			clusters[name] = envoy_v3.Cluster(cluster)
 		}
 	}
 
-	// recurse into children of v
-	vertex.Visit(v.visit)
+	for name, ec := range root.GetExtensionClusters() {
+		if _, ok := clusters[name]; !ok {
+			clusters[name] = envoy_v3.ExtensionCluster(ec)
+		}
+	}
+
+	c.Update(clusters)
 }

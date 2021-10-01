@@ -32,74 +32,52 @@ func (p *ListenerProcessor) Run(dag *DAG, _ *KubernetesCache) {
 // The list of virtual hosts will attached to the listener will be sorted
 // by hostname.
 func (p *ListenerProcessor) buildHTTPListener(dag *DAG) {
-	var virtualhosts []Vertex
-	var remove []Vertex
-
-	for _, root := range dag.roots {
-		if obj, ok := root.(*VirtualHost); ok {
-			remove = append(remove, obj)
-
-			if obj.Valid() {
-				virtualhosts = append(virtualhosts, obj)
-			}
+	var vhosts []*VirtualHost
+	for _, vh := range dag.VirtualHosts {
+		if vh.Valid() {
+			vhosts = append(vhosts, vh)
 		}
 	}
 
-	// Update the DAG's roots to not include virtual hosts.
-	for _, r := range remove {
-		dag.RemoveRoot(r)
-	}
-
-	if len(virtualhosts) == 0 {
+	if len(vhosts) == 0 {
 		return
 	}
 
-	sort.SliceStable(virtualhosts, func(i, j int) bool {
-		return virtualhosts[i].(*VirtualHost).Name < virtualhosts[j].(*VirtualHost).Name
+	sort.SliceStable(vhosts, func(i, j int) bool {
+		return vhosts[i].Name < vhosts[j].Name
 	})
 
 	http := &Listener{
 		Port:         80,
-		VirtualHosts: virtualhosts,
+		VirtualHosts: vhosts,
 	}
 
-	dag.AddRoot(http)
+	dag.Listeners = append(dag.Listeners, http)
 }
 
 // buildHTTPSListener builds a *dag.Listener for the vhosts bound to port 443.
 // The list of virtual hosts will attached to the listener will be sorted
 // by hostname.
 func (p *ListenerProcessor) buildHTTPSListener(dag *DAG) {
-	var virtualhosts []Vertex
-	var remove []Vertex
-
-	for _, root := range dag.roots {
-		if obj, ok := root.(*SecureVirtualHost); ok {
-			remove = append(remove, obj)
-
-			if obj.Valid() {
-				virtualhosts = append(virtualhosts, obj)
-			}
+	var vhosts []*SecureVirtualHost
+	for _, svh := range dag.SecureVirtualHosts {
+		if svh.Valid() {
+			vhosts = append(vhosts, svh)
 		}
 	}
 
-	// Update the DAG's roots to not include secure virtual hosts.
-	for _, r := range remove {
-		dag.RemoveRoot(r)
-	}
-
-	if len(virtualhosts) == 0 {
+	if len(vhosts) == 0 {
 		return
 	}
 
-	sort.SliceStable(virtualhosts, func(i, j int) bool {
-		return virtualhosts[i].(*SecureVirtualHost).Name < virtualhosts[j].(*SecureVirtualHost).Name
+	sort.SliceStable(vhosts, func(i, j int) bool {
+		return vhosts[i].Name < vhosts[j].Name
 	})
 
 	https := &Listener{
-		Port:         443,
-		VirtualHosts: virtualhosts,
+		Port:               443,
+		SecureVirtualHosts: vhosts,
 	}
 
-	dag.AddRoot(https)
+	dag.Listeners = append(dag.Listeners, https)
 }

@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/xds"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -26,7 +27,7 @@ import (
 // EnsureService looks for a Kubernetes service in the cache matching the provided
 // namespace, name and port, and returns a DAG service for it. If a matching service
 // cannot be found in the cache, an error is returned.
-func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
+func (d *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString, cache *KubernetesCache, enableExternalNameSvc bool) (*Service, error) {
 	svc, svcPort, err := cache.LookupService(meta, port)
 	if err != nil {
 		return nil, err
@@ -109,23 +110,37 @@ func externalName(svc *v1.Service) string {
 }
 
 // GetSecureVirtualHosts returns all secure virtual hosts in the DAG.
-func (dag *DAG) GetSecureVirtualHosts() map[ListenerName]*SecureVirtualHost {
-	getter := svhostGetter(map[ListenerName]*SecureVirtualHost{})
-	dag.Visit(getter.visit)
-	return getter
+func (d *DAG) GetSecureVirtualHosts() map[ListenerName]*SecureVirtualHost {
+	res := map[ListenerName]*SecureVirtualHost{}
+
+	for _, svh := range d.SecureVirtualHosts {
+		listenerName := ListenerName{
+			Name:         svh.Name,
+			ListenerName: svh.VirtualHost.ListenerName,
+		}
+		res[listenerName] = svh
+	}
+
+	return res
 }
 
 // GetSecureVirtualHost returns the secure virtual host in the DAG that
 // matches the provided name, or nil if no matching secure virtual host
 // is found.
-func (dag *DAG) GetSecureVirtualHost(ln ListenerName) *SecureVirtualHost {
-	return dag.GetSecureVirtualHosts()[ln]
+func (d *DAG) GetSecureVirtualHost(ln ListenerName) *SecureVirtualHost {
+	for _, svh := range d.SecureVirtualHosts {
+		if svh.Name == ln.Name && svh.VirtualHost.ListenerName == ln.ListenerName {
+			return svh
+		}
+	}
+
+	return nil
 }
 
 // EnsureSecureVirtualHost adds a secure virtual host with the provided
 // name to the DAG if it does not already exist, and returns it.
-func (dag *DAG) EnsureSecureVirtualHost(ln ListenerName) *SecureVirtualHost {
-	if svh := dag.GetSecureVirtualHost(ln); svh != nil {
+func (d *DAG) EnsureSecureVirtualHost(ln ListenerName) *SecureVirtualHost {
+	if svh := d.GetSecureVirtualHost(ln); svh != nil {
 		return svh
 	}
 
@@ -135,40 +150,41 @@ func (dag *DAG) EnsureSecureVirtualHost(ln ListenerName) *SecureVirtualHost {
 			ListenerName: ln.ListenerName,
 		},
 	}
-	dag.AddRoot(svh)
+	d.SecureVirtualHosts = append(d.SecureVirtualHosts, svh)
 	return svh
 }
 
-// svhostGetter is a visitor that gets all secure virtual hosts
-// in the DAG.
-type svhostGetter map[ListenerName]*SecureVirtualHost
-
-func (s svhostGetter) visit(vertex Vertex) {
-	switch obj := vertex.(type) {
-	case *SecureVirtualHost:
-		s[ListenerName{Name: obj.Name, ListenerName: obj.VirtualHost.ListenerName}] = obj
-	default:
-		vertex.Visit(s.visit)
-	}
-}
-
 // GetVirtualHosts returns all virtual hosts in the DAG.
-func (dag *DAG) GetVirtualHosts() map[ListenerName]*VirtualHost {
-	getter := vhostGetter(map[ListenerName]*VirtualHost{})
-	dag.Visit(getter.visit)
-	return getter
+func (d *DAG) GetVirtualHosts() map[ListenerName]*VirtualHost {
+	res := map[ListenerName]*VirtualHost{}
+
+	for _, vh := range d.VirtualHosts {
+		listenerName := ListenerName{
+			Name:         vh.Name,
+			ListenerName: vh.ListenerName,
+		}
+		res[listenerName] = vh
+	}
+
+	return res
 }
 
 // GetVirtualHost returns the virtual host in the DAG that matches the
 // provided name, or nil if no matching virtual host is found.
-func (dag *DAG) GetVirtualHost(ln ListenerName) *VirtualHost {
-	return dag.GetVirtualHosts()[ln]
+func (d *DAG) GetVirtualHost(ln ListenerName) *VirtualHost {
+	for _, vh := range d.VirtualHosts {
+		if vh.Name == ln.Name && vh.ListenerName == ln.ListenerName {
+			return vh
+		}
+	}
+
+	return nil
 }
 
 // EnsureVirtualHost adds a virtual host with the provided name to the
 // DAG if it does not already exist, and returns it.
-func (dag *DAG) EnsureVirtualHost(ln ListenerName) *VirtualHost {
-	if vhost := dag.GetVirtualHost(ln); vhost != nil {
+func (d *DAG) EnsureVirtualHost(ln ListenerName) *VirtualHost {
+	if vhost := d.GetVirtualHost(ln); vhost != nil {
 		return vhost
 	}
 
@@ -176,48 +192,152 @@ func (dag *DAG) EnsureVirtualHost(ln ListenerName) *VirtualHost {
 		Name:         ln.Name,
 		ListenerName: ln.ListenerName,
 	}
-	dag.AddRoot(vhost)
+	d.VirtualHosts = append(d.VirtualHosts, vhost)
 	return vhost
 }
 
-// vhostGetter is a visitor that gets all virtual hosts
-// in the DAG.
-type vhostGetter map[ListenerName]*VirtualHost
+func (d *DAG) GetClusters() []*Cluster {
+	var res []*Cluster
 
-func (v vhostGetter) visit(vertex Vertex) {
-	switch obj := vertex.(type) {
-	case *VirtualHost:
-		v[ListenerName{Name: obj.Name, ListenerName: obj.ListenerName}] = obj
-	default:
-		vertex.Visit(v.visit)
+	for _, listener := range d.Listeners {
+		for _, vhost := range listener.VirtualHosts {
+			for _, route := range vhost.Routes {
+				res = append(res, route.Clusters...)
+
+				if route.MirrorPolicy != nil && route.MirrorPolicy.Cluster != nil {
+					res = append(res, route.MirrorPolicy.Cluster)
+				}
+			}
+		}
+
+		for _, vhost := range listener.SecureVirtualHosts {
+			for _, route := range vhost.Routes {
+				res = append(res, route.Clusters...)
+
+				if route.MirrorPolicy != nil && route.MirrorPolicy.Cluster != nil {
+					res = append(res, route.MirrorPolicy.Cluster)
+				}
+			}
+
+			if vhost.TCPProxy != nil {
+				res = append(res, vhost.TCPProxy.Clusters...)
+			}
+		}
 	}
+
+	return res
+}
+
+func (d *DAG) GetServiceClusters() []*ServiceCluster {
+	var res []*ServiceCluster
+
+	for _, cluster := range d.GetClusters() {
+		// A Service has only one WeightedService entry. Fake up a
+		// ServiceCluster so that the visitor can pretend to not
+		// know this.
+		c := &ServiceCluster{
+			ClusterName: xds.ClusterLoadAssignmentName(
+				types.NamespacedName{
+					Name:      cluster.Upstream.Weighted.ServiceName,
+					Namespace: cluster.Upstream.Weighted.ServiceNamespace,
+				},
+				cluster.Upstream.Weighted.ServicePort.Name),
+			Services: []WeightedService{
+				cluster.Upstream.Weighted,
+			},
+		}
+
+		res = append(res, c)
+	}
+
+	for _, ec := range d.ExtensionClusters {
+		res = append(res, &ec.Upstream)
+	}
+
+	return res
 }
 
 // GetExtensionClusters returns all extension clusters in the DAG.
-func (dag *DAG) GetExtensionClusters() map[string]*ExtensionCluster {
-	getter := extensionClusterGetter(map[string]*ExtensionCluster{})
-	dag.Visit(getter.visit)
-	return getter
+func (d *DAG) GetExtensionClusters() map[string]*ExtensionCluster {
+	// TODO for DAG consumers, this should iterate
+	// over Listeners.SecureVirtualHosts and get
+	// AuthorizationServices.
+	res := map[string]*ExtensionCluster{}
+	for _, ec := range d.ExtensionClusters {
+		res[ec.Name] = ec
+	}
+	return res
+}
+
+func (d *DAG) GetSecrets() []*Secret {
+	var res []*Secret
+	for _, l := range d.Listeners {
+		for _, svh := range l.SecureVirtualHosts {
+			if svh.Secret != nil {
+				res = append(res, svh.Secret)
+			}
+			if svh.FallbackCertificate != nil {
+				res = append(res, svh.FallbackCertificate)
+			}
+		}
+	}
+
+	for _, c := range d.GetClusters() {
+		if c.ClientCertificate != nil {
+			res = append(res, c.ClientCertificate)
+		}
+	}
+
+	return res
 }
 
 // GetExtensionCluster returns the extension cluster in the DAG that
 // matches the provided name, or nil if no matching extension cluster
 // is found.
-func (dag *DAG) GetExtensionCluster(name string) *ExtensionCluster {
-	return dag.GetExtensionClusters()[name]
+func (d *DAG) GetExtensionCluster(name string) *ExtensionCluster {
+	for _, ec := range d.ExtensionClusters {
+		if ec.Name == name {
+			return ec
+		}
+	}
+
+	return nil
 }
 
-// extensionClusterGetter is a visitor that gets all extension clusters
-// in the DAG.
-type extensionClusterGetter map[string]*ExtensionCluster
+func (d *DAG) GetVirtualHostRoutes() map[*VirtualHost][]*Route {
+	res := map[*VirtualHost][]*Route{}
 
-func (v extensionClusterGetter) visit(vertex Vertex) {
-	switch obj := vertex.(type) {
-	case *ExtensionCluster:
-		v[obj.Name] = obj
-	default:
-		vertex.Visit(v.visit)
+	for _, l := range d.Listeners {
+		for _, vhost := range l.VirtualHosts {
+			var routes []*Route
+			for _, r := range vhost.Routes {
+				routes = append(routes, r)
+			}
+			if len(routes) > 0 {
+				res[vhost] = routes
+			}
+		}
 	}
+
+	return res
+}
+
+func (d *DAG) GetSecureVirtualHostRoutes() map[*SecureVirtualHost][]*Route {
+	res := map[*SecureVirtualHost][]*Route{}
+
+	for _, l := range d.Listeners {
+		for _, vhost := range l.SecureVirtualHosts {
+			var routes []*Route
+			for _, r := range vhost.Routes {
+				routes = append(routes, r)
+			}
+			if len(routes) > 0 {
+				res[vhost] = routes
+			}
+		}
+	}
+
+	return res
 }
 
 // validSecret returns true if the Secret contains certificate and private key material.

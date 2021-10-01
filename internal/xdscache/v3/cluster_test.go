@@ -818,9 +818,9 @@ func TestClusterVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAG(t, tc.objs...)
-			got := visitClusters(root)
-			protobuf.ExpectEqual(t, tc.want, got)
+			var cc ClusterCache
+			cc.OnChange(buildDAG(t, tc.objs...))
+			protobuf.ExpectEqual(t, tc.want, cc.values)
 		})
 	}
 }

@@ -31,65 +31,94 @@ type pair struct {
 	a, b interface{}
 }
 
-type ctx struct {
-	w     io.Writer
-	nodes map[interface{}]bool
-	edges map[pair]bool
-}
-
-func (c *ctx) writeVertex(v dag.Vertex) {
-	if c.nodes[v] {
-		return
-	}
-	c.nodes[v] = true
-	switch v := v.(type) {
-	case *dag.Listener:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{listener|%s:%d}"]`+"\n", v, v.Address, v.Port)
-	case *dag.Secret:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", v, v.Namespace(), v.Name())
-	case *dag.Service:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{service|%s/%s:%d}"]`+"\n",
-			v, v.Weighted.ServiceNamespace, v.Weighted.ServiceName, v.Weighted.ServicePort.Port)
-	case *dag.VirtualHost:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{http://%s}"]`+"\n", v, v.Name)
-	case *dag.SecureVirtualHost:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{https://%s}"]`+"\n", v, v.VirtualHost.Name)
-	case *dag.Route:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{%s}"]`+"\n", v, v.PathMatchCondition.String())
-	case *dag.TCPProxy:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{tcpproxy}"]`+"\n", v)
-	case *dag.Cluster:
-		fmt.Fprintf(c.w, `"%p" [shape=record, label="{cluster|{%s|weight %d}}"]`+"\n", v, envoy.Clustername(v), v.Weight)
-	}
-}
-
-func (c *ctx) writeEdge(parent, child dag.Vertex) {
-	if c.edges[pair{parent, child}] {
-		return
-	}
-	c.edges[pair{parent, child}] = true
-	fmt.Fprintf(c.w, `"%p" -> "%p"`+"\n", parent, child)
-}
-
 func (dw *dotWriter) writeDot(w io.Writer) {
 	fmt.Fprintln(w, "digraph DAG {\nrankdir=\"LR\"")
 
-	ctx := &ctx{
-		w:     w,
-		nodes: make(map[interface{}]bool),
-		edges: make(map[pair]bool),
+	nodes := map[interface{}]bool{}
+	edges := map[pair]bool{}
+
+	// collect nodes and edges
+	for _, listener := range dw.Builder.Build().Listeners {
+		nodes[listener] = true
+
+		for _, vhost := range listener.VirtualHosts {
+			edges[pair{listener, vhost}] = true
+			nodes[vhost] = true
+
+			for _, route := range vhost.Routes {
+				edges[pair{vhost, route}] = true
+				nodes[route] = true
+
+				clusters := route.Clusters
+				if route.MirrorPolicy != nil && route.MirrorPolicy.Cluster != nil {
+					clusters = append(clusters, route.MirrorPolicy.Cluster)
+				}
+				for _, cluster := range clusters {
+					edges[pair{route, cluster}] = true
+					nodes[cluster] = true
+
+					if service := cluster.Upstream; service != nil {
+						edges[pair{cluster, service}] = true
+						nodes[service] = true
+					}
+				}
+			}
+		}
+
+		for _, vhost := range listener.SecureVirtualHosts {
+			edges[pair{listener, vhost}] = true
+			nodes[vhost] = true
+
+			if vhost.TCPProxy != nil {
+				edges[pair{vhost, vhost.TCPProxy}] = true
+				nodes[vhost.TCPProxy] = true
+
+				for _, cluster := range vhost.TCPProxy.Clusters {
+					edges[pair{vhost.TCPProxy, cluster}] = true
+					nodes[cluster] = true
+
+					if service := cluster.Upstream; service != nil {
+						edges[pair{cluster, service}] = true
+						nodes[service] = true
+					}
+				}
+			}
+
+			if vhost.Secret != nil {
+				edges[pair{vhost, vhost.Secret}] = true
+				nodes[vhost.Secret] = true
+			}
+		}
 	}
 
-	var visit func(dag.Vertex)
-	visit = func(parent dag.Vertex) {
-		ctx.writeVertex(parent)
-		parent.Visit(func(child dag.Vertex) {
-			visit(child)
-			ctx.writeEdge(parent, child)
-		})
+	// print nodes
+	for node := range nodes {
+		switch node := node.(type) {
+		case *dag.Listener:
+			fmt.Fprintf(w, `"%p" [shape=record, label="{listener|%s:%d}"]`+"\n", node, node.Address, node.Port)
+		case *dag.VirtualHost:
+			fmt.Fprintf(w, `"%p" [shape=record, label="{http://%s}"]`+"\n", node, node.Name)
+		case *dag.SecureVirtualHost:
+			fmt.Fprintf(w, `"%p" [shape=record, label="{https://%s}"]`+"\n", node, node.VirtualHost.Name)
+		case *dag.Route:
+			fmt.Fprintf(w, `"%p" [shape=record, label="{%s}"]`+"\n", node, node.PathMatchCondition.String())
+		case *dag.Cluster:
+			fmt.Fprintf(w, `"%p" [shape=record, label="{cluster|{%s|weight %d}}"]`+"\n", node, envoy.Clustername(node), node.Weight)
+		case *dag.Service:
+			fmt.Fprintf(w, `"%p" [shape=record, label="{service|%s/%s:%d}"]`+"\n",
+				node, node.Weighted.ServiceNamespace, node.Weighted.ServiceName, node.Weighted.ServicePort.Port)
+		case *dag.Secret:
+			fmt.Fprintf(w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", node, node.Namespace(), node.Name())
+		case *dag.TCPProxy:
+			fmt.Fprintf(w, `"%p" [shape=record, label="{tcpproxy}"]`+"\n", node)
+
+		}
 	}
 
-	dw.Builder.Build().Visit(visit)
+	// print edges
+	for edge := range edges {
+		fmt.Fprintf(w, `"%p" -> "%p"`+"\n", edge.a, edge.b)
+	}
 
 	fmt.Fprintln(w, "}")
 }

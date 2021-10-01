@@ -25,15 +25,9 @@ import (
 
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
-	"github.com/projectcontour/contour/internal/xds"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
-
-// Vertex is a node in the DAG that can be visited.
-type Vertex interface {
-	Visit(func(Vertex))
-}
 
 // Observer is an interface for receiving notification of DAG updates.
 type Observer interface {
@@ -61,42 +55,14 @@ func ComposeObservers(observers ...Observer) Observer {
 	})
 }
 
-// A DAG represents a directed acyclic graph of objects representing the relationship
-// between Kubernetes Ingress objects, the backend Services, and Secret objects.
-// The DAG models these relationships as Roots and Vertices.
 type DAG struct {
 	// StatusCache holds a cache of status updates to send.
 	StatusCache status.Cache
 
-	// roots are the root vertices of this DAG.
-	roots []Vertex
-}
-
-// Visit calls fn on each root of this DAG.
-func (d *DAG) Visit(fn func(Vertex)) {
-	for _, r := range d.roots {
-		fn(r)
-	}
-}
-
-// AddRoot appends the given root to the DAG's roots.
-func (d *DAG) AddRoot(root Vertex) {
-	d.roots = append(d.roots, root)
-}
-
-// RemoveRoot removes the given root from the DAG's roots if it exists.
-func (d *DAG) RemoveRoot(root Vertex) {
-	idx := -1
-	for i := range d.roots {
-		if d.roots[i] == root {
-			idx = i
-			break
-		}
-	}
-
-	if idx >= 0 {
-		d.roots = append(d.roots[:idx], d.roots[idx+1:]...)
-	}
+	Listeners          []*Listener
+	VirtualHosts       []*VirtualHost
+	SecureVirtualHosts []*SecureVirtualHost
+	ExtensionClusters  []*ExtensionCluster
 }
 
 type MatchCondition interface {
@@ -497,17 +463,6 @@ func (pvc *PeerValidationContext) GetSubjectName() string {
 	return pvc.SubjectName
 }
 
-func (r *Route) Visit(f func(Vertex)) {
-	for _, c := range r.Clusters {
-		f(c)
-	}
-	// Allow any mirror clusters to also be visited so that
-	// they are also added to CDS.
-	if r.MirrorPolicy != nil && r.MirrorPolicy.Cluster != nil {
-		f(r.MirrorPolicy.Cluster)
-	}
-}
-
 // A VirtualHost represents a named L4/L7 service.
 type VirtualHost struct {
 	// Name is the fully qualified domain name of a network host,
@@ -523,14 +478,14 @@ type VirtualHost struct {
 	// are rate limited.
 	RateLimitPolicy *RateLimitPolicy
 
-	routes map[string]*Route
+	Routes map[string]*Route
 }
 
 func (v *VirtualHost) addRoute(route *Route) {
-	if v.routes == nil {
-		v.routes = make(map[string]*Route)
+	if v.Routes == nil {
+		v.Routes = make(map[string]*Route)
 	}
-	v.routes[conditionsToString(route)] = route
+	v.Routes[conditionsToString(route)] = route
 }
 
 func conditionsToString(r *Route) string {
@@ -541,15 +496,9 @@ func conditionsToString(r *Route) string {
 	return strings.Join(s, ",")
 }
 
-func (v *VirtualHost) Visit(f func(Vertex)) {
-	for _, r := range v.routes {
-		f(r)
-	}
-}
-
 func (v *VirtualHost) Valid() bool {
 	// A VirtualHost is valid if it has at least one route.
-	return len(v.routes) > 0
+	return len(v.Routes) > 0
 }
 
 // A SecureVirtualHost represents a HTTP host protected by TLS.
@@ -587,21 +536,11 @@ type SecureVirtualHost struct {
 	AuthorizationFailOpen bool
 }
 
-func (s *SecureVirtualHost) Visit(f func(Vertex)) {
-	s.VirtualHost.Visit(f)
-	if s.TCPProxy != nil {
-		f(s.TCPProxy)
-	}
-	if s.Secret != nil {
-		f(s.Secret) // secret is not required if vhost is using tls passthrough
-	}
-}
-
 func (s *SecureVirtualHost) Valid() bool {
 	// A SecureVirtualHost is valid if either
 	// 1. it has a secret and at least one route.
 	// 2. it has a tcpproxy, because the tcpproxy backend may negotiate TLS itself.
-	return (s.Secret != nil && len(s.routes) > 0) || s.TCPProxy != nil
+	return (s.Secret != nil && len(s.Routes) > 0) || s.TCPProxy != nil
 }
 
 type ListenerName struct {
@@ -612,6 +551,7 @@ type ListenerName struct {
 // A Listener represents a TCP socket that accepts
 // incoming connections.
 type Listener struct {
+	Name string
 
 	// Address is the TCP address to listen on.
 	// If blank 0.0.0.0, or ::/0 for IPv6, is assumed.
@@ -620,13 +560,8 @@ type Listener struct {
 	// Port is the TCP port to listen on.
 	Port int
 
-	VirtualHosts []Vertex
-}
-
-func (l *Listener) Visit(f func(Vertex)) {
-	for _, vh := range l.VirtualHosts {
-		f(vh)
-	}
+	VirtualHosts       []*VirtualHost
+	SecureVirtualHosts []*SecureVirtualHost
 }
 
 // TCPProxy represents a cluster of TCP endpoints.
@@ -635,12 +570,6 @@ type TCPProxy struct {
 	// Clusters is the, possibly weighted, set
 	// of upstream services to forward decrypted traffic.
 	Clusters []*Cluster
-}
-
-func (t *TCPProxy) Visit(f func(Vertex)) {
-	for _, s := range t.Clusters {
-		f(s)
-	}
 }
 
 // Service represents a single Kubernetes' Service's Port.
@@ -671,26 +600,6 @@ type Service struct {
 
 	// ExternalName is an optional field referencing a dns entry for Service type "ExternalName"
 	ExternalName string
-}
-
-// Visit applies the visitor function to the Service vertex.
-func (s *Service) Visit(f func(Vertex)) {
-	// A Service has only one WeightedService entry. Fake up a
-	// ServiceCluster so that the visitor can pretend to not
-	// know this.
-	c := ServiceCluster{
-		ClusterName: xds.ClusterLoadAssignmentName(
-			types.NamespacedName{
-				Name:      s.Weighted.ServiceName,
-				Namespace: s.Weighted.ServiceNamespace,
-			},
-			s.Weighted.ServicePort.Name),
-		Services: []WeightedService{
-			s.Weighted,
-		},
-	}
-
-	f(&c)
 }
 
 // Cluster holds the connection specific parameters that apply to
@@ -749,10 +658,6 @@ type Cluster struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *Secret
-}
-
-func (c Cluster) Visit(f func(Vertex)) {
-	f(c.Upstream)
 }
 
 // WeightedService represents the load balancing weight of a
@@ -819,10 +724,6 @@ func (s *ServiceCluster) Validate() error {
 	return nil
 }
 
-func (s *ServiceCluster) Visit(func(Vertex)) {
-	// ServiceClusters are leaves in the DAG.
-}
-
 // AddService adds the given service with a default weight of 1.
 func (s *ServiceCluster) AddService(name types.NamespacedName, port v1.ServicePort) {
 	s.AddWeightedService(1, name, port)
@@ -864,9 +765,8 @@ type Secret struct {
 	Object *v1.Secret
 }
 
-func (s *Secret) Name() string       { return s.Object.Name }
-func (s *Secret) Namespace() string  { return s.Object.Namespace }
-func (s *Secret) Visit(func(Vertex)) {}
+func (s *Secret) Name() string      { return s.Object.Name }
+func (s *Secret) Namespace() string { return s.Object.Namespace }
 
 // Data returns the contents of the backing secret's map.
 func (s *Secret) Data() map[string][]byte {
@@ -929,12 +829,6 @@ type ExtensionCluster struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *Secret
-}
-
-// Visit processes extension clusters.
-func (e *ExtensionCluster) Visit(f func(Vertex)) {
-	// Emit the upstream ServiceCluster to the visitor.
-	f(&e.Upstream)
 }
 
 func wildcardDomainHeaderMatch(fqdn string) HeaderMatchCondition {
