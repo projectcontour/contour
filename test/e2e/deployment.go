@@ -18,11 +18,12 @@ package e2e
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/rand"
+	"math/big"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -588,7 +589,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		}
 
 		if err := d.client.Create(context.TODO(), contourConfiguration); err != nil {
-			fmt.Println("could not create ContourConfiguration: %v", err)
+			return nil, "", fmt.Errorf("could not create ContourConfiguration: %v", err)
 		}
 
 		contourServeArgs = append([]string{
@@ -649,7 +650,7 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 		}
 
 		if err := d.client.Delete(context.TODO(), cc); err != nil {
-			fmt.Errorf("could not delete ContourConfiguration: %v", err)
+			return fmt.Errorf("could not delete ContourConfiguration: %v", err)
 		}
 	}
 
@@ -660,11 +661,15 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 }
 
 func randomString(n int) string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
-
-	s := make([]rune, n)
-	for i := range s {
-		s[i] = letters[rand.Intn(len(letters))]
+	const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
+	ret := make([]byte, n)
+	for i := 0; i < n; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
+		if err != nil {
+			return ""
+		}
+		ret[i] = letters[num.Int64()]
 	}
-	return string(s)
+
+	return string(ret)
 }

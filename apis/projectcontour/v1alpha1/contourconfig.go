@@ -14,11 +14,8 @@
 package v1alpha1
 
 import (
-	"strings"
-
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // ContourConfigurationSpec represents a configuration of a Contour controller.
@@ -82,7 +79,7 @@ type ContourConfigurationSpec struct {
 	// +optional
 	Policy *PolicyConfig `json:"policy,omitempty"`
 
-	// Metrics defines the endpoints Envoy use to serve to metrics.
+	// Metrics defines the endpoints Contour uses to serve to metrics.
 	// +optional
 	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
 	Metrics MetricsConfig `json:"metrics"`
@@ -524,21 +521,6 @@ type HeadersPolicy struct {
 type NamespacedName struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
-}
-
-func (n *NamespacedName) NamespacedNameOf() *types.NamespacedName {
-	if n == nil {
-		return nil
-	}
-
-	if len(strings.TrimSpace(n.Name)) == 0 && len(strings.TrimSpace(n.Namespace)) == 0 {
-		return nil
-	}
-
-	return &types.NamespacedName{
-		Namespace: n.Namespace,
-		Name:      n.Name,
-	}
 }
 
 // ContourConfigurationStatus defines the observed state of a ContourConfiguration resource.

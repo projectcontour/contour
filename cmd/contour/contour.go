@@ -121,9 +121,9 @@ func main() {
 		}
 
 		// Build out serve deps.
-		serve, err := NewServe(log, serveCtx)
+		serve, err := NewServer(log, serveCtx)
 		if err != nil {
-			log.WithError(err).Fatal("unable to create serve deps")
+			log.WithError(err).Fatal("unable to initialize Server dependencies required to start Contour")
 		}
 
 		if err := serve.doServe(); err != nil {

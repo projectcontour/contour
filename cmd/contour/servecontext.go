@@ -159,7 +159,7 @@ func grpcOptions(log logrus.FieldLogger, contourXDSConfig *contour_api_v1alpha1.
 	return opts
 }
 
-// tlsconfig returns a new *tls.Config. If the context is not properly configured
+// tlsconfig returns a new *tls.Config. If the TLS parameters passed are not properly configured
 // for tls communication, tlsconfig returns nil.
 func tlsconfig(log logrus.FieldLogger, contourXDSTLS *contour_api_v1alpha1.TLS) *tls.Config {
 	err := verifyTLSFlags(contourXDSTLS)

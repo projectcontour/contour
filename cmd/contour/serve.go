@@ -172,7 +172,9 @@ type Server struct {
 	registry *prometheus.Registry
 }
 
-func NewServe(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
+// NewServer returns a Server object which contains the initial configuration
+// objects required to start an instance of Contour.
+func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
 	// Set up workgroup runner.
 	var group workgroup.Group
@@ -185,7 +187,7 @@ func NewServe(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
 	scheme, err := k8s.NewContourScheme()
 	if err != nil {
-		log.WithError(err).Fatal("unable to create scheme")
+		return nil, fmt.Errorf("unable to create scheme: %w", err)
 	}
 
 	// Instantiate a controller-runtime manager.
@@ -193,7 +195,7 @@ func NewServe(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 		Scheme: scheme,
 	})
 	if err != nil {
-		log.WithError(err).Fatal("unable to set up controller manager")
+		return nil, fmt.Errorf("unable to set up controller manager: %w", err)
 	}
 
 	// Set up Prometheus registry and register base metrics.
@@ -221,11 +223,9 @@ func (s *Server) doServe() error {
 		// Determine the name/namespace of the configuration resource utilizing the environment
 		// variable "CONTOUR_NAMESPACE" which should exist on the Contour deployment.
 		//
-		// If the env variable is not present, it will return "" and still fail the lookup
-		// of the ContourConfiguration in the cluster.
-
-		contourNamespace := os.Getenv("CONTOUR_NAMESPACE")
-		if len(contourNamespace) == 0 {
+		// If the env variable is not present, it will default to "projectcontour".
+		contourNamespace, found := os.LookupEnv("CONTOUR_NAMESPACE")
+		if !found {
 			contourNamespace = "projectcontour"
 		}
 
@@ -359,8 +359,8 @@ func (s *Server) doServe() error {
 			dnsLookupFamily:           contourConfiguration.Envoy.Cluster.DNSLookupFamily,
 			headersPolicy:             contourConfiguration.Policy,
 			clients:                   s.clients,
-			clientCert:                contourConfiguration.Envoy.ClientCertificate.NamespacedNameOf(),
-			fallbackCert:              contourConfiguration.HTTPProxy.FallbackCertificate.NamespacedNameOf(),
+			clientCert:                &types.NamespacedName{Name: contourConfiguration.Envoy.ClientCertificate.Name, Namespace: contourConfiguration.Envoy.ClientCertificate.Namespace},
+			fallbackCert:              &types.NamespacedName{Name: contourConfiguration.HTTPProxy.FallbackCertificate.Name, Namespace: contourConfiguration.HTTPProxy.FallbackCertificate.Namespace},
 		}),
 		FieldLogger: s.log.WithField("context", "contourEventHandler"),
 	}
@@ -515,7 +515,10 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 		return nil
 	}
 
-	namespacedName := contourConfiguration.RateLimitService.ExtensionService.NamespacedNameOf()
+	namespacedName := &types.NamespacedName{
+		Namespace: contourConfiguration.RateLimitService.ExtensionService.Namespace,
+		Name:      contourConfiguration.RateLimitService.ExtensionService.Name,
+	}
 	client := s.clients.DynamicClient().Resource(contour_api_v1alpha1.ExtensionServiceGVR).Namespace(namespacedName.Namespace)
 
 	// ensure the specified ExtensionService exists

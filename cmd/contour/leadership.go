@@ -103,11 +103,11 @@ func newLeaderElector(
 	if err != nil {
 		log.WithError(err).Fatalf("could not parse LeaseDuration: %q", conf.LeaseDuration)
 	}
-	renewDeadline, _ := time.ParseDuration(conf.RenewDeadline)
+	renewDeadline, err := time.ParseDuration(conf.RenewDeadline)
 	if err != nil {
 		log.WithError(err).Fatalf("could not parse RenewDeadline: %q", conf.RenewDeadline)
 	}
-	retryPeriod, _ := time.ParseDuration(conf.RetryPeriod)
+	retryPeriod, err := time.ParseDuration(conf.RetryPeriod)
 	if err != nil {
 		log.WithError(err).Fatalf("could not parse RetryPeriod: %q", conf.RetryPeriod)
 	}
