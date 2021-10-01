@@ -542,7 +542,8 @@ spec:
                 default:
                   address: 0.0.0.0
                   port: 8000
-                description: Metrics defines the endpoints Envoy use to serve to metrics.
+                description: Metrics defines the endpoints Contour uses to serve to
+                  metrics.
                 properties:
                   address:
                     description: Defines the metrics address interface.
@@ -1455,7 +1456,7 @@ spec:
                     default:
                       address: 0.0.0.0
                       port: 8000
-                    description: Metrics defines the endpoints Envoy use to serve
+                    description: Metrics defines the endpoints Contour uses to serve
                       to metrics.
                     properties:
                       address:
