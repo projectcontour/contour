@@ -345,6 +345,15 @@ func (s *Server) doServe() error {
 		ingressClassName = *contourConfiguration.Ingress.ClassName
 	}
 
+	var clientCert *types.NamespacedName
+	var fallbackCert *types.NamespacedName
+	if contourConfiguration.Envoy.ClientCertificate != nil {
+		clientCert = &types.NamespacedName{Name: contourConfiguration.Envoy.ClientCertificate.Name, Namespace: contourConfiguration.Envoy.ClientCertificate.Namespace}
+	}
+	if contourConfiguration.HTTPProxy.FallbackCertificate != nil {
+		fallbackCert = &types.NamespacedName{Name: contourConfiguration.HTTPProxy.FallbackCertificate.Name, Namespace: contourConfiguration.HTTPProxy.FallbackCertificate.Namespace}
+	}
+
 	// Build the core Kubernetes event handler.
 	contourHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
@@ -359,8 +368,8 @@ func (s *Server) doServe() error {
 			dnsLookupFamily:           contourConfiguration.Envoy.Cluster.DNSLookupFamily,
 			headersPolicy:             contourConfiguration.Policy,
 			clients:                   s.clients,
-			clientCert:                &types.NamespacedName{Name: contourConfiguration.Envoy.ClientCertificate.Name, Namespace: contourConfiguration.Envoy.ClientCertificate.Namespace},
-			fallbackCert:              &types.NamespacedName{Name: contourConfiguration.HTTPProxy.FallbackCertificate.Name, Namespace: contourConfiguration.HTTPProxy.FallbackCertificate.Namespace},
+			clientCert:                clientCert,
+			fallbackCert:              fallbackCert,
 		}),
 		FieldLogger: s.log.WithField("context", "contourEventHandler"),
 	}
