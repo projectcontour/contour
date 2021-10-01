@@ -18,35 +18,10 @@ import (
 	"strconv"
 
 	"github.com/projectcontour/contour/internal/annotation"
-	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-// RouteServiceName identifies a service used in a route.
-type RouteServiceName struct {
-	Name      string
-	Namespace string
-	Port      int32
-}
-
-// GetServices returns all services in the DAG.
-func (dag *DAG) GetServices() map[RouteServiceName]*Service {
-	getter := serviceGetter(map[RouteServiceName]*Service{})
-	dag.Visit(getter.visit)
-	return getter
-}
-
-// GetService returns the service in the DAG that matches the provided
-// namespace, name and port, or nil if no matching service is found.
-func (dag *DAG) GetService(meta types.NamespacedName, port int32) *Service {
-	return dag.GetServices()[RouteServiceName{
-		Name:      meta.Name,
-		Namespace: meta.Namespace,
-		Port:      port,
-	}]
-}
 
 // EnsureService looks for a Kubernetes service in the cache matching the provided
 // namespace, name and port, and returns a DAG service for it. If a matching service
@@ -62,11 +37,14 @@ func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString
 		return nil, err
 	}
 
-	if dagSvc := dag.GetService(k8s.NamespacedNameOf(svc), svcPort.Port); dagSvc != nil {
-		return dagSvc, nil
-	}
-
-	dagSvc := &Service{
+	// There's no need to walk the DAG to look for a matching
+	// existing Service here. They're terminal nodes in the DAG
+	// so nothing is getting attached to them, and when used
+	// to generate an Envoy cluster any copy of this info will
+	// do. Doing a DAG walk to look for them is also very
+	// inefficient and can cause performance isuses at scale
+	// (see https://github.com/projectcontour/contour/issues/4058).
+	return &Service{
 		Weighted: WeightedService{
 			ServiceName:      svc.Name,
 			ServiceNamespace: svc.Namespace,
@@ -79,8 +57,7 @@ func (dag *DAG) EnsureService(meta types.NamespacedName, port intstr.IntOrString
 		MaxRequests:        annotation.MaxRequests(svc),
 		MaxRetries:         annotation.MaxRetries(svc),
 		ExternalName:       externalName(svc),
-	}
-	return dagSvc, nil
+	}, nil
 }
 
 func validateExternalName(svc *v1.Service, enableExternalNameSvc bool) error {
@@ -129,23 +106,6 @@ func externalName(svc *v1.Service) string {
 		return ""
 	}
 	return svc.Spec.ExternalName
-}
-
-// serviceGetter is a visitor that gets all services
-// in the DAG.
-type serviceGetter map[RouteServiceName]*Service
-
-func (s serviceGetter) visit(vertex Vertex) {
-	switch obj := vertex.(type) {
-	case *Service:
-		s[RouteServiceName{
-			Name:      obj.Weighted.ServiceName,
-			Namespace: obj.Weighted.ServiceNamespace,
-			Port:      obj.Weighted.ServicePort.Port,
-		}] = obj
-	default:
-		vertex.Visit(s.visit)
-	}
 }
 
 // GetSecureVirtualHosts returns all secure virtual hosts in the DAG.
