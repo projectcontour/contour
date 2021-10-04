@@ -57,7 +57,7 @@ jobs:
           - config_type: "ConfigmapConfiguration"
             use_config_crd: "false"
           - config_type: "ContourConfiguration"
-            use_config_crd: "false"
+            use_config_crd: "true"
 
     steps:
       - uses: actions/checkout@v2

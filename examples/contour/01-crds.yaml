@@ -562,6 +562,8 @@ spec:
                   by the user
                 properties:
                   applyToIngress:
+                    description: ApplyToIngress determines if the Policies will apply
+                      to ingress objects
                     type: boolean
                   requestHeaders:
                     description: RequestHeadersPolicy defines the request headers
@@ -1476,6 +1478,8 @@ spec:
                       by the user
                     properties:
                       applyToIngress:
+                        description: ApplyToIngress determines if the Policies will
+                          apply to ingress objects
                         type: boolean
                       requestHeaders:
                         description: RequestHeadersPolicy defines the request headers
