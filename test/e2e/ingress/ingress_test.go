@@ -67,7 +67,7 @@ var _ = Describe("Ingress", func() {
 		// BeforeEach.
 		contourConfig = &config.Parameters{}
 
-		contourConfiguration = e2e.ContourConfiguration.DeepCopy()
+		contourConfiguration = e2e.DefaultContourConfiguration()
 
 		// Default contour serve command line arguments can be appended to in
 		// nested BeforeEach.

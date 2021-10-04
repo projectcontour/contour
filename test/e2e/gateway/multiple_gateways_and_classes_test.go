@@ -56,7 +56,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 		}
 
 		// Update contour configuration to point to specified gateway.
-		contourConfiguration = e2e.ContourConfiguration.DeepCopy()
+		contourConfiguration = e2e.DefaultContourConfiguration()
 		contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
 			ControllerName: controllerName,
 		}

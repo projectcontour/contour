@@ -639,7 +639,7 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 
 	// Look for the ENV variable to tell if this test run should use
 	// the ContourConfiguration file or the ContourConfiguration CRD.
-	if _, useContourConfiguration := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); useContourConfiguration {
+	if useContourConfiguration, variableFound := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); variableFound && useContourConfiguration == "true" {
 		cc := &contour_api_v1alpha1.ContourConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      configFile,

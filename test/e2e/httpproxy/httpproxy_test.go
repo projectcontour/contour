@@ -71,7 +71,7 @@ var _ = Describe("HTTPProxy", func() {
 
 		// Contour configuration crd, can be modified in nested
 		// BeforeEach.
-		contourConfiguration = e2e.ContourConfiguration.DeepCopy()
+		contourConfiguration = e2e.DefaultContourConfiguration()
 
 		// Default contour serve command line arguments can be appended to in
 		// nested BeforeEach.

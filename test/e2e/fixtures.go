@@ -306,75 +306,78 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 	}
 }
 
-var ContourConfiguration = &contour_api_v1alpha1.ContourConfiguration{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "ingress",
-		Namespace: "projectcontour",
-	},
-	Spec: contour_api_v1alpha1.ContourConfigurationSpec{
-		Debug: contour_api_v1alpha1.DebugConfig{
-			Address:                 "127.0.0.1",
-			Port:                    6060,
-			DebugLogLevel:           contour_api_v1alpha1.InfoLog,
-			KubernetesDebugLogLevel: 0,
+// DefaultContourConfiguration returns a default ContourConfiguration object.
+func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
+	return &contour_api_v1alpha1.ContourConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ingress",
+			Namespace: "projectcontour",
 		},
-		Health: contour_api_v1alpha1.HealthConfig{
-			Address: "0.0.0.0",
-			Port:    8000,
-		},
-		Envoy: contour_api_v1alpha1.EnvoyConfig{
-			DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
-				"HTTP/1.1", "HTTP/2",
+		Spec: contour_api_v1alpha1.ContourConfigurationSpec{
+			Debug: contour_api_v1alpha1.DebugConfig{
+				Address:                 "127.0.0.1",
+				Port:                    6060,
+				DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+				KubernetesDebugLogLevel: 0,
 			},
-			Listener: contour_api_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:             false,
-				DisableAllowChunkedLength: false,
-				ConnectionBalancer:        "",
-				TLS: contour_api_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: "1.2",
-					CipherSuites: []contour_api_v1alpha1.TLSCipherType{
-						"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
-						"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
-						"ECDHE-ECDSA-AES256-GCM-SHA384",
-						"ECDHE-RSA-AES256-GCM-SHA384",
+			Health: contour_api_v1alpha1.HealthConfig{
+				Address: "0.0.0.0",
+				Port:    8000,
+			},
+			Envoy: contour_api_v1alpha1.EnvoyConfig{
+				DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
+					"HTTP/1.1", "HTTP/2",
+				},
+				Listener: contour_api_v1alpha1.EnvoyListenerConfig{
+					UseProxyProto:             false,
+					DisableAllowChunkedLength: false,
+					ConnectionBalancer:        "",
+					TLS: contour_api_v1alpha1.EnvoyTLS{
+						MinimumProtocolVersion: "1.2",
+						CipherSuites: []contour_api_v1alpha1.TLSCipherType{
+							"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
+							"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+							"ECDHE-ECDSA-AES256-GCM-SHA384",
+							"ECDHE-RSA-AES256-GCM-SHA384",
+						},
 					},
 				},
+				Service: contour_api_v1alpha1.NamespacedName{
+					Name:      "envoy",
+					Namespace: "projectcontour",
+				},
+				HTTPListener: contour_api_v1alpha1.EnvoyListener{
+					Address:   "0.0.0.0",
+					Port:      8080,
+					AccessLog: "/dev/stdout",
+				},
+				HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+					Address:   "0.0.0.0",
+					Port:      8443,
+					AccessLog: "/dev/stdout",
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8002,
+				},
+				Logging: contour_api_v1alpha1.EnvoyLogging{
+					AccessLogFormat: contour_api_v1alpha1.EnvoyAccessLog,
+				},
+				Cluster: contour_api_v1alpha1.ClusterParameters{
+					DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+				},
+				Network: contour_api_v1alpha1.NetworkParameters{
+					EnvoyAdminPort: 9001,
+				},
 			},
-			Service: contour_api_v1alpha1.NamespacedName{
-				Name:      "envoy",
-				Namespace: "projectcontour",
+			HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				DisablePermitInsecure: false,
 			},
-			HTTPListener: contour_api_v1alpha1.EnvoyListener{
-				Address:   "0.0.0.0",
-				Port:      8080,
-				AccessLog: "/dev/stdout",
-			},
-			HTTPSListener: contour_api_v1alpha1.EnvoyListener{
-				Address:   "0.0.0.0",
-				Port:      8443,
-				AccessLog: "/dev/stdout",
-			},
+			EnableExternalNameService: false,
 			Metrics: contour_api_v1alpha1.MetricsConfig{
 				Address: "0.0.0.0",
-				Port:    8002,
-			},
-			Logging: contour_api_v1alpha1.EnvoyLogging{
-				AccessLogFormat: contour_api_v1alpha1.EnvoyAccessLog,
-			},
-			Cluster: contour_api_v1alpha1.ClusterParameters{
-				DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
-			},
-			Network: contour_api_v1alpha1.NetworkParameters{
-				EnvoyAdminPort: 9001,
+				Port:    8000,
 			},
 		},
-		HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
-			DisablePermitInsecure: false,
-		},
-		EnableExternalNameService: false,
-		Metrics: contour_api_v1alpha1.MetricsConfig{
-			Address: "0.0.0.0",
-			Port:    8000,
-		},
-	},
+	}
 }
