@@ -568,7 +568,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 
 	// Look for the ENV variable to tell if this test run should use
 	// the ContourConfiguration file or the ContourConfiguration CRD.
-	if _, useContourConfiguration := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); useContourConfiguration {
+	if useContourConfiguration, variableFound := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); variableFound && useContourConfiguration == "true" {
 		port, _ := strconv.Atoi(d.localContourPort)
 
 		contourConfiguration.Name = randomString(14)
@@ -628,8 +628,6 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		configReferenceName = configFile.Name()
 	}
 
-	// Set the CONTOUR_NAMESPACE env variable so Contour can lookup the Configuration CRD in the proper namespace.
-	//os.Setenv("CONTOUR_NAMESPACE", "projectcontour")
 	session, err := gexec.Start(exec.Command(d.contourBin, contourServeArgs...), d.cmdOutputWriter, d.cmdOutputWriter) // nolint:gosec
 	if err != nil {
 		return nil, "", err

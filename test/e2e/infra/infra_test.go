@@ -65,7 +65,7 @@ var _ = Describe("Infra", func() {
 
 		// Contour configuration crd, can be modified in nested
 		// BeforeEach.
-		contourConfiguration = e2e.ContourConfigration.DeepCopy()
+		contourConfiguration = e2e.ContourConfiguration.DeepCopy()
 
 		// Default contour serve command line arguments can be appended to in
 		// nested BeforeEach.

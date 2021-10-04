@@ -306,7 +306,7 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 	}
 }
 
-var ContourConfigration = &contour_api_v1alpha1.ContourConfiguration{
+var ContourConfiguration = &contour_api_v1alpha1.ContourConfiguration{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "ingress",
 		Namespace: "projectcontour",

@@ -80,7 +80,7 @@ var _ = Describe("Gateway API", func() {
 					}
 
 					// Update contour configuration to point to specified gateway.
-					contourConfiguration = e2e.ContourConfigration.DeepCopy()
+					contourConfiguration = e2e.ContourConfiguration.DeepCopy()
 					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
 						ControllerName: gatewayClass.Spec.Controller,
 					}

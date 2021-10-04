@@ -504,6 +504,7 @@ type PolicyConfig struct {
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeaders,omitempty"`
 
+	// ApplyToIngress determines if the Policies will apply to ingress objects
 	// +optional
 	ApplyToIngress bool `json:"applyToIngress"`
 }
