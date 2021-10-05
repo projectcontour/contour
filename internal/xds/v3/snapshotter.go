@@ -36,17 +36,11 @@ type snapshotter struct {
 	envoy_cache_v3.SnapshotCache
 }
 
-func (s *snapshotter) Generate(version string, resources map[envoy_types.ResponseType][]envoy_types.Resource) error {
+func (s *snapshotter) Generate(version string, resources map[envoy_resource_v3.Type][]envoy_types.Resource) error {
 	// Create a snapshot with all xDS resources.
 	snapshot, err := envoy_cache_v3.NewSnapshot(
 		version,
-		map[envoy_resource_v3.Type][]envoy_types.Resource{
-			envoy_resource_v3.EndpointType: resources[envoy_types.Endpoint],
-			envoy_resource_v3.ClusterType:  resources[envoy_types.Cluster],
-			envoy_resource_v3.RouteType:    resources[envoy_types.Route],
-			envoy_resource_v3.ListenerType: resources[envoy_types.Listener],
-			envoy_resource_v3.SecretType:   resources[envoy_types.Secret],
-		},
+		resources,
 	)
 	if err != nil {
 		return err
