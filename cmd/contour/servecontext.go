@@ -303,7 +303,12 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 
 	var defaultHTTPVersions []contour_api_v1alpha1.HTTPVersionType
 	for _, version := range ctx.Config.DefaultHTTPVersions {
-		defaultHTTPVersions = append(defaultHTTPVersions, contour_api_v1alpha1.HTTPVersionType(version))
+		switch version {
+		case config.HTTPVersion1:
+			defaultHTTPVersions = append(defaultHTTPVersions, contour_api_v1alpha1.HTTPVersion1)
+		case config.HTTPVersion2:
+			defaultHTTPVersions = append(defaultHTTPVersions, contour_api_v1alpha1.HTTPVersion2)
+		}
 	}
 
 	timeoutParams := &contour_api_v1alpha1.TimeoutParameters{}
