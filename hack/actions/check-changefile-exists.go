@@ -71,7 +71,10 @@ Thanks for your PR.
 For a PR to be accepted to Contour, it must have:
 - at least one release-note label set
 - a file named changelogs/unreleased/PR#-author-category,
-	where category matches the relase-note/category label you apply`)
+	where category matches the relase-note/category label you apply.
+	
+Please see the "Commit message and PR guidelines" section of CONTRIBUTING.md,
+or https://github.com/projectcontour/contour/blob/main/design/changelog.md for background.`)
 
 	}
 
