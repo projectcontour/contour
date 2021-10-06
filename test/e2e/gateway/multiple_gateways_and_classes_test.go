@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"time"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/test/e2e"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/gomega/gexec"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -35,6 +38,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
+		contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
 		contourConfigFile     string
 		additionalContourArgs []string
 		controllerName        string
@@ -51,6 +55,12 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			},
 		}
 
+		// Update contour configuration to point to specified gateway.
+		contourConfiguration = e2e.DefaultContourConfiguration()
+		contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
+			ControllerName: controllerName,
+		}
+
 		// Default contour serve command line arguments can be appended to in
 		// nested BeforeEach.
 		additionalContourArgs = []string{}
@@ -62,7 +72,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 	// until here to start Contour.
 	JustBeforeEach(func() {
 		var err error
-		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, additionalContourArgs...)
+		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, contourConfiguration, additionalContourArgs...)
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.

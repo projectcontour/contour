@@ -16,6 +16,8 @@ package main
 import (
 	"testing"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +37,10 @@ func TestGetDAGBuilder(t *testing.T) {
 	}
 
 	t.Run("all default options", func(t *testing.T) {
-		got := getDAGBuilder(newServeContext(), nil, nil, nil, logrus.StandardLogger())
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily})
 		commonAssertions(t, &got)
 		assert.Empty(t, got.Source.ConfiguredSecretRefs)
 	})
@@ -43,7 +48,10 @@ func TestGetDAGBuilder(t *testing.T) {
 	t.Run("client cert specified", func(t *testing.T) {
 		clientCert := &types.NamespacedName{Namespace: "client-ns", Name: "client-name"}
 
-		got := getDAGBuilder(newServeContext(), nil, clientCert, nil, logrus.StandardLogger())
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert})
 		commonAssertions(t, &got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert})
 	})
@@ -51,7 +59,10 @@ func TestGetDAGBuilder(t *testing.T) {
 	t.Run("fallback cert specified", func(t *testing.T) {
 		fallbackCert := &types.NamespacedName{Namespace: "fallback-ns", Name: "fallback-name"}
 
-		got := getDAGBuilder(newServeContext(), nil, nil, fallbackCert, logrus.StandardLogger())
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, fallbackCert: fallbackCert})
 		commonAssertions(t, &got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{fallbackCert})
 	})
@@ -60,33 +71,45 @@ func TestGetDAGBuilder(t *testing.T) {
 		clientCert := &types.NamespacedName{Namespace: "client-ns", Name: "client-name"}
 		fallbackCert := &types.NamespacedName{Namespace: "fallback-ns", Name: "fallback-name"}
 
-		got := getDAGBuilder(newServeContext(), nil, clientCert, fallbackCert, logrus.StandardLogger())
-
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert, fallbackCert: fallbackCert})
 		commonAssertions(t, &got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert, fallbackCert})
 	})
 
 	t.Run("request and response headers policy specified", func(t *testing.T) {
-		ctx := newServeContext()
-		ctx.Config.Policy.RequestHeadersPolicy.Set = map[string]string{
-			"req-set-key-1": "req-set-val-1",
-			"req-set-key-2": "req-set-val-2",
-		}
-		ctx.Config.Policy.RequestHeadersPolicy.Remove = []string{"req-remove-key-1", "req-remove-key-2"}
-		ctx.Config.Policy.ResponseHeadersPolicy.Set = map[string]string{
-			"res-set-key-1": "res-set-val-1",
-			"res-set-key-2": "res-set-val-2",
-		}
-		ctx.Config.Policy.ResponseHeadersPolicy.Remove = []string{"res-remove-key-1", "res-remove-key-2"}
 
-		got := getDAGBuilder(ctx, nil, nil, nil, logrus.StandardLogger())
+		policy := &contour_api_v1alpha1.PolicyConfig{
+			RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+				Set: map[string]string{
+					"req-set-key-1": "req-set-val-1",
+					"req-set-key-2": "req-set-val-2",
+				},
+				Remove: []string{"req-remove-key-1", "req-remove-key-2"},
+			},
+			ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+				Set: map[string]string{
+					"res-set-key-1": "res-set-val-1",
+					"res-set-key-2": "res-set-val-2",
+				},
+				Remove: []string{"res-remove-key-1", "res-remove-key-2"},
+			},
+			ApplyToIngress: false,
+		}
+
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, headersPolicy: policy})
 		commonAssertions(t, &got)
 
 		httpProxyProcessor := mustGetHTTPProxyProcessor(t, &got)
-		assert.EqualValues(t, ctx.Config.Policy.RequestHeadersPolicy.Set, httpProxyProcessor.RequestHeadersPolicy.Set)
-		assert.ElementsMatch(t, ctx.Config.Policy.RequestHeadersPolicy.Remove, httpProxyProcessor.RequestHeadersPolicy.Remove)
-		assert.EqualValues(t, ctx.Config.Policy.ResponseHeadersPolicy.Set, httpProxyProcessor.ResponseHeadersPolicy.Set)
-		assert.ElementsMatch(t, ctx.Config.Policy.ResponseHeadersPolicy.Remove, httpProxyProcessor.ResponseHeadersPolicy.Remove)
+		assert.EqualValues(t, policy.RequestHeadersPolicy.Set, httpProxyProcessor.RequestHeadersPolicy.Set)
+		assert.ElementsMatch(t, policy.RequestHeadersPolicy.Remove, httpProxyProcessor.RequestHeadersPolicy.Remove)
+		assert.EqualValues(t, policy.ResponseHeadersPolicy.Set, httpProxyProcessor.ResponseHeadersPolicy.Set)
+		assert.ElementsMatch(t, policy.ResponseHeadersPolicy.Remove, httpProxyProcessor.ResponseHeadersPolicy.Remove)
 
 		ingressProcessor := mustGetIngressProcessor(t, &got)
 		assert.EqualValues(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Set)
@@ -96,27 +119,37 @@ func TestGetDAGBuilder(t *testing.T) {
 	})
 
 	t.Run("request and response headers policy specified for ingress", func(t *testing.T) {
-		ctx := newServeContext()
-		ctx.Config.Policy.RequestHeadersPolicy.Set = map[string]string{
-			"req-set-key-1": "req-set-val-1",
-			"req-set-key-2": "req-set-val-2",
-		}
-		ctx.Config.Policy.RequestHeadersPolicy.Remove = []string{"req-remove-key-1", "req-remove-key-2"}
-		ctx.Config.Policy.ResponseHeadersPolicy.Set = map[string]string{
-			"res-set-key-1": "res-set-val-1",
-			"res-set-key-2": "res-set-val-2",
-		}
-		ctx.Config.Policy.ResponseHeadersPolicy.Remove = []string{"res-remove-key-1", "res-remove-key-2"}
-		ctx.Config.Policy.ApplyToIngress = true
 
-		got := getDAGBuilder(ctx, nil, nil, nil, logrus.StandardLogger())
+		policy := &contour_api_v1alpha1.PolicyConfig{
+			RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+				Set: map[string]string{
+					"req-set-key-1": "req-set-val-1",
+					"req-set-key-2": "req-set-val-2",
+				},
+				Remove: []string{"req-remove-key-1", "req-remove-key-2"},
+			},
+			ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+				Set: map[string]string{
+					"res-set-key-1": "res-set-val-1",
+					"res-set-key-2": "res-set-val-2",
+				},
+				Remove: []string{"res-remove-key-1", "res-remove-key-2"},
+			},
+			ApplyToIngress: false,
+		}
+
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+			headersPolicy: policy, applyHeaderPolicyToIngress: true})
 		commonAssertions(t, &got)
 
 		ingressProcessor := mustGetIngressProcessor(t, &got)
-		assert.EqualValues(t, ctx.Config.Policy.RequestHeadersPolicy.Set, ingressProcessor.RequestHeadersPolicy.Set)
-		assert.ElementsMatch(t, ctx.Config.Policy.RequestHeadersPolicy.Remove, ingressProcessor.RequestHeadersPolicy.Remove)
-		assert.EqualValues(t, ctx.Config.Policy.ResponseHeadersPolicy.Set, ingressProcessor.ResponseHeadersPolicy.Set)
-		assert.ElementsMatch(t, ctx.Config.Policy.ResponseHeadersPolicy.Remove, ingressProcessor.ResponseHeadersPolicy.Remove)
+		assert.EqualValues(t, policy.RequestHeadersPolicy.Set, ingressProcessor.RequestHeadersPolicy.Set)
+		assert.ElementsMatch(t, policy.RequestHeadersPolicy.Remove, ingressProcessor.RequestHeadersPolicy.Remove)
+		assert.EqualValues(t, policy.ResponseHeadersPolicy.Set, ingressProcessor.ResponseHeadersPolicy.Set)
+		assert.ElementsMatch(t, policy.ResponseHeadersPolicy.Remove, ingressProcessor.ResponseHeadersPolicy.Remove)
 	})
 
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))

@@ -3466,7 +3466,7 @@ MetricsConfig
 </td>
 <td>
 <em>(Optional)</em>
-<p>Metrics defines the endpoints Envoy use to serve to metrics.</p>
+<p>Metrics defines the endpoints Contour uses to serve to metrics.</p>
 </td>
 </tr>
 </table>
@@ -4045,7 +4045,7 @@ MetricsConfig
 </td>
 <td>
 <em>(Optional)</em>
-<p>Metrics defines the endpoints Envoy use to serve to metrics.</p>
+<p>Metrics defines the endpoints Contour uses to serve to metrics.</p>
 </td>
 </tr>
 </tbody>
@@ -4234,7 +4234,7 @@ use when outputting log information.</p>
 <code>kubernetesLogLevel</code>
 <br>
 <em>
-int
+uint
 </em>
 </td>
 <td>
@@ -5407,6 +5407,19 @@ HeadersPolicy
 <td>
 <em>(Optional)</em>
 <p>ResponseHeadersPolicy defines the response headers set/removed on all routes</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>applyToIngress</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ApplyToIngress determines if the Policies will apply to ingress objects</p>
 </td>
 </tr>
 </tbody>

@@ -46,7 +46,7 @@ type ContourConfigurationSpec struct {
 	// Envoy contains parameters for Envoy as well
 	// as how to optionally configure a managed Envoy fleet.
 	// +optional
-	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "http/1.1";"http/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
+	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "HTTP/1.1";"HTTP/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
 	Envoy EnvoyConfig `json:"envoy"`
 
 	// Gateway contains parameters for the gateway-api Gateway that Contour
@@ -79,7 +79,7 @@ type ContourConfigurationSpec struct {
 	// +optional
 	Policy *PolicyConfig `json:"policy,omitempty"`
 
-	// Metrics defines the endpoints Envoy use to serve to metrics.
+	// Metrics defines the endpoints Contour uses to serve to metrics.
 	// +optional
 	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
 	Metrics MetricsConfig `json:"metrics"`
@@ -169,11 +169,11 @@ type MetricsConfig struct {
 }
 
 // HTTPVersionType is the name of a supported HTTP version.
-// +kubebuilder:validation:Enum="http/1.1";"http/2"
+// +kubebuilder:validation:Enum="HTTP/1.1";"HTTP/2"
 type HTTPVersionType string
 
-const HTTPVersion1 HTTPVersionType = "http/1.1"
-const HTTPVersion2 HTTPVersionType = "http/2"
+const HTTPVersion1 HTTPVersionType = "HTTP/1.1"
+const HTTPVersion2 HTTPVersionType = "HTTP/2"
 
 // EnvoyConfig defines how Envoy is to be Configured from Contour.
 type EnvoyConfig struct {
@@ -254,7 +254,7 @@ type DebugConfig struct {
 	// +kubebuilder:default=0
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=9
-	KubernetesDebugLogLevel int `json:"kubernetesLogLevel"`
+	KubernetesDebugLogLevel uint `json:"kubernetesLogLevel"`
 }
 
 // EnvoyListenerConfig hold various configurable Envoy listener values.
@@ -282,21 +282,6 @@ type EnvoyListenerConfig struct {
 
 // +kubebuilder:validation:Enum="[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES128-GCM-SHA256";"ECDHE-RSA-AES128-GCM-SHA256";"ECDHE-ECDSA-AES128-SHA";"ECDHE-RSA-AES128-SHA";"AES128-GCM-SHA256";"AES128-SHA";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384";"ECDHE-ECDSA-AES256-SHA";"ECDHE-RSA-AES256-SHA";"AES256-GCM-SHA384";"AES256-SHA"
 type TLSCipherType string
-
-const CIPHER1 TLSCipherType = "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]"
-const CIPHER2 TLSCipherType = "[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]"
-const CIPHER3 TLSCipherType = "ECDHE-ECDSA-AES128-GCM-SHA256"
-const CIPHER4 TLSCipherType = "ECDHE-RSA-AES128-GCM-SHA256"
-const CIPHER5 TLSCipherType = "ECDHE-ECDSA-AES128-SHA"
-const CIPHER6 TLSCipherType = "ECDHE-RSA-AES128-SHA"
-const CIPHER7 TLSCipherType = "AES128-GCM-SHA256"
-const CIPHER8 TLSCipherType = "AES128-SHA"
-const CIPHER9 TLSCipherType = "ECDHE-ECDSA-AES256-GCM-SHA384"
-const CIPHER10 TLSCipherType = "ECDHE-RSA-AES256-GCM-SHA384"
-const CIPHER11 TLSCipherType = "ECDHE-ECDSA-AES256-SHA"
-const CIPHER12 TLSCipherType = "ECDHE-RSA-AES256-SHA"
-const CIPHER13 TLSCipherType = "AES256-GCM-SHA384"
-const CIPHER14 TLSCipherType = "AES256-SHA"
 
 // EnvoyTLS describes tls parameters for Envoy listneners.
 type EnvoyTLS struct {
@@ -518,6 +503,10 @@ type PolicyConfig struct {
 	// ResponseHeadersPolicy defines the response headers set/removed on all routes
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeaders,omitempty"`
+
+	// ApplyToIngress determines if the Policies will apply to ingress objects
+	// +optional
+	ApplyToIngress bool `json:"applyToIngress"`
 }
 
 type HeadersPolicy struct {

@@ -19,6 +19,8 @@ package infra
 import (
 	"testing"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -51,6 +53,7 @@ var _ = Describe("Infra", func() {
 		contourCmd            *gexec.Session
 		kubectlCmd            *gexec.Session
 		contourConfig         *config.Parameters
+		contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
 		contourConfigFile     string
 		additionalContourArgs []string
 	)
@@ -59,6 +62,10 @@ var _ = Describe("Infra", func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
 		contourConfig = &config.Parameters{}
+
+		// Contour configuration crd, can be modified in nested
+		// BeforeEach.
+		contourConfiguration = e2e.DefaultContourConfiguration()
 
 		// Default contour serve command line arguments can be appended to in
 		// nested BeforeEach.
@@ -71,7 +78,7 @@ var _ = Describe("Infra", func() {
 	// until here to start Contour.
 	JustBeforeEach(func() {
 		var err error
-		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, additionalContourArgs...)
+		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, contourConfiguration, additionalContourArgs...)
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
