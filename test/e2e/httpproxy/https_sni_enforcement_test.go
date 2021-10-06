@@ -65,6 +65,7 @@ func testHTTPSSNIEnforcement(namespace string) {
 			Path:      "/https-sni-enforcement",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		assert.Equal(t, "echo-one", f.GetEchoResponseBody(res.Body).Service)
@@ -104,6 +105,7 @@ func testHTTPSSNIEnforcement(namespace string) {
 			Path:      "/https-sni-enforcement",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		assert.Equal(t, "echo-two", f.GetEchoResponseBody(res.Body).Service)
@@ -118,6 +120,7 @@ func testHTTPSSNIEnforcement(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(421),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 421 (Misdirected Request) response code, got %d", res.StatusCode)
 	})
 }

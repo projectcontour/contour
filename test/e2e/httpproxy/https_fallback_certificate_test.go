@@ -67,6 +67,7 @@ func testHTTPSFallbackCertificate(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected a 200 response code, got %d", res.StatusCode)
 
 		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
@@ -80,6 +81,7 @@ func testHTTPSFallbackCertificate(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected a 200 response code, got %d", res.StatusCode)
 	})
 }

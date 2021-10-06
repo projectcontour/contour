@@ -64,6 +64,7 @@ func testHTTPSMisdirectedRequest(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		assert.Equal(t, "echo", f.GetEchoResponseBody(res.Body).Service)
@@ -77,6 +78,7 @@ func testHTTPSMisdirectedRequest(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(421),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 421 (Misdirected Request) response code, got %d", res.StatusCode)
 
 		// The virtual host name is port-insensitive, so verify that we can
@@ -88,6 +90,7 @@ func testHTTPSMisdirectedRequest(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Verify that the hostname match is case-insensitive.
@@ -100,6 +103,7 @@ func testHTTPSMisdirectedRequest(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 	})
 }

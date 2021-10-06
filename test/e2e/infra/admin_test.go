@@ -50,6 +50,7 @@ func testAdminInterface() {
 				Path:      prefix,
 				Condition: e2e.HasStatusCode(code),
 			})
+			require.NotNil(t, res, "request never succeeded")
 			require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		}
 	})
