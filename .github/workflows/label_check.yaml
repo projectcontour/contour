@@ -1,0 +1,32 @@
+name: Release Note Label Check
+
+# Trigger the workflow on push or pull request
+on: 
+  push:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize]
+
+env:
+  GOPROXY: https://proxy.golang.org/
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+jobs:
+  check-label:
+    name: Check release-note label set
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mheap/github-action-required-labels@v1
+        with:
+          mode: exactly
+          count: 1
+          labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note/none-required"
+  check-changelog:
+    name: Check for changelog file
+    needs:
+      - check-label
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: go run ./hack/actions/check-changefile-exists.go
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

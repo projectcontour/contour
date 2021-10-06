@@ -1,4 +1,4 @@
-## New Changelog process
+### New Changelog process
 
 Contour now requires:
 - all PRs be labelled with a `release-note/<category>` label, where category

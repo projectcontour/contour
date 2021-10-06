@@ -3,37 +3,13 @@ name: Build and Test Pull Request
 # Trigger the workflow on push or pull request
 on: 
   push:
-    branches-ignore:
-      - "main"
-  # Trigger this workflow when the PR is labeled or unlabelled
-  # as well as opened or updated.
   pull_request:
-    types: [opened, labeled, unlabeled, synchronize]
+    types: [opened, synchronize]
 
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 jobs:
-  check-label:
-    name: Check release-note label set
-    runs-on: ubuntu-latest
-    steps:
-      - uses: mheap/github-action-required-labels@v1
-        with:
-          mode: exactly
-          count: 1
-          labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note/none-required"
-  check-changelog:
-    name: Check for changelog file
-    needs:
-      - check-label
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - run: go run ./hack/actions/check-changefile-exists.go
-      env:
-        PR_NUMBER: ${{ github.event.number }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -104,7 +80,6 @@ jobs:
       - lint
       - codespell
       - codegen
-      - check-changelog
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -134,7 +109,6 @@ jobs:
       - lint
       - codespell
       - codegen
-      - check-changelog
       # TODO uncomment the below once we're using the image
       # or its binary for testing.
       # - build-image
@@ -269,7 +243,6 @@ jobs:
       - lint
       - codespell
       - codegen
-      - check-changelog
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -309,7 +282,6 @@ jobs:
       - lint
       - codespell
       - codegen
-      - check-changelog
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
