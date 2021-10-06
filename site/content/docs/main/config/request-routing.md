@@ -199,20 +199,19 @@ spec:
 In this example, requests to `timeout.bar.com/` will have a response timeout policy of 1s.
 This refers to the time that spans between the point at which complete client request has been processed by the proxy, and when the response from the server has been completely processed.
 
-- `timeoutPolicy.response` This field can be any positive time period or "infinity".
-This timeout covers the time from the *end of the client request* to the *end of the upstream response*.
-By default, Envoy has a 15 second value for this timeout.
+- `timeoutPolicy.response` Timeout for receiving a response from the server after processing a request from client.
+If not supplied, Envoy's default value of 15s applies.
 More information can be found in [Envoy's documentation][4].
-Note that a value of **0s** will be treated as if the field were not set, i.e. by using Envoy's default behavior.
-- `timeoutPolicy.idle` This field can be any positive time period or "infinity".
-By default, there is no per-route idle timeout.
-Note that the default connection manager idle timeout of 5 minutes will apply if this is not set.
+- `timeoutPolicy.idle` Timeout for how long the proxy should wait while there is no activity during single request/response (for HTTP/1.1) or stream (for HTTP/2).
+Timeout will not trigger while HTTP/1.1 connection is idle between two consecutive requests.
+If not specified, there is no per-route idle timeout, though a connection manager-wide stream idle timeout default of 5m still applies.
 More information can be found in [Envoy's documentation][6].
-Note that a value of **0s** will be treated as if the field were not set, i.e. by using Envoy's default behavior.
 
-TimeoutPolicy durations are expressed as per the format specified in the [ParseDuration documentation][5].
-Example input values: "300ms", "5s", "1m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-The string 'infinity' is also a valid input and specifies no timeout.
+TimeoutPolicy durations are expressed in the Go [Duration format][5].
+Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+The string "infinity" is also a valid input and specifies no timeout.
+A value of "0s" will be treated as if the field were not set, i.e. by using Envoy's default behavior.
+Example input values: "300ms", "5s", "1m".
 
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
 
