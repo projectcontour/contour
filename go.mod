@@ -5,9 +5,8 @@ go 1.15
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/bombsimon/logrusr v1.0.0
-	github.com/cncf/xds/go v0.0.0-20211001041855-01bcc9b48dfe // indirect
 	github.com/davecgh/go-spew v1.1.1
-	github.com/envoyproxy/go-control-plane v0.9.10-0.20211004210356-4dc61ebae957
+	github.com/envoyproxy/go-control-plane v0.9.10-0.20211006050637-f76d23b38f14
 	github.com/go-logr/logr v0.4.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.6
