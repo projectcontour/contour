@@ -51,7 +51,7 @@ echo "Installing Kubernetes toolchain..."
 
 # Install ginkgo CLI
 if [[ ${GITHUB_ACTIONS} == "true" && ${OS} == "linux" ]]; then
-  go get github.com/onsi/ginkgo/...
+  go install github.com/onsi/ginkgo/...
   mv /home/runner/go/bin/ginkgo ${DESTDIR}/ginkgo
 fi
 
