@@ -81,6 +81,7 @@ func testGatewayAllowType(namespace string) {
 			Path:      "/gateway-in-allowed-list",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		body := f.GetEchoResponseBody(res.Body)
 		assert.Equal(t, "echo-blue", body.Service)
@@ -132,6 +133,7 @@ func testGatewayAllowType(namespace string) {
 			Path:      "/gateway-not-in-allowed-list",
 			Condition: e2e.HasStatusCode(404),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 404 response code, got %d", res.StatusCode)
 
 		// This route allows gateways in the same namespace, and the actual
@@ -174,6 +176,7 @@ func testGatewayAllowType(namespace string) {
 			Path:      "/gateway-in-same-namespace",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// This route allows gateways in the same namespace, and the actual
@@ -219,6 +222,7 @@ func testGatewayAllowType(namespace string) {
 			Path:      "/gateway-not-in-same-namespace",
 			Condition: e2e.HasStatusCode(404),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 404 response code, got %d", res.StatusCode)
 	})
 }

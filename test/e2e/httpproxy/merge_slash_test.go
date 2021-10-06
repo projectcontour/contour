@@ -64,6 +64,7 @@ func testMergeSlash(namespace string) {
 			Path:      "/anything/this//has//lots////of/slashes",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		assert.Contains(t, f.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")

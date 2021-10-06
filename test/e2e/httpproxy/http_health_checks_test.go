@@ -61,6 +61,7 @@ func testHTTPHealthChecks(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// set the health check policy to always fail
@@ -82,6 +83,7 @@ func testHTTPHealthChecks(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(503),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 503 response code, got %d", res.StatusCode)
 
 		// set the health check policy to always pass
@@ -103,6 +105,7 @@ func testHTTPHealthChecks(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 	})
 }

@@ -63,6 +63,7 @@ func testLocalRateLimitingVirtualHost(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Add a local rate limit policy on the virtual host.
@@ -87,6 +88,7 @@ func testLocalRateLimitingVirtualHost(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Make another request against the proxy, confirm a 429 response
@@ -95,6 +97,7 @@ func testLocalRateLimitingVirtualHost(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 	})
 }
@@ -147,6 +150,7 @@ func testLocalRateLimitingRoute(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Add a local rate limit policy on the first route.
@@ -171,6 +175,7 @@ func testLocalRateLimitingRoute(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Make another request against the proxy, confirm a 429 response
@@ -179,6 +184,7 @@ func testLocalRateLimitingRoute(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 
 		// Make a request against the route that doesn't have rate limiting
@@ -188,6 +194,7 @@ func testLocalRateLimitingRoute(namespace string) {
 			Path:      "/unlimited",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code for non-rate-limited route, got %d", res.StatusCode)
 	})
 }

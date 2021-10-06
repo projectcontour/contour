@@ -64,6 +64,7 @@ func testPodRestart(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		body := f.GetEchoResponseBody(res.Body)
@@ -93,6 +94,7 @@ func testPodRestart(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// should be a different pod than the original request
