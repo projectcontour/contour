@@ -1049,6 +1049,9 @@ func TestBootstrap(t *testing.T) {
           "typed_config": {
             "@type":"type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
             "common_tls_context": {
+              "tls_params": {
+                "tls_maximum_protocol_version": "TLSv1_3"
+              },
               "tls_certificates": [
                 {
                   "certificate_chain": {
@@ -1208,6 +1211,9 @@ func TestBootstrap(t *testing.T) {
                 "typed_config": {
                   "@type": "type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext",
                   "common_tls_context": {
+                    "tls_params": {
+                      "tls_maximum_protocol_version": "TLSv1_3"
+                    },
                     "tls_certificate_sds_secret_configs": [
                       {
                         "name": "contour_xds_tls_certificate",
