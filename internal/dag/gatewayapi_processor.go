@@ -715,17 +715,13 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 		return nil, fmt.Errorf("Spec.Rules.BackendRef.Port must be specified")
 	}
 
-	// If the BackendRef does not specify a namespace,
-	// the Service must be in the same namespace as
-	// the route itself. If the BackendRef specifies
-	// a namespace then the Service must be in that
-	// namespace.
-	namespace := routeNamespace
-	if backendRef.Namespace != nil {
-		namespace = string(*backendRef.Namespace)
+	if backendRef.Namespace != nil && string(*backendRef.Namespace) != routeNamespace {
+		// we haven't implemented ReferencePolicy yet, so disallow any
+		// cross-namespace reference.
+		return nil, fmt.Errorf("Spec.Rules.BackendRef.Namespace must match the route's namespace")
 	}
 
-	meta := types.NamespacedName{Name: backendRef.Name, Namespace: namespace}
+	meta := types.NamespacedName{Name: backendRef.Name, Namespace: routeNamespace}
 
 	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
 	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendRef.Port)), p.source, p.EnableExternalNameService)
