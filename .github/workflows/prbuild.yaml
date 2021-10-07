@@ -1,13 +1,84 @@
 name: Build and Test Pull Request
 
 # Trigger the workflow on push or pull request
-on: [push, pull_request]
+on: 
+  pull_request:
+    types: [opened, synchronize]
 
 env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.42.0
+          args: --build-tags=e2e
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
+  codespell:
+    name: Codespell
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v2
+      - name: Codespell
+        uses: codespell-project/actions-codespell@master
+        with:
+          skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public,./hack/actions/check-changefile-exists.go
+          ignore_words_file: './.codespell.ignorewords'
+          check_filenames: true
+          check_hidden: true
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.17.0'
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: generate
+        run: |
+          make generate lint-yamllint lint-flags
+          ./hack/actions/check-uncommitted-codegen.sh
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}    
   build-image:
+    needs:
+      - lint
+      - codespell
+      - codegen
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -33,9 +104,13 @@ jobs:
       if: ${{ failure() && github.ref == 'refs/heads/main' }}
   e2e:
     runs-on: ubuntu-latest
-    # TODO uncomment the below once we're using the image
-    # or its binary for testing.
-    # needs: [build-image]
+    needs:
+      - lint
+      - codespell
+      - codegen
+      # TODO uncomment the below once we're using the image
+      # or its binary for testing.
+      # - build-image
     strategy:
       matrix:
         # use stable kubernetes_version values since they're included
@@ -171,6 +246,10 @@ jobs:
   #       run: |
   #         make check-ingress-conformance
   test-linux:
+    needs:
+      - lint
+      - codespell
+      - codegen
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -206,6 +285,10 @@ jobs:
           channel: '#contour-ci-notifications'
         if: ${{ failure() && github.ref == 'refs/heads/main' }}
   test-osx:
+    needs:
+      - lint
+      - codespell
+      - codegen
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -230,71 +313,6 @@ jobs:
         run: |
           make install
           make check-coverage
-      - uses: act10ns/slack@v1
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.ref == 'refs/heads/main' }}
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: v1.42.0
-          args: --build-tags=e2e
-      - uses: act10ns/slack@v1
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.ref == 'refs/heads/main' }}
-  codespell:
-    name: Codespell
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v2
-      - name: Codespell
-        uses: codespell-project/actions-codespell@master
-        with:
-          skip: .git,*.png,*.woff,*.woff2,*.eot,*.ttf,*.jpg,*.ico,*.svg,./site/themes/contour/static/fonts/README.md,./vendor,./site/public
-          ignore_words_file: './.codespell.ignorewords'
-          check_filenames: true
-          check_hidden: true
-      - uses: act10ns/slack@v1
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: '#contour-ci-notifications'
-        if: ${{ failure() && github.ref == 'refs/heads/main' }}
-  codegen:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          # * Module download cache
-          # * Build cache (Linux)
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ github.job }}-go-
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '1.17.0'
-      - name: add deps to path
-        run: |
-          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
-          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-      - name: generate
-        run: |
-          make generate lint-yamllint lint-flags
-          ./hack/actions/check-uncommitted-codegen.sh
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
