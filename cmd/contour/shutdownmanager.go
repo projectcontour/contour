@@ -38,7 +38,7 @@ const (
 )
 
 // shutdownReadyFile is the default file path used in the /shutdown endpoint.
-const shutdownReadyFile = "/ok"
+const shutdownReadyFile = "/admin/ok"
 
 // shutdownReadyFile is the default polling interval for the file used in the /shutdown endpoint.
 const shutdownReadyCheckInterval = time.Second * 1
@@ -78,6 +78,9 @@ type shutdownContext struct {
 	// adminAddress defines the address for the Envoy admin webpage, being configurable through --admin-address flag
 	adminAddress string
 
+	// shutdownReadlyFile defines the name of the file that is used to signal that shutdown is completed.
+	shutdownReadyFile string
+
 	logrus.FieldLogger
 }
 
@@ -108,7 +111,7 @@ func (s *shutdownmanagerContext) healthzHandler(w http.ResponseWriter, r *http.R
 }
 
 // shutdownReadyHandler handles the /shutdown endpoint which is used by Envoy to determine if it can terminate.
-// Once enough connections have drained based upon configuration, a file will be written to "/ok" in
+// Once enough connections have drained based upon configuration, a file will be written in
 // the shutdown manager's file system. Any HTTP request to /shutdown will use the existence of this
 // file to understand if it is safe to terminate. The file-based approach is used since the process in which
 // the kubelet calls the shutdown command is different than the HTTP request from Envoy to /shutdown
@@ -183,7 +186,7 @@ func (s *shutdownContext) shutdownHandler() {
 					WithField("open_connections", openConnections).
 					WithField("min_connections", s.minOpenConnections).
 					Info("min number of open connections found, shutting down")
-				file, err := os.Create(shutdownReadyFile)
+				file, err := os.Create(s.shutdownReadyFile)
 				if err != nil {
 					s.Error(err)
 				}
@@ -298,6 +301,7 @@ func registerShutdownManager(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*k
 
 	shutdownmgr := cmd.Command("shutdown-manager", "Start envoy shutdown-manager.")
 	shutdownmgr.Flag("serve-port", "Port to serve the http server on.").IntVar(&ctx.httpServePort)
+	shutdownmgr.Flag("ready-file", "File that signals that shutdown is completed.").Default(shutdownReadyFile).StringVar(&ctx.shutdownReadyFile)
 
 	return shutdownmgr, ctx
 }
@@ -314,6 +318,7 @@ func registerShutdown(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*kingpin.
 	shutdown.Flag("check-delay", "Time to wait before polling Envoy for open connections.").Default("60s").DurationVar(&ctx.checkDelay)
 	shutdown.Flag("drain-delay", "Time to wait before draining Envoy connections.").Default("0s").DurationVar(&ctx.drainDelay)
 	shutdown.Flag("min-open-connections", "Min number of open connections when polling Envoy.").IntVar(&ctx.minOpenConnections)
+	shutdown.Flag("ready-file", "File to write when shutdown is completed.").Default(shutdownReadyFile).StringVar(&ctx.shutdownReadyFile)
 
 	return shutdown, ctx
 }

@@ -3,9 +3,9 @@
 The Envoy process, the data path component of Contour, at times needs to be re-deployed.
 This could be due to an upgrade, a change in configuration, or a node-failure forcing a redeployment.
 
-When implementing this roll out, the following steps should be taken: 
+When implementing this roll out, the following steps should be taken:
 
-1. Stop Envoy from accepting new connections 
+1. Stop Envoy from accepting new connections
 2. Start draining existing connections in Envoy by sending a `POST` request to `/healthcheck/fail` endpoint
 3. Wait for connections to drain before allowing Kubernetes to `SIGTERM` the pod
 
@@ -39,7 +39,7 @@ It exposes two HTTP endpoints which are used for `livenessProbe` as well as to h
        path: /healthz
        port: 8090
      initialDelaySeconds: 3
-     periodSeconds: 10  
+     periodSeconds: 10
 ```
 
 The Envoy container also has some configuration to implement the shutdown manager.
@@ -60,6 +60,7 @@ The shutdown manager has a single argument that can be passed to change how it b
 | Name | Type | Default | Description |
 |------------|------|---------|-------------|
 | <nobr>serve-port</nobr> | integer | 8090 | Port to serve the http server on |
+| <nobr>ready-file</bobr> | string | /admin/ok | File to poll while waiting shutdown to be completed. |
 
 ### Shutdown Config Options
 
@@ -75,5 +76,6 @@ The shutdown command has a few arguments that can be passed to change how it beh
 | <nobr>min-open-connections</nobr> | integer | 0 | Min number of open connections when polling Envoy. |
 | <nobr>admin-port (Deprecated)</nobr> | integer | 9001 | Deprecated: No longer used, Envoy admin interface runs as a unix socket.  |
 | <nobr>admin-address</nobr> | string | /admin/admin.sock | Path to Envoy admin unix domain socket. |
+| <nobr>ready-file</nobr> | string | /admin/ok | File to write when shutdown is completed. |
 
   [1]: ../img/shutdownmanager.png
