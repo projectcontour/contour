@@ -599,7 +599,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		}, additionalArgs...)
 
 		configReferenceName = contourConfiguration.Name
-	} else {
+	} else if config != nil {
 
 		configFile, err := ioutil.TempFile("", "contour-config-*.yaml")
 		if err != nil {
@@ -626,6 +626,8 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		}, additionalArgs...)
 
 		configReferenceName = configFile.Name()
+	} else {
+		return nil, "", errors.New("no valid configurations specified")
 	}
 
 	session, err := gexec.Start(exec.Command(d.contourBin, contourServeArgs...), d.cmdOutputWriter, d.cmdOutputWriter) // nolint:gosec

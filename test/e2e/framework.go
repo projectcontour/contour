@@ -422,6 +422,26 @@ func (f *Framework) DeleteGatewayClass(gwc *gatewayv1alpha1.GatewayClass, waitFo
 	return nil
 }
 
+// WaitForContourConfigurationStatus waits for a Valid=true condition to exist on the object.
+func (f *Framework) WaitForContourConfigurationStatus(config *contourv1alpha1.ContourConfiguration, condition func(configuration *contourv1alpha1.ContourConfiguration) bool) bool {
+	res := &contourv1alpha1.ContourConfiguration{}
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(config), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return false
+	}
+	return true
+}
+
 // GetEchoResponseBody decodes an HTTP response body that is
 // expected to have come from ingress-conformance-echo into an
 // EchoResponseBody, or fails the test if it encounters an error.
