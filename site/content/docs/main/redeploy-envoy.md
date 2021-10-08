@@ -60,7 +60,7 @@ The shutdown manager has a single argument that can be passed to change how it b
 | Name | Type | Default | Description |
 |------------|------|---------|-------------|
 | <nobr>serve-port</nobr> | integer | 8090 | Port to serve the http server on |
-| <nobr>ready-file</bobr> | string | /admin/ok | File to poll while waiting shutdown to be completed. |
+| <nobr>ready-file</nobr> | string | /admin/ok | File to poll while waiting shutdown to be completed. |
 
 ### Shutdown Config Options
 

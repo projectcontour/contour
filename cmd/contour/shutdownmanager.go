@@ -301,7 +301,7 @@ func registerShutdownManager(cmd *kingpin.CmdClause, log logrus.FieldLogger) (*k
 
 	shutdownmgr := cmd.Command("shutdown-manager", "Start envoy shutdown-manager.")
 	shutdownmgr.Flag("serve-port", "Port to serve the http server on.").IntVar(&ctx.httpServePort)
-	shutdownmgr.Flag("ready-file", "File that signals that shutdown is completed.").Default(shutdownReadyFile).StringVar(&ctx.shutdownReadyFile)
+	shutdownmgr.Flag("ready-file", "File to poll while waiting shutdown to be completed.").Default(shutdownReadyFile).StringVar(&ctx.shutdownReadyFile)
 
 	return shutdownmgr, ctx
 }
