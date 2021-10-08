@@ -44,6 +44,10 @@ func TLSModeTypePtr(mode gatewayapi_v1alpha2.TLSModeType) *gatewayapi_v1alpha2.T
 	return &mode
 }
 
+func HTTPMethodPtr(method gatewayapi_v1alpha2.HTTPMethod) *gatewayapi_v1alpha2.HTTPMethod {
+	return &method
+}
+
 func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
 	h := gatewayapi_v1alpha2.Hostname(host)
 	return &h

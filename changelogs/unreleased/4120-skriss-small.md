@@ -1,0 +1,1 @@
+Gateway API: adds support for HTTP method matching in `HTTPRoute` rules. See the [Gateway API documentation](https://gateway-api.sigs.k8s.io/v1alpha2/references/spec/#gateway.networking.k8s.io/v1alpha2.HTTPRouteMatch) for more information.
