@@ -56,8 +56,8 @@ type GatewayAPIProcessor struct {
 
 // matchConditions holds match rules.
 type matchConditions struct {
-	pathMatchConditions  []MatchCondition
-	headerMatchCondition []HeaderMatchCondition
+	path    MatchCondition
+	headers []HeaderMatchCondition
 }
 
 // Run translates Service APIs into DAG objects and
@@ -580,15 +580,21 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 		var matchconditions []*matchConditions
 
 		for _, match := range rule.Matches {
-			mc := &matchConditions{}
-			if err := pathMatchCondition(mc, match.Path); err != nil {
+			pathMatch, err := gatewayPathMatchCondition(match.Path)
+			if err != nil {
 				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
+				continue
 			}
 
-			if err := headerMatchCondition(mc, match.Headers); err != nil {
+			headerMatches, err := gatewayHeaderMatchConditions(match.Headers)
+			if err != nil {
 				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
+				continue
 			}
-			matchconditions = append(matchconditions, mc)
+			matchconditions = append(matchconditions, &matchConditions{
+				path:    pathMatch,
+				headers: headerMatches,
+			})
 		}
 
 		if len(rule.BackendRefs) == 0 {
@@ -739,32 +745,31 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 	return service, nil
 }
 
-func pathMatchCondition(mc *matchConditions, match *gatewayapi_v1alpha2.HTTPPathMatch) error {
+func gatewayPathMatchCondition(match *gatewayapi_v1alpha2.HTTPPathMatch) (MatchCondition, error) {
 
 	if match == nil {
-		mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: "/"})
-		return nil
+		return &PrefixMatchCondition{Prefix: "/"}, nil
 	}
 
 	path := pointer.StringDeref(match.Value, "/")
 
 	if match.Type == nil {
 		// If path match type is not defined, default to 'PrefixMatch'.
-		mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: path})
-	} else {
-		switch *match.Type {
-		case gatewayapi_v1alpha2.PathMatchPathPrefix:
-			mc.pathMatchConditions = append(mc.pathMatchConditions, &PrefixMatchCondition{Prefix: path})
-		case gatewayapi_v1alpha2.PathMatchExact:
-			mc.pathMatchConditions = append(mc.pathMatchConditions, &ExactMatchCondition{Path: path})
-		default:
-			return fmt.Errorf("HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported")
-		}
+		return &PrefixMatchCondition{Prefix: path}, nil
 	}
-	return nil
+
+	switch *match.Type {
+	case gatewayapi_v1alpha2.PathMatchPathPrefix:
+		return &PrefixMatchCondition{Prefix: path}, nil
+	case gatewayapi_v1alpha2.PathMatchExact:
+		return &ExactMatchCondition{Path: path}, nil
+	}
+
+	return nil, fmt.Errorf("HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported")
 }
 
-func headerMatchCondition(mc *matchConditions, matches []gatewayapi_v1alpha2.HTTPHeaderMatch) error {
+func gatewayHeaderMatchConditions(matches []gatewayapi_v1alpha2.HTTPHeaderMatch) ([]HeaderMatchCondition, error) {
+	var headerMatchConditions []HeaderMatchCondition
 
 	for _, match := range matches {
 		// HeaderMatchTypeExact is the default if not defined in the object.
@@ -774,30 +779,32 @@ func headerMatchCondition(mc *matchConditions, matches []gatewayapi_v1alpha2.HTT
 			case gatewayapi_v1alpha2.HeaderMatchExact:
 				headerMatchType = HeaderMatchTypeExact
 			default:
-				return fmt.Errorf("HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported")
+				return nil, fmt.Errorf("HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported")
 			}
 		}
 
-		mc.headerMatchCondition = append(mc.headerMatchCondition, HeaderMatchCondition{MatchType: headerMatchType, Name: string(match.Name), Value: match.Value})
+		headerMatchConditions = append(headerMatchConditions, HeaderMatchCondition{MatchType: headerMatchType, Name: string(match.Name), Value: match.Value})
 	}
 
-	return nil
+	return headerMatchConditions, nil
 }
 
 // routes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and clusters.
 func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, headerPolicy *HeadersPolicy, clusters []*Cluster) []*Route {
 	var routes []*Route
 
+	// Per Gateway API: "Each match is independent,
+	// i.e. this rule will be matched if any one of
+	// the matches is satisfied." To implement this,
+	// we create a separate route per match.
 	for _, mc := range matchConditions {
-		for _, pathMatch := range mc.pathMatchConditions {
-			r := &Route{
-				Clusters: clusters,
-			}
-			r.PathMatchCondition = pathMatch
-			r.HeaderMatchConditions = mc.headerMatchCondition
-			r.RequestHeadersPolicy = headerPolicy
-			routes = append(routes, r)
-		}
+		routes = append(routes, &Route{
+			Clusters:              clusters,
+			PathMatchCondition:    mc.path,
+			HeaderMatchConditions: mc.headers,
+			RequestHeadersPolicy:  headerPolicy,
+		})
+
 	}
 
 	return routes
