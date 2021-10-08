@@ -40,7 +40,7 @@ const (
 // shutdownReadyFile is the default file path used in the /shutdown endpoint.
 const shutdownReadyFile = "/admin/ok"
 
-// shutdownReadyFile is the default polling interval for the file used in the /shutdown endpoint.
+// shutdownReadyCheckInterval is the default polling interval for the file used in the /shutdown endpoint.
 const shutdownReadyCheckInterval = time.Second * 1
 
 func prometheusLabels() []string {
@@ -78,7 +78,7 @@ type shutdownContext struct {
 	// adminAddress defines the address for the Envoy admin webpage, being configurable through --admin-address flag
 	adminAddress string
 
-	// shutdownReadlyFile defines the name of the file that is used to signal that shutdown is completed.
+	// shutdownReadyFile defines the name of the file that is used to signal that shutdown is completed.
 	shutdownReadyFile string
 
 	logrus.FieldLogger
