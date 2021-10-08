@@ -18,9 +18,8 @@ import (
 	"os"
 	"time"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-
 	"github.com/google/uuid"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/sirupsen/logrus"
@@ -43,9 +42,9 @@ func setupLeadershipElection(
 	g *workgroup.Group,
 	log logrus.FieldLogger,
 	conf contour_api_v1alpha1.LeaderElectionConfig,
-	clients *k8s.Clients, updateNow func(),
-) chan struct{} {
-	le, leader, deposed := newLeaderElector(log, conf, clients)
+	clients *k8s.Clients,
+) (chan struct{}, chan string, *leaderelection.LeaderElector) {
+	le, leader, deposed, leaderChanged := newLeaderElector(log, conf, clients)
 
 	g.AddContext(func(electionCtx context.Context) error {
 		log.WithFields(logrus.Fields{
@@ -68,7 +67,7 @@ func setupLeadershipElection(
 				return nil
 			case <-leader:
 				log.Info("elected as leader, triggering rebuild")
-				updateNow()
+				//updateNow()  //TODO (SAS): is it ok to not do this?
 
 				// disable this case
 				leader = nil
@@ -80,7 +79,7 @@ func setupLeadershipElection(
 		}
 	})
 
-	return leader
+	return leader, leaderChanged, le
 }
 
 // newLeaderElector creates a new leaderelection.LeaderElector and associated
@@ -89,13 +88,15 @@ func newLeaderElector(
 	log logrus.FieldLogger,
 	conf contour_api_v1alpha1.LeaderElectionConfig,
 	clients *k8s.Clients,
-) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
+) (*leaderelection.LeaderElector, chan struct{}, chan struct{}, chan string) {
 	log = log.WithField("context", "leaderelection")
 	// leaderOK will block gRPC startup until it's closed.
 	leaderOK := make(chan struct{})
 	// deposed is closed by the leader election callback when
 	// we are deposed as leader so that we can clean up.
 	deposed := make(chan struct{})
+	// leader was elected or changed.
+	leaderChanged := make(chan string)
 
 	rl := newResourceLock(log, conf, clients)
 
@@ -131,12 +132,17 @@ func newLeaderElector(
 				// deal with being deposed.
 				close(deposed)
 			},
+			OnNewLeader: func(newLeaderIdentity string) {
+				// We observe a leader that is not the previously observed leader.
+				// This includes the first observed leader when the client starts.
+				leaderChanged <- newLeaderIdentity
+			},
 		},
 	})
 	if err != nil {
 		log.WithError(err).Fatal("failed to create leader elector")
 	}
-	return le, leaderOK, deposed
+	return le, leaderOK, deposed, leaderChanged
 }
 
 // newResourceLock creates a new resourcelock.Interface based on the Pod's name,

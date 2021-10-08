@@ -26,14 +26,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/projectcontour/contour/pkg/config"
-	"k8s.io/utils/pointer"
-
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"k8s.io/utils/pointer"
 )
 
 func TestServeContextProxyRootNamespaces(t *testing.T) {
@@ -430,11 +429,11 @@ func TestConvertServeContext(t *testing.T) {
 
 	cases := map[string]struct {
 		serveContext  *serveContext
-		contourConfig contour_api_v1alpha1.ContourConfigurationSpec
+		contourConfig *contour_api_v1alpha1.ContourConfigurationSpec
 	}{
 		"default ServeContext": {
 			serveContext: defaultContext,
-			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+			contourConfig: &contour_api_v1alpha1.ContourConfigurationSpec{
 				XDSServer: contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
@@ -548,7 +547,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"headers policy": {
 			serveContext: headersPolicyContext,
-			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+			contourConfig: &contour_api_v1alpha1.ContourConfigurationSpec{
 				XDSServer: contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
@@ -665,7 +664,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"ingress": {
 			serveContext: ingressContext,
-			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+			contourConfig: &contour_api_v1alpha1.ContourConfigurationSpec{
 				XDSServer: contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
@@ -776,7 +775,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"gatewayapi": {
 			serveContext: gatewayContext,
-			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+			contourConfig: &contour_api_v1alpha1.ContourConfigurationSpec{
 				XDSServer: contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
@@ -889,7 +888,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"client certificate": {
 			serveContext: clientCertificate,
-			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+			contourConfig: &contour_api_v1alpha1.ContourConfigurationSpec{
 				XDSServer: contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
@@ -1003,7 +1002,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"httpproxy": {
 			serveContext: httpProxy,
-			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+			contourConfig: &contour_api_v1alpha1.ContourConfigurationSpec{
 				XDSServer: contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
@@ -1117,7 +1116,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"ratelimit": {
 			serveContext: rateLimit,
-			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+			contourConfig: &contour_api_v1alpha1.ContourConfigurationSpec{
 				XDSServer: contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
@@ -1236,7 +1235,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"default http versions": {
 			serveContext: defaultHTTPVersions,
-			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+			contourConfig: &contour_api_v1alpha1.ContourConfigurationSpec{
 				XDSServer: contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
@@ -1349,7 +1348,7 @@ func TestConvertServeContext(t *testing.T) {
 		},
 		"access log": {
 			serveContext: accessLog,
-			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+			contourConfig: &contour_api_v1alpha1.ContourConfigurationSpec{
 				XDSServer: contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",

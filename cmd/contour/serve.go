@@ -169,6 +169,7 @@ type Server struct {
 	ctx      *serveContext
 	clients  *k8s.Clients
 	mgr      manager.Manager
+	sh       *k8s.StatusUpdateHandler
 	registry *prometheus.Registry
 }
 
@@ -203,52 +204,33 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	registry.MustRegister(collectors.NewGoCollector())
 
+	converter, err := k8s.NewUnstructuredConverter()
+	if err != nil {
+		return nil, err
+	}
+
+	sh := k8s.StatusUpdateHandler{
+		Log:       log.WithField("context", "StatusUpdateHandler"),
+		Clients:   clients,
+		Cache:     mgr.GetCache(),
+		Converter: converter,
+	}
+
 	return &Server{
 		group:    group,
 		log:      log,
 		ctx:      ctx,
 		clients:  clients,
 		mgr:      mgr,
+		sh:       &sh,
 		registry: registry,
 	}, nil
 }
 
 // doServe runs the contour serve subcommand.
-func (s *Server) doServe() error {
+func (s *Server) doServe(contourConfig *contour_api_v1alpha1.ContourConfiguration, isLeader chan struct{}) error {
 
-	var contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec
-
-	// Get the ContourConfiguration CRD if specified
-	if len(s.ctx.contourConfigurationName) > 0 {
-		// Determine the name/namespace of the configuration resource utilizing the environment
-		// variable "CONTOUR_NAMESPACE" which should exist on the Contour deployment.
-		//
-		// If the env variable is not present, it will default to "projectcontour".
-		contourNamespace, found := os.LookupEnv("CONTOUR_NAMESPACE")
-		if !found {
-			contourNamespace = "projectcontour"
-		}
-
-		namespacedName := types.NamespacedName{Name: s.ctx.contourConfigurationName, Namespace: contourNamespace}
-		client := s.clients.DynamicClient().Resource(contour_api_v1alpha1.ContourConfigurationGVR).Namespace(namespacedName.Namespace)
-
-		// ensure the specified ContourConfiguration exists
-		res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("error getting contour configuration %s: %v", namespacedName, err)
-		}
-
-		var contourConfig contour_api_v1alpha1.ContourConfiguration
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &contourConfig); err != nil {
-			return fmt.Errorf("error converting contour configuration %s: %v", namespacedName, err)
-		}
-
-		// Copy the Spec from the parsed Configuration
-		contourConfiguration = contourConfig.Spec
-	} else {
-		// No contour configuration passed, so convert the ServeContext into a ContourConfigurationSpec.
-		contourConfiguration = s.ctx.convertToContourConfigurationSpec()
-	}
+	contourConfiguration := contourConfig.Spec
 
 	// Register the manager with the workgroup.
 	s.group.AddContext(func(taskCtx context.Context) error {
@@ -308,7 +290,7 @@ func (s *Server) doServe() error {
 		s.log,
 	)
 
-	if err = s.setupRateLimitService(contourConfiguration, &listenerConfig); err != nil {
+	if err = s.setupRateLimitService(&contourConfiguration, &listenerConfig); err != nil {
 		return err
 	}
 
@@ -356,6 +338,7 @@ func (s *Server) doServe() error {
 
 	// Build the core Kubernetes event handler.
 	contourHandler := &contour.EventHandler{
+		IsLeader:        isLeader,
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
 		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
@@ -380,21 +363,15 @@ func (s *Server) doServe() error {
 		Counter: contourMetrics.EventHandlerOperations,
 	}
 
-	// Register leadership election.
-	if contourConfiguration.LeaderElection.DisableLeaderElection {
-		contourHandler.IsLeader = disableLeaderElection(s.log)
-	} else {
-		contourHandler.IsLeader = setupLeadershipElection(&s.group, s.log, contourConfiguration.LeaderElection, s.clients, contourHandler.UpdateNow)
-	}
-
 	// Start setting up StatusUpdateHandler since we need it in
 	// the Gateway API controllers. Will finish setting it up and
 	// start it later.
 	sh := k8s.StatusUpdateHandler{
-		Log:       s.log.WithField("context", "StatusUpdateHandler"),
-		Clients:   s.clients,
-		Cache:     s.mgr.GetCache(),
-		Converter: converter,
+		Log:           s.log.WithField("context", "StatusUpdateHandler"),
+		Clients:       s.clients,
+		Cache:         s.mgr.GetCache(),
+		Converter:     converter,
+		LeaderElected: isLeader,
 	}
 
 	// Inform on DefaultResources.
@@ -405,7 +382,7 @@ func (s *Server) doServe() error {
 	}
 
 	// Inform on Gateway API resources.
-	s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler, &sh, contourHandler.IsLeader)
+	s.setupGatewayAPI(&contourConfiguration, s.mgr, eventHandler, &sh, isLeader)
 
 	// Inform on secrets, filtering by root namespaces.
 	for _, r := range k8s.SecretsResources() {
@@ -447,13 +424,12 @@ func (s *Server) doServe() error {
 	// push DAG rebuild metrics onto the observer stack.
 	contourHandler.Observer = &contour.RebuildMetricsObserver{
 		Metrics:      contourMetrics,
-		IsLeader:     contourHandler.IsLeader,
+		IsLeader:     isLeader,
 		NextObserver: contourHandler.Observer,
 	}
 
 	// Finish setting up the StatusUpdateHandler and
 	// add it to the work group.
-	sh.LeaderElected = contourHandler.IsLeader
 	s.group.Add(sh.Start)
 
 	// Now we have the statusUpdateHandler, we can create the event handler's StatusUpdater, which will take the
@@ -519,7 +495,7 @@ func (s *Server) doServe() error {
 	return s.group.Run(context.Background())
 }
 
-func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec, listenerConfig *xdscache_v3.ListenerConfig) error {
+func (s *Server) setupRateLimitService(contourConfiguration *contour_api_v1alpha1.ContourConfigurationSpec, listenerConfig *xdscache_v3.ListenerConfig) error {
 	if contourConfiguration.RateLimitService == nil {
 		return nil
 	}
@@ -667,7 +643,7 @@ func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 	}
 }
 
-func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
+func (s *Server) setupGatewayAPI(contourConfiguration *contour_api_v1alpha1.ContourConfigurationSpec,
 	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler, isLeader chan struct{}) {
 
 	// Check if GatewayAPI is configured.

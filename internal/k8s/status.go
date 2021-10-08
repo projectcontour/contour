@@ -16,6 +16,11 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"time"
+
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -193,4 +198,40 @@ type StatusUpdateWriter struct {
 // Send sends the given StatusUpdate off to the update channel for writing by the StatusUpdateHandler.
 func (suw *StatusUpdateWriter) Send(update StatusUpdate) {
 	suw.UpdateChannel <- update
+}
+
+// SetValidContourConfigurationStatus writes the status to the Kubernetes api server returning
+// errors if anything goes wrong during that process.
+func (suh *StatusUpdateHandler) SetValidContourConfigurationStatus(config *contour_api_v1alpha1.ContourConfiguration) error {
+	config.Status = contour_api_v1alpha1.ContourConfigurationStatus{
+		Conditions: []contour_api_v1.DetailedCondition{{
+			Condition: contour_api_v1.Condition{
+				Type:               "Valid",
+				Status:             "True",
+				ObservedGeneration: config.ObjectMeta.GetGeneration(),
+				LastTransitionTime: metav1.NewTime(time.Now()),
+				Reason:             "ValidContourConfiguration",
+				Message:            "Valid ContourConfiguration",
+			},
+			Errors:   nil,
+			Warnings: nil,
+		}},
+	}
+	return suh.setContourConfigurationStatus(config)
+}
+
+// setContourConfigurationStatus writes the status to the Kubernetes api server returning
+// errors if anything goes wrong during that process.
+func (suh *StatusUpdateHandler) setContourConfigurationStatus(config *contour_api_v1alpha1.ContourConfiguration) error {
+	usNewObj, err := suh.Converter.ToUnstructured(config)
+	if err != nil {
+		return fmt.Errorf("unable to convert object: %w", err)
+	}
+
+	_, err = suh.Clients.DynamicClient().
+		Resource(contour_api_v1alpha1.ContourConfigurationGVR).
+		Namespace(config.Namespace).
+		UpdateStatus(context.Background(), usNewObj, metav1.UpdateOptions{})
+
+	return err
 }

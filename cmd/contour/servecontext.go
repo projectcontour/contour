@@ -259,7 +259,7 @@ func parseDefaultHTTPVersions(versions []contour_api_v1alpha1.HTTPVersionType) [
 	return parsed
 }
 
-func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha1.ContourConfigurationSpec {
+func (ctx *serveContext) convertToContourConfigurationSpec() *contour_api_v1alpha1.ContourConfigurationSpec {
 	ingress := &contour_api_v1alpha1.IngressConfig{}
 	if len(ctx.ingressClassName) > 0 {
 		ingress.ClassName = pointer.StringPtr(ctx.ingressClassName)
@@ -487,5 +487,5 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		},
 	}
 
-	return contourConfiguration
+	return &contourConfiguration
 }
