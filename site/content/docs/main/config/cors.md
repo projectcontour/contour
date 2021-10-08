@@ -9,6 +9,8 @@ In this example, cross-domain requests will be allowed for any domain (note the 
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
+metadata:
+  name: s1
 spec:
   virtualhost:
     fqdn: www.example.com
@@ -40,6 +42,8 @@ In the following example, cross-domain requests are restricted to `https://clien
 ```yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
+metadata:
+  name: s1
 spec:
   virtualhost:
     fqdn: www.example.com
