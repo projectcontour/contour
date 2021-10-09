@@ -18,6 +18,7 @@ package contourconfiguration
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -67,6 +68,10 @@ var _ = Describe("ContourConfiguration Status", func() {
 func testValidContourConfigurationStatus() {
 
 	Specify("leader election enabled", func() {
+		if useContourConfiguration, variableFound := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); variableFound && useContourConfiguration == "false" {
+			Skip("configmap configuration not supported")
+		}
+
 		var err error
 
 		contourConfiguration := e2e.DefaultContourConfiguration()
@@ -100,6 +105,9 @@ func testValidContourConfigurationStatus() {
 	})
 
 	Specify("leader election disabled", func() {
+		if useContourConfiguration, variableFound := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); variableFound && useContourConfiguration == "false" {
+			Skip("configmap configuration not supported")
+		}
 		var err error
 
 		contourConfiguration := e2e.DefaultContourConfiguration()
