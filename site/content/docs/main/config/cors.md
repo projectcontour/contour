@@ -10,7 +10,7 @@ In this example, cross-domain requests will be allowed for any domain (note the 
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: s1
+  name: cors_example
 spec:
   virtualhost:
     fqdn: www.example.com
@@ -33,7 +33,7 @@ spec:
     - conditions:
       - prefix: /
       services:
-        - name: s1
+        - name: cors_example
           port: 80
 ```
 
@@ -43,7 +43,7 @@ In the following example, cross-domain requests are restricted to `https://clien
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: s1
+  name: cors_example
 spec:
   virtualhost:
     fqdn: www.example.com
@@ -66,7 +66,7 @@ spec:
     - conditions:
       - prefix: /
       services:
-        - name: s1
+        - name: cors_example
           port: 80
 ```
 
