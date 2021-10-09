@@ -378,6 +378,9 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 				Address: "0.0.0.0",
 				Port:    8000,
 			},
+			LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+				DisableLeaderElection: true,
+			},
 		},
 	}
 }

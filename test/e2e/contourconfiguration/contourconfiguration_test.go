@@ -17,9 +17,8 @@
 package contourconfiguration
 
 import (
+	"context"
 	"testing"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -27,6 +26,8 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var f = e2e.NewFramework(false)
@@ -50,7 +51,6 @@ var _ = AfterSuite(func() {
 
 var (
 	contourCmd            *gexec.Session
-	contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
 	contourConfigFile     string
 	additionalContourArgs []string
 )
@@ -61,15 +61,49 @@ var _ = Describe("ContourConfiguration Status", func() {
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
-	f.Test(testContourConfigurationStatus)
+	f.Test(testValidContourConfigurationStatus)
 })
 
-func testContourConfigurationStatus() {
+func testValidContourConfigurationStatus() {
 
-	contourConfiguration = e2e.DefaultContourConfiguration()
-
-	Specify("default ContourConfiguration status is Valid=true", func() {
+	Specify("leader election enabled", func() {
 		var err error
+
+		contourConfiguration := e2e.DefaultContourConfiguration()
+
+		// Enable LeaderElection since the test framework default is disabled.
+		contourConfiguration.Spec.LeaderElection = contour_api_v1alpha1.LeaderElectionConfig{
+			LeaseDuration: "10s",
+			RenewDeadline: "5s",
+			RetryPeriod:   "1s",
+			Configmap: contour_api_v1alpha1.NamespacedName{
+				Name:      "leader-elect",
+				Namespace: "projectcontour",
+			},
+			DisableLeaderElection: false,
+		}
+
+		// Set the "config" to nil to disable running those tests since they don't apply.
+		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(nil, contourConfiguration, additionalContourArgs...)
+		require.NoError(f.T(), err)
+
+		// Verify Status on Contour
+		require.True(f.T(), f.WaitForContourConfigurationStatus(contourConfiguration, contourConfigurationValid))
+
+		// Cleanup since this case uses leader election whereas others do not.
+		require.NoError(f.T(), f.Client.Delete(context.TODO(), &v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "leader-elect",
+				Namespace: "projectcontour",
+			},
+		}))
+	})
+
+	Specify("leader election disabled", func() {
+		var err error
+
+		contourConfiguration := e2e.DefaultContourConfiguration()
+
 		// Set the "config" to nil to disable running those tests since they don't apply.
 		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(nil, contourConfiguration, additionalContourArgs...)
 		require.NoError(f.T(), err)
