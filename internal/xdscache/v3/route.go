@@ -80,7 +80,6 @@ func (c *RouteCache) Query(names []string) []proto.Message {
 		values = append(values, v)
 	}
 
-	//sort.RouteConfigurations(values)
 	sort.Stable(sorter.For(values))
 	return protobuf.AsMessages(values)
 }
@@ -228,13 +227,11 @@ func (v *routeVisitor) onSecureVirtualHost(svh *dag.SecureVirtualHost) {
 					rt.TypedPerFilterConfig = map[string]*any.Any{}
 				}
 				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = envoy_v3.RouteAuthzDisabled()
-			} else {
-				if len(route.AuthContext) > 0 {
-					if rt.TypedPerFilterConfig == nil {
-						rt.TypedPerFilterConfig = map[string]*any.Any{}
-					}
-					rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = envoy_v3.RouteAuthzContext(route.AuthContext)
+			} else if len(route.AuthContext) > 0 {
+				if rt.TypedPerFilterConfig == nil {
+					rt.TypedPerFilterConfig = map[string]*any.Any{}
 				}
+				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = envoy_v3.RouteAuthzContext(route.AuthContext)
 			}
 		}
 

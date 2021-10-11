@@ -64,7 +64,7 @@ func KindOf(obj interface{}) string {
 // VersionOf returns the GroupVersion string for the given Kubernetes object.
 //
 func VersionOf(obj interface{}) string {
-	//If err is not nil we have the GVK and we can use it. Otherwise we're going to use switch case method as failover
+	// If err is not nil we have the GVK and we can use it. Otherwise we're going to use switch case method as failover
 	gvk, _, err := scheme.Scheme.ObjectKinds(obj.(runtime.Object))
 	if err != nil {
 		switch obj := obj.(type) {

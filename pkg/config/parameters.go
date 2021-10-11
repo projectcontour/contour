@@ -143,13 +143,14 @@ func (a AccessLogFields) AsFieldMap() map[string]string {
 			operator, foundInFieldMapping := jsonFields[val]
 			_, isSimpleOperator := envoySimpleOperators[strings.ToUpper(val)]
 
-			if isSimpleOperator && !foundInFieldMapping {
+			switch {
+			case isSimpleOperator && !foundInFieldMapping:
 				// Operator name is known to be simple, upcase and wrap it in percents.
 				fieldMap[val] = fmt.Sprintf("%%%s%%", strings.ToUpper(val))
-			} else if foundInFieldMapping {
+			case foundInFieldMapping:
 				// Operator name has a known mapping, store the result of the mapping.
 				fieldMap[val] = operator
-			} else {
+			default:
 				// Operator name not found, save as emptystring and let validation catch it later.
 				fieldMap[val] = ""
 			}

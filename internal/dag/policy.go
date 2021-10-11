@@ -266,7 +266,7 @@ func escapeHeaderValue(value string, dynamicHeaders map[string]string) string {
 	if !strings.Contains(value, "%") {
 		return value
 	}
-	escapedValue := strings.Replace(value, "%", "%%", -1)
+	escapedValue := strings.ReplaceAll(value, "%", "%%")
 	for dynamicVar, dynamicVal := range dynamicHeaders {
 		escapedValue = strings.ReplaceAll(escapedValue, "%%"+dynamicVar+"%%", dynamicVal)
 	}

@@ -103,8 +103,7 @@ func (suc *StatusUpdateCacher) GetStatus(obj interface{}) (*contour_api_v1.HTTPP
 		objectKey := suc.objKey(o.Name, o.Namespace, contour_api_v1.HTTPProxyGVR)
 		cachedObj, ok := suc.objectCache[objectKey]
 		if ok {
-			switch c := cachedObj.(type) {
-			case *contour_api_v1.HTTPProxy:
+			if c, ok := cachedObj.(*contour_api_v1.HTTPProxy); ok {
 				return &c.Status, nil
 			}
 		}

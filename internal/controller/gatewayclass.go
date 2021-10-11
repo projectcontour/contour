@@ -235,11 +235,12 @@ func (cc *controlledClasses) len() int {
 func (cc *controlledClasses) add(class *gatewayapi_v1alpha1.GatewayClass) {
 	cc.allClasses = append(cc.allClasses, class)
 
-	if cc.oldestClass == nil {
+	switch {
+	case cc.oldestClass == nil:
 		cc.oldestClass = class
-	} else if class.CreationTimestamp.Time.Before(cc.oldestClass.CreationTimestamp.Time) {
+	case class.CreationTimestamp.Time.Before(cc.oldestClass.CreationTimestamp.Time):
 		cc.oldestClass = class
-	} else if class.CreationTimestamp.Time.Equal(cc.oldestClass.CreationTimestamp.Time) && class.Name < cc.oldestClass.Name {
+	case class.CreationTimestamp.Time.Equal(cc.oldestClass.CreationTimestamp.Time) && class.Name < cc.oldestClass.Name:
 		// tie-breaker: first one in alphabetical order is considered oldest/admitted
 		cc.oldestClass = class
 	}

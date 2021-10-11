@@ -120,17 +120,18 @@ func (s *shutdownmanagerContext) shutdownReadyHandler(w http.ResponseWriter, r *
 	ctx := r.Context()
 	for {
 		_, err := os.Stat(s.shutdownReadyFile)
-		if os.IsNotExist(err) {
+		switch {
+		case os.IsNotExist(err):
 			l.Infof("file %s does not exist; checking again in %v", s.shutdownReadyFile,
 				s.shutdownReadyCheckInterval)
-		} else if err == nil {
+		case err == nil:
 			l.Infof("detected file %s; sending HTTP response", s.shutdownReadyFile)
 			http.StatusText(http.StatusOK)
 			if _, err := w.Write([]byte("OK")); err != nil {
 				l.Error(err)
 			}
 			return
-		} else {
+		default:
 			l.Errorf("error checking for file: %v", err)
 		}
 
@@ -287,11 +288,14 @@ func parseOpenConnections(stats io.Reader) (int, error) {
 func doShutdownManager(config *shutdownmanagerContext) {
 
 	config.Info("started envoy shutdown manager")
-	defer config.Info("stopped")
 
 	http.HandleFunc("/healthz", config.healthzHandler)
 	http.HandleFunc("/shutdown", config.shutdownReadyHandler)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", config.httpServePort), nil))
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", config.httpServePort), nil); err != http.ErrServerClosed {
+		log.Fatal(err)
+	}
+	config.Info("stopped")
 }
 
 // registerShutdownManager registers the envoy shutdown-manager sub-command and flags

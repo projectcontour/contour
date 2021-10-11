@@ -455,10 +455,11 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		conds := append(conditions, route.Conditions...)
+		routeConditions := conditions
+		routeConditions = append(routeConditions, route.Conditions...)
 
 		// Look for invalid header conditions on this route
-		if err := headerMatchConditionsValid(conds); err != nil {
+		if err := headerMatchConditionsValid(routeConditions); err != nil {
 			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid",
 				err.Error())
 			return nil
@@ -501,8 +502,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		requestHashPolicies, lbPolicy := loadBalancerRequestHashPolicies(route.LoadBalancerPolicy, validCond)
 
 		r := &Route{
-			PathMatchCondition:    mergePathMatchConditions(conds),
-			HeaderMatchConditions: mergeHeaderMatchConditions(conds),
+			PathMatchCondition:    mergePathMatchConditions(routeConditions),
+			HeaderMatchConditions: mergeHeaderMatchConditions(routeConditions),
 			Websocket:             route.EnableWebsockets,
 			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
 			TimeoutPolicy:         tp,

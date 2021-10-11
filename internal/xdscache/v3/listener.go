@@ -536,8 +536,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 	// support more params of envoy listener
 
 	// 1. connection balancer
-	switch lvc.ConnectionBalancer {
-	case "exact":
+	if lvc.ConnectionBalancer == "exact" {
 		for _, listener := range lv.listeners {
 			listener.ConnectionBalanceConfig = &envoy_listener_v3.Listener_ConnectionBalanceConfig{
 				BalanceType: &envoy_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance_{

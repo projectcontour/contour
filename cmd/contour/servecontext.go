@@ -470,8 +470,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	}
 
 	xdsServerType := contour_api_v1alpha1.ContourServerType
-	switch ctx.Config.Server.XDSServerType {
-	case config.EnvoyServerType:
+	if ctx.Config.Server.XDSServerType == config.EnvoyServerType {
 		xdsServerType = contour_api_v1alpha1.EnvoyServerType
 	}
 
