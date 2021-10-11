@@ -14,7 +14,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/jetstack/cert-manager v1.5.1
-	github.com/onsi/ginkgo v1.16.5-0.20211006031607-dc20c1d5f117
+	github.com/onsi/ginkgo v1.16.5-0.20211011165036-638dfbc0fced
 	github.com/onsi/gomega v1.16.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0
