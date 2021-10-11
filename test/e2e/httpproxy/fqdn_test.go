@@ -19,12 +19,14 @@ package httpproxy
 import (
 	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/test/e2e"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func testWildcardSubdomainFQDN(namespace string) {
-	Specify("invalid wildcard subdomain fqdn", func() {
+	Specify("valid wildcard subdomain fqdn", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
@@ -47,9 +49,9 @@ func testWildcardSubdomainFQDN(namespace string) {
 			},
 		}
 
-		// Creation should fail the kubebuilder CRD validations.
+		// Creation should pass the kubebuilder CRD validations.
 		err := f.CreateHTTPProxy(p)
-		require.NotNil(t, err, "Expected invalid subdomain wildcard to be rejected.")
+		require.Nil(t, err, "Expected invalid subdomain wildcard to be allowed.")
 	})
 }
 
@@ -80,5 +82,100 @@ func testWildcardFQDN(namespace string) {
 		// Creation should fail the kubebuilder CRD validations.
 		err := f.CreateHTTPProxy(p)
 		require.NotNil(t, err, "Expected invalid wildcard to be rejected.")
+	})
+
+	Specify("wildcard routing works", func() {
+		t := f.T()
+
+		f.Fixtures.Echo.Deploy(namespace, "echo-slash-default")
+		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
+		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-bar")
+
+		proxyWildcard := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "wildcard",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "*.projectcontour.io",
+				},
+				Routes: []contourv1.Route{{
+					Services: []contourv1.Service{
+						{
+							Name: "echo-slash-default",
+							Port: 80,
+						},
+					},
+				}},
+			},
+		}
+		proxyFullFQDN := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "full-fqdn",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "projectcontour.io",
+				},
+				Routes: []contourv1.Route{{
+					Services: []contourv1.Service{
+						{
+							Name: "ingress-conformance-echo",
+							Port: 80,
+						},
+					},
+				}},
+			},
+		}
+		proxyFullFQDNSubdomain := &contourv1.HTTPProxy{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+				Name:      "fqdn-subdomain",
+			},
+			Spec: contourv1.HTTPProxySpec{
+				VirtualHost: &contourv1.VirtualHost{
+					Fqdn: "bar.projectcontour.io",
+				},
+				Routes: []contourv1.Route{{
+					Services: []contourv1.Service{
+						{
+							Name: "ingress-conformance-bar",
+							Port: 80,
+						},
+					},
+				}},
+			},
+		}
+		f.CreateHTTPProxyAndWaitFor(proxyWildcard, httpProxyValid)
+		f.CreateHTTPProxyAndWaitFor(proxyFullFQDN, httpProxyValid)
+		f.CreateHTTPProxyAndWaitFor(proxyFullFQDNSubdomain, httpProxyValid)
+
+		cases := map[string]string{
+			"projectcontour.io":                         "ingress-conformance-echo",
+			"www.projectcontour.io":                     "echo-slash-default",
+			"bar.projectcontour.io":                     "ingress-conformance-bar",
+			"foo.projectcontour.io":                     "echo-slash-default",
+			"foo.bar.projectcontour.io":                 "echo-slash-default",
+			"i.n.g.r.e.s.s.r.u.l.e.s.projectcontour.io": "echo-slash-default",
+		}
+
+		for fqdn, expectedService := range cases {
+			t.Logf("Querying %q, expecting service %q", fqdn, expectedService)
+
+			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+				Host:      fqdn,
+				Path:      "/",
+				Condition: e2e.HasStatusCode(200),
+			})
+			if !assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode) {
+				continue
+			}
+
+			body := f.GetEchoResponseBody(res.Body)
+			assert.Equal(t, namespace, body.Namespace)
+			assert.Equal(t, expectedService, body.Service)
+		}
 	})
 }
