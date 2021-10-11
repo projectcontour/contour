@@ -202,7 +202,7 @@ func (dag *DAG) GetExtensionClusters() map[string]*ExtensionCluster {
 
 // GetExtensionCluster returns the extension cluster in the DAG that
 // matches the provided name, or nil if no matching extension cluster
-//is found.
+// is found.
 func (dag *DAG) GetExtensionCluster(name string) *ExtensionCluster {
 	return dag.GetExtensionClusters()[name]
 }

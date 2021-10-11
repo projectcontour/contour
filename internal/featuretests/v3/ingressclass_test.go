@@ -259,9 +259,9 @@ func TestIngressClassAnnotation_Configured(t *testing.T) {
 	}
 }
 
-//no configured ingress.class, none on object - pass
-//no configured ingress.class, "contour" on object - pass
-//no configured ingress.class, anything else on object - fail
+// no configured ingress.class, none on object - pass
+// no configured ingress.class, "contour" on object - pass
+// no configured ingress.class, anything else on object - fail
 
 func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {})

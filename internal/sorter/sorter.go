@@ -98,8 +98,7 @@ func (s headerMatchConditionSorter) Less(i, j int) bool {
 				return true
 			}
 		case dag.HeaderMatchTypePresent:
-			switch s[j].MatchType {
-			case dag.HeaderMatchTypePresent:
+			if s[j].MatchType == dag.HeaderMatchTypePresent {
 				// The match that is not inverted sorts first.
 				return !s[i].Invert
 			}
@@ -139,8 +138,7 @@ func (s routeSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s routeSorter) Less(i, j int) bool {
 	switch a := s[i].PathMatchCondition.(type) {
 	case *dag.PrefixMatchCondition:
-		switch b := s[j].PathMatchCondition.(type) {
-		case *dag.PrefixMatchCondition:
+		if b, ok := s[j].PathMatchCondition.(*dag.PrefixMatchCondition); ok {
 			cmp := strings.Compare(a.Prefix, b.Prefix)
 			switch cmp {
 			case 1:

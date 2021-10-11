@@ -132,25 +132,6 @@ func TestHTTPProxyMetrics(t *testing.T) {
 		},
 	}
 
-	//// proxy4 is invalid because its match prefix does not match its parent's (proxy1)
-	//proxy4 := &contour_api_v1.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Namespace: "roots",
-	//		Name:      "delegated",
-	//	},
-	//	Spec: contour_api_v1.HTTPProxySpec{
-	//		Routes: []contour_api_v1.Route{{
-	//			Conditions: []contour_api_v1.MatchCondition{{
-	//				Prefix: "/doesnotmatch",
-	//			}},
-	//			Services: []contour_api_v1.Service{{
-	//				Name: "home",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
-
 	// proxy6 is invalid because it delegates to itself, producing a cycle
 	proxy6 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -203,31 +184,6 @@ func TestHTTPProxyMetrics(t *testing.T) {
 			}},
 		},
 	}
-
-	//// proxy9 is invalid because it has a route that both delegates and has a list of services
-	//proxy9 := &contour_api_v1.HTTPProxy{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Namespace: "roots",
-	//		Name:      "parent",
-	//	},
-	//	Spec: contour_api_v1.HTTPProxySpec{
-	//		VirtualHost: &contour_api_v1.VirtualHost{
-	//			Fqdn: "example.com",
-	//		},
-	//		Includes: []contour_api_v1.Include{{
-	//			Name: "child",
-	//			Conditions: []contour_api_v1.MatchCondition{{
-	//				Prefix: "/foo",
-	//			}},
-	//		}},
-	//		Routes: []contour_api_v1.Route{{
-	//			Services: []contour_api_v1.Service{{
-	//				Name: "kuard",
-	//				Port: 8080,
-	//			}},
-	//		}},
-	//	},
-	//}
 
 	// proxy10 delegates to proxy11 and proxy12.
 	proxy10 := &contour_api_v1.HTTPProxy{

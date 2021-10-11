@@ -29,7 +29,7 @@ import (
 func mergePathMatchConditions(conds []contour_api_v1.MatchCondition) MatchCondition {
 	prefix := ""
 	for _, cond := range conds {
-		prefix = prefix + cond.Prefix
+		prefix += cond.Prefix
 	}
 
 	re := regexp.MustCompile(`//+`)
