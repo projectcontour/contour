@@ -30,7 +30,6 @@ func testGatewayPathConditionMatch(namespace string) {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-slash-prefix")
-		f.Fixtures.Echo.Deploy(namespace, "echo-slash-noprefix")
 		f.Fixtures.Echo.Deploy(namespace, "echo-slash-default")
 		f.Fixtures.Echo.Deploy(namespace, "echo-slash-exact")
 
@@ -48,13 +47,8 @@ func testGatewayPathConditionMatch(namespace string) {
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/path/prefix/"),
-						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-prefix", 80, 1),
-					},
-
-					{
 						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/path/prefix"),
-						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-noprefix", 80, 1),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-prefix", 80, 1),
 					},
 
 					{
@@ -72,16 +66,20 @@ func testGatewayPathConditionMatch(namespace string) {
 		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		cases := map[string]string{
-			"/":                "echo-slash-default",
-			"/foo":             "echo-slash-default",
-			"/path/prefix":     "echo-slash-noprefix",
-			"/path/prefixfoo":  "echo-slash-noprefix",
-			"/path/prefix/":    "echo-slash-prefix",
-			"/path/prefix/foo": "echo-slash-prefix",
-			"/path/exact":      "echo-slash-exact",
-			"/path/exactfoo":   "echo-slash-default",
-			"/path/exact/":     "echo-slash-default",
-			"/path/exact/foo":  "echo-slash-default",
+			"/":    "echo-slash-default",
+			"/foo": "echo-slash-default",
+
+			"/path/prefix":         "echo-slash-prefix",
+			"/path/prefix/":        "echo-slash-prefix",
+			"/path/prefix/foo":     "echo-slash-prefix",
+			"/path/prefix/foo/bar": "echo-slash-prefix",
+			"/path/prefixfoo":      "echo-slash-default", // not a segment prefix match
+			"/foo/path/prefix":     "echo-slash-default",
+
+			"/path/exact":     "echo-slash-exact",
+			"/path/exactfoo":  "echo-slash-default",
+			"/path/exact/":    "echo-slash-default",
+			"/path/exact/foo": "echo-slash-default",
 		}
 
 		for path, expectedService := range cases {

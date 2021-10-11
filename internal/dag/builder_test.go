@@ -1124,7 +1124,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
-							prefixrouteHTTPRoute("/", service(kuardService)), prefixrouteHTTPRoute("/blog", service(blogService))),
+							prefixrouteHTTPRoute("/", service(kuardService)), segmentPrefixHTTPRoute("/blog", service(blogService))),
 					),
 				},
 			),
@@ -1463,8 +1463,8 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("test.projectcontour.io",
 							prefixrouteHTTPRoute("/", service(kuardService)),
-							prefixrouteHTTPRoute("/blog", service(kuardService)),
-							prefixrouteHTTPRoute("/tech", service(kuardService))),
+							segmentPrefixHTTPRoute("/blog", service(kuardService)),
+							segmentPrefixHTTPRoute("/tech", service(kuardService))),
 					),
 				},
 			),
@@ -1938,11 +1938,11 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
-							PathMatchCondition: prefixString("/blog"),
+							PathMatchCondition: prefixSegment("/blog"),
 							Clusters:           clustersWeight(service(kuardService)),
 						},
 						&Route{
-							PathMatchCondition: prefixString("/tech"),
+							PathMatchCondition: prefixSegment("/tech"),
 							HeaderMatchConditions: []HeaderMatchCondition{
 								{Name: "foo", Value: "bar", MatchType: "exact", Invert: false},
 							},
@@ -10997,6 +10997,14 @@ func prefixrouteHTTPRoute(prefix string, first *Service, rest ...*Service) *Rout
 	services := append([]*Service{first}, rest...)
 	return &Route{
 		PathMatchCondition: prefixString(prefix),
+		Clusters:           clustersWeight(services...),
+	}
+}
+
+func segmentPrefixHTTPRoute(prefix string, first *Service, rest ...*Service) *Route {
+	services := append([]*Service{first}, rest...)
+	return &Route{
+		PathMatchCondition: prefixSegment(prefix),
 		Clusters:           clustersWeight(services...),
 	}
 }

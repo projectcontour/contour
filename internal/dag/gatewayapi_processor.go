@@ -753,15 +753,18 @@ func gatewayPathMatchCondition(match *gatewayapi_v1alpha2.HTTPPathMatch) (MatchC
 
 	path := pointer.StringDeref(match.Value, "/")
 
-	if match.Type == nil {
-		// If path match type is not defined, default to 'PrefixMatch'.
-		return &PrefixMatchCondition{Prefix: path}, nil
+	// If path match type is not defined, default to 'PathPrefix'.
+	if match.Type == nil || *match.Type == gatewayapi_v1alpha2.PathMatchPathPrefix {
+		// As an optimization, if path is just "/", we can use
+		// string prefix matching instead of segment prefix
+		// matching which requires a regex.
+		if path == "/" {
+			return &PrefixMatchCondition{Prefix: path}, nil
+		}
+		return &PrefixMatchCondition{Prefix: path, PrefixMatchType: PrefixMatchSegment}, nil
 	}
 
-	switch *match.Type {
-	case gatewayapi_v1alpha2.PathMatchPathPrefix:
-		return &PrefixMatchCondition{Prefix: path}, nil
-	case gatewayapi_v1alpha2.PathMatchExact:
+	if *match.Type == gatewayapi_v1alpha2.PathMatchExact {
 		return &ExactMatchCondition{Path: path}, nil
 	}
 
