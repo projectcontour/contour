@@ -40,7 +40,7 @@ spec:
       - name: X-User-Session
         pathRewrite:
           value: /payments
-	sameSite: Lax
+        sameSite: Lax
       - name: X-User-Data
         sameSite: Lax
 ```
