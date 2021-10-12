@@ -4721,7 +4721,7 @@ rules:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: contour-certgen-main
+  name: contour-certgen-v1.19.0
   namespace: projectcontour
 spec:
   ttlSecondsAfterFinished: 0
@@ -4732,7 +4732,7 @@ spec:
     spec:
       containers:
       - name: contour
-        image: ghcr.io/projectcontour/contour:main
+        image: ghcr.io/projectcontour/contour:v1.19.0
         imagePullPolicy: Always
         command:
         - contour
@@ -5013,7 +5013,7 @@ spec:
         - --contour-key-file=/certs/tls.key
         - --config-path=/config/contour.yaml
         command: ["contour"]
-        image: ghcr.io/projectcontour/contour:main
+        image: ghcr.io/projectcontour/contour:v1.19.0
         imagePullPolicy: IfNotPresent
         name: contour
         ports:
@@ -5102,7 +5102,7 @@ spec:
         args:
           - envoy
           - shutdown-manager
-        image: ghcr.io/projectcontour/contour:main
+        image: ghcr.io/projectcontour/contour:v1.19.0
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -5186,7 +5186,7 @@ spec:
         - --envoy-key-file=/certs/tls.key
         command:
         - contour
-        image: ghcr.io/projectcontour/contour:main
+        image: ghcr.io/projectcontour/contour:v1.19.0
         imagePullPolicy: IfNotPresent
         name: envoy-initconfig
         volumeMounts:
