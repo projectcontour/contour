@@ -14,14 +14,17 @@
 package v3
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 	"sort"
 	"strings"
+	"text/template"
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_config_filter_http_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
+	lua "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/lua/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/ptypes/any"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
@@ -146,13 +149,13 @@ func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 		)
 	}
 
-	if envoy.SingleSimpleCluster(r.Clusters) {
+	if envoy.SingleSimpleCluster(r) {
 		ra.ClusterSpecifier = &envoy_route_v3.RouteAction_Cluster{
 			Cluster: envoy.Clustername(r.Clusters[0]),
 		}
 	} else {
 		ra.ClusterSpecifier = &envoy_route_v3.RouteAction_WeightedClusters{
-			WeightedClusters: weightedClusters(r.Clusters),
+			WeightedClusters: weightedClusters(r),
 		}
 	}
 	return &envoy_route_v3.Route_Route{
@@ -258,10 +261,10 @@ func HeaderValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderVal
 }
 
 // weightedClusters returns a route.WeightedCluster for multiple services.
-func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
+func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 	var wc envoy_route_v3.WeightedCluster
 	var total uint32
-	for _, cluster := range clusters {
+	for _, cluster := range route.Clusters {
 		total += cluster.Weight
 
 		c := &envoy_route_v3.WeightedCluster_ClusterWeight{
@@ -276,6 +279,12 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
 			c.ResponseHeadersToAdd = HeaderValueList(cluster.ResponseHeadersPolicy.Set, false)
 			c.ResponseHeadersToRemove = cluster.ResponseHeadersPolicy.Remove
 		}
+		if len(route.CookieRewritePolicies) > 0 || len(cluster.CookieRewritePolicies) > 0 {
+			if c.TypedPerFilterConfig == nil {
+				c.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+			c.TypedPerFilterConfig["envoy.filters.http.lua"] = CookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
+		}
 		wc.Clusters = append(wc.Clusters, c)
 	}
 	// Check if no weights were defined, if not default to even distribution
@@ -283,7 +292,7 @@ func weightedClusters(clusters []*dag.Cluster) *envoy_route_v3.WeightedCluster {
 		for _, c := range wc.Clusters {
 			c.Weight.Value = 1
 		}
-		total = uint32(len(clusters))
+		total = uint32(len(route.Clusters))
 	}
 	wc.TotalWeight = protobuf.UInt32(total)
 
@@ -401,4 +410,154 @@ func containsMatch(s string) *envoy_route_v3.HeaderMatcher_SafeRegexMatch {
 	return &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
 		SafeRegexMatch: SafeRegexMatch(regex),
 	}
+}
+
+func CookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *any.Any {
+	// Merge route and cluster policies
+	mergedPolicies := map[string]dag.CookieRewritePolicy{}
+	for _, p := range append(routePolicies, clusterPolicies...) {
+		if _, ok := mergedPolicies[p.Name]; !ok {
+			mergedPolicies[p.Name] = p
+		} else {
+			merged := mergedPolicies[p.Name]
+			// Merge this policy with an existing one.
+			if p.Path != nil {
+				merged.Path = p.Path
+			}
+			if p.Domain != nil {
+				merged.Domain = p.Domain
+			}
+			if p.Secure != 0 {
+				merged.Secure = p.Secure
+			}
+			if p.SameSite != nil {
+				merged.SameSite = p.SameSite
+			}
+			mergedPolicies[p.Name] = merged
+		}
+	}
+	policies := make([]dag.CookieRewritePolicy, len(mergedPolicies))
+	i := 0
+	for _, p := range mergedPolicies {
+		policies[i] = p
+		i++
+	}
+
+	codeTemplate := `
+function envoy_on_response(response_handle)
+	rewrite_table = {}
+
+	{{range $i, $p := .}}
+	function cookie_{{$i}}_attribute_rewrite(attributes)
+		response_handle:logDebug("rewriting cookie \"{{$p.Name}}\"")
+
+		{{if $p.Path}}attributes["Path"] = "Path={{$p.Path}}"{{end}}
+		{{if $p.Domain}}attributes["Domain"] = "Domain={{$p.Domain}}"{{end}}
+		{{if $p.SameSite}}attributes["SameSite"] = "SameSite={{$p.SameSite}}"{{end}}
+		{{if eq $p.Secure 1}}attributes["Secure"] = nil{{end}}
+		{{if eq $p.Secure 2}}attributes["Secure"] = "Secure"{{end}}
+	end
+	rewrite_table["{{$p.Name}}"] = cookie_{{$i}}_attribute_rewrite
+	{{end}}
+
+	function rewrite_cookie(original)
+		local original_len = string.len(original)
+		local name_end = string.find(original, "=")
+		if name_end == nil then
+			return original
+		end
+		local name = string.sub(original, 1, name_end - 1)
+
+		local rewrite_func = rewrite_table[name]
+		-- We don't have a rewrite rule for this cookie.
+		if rewrite_func == nil then
+			return original
+		end
+
+		-- Find cookie value via ; or end of string
+		local value_end = string.find(original, ";", name_end)
+		-- Save position to use as iterator
+		local iter = value_end
+		if value_end == nil then
+			-- Set to 0 since we have to subtract below if we did find a ;
+			value_end = 0
+			iter = original_len
+		end
+		iter = iter + 1
+		local value = string.sub(original, name_end + 1, value_end - 1)
+
+		-- Parse original attributes into table
+		-- Keyed by attribute name, values are <name>=<value> or just <name>
+		-- so we can easily rebuild, esp for attributes like 'Secure' that
+		-- do not have a value
+		local attributes = {}
+		while iter < original_len do
+			local attr_end = string.find(original, ";", iter)
+			local new_iter = attr_end
+			if attr_end == nil then
+				-- Set to 0 since we have to subtract below if we did find a ;
+				attr_end = 0
+				new_iter = original_len
+			end
+			local attr_value = string.sub(original, iter + 1, attr_end - 1)
+			-- Strip whitespace from front
+			attr_value = string.gsub(attr_value, "^%s*(.-)$", "%1")
+
+			-- Get attribute name
+			local attr_name_end = string.find(attr_value, "=")
+			if attr_name_end == nil then
+				-- Set to 0 since we have to subtract below if we did find a =
+				attr_name_end = 0
+			end
+			local attr_name = string.sub(attr_value, 1, attr_name_end - 1)
+
+			attributes[attr_name] = attr_value
+
+			iter = new_iter + 1
+		end
+
+		rewrite_func(attributes)
+
+		local rewritten = string.format("%s=%s", name, value)
+		for k, v in next, attributes do
+			if v then
+				rewritten = string.format("%s; %s", rewritten, v)
+			end
+		end
+
+		return rewritten
+	end
+
+	if response_handle:headers():get("set-cookie") then
+		rewritten_cookies = {}
+		for k, v in pairs(response_handle:headers()) do
+			if k == "set-cookie" then
+				table.insert(rewritten_cookies, rewrite_cookie(v))
+			end
+		end
+
+		response_handle:headers():remove("set-cookie")
+		for k, v in next, rewritten_cookies do
+			response_handle:headers():add("set-cookie", v)
+		end
+	end
+end
+	`
+
+	t := new(bytes.Buffer)
+	if err := template.Must(template.New("code").Parse(codeTemplate)).Execute(t, policies); err != nil {
+		// If template execution fails, return empty filter.
+		return nil
+	}
+
+	c := &lua.LuaPerRoute{
+		Override: &lua.LuaPerRoute_SourceCode{
+			SourceCode: &envoy_core_v3.DataSource{
+				Specifier: &envoy_core_v3.DataSource_InlineString{
+					InlineString: t.String(),
+				},
+			},
+		},
+	}
+	return protobuf.MustMarshalAny(c)
 }

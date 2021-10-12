@@ -240,6 +240,10 @@ type Route struct {
 	// ResponseHeadersPolicy defines how headers are managed during forwarding
 	ResponseHeadersPolicy *HeadersPolicy
 
+	// CookieRewritePolicies is a list of policies that define how HTTP Set-Cookie
+	// headers should be rewritten for responses on this route.
+	CookieRewritePolicies []CookieRewritePolicy
+
 	// RateLimitPolicy defines if/how requests for the route are rate limited.
 	RateLimitPolicy *RateLimitPolicy
 
@@ -306,6 +310,19 @@ type HeadersPolicy struct {
 	Add    map[string]string
 	Set    map[string]string
 	Remove []string
+}
+
+// CookieRewritePolicy defines how attributes of an HTTP Set-Cookie header
+// can be rewritten.
+type CookieRewritePolicy struct {
+	Name   string
+	Path   *string
+	Domain *string
+	// Using an uint since pointer to boolean gets dereferenced in golang
+	// text templates so we have no way of distinguishing if unset or set to false.
+	// 0 means unset, 1 means false, 2 means true
+	Secure   uint
+	SameSite *string
 }
 
 // RateLimitPolicy holds rate limiting parameters.
@@ -680,6 +697,10 @@ type Cluster struct {
 
 	// ResponseHeadersPolicy defines how headers are managed during forwarding
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// CookieRewritePolicies is a list of policies that define how HTTP Set-Cookie
+	// headers should be rewritten for responses on this route.
+	CookieRewritePolicies []CookieRewritePolicy
 
 	// SNI is used when a route proxies an upstream using tls.
 	// SNI describes how the SNI is set on a Cluster and is configured via RequestHeadersPolicy.Host key.

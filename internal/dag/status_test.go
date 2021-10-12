@@ -2323,6 +2323,148 @@ func TestDAGStatus(t *testing.T) {
 		},
 	})
 
+	duplicateCookieRewritePolicyRoute := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalidCRPRoute",
+			Namespace: fixture.ServiceRootsKuard.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{
+					{
+						Name: fixture.ServiceRootsKuard.Name,
+						Port: 8080,
+					},
+				},
+				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+					{
+						Name:   "a-cookie",
+						Secure: pointer.Bool(true),
+					},
+					{
+						Name:     "a-cookie",
+						SameSite: pointer.String("Lax"),
+					},
+				},
+			}},
+		},
+	}
+
+	run(t, "cookieRewritePolicies, duplicate cookie names on route", testcase{
+		objs: []interface{}{duplicateCookieRewritePolicyRoute, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: duplicateCookieRewritePolicyRoute.Name, Namespace: duplicateCookieRewritePolicyRoute.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid", `duplicate cookie rewrite rule for cookie "a-cookie" on route cookie rewrite rules`),
+		},
+	})
+
+	duplicateCookieRewritePolicyService := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalidCRPService",
+			Namespace: fixture.ServiceRootsKuard.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{
+					{
+						Name: fixture.ServiceRootsKuard.Name,
+						Port: 8080,
+						CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+							{
+								Name:   "a-cookie",
+								Secure: pointer.Bool(true),
+							},
+							{
+								Name:     "a-cookie",
+								SameSite: pointer.String("Lax"),
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	run(t, "cookieRewritePolicies, duplicate cookie names on service", testcase{
+		objs: []interface{}{duplicateCookieRewritePolicyService, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: duplicateCookieRewritePolicyService.Name, Namespace: duplicateCookieRewritePolicyService.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid", `duplicate cookie rewrite rule for cookie "a-cookie" on service cookie rewrite rules`),
+		},
+	})
+
+	emptyCookieRewritePolicyRoute := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalidCRPRoute",
+			Namespace: fixture.ServiceRootsKuard.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+					{
+						Name: "a-cookie",
+					},
+				},
+				Services: []contour_api_v1.Service{
+					{
+						Name: fixture.ServiceRootsKuard.Name,
+						Port: 8080,
+					},
+				},
+			}},
+		},
+	}
+
+	run(t, "cookieRewritePolicies, empty cookie rewrite on route", testcase{
+		objs: []interface{}{emptyCookieRewritePolicyRoute, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: emptyCookieRewritePolicyRoute.Name, Namespace: emptyCookieRewritePolicyRoute.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid", `no attributes rewritten for cookie "a-cookie" on route cookie rewrite rules`),
+		},
+	})
+
+	emptyCookieRewritePolicyService := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalidCRPService",
+			Namespace: fixture.ServiceRootsKuard.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{
+					{
+						Name: fixture.ServiceRootsKuard.Name,
+						Port: 8080,
+						CookieRewritePolicies: []contour_api_v1.CookieRewritePolicy{
+							{
+								Name: "a-cookie",
+							},
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	run(t, "cookieRewritePolicies, empty cookie rewrite on service", testcase{
+		objs: []interface{}{emptyCookieRewritePolicyService, fixture.ServiceRootsKuard},
+		want: map[types.NamespacedName]contour_api_v1.DetailedCondition{
+			{Name: emptyCookieRewritePolicyService.Name, Namespace: emptyCookieRewritePolicyService.Namespace}: fixture.NewValidCondition().
+				WithError(contour_api_v1.ConditionTypeRouteError, "CookieRewritePoliciesInvalid", `no attributes rewritten for cookie "a-cookie" on service cookie rewrite rules`),
+		},
+	})
+
 	proxyAuthFallback := fixture.NewProxy("roots/fallback-incompat").
 		WithSpec(contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{

@@ -22,6 +22,7 @@ import (
 	"time"
 
 	networking_v1 "k8s.io/api/networking/v1"
+	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -302,6 +303,58 @@ func escapeHeaderValue(value string, dynamicHeaders map[string]string) string {
 	var validReqEnvoyVar = regexp.MustCompile(`%(%REQ\([\w-]+\)%)%`)
 	escapedValue = validReqEnvoyVar.ReplaceAllString(escapedValue, "$1")
 	return escapedValue
+}
+
+func cookieRewritePolicies(policies []contour_api_v1.CookieRewritePolicy) ([]CookieRewritePolicy, error) {
+	validPolicies := make([]CookieRewritePolicy, 0, len(policies))
+	cookieNames := map[string]struct{}{}
+	for _, p := range policies {
+		if _, exists := cookieNames[p.Name]; exists {
+			return nil, fmt.Errorf("duplicate cookie rewrite rule for cookie %q", p.Name)
+		}
+		cookieNames[p.Name] = struct{}{}
+		policiesSet := 0
+		var path *string
+		if p.PathRewrite != nil {
+			policiesSet++
+			path = pointer.String(p.PathRewrite.Value)
+		}
+		var domain *string
+		if p.DomainRewrite != nil {
+			policiesSet++
+			domain = pointer.String(p.DomainRewrite.Value)
+		}
+		// We use a uint here since a pointer to bool cannot be
+		// distingiuished when unset or false in golang text templates.
+		// 0 means unset.
+		secure := uint(0)
+		if p.Secure != nil {
+			policiesSet++
+			// Increment to indicate it has been set.
+			secure++
+			if *p.Secure {
+				// Increment to indicate it is true.
+				secure++
+			}
+		}
+		if p.SameSite != nil {
+			policiesSet++
+		}
+		if policiesSet == 0 {
+			return nil, fmt.Errorf("no attributes rewritten for cookie %q", p.Name)
+		}
+		validPolicies = append(validPolicies, CookieRewritePolicy{
+			Name:     p.Name,
+			Path:     path,
+			Domain:   domain,
+			Secure:   secure,
+			SameSite: p.SameSite,
+		})
+	}
+	if len(validPolicies) == 0 {
+		return nil, nil
+	}
+	return validPolicies, nil
 }
 
 // ingressRetryPolicy builds a RetryPolicy from ingress annotations.

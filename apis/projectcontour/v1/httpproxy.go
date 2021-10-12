@@ -345,9 +345,63 @@ type Route struct {
 	// Rewriting the 'Host' header is not supported.
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
+	// The policies for rewriting Set-Cookie header attributes. Note that
+	// rewritten cookie names must be unique in this list. Order rewrite
+	// policies are specified in does not matter.
+	// +optional
+	CookieRewritePolicies []CookieRewritePolicy `json:"cookieRewritePolicies,omitempty"`
 	// The policy for rate limiting on the route.
 	// +optional
 	RateLimitPolicy *RateLimitPolicy `json:"rateLimitPolicy,omitempty"`
+}
+
+type CookieRewritePolicy struct {
+	// Name is the name of the cookie for which attributes will be rewritten.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=4096
+	// +kubebuilder:validation:Pattern=`^[^()<>@,;:\\"\/[\]?={} \t\x7f\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f]+$`
+	Name string `json:"name"`
+
+	// PathRewrite enables rewriting the Set-Cookie Path element.
+	// If not set, Path will not be rewritten.
+	// +optional
+	PathRewrite *CookiePathRewrite `json:"pathRewrite,omitempty"`
+
+	// DomainRewrite enables rewriting the Set-Cookie Domain element.
+	// If not set, Domain will not be rewritten.
+	// +optional
+	DomainRewrite *CookieDomainRewrite `json:"domainRewrite,omitempty"`
+
+	// Secure enables rewriting the Set-Cookie Secure element.
+	// If not set, Secure attribute will not be rewritten.
+	// +optional
+	Secure *bool `json:"secure,omitempty"`
+
+	// SameSite enables rewriting the Set-Cookie SameSite element.
+	// If not set, SameSite attribute will not be rewritten.
+	// +optional
+	// +kubebuilder:validation:Enum=Strict;Lax;None
+	SameSite *string `json:"sameSite,omitempty"`
+}
+
+type CookiePathRewrite struct {
+	// Value is the value to rewrite the Path attribute to.
+	// For now this is required.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=4096
+	// +kubebuilder:validation:Pattern=`^[^;\x7f\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f]+$`
+	Value string `json:"value"`
+}
+
+type CookieDomainRewrite struct {
+	// Value is the value to rewrite the Domain attribute to.
+	// For now this is required.
+	// +required
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=4096
+	// +kubebuilder:validation:Pattern="^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+	Value string `json:"value"`
 }
 
 // RateLimitPolicy defines rate limiting parameters.
@@ -567,6 +621,9 @@ type Service struct {
 	// Rewriting the 'Host' header is not supported.
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
+	// The policies for rewriting Set-Cookie header attributes.
+	// +optional
+	CookieRewritePolicies []CookieRewritePolicy `json:"cookieRewritePolicies,omitempty"`
 }
 
 // HTTPHealthCheckPolicy defines health checks on the upstream service.

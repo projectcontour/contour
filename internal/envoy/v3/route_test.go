@@ -587,33 +587,35 @@ func TestRouteDirectResponse(t *testing.T) {
 
 func TestWeightedClusters(t *testing.T) {
 	tests := map[string]struct {
-		clusters []*dag.Cluster
-		want     *envoy_route_v3.WeightedCluster
+		route *dag.Route
+		want  *envoy_route_v3.WeightedCluster
 	}{
 		"multiple services w/o weights": {
-			clusters: []*dag.Cluster{{
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "kuard",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Port: 8080,
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      "kuard",
+							ServiceNamespace: "default",
+							ServicePort: v1.ServicePort{
+								Port: 8080,
+							},
 						},
 					},
-				},
-			}, {
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "nginx",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Port: 8080,
+				}, {
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      "nginx",
+							ServiceNamespace: "default",
+							ServicePort: v1.ServicePort{
+								Port: 8080,
+							},
 						},
 					},
-				},
-			}},
+				}},
+			},
 			want: &envoy_route_v3.WeightedCluster{
 				Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 					Name:   "default/kuard/8080/da39a3ee5e",
@@ -626,31 +628,33 @@ func TestWeightedClusters(t *testing.T) {
 			},
 		},
 		"multiple weighted services": {
-			clusters: []*dag.Cluster{{
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "kuard",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Port: 8080,
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      "kuard",
+							ServiceNamespace: "default",
+							ServicePort: v1.ServicePort{
+								Port: 8080,
+							},
 						},
 					},
-				},
-				Weight: 80,
-			}, {
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "nginx",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Port: 8080,
+					Weight: 80,
+				}, {
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      "nginx",
+							ServiceNamespace: "default",
+							ServicePort: v1.ServicePort{
+								Port: 8080,
+							},
 						},
 					},
-				},
-				Weight: 20,
-			}},
+					Weight: 20,
+				}},
+			},
 			want: &envoy_route_v3.WeightedCluster{
 				Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 					Name:   "default/kuard/8080/da39a3ee5e",
@@ -663,42 +667,44 @@ func TestWeightedClusters(t *testing.T) {
 			},
 		},
 		"multiple weighted services and one with no weight specified": {
-			clusters: []*dag.Cluster{{
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "kuard",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Port: 8080,
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{{
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      "kuard",
+							ServiceNamespace: "default",
+							ServicePort: v1.ServicePort{
+								Port: 8080,
+							},
 						},
 					},
-				},
-				Weight: 80,
-			}, {
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "nginx",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Port: 8080,
+					Weight: 80,
+				}, {
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      "nginx",
+							ServiceNamespace: "default",
+							ServicePort: v1.ServicePort{
+								Port: 8080,
+							},
 						},
 					},
-				},
-				Weight: 20,
-			}, {
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "notraffic",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Port: 8080,
+					Weight: 20,
+				}, {
+					Upstream: &dag.Service{
+						Weighted: dag.WeightedService{
+							Weight:           1,
+							ServiceName:      "notraffic",
+							ServiceNamespace: "default",
+							ServicePort: v1.ServicePort{
+								Port: 8080,
+							},
 						},
 					},
-				},
-			}},
+				}},
+			},
 			want: &envoy_route_v3.WeightedCluster{
 				Clusters: []*envoy_route_v3.WeightedCluster_ClusterWeight{{
 					Name:   "default/kuard/8080/da39a3ee5e",
@@ -717,7 +723,7 @@ func TestWeightedClusters(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := weightedClusters(tc.clusters)
+			got := weightedClusters(tc.route)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

@@ -39,6 +39,8 @@ toc:
         url: /config/access-logging
       - page: Annotations Reference
         url: /config/annotations
+      - page: Cookie Rewriting
+        url: /config/cookie-rewriting
       - page: API Reference
         url: /config/api
   - title: Deployment

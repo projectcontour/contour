@@ -574,6 +574,159 @@ the secret will be delegated to all namespaces.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1.CookieDomainRewrite">CookieDomainRewrite
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.CookieRewritePolicy">CookieRewritePolicy</a>)
+</p>
+<p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>value</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Value is the value to rewrite the Domain attribute to.
+For now this is required.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.CookiePathRewrite">CookiePathRewrite
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.CookieRewritePolicy">CookieRewritePolicy</a>)
+</p>
+<p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>value</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Value is the value to rewrite the Path attribute to.
+For now this is required.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1.CookieRewritePolicy">CookieRewritePolicy
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1.Route">Route</a>, 
+<a href="#projectcontour.io/v1.Service">Service</a>)
+</p>
+<p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>name</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name is the name of the cookie for which attributes will be rewritten.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>pathRewrite</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.CookiePathRewrite">
+CookiePathRewrite
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>PathRewrite enables rewriting the Set-Cookie Path element.
+If not set, Path will not be rewritten.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>domainRewrite</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.CookieDomainRewrite">
+CookieDomainRewrite
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DomainRewrite enables rewriting the Set-Cookie Domain element.
+If not set, Domain will not be rewritten.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>secure</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Secure enables rewriting the Set-Cookie Secure element.
+If not set, Secure attribute will not be rewritten.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>sameSite</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SameSite enables rewriting the Set-Cookie SameSite element.
+If not set, SameSite attribute will not be rewritten.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1.DetailedCondition">DetailedCondition
 </h3>
 <p>
@@ -2392,6 +2545,23 @@ Rewriting the &lsquo;Host&rsquo; header is not supported.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>cookieRewritePolicies</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.CookieRewritePolicy">
+[]CookieRewritePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policies for rewriting Set-Cookie header attributes. Note that
+rewritten cookie names must be unique in this list. Order rewrite
+policies are specified in does not matter.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>rateLimitPolicy</code>
 <br>
 <em>
@@ -2534,6 +2704,21 @@ HeadersPolicy
 <em>(Optional)</em>
 <p>The policy for managing response headers during proxying.
 Rewriting the &lsquo;Host&rsquo; header is not supported.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>cookieRewritePolicies</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1.CookieRewritePolicy">
+[]CookieRewritePolicy
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>The policies for rewriting Set-Cookie header attributes.</p>
 </td>
 </tr>
 </tbody>
