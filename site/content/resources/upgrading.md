@@ -9,7 +9,7 @@ This document describes the changes needed to upgrade your Contour installation.
 
 <div id="toc" class="navigation"></div>
 
-## Upgrading Contour 1.18.1 to 1.19.0
+## Upgrading Contour 1.18.2 to 1.19.0
 
 Contour 1.19.0 is the current stable release.
 
