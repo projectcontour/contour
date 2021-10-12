@@ -390,7 +390,7 @@ func testAppCookieRewrite(namespace string) {
 		// Rewrite on a service, balancing to multiple services.
 		services := map[string]struct{}{}
 		// Use a few attempts to make sure we hit both services.
-		for i := 0; i < 8; i++ {
+		for i := 0; i < 20; i++ {
 			headers = requestSetCookieHeader(false, p.Spec.VirtualHost.Fqdn, "/service", "service=baz; Path=/svc")
 			for headerName, values := range headers {
 				if headerName != "Set-Cookie" {
