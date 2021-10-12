@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"testing"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+
 	"github.com/davecgh/go-spew/spew"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
@@ -57,6 +59,7 @@ var _ = Describe("HTTPProxy", func() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
+		contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
 		contourConfigFile     string
 		additionalContourArgs []string
 	)
@@ -65,6 +68,10 @@ var _ = Describe("HTTPProxy", func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
 		contourConfig = &config.Parameters{}
+
+		// Contour configuration crd, can be modified in nested
+		// BeforeEach.
+		contourConfiguration = e2e.DefaultContourConfiguration()
 
 		// Default contour serve command line arguments can be appended to in
 		// nested BeforeEach.
@@ -77,7 +84,7 @@ var _ = Describe("HTTPProxy", func() {
 	// until here to start Contour.
 	JustBeforeEach(func() {
 		var err error
-		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, additionalContourArgs...)
+		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, contourConfiguration, additionalContourArgs...)
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
@@ -122,6 +129,11 @@ var _ = Describe("HTTPProxy", func() {
 						Namespace: namespace,
 					},
 				}
+				contourConfiguration.Spec.HTTPProxy.FallbackCertificate = &contour_api_v1alpha1.NamespacedName{
+					Name:      "fallback-cert",
+					Namespace: namespace,
+				}
+
 				f.Certs.CreateSelfSignedCert(namespace, "fallback-cert", "fallback-cert", "fallback.projectcontour.io")
 			})
 
@@ -208,6 +220,11 @@ var _ = Describe("HTTPProxy", func() {
 						Name:      "backend-client-cert",
 					},
 				}
+
+				contourConfiguration.Spec.Envoy.ClientCertificate = &contour_api_v1alpha1.NamespacedName{
+					Name:      "backend-client-cert",
+					Namespace: namespace,
+				}
 			})
 
 			testBackendTLS(namespace)
@@ -226,6 +243,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = true
 			})
 			testExternalNameServiceInsecure(namespace)
 		})
@@ -235,6 +253,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = true
 			})
 			testExternalNameServiceTLS(namespace)
 		})
@@ -244,6 +263,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = true
 			})
 			testExternalNameServiceLocalhostInvalid(namespace)
 		})
@@ -261,6 +281,15 @@ var _ = Describe("HTTPProxy", func() {
 							ExtensionService: fmt.Sprintf("%s/%s", namespace, f.Deployment.RateLimitExtensionService.Name),
 							Domain:           "contour",
 							FailOpen:         false,
+						}
+						contourConfiguration.Spec.RateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
+							ExtensionService: contour_api_v1alpha1.NamespacedName{
+								Name:      f.Deployment.RateLimitExtensionService.Name,
+								Namespace: namespace,
+							},
+							Domain:                  "contour",
+							FailOpen:                false,
+							EnableXRateLimitHeaders: false,
 						}
 						require.NoError(f.T(),
 							f.Deployment.EnsureRateLimitResources(

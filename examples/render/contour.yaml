@@ -274,8 +274,8 @@ spec:
                   cluster:
                     dnsLookupFamily: auto
                   defaultHTTPVersions:
-                  - http/1.1
-                  - http/2
+                  - HTTP/1.1
+                  - HTTP/2
                   http:
                     accessLog: /dev/stdout
                     address: 0.0.0.0
@@ -355,8 +355,8 @@ spec:
                       description: HTTPVersionType is the name of a supported HTTP
                         version.
                       enum:
-                      - http/1.1
-                      - http/2
+                      - HTTP/1.1
+                      - HTTP/2
                       type: string
                     type: array
                   http:
@@ -735,7 +735,8 @@ spec:
                 default:
                   address: 0.0.0.0
                   port: 8000
-                description: Metrics defines the endpoints Envoy use to serve to metrics.
+                description: Metrics defines the endpoints Contour uses to serve to
+                  metrics.
                 properties:
                   address:
                     description: Defines the metrics address interface.
@@ -753,6 +754,10 @@ spec:
                 description: Policy specifies default policy applied if not overridden
                   by the user
                 properties:
+                  applyToIngress:
+                    description: ApplyToIngress determines if the Policies will apply
+                      to ingress objects
+                    type: boolean
                   requestHeaders:
                     description: RequestHeadersPolicy defines the request headers
                       set/removed on all routes
@@ -1179,8 +1184,8 @@ spec:
                       cluster:
                         dnsLookupFamily: auto
                       defaultHTTPVersions:
-                      - http/1.1
-                      - http/2
+                      - HTTP/1.1
+                      - HTTP/2
                       http:
                         accessLog: /dev/stdout
                         address: 0.0.0.0
@@ -1260,8 +1265,8 @@ spec:
                           description: HTTPVersionType is the name of a supported
                             HTTP version.
                           enum:
-                          - http/1.1
-                          - http/2
+                          - HTTP/1.1
+                          - HTTP/2
                           type: string
                         type: array
                       http:
@@ -1646,7 +1651,7 @@ spec:
                     default:
                       address: 0.0.0.0
                       port: 8000
-                    description: Metrics defines the endpoints Envoy use to serve
+                    description: Metrics defines the endpoints Contour uses to serve
                       to metrics.
                     properties:
                       address:
@@ -1665,6 +1670,10 @@ spec:
                     description: Policy specifies default policy applied if not overridden
                       by the user
                     properties:
+                      applyToIngress:
+                        description: ApplyToIngress determines if the Policies will
+                          apply to ingress objects
+                        type: boolean
                       requestHeaders:
                         description: RequestHeadersPolicy defines the request headers
                           set/removed on all routes
@@ -5201,3 +5210,7 @@ spec:
           secret:
             secretName: envoycert
       restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534

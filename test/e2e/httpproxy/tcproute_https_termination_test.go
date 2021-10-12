@@ -78,6 +78,7 @@ func testTCPRouteHTTPSTermination(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 	})
 }

@@ -26,9 +26,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/projectcontour/contour/pkg/config"
+	"k8s.io/utils/pointer"
+
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
-	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
@@ -82,38 +85,36 @@ func TestServeContextProxyRootNamespaces(t *testing.T) {
 
 func TestServeContextTLSParams(t *testing.T) {
 	tests := map[string]struct {
-		ctx         serveContext
-		expecterror bool
+		tls         *contour_api_v1alpha1.TLS
+		expectError bool
 	}{
 		"tls supplied correctly": {
-			ctx: serveContext{
-				ServerConfig: ServerConfig{
-					caFile:      "cacert.pem",
-					contourCert: "contourcert.pem",
-					contourKey:  "contourkey.pem",
-				},
+			tls: &contour_api_v1alpha1.TLS{
+				CAFile:   "cacert.pem",
+				CertFile: "contourcert.pem",
+				KeyFile:  "contourkey.pem",
+				Insecure: false,
 			},
-			expecterror: false,
+			expectError: false,
 		},
 		"tls partially supplied": {
-			ctx: serveContext{
-				ServerConfig: ServerConfig{
-					contourCert: "contourcert.pem",
-					contourKey:  "contourkey.pem",
-				},
+			tls: &contour_api_v1alpha1.TLS{
+				CertFile: "contourcert.pem",
+				KeyFile:  "contourkey.pem",
+				Insecure: false,
 			},
-			expecterror: true,
+			expectError: true,
 		},
 		"tls not supplied": {
-			ctx:         serveContext{},
-			expecterror: true,
+			tls:         &contour_api_v1alpha1.TLS{},
+			expectError: true,
 		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := tc.ctx.verifyTLSFlags()
+			err := verifyTLSFlags(tc.tls)
 			goterror := err != nil
-			if goterror != tc.expecterror {
+			if goterror != tc.expectError {
 				t.Errorf("TLS Config: %s", err)
 			}
 		})
@@ -161,12 +162,11 @@ func TestServeContextCertificateHandling(t *testing.T) {
 	checkFatalErr(t, err)
 	defer os.RemoveAll(configDir)
 
-	ctx := serveContext{
-		ServerConfig: ServerConfig{
-			caFile:      filepath.Join(configDir, "CAcert.pem"),
-			contourCert: filepath.Join(configDir, "contourcert.pem"),
-			contourKey:  filepath.Join(configDir, "contourkey.pem"),
-		},
+	contourTLS := &contour_api_v1alpha1.TLS{
+		CAFile:   filepath.Join(configDir, "CAcert.pem"),
+		CertFile: filepath.Join(configDir, "contourcert.pem"),
+		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
+		Insecure: false,
 	}
 
 	// Initial set of credentials must be linked into temp directory before
@@ -176,7 +176,7 @@ func TestServeContextCertificateHandling(t *testing.T) {
 
 	// Start a dummy server.
 	log := fixture.NewTestLogger(t)
-	opts := ctx.grpcOptions(log)
+	opts := grpcOptions(log, contourTLS)
 	g := grpc.NewServer(opts...)
 	if g == nil {
 		t.Error("failed to create server")
@@ -218,12 +218,11 @@ func TestTlsVersionDeprecation(t *testing.T) {
 	checkFatalErr(t, err)
 	defer os.RemoveAll(configDir)
 
-	ctx := serveContext{
-		ServerConfig: ServerConfig{
-			caFile:      filepath.Join(configDir, "CAcert.pem"),
-			contourCert: filepath.Join(configDir, "contourcert.pem"),
-			contourKey:  filepath.Join(configDir, "contourkey.pem"),
-		},
+	contourTLS := &contour_api_v1alpha1.TLS{
+		CAFile:   filepath.Join(configDir, "CAcert.pem"),
+		CertFile: filepath.Join(configDir, "contourcert.pem"),
+		KeyFile:  filepath.Join(configDir, "contourkey.pem"),
+		Insecure: false,
 	}
 
 	err = linkFiles("testdata/1", configDir)
@@ -231,7 +230,7 @@ func TestTlsVersionDeprecation(t *testing.T) {
 
 	// Get preliminary TLS config from the serveContext.
 	log := fixture.NewTestLogger(t)
-	preliminaryTLSConfig := ctx.tlsconfig(log)
+	preliminaryTLSConfig := tlsconfig(log, contourTLS)
 
 	// Get actual TLS config that will be used during TLS handshake.
 	tlsConfig, err := preliminaryTLSConfig.GetConfigForClient(nil)
@@ -326,25 +325,25 @@ func peekError(conn net.Conn) error {
 
 func TestParseHTTPVersions(t *testing.T) {
 	cases := map[string]struct {
-		versions      []config.HTTPVersionType
+		versions      []contour_api_v1alpha1.HTTPVersionType
 		parseVersions []envoy_v3.HTTPVersionType
 	}{
 		"empty": {
-			versions:      []config.HTTPVersionType{},
+			versions:      []contour_api_v1alpha1.HTTPVersionType{},
 			parseVersions: nil,
 		},
 		"http/1.1": {
-			versions:      []config.HTTPVersionType{config.HTTPVersion1},
+			versions:      []contour_api_v1alpha1.HTTPVersionType{contour_api_v1alpha1.HTTPVersion1},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1},
 		},
 		"http/1.1+http/2": {
-			versions:      []config.HTTPVersionType{config.HTTPVersion1, config.HTTPVersion2},
+			versions:      []contour_api_v1alpha1.HTTPVersionType{contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
 		"http/1.1+http/2 duplicated": {
-			versions: []config.HTTPVersionType{
-				config.HTTPVersion1, config.HTTPVersion2,
-				config.HTTPVersion1, config.HTTPVersion2},
+			versions: []contour_api_v1alpha1.HTTPVersionType{
+				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2,
+				contour_api_v1alpha1.HTTPVersion1, contour_api_v1alpha1.HTTPVersion2},
 			parseVersions: []envoy_v3.HTTPVersionType{envoy_v3.HTTPVersion1, envoy_v3.HTTPVersion2},
 		},
 	}
@@ -361,6 +360,1090 @@ func TestParseHTTPVersions(t *testing.T) {
 				func(i, j int) bool { return testcase.parseVersions[i] < testcase.parseVersions[j] })
 
 			assert.Equal(t, testcase.parseVersions, vers)
+		})
+	}
+}
+
+func TestConvertServeContext(t *testing.T) {
+
+	defaultContext := newServeContext()
+	defaultContext.ServerConfig = ServerConfig{
+		xdsAddr:     "127.0.0.1",
+		xdsPort:     8001,
+		caFile:      "/certs/ca.crt",
+		contourCert: "/certs/cert.crt",
+		contourKey:  "/certs/cert.key",
+	}
+
+	headersPolicyContext := newServeContext()
+	headersPolicyContext.Config.Policy = config.PolicyParameters{
+		RequestHeadersPolicy: config.HeadersPolicy{
+			Set:    map[string]string{"custom-request-header-set": "foo-bar", "Host": "request-bar.com"},
+			Remove: []string{"custom-request-header-remove"},
+		},
+		ResponseHeadersPolicy: config.HeadersPolicy{
+			Set:    map[string]string{"custom-response-header-set": "foo-bar", "Host": "response-bar.com"},
+			Remove: []string{"custom-response-header-remove"},
+		},
+		ApplyToIngress: true,
+	}
+
+	gatewayContext := newServeContext()
+	gatewayContext.Config.GatewayConfig = &config.GatewayParameters{
+		ControllerName: "projectcontour.io/projectcontour/contour",
+	}
+
+	ingressContext := newServeContext()
+	ingressContext.ingressClassName = "coolclass"
+	ingressContext.Config.IngressStatusAddress = "1.2.3.4"
+
+	clientCertificate := newServeContext()
+	clientCertificate.Config.TLS.ClientCertificate = config.NamespacedName{
+		Name:      "cert",
+		Namespace: "secretplace",
+	}
+
+	httpProxy := newServeContext()
+	httpProxy.Config.DisablePermitInsecure = true
+	httpProxy.Config.TLS.FallbackCertificate = config.NamespacedName{
+		Name:      "fallbackname",
+		Namespace: "fallbacknamespace",
+	}
+
+	rateLimit := newServeContext()
+	rateLimit.Config.RateLimitService = config.RateLimitService{
+		ExtensionService:        "ratens/ratelimitext",
+		Domain:                  "contour",
+		FailOpen:                true,
+		EnableXRateLimitHeaders: true,
+	}
+
+	defaultHTTPVersions := newServeContext()
+	defaultHTTPVersions.Config.DefaultHTTPVersions = []config.HTTPVersionType{
+		config.HTTPVersion1,
+	}
+
+	accessLog := newServeContext()
+	accessLog.Config.AccessLogFormat = config.JSONAccessLog
+	accessLog.Config.AccessLogFormatString = "foo-bar-baz"
+	accessLog.Config.AccessLogFields = []string{"custom_field"}
+
+	cases := map[string]struct {
+		serveContext  *serveContext
+		contourConfig contour_api_v1alpha1.ContourConfigurationSpec
+	}{
+		"default ServeContext": {
+			serveContext: defaultContext,
+			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+					Type:    contour_api_v1alpha1.ContourServerType,
+					Address: "127.0.0.1",
+					Port:    8001,
+					TLS: &contour_api_v1alpha1.TLS{
+						CAFile:   "/certs/ca.crt",
+						CertFile: "/certs/cert.crt",
+						KeyFile:  "/certs/cert.key",
+						Insecure: false,
+					},
+				},
+				Ingress: &contour_api_v1alpha1.IngressConfig{
+					ClassName:     nil,
+					StatusAddress: nil,
+				},
+				Debug: contour_api_v1alpha1.DebugConfig{
+					Address:                 "127.0.0.1",
+					Port:                    6060,
+					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+					KubernetesDebugLogLevel: 0,
+				},
+				Health: contour_api_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+				Envoy: contour_api_v1alpha1.EnvoyConfig{
+					Service: contour_api_v1alpha1.NamespacedName{
+						Name:      "envoy",
+						Namespace: "projectcontour",
+					},
+					HTTPListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8080,
+						AccessLog: "/dev/stdout",
+					},
+					HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8443,
+						AccessLog: "/dev/stdout",
+					},
+					Metrics: contour_api_v1alpha1.MetricsConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
+					ClientCertificate: nil,
+					Logging: contour_api_v1alpha1.EnvoyLogging{
+						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+						AccessLogFormatString: nil,
+						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+							"@timestamp",
+							"authority",
+							"bytes_received",
+							"bytes_sent",
+							"downstream_local_address",
+							"downstream_remote_address",
+							"duration",
+							"method",
+							"path",
+							"protocol",
+							"request_id",
+							"requested_server_name",
+							"response_code",
+							"response_flags",
+							"uber_trace_id",
+							"upstream_cluster",
+							"upstream_host",
+							"upstream_local_address",
+							"upstream_service_time",
+							"user_agent",
+							"x_forwarded_for",
+						}),
+					},
+					DefaultHTTPVersions: nil,
+					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+					},
+					Cluster: contour_api_v1alpha1.ClusterParameters{
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					},
+					Network: contour_api_v1alpha1.NetworkParameters{
+						EnvoyAdminPort: 9001,
+					},
+				},
+				Gateway: nil,
+				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+					DisablePermitInsecure: false,
+					FallbackCertificate:   nil,
+				},
+				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+					LeaseDuration: "15s",
+					RenewDeadline: "10s",
+					RetryPeriod:   "2s",
+					Configmap: contour_api_v1alpha1.NamespacedName{
+						Name:      "leader-elect",
+						Namespace: "projectcontour",
+					},
+					DisableLeaderElection: false,
+				},
+				EnableExternalNameService: false,
+				RateLimitService:          nil,
+				Policy: &contour_api_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+					ApplyToIngress:        false,
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+			},
+		},
+		"headers policy": {
+			serveContext: headersPolicyContext,
+			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+					Type:    contour_api_v1alpha1.ContourServerType,
+					Address: "127.0.0.1",
+					Port:    8001,
+					TLS: &contour_api_v1alpha1.TLS{
+						Insecure: false,
+					},
+				},
+				Ingress: &contour_api_v1alpha1.IngressConfig{
+					ClassName:     nil,
+					StatusAddress: nil,
+				},
+				Debug: contour_api_v1alpha1.DebugConfig{
+					Address:                 "127.0.0.1",
+					Port:                    6060,
+					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+					KubernetesDebugLogLevel: 0,
+				},
+				Health: contour_api_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+				Envoy: contour_api_v1alpha1.EnvoyConfig{
+					Service: contour_api_v1alpha1.NamespacedName{
+						Name:      "envoy",
+						Namespace: "projectcontour",
+					},
+					HTTPListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8080,
+						AccessLog: "/dev/stdout",
+					},
+					HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8443,
+						AccessLog: "/dev/stdout",
+					},
+					Metrics: contour_api_v1alpha1.MetricsConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
+					ClientCertificate: nil,
+					Logging: contour_api_v1alpha1.EnvoyLogging{
+						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+						AccessLogFormatString: nil,
+						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+							"@timestamp",
+							"authority",
+							"bytes_received",
+							"bytes_sent",
+							"downstream_local_address",
+							"downstream_remote_address",
+							"duration",
+							"method",
+							"path",
+							"protocol",
+							"request_id",
+							"requested_server_name",
+							"response_code",
+							"response_flags",
+							"uber_trace_id",
+							"upstream_cluster",
+							"upstream_host",
+							"upstream_local_address",
+							"upstream_service_time",
+							"user_agent",
+							"x_forwarded_for",
+						}),
+					},
+					DefaultHTTPVersions: nil,
+					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+					},
+					Cluster: contour_api_v1alpha1.ClusterParameters{
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					},
+					Network: contour_api_v1alpha1.NetworkParameters{
+						EnvoyAdminPort: 9001,
+					},
+				},
+				Gateway: nil,
+				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+					DisablePermitInsecure: false,
+					FallbackCertificate:   nil,
+				},
+				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+					LeaseDuration: "15s",
+					RenewDeadline: "10s",
+					RetryPeriod:   "2s",
+					Configmap: contour_api_v1alpha1.NamespacedName{
+						Name:      "leader-elect",
+						Namespace: "projectcontour",
+					},
+					DisableLeaderElection: false,
+				},
+				EnableExternalNameService: false,
+				RateLimitService:          nil,
+				Policy: &contour_api_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+						Set:    map[string]string{"custom-request-header-set": "foo-bar", "Host": "request-bar.com"},
+						Remove: []string{"custom-request-header-remove"},
+					},
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+						Set:    map[string]string{"custom-response-header-set": "foo-bar", "Host": "response-bar.com"},
+						Remove: []string{"custom-response-header-remove"},
+					},
+					ApplyToIngress: true,
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+			},
+		},
+		"ingress": {
+			serveContext: ingressContext,
+			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+					Type:    contour_api_v1alpha1.ContourServerType,
+					Address: "127.0.0.1",
+					Port:    8001,
+					TLS: &contour_api_v1alpha1.TLS{
+						Insecure: false,
+					},
+				},
+				Ingress: &contour_api_v1alpha1.IngressConfig{
+					ClassName:     pointer.StringPtr("coolclass"),
+					StatusAddress: pointer.StringPtr("1.2.3.4"),
+				},
+				Debug: contour_api_v1alpha1.DebugConfig{
+					Address:                 "127.0.0.1",
+					Port:                    6060,
+					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+					KubernetesDebugLogLevel: 0,
+				},
+				Health: contour_api_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+				Envoy: contour_api_v1alpha1.EnvoyConfig{
+					Service: contour_api_v1alpha1.NamespacedName{
+						Name:      "envoy",
+						Namespace: "projectcontour",
+					},
+					HTTPListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8080,
+						AccessLog: "/dev/stdout",
+					},
+					HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8443,
+						AccessLog: "/dev/stdout",
+					},
+					Metrics: contour_api_v1alpha1.MetricsConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
+					ClientCertificate: nil,
+					Logging: contour_api_v1alpha1.EnvoyLogging{
+						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+						AccessLogFormatString: nil,
+						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+							"@timestamp",
+							"authority",
+							"bytes_received",
+							"bytes_sent",
+							"downstream_local_address",
+							"downstream_remote_address",
+							"duration",
+							"method",
+							"path",
+							"protocol",
+							"request_id",
+							"requested_server_name",
+							"response_code",
+							"response_flags",
+							"uber_trace_id",
+							"upstream_cluster",
+							"upstream_host",
+							"upstream_local_address",
+							"upstream_service_time",
+							"user_agent",
+							"x_forwarded_for",
+						}),
+					},
+					DefaultHTTPVersions: nil,
+					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+					},
+					Cluster: contour_api_v1alpha1.ClusterParameters{
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					},
+					Network: contour_api_v1alpha1.NetworkParameters{
+						EnvoyAdminPort: 9001,
+					},
+				},
+				Gateway: nil,
+				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+					DisablePermitInsecure: false,
+					FallbackCertificate:   nil,
+				},
+				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+					LeaseDuration: "15s",
+					RenewDeadline: "10s",
+					RetryPeriod:   "2s",
+					Configmap: contour_api_v1alpha1.NamespacedName{
+						Name:      "leader-elect",
+						Namespace: "projectcontour",
+					},
+					DisableLeaderElection: false,
+				},
+				EnableExternalNameService: false,
+				RateLimitService:          nil,
+				Policy: &contour_api_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+					ApplyToIngress:        false,
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+			},
+		},
+		"gatewayapi": {
+			serveContext: gatewayContext,
+			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+					Type:    contour_api_v1alpha1.ContourServerType,
+					Address: "127.0.0.1",
+					Port:    8001,
+					TLS: &contour_api_v1alpha1.TLS{
+						Insecure: false,
+					},
+				},
+				Ingress: &contour_api_v1alpha1.IngressConfig{
+					ClassName:     nil,
+					StatusAddress: nil,
+				},
+				Debug: contour_api_v1alpha1.DebugConfig{
+					Address:                 "127.0.0.1",
+					Port:                    6060,
+					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+					KubernetesDebugLogLevel: 0,
+				},
+				Health: contour_api_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+				Envoy: contour_api_v1alpha1.EnvoyConfig{
+					Service: contour_api_v1alpha1.NamespacedName{
+						Name:      "envoy",
+						Namespace: "projectcontour",
+					},
+					HTTPListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8080,
+						AccessLog: "/dev/stdout",
+					},
+					HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8443,
+						AccessLog: "/dev/stdout",
+					},
+					Metrics: contour_api_v1alpha1.MetricsConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
+					ClientCertificate: nil,
+					Logging: contour_api_v1alpha1.EnvoyLogging{
+						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+						AccessLogFormatString: nil,
+						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+							"@timestamp",
+							"authority",
+							"bytes_received",
+							"bytes_sent",
+							"downstream_local_address",
+							"downstream_remote_address",
+							"duration",
+							"method",
+							"path",
+							"protocol",
+							"request_id",
+							"requested_server_name",
+							"response_code",
+							"response_flags",
+							"uber_trace_id",
+							"upstream_cluster",
+							"upstream_host",
+							"upstream_local_address",
+							"upstream_service_time",
+							"user_agent",
+							"x_forwarded_for",
+						}),
+					},
+					DefaultHTTPVersions: nil,
+					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+					},
+					Cluster: contour_api_v1alpha1.ClusterParameters{
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					},
+					Network: contour_api_v1alpha1.NetworkParameters{
+						EnvoyAdminPort: 9001,
+					},
+				},
+				Gateway: &contour_api_v1alpha1.GatewayConfig{
+					ControllerName: "projectcontour.io/projectcontour/contour",
+				},
+				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+					DisablePermitInsecure: false,
+					FallbackCertificate:   nil,
+				},
+				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+					LeaseDuration: "15s",
+					RenewDeadline: "10s",
+					RetryPeriod:   "2s",
+					Configmap: contour_api_v1alpha1.NamespacedName{
+						Name:      "leader-elect",
+						Namespace: "projectcontour",
+					},
+					DisableLeaderElection: false,
+				},
+				EnableExternalNameService: false,
+				RateLimitService:          nil,
+				Policy: &contour_api_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+					ApplyToIngress:        false,
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+			},
+		},
+		"client certificate": {
+			serveContext: clientCertificate,
+			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+					Type:    contour_api_v1alpha1.ContourServerType,
+					Address: "127.0.0.1",
+					Port:    8001,
+					TLS: &contour_api_v1alpha1.TLS{
+						Insecure: false,
+					},
+				},
+				Ingress: &contour_api_v1alpha1.IngressConfig{
+					ClassName:     nil,
+					StatusAddress: nil,
+				},
+				Debug: contour_api_v1alpha1.DebugConfig{
+					Address:                 "127.0.0.1",
+					Port:                    6060,
+					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+					KubernetesDebugLogLevel: 0,
+				},
+				Health: contour_api_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+				Envoy: contour_api_v1alpha1.EnvoyConfig{
+					Service: contour_api_v1alpha1.NamespacedName{
+						Name:      "envoy",
+						Namespace: "projectcontour",
+					},
+					HTTPListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8080,
+						AccessLog: "/dev/stdout",
+					},
+					HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8443,
+						AccessLog: "/dev/stdout",
+					},
+					Metrics: contour_api_v1alpha1.MetricsConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
+					ClientCertificate: &contour_api_v1alpha1.NamespacedName{
+						Name:      "cert",
+						Namespace: "secretplace",
+					},
+					Logging: contour_api_v1alpha1.EnvoyLogging{
+						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+						AccessLogFormatString: nil,
+						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+							"@timestamp",
+							"authority",
+							"bytes_received",
+							"bytes_sent",
+							"downstream_local_address",
+							"downstream_remote_address",
+							"duration",
+							"method",
+							"path",
+							"protocol",
+							"request_id",
+							"requested_server_name",
+							"response_code",
+							"response_flags",
+							"uber_trace_id",
+							"upstream_cluster",
+							"upstream_host",
+							"upstream_local_address",
+							"upstream_service_time",
+							"user_agent",
+							"x_forwarded_for",
+						}),
+					},
+					DefaultHTTPVersions: nil,
+					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+					},
+					Cluster: contour_api_v1alpha1.ClusterParameters{
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					},
+					Network: contour_api_v1alpha1.NetworkParameters{
+						EnvoyAdminPort: 9001,
+					},
+				},
+				Gateway: nil,
+				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+					DisablePermitInsecure: false,
+					FallbackCertificate:   nil,
+				},
+				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+					LeaseDuration: "15s",
+					RenewDeadline: "10s",
+					RetryPeriod:   "2s",
+					Configmap: contour_api_v1alpha1.NamespacedName{
+						Name:      "leader-elect",
+						Namespace: "projectcontour",
+					},
+					DisableLeaderElection: false,
+				},
+				EnableExternalNameService: false,
+				RateLimitService:          nil,
+				Policy: &contour_api_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+					ApplyToIngress:        false,
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+			},
+		},
+		"httpproxy": {
+			serveContext: httpProxy,
+			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+					Type:    contour_api_v1alpha1.ContourServerType,
+					Address: "127.0.0.1",
+					Port:    8001,
+					TLS: &contour_api_v1alpha1.TLS{
+						Insecure: false,
+					},
+				},
+				Ingress: &contour_api_v1alpha1.IngressConfig{
+					ClassName:     nil,
+					StatusAddress: nil,
+				},
+				Debug: contour_api_v1alpha1.DebugConfig{
+					Address:                 "127.0.0.1",
+					Port:                    6060,
+					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+					KubernetesDebugLogLevel: 0,
+				},
+				Health: contour_api_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+				Envoy: contour_api_v1alpha1.EnvoyConfig{
+					Service: contour_api_v1alpha1.NamespacedName{
+						Name:      "envoy",
+						Namespace: "projectcontour",
+					},
+					HTTPListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8080,
+						AccessLog: "/dev/stdout",
+					},
+					HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8443,
+						AccessLog: "/dev/stdout",
+					},
+					Metrics: contour_api_v1alpha1.MetricsConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
+					ClientCertificate: nil,
+					Logging: contour_api_v1alpha1.EnvoyLogging{
+						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+						AccessLogFormatString: nil,
+						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+							"@timestamp",
+							"authority",
+							"bytes_received",
+							"bytes_sent",
+							"downstream_local_address",
+							"downstream_remote_address",
+							"duration",
+							"method",
+							"path",
+							"protocol",
+							"request_id",
+							"requested_server_name",
+							"response_code",
+							"response_flags",
+							"uber_trace_id",
+							"upstream_cluster",
+							"upstream_host",
+							"upstream_local_address",
+							"upstream_service_time",
+							"user_agent",
+							"x_forwarded_for",
+						}),
+					},
+					DefaultHTTPVersions: nil,
+					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+					},
+					Cluster: contour_api_v1alpha1.ClusterParameters{
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					},
+					Network: contour_api_v1alpha1.NetworkParameters{
+						EnvoyAdminPort: 9001,
+					},
+				},
+				Gateway: nil,
+				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+					DisablePermitInsecure: true,
+					FallbackCertificate: &contour_api_v1alpha1.NamespacedName{
+						Name:      "fallbackname",
+						Namespace: "fallbacknamespace",
+					},
+				},
+				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+					LeaseDuration: "15s",
+					RenewDeadline: "10s",
+					RetryPeriod:   "2s",
+					Configmap: contour_api_v1alpha1.NamespacedName{
+						Name:      "leader-elect",
+						Namespace: "projectcontour",
+					},
+					DisableLeaderElection: false,
+				},
+				EnableExternalNameService: false,
+				RateLimitService:          nil,
+				Policy: &contour_api_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+					ApplyToIngress:        false,
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+			},
+		},
+		"ratelimit": {
+			serveContext: rateLimit,
+			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+					Type:    contour_api_v1alpha1.ContourServerType,
+					Address: "127.0.0.1",
+					Port:    8001,
+					TLS: &contour_api_v1alpha1.TLS{
+						Insecure: false,
+					},
+				},
+				Ingress: &contour_api_v1alpha1.IngressConfig{
+					ClassName:     nil,
+					StatusAddress: nil,
+				},
+				Debug: contour_api_v1alpha1.DebugConfig{
+					Address:                 "127.0.0.1",
+					Port:                    6060,
+					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+					KubernetesDebugLogLevel: 0,
+				},
+				Health: contour_api_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+				Envoy: contour_api_v1alpha1.EnvoyConfig{
+					Service: contour_api_v1alpha1.NamespacedName{
+						Name:      "envoy",
+						Namespace: "projectcontour",
+					},
+					HTTPListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8080,
+						AccessLog: "/dev/stdout",
+					},
+					HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8443,
+						AccessLog: "/dev/stdout",
+					},
+					Metrics: contour_api_v1alpha1.MetricsConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
+					ClientCertificate: nil,
+					Logging: contour_api_v1alpha1.EnvoyLogging{
+						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+						AccessLogFormatString: nil,
+						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+							"@timestamp",
+							"authority",
+							"bytes_received",
+							"bytes_sent",
+							"downstream_local_address",
+							"downstream_remote_address",
+							"duration",
+							"method",
+							"path",
+							"protocol",
+							"request_id",
+							"requested_server_name",
+							"response_code",
+							"response_flags",
+							"uber_trace_id",
+							"upstream_cluster",
+							"upstream_host",
+							"upstream_local_address",
+							"upstream_service_time",
+							"user_agent",
+							"x_forwarded_for",
+						}),
+					},
+					DefaultHTTPVersions: nil,
+					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+					},
+					Cluster: contour_api_v1alpha1.ClusterParameters{
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					},
+					Network: contour_api_v1alpha1.NetworkParameters{
+						EnvoyAdminPort: 9001,
+					},
+				},
+				Gateway: nil,
+				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+					DisablePermitInsecure: false,
+					FallbackCertificate:   nil,
+				},
+				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+					LeaseDuration: "15s",
+					RenewDeadline: "10s",
+					RetryPeriod:   "2s",
+					Configmap: contour_api_v1alpha1.NamespacedName{
+						Name:      "leader-elect",
+						Namespace: "projectcontour",
+					},
+					DisableLeaderElection: false,
+				},
+				EnableExternalNameService: false,
+				RateLimitService: &contour_api_v1alpha1.RateLimitServiceConfig{
+					ExtensionService: contour_api_v1alpha1.NamespacedName{
+						Name:      "ratelimitext",
+						Namespace: "ratens",
+					},
+					Domain:                  "contour",
+					FailOpen:                true,
+					EnableXRateLimitHeaders: true,
+				},
+				Policy: &contour_api_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+					ApplyToIngress:        false,
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+			},
+		},
+		"default http versions": {
+			serveContext: defaultHTTPVersions,
+			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+					Type:    contour_api_v1alpha1.ContourServerType,
+					Address: "127.0.0.1",
+					Port:    8001,
+					TLS: &contour_api_v1alpha1.TLS{
+						Insecure: false,
+					},
+				},
+				Ingress: &contour_api_v1alpha1.IngressConfig{
+					ClassName:     nil,
+					StatusAddress: nil,
+				},
+				Debug: contour_api_v1alpha1.DebugConfig{
+					Address:                 "127.0.0.1",
+					Port:                    6060,
+					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+					KubernetesDebugLogLevel: 0,
+				},
+				Health: contour_api_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+				Envoy: contour_api_v1alpha1.EnvoyConfig{
+					Service: contour_api_v1alpha1.NamespacedName{
+						Name:      "envoy",
+						Namespace: "projectcontour",
+					},
+					HTTPListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8080,
+						AccessLog: "/dev/stdout",
+					},
+					HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8443,
+						AccessLog: "/dev/stdout",
+					},
+					Metrics: contour_api_v1alpha1.MetricsConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
+					ClientCertificate: nil,
+					Logging: contour_api_v1alpha1.EnvoyLogging{
+						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+						AccessLogFormatString: nil,
+						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+							"@timestamp",
+							"authority",
+							"bytes_received",
+							"bytes_sent",
+							"downstream_local_address",
+							"downstream_remote_address",
+							"duration",
+							"method",
+							"path",
+							"protocol",
+							"request_id",
+							"requested_server_name",
+							"response_code",
+							"response_flags",
+							"uber_trace_id",
+							"upstream_cluster",
+							"upstream_host",
+							"upstream_local_address",
+							"upstream_service_time",
+							"user_agent",
+							"x_forwarded_for",
+						}),
+					},
+					DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
+						contour_api_v1alpha1.HTTPVersion1,
+					},
+					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+					},
+					Cluster: contour_api_v1alpha1.ClusterParameters{
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					},
+					Network: contour_api_v1alpha1.NetworkParameters{
+						EnvoyAdminPort: 9001,
+					},
+				},
+				Gateway: nil,
+				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+					DisablePermitInsecure: false,
+					FallbackCertificate:   nil,
+				},
+				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+					LeaseDuration: "15s",
+					RenewDeadline: "10s",
+					RetryPeriod:   "2s",
+					Configmap: contour_api_v1alpha1.NamespacedName{
+						Name:      "leader-elect",
+						Namespace: "projectcontour",
+					},
+					DisableLeaderElection: false,
+				},
+				EnableExternalNameService: false,
+				RateLimitService:          nil,
+				Policy: &contour_api_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+					ApplyToIngress:        false,
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+			},
+		},
+		"access log": {
+			serveContext: accessLog,
+			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
+				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+					Type:    contour_api_v1alpha1.ContourServerType,
+					Address: "127.0.0.1",
+					Port:    8001,
+					TLS: &contour_api_v1alpha1.TLS{
+						Insecure: false,
+					},
+				},
+				Ingress: &contour_api_v1alpha1.IngressConfig{
+					ClassName:     nil,
+					StatusAddress: nil,
+				},
+				Debug: contour_api_v1alpha1.DebugConfig{
+					Address:                 "127.0.0.1",
+					Port:                    6060,
+					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+					KubernetesDebugLogLevel: 0,
+				},
+				Health: contour_api_v1alpha1.HealthConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+				Envoy: contour_api_v1alpha1.EnvoyConfig{
+					Service: contour_api_v1alpha1.NamespacedName{
+						Name:      "envoy",
+						Namespace: "projectcontour",
+					},
+					HTTPListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8080,
+						AccessLog: "/dev/stdout",
+					},
+					HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+						Address:   "0.0.0.0",
+						Port:      8443,
+						AccessLog: "/dev/stdout",
+					},
+					Metrics: contour_api_v1alpha1.MetricsConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
+					ClientCertificate: nil,
+					Logging: contour_api_v1alpha1.EnvoyLogging{
+						AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
+						AccessLogFormatString: pointer.StringPtr("foo-bar-baz"),
+						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
+							"custom_field",
+						}),
+					},
+					DefaultHTTPVersions: nil,
+					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+					},
+					Cluster: contour_api_v1alpha1.ClusterParameters{
+						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+					},
+					Network: contour_api_v1alpha1.NetworkParameters{
+						EnvoyAdminPort: 9001,
+					},
+				},
+				Gateway: nil,
+				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+					DisablePermitInsecure: false,
+					FallbackCertificate:   nil,
+				},
+				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
+					LeaseDuration: "15s",
+					RenewDeadline: "10s",
+					RetryPeriod:   "2s",
+					Configmap: contour_api_v1alpha1.NamespacedName{
+						Name:      "leader-elect",
+						Namespace: "projectcontour",
+					},
+					DisableLeaderElection: false,
+				},
+				EnableExternalNameService: false,
+				RateLimitService:          nil,
+				Policy: &contour_api_v1alpha1.PolicyConfig{
+					RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+					ApplyToIngress:        false,
+				},
+				Metrics: contour_api_v1alpha1.MetricsConfig{
+					Address: "0.0.0.0",
+					Port:    8000,
+				},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			converted := tc.serveContext.convertToContourConfigurationSpec()
+			assert.Equal(t, tc.contourConfig, converted)
 		})
 	}
 }

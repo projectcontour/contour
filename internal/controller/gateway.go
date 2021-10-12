@@ -262,11 +262,12 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	// as a tiebreaker.
 	var oldest *gatewayapi_v1alpha1.Gateway
 	for _, gw := range gatewaysForClass {
-		if oldest == nil {
+		switch {
+		case oldest == nil:
 			oldest = gw
-		} else if gw.CreationTimestamp.Before(&oldest.CreationTimestamp) {
+		case gw.CreationTimestamp.Before(&oldest.CreationTimestamp):
 			oldest = gw
-		} else if gw.CreationTimestamp.Equal(&oldest.CreationTimestamp) {
+		case gw.CreationTimestamp.Equal(&oldest.CreationTimestamp):
 			if fmt.Sprintf("%s/%s", gw.Namespace, gw.Name) < fmt.Sprintf("%s/%s", oldest.Namespace, oldest.Name) {
 				oldest = gw
 			}

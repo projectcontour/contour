@@ -92,15 +92,24 @@ type BootstrapConfig struct {
 	DNSLookupFamily string
 }
 
+// GetXdsAddress returns the address configured or defaults to "127.0.0.1"
 func (c *BootstrapConfig) GetXdsAddress() string { return stringOrDefault(c.XDSAddress, "127.0.0.1") }
-func (c *BootstrapConfig) GetXdsGRPCPort() int   { return intOrDefault(c.XDSGRPCPort, 8001) }
+
+// GetXdsGRPCPort returns the port configured or defaults to "8001"
+func (c *BootstrapConfig) GetXdsGRPCPort() int { return intOrDefault(c.XDSGRPCPort, 8001) }
+
+// GetAdminAddress returns the admin socket path configured or defaults to "/admin/admin.sock"
 func (c *BootstrapConfig) GetAdminAddress() string {
 	return stringOrDefault(c.AdminAddress, "/admin/admin.sock")
 }
 func (c *BootstrapConfig) GetAdminPort() int { return intOrDefault(c.AdminPort, 9001) }
+
+// GetAdminAccessLogPath returns the configured access log path or defaults to "/dev/null"
 func (c *BootstrapConfig) GetAdminAccessLogPath() string {
 	return stringOrDefault(c.AdminAccessLogPath, "/dev/null")
 }
+
+// GetDNSLookupFamily returns the configured dns lookup family or defaults to "auto"
 func (c *BootstrapConfig) GetDNSLookupFamily() string {
 	return stringOrDefault(c.DNSLookupFamily, "auto")
 }

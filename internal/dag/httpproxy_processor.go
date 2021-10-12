@@ -26,7 +26,6 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/internal/timeout"
-	"github.com/projectcontour/contour/pkg/config"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -71,7 +70,7 @@ type HTTPProxyProcessor struct {
 	// for addresses in the IPv6 family and fallback to a lookup for addresses
 	// in the IPv4 family.
 	// Note: This only applies to externalName clusters.
-	DNSLookupFamily config.ClusterDNSFamilyType
+	DNSLookupFamily contour_api_v1alpha1.ClusterDNSFamilyType
 
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
@@ -456,10 +455,11 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		conds := append(conditions, route.Conditions...)
+		routeConditions := conditions
+		routeConditions = append(routeConditions, route.Conditions...)
 
 		// Look for invalid header conditions on this route
-		if err := headerMatchConditionsValid(conds); err != nil {
+		if err := headerMatchConditionsValid(routeConditions); err != nil {
 			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "HeaderMatchConditionsNotValid",
 				err.Error())
 			return nil
@@ -509,8 +509,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		requestHashPolicies, lbPolicy := loadBalancerRequestHashPolicies(route.LoadBalancerPolicy, validCond)
 
 		r := &Route{
-			PathMatchCondition:    mergePathMatchConditions(conds),
-			HeaderMatchConditions: mergeHeaderMatchConditions(conds),
+			PathMatchCondition:    mergePathMatchConditions(routeConditions),
+			HeaderMatchConditions: mergeHeaderMatchConditions(routeConditions),
 			Websocket:             route.EnableWebsockets,
 			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
 			TimeoutPolicy:         tp,

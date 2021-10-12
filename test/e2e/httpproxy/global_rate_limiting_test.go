@@ -63,6 +63,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		require.NoError(t, retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -96,6 +97,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Make another request against the proxy, confirm a 429 response
@@ -104,6 +106,7 @@ func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 	})
 }
@@ -156,6 +159,7 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Add a global rate limit policy on the first route.
@@ -190,6 +194,7 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Make another request against the proxy, confirm a 429 response
@@ -198,6 +203,7 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 
 		// Make a request against the route that doesn't have rate limiting
@@ -207,6 +213,7 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 			Path:      "/unlimited",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code for non-rate-limited route, got %d", res.StatusCode)
 	})
 }
@@ -250,6 +257,7 @@ func testGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Add a global rate limit policy on the virtual host.
@@ -283,6 +291,7 @@ func testGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Make another request against the proxy, confirm a 429 response
@@ -291,6 +300,7 @@ func testGlobalRateLimitingVirtualHostTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 	})
 }
@@ -347,6 +357,7 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Add a global rate limit policy on the first route.
@@ -380,6 +391,7 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// Make another request against the proxy, confirm a 429 response
@@ -388,6 +400,7 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 			Host:      p.Spec.VirtualHost.Fqdn,
 			Condition: e2e.HasStatusCode(429),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 429 response code, got %d", res.StatusCode)
 
 		// Make a request against the route that doesn't have rate limiting
@@ -397,6 +410,7 @@ func testGlobalRateLimitingRouteTLS(namespace string) {
 			Path:      "/unlimited",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code for non-rate-limited route, got %d", res.StatusCode)
 	})
 }

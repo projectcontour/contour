@@ -286,7 +286,7 @@ e2e: | setup-kind-cluster run-e2e cleanup-kind ## Run E2E tests against a real k
 .PHONY: run-e2e
 run-e2e:
 	CONTOUR_E2E_LOCAL_HOST=$(CONTOUR_E2E_LOCAL_HOST) \
-		ginkgo -tags=e2e -mod=readonly -skipPackage=upgrade -keepGoing -randomizeSuites -randomizeAllSpecs -slowSpecThreshold=15 -r -v ./test/e2e
+		ginkgo -tags=e2e -mod=readonly -skip-package=upgrade -keep-going -randomize-suites -randomize-all -slow-spec-threshold=15s -r -v ./test/e2e
 
 .PHONY: cleanup-kind
 cleanup-kind:
@@ -307,7 +307,7 @@ upgrade: | install-contour-release load-contour-image-kind run-upgrade cleanup-k
 run-upgrade:
 	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
 		CONTOUR_UPGRADE_TO_IMAGE=$(CONTOUR_UPGRADE_TO_IMAGE) \
-		ginkgo -tags=e2e -mod=readonly -randomizeAllSpecs -slowSpecThreshold=300 -v ./test/e2e/upgrade
+		ginkgo -tags=e2e -mod=readonly -randomize-all -slow-spec-threshold=300s -v ./test/e2e/upgrade
 
 .PHONY: check-ingress-conformance
 check-ingress-conformance: | install-contour-working run-ingress-conformance cleanup-kind ## Run Ingress controller conformance

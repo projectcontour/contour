@@ -18,12 +18,15 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/sirupsen/logrus"
+
 	envoy_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -96,12 +99,12 @@ type ListenerConfig struct {
 	// AccessLogType defines if Envoy logs should be output as Envoy's default or JSON.
 	// Valid values: 'envoy', 'json'
 	// If not set, defaults to 'envoy'
-	AccessLogType config.AccessLogType
+	AccessLogType contour_api_v1alpha1.AccessLogType
 
 	// AccessLogFields sets the fields that should be shown in JSON logs.
 	// Valid entries are the keys from internal/envoy/accesslog.go:jsonheaders
 	// Defaults to a particular set of fields.
-	AccessLogFields config.AccessLogFields
+	AccessLogFields contour_api_v1alpha1.AccessLogFields
 
 	// AccessLogFormatString sets the format string to be used for text based access logs.
 	// Defaults to empty to defer to Envoy's default log format.
@@ -154,6 +157,119 @@ type RateLimitConfig struct {
 	Timeout                 timeout.Setting
 	FailOpen                bool
 	EnableXRateLimitHeaders bool
+}
+
+func NewListenerConfig(
+	useProxyProto bool,
+	httpListener contour_api_v1alpha1.EnvoyListener,
+	httpsListener contour_api_v1alpha1.EnvoyListener,
+	accessLogType contour_api_v1alpha1.AccessLogType,
+	accessLogFields contour_api_v1alpha1.AccessLogFields,
+	accessLogFormatString *string,
+	accessLogFormatterExtensions []string,
+	minimumTLSVersion string,
+	cipherSuites []string,
+	timeoutParameters *contour_api_v1alpha1.TimeoutParameters,
+	defaultHTTPVersions []envoy_v3.HTTPVersionType,
+	allowChunkedLength bool,
+	xffNumTrustedHops uint32,
+	connectionBalancer string,
+	log logrus.FieldLogger) ListenerConfig {
+
+	// connection balancer
+	if ok := connectionBalancer == "exact" || connectionBalancer == ""; !ok {
+		log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", connectionBalancer)
+		connectionBalancer = ""
+	}
+
+	var connectionIdleTimeoutSetting timeout.Setting
+	var streamIdleTimeoutSetting timeout.Setting
+	var delayedCloseTimeoutSetting timeout.Setting
+	var maxConnectionDurationSetting timeout.Setting
+	var connectionShutdownGracePeriodSetting timeout.Setting
+	var requestTimeoutSetting timeout.Setting
+	var err error
+
+	if timeoutParameters != nil {
+		if timeoutParameters.ConnectionIdleTimeout != nil {
+			connectionIdleTimeoutSetting, err = timeout.Parse(*timeoutParameters.ConnectionIdleTimeout)
+			if err != nil {
+				log.Errorf("error parsing connection idle timeout: %w", err)
+			}
+		}
+		if timeoutParameters.StreamIdleTimeout != nil {
+			streamIdleTimeoutSetting, err = timeout.Parse(*timeoutParameters.StreamIdleTimeout)
+			if err != nil {
+				log.Errorf("error parsing stream idle timeout: %w", err)
+			}
+		}
+		if timeoutParameters.DelayedCloseTimeout != nil {
+			delayedCloseTimeoutSetting, err = timeout.Parse(*timeoutParameters.DelayedCloseTimeout)
+			if err != nil {
+				log.Errorf("error parsing delayed close timeout: %w", err)
+			}
+		}
+		if timeoutParameters.MaxConnectionDuration != nil {
+			maxConnectionDurationSetting, _ = timeout.Parse(*timeoutParameters.MaxConnectionDuration)
+			if err != nil {
+				log.Errorf("error parsing max connection duration: %w", err)
+			}
+		}
+		if timeoutParameters.ConnectionShutdownGracePeriod != nil {
+			connectionShutdownGracePeriodSetting, _ = timeout.Parse(*timeoutParameters.ConnectionShutdownGracePeriod)
+			if err != nil {
+				log.Errorf("error parsing connection shutdown grace period: %w", err)
+			}
+		}
+		if timeoutParameters.RequestTimeout != nil {
+			requestTimeoutSetting, _ = timeout.Parse(*timeoutParameters.RequestTimeout)
+			if err != nil {
+				log.Errorf("error parsing request timeout: %w", err)
+			}
+		}
+	}
+
+	accessLogFormatStringConverted := ""
+	if accessLogFormatString != nil {
+		accessLogFormatStringConverted = *accessLogFormatString
+	}
+
+	lc := ListenerConfig{
+		UseProxyProto: useProxyProto,
+		HTTPListeners: map[string]Listener{
+			"ingress_http": {
+				Name:    "ingress_http",
+				Address: httpListener.Address,
+				Port:    httpListener.Port,
+			},
+		},
+		HTTPSListeners: map[string]Listener{
+			"ingress_https": {
+				Name:    "ingress_https",
+				Address: httpsListener.Address,
+				Port:    httpsListener.Port,
+			},
+		},
+		HTTPAccessLog:                 httpListener.AccessLog,
+		HTTPSAccessLog:                httpsListener.AccessLog,
+		AccessLogType:                 accessLogType,
+		AccessLogFields:               accessLogFields,
+		AccessLogFormatString:         accessLogFormatStringConverted,
+		AccessLogFormatterExtensions:  accessLogFormatterExtensions,
+		MinimumTLSVersion:             minimumTLSVersion,
+		CipherSuites:                  cipherSuites,
+		RequestTimeout:                requestTimeoutSetting,
+		ConnectionIdleTimeout:         connectionIdleTimeoutSetting,
+		StreamIdleTimeout:             streamIdleTimeoutSetting,
+		DelayedCloseTimeout:           delayedCloseTimeoutSetting,
+		MaxConnectionDuration:         maxConnectionDurationSetting,
+		ConnectionShutdownGracePeriod: connectionShutdownGracePeriodSetting,
+		DefaultHTTPVersions:           defaultHTTPVersions,
+		AllowChunkedLength:            !allowChunkedLength,
+		XffNumTrustedHops:             xffNumTrustedHops,
+		ConnectionBalancer:            connectionBalancer,
+	}
+	return lc
 }
 
 // DefaultListeners returns the configured Listeners or a single
@@ -242,11 +358,11 @@ func (lvc *ListenerConfig) accesslogType() string {
 
 // accesslogFields returns the access log fields that should be configured
 // for Envoy, or a default set if not configured.
-func (lvc *ListenerConfig) accesslogFields() config.AccessLogFields {
+func (lvc *ListenerConfig) accesslogFields() contour_api_v1alpha1.AccessLogFields {
 	if lvc.AccessLogFields != nil {
 		return lvc.AccessLogFields
 	}
-	return config.DefaultFields
+	return contour_api_v1alpha1.DefaultFields
 }
 
 func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_accesslog_v3.AccessLog {
@@ -288,8 +404,8 @@ type ListenerCache struct {
 }
 
 // NewListenerCache returns an instance of a ListenerCache
-func NewListenerCache(config ListenerConfig, statsAddress string, statsPort, adminPort int) *ListenerCache {
-	stats := envoy_v3.StatsListener(statsAddress, statsPort)
+func NewListenerCache(config ListenerConfig, statsAddr string, statsPort, adminPort int) *ListenerCache {
+	stats := envoy_v3.StatsListener(statsAddr, statsPort)
 	admin := envoy_v3.AdminListener("127.0.0.1", adminPort)
 
 	listenerCache := &ListenerCache{
@@ -420,8 +536,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 	// support more params of envoy listener
 
 	// 1. connection balancer
-	switch lvc.ConnectionBalancer {
-	case "exact":
+	if lvc.ConnectionBalancer == "exact" {
 		for _, listener := range lv.listeners {
 			listener.ConnectionBalanceConfig = &envoy_listener_v3.Listener_ConnectionBalanceConfig{
 				BalanceType: &envoy_listener_v3.Listener_ConnectionBalanceConfig_ExactBalance_{

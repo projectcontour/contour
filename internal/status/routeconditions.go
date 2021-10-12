@@ -150,13 +150,15 @@ func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 		route := o.DeepCopy()
 
 		// Set the HTTPRoute status.
-		route.Status.RouteStatus.Gateways = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
+		gatewayStatuses = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
+		route.Status.RouteStatus.Gateways = gatewayStatuses
 		return route
 	case *gatewayapi_v1alpha1.TLSRoute:
 		route := o.DeepCopy()
 
 		// Set the TLSRoute status.
-		route.Status.RouteStatus.Gateways = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
+		gatewayStatuses = append(gatewayStatuses, routeUpdate.combineConditions(route.Status.Gateways)...)
+		route.Status.RouteStatus.Gateways = gatewayStatuses
 		return route
 	default:
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in RouteConditionsUpdate status mutator",

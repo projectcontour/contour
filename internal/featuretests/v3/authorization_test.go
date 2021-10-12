@@ -272,8 +272,8 @@ func authzOverrideDisabled(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	)
 
 	// For each proxy, the `/default` route should have the
-	//' same authorization enablement as the root proxy, and
-	// the ' other path should have the opposite enablement.
+	// same authorization enablement as the root proxy, and
+	// the other path should have the opposite enablement.
 
 	disabledConfig := withFilterConfig("envoy.filters.http.ext_authz",
 		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{

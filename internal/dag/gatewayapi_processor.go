@@ -332,21 +332,22 @@ func (p *GatewayAPIProcessor) computeHosts(hostnames []gatewayapi_v1alpha1.Hostn
 			lhn := string(*listenerHostname)
 
 			// A "*" hostname matches anything.
-			if lhn == "*" {
+			switch {
+			case lhn == "*":
 				hosts[hostname] = struct{}{}
 				continue
-			} else if lhn == hostname {
+			case lhn == hostname:
 				// If the listener.hostname matches then no need to
 				// do any other validation.
 				hosts[hostname] = struct{}{}
 				continue
-			} else if strings.Contains(lhn, "*") {
+			case strings.Contains(lhn, "*"):
 
 				if removeFirstDNSLabel(lhn) != removeFirstDNSLabel(hostname) {
 					errors = append(errors, fmt.Errorf("gateway hostname %q does not match route hostname %q", lhn, hostname))
 					continue
 				}
-			} else {
+			default:
 				// Validate the gateway listener hostname matches the hostnames hostname.
 				errors = append(errors, fmt.Errorf("gateway hostname %q does not match route hostname %q", lhn, hostname))
 				continue

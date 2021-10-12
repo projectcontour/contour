@@ -36,8 +36,7 @@ func (p *ListenerProcessor) buildHTTPListener(dag *DAG) {
 	var remove []Vertex
 
 	for _, root := range dag.roots {
-		switch obj := root.(type) {
-		case *VirtualHost:
+		if obj, ok := root.(*VirtualHost); ok {
 			remove = append(remove, obj)
 
 			if obj.Valid() {
@@ -75,8 +74,7 @@ func (p *ListenerProcessor) buildHTTPSListener(dag *DAG) {
 	var remove []Vertex
 
 	for _, root := range dag.roots {
-		switch obj := root.(type) {
-		case *SecureVirtualHost:
+		if obj, ok := root.(*SecureVirtualHost); ok {
 			remove = append(remove, obj)
 
 			if obj.Valid() {

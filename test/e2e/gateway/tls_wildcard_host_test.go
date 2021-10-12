@@ -109,6 +109,7 @@ func testTLSWildcardHost(namespace string) {
 				},
 				Condition: e2e.HasStatusCode(tc.wantStatus),
 			})
+			require.NotNil(t, res, "request never succeeded")
 			require.Truef(t, ok, "expected %d response code, got %d", tc.wantStatus, res.StatusCode)
 		}
 	})

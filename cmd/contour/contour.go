@@ -120,7 +120,13 @@ func main() {
 			log.WithError(err).Fatal("invalid configuration")
 		}
 
-		if err := doServe(log, serveCtx); err != nil {
+		// Build out serve deps.
+		serve, err := NewServer(log, serveCtx)
+		if err != nil {
+			log.WithError(err).Fatal("unable to initialize Server dependencies required to start Contour")
+		}
+
+		if err := serve.doServe(); err != nil {
 			log.WithError(err).Fatal("Contour server failed")
 		}
 	case version.FullCommand():

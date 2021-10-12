@@ -5451,7 +5451,7 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	//proxy1f is identical to proxy1 and ir1, except for a different service.
+	// proxy1f is identical to proxy1 and ir1, except for a different service.
 	// Used to test priority when importing ir then httproxy.
 	proxy1f := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -8769,7 +8769,7 @@ func TestDAGInsert(t *testing.T) {
 			objs: []interface{}{
 				proxy17, s1a,
 			},
-			want: listeners(), //no listeners, missing certificate
+			want: listeners(), // no listeners, missing certificate
 		},
 		"insert httpproxy expecting upstream verification, no annotation on service": {
 			objs: []interface{}{

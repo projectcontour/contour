@@ -22,6 +22,8 @@ import (
 	"math/big"
 	"testing"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -55,6 +57,7 @@ var _ = Describe("Gateway API", func() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
+		contourConfiguration  *contour_api_v1alpha1.ContourConfiguration
 		contourConfigFile     string
 		additionalContourArgs []string
 
@@ -73,6 +76,12 @@ var _ = Describe("Gateway API", func() {
 					gateway.Namespace = namespace
 					// Update contour config to point to specified gateway.
 					contourConfig.GatewayConfig = &config.GatewayParameters{
+						ControllerName: gatewayClass.Spec.Controller,
+					}
+
+					// Update contour configuration to point to specified gateway.
+					contourConfiguration = e2e.DefaultContourConfiguration()
+					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
 						ControllerName: gatewayClass.Spec.Controller,
 					}
 
@@ -104,7 +113,7 @@ var _ = Describe("Gateway API", func() {
 	// until here to start Contour.
 	JustBeforeEach(func() {
 		var err error
-		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, additionalContourArgs...)
+		contourCmd, contourConfigFile, err = f.Deployment.StartLocalContour(contourConfig, contourConfiguration, additionalContourArgs...)
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.

@@ -43,7 +43,7 @@ func createFile(filepath string, force bool) (*os.File, error) {
 			return nil, fmt.Errorf("unable to remove %s: %s", filepath, err)
 		}
 	} else {
-		flags = flags | os.O_EXCL
+		flags |= os.O_EXCL
 	}
 
 	f, err := os.OpenFile(filepath, flags, 0600)

@@ -16,11 +16,13 @@ package main
 import (
 	"context"
 	"os"
+	"time"
+
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 
 	"github.com/google/uuid"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/workgroup"
-	"github.com/projectcontour/contour/pkg/config"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -40,15 +42,15 @@ func disableLeaderElection(log logrus.FieldLogger) chan struct{} {
 func setupLeadershipElection(
 	g *workgroup.Group,
 	log logrus.FieldLogger,
-	conf *config.LeaderElectionParameters,
+	conf contour_api_v1alpha1.LeaderElectionConfig,
 	clients *k8s.Clients, updateNow func(),
 ) chan struct{} {
 	le, leader, deposed := newLeaderElector(log, conf, clients)
 
 	g.AddContext(func(electionCtx context.Context) error {
 		log.WithFields(logrus.Fields{
-			"configmapname":      conf.Name,
-			"configmapnamespace": conf.Namespace,
+			"configmapname":      conf.Configmap.Name,
+			"configmapnamespace": conf.Configmap.Namespace,
 		}).Info("started leader election")
 
 		le.Run(electionCtx)
@@ -85,7 +87,7 @@ func setupLeadershipElection(
 // channels by which to observe elections and depositions.
 func newLeaderElector(
 	log logrus.FieldLogger,
-	conf *config.LeaderElectionParameters,
+	conf contour_api_v1alpha1.LeaderElectionConfig,
 	clients *k8s.Clients,
 ) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
 	log = log.WithField("context", "leaderelection")
@@ -97,12 +99,25 @@ func newLeaderElector(
 
 	rl := newResourceLock(log, conf, clients)
 
+	leaseDuration, err := time.ParseDuration(conf.LeaseDuration)
+	if err != nil {
+		log.WithError(err).Fatalf("could not parse LeaseDuration: %q", conf.LeaseDuration)
+	}
+	renewDeadline, err := time.ParseDuration(conf.RenewDeadline)
+	if err != nil {
+		log.WithError(err).Fatalf("could not parse RenewDeadline: %q", conf.RenewDeadline)
+	}
+	retryPeriod, err := time.ParseDuration(conf.RetryPeriod)
+	if err != nil {
+		log.WithError(err).Fatalf("could not parse RetryPeriod: %q", conf.RetryPeriod)
+	}
+
 	// Make the leader elector, ready to be used in the Workgroup.
 	le, err := leaderelection.NewLeaderElector(leaderelection.LeaderElectionConfig{
 		Lock:          rl,
-		LeaseDuration: conf.LeaseDuration,
-		RenewDeadline: conf.RenewDeadline,
-		RetryPeriod:   conf.RetryPeriod,
+		LeaseDuration: leaseDuration,
+		RenewDeadline: renewDeadline,
+		RetryPeriod:   retryPeriod,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(_ context.Context) {
 				log.WithFields(logrus.Fields{
@@ -126,7 +141,7 @@ func newLeaderElector(
 
 // newResourceLock creates a new resourcelock.Interface based on the Pod's name,
 // or a uuid if the name cannot be determined.
-func newResourceLock(log logrus.FieldLogger, conf *config.LeaderElectionParameters, clients *k8s.Clients) resourcelock.Interface {
+func newResourceLock(log logrus.FieldLogger, conf contour_api_v1alpha1.LeaderElectionConfig, clients *k8s.Clients) resourcelock.Interface {
 	resourceLockID, found := os.LookupEnv("POD_NAME")
 	if !found {
 		resourceLockID = uuid.New().String()
@@ -138,8 +153,8 @@ func newResourceLock(log logrus.FieldLogger, conf *config.LeaderElectionParamete
 		// cycle (ie nine months).
 		// Figure out the resource lock ID
 		resourcelock.ConfigMapsResourceLock,
-		conf.Namespace,
-		conf.Name,
+		conf.Configmap.Namespace,
+		conf.Configmap.Name,
 		clients.ClientSet().CoreV1(),
 		clients.ClientSet().CoordinationV1(),
 		resourcelock.ResourceLockConfig{
@@ -148,8 +163,8 @@ func newResourceLock(log logrus.FieldLogger, conf *config.LeaderElectionParamete
 	)
 	if err != nil {
 		log.WithError(err).
-			WithField("name", conf.Name).
-			WithField("namespace", conf.Namespace).
+			WithField("name", conf.Configmap.Name).
+			WithField("namespace", conf.Configmap.Namespace).
 			WithField("identity", resourceLockID).
 			Fatal("failed to create new resource lock")
 	}

@@ -109,6 +109,7 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		body := f.GetEchoResponseBody(res.Body)
 		assert.Equal(t, "echo-header-filter", body.Service)
@@ -130,6 +131,7 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		body = f.GetEchoResponseBody(res.Body)
 		assert.Equal(t, "echo-header-nofilter", body.Service)
@@ -223,6 +225,7 @@ func testRequestHeaderModifierRule(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		body := f.GetEchoResponseBody(res.Body)
 		assert.Equal(t, "echo-header-filter", body.Service)
@@ -244,6 +247,7 @@ func testRequestHeaderModifierRule(namespace string) {
 			},
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 		body = f.GetEchoResponseBody(res.Body)
 		assert.Equal(t, "echo-header-nofilter", body.Service)

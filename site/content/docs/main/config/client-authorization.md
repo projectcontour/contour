@@ -34,8 +34,8 @@ The primary field of interest in the `ExtensionService` CRD is the
 `.spec.services` field.
 This field lists the Kubernetes Services that will receive the check requests.
 The `.spec.services[].name` field contains the name of the Service, which must
-exist in the name namespace as the `ExtensionService` object.
-The `ExtensionService` object must exist in the name namespace as the
+exist in the same namespace as the `ExtensionService` object.
+The `ExtensionService` object must exist in the same namespace as the
 Services they target to ensure that both objects are under the same
 administrative control.
 

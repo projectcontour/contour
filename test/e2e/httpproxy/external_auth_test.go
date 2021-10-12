@@ -231,6 +231,7 @@ func testExternalAuth(namespace string) {
 			Path:      "/first",
 			Condition: e2e.HasStatusCode(401),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 401 response code, got %d", res.StatusCode)
 
 		// The `testserver` authorization server will accept any request with
@@ -242,6 +243,7 @@ func testExternalAuth(namespace string) {
 			Path:      "/first/allow",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		body := f.GetEchoResponseBody(res.Body)
@@ -254,6 +256,7 @@ func testExternalAuth(namespace string) {
 			Path:      "/second",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		// The default route should not authorize by default.
@@ -262,6 +265,7 @@ func testExternalAuth(namespace string) {
 			Path:      "/matches-default-route",
 			Condition: e2e.HasStatusCode(401),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 401 response code, got %d", res.StatusCode)
 
 		// The `testserver` authorization server will accept any request with
@@ -273,6 +277,7 @@ func testExternalAuth(namespace string) {
 			Path:      "/matches-default-route/allow",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(t, res, "request never succeeded")
 		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
 
 		body = f.GetEchoResponseBody(res.Body)
