@@ -1,10 +1,7 @@
 name: Release Note Label Check
 
-# Trigger the workflow on push or pull request
+# Trigger the workflow on pull requests only
 on: 
-  push:
-    branches-ignore:
-      - "main"
   pull_request:
     types: [opened, labeled, unlabeled, synchronize]
 
