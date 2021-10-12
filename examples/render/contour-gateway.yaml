@@ -2652,6 +2652,8 @@ spec:
                       type: array
                     cookieRewritePolicies:
                       description: The policies for rewriting Set-Cookie header attributes.
+                        Note that rewritten cookie names must be unique in this list.
+                        Order rewrite policies are specified in does not matter.
                       items:
                         properties:
                           domainRewrite:

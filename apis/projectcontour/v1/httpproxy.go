@@ -345,7 +345,9 @@ type Route struct {
 	// Rewriting the 'Host' header is not supported.
 	// +optional
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeadersPolicy,omitempty"`
-	// The policies for rewriting Set-Cookie header attributes.
+	// The policies for rewriting Set-Cookie header attributes. Note that
+	// rewritten cookie names must be unique in this list. Order rewrite
+	// policies are specified in does not matter.
 	// +optional
 	CookieRewritePolicies []CookieRewritePolicy `json:"cookieRewritePolicies,omitempty"`
 	// The policy for rate limiting on the route.
