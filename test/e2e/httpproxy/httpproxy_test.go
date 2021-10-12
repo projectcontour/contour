@@ -349,6 +349,13 @@ descriptors:
 						},
 					},
 				}
+				contourConfiguration.Spec.Policy = &contour_api_v1alpha1.PolicyConfig{
+					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+						Set: map[string]string{
+							"Set-Cookie": "global=foo",
+						},
+					},
+				}
 			})
 
 			f.NamespacedTest("global-rewrite-headers-cookie-rewrite", testHeaderGlobalRewriteCookieRewrite)
