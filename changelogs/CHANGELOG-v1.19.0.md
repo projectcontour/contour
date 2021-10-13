@@ -56,11 +56,11 @@ Also see Contour's CRD [API reference](https://projectcontour.io/docs/v1.19.0/co
 ## ContourConfiguration CRD in Alpha
 
 Contour uses a set of flags on the `contour serve` command as well as a configuration file represented as in a Kubernetes Configmap for further configuration of Contour & Envoy.
-It has been difficult to manage the contents of that file (e.g. yaml in a configmap) along with having no way of properly validating that conifguration, so Contour has introduced
+It has been difficult to manage the contents of that file (e.g. yaml in a configmap) along with having no way of properly validating that configuration, so Contour has introduced
 a new `ContourConfiguration` CRD which refactors the current config file along with any missing flags into a new object.
 This new config is in an Alpha state while we verify the format of the configuration file along with its validation. 
 
-Contour will continue to support the current configuration file for some time, but looking ahead to the roadamp, `ContourConfiguration` will be the new way to configure Contour. 
+Contour will continue to support the current configuration file for some time, but looking ahead to the roadmap, `ContourConfiguration` will be the new way to configure Contour. 
 
 Additional details around the design of this change can be read in the design doc: https://github.com/projectcontour/contour/blob/main/design/configuration-crd.md
 
