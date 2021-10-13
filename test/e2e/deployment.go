@@ -568,7 +568,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 
 	// Look for the ENV variable to tell if this test run should use
 	// the ContourConfiguration file or the ContourConfiguration CRD.
-	if useContourConfiguration, variableFound := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD"); variableFound && useContourConfiguration == "true" {
+	if UsingContourConfigCRD() {
 		port, _ := strconv.Atoi(d.localContourPort)
 
 		contourConfiguration.Name = randomString(14)
