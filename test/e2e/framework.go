@@ -442,3 +442,8 @@ type EchoResponseBody struct {
 	Service        string      `json:"service"`
 	Pod            string      `json:"pod"`
 }
+
+func UsingContourConfigCRD() bool {
+	useContourConfiguration, found := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD")
+	return found && useContourConfiguration == "true"
+}
