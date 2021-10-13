@@ -10,7 +10,7 @@ This document describes Contour's image tagging policy.
 `ghcr.io/projectcontour/contour:<SemVer>`
 
 Contour follows the [Semantic Versioning][1] standard for releases.
-Each tag in the github.com/projectcontour/contour repository has a matching image. eg. `docker.io/projectcontour/contour:{{< param latest_version >}}`
+Each tag in the github.com/projectcontour/contour repository has a matching image. eg. `ghcr.io/projectcontour/contour:{{< param latest_version >}}`
 
 `ghcr.io/projectcontour/contour:v<major>.<minor>`
 

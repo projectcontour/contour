@@ -44,7 +44,7 @@ spec:
 ...
 spec:
   containers:
-  - image: docker.io/projectcontour/contour:{{< param latest_version >}}
+  - image: ghcr.io/projectcontour/contour:{{< param latest_version >}}
     imagePullPolicy: Always
     name: contour
     command: ["contour"]
