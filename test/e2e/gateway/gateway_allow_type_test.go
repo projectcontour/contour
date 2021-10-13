@@ -57,7 +57,7 @@ func testRouteParentRefs(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(gatewayInParentRefsRoute, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(gatewayInParentRefsRoute, httpRouteAccepted)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      string(gatewayInParentRefsRoute.Spec.Hostnames[0]),
@@ -90,7 +90,7 @@ func testRouteParentRefs(namespace string) {
 				},
 			},
 		}
-		// can't wait for admitted because it'll be invalid
+		// can't wait for accepted because it'll be invalid
 		require.NoError(t, f.Client.Create(context.TODO(), gatewayNotInParentRefsRoute))
 
 		res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{

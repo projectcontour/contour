@@ -136,9 +136,9 @@ func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
 	}
 
 	gatewayStatuses = append(gatewayStatuses, gatewayapi_v1alpha2.RouteParentStatus{
-		ParentRef:  parentRefForGateway(routeUpdate.GatewayRef),
-		Controller: routeUpdate.GatewayController,
-		Conditions: conditionsToWrite,
+		ParentRef:      parentRefForGateway(routeUpdate.GatewayRef),
+		ControllerName: routeUpdate.GatewayController,
+		Conditions:     conditionsToWrite,
 	})
 
 	switch o := obj.(type) {
@@ -185,7 +185,7 @@ func isRefToGateway(ref gatewayapi_v1alpha2.ParentRef, gateway types.NamespacedN
 	return ref.Group != nil && *ref.Group == gatewayapi_v1alpha2.GroupName &&
 		ref.Kind != nil && *ref.Kind == "Gateway" &&
 		ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(gateway.Namespace) &&
-		ref.Name == gateway.Name
+		string(ref.Name) == gateway.Name
 }
 
 // parentRefForGateway returns a ParentRef for a Gateway with
@@ -201,7 +201,7 @@ func parentRefForGateway(gateway types.NamespacedName) gatewayapi_v1alpha2.Paren
 		Group:     &group,
 		Kind:      &kind,
 		Namespace: &namespace,
-		Name:      gateway.Name,
+		Name:      gatewayapi_v1alpha2.ObjectName(gateway.Name),
 	}
 }
 

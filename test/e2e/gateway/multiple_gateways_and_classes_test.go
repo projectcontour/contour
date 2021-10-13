@@ -85,19 +85,19 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 	})
 
 	f.NamespacedTest("gateway-multiple-gatewayclasses", func(namespace string) {
-		Specify("only the oldest matching gatewayclass should be admitted", func() {
+		Specify("only the oldest matching gatewayclass should be accepted", func() {
 			newGatewayClass := func(name, controller string) *gatewayapi_v1alpha2.GatewayClass {
 				return &gatewayapi_v1alpha2.GatewayClass{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: name,
 					},
 					Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-						Controller: gatewayapi_v1alpha2.GatewayController(controller),
+						ControllerName: gatewayapi_v1alpha2.GatewayController(controller),
 					},
 				}
 			}
 
-			// create a non-matching GC: should not be admitted
+			// create a non-matching GC: should not be accepted
 			nonMatching := newGatewayClass("non-matching-gatewayclass", "projectcontour.io/non-matching-controller")
 
 			require.NoError(f.T(), f.Client.Create(context.Background(), nonMatching))
@@ -108,16 +108,16 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 				return gatewayClassValid(nonMatching)
 			}, 5*time.Second, time.Second)
 
-			// create a matching GC: should be admitted
+			// create a matching GC: should be accepted
 			oldest := newGatewayClass("oldest-matching-gatewayclass", controllerName)
 			_, valid := f.CreateGatewayClassAndWaitFor(oldest, gatewayClassValid)
 			require.True(f.T(), valid)
 
-			// create another matching GC: should not be admitted since it's not oldest
+			// create another matching GC: should not be accepted since it's not oldest
 			secondOldest := newGatewayClass("second-oldest-matching-gatewayclass", controllerName)
 			_, notOldest := f.CreateGatewayClassAndWaitFor(secondOldest, func(gc *gatewayapi_v1alpha2.GatewayClass) bool {
 				for _, cond := range gc.Status.Conditions {
-					if cond.Type == "Admitted" &&
+					if cond.Type == string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted) &&
 						cond.Status == metav1.ConditionFalse &&
 						cond.Reason == "Invalid" &&
 						cond.Message == "Invalid GatewayClass: another older GatewayClass with the same Spec.Controller exists" {
@@ -128,11 +128,11 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			})
 			require.True(f.T(), notOldest)
 
-			// double-check that the oldest matching GC is still admitted
+			// double-check that the oldest matching GC is still accepted
 			require.NoError(f.T(), f.Client.Get(context.Background(), k8s.NamespacedNameOf(oldest), oldest))
 			require.True(f.T(), gatewayClassValid(oldest))
 
-			// delete the first matching GC: second one should now be admitted
+			// delete the first matching GC: second one should now be accepted
 			require.NoError(f.T(), f.Client.Delete(context.Background(), oldest))
 			require.Eventually(f.T(), func() bool {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(secondOldest), secondOldest); err != nil {
@@ -144,27 +144,27 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 	})
 
 	f.NamespacedTest("gateway-multiple-gateways", func(namespace string) {
-		Specify("only the oldest gateway for the admitted gatewayclass should be admitted", func() {
+		Specify("only the oldest gateway for the accepted gatewayclass should be accepted", func() {
 			// Create a matching gateway class.
 			gc := &gatewayapi_v1alpha2.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "contour-gatewayclass",
 				},
 				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					Controller: gatewayapi_v1alpha2.GatewayController(controllerName),
+					ControllerName: gatewayapi_v1alpha2.GatewayController(controllerName),
 				},
 			}
 			_, valid := f.CreateGatewayClassAndWaitFor(gc, gatewayClassValid)
 			require.True(f.T(), valid)
 
-			// Create a matching gateway and verify it's admitted.
+			// Create a matching gateway and verify it's accepted.
 			oldest := &gatewayapi_v1alpha2.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "oldest",
 					Namespace: namespace,
 				},
 				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gc.Name,
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName(gc.Name),
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
 							Name:     "http",
@@ -182,14 +182,14 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			_, valid = f.CreateGatewayAndWaitFor(oldest, gatewayValid)
 			require.True(f.T(), valid)
 
-			// Create another matching gateway and verify it's not admitted.
+			// Create another matching gateway and verify it's not accepted.
 			secondOldest := &gatewayapi_v1alpha2.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "second-oldest",
 					Namespace: namespace,
 				},
 				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gc.Name,
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName(gc.Name),
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
 							Name:     "http",
@@ -216,12 +216,12 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			})
 			require.True(f.T(), notScheduled)
 
-			// Double-check that the oldest gateway is still admitted.
+			// Double-check that the oldest gateway is still accepted.
 			require.NoError(f.T(), f.Client.Get(context.Background(), k8s.NamespacedNameOf(oldest), oldest))
 			require.True(f.T(), gatewayValid(oldest))
 
 			// Delete the oldest gateway and verify that the second
-			// oldest is now admitted.
+			// oldest is now accepted.
 			require.NoError(f.T(), f.Client.Delete(context.Background(), oldest))
 			require.Eventually(f.T(), func() bool {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(secondOldest), secondOldest); err != nil {
@@ -240,20 +240,20 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Name: "older-gc",
 				},
 				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					Controller: gatewayapi_v1alpha2.GatewayController(controllerName),
+					ControllerName: gatewayapi_v1alpha2.GatewayController(controllerName),
 				},
 			}
 			_, valid := f.CreateGatewayClassAndWaitFor(olderGC, gatewayClassValid)
 			require.True(f.T(), valid)
 
-			// Create a matching gateway and verify it's admitted.
+			// Create a matching gateway and verify it's accepted.
 			olderGCGateway1 := &gatewayapi_v1alpha2.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "older-gc-gw-1",
 					Namespace: namespace,
 				},
 				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: olderGC.Name,
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName(olderGC.Name),
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
 							Name:     "http",
@@ -272,13 +272,13 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			require.True(f.T(), valid)
 
 			// Create a second matching gatewayclass & 2 associated gateways
-			// and verify none of them are admitted.
+			// and verify none of them are accepted.
 			newerGC := &gatewayapi_v1alpha2.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "newer-gc",
 				},
 				Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-					Controller: gatewayapi_v1alpha2.GatewayController(controllerName),
+					ControllerName: gatewayapi_v1alpha2.GatewayController(controllerName),
 				},
 			}
 			require.NoError(f.T(), f.Client.Create(context.Background(), newerGC))
@@ -295,7 +295,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Namespace: namespace,
 				},
 				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: newerGC.Name,
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName(newerGC.Name),
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
 							Name:     "http",
@@ -324,7 +324,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 					Namespace: namespace,
 				},
 				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: newerGC.Name,
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName(newerGC.Name),
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
 							Name:     "http",
@@ -351,7 +351,7 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 			require.NoError(f.T(), f.Client.Delete(context.Background(), olderGCGateway1))
 			require.NoError(f.T(), f.Client.Delete(context.Background(), olderGC))
 
-			// Verify that the newer gatewayclass and its oldest gateway are now admitted.
+			// Verify that the newer gatewayclass and its oldest gateway are now accepted.
 			require.Eventually(f.T(), func() bool {
 				if err := f.Client.Get(context.Background(), k8s.NamespacedNameOf(newerGC), newerGC); err != nil {
 					return false

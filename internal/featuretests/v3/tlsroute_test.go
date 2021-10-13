@@ -48,12 +48,12 @@ func TestTLSRoute(t *testing.T) {
 			Name: "test-gc",
 		},
 		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-			Controller: "projectcontour.io/contour",
+			ControllerName: "projectcontour.io/contour",
 		},
 		Status: gatewayapi_v1alpha2.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 					Status: metav1.ConditionTrue,
 				},
 			},
@@ -288,8 +288,10 @@ func TestTLSRoute(t *testing.T) {
 				Port:     443,
 				Protocol: "TLS",
 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-					Mode:           gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-					CertificateRef: gatewayapi.CertificateRef("tlscert", ""),
+					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						gatewayapi.CertificateRef("tlscert", ""),
+					},
 				},
 				AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{

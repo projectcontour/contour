@@ -51,7 +51,7 @@ func testGatewayHeaderConditionMatch(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
 									Value: pointer.StringPtr("/"),
 								},
 								Headers: []gatewayapi_v1alpha2.HTTPHeaderMatch{
@@ -68,7 +68,7 @@ func testGatewayHeaderConditionMatch(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		type scenario struct {
 			headers        map[string]string

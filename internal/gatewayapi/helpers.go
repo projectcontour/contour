@@ -53,7 +53,7 @@ func CertificateRef(name, namespace string) *gatewayapi_v1alpha2.SecretObjectRef
 	ref := &gatewayapi_v1alpha2.SecretObjectReference{
 		Group: GroupPtr("core"),
 		Kind:  KindPtr("Secret"),
-		Name:  name,
+		Name:  gatewayapi_v1alpha2.ObjectName(name),
 	}
 
 	if namespace != "" {
@@ -67,7 +67,7 @@ func GatewayParentRef(namespace, name string) gatewayapi_v1alpha2.ParentRef {
 	parentRef := gatewayapi_v1alpha2.ParentRef{
 		Group: GroupPtr(gatewayapi_v1alpha2.GroupName),
 		Kind:  KindPtr("Gateway"),
-		Name:  name,
+		Name:  gatewayapi_v1alpha2.ObjectName(name),
 	}
 
 	if namespace != "" {
@@ -106,7 +106,7 @@ func ServiceBackendObjectRef(name string, port int) gatewayapi_v1alpha2.BackendO
 	return gatewayapi_v1alpha2.BackendObjectReference{
 		Group: GroupPtr(""),
 		Kind:  KindPtr("Service"),
-		Name:  name,
+		Name:  gatewayapi_v1alpha2.ObjectName(name),
 		Port:  PortNumPtr(port),
 	}
 }

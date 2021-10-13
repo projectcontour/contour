@@ -23,27 +23,27 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
+func TestComputeGatewayClassAcceptedCondition(t *testing.T) {
 	testCases := []struct {
 		name     string
-		admitted bool
+		accepted bool
 		expect   metav1.Condition
 	}{
 		{
 			name: "valid gatewayclass",
 
-			admitted: true,
+			accepted: true,
 			expect: metav1.Condition{
-				Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+				Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionTrue,
 				Reason: reasonValidGatewayClass,
 			},
 		},
 		{
 			name:     "invalid gatewayclass",
-			admitted: false,
+			accepted: false,
 			expect: metav1.Condition{
-				Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+				Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
 				Reason: reasonInvalidGatewayClass,
 			},
@@ -57,7 +57,7 @@ func TestComputeGatewayClassAdmittedCondition(t *testing.T) {
 			},
 		}
 
-		got := computeGatewayClassAdmittedCondition(gc, tc.admitted)
+		got := computeGatewayClassAcceptedCondition(gc, tc.accepted)
 
 		assert.Equal(t, tc.expect.Type, got.Type)
 		assert.Equal(t, tc.expect.Status, got.Status)
@@ -87,12 +87,12 @@ func TestConditionChanged(t *testing.T) {
 			name:     "condition LastTransitionTime should be ignored",
 			expected: false,
 			a: metav1.Condition{
-				Type:               string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+				Type:               string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 				Status:             metav1.ConditionTrue,
 				LastTransitionTime: metav1.Unix(0, 0),
 			},
 			b: metav1.Condition{
-				Type:               string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+				Type:               string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 				Status:             metav1.ConditionTrue,
 				LastTransitionTime: metav1.Unix(1, 0),
 			},
@@ -115,11 +115,11 @@ func TestConditionChanged(t *testing.T) {
 			name:     "condition status differs",
 			expected: true,
 			a: metav1.Condition{
-				Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+				Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionTrue,
 			},
 			b: metav1.Condition{
-				Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+				Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 				Status: metav1.ConditionFalse,
 			},
 		},

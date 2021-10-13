@@ -35,12 +35,12 @@ var (
 			Name: "contour",
 		},
 		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-			Controller: "projectcontour.io/contour",
+			ControllerName: "projectcontour.io/contour",
 		},
 		Status: gatewayapi_v1alpha2.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 					Status: metav1.ConditionTrue,
 				},
 			},
@@ -53,7 +53,7 @@ var (
 			Namespace: "projectcontour",
 		},
 		Spec: gatewayapi_v1alpha2.GatewaySpec{
-			GatewayClassName: gc.Name,
+			GatewayClassName: gatewayapi_v1alpha2.ObjectName(gc.Name),
 			Listeners: []gatewayapi_v1alpha2.Listener{
 				{
 					Port:     80,
@@ -68,7 +68,9 @@ var (
 					Port:     443,
 					Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-						CertificateRef: gatewayapi.CertificateRef("tlscert", ""),
+						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							gatewayapi.CertificateRef("tlscert", ""),
+						},
 					},
 					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
@@ -127,10 +129,10 @@ func TestGateway_TLS(t *testing.T) {
 				"test.projectcontour.io",
 			},
 			Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/blog"),
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/blog"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc2", 80, 1),
 			}, {
-				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 10),
 			}},
 		},

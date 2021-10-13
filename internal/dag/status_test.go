@@ -2660,12 +2660,12 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 							Name: "test-gc",
 						},
 						Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-							Controller: "projectcontour.io/contour",
+							ControllerName: "projectcontour.io/contour",
 						},
 						Status: gatewayapi_v1alpha2.GatewayClassStatus{
 							Conditions: []metav1.Condition{
 								{
-									Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+									Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 									Status: metav1.ConditionTrue,
 								},
 							},
@@ -2734,7 +2734,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 			// set the expected controller string here for all
 			// test cases.
 			for _, u := range tc.wantRouteConditions {
-				u.GatewayController = builder.Source.gatewayclass.Spec.Controller
+				u.GatewayController = builder.Source.gatewayclass.Spec.ControllerName
 			}
 
 			if diff := cmp.Diff(tc.wantRouteConditions, gotRouteUpdates, ops...); diff != "" {
@@ -2782,7 +2782,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 					}},
 				},
@@ -2790,8 +2790,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantRouteConditions: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionTrue,
 					Reason:  string(status.ValidCondition),
 					Message: "Valid HTTPRoute",
@@ -2820,14 +2820,14 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
 									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
 										Kind:      gatewayapi.KindPtr("Service"),
 										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
-										Name:      kuardService.Name,
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
 										Port:      gatewayapi.PortNumPtr(8080),
 									},
 									Weight: pointer.Int32(1),
@@ -2840,8 +2840,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantRouteConditions: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionTrue,
 					Reason:  string(status.ValidCondition),
 					Message: "Valid HTTPRoute",
@@ -2883,8 +2883,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantRouteConditions: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -2927,8 +2927,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantRouteConditions: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -2965,7 +2965,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
 							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/"),
 							},
 							Headers: []gatewayapi_v1alpha2.HTTPHeaderMatch{
@@ -2983,8 +2983,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantRouteConditions: []*status.RouteConditionsUpdate{{
 			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
 			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3019,7 +3019,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
@@ -3042,8 +3042,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "Spec.Rules.BackendRef.Name must be specified",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3073,7 +3073,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
 							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/"),
 							},
 						}},
@@ -3081,7 +3081,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					}, {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
 							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
 								Value: pointer.StringPtr("/blog"),
 							},
 						}},
@@ -3098,8 +3098,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3128,7 +3128,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
@@ -3151,8 +3151,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "Spec.Rules.BackendRef.Port must be specified",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3181,7 +3181,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 					}},
 				},
 			}},
@@ -3194,8 +3194,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "At least one Spec.Rules.BackendRef must be specified.",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3224,7 +3224,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
@@ -3249,8 +3249,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "Spec.Rules.BackendRef.Namespace must match the route's namespace",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3279,7 +3279,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"*.*.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 					}},
 				},
 			}},
@@ -3292,8 +3292,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3322,7 +3322,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"#projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 					}},
 				},
 			}},
@@ -3335,8 +3335,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3365,7 +3365,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"1.2.3.4",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 					}},
 				},
 			}},
@@ -3378,8 +3378,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "hostname \"1.2.3.4\" must be a DNS name, not an IP address",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3408,7 +3408,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
 							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestMirror, // HTTPRouteFilterRequestMirror is not supported yet.
@@ -3425,8 +3425,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonHTTPRouteFilterType),
 					Message: "HTTPRoute.Spec.Rules.Filters: Only RequestHeaderModifier type is supported.",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3456,7 +3456,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
@@ -3479,8 +3479,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonHTTPRouteFilterType),
 					Message: "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier type is supported.",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3509,7 +3509,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
 						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
 							Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
@@ -3532,8 +3532,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "duplicate header addition: \"Custom\" on request headers",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3562,7 +3562,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 						"test.projectcontour.io",
 					},
 					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
@@ -3590,8 +3590,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Reason:  string(status.ReasonDegraded),
 					Message: "invalid set header \"!invalid-Header\": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')] on request headers",
 				},
-				gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-					Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonErrorsExist),
 					Message: "Errors found, check other Conditions for details.",
@@ -3661,12 +3661,12 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 							Name: "test-gc",
 						},
 						Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-							Controller: "projectcontour.io/contour",
+							ControllerName: "projectcontour.io/contour",
 						},
 						Status: gatewayapi_v1alpha2.GatewayClassStatus{
 							Conditions: []metav1.Condition{
 								{
-									Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+									Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 									Status: metav1.ConditionTrue,
 								},
 							},
@@ -3716,7 +3716,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 			// set the expected controller string here for all
 			// test cases.
 			for _, u := range tc.wantRouteConditions {
-				u.GatewayController = builder.Source.gatewayclass.Spec.Controller
+				u.GatewayController = builder.Source.gatewayclass.Spec.ControllerName
 			}
 
 			if diff := cmp.Diff(tc.wantRouteConditions, gotRouteUpdates, ops...); diff != "" {
@@ -3741,7 +3741,9 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
 					// Mode is not defined and should default to "Terminate".
-					CertificateRef: gatewayapi.CertificateRef(fixture.SecretProjectContourCert.Name, fixture.SecretProjectContourCert.Namespace),
+					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						gatewayapi.CertificateRef(fixture.SecretProjectContourCert.Name, fixture.SecretProjectContourCert.Namespace),
+					},
 				},
 				AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
@@ -3760,8 +3762,10 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				Port:     443,
 				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-					Mode:           gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-					CertificateRef: gatewayapi.CertificateRef(fixture.SecretProjectContourCert.Name, fixture.SecretProjectContourCert.Namespace),
+					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						gatewayapi.CertificateRef(fixture.SecretProjectContourCert.Name, fixture.SecretProjectContourCert.Namespace),
+					},
 				},
 				AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
@@ -3851,8 +3855,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						Reason:  string(status.ReasonDegraded),
 						Message: "Spec.Rules.BackendRef.Name must be specified",
 					},
-					gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-						Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+					gatewayapi_v1alpha2.ConditionRouteAccepted: {
+						Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 						Status:  contour_api_v1.ConditionFalse,
 						Reason:  "ErrorsExist",
 						Message: "Errors found, check other Conditions for details.",
@@ -3895,8 +3899,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						Reason:  string(status.ReasonDegraded),
 						Message: "service \"invalid-one\" is invalid: service \"default/invalid-one\" not found, service \"invalid-two\" is invalid: service \"default/invalid-two\" not found",
 					},
-					gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-						Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+					gatewayapi_v1alpha2.ConditionRouteAccepted: {
+						Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 						Status:  contour_api_v1.ConditionFalse,
 						Reason:  "ErrorsExist",
 						Message: "Errors found, check other Conditions for details.",
@@ -3946,8 +3950,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						Reason:  string(status.ReasonDegraded),
 						Message: "Spec.Rules.BackendRef.Port must be specified",
 					},
-					gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-						Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+					gatewayapi_v1alpha2.ConditionRouteAccepted: {
+						Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 						Status:  contour_api_v1.ConditionFalse,
 						Reason:  "ErrorsExist",
 						Message: "Errors found, check other Conditions for details.",
@@ -3990,8 +3994,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						Reason:  string(status.ReasonDegraded),
 						Message: "At least one Spec.Rules.BackendRef must be specified.",
 					},
-					gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-						Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+					gatewayapi_v1alpha2.ConditionRouteAccepted: {
+						Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 						Status:  contour_api_v1.ConditionFalse,
 						Reason:  "ErrorsExist",
 						Message: "Errors found, check other Conditions for details.",
@@ -4034,8 +4038,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						Reason:  string(status.ReasonDegraded),
 						Message: "invalid hostname \"*.*.projectcontour.io\": [a wildcard DNS-1123 subdomain must start with '*.', followed by a valid DNS subdomain, which must consist of lower case alphanumeric characters, '-' or '.' and end with an alphanumeric character (e.g. '*.example.com', regex used for validation is '\\*\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 					},
-					gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-						Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+					gatewayapi_v1alpha2.ConditionRouteAccepted: {
+						Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 						Status:  contour_api_v1.ConditionFalse,
 						Reason:  "ErrorsExist",
 						Message: "Errors found, check other Conditions for details.",
@@ -4078,8 +4082,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						Reason:  string(status.ReasonDegraded),
 						Message: "invalid hostname \"#projectcontour.io\": [a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')]",
 					},
-					gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-						Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+					gatewayapi_v1alpha2.ConditionRouteAccepted: {
+						Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 						Status:  contour_api_v1.ConditionFalse,
 						Reason:  "ErrorsExist",
 						Message: "Errors found, check other Conditions for details.",
@@ -4122,8 +4126,8 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 						Reason:  string(status.ReasonDegraded),
 						Message: "hostname \"1.2.3.4\" must be a DNS name, not an IP address",
 					},
-					gatewayapi_v1alpha2.ConditionRouteAdmitted: {
-						Type:    string(gatewayapi_v1alpha2.ConditionRouteAdmitted),
+					gatewayapi_v1alpha2.ConditionRouteAccepted: {
+						Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
 						Status:  contour_api_v1.ConditionFalse,
 						Reason:  "ErrorsExist",
 						Message: "Errors found, check other Conditions for details.",

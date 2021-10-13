@@ -1746,7 +1746,7 @@ func TestSecretTriggersRebuild(t *testing.T) {
 					Spec: gatewayapi_v1alpha2.GatewaySpec{
 						Listeners: []gatewayapi_v1alpha2.Listener{{
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRef: nil,
+								CertificateRefs: nil,
 							},
 						}},
 					},
@@ -1765,7 +1765,9 @@ func TestSecretTriggersRebuild(t *testing.T) {
 					Spec: gatewayapi_v1alpha2.GatewaySpec{
 						Listeners: []gatewayapi_v1alpha2.Listener{{
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRef: gatewayapi.CertificateRef("tlscert", ""),
+								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+									gatewayapi.CertificateRef("tlscert", ""),
+								},
 							},
 						}},
 					},
@@ -1784,7 +1786,9 @@ func TestSecretTriggersRebuild(t *testing.T) {
 					Spec: gatewayapi_v1alpha2.GatewaySpec{
 						Listeners: []gatewayapi_v1alpha2.Listener{{
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRef: gatewayapi.CertificateRef("tlscert", ""),
+								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+									gatewayapi.CertificateRef("tlscert", ""),
+								},
 							},
 						}},
 					},

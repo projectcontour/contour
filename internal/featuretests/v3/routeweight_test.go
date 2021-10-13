@@ -126,12 +126,12 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 			Name: "test-gc",
 		},
 		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-			Controller: "projectcontour.io/contour",
+			ControllerName: "projectcontour.io/contour",
 		},
 		Status: gatewayapi_v1alpha2.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 					Status: metav1.ConditionTrue,
 				},
 			},
@@ -176,7 +176,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 				"test.projectcontour.io",
 			},
 			Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/blog"),
+				Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/blog"),
 				BackendRefs: gatewayapi.HTTPBackendRef("svc1", 80, 1),
 			}},
 		},
@@ -213,7 +213,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 				"test.projectcontour.io",
 			},
 			Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-				Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/blog"),
+				Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/blog"),
 				BackendRefs: gatewayapi.HTTPBackendRefs(
 					gatewayapi.HTTPBackendRef("svc1", 80, 60),
 					gatewayapi.HTTPBackendRef("svc2", 80, 90),
@@ -251,12 +251,12 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 			Name: "test-gc",
 		},
 		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-			Controller: "projectcontour.io/contour",
+			ControllerName: "projectcontour.io/contour",
 		},
 		Status: gatewayapi_v1alpha2.GatewayClassStatus{
 			Conditions: []metav1.Condition{
 				{
-					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted),
+					Type:   string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 					Status: metav1.ConditionTrue,
 				},
 			},

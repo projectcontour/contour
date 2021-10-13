@@ -50,7 +50,7 @@ func testHostRewrite(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
 									Value: pointer.StringPtr("/"),
 								},
 							},
@@ -70,7 +70,7 @@ func testHostRewrite(namespace string) {
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      string(route.Spec.Hostnames[0]),

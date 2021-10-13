@@ -48,12 +48,12 @@ func testGatewayPathConditionMatch(namespace string) {
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/path/prefix/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/path/prefix/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-prefix", 80, 1),
 					},
 
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/path/prefix"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/path/prefix"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-noprefix", 80, 1),
 					},
 
@@ -63,13 +63,13 @@ func testGatewayPathConditionMatch(namespace string) {
 					},
 
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-slash-default", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		cases := map[string]string{
 			"/":                "echo-slash-default",

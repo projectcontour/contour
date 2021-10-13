@@ -50,13 +50,13 @@ func testTLSGateway(namespace string) {
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
 
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-insecure", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		route = &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
@@ -75,13 +75,13 @@ func testTLSGateway(namespace string) {
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-secure", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		// Ensure http (insecure) request routes to echo-insecure.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{

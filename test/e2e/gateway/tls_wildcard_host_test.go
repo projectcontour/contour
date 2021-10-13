@@ -51,13 +51,13 @@ func testTLSWildcardHost(namespace string) {
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		cases := []struct {
 			hostname   string

@@ -71,19 +71,19 @@ var _ = Describe("Gateway API", func() {
 	testWithGateway := func(gateway *gatewayapi_v1alpha2.Gateway, gatewayClass *gatewayapi_v1alpha2.GatewayClass, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 		return func(namespace string) {
 
-			Context(fmt.Sprintf("with gateway %s/%s, controllerName: %s", namespace, gateway.Name, gatewayClass.Spec.Controller), func() {
+			Context(fmt.Sprintf("with gateway %s/%s, controllerName: %s", namespace, gateway.Name, gatewayClass.Spec.ControllerName), func() {
 				BeforeEach(func() {
 					// Ensure gateway created in this test's namespace.
 					gateway.Namespace = namespace
 					// Update contour config to point to specified gateway.
 					contourConfig.GatewayConfig = &config.GatewayParameters{
-						ControllerName: string(gatewayClass.Spec.Controller),
+						ControllerName: string(gatewayClass.Spec.ControllerName),
 					}
 
 					// Update contour configuration to point to specified gateway.
 					contourConfiguration = e2e.DefaultContourConfiguration()
 					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
-						ControllerName: string(gatewayClass.Spec.Controller),
+						ControllerName: string(gatewayClass.Spec.ControllerName),
 					}
 
 					contourGatewayClass = gatewayClass
@@ -137,7 +137,7 @@ var _ = Describe("Gateway API", func() {
 					Name: "http",
 				},
 				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayClass.Name,
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName(gatewayClass.Name),
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
 							Name:     "http",
@@ -180,7 +180,7 @@ var _ = Describe("Gateway API", func() {
 					Name: "https",
 				},
 				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayClass.Name,
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName(gatewayClass.Name),
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
 							Name:     "insecure",
@@ -200,7 +200,9 @@ var _ = Describe("Gateway API", func() {
 							Protocol: gatewayapi_v1alpha2.HTTPSProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								CertificateRef: gatewayapi.CertificateRef("tlscert", ""),
+								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+									gatewayapi.CertificateRef("tlscert", ""),
+								},
 							},
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 								Kinds: []gatewayapi_v1alpha2.RouteGroupKind{
@@ -237,7 +239,7 @@ var _ = Describe("Gateway API", func() {
 				Name: "tls-passthrough",
 			},
 			Spec: gatewayapi_v1alpha2.GatewaySpec{
-				GatewayClassName: gatewayClass.Name,
+				GatewayClassName: gatewayapi_v1alpha2.ObjectName(gatewayClass.Name),
 				Listeners: []gatewayapi_v1alpha2.Listener{
 					{
 						Name:     "tls-passthrough",
@@ -267,15 +269,17 @@ var _ = Describe("Gateway API", func() {
 					Name: "tls-terminate",
 				},
 				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayClass.Name,
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName(gatewayClass.Name),
 					Listeners: []gatewayapi_v1alpha2.Listener{
 						{
 							Name:     "tls-terminate",
 							Protocol: gatewayapi_v1alpha2.TLSProtocolType,
 							Port:     gatewayapi_v1alpha2.PortNumber(443),
 							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-								Mode:           gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-								CertificateRef: gatewayapi.CertificateRef("tlscert", ""),
+								Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+									gatewayapi.CertificateRef("tlscert", ""),
+								},
 							},
 							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
 								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
@@ -301,16 +305,16 @@ var _ = Describe("Gateway API", func() {
 	})
 })
 
-// httpRouteAdmitted returns true if the route has a .status.conditions
-// entry of "Admitted: true".
-func httpRouteAdmitted(route *gatewayapi_v1alpha2.HTTPRoute) bool {
+// httpRouteAccepted returns true if the route has a .status.conditions
+// entry of "Accepted: true".
+func httpRouteAccepted(route *gatewayapi_v1alpha2.HTTPRoute) bool {
 	if route == nil {
 		return false
 	}
 
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAdmitted) && cond.Status == metav1.ConditionTrue {
+			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionTrue {
 				return true
 			}
 		}
@@ -319,16 +323,16 @@ func httpRouteAdmitted(route *gatewayapi_v1alpha2.HTTPRoute) bool {
 	return false
 }
 
-// tlsRouteAdmitted returns true if the route has a .status.conditions
-// entry of "Admitted: true".
-func tlsRouteAdmitted(route *gatewayapi_v1alpha2.TLSRoute) bool {
+// tlsRouteAccepted returns true if the route has a .status.conditions
+// entry of "Accepted: true".
+func tlsRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 	if route == nil {
 		return false
 	}
 
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAdmitted) && cond.Status == metav1.ConditionTrue {
+			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionTrue {
 				return true
 			}
 		}
@@ -354,14 +358,14 @@ func gatewayValid(gateway *gatewayapi_v1alpha2.Gateway) bool {
 }
 
 // gatewayClassValid returns true if the gateway has a .status.conditions
-// entry of Admitted: true".
+// entry of Accepted: true".
 func gatewayClassValid(gatewayClass *gatewayapi_v1alpha2.GatewayClass) bool {
 	if gatewayClass == nil {
 		return false
 	}
 
 	for _, cond := range gatewayClass.Status.Conditions {
-		if cond.Type == string(gatewayapi_v1alpha2.GatewayClassConditionStatusAdmitted) && cond.Status == metav1.ConditionTrue {
+		if cond.Type == string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted) && cond.Status == metav1.ConditionTrue {
 			return true
 		}
 	}
@@ -385,7 +389,7 @@ func getGatewayClass() *gatewayapi_v1alpha2.GatewayClass {
 			Name: fmt.Sprintf("contour-class-%d", randNumber),
 		},
 		Spec: gatewayapi_v1alpha2.GatewayClassSpec{
-			Controller: gatewayapi_v1alpha2.GatewayController(fmt.Sprintf("projectcontour.io/ingress-controller-%d", randNumber)),
+			ControllerName: gatewayapi_v1alpha2.GatewayController(fmt.Sprintf("projectcontour.io/ingress-controller-%d", randNumber)),
 		},
 	}
 }

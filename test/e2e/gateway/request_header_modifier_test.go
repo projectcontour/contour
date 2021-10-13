@@ -49,7 +49,7 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/filter"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/filter"),
 						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
 								BackendRef: gatewayapi_v1alpha2.BackendRef{
@@ -73,13 +73,13 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 						},
 					},
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/nofilter"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/nofilter"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-nofilter", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		// Check the route with the RequestHeaderModifier filter.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
@@ -148,7 +148,7 @@ func testRequestHeaderModifierRule(namespace string) {
 				},
 				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/filter"),
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/filter"),
 						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
 							{
 								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
@@ -166,13 +166,13 @@ func testRequestHeaderModifierRule(namespace string) {
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-filter", 80, 1),
 					},
 					{
-						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPrefix, "/nofilter"),
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/nofilter"),
 						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-nofilter", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		// Check the route with the RequestHeaderModifier filter.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{

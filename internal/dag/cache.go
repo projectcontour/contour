@@ -373,7 +373,7 @@ func isRefToService(ref gatewayapi_v1alpha2.BackendObjectReference, service *v1.
 	return ref.Group != nil && (*ref.Group == "" || *ref.Group == "core") &&
 		ref.Kind != nil && *ref.Kind == "Service" &&
 		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(service.Namespace)) || (ref.Namespace == nil && routeNamespace == service.Namespace)) &&
-		ref.Name == service.Name
+		string(ref.Name) == service.Name
 }
 
 // secretTriggersRebuild returns true if this secret is referenced by an Ingress
@@ -464,12 +464,11 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 			if listener.TLS == nil {
 				continue
 			}
-			if listener.TLS.CertificateRef == nil {
-				continue
-			}
 
-			if isRefToSecret(*listener.TLS.CertificateRef, secret, kc.gateway.Namespace) {
-				return true
+			for _, certificateRef := range listener.TLS.CertificateRefs {
+				if isRefToSecret(*certificateRef, secret, kc.gateway.Namespace) {
+					return true
+				}
 			}
 		}
 	}
@@ -481,7 +480,7 @@ func isRefToSecret(ref gatewayapi_v1alpha2.SecretObjectReference, secret *v1.Sec
 	return ref.Group != nil && (*ref.Group == "" || *ref.Group == "core") &&
 		ref.Kind != nil && *ref.Kind == "Secret" &&
 		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(secret.Namespace)) || (ref.Namespace == nil && gatewayNamespace == secret.Namespace)) &&
-		ref.Name == secret.Name
+		string(ref.Name) == secret.Name
 }
 
 // LookupSecret returns a Secret if present or nil if the underlying kubernetes

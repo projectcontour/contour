@@ -56,7 +56,7 @@ func (b *Builder) Build() *DAG {
 	}
 	var gatewayController gatewayapi_v1alpha2.GatewayController
 	if b.Source.gatewayclass != nil {
-		gatewayController = b.Source.gatewayclass.Spec.Controller
+		gatewayController = b.Source.gatewayclass.Spec.ControllerName
 	}
 
 	dag := DAG{

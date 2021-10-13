@@ -57,7 +57,7 @@ func testTLSRoutePassthrough(namespace string) {
 				}},
 			},
 		}
-		f.CreateTLSRouteAndWaitFor(route, tlsRouteAdmitted)
+		f.CreateTLSRouteAndWaitFor(route, tlsRouteAccepted)
 
 		// Ensure request routes to echo.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
@@ -122,7 +122,7 @@ func testTLSRouteTerminate(namespace string) {
 				}},
 			},
 		}
-		f.CreateTLSRouteAndWaitFor(route, tlsRouteAdmitted)
+		f.CreateTLSRouteAndWaitFor(route, tlsRouteAccepted)
 
 		// Ensure request routes to echo matching SNI: tlsroute.gatewayapi.projectcontour.io
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{

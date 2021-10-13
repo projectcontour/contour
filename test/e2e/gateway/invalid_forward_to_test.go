@@ -50,7 +50,7 @@ func testInvalidForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
 									Value: pointer.StringPtr("/invalidref"),
 								},
 							},
@@ -68,7 +68,7 @@ func testInvalidForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
 									Value: pointer.StringPtr("/invalidport"),
 								},
 							},
@@ -89,7 +89,7 @@ func testInvalidForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
 									Value: pointer.StringPtr("/invalidservicename"),
 								},
 							},
@@ -111,7 +111,7 @@ func testInvalidForwardTo(namespace string) {
 						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
 								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
-									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPrefix),
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
 									Value: pointer.StringPtr("/"),
 								},
 							},
@@ -141,17 +141,17 @@ func testInvalidForwardTo(namespace string) {
 				return false
 			}
 
-			var hasAdmitted, hasResolvedRefs bool
+			var hasAccepted, hasResolvedRefs bool
 			for _, cond := range route.Status.Parents[0].Conditions {
-				if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAdmitted) && cond.Status == metav1.ConditionFalse {
-					hasAdmitted = true
+				if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionFalse {
+					hasAccepted = true
 				}
 				if cond.Type == string(status.ConditionResolvedRefs) && cond.Status == metav1.ConditionFalse {
 					hasResolvedRefs = true
 				}
 			}
 
-			return hasAdmitted && hasResolvedRefs
+			return hasAccepted && hasResolvedRefs
 		})
 
 		type scenario struct {
