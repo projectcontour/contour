@@ -41,9 +41,15 @@ You'll need to re-check where your DNS names are pointing as well, using [Get yo
 ### The less easy way
 
 This section contains information for administrators who wish to apply the Contour 1.18.2 to 1.19.0 changes manually.
-The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.18.2` tag.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.19.0` tag.
 
 If your version of Contour is older than v1.18.2, please upgrade to v1.18.2 first, then upgrade to v1.19.0.
+
+1. Update the Contour CRDs:
+
+    ```bash
+    $ kubectl apply -f examples/contour/01-crds.yaml
+    ```
 
 1. Users of the example deployment should reapply the certgen Job YAML which will re-generate the relevant Secrets in a format compatible with [cert-manager](https://cert-manager.io) TLS secrets.
    This will rotate the TLS certificates used for gRPC security.
@@ -52,13 +58,13 @@ If your version of Contour is older than v1.18.2, please upgrade to v1.18.2 firs
     $ kubectl apply -f examples/contour/02-job-certgen.yaml
     ```
 
-1. Update your RBAC definitions:
+1. Update the Contour cluster role:
 
     ```bash
-    $ kubectl apply -f examples/contour/02-rbac.yaml
+    $ kubectl apply -f examples/contour/02-role-contour.yaml
     ```
 
-1. Upgrade your Contour deployment:
+1. Upgrade the Contour deployment:
 
     ```bash
     $ kubectl apply -f examples/contour/03-contour.yaml
