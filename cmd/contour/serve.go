@@ -262,7 +262,7 @@ func (s *Server) doServe() error {
 		informerNamespaces = append(informerNamespaces, contourConfiguration.HTTPProxy.RootNamespaces...)
 
 		// Add the FallbackCertificateNamespace to informerNamespaces if it isn't present.
-		if !contains(informerNamespaces, contourConfiguration.HTTPProxy.FallbackCertificate.Namespace) && contourConfiguration.HTTPProxy.FallbackCertificate != nil {
+		if contourConfiguration.HTTPProxy.FallbackCertificate != nil && !contains(informerNamespaces, contourConfiguration.HTTPProxy.FallbackCertificate.Namespace) {
 			informerNamespaces = append(informerNamespaces, contourConfiguration.HTTPProxy.FallbackCertificate.Namespace)
 			s.log.WithField("context", "fallback-certificate").
 				Infof("fallback certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",
@@ -270,7 +270,7 @@ func (s *Server) doServe() error {
 		}
 
 		// Add the client certificate namespace to informerNamespaces if it isn't present.
-		if !contains(informerNamespaces, contourConfiguration.Envoy.ClientCertificate.Namespace) && contourConfiguration.Envoy.ClientCertificate != nil {
+		if contourConfiguration.Envoy.ClientCertificate != nil && !contains(informerNamespaces, contourConfiguration.Envoy.ClientCertificate.Namespace) {
 			informerNamespaces = append(informerNamespaces, contourConfiguration.Envoy.ClientCertificate.Namespace)
 			s.log.WithField("context", "envoy-client-certificate").
 				Infof("client certificate namespace %q not defined in 'root-namespaces', adding namespace to watch",

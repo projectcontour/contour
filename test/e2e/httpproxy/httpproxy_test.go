@@ -19,9 +19,8 @@ package httpproxy
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
-
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 
 	"github.com/davecgh/go-spew/spew"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
@@ -30,6 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
@@ -362,6 +362,60 @@ descriptors:
 		})
 
 		f.NamespacedTest("rewrite-headers-cookie-rewrite", testHeaderRewriteCookieRewrite)
+	})
+
+	Context("using root namespaces", func() {
+		Context("configured via config CRD", func() {
+			rootNamespaces := []string{
+				"root-ns-crd-1",
+				"root-ns-crd-2",
+			}
+
+			BeforeEach(func() {
+				if !e2e.UsingContourConfigCRD() {
+					Skip("test only applies to contour config CRD")
+				}
+				for _, ns := range rootNamespaces {
+					f.CreateNamespace(ns)
+				}
+				contourConfiguration.Spec.HTTPProxy.RootNamespaces = rootNamespaces
+			})
+
+			AfterEach(func() {
+				for _, ns := range rootNamespaces {
+					f.DeleteNamespace(ns, false)
+				}
+			})
+
+			f.NamespacedTest("root-ns-crd", testRootNamespaces(rootNamespaces))
+		})
+
+		Context("configured via CLI flag", func() {
+			rootNamespaces := []string{
+				"root-ns-cli-1",
+				"root-ns-cli-2",
+			}
+
+			BeforeEach(func() {
+				if e2e.UsingContourConfigCRD() {
+					Skip("test only applies to contour configmap")
+				}
+				for _, ns := range rootNamespaces {
+					f.CreateNamespace(ns)
+				}
+				additionalContourArgs = []string{
+					"--root-namespaces=" + strings.Join(rootNamespaces, ","),
+				}
+			})
+
+			AfterEach(func() {
+				for _, ns := range rootNamespaces {
+					f.DeleteNamespace(ns, false)
+				}
+			})
+
+			f.NamespacedTest("root-ns-cli", testRootNamespaces(rootNamespaces))
+		})
 	})
 })
 
