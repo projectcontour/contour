@@ -11,7 +11,7 @@ This tutorial shows you how to securely deploy an HTTPS web application on a Kub
 
 ## Prerequisites
 
-- A Kubernetes cluster deployed in either a data center or a cloud provider with a Kubernetes as a service offering. This tutorial was developed on a GKE cluster running Kubernetes 1.17
+- A Kubernetes cluster deployed in either a data center or a cloud provider with a Kubernetes as a service offering. This tutorial was last tested on a GKE cluster running Kubernetes 1.22
 - RBAC enabled on your cluster
 - Your cluster must be able to request a public IP address from your cloud provider, using a load balancer. If you're on AWS or GKE this is automatic if you deploy a Kubernetes service object of type: LoadBalancer. If you're on your own datacenter you must set it up yourself
 - A DNS domain that you control, where you host your web application
@@ -43,12 +43,12 @@ to set up Contour as a deployment in its own namespace, `projectcontour`, and te
 
 Check the progress of the deployment with this command:
 
-```
+```bash
 $ kubectl -n projectcontour get po
 NAME                            READY   STATUS      RESTARTS   AGE
 contour-5475898957-jh9fm        1/1     Running     0          39s
 contour-5475898957-qlbs2        1/1     Running     0          39s
-contour-certgen-v1.10.0-5xthf   0/1     Completed   0          39s
+contour-certgen-v1.19.0-5xthf   0/1     Completed   0          39s
 envoy-hqbkm                     2/2     Running     0          39s
 ```
 
@@ -58,7 +58,7 @@ After all the `contour` & `envoy` pods reach `Running` status and fully `Ready`,
 
 Retrieve the external address of the load balancer assigned to Contour's Envoys by your cloud provider:
 
-```
+```bash
 $ kubectl get -n projectcontour service envoy -o wide
 NAME      TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)                      AGE       SELECTOR
 envoy   LoadBalancer   10.51.245.99   35.189.26.87   80:30111/TCP,443:30933/TCP   38d       app=envoy
@@ -68,14 +68,14 @@ The value of `EXTERNAL-IP` varies by cloud provider. In this example GKE gives a
 
 To make it easier to work with the external load balancer, the tutorial adds a DNS record to a domain we control that points to this load balancer's IP address:
 
-```
+```bash
 $ host gke.davecheney.com
 gke.davecheney.com has address 35.189.26.87
 ```
 
 On AWS, you specify a `CNAME`, not an `A` record, and it would look something like this:
 
-```
+```bash
 $ host aws.davecheney.com
 aws.davecheney.com is an alias for a4d1766f6ce1611e7b27f023b7e83d33–1465548734.ap-southeast-2.elb.amazonaws.com.
 a4d1766f6ce1611e7b27f023b7e83d33–1465548734.ap-southeast-2.elb.amazonaws.com has address 52.63.20.117
@@ -96,12 +96,14 @@ To deploy httpbin to your cluster, run this command:
 $ kubectl apply -f {{< param base_url >}}/examples/httpbin.yaml
 ```
 
-Check that the pod is running:
+Check that the pods are running:
 
-```
+```bash
 $ kubectl get po -l app=httpbin
-NAME                         READY     STATUS    RESTARTS   AGE
-httpbin-67ff6dd458-sfxkb     1/1       Running   0          19d
+NAME                       READY   STATUS    RESTARTS   AGE
+httpbin-85777b684b-8sqw5   1/1     Running   0          24s
+httpbin-85777b684b-pb26w   1/1     Running   0          24s
+httpbin-85777b684b-vpgwl   1/1     Running   0          24s
 ```
 
 Then type the DNS name you set up in the previous step into a web browser, for example `http://gke.davecheney.com/`. You should see something like:
@@ -123,13 +125,13 @@ There are plenty of [other ways to deploy cert-manager][4], but they are out of 
 
 To keep things simple, we skip cert-manager's Helm installation, and use the [supplied YAML manifests][5].
 
-```sh
-$ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
+```bash
+$ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
 ```
 
 When cert-manager is up and running you should see something like:
 
-```
+```bash
 $ kubectl -n cert-manager get all
 NAME                                           READY   STATUS    RESTARTS   AGE
 pod/cert-manager-cainjector-74bb68d67c-8lb2f   1/1     Running   0          40s
@@ -186,20 +188,17 @@ You can then repeat this step for a production Let's Encrypt certificate issuer.
 
 After you edit and save the file, deploy it:
 
-```
+```bash
 $ kubectl apply -f letsencrypt-staging.yaml
-clusterissuer "letsencrypt-staging" created
+clusterissuer.cert-manager.io/letsencrypt-staging created
 ```
 
-You should see several lines in the output of `kubectl -n cert-manager
-logs -l app=cert-manager -c cert-manager` informing you that the
-`ClusterIssuer` is properly registered:
+Wait for the `ClusterIssuer` to be ready:
 
-```
-I1202 20:54:20.535886       1 setup.go:90] cert-manager/controller/clusterissuers "msg"="generating acme account private key" "related_resource_kind"="Secret" "related_resource_name"="letsencrypt-staging" "related_resource_namespace"="cert-manager" "resource_kind"="ClusterIssuer" "resource_name"="letsencrypt-staging" "resource_namespace"="" "resource_version"="v1" 
-I1202 20:54:20.812603       1 setup.go:178] cert-manager/controller/clusterissuers "msg"="ACME server URL host and ACME private key registration host differ. Re-checking ACME account registration" "related_resource_kind"="Secret" "related_resource_name"="letsencrypt-staging" "related_resource_namespace"="cert-manager" "resource_kind"="ClusterIssuer" "resource_name"="letsencrypt-staging" "resource_namespace"="" "resource_version"="v1" 
-I1202 20:54:21.210748       1 setup.go:270] cert-manager/controller/clusterissuers "msg"="verified existing registration with ACME server" "related_resource_kind"="Secret" "related_resource_name"="letsencrypt-staging" "related_resource_namespace"="cert-manager" "resource_kind"="ClusterIssuer" "resource_name"="letsencrypt-staging" "resource_namespace"="" "resource_version"="v1" 
-I1202 20:54:21.210780       1 conditions.go:92] Setting lastTransitionTime for Issuer "letsencrypt-staging" condition "Ready" to 2020-12-02 20:54:21.21077351 +0000 UTC m=+155.665053010
+```bash
+$ kubectl get clusterissuer letsencrypt-staging
+NAME                  READY   AGE
+letsencrypt-staging   True    54s
 ```
 
 ## 3. Deploy your first HTTPS site using Ingress
@@ -243,9 +242,9 @@ spec:
 
 Deploy to your cluster:
 
-```
+```bash
 $ kubectl apply -f deployment.yaml
-deployment "httpbin" created
+deployment.apps/httpbin created
 $ kubectl get pod -l app=httpbin
 NAME                       READY     STATUS    RESTARTS   AGE
 httpbin-67fd96d97c-8j2rr   1/1       Running   0          56m
@@ -270,9 +269,9 @@ spec:
 
 and deploy:
 
-```
+```bash
 $ kubectl apply -f service.yaml
-service "httpbin" created
+service/httpbin created
 $ kubectl get service httpbin
 NAME      TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)     AGE
 httpbin   ClusterIP   10.48.6.155   <none>        8080/TCP   57m
@@ -282,7 +281,7 @@ Expose the Service to the world with Contour and an Ingress object. Create a fil
 the following contents:
 
 ```yaml
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: httpbin
@@ -291,9 +290,13 @@ spec:
   - host: httpbin.davecheney.com
     http:
       paths:
-      - backend:
-          serviceName: httpbin
-          servicePort: 8080
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: httpbin
+            port:
+              number: 8080
 ```
 
 The host name, `httpbin.davecheney.com` is a `CNAME` to the `gke.davecheney.com` record that was created in the first section, and must be created in the same place as the `gke.davecheney.com` record was.
@@ -301,7 +304,7 @@ That is, in your cloud provider.
 This lets requests to `httpbin.davecheney.com` resolve to the external IP address of the Contour service.
 They are then forwarded to the Contour pods running in the cluster:
 
-```
+```bash
 $ host httpbin.davecheney.com
 httpbin.davecheney.com is an alias for gke.davecheney.com.
 gke.davecheney.com has address 35.189.26.87
@@ -309,17 +312,17 @@ gke.davecheney.com has address 35.189.26.87
 
 Change the value of `spec.rules.host` to something that you control, and deploy the Ingress to your cluster:
 
-```
+```bash
 $ kubectl apply -f ingress.yaml
-ingress "httpbin" created
+ingress.networking.k8s.io/httpbin created
 $ kubectl get ingress httpbin
-NAME      HOSTS                    ADDRESS   PORTS     AGE
-httpbin   httpbin.davecheney.com             80        58m
+NAME      CLASS    HOSTS                     ADDRESS         PORTS   AGE
+httpbin   <none>   httpbin.davecheney.com                    80      12s
 ```
 
 Now you can type the host name of the service into a browser, or use curl, to verify it's deployed and everything is working:
 
-```
+```bash
 $ curl http://httpbin.davecheney.com/get
 {
   "args": {},
@@ -353,7 +356,7 @@ We need to add the following annotations:
 Using `kubectl edit ingress httpbin`:
 
 ```yaml
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: httpbin
@@ -371,9 +374,13 @@ spec:
   - host: httpbin.davecheney.com
     http:
       paths:
-      - backend:
-          serviceName: httpbin
-          servicePort: 8080
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: httpbin
+            port:
+              number: 8080
 ```
 
 The certificate is issued in the name of the hosts listed in the `tls:` section, `httpbin.davecheney.com` and stored in the secret `httpbin`.
@@ -381,7 +388,7 @@ Behind the scenes, cert-manager creates a certificate CRD to manage the lifecycl
 
 You can watch the progress of the certificate as it's issued:
 
-```
+```bash
 $ kubectl describe certificate httpbin | tail -n 12
 Status:
   Conditions:
@@ -399,7 +406,7 @@ Events:
 
 Wait for the certificate to be issued:
 
-```
+```bash
 $ kubectl describe certificate httpbin | grep -C3 "Certificate is up to date"
 Status:
   Conditions:
@@ -412,7 +419,7 @@ Status:
 
 A `kubernetes.io/tls` secret is created with the `secretName` specified in the `tls:` field of the Ingress.
 
-```
+```bash
 $ kubectl get secret httpbin
 NAME      TYPE                DATA      AGE
 httpbin   kubernetes.io/tls   2         3m
@@ -424,7 +431,7 @@ You can now visit your site, replacing `http://` with `https://` — and you
 This is because the certificate was issued by the Let's Encrypt staging servers and has a fake CA.
 This is so you can't accidentally use the staging servers to serve real certificates.
 
-```
+```bash
 $ curl https://httpbin.davecheney.com/get
 curl: (60) SSL certificate problem: unable to get local issuer certificate
 More details here: https://curl.haxx.se/docs/sslcerts.html
@@ -462,15 +469,15 @@ again replacing `user@example.com` with your email address.
 
 Deploy:
 
-```
+```bash
 $ kubectl apply -f letsencrypt-prod.yaml
-clusterissuer "letsencrypt-prod" created
+clusterissuer.cert-manager.io/letsencrypt-prod created
 ```
 
 Now we use `kubectl edit ingress httpbin` to edit our Ingress to ask for a real certificate from `letsencrypt-prod`:
 
 ```yaml
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: httpbin
@@ -480,20 +487,32 @@ spec:
   ...
 ```
 
-Next, delete the existing certificate CRD and the Secret that contains the untrusted staging certificate.
-This triggers cert-manager to request the certificate again from the Let's Encrypt production servers.
+The certificate resource will transition to `Ready: False` while it's re-provisioned from the Let's Encrypt production servers, and then back to `Ready: True` once it's been provisioned:
 
-```
-$ kubectl delete certificate httpbin
-certificate "httpbin" deleted
-$ kubectl delete secret httpbin
-secret "httpbin" deleted
+```bash
+$ kubectl describe certificate httpbin
+...
+Events:
+  Type    Reason     Age                From          Message
+  ----    ------     ----               ----          -------
+  ...
+  Normal  Issuing    21s                cert-manager  Issuing certificate as Secret was previously issued by ClusterIssuer.cert-manager.io/letsencrypt-staging
+  Normal  Reused     21s                cert-manager  Reusing private key stored in existing Secret resource "httpbin"
+  Normal  Requested  21s                cert-manager  Created new CertificateRequest resource "httpbin-sjqbt"
+  Normal  Issuing    18s (x2 over 48s)  cert-manager  The certificate has been successfully issued
 ```
 
-Check that the `httpbin` Secret is recreated, to make sure that the certificate is issued again.
+Followed by:
+
+```bash
+$ kubectl get certificate httpbin -o wide
+NAME      READY   SECRET    ISSUER             STATUS                                          AGE
+httpbin   True    httpbin   letsencrypt-prod   Certificate is up to date and has not expired   3m35s
+```
+
 Now revisiting our `https://httpbin.davecheney.com` site should show a valid, trusted, HTTPS certificate.
 
-```
+```bash
 $ curl https://httpbin.davecheney.com/get
 {
   "args": {},
@@ -565,12 +584,20 @@ spec:
   secretName: httpbinproxy
 ```
 
+Wait for the Certificate to be provisioned:
+
+```bash
+$ kubectl get certificate httpbinproxy -o wide
+NAME           READY   SECRET         ISSUER             STATUS                                          AGE
+httpbinproxy   True    httpbinproxy   letsencrypt-prod   Certificate is up to date and has not expired   39s
+```
+
 Once cert-manager has fulfilled the HTTP01 challenge, you will have a `httpbinproxy` secret, that will contain the keypair.
 Contour will detect that the Secret exists and generate the HTTPProxy config.
 
 After that, you should be able to curl the new site:
 
-```sh
+```bash
 $ curl https://httpbinproxy.davecheney.com/get
 {
   "args": {},
@@ -634,7 +661,7 @@ __Note:__ For HTTPProxy resources this happens automatically without the need fo
 [2]: https://letsencrypt.org/docs/rate-limits/
 [3]: http://httpbin.org/
 [4]: https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html
-[5]: https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
+[5]: https://github.com/jetstack/cert-manager/releases/download/v1.5.4/cert-manager.yaml
 [6]: https://letsencrypt.org/getting-started/
 [7]: /docs/{{< param latest_version >}}/deploy-options/#get-your-hostname-or-ip-address
 [8]: /img/cert-manager/httpbinhomepage.png
