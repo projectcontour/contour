@@ -5225,7 +5225,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: unapproved
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
   creationTimestamp: null
   name: gatewayclasses.gateway.networking.k8s.io
 spec:
@@ -5450,7 +5450,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: unapproved
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
   creationTimestamp: null
   name: gateways.gateway.networking.k8s.io
 spec:
@@ -6168,7 +6168,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: unapproved
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
   creationTimestamp: null
   name: httproutes.gateway.networking.k8s.io
 spec:
@@ -7451,7 +7451,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: unapproved
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
   creationTimestamp: null
   name: referencepolicies.gateway.networking.k8s.io
 spec:
@@ -7594,7 +7594,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: unapproved
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
   creationTimestamp: null
   name: tcproutes.gateway.networking.k8s.io
 spec:
@@ -8024,7 +8024,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: unapproved
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
   creationTimestamp: null
   name: tlsroutes.gateway.networking.k8s.io
 spec:
@@ -8503,7 +8503,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    api-approved.kubernetes.io: unapproved
+    api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/891
   creationTimestamp: null
   name: udproutes.gateway.networking.k8s.io
 spec:
