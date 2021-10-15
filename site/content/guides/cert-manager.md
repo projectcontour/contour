@@ -624,7 +624,7 @@ See the [cert-manager docs][12] for more information.
 
 ## Bonus points
 
-For bonus points, it's 2020 and you probably shouldn't be serving traffic over insecure HTTP any more, you can use a feature of Contour to automatically upgrade any HTTP request to the corresponding HTTPS site.
+For bonus points, you can use a feature of Contour to automatically upgrade any HTTP request to the corresponding HTTPS site so you are no longer serving any traffic over insecure HTTP.
 
 To enable the automatic redirect from HTTP to HTTPS, add this annotation to your Ingress object.
 
