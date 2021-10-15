@@ -32,12 +32,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 var gatewayClassGVR = schema.GroupVersionResource{
-	Group:    gatewayapi_v1alpha1.GroupVersion.Group,
-	Version:  gatewayapi_v1alpha1.GroupVersion.Version,
+	Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+	Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 	Resource: "gatewayclasses",
 }
 
@@ -46,7 +46,7 @@ type gatewayClassReconciler struct {
 	eventHandler  cache.ResourceEventHandler
 	statusUpdater k8s.StatusUpdater
 	log           logrus.FieldLogger
-	controller    string
+	controller    gatewayapi_v1alpha2.GatewayController
 }
 
 // NewGatewayClassController creates the gatewayclass controller. The controller
@@ -65,7 +65,7 @@ func NewGatewayClassController(
 		eventHandler:  eventHandler,
 		statusUpdater: statusUpdater,
 		log:           log,
-		controller:    name,
+		controller:    gatewayapi_v1alpha2.GatewayController(name),
 	}
 
 	c, err := controller.New("gatewayclass-controller", mgr, controller.Options{Reconciler: r})
@@ -75,7 +75,7 @@ func NewGatewayClassController(
 
 	// Only enqueue GatewayClass objects that match name.
 	if err := c.Watch(
-		&source.Kind{Type: &gatewayapi_v1alpha1.GatewayClass{}},
+		&source.Kind{Type: &gatewayapi_v1alpha2.GatewayClass{}},
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
@@ -91,7 +91,7 @@ func NewGatewayClassController(
 		<-isLeader
 		log.Info("elected leader, triggering reconciles for all gatewayclasses")
 
-		var gatewayClasses gatewayapi_v1alpha1.GatewayClassList
+		var gatewayClasses gatewayapi_v1alpha2.GatewayClassList
 		if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
 			log.WithError(err).Error("error listing gatewayclasses")
 			return
@@ -121,13 +121,13 @@ func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
 		"name": obj.GetName(),
 	})
 
-	gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
+	gc, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
 	if !ok {
 		log.Debugf("unexpected object type %T, bypassing reconciliation.", obj)
 		return false
 	}
 
-	if gc.Spec.Controller == r.controller {
+	if gc.Spec.ControllerName == r.controller {
 		log.Debug("enqueueing gatewayclass")
 		return true
 	}
@@ -139,7 +139,7 @@ func (r *gatewayClassReconciler) hasMatchingController(obj client.Object) bool {
 func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.log.WithField("name", request.Name).Info("reconciling gatewayclass")
 
-	var gatewayClasses gatewayapi_v1alpha1.GatewayClassList
+	var gatewayClasses gatewayapi_v1alpha2.GatewayClassList
 	if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
 		return reconcile.Result{}, fmt.Errorf("error listing gatewayclasses: %w", err)
 	}
@@ -150,7 +150,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 		// avoid loop pointer issues
 		gc := gatewayClasses.Items[i]
 
-		if gc.Spec.Controller != r.controller {
+		if gc.Spec.ControllerName != r.controller {
 			// different controller, ignore.
 			continue
 		}
@@ -162,7 +162,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 	if controlledClasses.len() == 0 {
 		r.log.WithField("name", request.Name).Info("failed to find gatewayclass")
 
-		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.GatewayClass{
+		r.eventHandler.OnDelete(&gatewayapi_v1alpha2.GatewayClass{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: request.Namespace,
 				Name:      request.Name,
@@ -170,24 +170,24 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, nil
 	}
 
-	for _, gc := range controlledClasses.notAdmittedClasses() {
+	for _, gc := range controlledClasses.notAcceptedClasses() {
 		if r.statusUpdater != nil {
 			r.statusUpdater.Send(k8s.StatusUpdate{
 				NamespacedName: types.NamespacedName{Name: gc.Name},
 				Resource:       gatewayClassGVR,
 				Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
-					gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
+					gc, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
 					if !ok {
 						panic(fmt.Sprintf("unsupported object type %T", obj))
 					}
 
 					copy := gc.DeepCopy()
-					return status.SetGatewayClassAdmitted(context.Background(), r.client, copy, false)
+					return status.SetGatewayClassAccepted(context.Background(), r.client, copy, false)
 				}),
 			})
 		} else {
 			// this branch makes testing easier by not going through the StatusUpdater.
-			copy := status.SetGatewayClassAdmitted(context.Background(), r.client, gc.DeepCopy(), false)
+			copy := status.SetGatewayClassAccepted(context.Background(), r.client, gc.DeepCopy(), false)
 
 			if err := r.client.Status().Update(context.Background(), copy); err != nil {
 				return reconcile.Result{}, fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
@@ -197,26 +197,26 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 
 	if r.statusUpdater != nil {
 		r.statusUpdater.Send(k8s.StatusUpdate{
-			NamespacedName: types.NamespacedName{Name: controlledClasses.admittedClass().Name},
+			NamespacedName: types.NamespacedName{Name: controlledClasses.acceptedClass().Name},
 			Resource:       gatewayClassGVR,
 			Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
-				gc, ok := obj.(*gatewayapi_v1alpha1.GatewayClass)
+				gc, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
 				if !ok {
 					panic(fmt.Sprintf("unsupported object type %T", obj))
 				}
 
-				return status.SetGatewayClassAdmitted(context.Background(), r.client, gc.DeepCopy(), true)
+				return status.SetGatewayClassAccepted(context.Background(), r.client, gc.DeepCopy(), true)
 			}),
 		})
 	} else {
 		// this branch makes testing easier by not going through the StatusUpdater.
-		copy := status.SetGatewayClassAdmitted(context.Background(), r.client, controlledClasses.admittedClass().DeepCopy(), true)
+		copy := status.SetGatewayClassAccepted(context.Background(), r.client, controlledClasses.acceptedClass().DeepCopy(), true)
 		if err := r.client.Status().Update(context.Background(), copy); err != nil {
 			return reconcile.Result{}, fmt.Errorf("error updating status of gateway class %s: %v", copy.Name, err)
 		}
 	}
 
-	r.eventHandler.OnAdd(controlledClasses.admittedClass())
+	r.eventHandler.OnAdd(controlledClasses.acceptedClass())
 
 	return reconcile.Result{}, nil
 }
@@ -224,15 +224,15 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 // controlledClasses helps organize a list of GatewayClasses
 // with the same controller string.
 type controlledClasses struct {
-	allClasses  []*gatewayapi_v1alpha1.GatewayClass
-	oldestClass *gatewayapi_v1alpha1.GatewayClass
+	allClasses  []*gatewayapi_v1alpha2.GatewayClass
+	oldestClass *gatewayapi_v1alpha2.GatewayClass
 }
 
 func (cc *controlledClasses) len() int {
 	return len(cc.allClasses)
 }
 
-func (cc *controlledClasses) add(class *gatewayapi_v1alpha1.GatewayClass) {
+func (cc *controlledClasses) add(class *gatewayapi_v1alpha2.GatewayClass) {
 	cc.allClasses = append(cc.allClasses, class)
 
 	switch {
@@ -241,19 +241,19 @@ func (cc *controlledClasses) add(class *gatewayapi_v1alpha1.GatewayClass) {
 	case class.CreationTimestamp.Time.Before(cc.oldestClass.CreationTimestamp.Time):
 		cc.oldestClass = class
 	case class.CreationTimestamp.Time.Equal(cc.oldestClass.CreationTimestamp.Time) && class.Name < cc.oldestClass.Name:
-		// tie-breaker: first one in alphabetical order is considered oldest/admitted
+		// tie-breaker: first one in alphabetical order is considered oldest/accepted
 		cc.oldestClass = class
 	}
 }
 
-func (cc *controlledClasses) admittedClass() *gatewayapi_v1alpha1.GatewayClass {
+func (cc *controlledClasses) acceptedClass() *gatewayapi_v1alpha2.GatewayClass {
 	return cc.oldestClass
 }
 
-func (cc *controlledClasses) notAdmittedClasses() []*gatewayapi_v1alpha1.GatewayClass {
-	var res []*gatewayapi_v1alpha1.GatewayClass
+func (cc *controlledClasses) notAcceptedClasses() []*gatewayapi_v1alpha2.GatewayClass {
+	var res []*gatewayapi_v1alpha2.GatewayClass
 	for _, gc := range cc.allClasses {
-		// skip the oldest one since it will be admitted.
+		// skip the oldest one since it will be accepted.
 		if gc.Name != cc.oldestClass.Name {
 			res = append(res, gc)
 		}

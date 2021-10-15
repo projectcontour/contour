@@ -18,10 +18,11 @@ package gateway
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func testTLSGateway(namespace string) {
@@ -31,71 +32,56 @@ func testTLSGateway(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-insecure")
 		f.Fixtures.Echo.Deploy(namespace, "echo-secure")
 
-		route := &gatewayv1alpha1.HTTPRoute{
+		route := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-1",
-				Labels:    map[string]string{"type": "insecure"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"tls-gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						{
+							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
+							SectionName: gatewayapi.SectionNamePtr("insecure"),
+						},
+					},
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
-							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/"),
-								},
-							},
-						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-							{
-								ServiceName: stringPtr("echo-insecure"),
-								Port:        portNumPtr(80),
-							},
-						},
+
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-insecure", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
-		route = &gatewayv1alpha1.HTTPRoute{
+		route = &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-2",
-				Labels:    map[string]string{"type": "secure"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"tls-gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"tls-gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						{
+							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
+							SectionName: gatewayapi.SectionNamePtr("secure"),
+						},
+					},
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
-							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/"),
-								},
-							},
-						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-							{
-								ServiceName: stringPtr("echo-secure"),
-								Port:        portNumPtr(80),
-							},
-						},
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-secure", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		// Ensure http (insecure) request routes to echo-insecure.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{

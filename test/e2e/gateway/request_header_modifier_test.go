@@ -20,11 +20,12 @@ import (
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func testRequestHeaderModifierForwardTo(namespace string) {
@@ -34,40 +35,35 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-filter")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-nofilter")
 
-		route := &gatewayv1alpha1.HTTPRoute{
+		route := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
-				Labels:    map[string]string{"app": "filter"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"requestheadermodifierforwardto.gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierforwardto.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/filter"),
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/filter"),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("echo-header-filter", 80),
 								},
-							},
-						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-							{
-								ServiceName: stringPtr("echo-header-filter"),
-								Port:        portNumPtr(80),
-								Filters: []gatewayv1alpha1.HTTPRouteFilter{
+								Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
 									{
-										Type: gatewayv1alpha1.HTTPRouteFilterRequestHeaderModifier,
-										RequestHeaderModifier: &gatewayv1alpha1.HTTPRequestHeaderFilter{
-											Add: map[string]string{
-												"My-Header": "Foo",
+										Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
+										RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
+											Add: []gatewayapi_v1alpha2.HTTPHeader{
+												{Name: gatewayapi_v1alpha2.HTTPHeaderName("My-Header"), Value: "Foo"},
 											},
-											Set: map[string]string{
-												"Replace-Header": "Bar",
+											Set: []gatewayapi_v1alpha2.HTTPHeader{
+												{Name: gatewayapi_v1alpha2.HTTPHeaderName("Replace-Header"), Value: "Bar"},
 											},
 											Remove: []string{"Other-Header"},
 										},
@@ -77,25 +73,13 @@ func testRequestHeaderModifierForwardTo(namespace string) {
 						},
 					},
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
-							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/nofilter"),
-								},
-							},
-						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-							{
-								ServiceName: stringPtr("echo-header-nofilter"),
-								Port:        portNumPtr(80),
-							},
-						},
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/nofilter"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-nofilter", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		// Check the route with the RequestHeaderModifier filter.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
@@ -150,68 +134,45 @@ func testRequestHeaderModifierRule(namespace string) {
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-filter")
 		f.Fixtures.Echo.Deploy(namespace, "echo-header-nofilter")
 
-		route := &gatewayv1alpha1.HTTPRoute{
+		route := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
-				Labels:    map[string]string{"app": "filter"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"requestheadermodifierrule.gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"requestheadermodifierrule.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/filter"),
+						Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/filter"),
-								},
-							},
-						},
-						Filters: []gatewayv1alpha1.HTTPRouteFilter{
-							{
-								Type: gatewayv1alpha1.HTTPRouteFilterRequestHeaderModifier,
-								RequestHeaderModifier: &gatewayv1alpha1.HTTPRequestHeaderFilter{
-									Add: map[string]string{
-										"My-Header": "Foo",
+								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier,
+								RequestHeaderModifier: &gatewayapi_v1alpha2.HTTPRequestHeaderFilter{
+									Add: []gatewayapi_v1alpha2.HTTPHeader{
+										{Name: gatewayapi_v1alpha2.HTTPHeaderName("My-Header"), Value: "Foo"},
 									},
-									Set: map[string]string{
-										"Replace-Header": "Bar",
+									Set: []gatewayapi_v1alpha2.HTTPHeader{
+										{Name: gatewayapi_v1alpha2.HTTPHeaderName("Replace-Header"), Value: "Bar"},
 									},
 									Remove: []string{"Other-Header"},
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-							{
-								ServiceName: stringPtr("echo-header-filter"),
-								Port:        portNumPtr(80),
-							},
-						},
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-filter", 80, 1),
 					},
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
-							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/nofilter"),
-								},
-							},
-						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
-							{
-								ServiceName: stringPtr("echo-header-nofilter"),
-								Port:        portNumPtr(80),
-							},
-						},
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/nofilter"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo-header-nofilter", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		// Check the route with the RequestHeaderModifier filter.
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{

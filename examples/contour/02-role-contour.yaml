@@ -50,6 +50,30 @@ rules:
   - list
   - watch
 - apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - gatewayclasses
+  - gateways
+  - httproutes
+  - tcproutes
+  - tlsroutes
+  - udproutes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - gatewayclasses/status
+  - gateways/status
+  - httproutes/status
+  - tcproutes/status
+  - tlsroutes/status
+  - udproutes/status
+  verbs:
+  - update
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingressclasses
@@ -72,30 +96,6 @@ rules:
   verbs:
   - create
   - get
-  - update
-- apiGroups:
-  - networking.x-k8s.io
-  resources:
-  - gatewayclasses
-  - gateways
-  - httproutes
-  - tcproutes
-  - tlsroutes
-  - udproutes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - networking.x-k8s.io
-  resources:
-  - gatewayclasses/status
-  - gateways/status
-  - httproutes/status
-  - tcproutes/status
-  - tlsroutes/status
-  - udproutes/status
-  verbs:
   - update
 - apiGroups:
   - projectcontour.io

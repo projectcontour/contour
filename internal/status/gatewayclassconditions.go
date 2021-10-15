@@ -18,18 +18,18 @@ import (
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 const reasonValidGatewayClass = "Valid"
 const reasonInvalidGatewayClass = "Invalid"
 
-// computeGatewayClassAdmittedCondition computes the GatewayClass Admitted status condition.
-func computeGatewayClassAdmittedCondition(gatewayClass *gatewayapi_v1alpha1.GatewayClass, admitted bool) metav1.Condition {
-	switch admitted {
+// computeGatewayClassAcceptedCondition computes the GatewayClass Accepted status condition.
+func computeGatewayClassAcceptedCondition(gatewayClass *gatewayapi_v1alpha2.GatewayClass, accepted bool) metav1.Condition {
+	switch accepted {
 	case true:
 		return metav1.Condition{
-			Type:               string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+			Type:               string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 			Status:             metav1.ConditionTrue,
 			Reason:             "Valid",
 			Message:            "Valid GatewayClass",
@@ -38,7 +38,7 @@ func computeGatewayClassAdmittedCondition(gatewayClass *gatewayapi_v1alpha1.Gate
 		}
 	default:
 		return metav1.Condition{
-			Type:               string(gatewayapi_v1alpha1.GatewayClassConditionStatusAdmitted),
+			Type:               string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 			Status:             metav1.ConditionFalse,
 			Reason:             "Invalid",
 			Message:            "Invalid GatewayClass: another older GatewayClass with the same Spec.Controller exists",

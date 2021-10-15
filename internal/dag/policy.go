@@ -23,7 +23,7 @@ import (
 
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/utils/pointer"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
@@ -193,44 +193,48 @@ func headersPolicyRoute(policy *contour_api_v1.HeadersPolicy, allowHostRewrite b
 
 // headersPolicyGatewayAPI builds a *HeaderPolicy for the supplied HTTPRequestHeaderFilter.
 // TODO: Take care about the order of operators once https://github.com/kubernetes-sigs/gateway-api/issues/480 was solved.
-func headersPolicyGatewayAPI(hf *gatewayapi_v1alpha1.HTTPRequestHeaderFilter) (*HeadersPolicy, error) {
-	set, add := make(map[string]string, len(hf.Set)), make(map[string]string, len(hf.Add))
-	hostRewrite := ""
-	errlist := []error{}
-	for k, v := range hf.Set {
-		key := http.CanonicalHeaderKey(k)
+func headersPolicyGatewayAPI(hf *gatewayapi_v1alpha2.HTTPRequestHeaderFilter) (*HeadersPolicy, error) {
+	var (
+		set         = make(map[string]string, len(hf.Set))
+		add         = make(map[string]string, len(hf.Add))
+		remove      = sets.NewString()
+		hostRewrite = ""
+		errlist     = []error{}
+	)
+
+	for _, setHeader := range hf.Set {
+		key := http.CanonicalHeaderKey(string(setHeader.Name))
 		if _, ok := set[key]; ok {
 			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
 			continue
 		}
 		if key == "Host" {
-			hostRewrite = v
+			hostRewrite = setHeader.Value
 			continue
 		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			errlist = append(errlist, fmt.Errorf("invalid set header %q: %v", key, msgs))
 			continue
 		}
-		set[key] = escapeHeaderValue(v, nil)
+		set[key] = escapeHeaderValue(setHeader.Value, nil)
 	}
-	for k, v := range hf.Add {
-		key := http.CanonicalHeaderKey(k)
+	for _, addHeader := range hf.Add {
+		key := http.CanonicalHeaderKey(string(addHeader.Name))
 		if _, ok := add[key]; ok {
 			errlist = append(errlist, fmt.Errorf("duplicate header addition: %q", key))
 			continue
 		}
 		if key == "Host" {
-			hostRewrite = v
+			hostRewrite = addHeader.Value
 			continue
 		}
 		if msgs := validation.IsHTTPHeaderName(key); len(msgs) != 0 {
 			errlist = append(errlist, fmt.Errorf("invalid add header %q: %v", key, msgs))
 			continue
 		}
-		add[key] = escapeHeaderValue(v, nil)
+		add[key] = escapeHeaderValue(addHeader.Value, nil)
 	}
 
-	remove := sets.NewString()
 	for _, k := range hf.Remove {
 		key := http.CanonicalHeaderKey(k)
 		if remove.Has(key) {

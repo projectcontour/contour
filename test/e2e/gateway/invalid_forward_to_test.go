@@ -18,11 +18,13 @@ package gateway
 
 import (
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	"k8s.io/utils/pointer"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func testInvalidForwardTo(namespace string) {
@@ -31,81 +33,98 @@ func testInvalidForwardTo(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo-slash-default")
 
-		route := &gatewayv1alpha1.HTTPRoute{
+		route := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-filter-1",
-				Labels:    map[string]string{"app": "filter"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"invalidforwardto.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"invalidforwardto.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						gatewayapi.GatewayParentRef("", "http"), // TODO need a better way to inform the test case of the Gateway it should use
+					},
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/invalidref"),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+									Value: pointer.StringPtr("/invalidref"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("invalid"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi.ServiceBackendObjectRef("invalid", 80),
+								},
 							},
 						},
 					},
 
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/invalidport"),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+									Value: pointer.StringPtr("/invalidport"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-slash-default"),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind: gatewayapi.KindPtr("Service"),
+										Name: "echo-slash-default",
+									},
+								},
 							},
 						},
 					},
 
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/invalidservicename"),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+									Value: pointer.StringPtr("/invalidservicename"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr(""),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind: gatewayapi.KindPtr("Service"),
+										Name: "non-existent-service",
+										Port: gatewayapi.PortNumPtr(80),
+									},
+								},
 							},
 						},
 					},
 
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{
 							{
-								Path: &gatewayv1alpha1.HTTPPathMatch{
-									Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-									Value: stringPtr("/"),
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+									Value: pointer.StringPtr("/"),
 								},
 							},
 						},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{
+						BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
 							{
-								ServiceName: stringPtr("echo-slash-default"),
-								Port:        portNumPtr(80),
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind: gatewayapi.KindPtr("Service"),
+										Name: "echo-slash-default",
+										Port: gatewayapi.PortNumPtr(80),
+									},
+								},
 							},
 						},
 					},
@@ -113,26 +132,26 @@ func testInvalidForwardTo(namespace string) {
 			},
 		}
 
-		f.CreateHTTPRouteAndWaitFor(route, func(route *gatewayv1alpha1.HTTPRoute) bool {
-			if len(route.Status.Gateways) != 1 {
+		f.CreateHTTPRouteAndWaitFor(route, func(route *gatewayapi_v1alpha2.HTTPRoute) bool {
+			if len(route.Status.Parents) != 1 {
 				return false
 			}
 
-			if len(route.Status.Gateways[0].Conditions) != 2 {
+			if len(route.Status.Parents[0].Conditions) != 2 {
 				return false
 			}
 
-			var hasAdmitted, hasResolvedRefs bool
-			for _, cond := range route.Status.Gateways[0].Conditions {
-				if cond.Type == string(gatewayv1alpha1.ConditionRouteAdmitted) && cond.Status == metav1.ConditionFalse {
-					hasAdmitted = true
+			var hasAccepted, hasResolvedRefs bool
+			for _, cond := range route.Status.Parents[0].Conditions {
+				if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionFalse {
+					hasAccepted = true
 				}
 				if cond.Type == string(status.ConditionResolvedRefs) && cond.Status == metav1.ConditionFalse {
 					hasResolvedRefs = true
 				}
 			}
 
-			return hasAdmitted && hasResolvedRefs
+			return hasAccepted && hasResolvedRefs
 		})
 
 		type scenario struct {

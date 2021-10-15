@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func TestConvertUnstructured(t *testing.T) {
@@ -180,7 +180,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	gatewayClassUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x-k8s.io/v1alpha1",
+			"apiVersion": "gateway.networking.k8s.io/v1alpha2",
 			"kind":       "GatewayClass",
 			"metadata": map[string]interface{}{
 				"name":      "gatewayclass",
@@ -189,7 +189,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	gatewayclass1 := &gatewayapi_v1alpha1.GatewayClass{
+	gatewayclass1 := &gatewayapi_v1alpha2.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gatewayclass",
 			Namespace: "default",
@@ -198,7 +198,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	gatewayUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x-k8s.io/v1alpha1",
+			"apiVersion": "gateway.networking.k8s.io/v1alpha2",
 			"kind":       "Gateway",
 			"metadata": map[string]interface{}{
 				"name":      "gateway",
@@ -207,7 +207,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	gateway1 := &gatewayapi_v1alpha1.Gateway{
+	gateway1 := &gatewayapi_v1alpha2.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gateway",
 			Namespace: "default",
@@ -216,7 +216,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	httpRouteUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x-k8s.io/v1alpha1",
+			"apiVersion": "gateway.networking.k8s.io/v1alpha2",
 			"kind":       "HTTPRoute",
 			"metadata": map[string]interface{}{
 				"name":      "httproute",
@@ -225,7 +225,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	hpr1 := &gatewayapi_v1alpha1.HTTPRoute{
+	hpr1 := &gatewayapi_v1alpha2.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "httproute",
 			Namespace: "default",
@@ -234,7 +234,7 @@ func TestConvertUnstructured(t *testing.T) {
 
 	tcpRouteUnstructured := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "networking.x-k8s.io/v1alpha1",
+			"apiVersion": "gateway.networking.k8s.io/v1alpha2",
 			"kind":       "TCPRoute",
 			"metadata": map[string]interface{}{
 				"name":      "tcproute",
@@ -243,7 +243,7 @@ func TestConvertUnstructured(t *testing.T) {
 		},
 	}
 
-	tr1 := &gatewayapi_v1alpha1.TCPRoute{
+	tr1 := &gatewayapi_v1alpha2.TCPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tcproute",
 			Namespace: "default",

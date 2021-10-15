@@ -27,14 +27,14 @@ require (
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.22.0
+	k8s.io/api v0.22.1
 	k8s.io/apiextensions-apiserver v0.22.0
-	k8s.io/apimachinery v0.22.0
-	k8s.io/client-go v0.22.0
-	k8s.io/klog/v2 v2.9.0
-	k8s.io/utils v0.0.0-20210802155522-efc7438f0176
-	sigs.k8s.io/controller-runtime v0.9.2
-	sigs.k8s.io/controller-tools v0.6.0
-	sigs.k8s.io/gateway-api v0.3.0
+	k8s.io/apimachinery v0.22.1
+	k8s.io/client-go v0.22.1
+	k8s.io/klog/v2 v2.10.0
+	k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e
+	sigs.k8s.io/controller-runtime v0.9.6
+	sigs.k8s.io/controller-tools v0.6.2
+	sigs.k8s.io/gateway-api v0.4.0
 	sigs.k8s.io/kustomize/kyaml v0.10.17
 )

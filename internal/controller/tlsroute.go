@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 type tlsRouteReconciler struct {
@@ -48,7 +48,7 @@ func NewTLSRouteController(mgr manager.Manager, eventHandler cache.ResourceEvent
 	if err != nil {
 		return nil, err
 	}
-	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha1.TLSRoute{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.TLSRoute{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return nil, err
 	}
 	return c, nil
@@ -57,10 +57,10 @@ func NewTLSRouteController(mgr manager.Manager, eventHandler cache.ResourceEvent
 func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 
 	// Fetch the TLSRoute from the cache.
-	tlsroute := &gatewayapi_v1alpha1.TLSRoute{}
+	tlsroute := &gatewayapi_v1alpha2.TLSRoute{}
 	err := r.client.Get(ctx, request.NamespacedName, tlsroute)
 	if errors.IsNotFound(err) {
-		r.eventHandler.OnDelete(&gatewayapi_v1alpha1.TLSRoute{
+		r.eventHandler.OnDelete(&gatewayapi_v1alpha2.TLSRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      request.Name,
 				Namespace: request.Namespace,

@@ -20,10 +20,11 @@ import (
 	"crypto/tls"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gatewayv1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func testTLSWildcardHost(namespace string) {
@@ -33,34 +34,30 @@ func testTLSWildcardHost(namespace string) {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
-		route := &gatewayv1alpha1.HTTPRoute{
+		route := &gatewayapi_v1alpha2.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      "http-route-1",
-				Labels:    map[string]string{"type": "secure"},
 			},
-			Spec: gatewayv1alpha1.HTTPRouteSpec{
-				Hostnames: []gatewayv1alpha1.Hostname{"*.wildcardhost.gateway.projectcontour.io"},
-				Gateways: &gatewayv1alpha1.RouteGateways{
-					Allow: gatewayAllowTypePtr(gatewayv1alpha1.GatewayAllowAll),
+			Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+				Hostnames: []gatewayapi_v1alpha2.Hostname{"*.wildcardhost.gateway.projectcontour.io"},
+				CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+					ParentRefs: []gatewayapi_v1alpha2.ParentRef{
+						{
+							Name:        "https", // TODO need a better way to inform the test case of the Gateway it should use
+							SectionName: gatewayapi.SectionNamePtr("secure"),
+						},
+					},
 				},
-				Rules: []gatewayv1alpha1.HTTPRouteRule{
+				Rules: []gatewayapi_v1alpha2.HTTPRouteRule{
 					{
-						Matches: []gatewayv1alpha1.HTTPRouteMatch{{
-							Path: &gatewayv1alpha1.HTTPPathMatch{
-								Type:  pathMatchTypePtr(gatewayv1alpha1.PathMatchPrefix),
-								Value: stringPtr("/"),
-							},
-						}},
-						ForwardTo: []gatewayv1alpha1.HTTPRouteForwardTo{{
-							ServiceName: stringPtr("echo"),
-							Port:        portNumPtr(80),
-						}},
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("echo", 80, 1),
 					},
 				},
 			},
 		}
-		f.CreateHTTPRouteAndWaitFor(route, httpRouteAdmitted)
+		f.CreateHTTPRouteAndWaitFor(route, httpRouteAccepted)
 
 		cases := []struct {
 			hostname   string

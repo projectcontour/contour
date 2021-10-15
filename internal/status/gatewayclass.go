@@ -17,12 +17,12 @@ import (
 	"context"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gatewayapi_v1alpha1 "sigs.k8s.io/gateway-api/apis/v1alpha1"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-// SetGatewayClassAdmitted inserts or updates the Admitted condition
+// SetGatewayClassAccepted inserts or updates the Accepted condition
 // for the provided GatewayClass.
-func SetGatewayClassAdmitted(ctx context.Context, cli client.Client, gc *gatewayapi_v1alpha1.GatewayClass, admitted bool) *gatewayapi_v1alpha1.GatewayClass {
-	gc.Status.Conditions = mergeConditions(gc.Status.Conditions, computeGatewayClassAdmittedCondition(gc, admitted))
+func SetGatewayClassAccepted(ctx context.Context, cli client.Client, gc *gatewayapi_v1alpha2.GatewayClass, accepted bool) *gatewayapi_v1alpha2.GatewayClass {
+	gc.Status.Conditions = mergeConditions(gc.Status.Conditions, computeGatewayClassAcceptedCondition(gc, accepted))
 	return gc
 }
