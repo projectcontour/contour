@@ -513,7 +513,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 				routeWeight = uint32(*backendRef.Weight)
 			}
 
-			// Keep track of all the weights for this set of forwardTos. This will be
+			// Keep track of all the weights for this set of backendRefs. This will be
 			// used later to understand if all the weights are set to zero.
 			totalWeight += routeWeight
 
@@ -526,9 +526,16 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 			})
 		}
 
-		// No valid clusters or all forwardTos have a weight of 0
-		// so the route should get rejected.
-		if len(proxy.Clusters) == 0 || totalWeight == 0 {
+		// No clusters added: they were all invalid, so reject
+		// the route (it already has a relevant condition set).
+		if len(proxy.Clusters) == 0 {
+			continue
+		}
+
+		// If we have valid clusters but they all have a zero
+		// weight, reject the route.
+		if totalWeight == 0 {
+			routeAccessor.AddCondition(status.ConditionValidBackendRefs, metav1.ConditionFalse, status.ReasonAllBackendRefsHaveZeroWeights, "At least one Spec.Rules.BackendRef must have a non-zero weight.")
 			continue
 		}
 
@@ -541,7 +548,6 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 
 			secure.TCPProxy = &proxy
 		}
-
 	}
 
 	// Determine if any errors exist in conditions and set the "Accepted"
@@ -615,7 +621,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 
 		var clusters []*Cluster
 
-		// Validate the ForwardTos.
+		// Validate the backend refs.
 		totalWeight := uint32(0)
 		for _, backendRef := range rule.BackendRefs {
 
@@ -645,7 +651,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 				routeWeight = uint32(*backendRef.Weight)
 			}
 
-			// Keep track of all the weights for this set of forwardTos. This will be
+			// Keep track of all the weights for this set of backend refs. This will be
 			// used later to understand if all the weights are set to zero.
 			totalWeight += routeWeight
 
