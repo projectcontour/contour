@@ -1993,6 +1993,51 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
+		"route with HTTP method match": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+								Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+									Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+									Value: pointer.StringPtr("/"),
+								},
+								Method: gatewayapi.HTTPMethodPtr(gatewayapi_v1alpha2.HTTPMethodGet),
+							}},
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							HeaderMatchConditions: []HeaderMatchCondition{
+								{Name: ":method", Value: "GET", MatchType: "exact"},
+							},
+							Clusters: clustersWeight(service(kuardService)),
+						}),
+					),
+				},
+			),
+		},
 		"Route rule with request header modifier": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,

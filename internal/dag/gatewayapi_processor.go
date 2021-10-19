@@ -591,6 +591,17 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHeaderMatchType, "HTTPRoute.Spec.Rules.HeaderMatch: Only Exact match type is supported.")
 				continue
 			}
+
+			// Envoy uses the HTTP/2 ":method" header internally
+			// for both HTTP/1 and HTTP/2 method matching.
+			if match.Method != nil {
+				headerMatches = append(headerMatches, HeaderMatchCondition{
+					Name:      ":method",
+					Value:     string(*match.Method),
+					MatchType: HeaderMatchTypeExact,
+				})
+			}
+
 			matchconditions = append(matchconditions, &matchConditions{
 				path:    pathMatch,
 				headers: headerMatches,
