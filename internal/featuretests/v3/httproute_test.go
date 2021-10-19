@@ -143,7 +143,7 @@ func TestGateway_TLS(t *testing.T) {
 			envoy_v3.RouteConfiguration("https/test.projectcontour.io",
 				envoy_v3.VirtualHost("test.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/blog"),
+						Match:  routeSegmentPrefix("/blog"),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
 					}, &envoy_route_v3.Route{
 						Match:  routePrefix("/"),
@@ -154,7 +154,7 @@ func TestGateway_TLS(t *testing.T) {
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("test.projectcontour.io",
 					&envoy_route_v3.Route{
-						Match:  routePrefix("/blog"),
+						Match:  routeSegmentPrefix("/blog"),
 						Action: routeCluster("default/svc2/80/da39a3ee5e"),
 					}, &envoy_route_v3.Route{
 						Match:  routePrefix("/"),

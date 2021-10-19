@@ -187,7 +187,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 	assertRDS(t, c, "1", virtualhosts(
 		envoy_v3.VirtualHost("test.projectcontour.io",
 			&envoy_route_v3.Route{
-				Match:  routePrefix("/blog"),
+				Match:  routeSegmentPrefix("/blog"),
 				Action: routecluster("default/svc1/80/da39a3ee5e"),
 			},
 		),
@@ -226,7 +226,7 @@ func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
 	assertRDS(t, c, "2", virtualhosts(
 		envoy_v3.VirtualHost("test.projectcontour.io",
 			&envoy_route_v3.Route{
-				Match: routePrefix("/blog"),
+				Match: routeSegmentPrefix("/blog"),
 				Action: routeweightedcluster(
 					weightedcluster{"default/svc1/80/da39a3ee5e", 60},
 					weightedcluster{"default/svc2/80/da39a3ee5e", 90}),
