@@ -582,9 +582,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 	}
 
 	for _, rule := range route.Spec.Rules {
-
+		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
-
 		for _, match := range rule.Matches {
 			pathMatch, err := gatewayPathMatchCondition(match.Path)
 			if err != nil {
@@ -614,80 +613,57 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 			})
 		}
 
-		if len(rule.BackendRefs) == 0 {
-			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
-			continue
-		}
+		// Process rule-level filters.
+		var (
+			headerPolicy       *HeadersPolicy
+			headerModifierSeen bool
+			redirect           *gatewayapi_v1alpha2.HTTPRequestRedirectFilter
+		)
 
-		var clusters []*Cluster
-
-		// Validate the backend refs.
-		totalWeight := uint32(0)
-		for _, backendRef := range rule.BackendRefs {
-
-			service, err := p.validateBackendRef(backendRef.BackendRef, route.Namespace)
-			if err != nil {
-				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
-				continue
-			}
-
-			var headerPolicy *HeadersPolicy
-			for _, filter := range backendRef.Filters {
-				switch filter.Type {
-				case gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier:
-					var err error
-					headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
-					if err != nil {
-						routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
-					}
-				default:
-					routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier type is supported.")
-				}
-			}
-
-			// Route defaults to a weight of "1" unless otherwise specified.
-			routeWeight := uint32(1)
-			if backendRef.Weight != nil {
-				routeWeight = uint32(*backendRef.Weight)
-			}
-
-			// Keep track of all the weights for this set of backend refs. This will be
-			// used later to understand if all the weights are set to zero.
-			totalWeight += routeWeight
-
-			// https://github.com/projectcontour/contour/issues/3593
-			service.Weighted.Weight = routeWeight
-			clusters = append(clusters, p.cluster(headerPolicy, service, routeWeight))
-		}
-
-		var headerPolicy *HeadersPolicy
 		for _, filter := range rule.Filters {
 			switch filter.Type {
 			case gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier:
+				// Per Gateway API docs, "specifying a core filter multiple times has
+				// unspecified or custom conformance.", here we choose to just process
+				// the first one.
+				if headerModifierSeen {
+					continue
+				}
+
+				headerModifierSeen = true
+
 				var err error
 				headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
 				if err != nil {
 					routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
 				}
+			case gatewayapi_v1alpha2.HTTPRouteFilterRequestRedirect:
+				// Get the redirect filter if there is one. Note that per Gateway API
+				// docs, "specifying a core filter multiple times has unspecified or
+				// custom conformance.", here we choose to just select the first one.
+				if redirect == nil && filter.RequestRedirect != nil {
+					redirect = filter.RequestRedirect
+				}
 			default:
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.Filters: Only RequestHeaderModifier type is supported.")
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType,
+					fmt.Sprintf("HTTPRoute.Spec.Rules.Filters: invalid type %q: only RequestHeaderModifier and RequestRedirect are supported.", filter.Type))
 			}
 		}
 
-		routes := p.routes(matchconditions, headerPolicy, clusters)
+		// Get our list of routes based on whether it's a redirect or a cluster-backed route.
+		// Note that we can end up with multiple routes here since the match conditions are
+		// logically "OR"-ed, which we express as multiple routes, each with one of the
+		// conditions, all with the same action.
+		var routes []*Route
+		if redirect != nil {
+			routes = p.redirectRoutes(matchconditions, headerPolicy, redirect)
+		} else {
+			routes = p.clusterRoutes(route.Namespace, matchconditions, headerPolicy, rule.BackendRefs, routeAccessor)
+		}
+
+		// Add each route to the relevant vhost(s)/svhosts(s).
 		for host := range hosts {
 			for _, route := range routes {
-				// If there aren't any valid services, or the total weight of all of
-				// them equal zero, then return 503 responses to the caller.
-				if len(clusters) == 0 || totalWeight == 0 {
-					// Configure a direct response HTTP status code of 503 so the
-					// route still matches the configured conditions since the
-					// service is missing or invalid.
-					route.DirectResponse = &DirectResponse{
-						StatusCode: http.StatusServiceUnavailable,
-					}
-				}
-
 				// If we have a wildcard match, add a header match regex rule to match the
 				// hostname so we can be sure to only match one DNS label. This is required
 				// as Envoy's virtualhost hostname wildcard matching can match multiple
@@ -809,8 +785,58 @@ func gatewayHeaderMatchConditions(matches []gatewayapi_v1alpha2.HTTPHeaderMatch)
 	return headerMatchConditions, nil
 }
 
-// routes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and clusters.
-func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, headerPolicy *HeadersPolicy, clusters []*Cluster) []*Route {
+// clusterRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and backendRefs.
+func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditions []*matchConditions, headerPolicy *HeadersPolicy, backendRefs []gatewayapi_v1alpha2.HTTPBackendRef, routeAccessor *status.RouteConditionsUpdate) []*Route {
+	if len(backendRefs) == 0 {
+		routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
+		return nil
+	}
+
+	var clusters []*Cluster
+
+	// Validate the backend refs.
+	totalWeight := uint32(0)
+	for _, backendRef := range backendRefs {
+		service, err := p.validateBackendRef(backendRef.BackendRef, routeNamespace)
+		if err != nil {
+			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
+			continue
+		}
+
+		var headerPolicy *HeadersPolicy
+		for _, filter := range backendRef.Filters {
+			switch filter.Type {
+			case gatewayapi_v1alpha2.HTTPRouteFilterRequestHeaderModifier:
+				var err error
+				headerPolicy, err = headersPolicyGatewayAPI(filter.RequestHeaderModifier)
+				if err != nil {
+					routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, fmt.Sprintf("%s on request headers", err))
+				}
+			default:
+				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonHTTPRouteFilterType, "HTTPRoute.Spec.Rules.BackendRef.Filters: Only RequestHeaderModifier type is supported.")
+			}
+		}
+
+		// Route defaults to a weight of "1" unless otherwise specified.
+		routeWeight := uint32(1)
+		if backendRef.Weight != nil {
+			routeWeight = uint32(*backendRef.Weight)
+		}
+
+		// Keep track of all the weights for this set of backend refs. This will be
+		// used later to understand if all the weights are set to zero.
+		totalWeight += routeWeight
+
+		// https://github.com/projectcontour/contour/issues/3593
+		service.Weighted.Weight = routeWeight
+		clusters = append(clusters, &Cluster{
+			Upstream:             service,
+			Weight:               routeWeight,
+			Protocol:             service.Protocol,
+			RequestHeadersPolicy: headerPolicy,
+		})
+	}
+
 	var routes []*Route
 
 	// Per Gateway API: "Each match is independent,
@@ -824,18 +850,65 @@ func (p *GatewayAPIProcessor) routes(matchConditions []*matchConditions, headerP
 			HeaderMatchConditions: mc.headers,
 			RequestHeadersPolicy:  headerPolicy,
 		})
+	}
 
+	for _, route := range routes {
+		// If there aren't any valid services, or the total weight of all of
+		// them equal zero, then return 503 responses to the caller.
+		if len(clusters) == 0 || totalWeight == 0 {
+			// Configure a direct response HTTP status code of 503 so the
+			// route still matches the configured conditions since the
+			// service is missing or invalid.
+			route.DirectResponse = &DirectResponse{
+				StatusCode: http.StatusServiceUnavailable,
+			}
+		}
 	}
 
 	return routes
 }
 
-// cluster builds a *dag.Cluster for the supplied set of headerPolicy and service.
-func (p *GatewayAPIProcessor) cluster(headerPolicy *HeadersPolicy, service *Service, weight uint32) *Cluster {
-	return &Cluster{
-		Upstream:             service,
-		Weight:               weight,
-		Protocol:             service.Protocol,
-		RequestHeadersPolicy: headerPolicy,
+// redirectRoutes builds a []*dag.Route for the supplied set of matchConditions, headerPolicy and redirect.
+func (p *GatewayAPIProcessor) redirectRoutes(matchConditions []*matchConditions, headerPolicy *HeadersPolicy, redirect *gatewayapi_v1alpha2.HTTPRequestRedirectFilter) []*Route {
+	var hostname string
+	if redirect.Hostname != nil {
+		hostname = string(*redirect.Hostname)
 	}
+
+	var portNumber uint32
+	if redirect.Port != nil {
+		portNumber = uint32(*redirect.Port)
+	}
+
+	var scheme string
+	if redirect.Scheme != nil {
+		scheme = *redirect.Scheme
+	}
+
+	var statusCode int
+	if redirect.StatusCode != nil {
+		statusCode = *redirect.StatusCode
+	}
+
+	var routes []*Route
+
+	// Per Gateway API: "Each match is independent,
+	// i.e. this rule will be matched if any one of
+	// the matches is satisfied." To implement this,
+	// we create a separate route per match.
+	for _, mc := range matchConditions {
+		routes = append(routes, &Route{
+			Redirect: &Redirect{
+				Hostname:   hostname,
+				Scheme:     scheme,
+				PortNumber: portNumber,
+				StatusCode: statusCode,
+			},
+			PathMatchCondition:    mc.path,
+			HeaderMatchConditions: mc.headers,
+			RequestHeadersPolicy:  headerPolicy,
+		})
+	}
+
+	return routes
 }

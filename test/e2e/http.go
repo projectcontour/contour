@@ -61,6 +61,7 @@ type HTTPRequestOpts struct {
 	Path        string
 	Host        string
 	RequestOpts []func(*http.Request)
+	ClientOpts  []func(*http.Client)
 	Condition   func(*http.Response) bool
 }
 
@@ -84,11 +85,26 @@ func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 		opt(req)
 	}
 
+	client := &http.Client{}
+	for _, opt := range opts.ClientOpts {
+		opt(client)
+	}
+
 	makeRequest := func() (*http.Response, error) {
-		return http.DefaultClient.Do(req)
+		return client.Do(req)
 	}
 
 	return h.requestUntil(makeRequest, opts.Condition)
+}
+
+func OptDontFollowRedirects(c *http.Client) {
+	// Per CheckRedirect godoc: "As a special case, if
+	// CheckRedirect returns ErrUseLastResponse, then
+	// the most recent response is returned with its body
+	// unclosed, along with a nil error."
+	c.CheckRedirect = func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
 }
 
 // MetricsRequestUntil repeatedly makes HTTP requests with the provided

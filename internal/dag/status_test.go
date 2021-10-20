@@ -3423,7 +3423,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Type:    string(status.ConditionNotImplemented),
 					Status:  contour_api_v1.ConditionTrue,
 					Reason:  string(status.ReasonHTTPRouteFilterType),
-					Message: "HTTPRoute.Spec.Rules.Filters: Only RequestHeaderModifier type is supported.",
+					Message: "HTTPRoute.Spec.Rules.Filters: invalid type \"RequestMirror\": only RequestHeaderModifier and RequestRedirect are supported.",
 				},
 				gatewayapi_v1alpha2.ConditionRouteAccepted: {
 					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),

@@ -193,6 +193,25 @@ type DirectResponse struct {
 	StatusCode uint32
 }
 
+// Redirect allows for a 301/302 redirect to be the response
+// to a route request vs. routing to an envoy cluster.
+type Redirect struct {
+	// Hostname is the host name to redirect to.
+	Hostname string
+
+	// Scheme is the scheme (http or https) to
+	// use in the redirect.
+	Scheme string
+
+	// PortNumber is the port to redirect to,
+	// if any.
+	PortNumber uint32
+
+	// StatusCode is the HTTP response code to
+	// use. Valid options are 301 or 302.
+	StatusCode int
+}
+
 // Route defines the properties of a route to a Cluster.
 type Route struct {
 
@@ -255,6 +274,10 @@ type Route struct {
 	// to be the response to a route request vs routing to
 	// an envoy cluster.
 	DirectResponse *DirectResponse
+
+	// Redirect allows for a 301 Redirect to be the response
+	// to a route request vs. routing to an envoy cluster.
+	Redirect *Redirect
 }
 
 // HasPathPrefix returns whether this route has a PrefixPathCondition.
