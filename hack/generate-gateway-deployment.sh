@@ -19,9 +19,16 @@ cat <<EOF
 EOF
 
 for f in "examples/contour/"*.yaml "examples/gateway/"*.yaml ; do
-  (cd "${REPO}" && ls $f) | awk '{printf "#       %s\n", $0}'
+  case $f in
+  */03-envoy-deployment.yaml)
+    # skip
+    ;;
+  *)
+    (cd "${REPO}" && ls $f) | awk '{printf "#       %s\n", $0}'
+    ;;
+  esac
 done
-echo "#"
+
 echo
 
 # certgen uses the ':latest' image tag, so it always needs to be pulled. Everything
@@ -30,6 +37,9 @@ echo
 for y in "${REPO}/examples/contour/"*.yaml ; do
     echo # Ensure we have at least one newline between joined fragments.
     case $y in
+    */03-envoy-deployment.yaml)
+        # skip
+        ;;
     */01-contour-config.yaml)
         sed 's|# gateway:|gateway:|g ; s|#   controllerName: projectcontour.io/projectcontour/contour|  controllerName: projectcontour.io/projectcontour/contour|g' < "$y"
         ;;
