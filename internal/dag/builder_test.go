@@ -2288,14 +2288,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 									StatusCode: pointer.Int(301),
 								},
 							}},
-							BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{
-								{
-									BackendRef: gatewayapi_v1alpha2.BackendRef{
-										BackendObjectReference: gatewayapi.ServiceBackendObjectRef("kuard", 8080),
-										Weight:                 pointer.Int32(1),
-									},
-								},
-							},
 						}},
 					},
 				},
@@ -2306,6 +2298,67 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
 						&Route{
 							PathMatchCondition: prefixString("/"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPRoute rule with request redirect filter with multiple matches": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: append(
+								gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+								gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/another-match")...,
+							),
+							Filters: []gatewayapi_v1alpha2.HTTPRouteFilter{{
+								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestRedirect,
+								RequestRedirect: &gatewayapi_v1alpha2.HTTPRequestRedirectFilter{
+									Scheme:     pointer.String("https"),
+									Hostname:   gatewayapi.ListenerHostname("envoyproxy.io"),
+									Port:       gatewayapi.PortNumPtr(443),
+									StatusCode: pointer.Int(301),
+								},
+							}},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("test.projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
+						},
+						&Route{
+							PathMatchCondition: prefixSegment("/another-match"),
 							Redirect: &Redirect{
 								Scheme:     "https",
 								Hostname:   "envoyproxy.io",
