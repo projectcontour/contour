@@ -43,7 +43,7 @@ func TestGatewayAPI(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
+	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour(e2e.UseEnvoyDaemonsetDeploymentModel()))
 })
 
 var _ = AfterSuite(func() {
@@ -121,7 +121,7 @@ var _ = Describe("Gateway API", func() {
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
 		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassValid)
 		f.CreateGatewayAndWaitFor(contourGateway, gatewayValid)
