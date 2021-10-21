@@ -35,7 +35,7 @@ func TestParseUint32(t *testing.T) {
 			want: 0,
 		},
 		"negative": {
-			s:    "-6", // for alice
+			s:    "-6",
 			want: 0,
 		},
 		"explicit": {
@@ -55,6 +55,115 @@ func TestParseUint32(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			got := parseUInt32(tc.s)
+			if got != tc.want {
+				t.Fatalf("expected: %v, got %v", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestParseint32(t *testing.T) {
+	tests := map[string]struct {
+		s    string
+		want int32
+	}{
+		"blank": {
+			s:    "",
+			want: 0,
+		},
+		"negative": {
+			s:    "-1",
+			want: -1,
+		},
+		"explicit": {
+			s:    "0",
+			want: 0,
+		},
+		"positive": {
+			s:    "2",
+			want: 2,
+		},
+		"too large": {
+			s:    "144115188075855872", // larger than int32
+			want: 0,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := parseInt32(tc.s)
+			if got != tc.want {
+				t.Fatalf("expected: %v, got %v", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestNumRetries(t *testing.T) {
+	tests := map[string]struct {
+		ingress *networking_v1.Ingress
+		want    uint32
+	}{
+		"blank": {
+			ingress: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ing",
+					Annotations: map[string]string{
+						"projectcontour.io/num-retries": "",
+					},
+				},
+			},
+			want: 1,
+		},
+		"Set to 1": {
+			ingress: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ing",
+					Annotations: map[string]string{
+						"projectcontour.io/num-retries": "1",
+					},
+				},
+			},
+			want: 1,
+		},
+		"Set to 0": {
+			ingress: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ing",
+					Annotations: map[string]string{
+						"projectcontour.io/num-retries": "0",
+					},
+				},
+			},
+			want: 1,
+		},
+		"Set to -1": {
+			ingress: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ing",
+					Annotations: map[string]string{
+						"projectcontour.io/num-retries": "-1",
+					},
+				},
+			},
+			want: 0,
+		},
+		"Set to 9": {
+			ingress: &networking_v1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ing",
+					Annotations: map[string]string{
+						"projectcontour.io/num-retries": "9",
+					},
+				},
+			},
+			want: 9,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := NumRetries(tc.ingress)
 			if got != tc.want {
 				t.Fatalf("expected: %v, got %v", tc.want, got)
 			}
