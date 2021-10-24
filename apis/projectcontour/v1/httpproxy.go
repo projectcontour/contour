@@ -701,6 +701,7 @@ type RetryPolicy struct {
 	// If set to 0 or not supplied, the value is set
 	// to the Envoy default of 1.
 	// +optional
+	// +kubebuilder:default=1
 	// +kubebuilder:validation:Minimum=-1
 	NumRetries int64 `json:"count"`
 	// PerTryTimeout specifies the timeout per retry attempt.
