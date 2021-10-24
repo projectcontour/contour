@@ -921,6 +921,7 @@ type HTTPProxy struct {
 	Spec HTTPProxySpec `json:"spec"`
 	// Status is a container for computed information about the HTTPProxy.
 	// +optional
+	// +kubebuilder:default={currentStatus: "NotReconciled", description:"Waiting for controller"}
 	Status HTTPProxyStatus `json:"status,omitempty"`
 }
 
