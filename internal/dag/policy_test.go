@@ -48,7 +48,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 				NumRetries: 1,
 			},
 		},
-		"explicitly zero retries": {
+		"explicitly disabled retries": {
 			i: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
