@@ -973,7 +973,7 @@ func TestRouteVisit(t *testing.T) {
 					envoy_v3.VirtualHost("*",
 						&envoy_route_v3.Route{
 							Match:  routePrefix("/"),
-							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 0),
+							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 1, 0),
 						},
 					),
 				),
@@ -987,7 +987,7 @@ func TestRouteVisit(t *testing.T) {
 						Namespace: "default",
 						Annotations: map[string]string{
 							"projectcontour.io/retry-on":    "5xx,gateway-error",
-							"projectcontour.io/num-retries": "7", // not five or six or eight, but seven.
+							"projectcontour.io/num-retries": "7",
 						},
 					},
 					Spec: networking_v1.IngressSpec{
@@ -1014,6 +1014,47 @@ func TestRouteVisit(t *testing.T) {
 						&envoy_route_v3.Route{
 							Match:  routePrefix("/"),
 							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 7, 0),
+						},
+					),
+				),
+			),
+		},
+
+		"ingress num-retries disabled": {
+			objs: []interface{}{
+				&networking_v1.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+						Annotations: map[string]string{
+							"projectcontour.io/retry-on":    "5xx,gateway-error",
+							"projectcontour.io/num-retries": "-1",
+						},
+					},
+					Spec: networking_v1.IngressSpec{
+						DefaultBackend: backend("kuard", 8080),
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kuard",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       8080,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("*",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 0),
 						},
 					),
 				),
@@ -1054,7 +1095,59 @@ func TestRouteVisit(t *testing.T) {
 					envoy_v3.VirtualHost("*",
 						&envoy_route_v3.Route{
 							Match:  routePrefix("/"),
-							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 0, 150*time.Millisecond),
+							Action: routeretry("default/kuard/8080/da39a3ee5e", "5xx,gateway-error", 1, 150*time.Millisecond),
+						},
+					),
+				),
+			),
+		},
+
+		"httpproxy num-retries disabled": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "simple",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "www.example.com",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: "backend",
+								Port: 80,
+							}},
+							RetryPolicy: &contour_api_v1.RetryPolicy{
+								NumRetries: -1,
+								RetryOn:    []contour_api_v1.RetryOn{"5xx", "gateway-error"},
+							},
+						}},
+					},
+				},
+				&v1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "backend",
+						Namespace: "default",
+					},
+					Spec: v1.ServiceSpec{
+						Ports: []v1.ServicePort{{
+							Protocol:   "TCP",
+							Port:       80,
+							TargetPort: intstr.FromInt(8080),
+						}},
+					},
+				},
+			},
+			want: routeConfigurations(
+				envoy_v3.RouteConfiguration("ingress_http",
+					envoy_v3.VirtualHost("www.example.com",
+						&envoy_route_v3.Route{
+							Match:  routePrefix("/"),
+							Action: routeretry("default/backend/80/da39a3ee5e", "5xx,gateway-error", 0, 0),
 						},
 					),
 				),
