@@ -125,7 +125,65 @@ func TestRetryPolicy(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	rh.OnDelete(i3)
+	i4 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hello", Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/retry-on":        "5xx,gateway-error",
+				"projectcontour.io/num-retries":     "-1",
+				"projectcontour.io/per-try-timeout": "120ms",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
+		},
+	}
+	rh.OnUpdate(i3, i4)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("*",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 0, 120*time.Millisecond),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	i5 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hello", Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/retry-on":        "5xx,gateway-error",
+				"projectcontour.io/num-retries":     "0",
+				"projectcontour.io/per-try-timeout": "120ms",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			DefaultBackend: featuretests.IngressBackend(s1),
+		},
+	}
+	rh.OnUpdate(i4, i5)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("*",
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx,gateway-error", 1, 120*time.Millisecond),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	rh.OnDelete(i5)
 
 	hp1 := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -161,4 +219,76 @@ func TestRetryPolicy(t *testing.T) {
 		),
 		TypeUrl: routeType,
 	})
+
+	hp2 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test3.test.com"},
+			Routes: []contour_api_v1.Route{{
+				RetryPolicy: &contour_api_v1.RetryPolicy{
+					NumRetries:    -1,
+					PerTryTimeout: "105s",
+				},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(hp1, hp2)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost(hp1.Spec.VirtualHost.Fqdn,
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 0, 105*time.Second),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	hp3 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: s1.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test3.test.com"},
+			Routes: []contour_api_v1.Route{{
+				RetryPolicy: &contour_api_v1.RetryPolicy{
+					NumRetries:    0,
+					PerTryTimeout: "105s",
+				},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+			}},
+		},
+	}
+	rh.OnUpdate(hp2, hp3)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost(hp1.Spec.VirtualHost.Fqdn,
+					&envoy_route_v3.Route{
+						Match:  routePrefix("/"),
+						Action: withRetryPolicy(routeCluster("default/backend/80/da39a3ee5e"), "5xx", 1, 105*time.Second),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	rh.OnDelete(hp3)
 }

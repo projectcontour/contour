@@ -43,7 +43,7 @@ The `ingress.kubernetes.io/force-ssl-redirect` annotation takes precedence over 
 ## Contour specific Ingress annotations
 
  - `projectcontour.io/ingress.class`: The Ingress class that should interpret and serve the Ingress. See the [main Ingress class annotation section](#ingress-class) for more details.
- - `projectcontour.io/num-retries`: [The maximum number of retries][1] Envoy should make before abandoning and returning an error to the client. Applies only if `projectcontour.io/retry-on` is specified.
+ - `projectcontour.io/num-retries`: [The maximum number of retries][1] Envoy should make before abandoning and returning an error to the client. Applies only if `projectcontour.io/retry-on` is specified. Set to -1 to disable retries.
  - `projectcontour.io/per-try-timeout`: [The timeout per retry attempt][2], if there should be one. Applies only if `projectcontour.io/retry-on` is specified.
  - `projectcontour.io/response-timeout`: [The Envoy HTTP route timeout][3], specified as a [golang duration][4]. By default, Envoy has a 15 second timeout for a backend service to respond. Set this to `infinity` to specify that Envoy should never timeout the connection to the backend. Note that the value `0s` / zero has special semantics for Envoy.
  - `projectcontour.io/retry-on`: [The conditions for Envoy to retry a request][5]. See also [possible values and their meanings for `retry-on`][6].

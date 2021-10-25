@@ -44,15 +44,16 @@ func TestRetryPolicyIngress(t *testing.T) {
 				},
 			},
 			want: &RetryPolicy{
-				RetryOn: "5xx",
+				RetryOn:    "5xx",
+				NumRetries: 1,
 			},
 		},
-		"explicitly zero retries": {
+		"explicitly disabled retries": {
 			i: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"projectcontour.io/retry-on":    "5xx",
-						"projectcontour.io/num-retries": "0",
+						"projectcontour.io/num-retries": "-1",
 					},
 				},
 			},
@@ -86,7 +87,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			},
 			want: &RetryPolicy{
 				RetryOn:       "5xx",
-				NumRetries:    0,
+				NumRetries:    1,
 				PerTryTimeout: timeout.DurationSetting(10 * time.Second),
 			},
 		},
@@ -101,7 +102,7 @@ func TestRetryPolicyIngress(t *testing.T) {
 			},
 			want: &RetryPolicy{
 				RetryOn:       "5xx",
-				NumRetries:    0,
+				NumRetries:    1,
 				PerTryTimeout: timeout.DefaultSetting(),
 			},
 		},
