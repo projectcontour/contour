@@ -107,6 +107,16 @@ func parseUInt32(s string) uint32 {
 	return uint32(v)
 }
 
+// ParseInt32 parses the supplied string as if it were a int32.
+// If the value is not present, or malformed, zero is returned.
+func parseInt32(s string) int32 {
+	v, err := strconv.ParseInt(s, 10, 32)
+	if err != nil {
+		return 0
+	}
+	return int32(v)
+}
+
 // ParseUpstreamProtocols parses the annotations map for
 // projectcontour.io/upstream-protocol.{protocol} annotations.
 // 'protocol' identifies which protocol must be used in the upstream.
@@ -153,7 +163,20 @@ func WebsocketRoutes(i *networking_v1.Ingress) map[string]bool {
 // NumRetries returns the number of retries specified by the
 // "projectcontour.io/num-retries" annotation.
 func NumRetries(i *networking_v1.Ingress) uint32 {
-	return parseUInt32(ContourAnnotation(i, "num-retries"))
+
+	val := parseInt32(ContourAnnotation(i, "num-retries"))
+
+	// If set to -1, then retries set to 0. If set to 0 or
+	// not supplied, the value is set to the Envoy default of 1.
+	// Otherwise the value supplied is returned.
+	switch val {
+	case -1:
+		return 0
+	case 1, 0:
+		return 1
+	}
+
+	return uint32(val)
 }
 
 // PerTryTimeout returns the duration envoy will wait per retry cycle.

@@ -2275,7 +2275,9 @@ int64
 <td>
 <em>(Optional)</em>
 <p>NumRetries is maximum allowed number of retries.
-If not supplied, the number of retries is one.</p>
+If set to -1, then retries are disabled.
+If set to 0 or not supplied, the value is set
+to the Envoy default of 1.</p>
 </td>
 </tr>
 <tr>
