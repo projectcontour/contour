@@ -122,9 +122,11 @@ func RouteDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_Dir
 // client.
 func RouteRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 	r := &envoy_route_v3.Route_Redirect{
-		Redirect: &envoy_route_v3.RedirectAction{
-			HostRedirect: redirect.Hostname,
-		},
+		Redirect: &envoy_route_v3.RedirectAction{},
+	}
+
+	if len(redirect.Hostname) > 0 {
+		r.Redirect.HostRedirect = redirect.Hostname
 	}
 
 	if len(redirect.Scheme) > 0 {
@@ -137,6 +139,7 @@ func RouteRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 		r.Redirect.PortRedirect = redirect.PortNumber
 	}
 
+	// Envoy's default is a 301 if not otherwise specified.
 	switch redirect.StatusCode {
 	case 301:
 		r.Redirect.ResponseCode = envoy_route_v3.RedirectAction_MOVED_PERMANENTLY
