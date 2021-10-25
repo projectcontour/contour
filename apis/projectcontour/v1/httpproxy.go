@@ -697,9 +697,12 @@ type RetryOn string
 // RetryPolicy defines the attributes associated with retrying policy.
 type RetryPolicy struct {
 	// NumRetries is maximum allowed number of retries.
-	// If not supplied, the number of retries is one.
+	// If set to -1, then retries are disabled.
+	// If set to 0 or not supplied, the value is set
+	// to the Envoy default of 1.
 	// +optional
-	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=-1
 	NumRetries int64 `json:"count"`
 	// PerTryTimeout specifies the timeout per retry attempt.
 	// Ignored if NumRetries is not supplied.

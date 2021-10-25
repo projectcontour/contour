@@ -85,10 +85,21 @@ func retryPolicy(rp *contour_api_v1.RetryPolicy) *RetryPolicy {
 		perTryTimeout = timeout.DurationSetting(perTryDuration)
 	}
 
+	numRetries := rp.NumRetries
+	// If set to -1, then retries set to 0. If set to 0 or
+	// not supplied, the value is set to the Envoy default of 1.
+	// Otherwise the value supplied is returned.
+	switch rp.NumRetries {
+	case -1:
+		numRetries = 0
+	case 1, 0:
+		numRetries = 1
+	}
+
 	return &RetryPolicy{
 		RetryOn:              retryOn(rp.RetryOn),
 		RetriableStatusCodes: rp.RetriableStatusCodes,
-		NumRetries:           max(1, uint32(rp.NumRetries)),
+		NumRetries:           uint32(numRetries),
 		PerTryTimeout:        perTryTimeout,
 	}
 }
@@ -366,9 +377,7 @@ func ingressRetryPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) 
 
 	// if there is a non empty retry-on annotation, build a RetryPolicy manually.
 	rp := &RetryPolicy{
-		RetryOn: retryOn,
-		// TODO(dfc) k8s.NumRetries may parse as 0, which is inconsistent with
-		// retryPolicy()'s default value of 1.
+		RetryOn:    retryOn,
 		NumRetries: annotation.NumRetries(ingress),
 	}
 
@@ -472,13 +481,6 @@ func loadBalancerPolicy(lbp *contour_api_v1.LoadBalancerPolicy) string {
 	default:
 		return ""
 	}
-}
-
-func max(a, b uint32) uint32 {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 func prefixReplacementsAreValid(replacements []contour_api_v1.ReplacePrefix) (string, error) {
