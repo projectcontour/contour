@@ -206,8 +206,9 @@ go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELE
 ```
 
 1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
-1. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
-1. Commit all changes, push the branch, and PR it into `main`.
+2. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
+3. Add the new release to the compatibility YAML (`/versions.yaml`).
+4. Commit all changes, push the branch, and PR it into `main`.
 
 ### Update YAML and tag release
 
