@@ -4095,6 +4095,9 @@ spec:
                 type: object
             type: object
           status:
+            default:
+              currentStatus: NotReconciled
+              description: Waiting for controller
             description: Status is a container for computed information about the
               HTTPProxy.
             properties:
