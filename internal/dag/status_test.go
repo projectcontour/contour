@@ -3247,7 +3247,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 					Type:    string(status.ConditionResolvedRefs),
 					Status:  contour_api_v1.ConditionFalse,
 					Reason:  string(status.ReasonDegraded),
-					Message: "Spec.Rules.BackendRef.Namespace must match the route's namespace",
+					Message: "Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy",
 				},
 				gatewayapi_v1alpha2.ConditionRouteAccepted: {
 					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),

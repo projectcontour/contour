@@ -106,6 +106,11 @@ func NamespacePtr(namespace string) *gatewayapi_v1alpha2.Namespace {
 	return &gwNamespace
 }
 
+func ObjectNamePtr(name string) *gatewayapi_v1alpha2.ObjectName {
+	objectName := gatewayapi_v1alpha2.ObjectName(name)
+	return &objectName
+}
+
 func ServiceBackendObjectRef(name string, port int) gatewayapi_v1alpha2.BackendObjectReference {
 	return gatewayapi_v1alpha2.BackendObjectReference{
 		Group: GroupPtr(""),

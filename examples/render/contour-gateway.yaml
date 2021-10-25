@@ -4856,6 +4856,7 @@ rules:
   - gatewayclasses
   - gateways
   - httproutes
+  - referencepolicies
   - tcproutes
   - tlsroutes
   - udproutes
