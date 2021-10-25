@@ -109,21 +109,6 @@ func externalName(svc *v1.Service) string {
 	return svc.Spec.ExternalName
 }
 
-// GetSecureVirtualHosts returns all secure virtual hosts in the DAG.
-func (d *DAG) GetSecureVirtualHosts() map[ListenerName]*SecureVirtualHost {
-	res := map[ListenerName]*SecureVirtualHost{}
-
-	for _, svh := range d.SecureVirtualHosts {
-		listenerName := ListenerName{
-			Name:         svh.Name,
-			ListenerName: svh.VirtualHost.ListenerName,
-		}
-		res[listenerName] = svh
-	}
-
-	return res
-}
-
 // GetSecureVirtualHost returns the secure virtual host in the DAG that
 // matches the provided name, or nil if no matching secure virtual host
 // is found.
@@ -152,21 +137,6 @@ func (d *DAG) EnsureSecureVirtualHost(ln ListenerName) *SecureVirtualHost {
 	}
 	d.SecureVirtualHosts = append(d.SecureVirtualHosts, svh)
 	return svh
-}
-
-// GetVirtualHosts returns all virtual hosts in the DAG.
-func (d *DAG) GetVirtualHosts() map[ListenerName]*VirtualHost {
-	res := map[ListenerName]*VirtualHost{}
-
-	for _, vh := range d.VirtualHosts {
-		listenerName := ListenerName{
-			Name:         vh.Name,
-			ListenerName: vh.ListenerName,
-		}
-		res[listenerName] = vh
-	}
-
-	return res
 }
 
 // GetVirtualHost returns the virtual host in the DAG that matches the
