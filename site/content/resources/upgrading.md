@@ -9,9 +9,74 @@ This document describes the changes needed to upgrade your Contour installation.
 
 <div id="toc" class="navigation"></div>
 
-## Upgrading Contour 1.18.2 to 1.19.0
+## Upgrading Contour 1.19.0 to 1.19.1
 
-Contour 1.19.0 is the current stable release.
+Contour 1.19.1 is the current stable release.
+
+### Required Envoy version
+
+All users should ensure the Envoy image version is `docker.io/envoyproxy/envoy:v1.19.1`.
+
+Please see the [Envoy Release Notes][34] for information about issues fixed in Envoy 1.19.1.
+
+### The easy way to upgrade
+
+If the following are true for you:
+
+* Your installation is in the `projectcontour` namespace.
+* You are using our [quickstart example][18] deployments.
+* Your cluster can take a few minutes of downtime.
+
+Then the simplest way to upgrade to 1.19.1 is to delete the `projectcontour` namespace and reapply one of the example configurations:
+
+```bash
+$ kubectl delete namespace projectcontour
+$ kubectl apply -f {{< param base_url >}}/quickstart/v1.19.1/contour.yaml
+```
+
+This will remove the Envoy and Contour pods from your cluster and recreate them with the updated configuration.
+If you're using a `LoadBalancer` Service, (which most of the examples do) deleting and recreating may change the public IP assigned by your cloud provider.
+You'll need to re-check where your DNS names are pointing as well, using [Get your hostname or IP address][12].
+
+### The less easy way
+
+This section contains information for administrators who wish to apply the Contour 1.19.0 to 1.19.1 changes manually.
+The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.19.1` tag.
+
+If your version of Contour is older than v1.19.0, please upgrade to v1.19.0 first, then upgrade to v1.19.1.
+
+1. Update the Contour CRDs:
+
+    ```bash
+    $ kubectl apply -f examples/contour/01-crds.yaml
+    ```
+
+1. Users of the example deployment should reapply the certgen Job YAML which will re-generate the relevant Secrets in a format compatible with [cert-manager](https://cert-manager.io) TLS secrets.
+   This will rotate the TLS certificates used for gRPC security.
+
+    ```bash
+    $ kubectl apply -f examples/contour/02-job-certgen.yaml
+    ```
+
+1. Update the Contour cluster role:
+
+    ```bash
+    $ kubectl apply -f examples/contour/02-role-contour.yaml
+    ```
+
+1. Upgrade the Contour deployment:
+
+    ```bash
+    $ kubectl apply -f examples/contour/03-contour.yaml
+    ```
+
+1. Once the Contour deployment has finished upgrading, update the Envoy DaemonSet:
+
+    ```bash
+    $ kubectl apply -f examples/contour/03-envoy.yaml
+    ```
+
+## Upgrading Contour 1.18.2 to 1.19.0
 
 ### Required Envoy version
 
