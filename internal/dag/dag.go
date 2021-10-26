@@ -60,8 +60,8 @@ type DAG struct {
 	StatusCache status.Cache
 
 	Listeners          []*Listener
-	VirtualHosts       []*VirtualHost
-	SecureVirtualHosts []*SecureVirtualHost
+	VirtualHosts       map[string]*VirtualHost
+	SecureVirtualHosts map[string]*SecureVirtualHost
 	ExtensionClusters  []*ExtensionCluster
 }
 

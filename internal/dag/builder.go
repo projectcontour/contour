@@ -60,7 +60,9 @@ func (b *Builder) Build() *DAG {
 	}
 
 	dag := &DAG{
-		StatusCache: status.NewCache(gatewayNSName, gatewayController),
+		VirtualHosts:       map[string]*VirtualHost{},
+		SecureVirtualHosts: map[string]*SecureVirtualHost{},
+		StatusCache:        status.NewCache(gatewayNSName, gatewayController),
 	}
 
 	for _, p := range b.Processors {
