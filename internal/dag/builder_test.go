@@ -5869,7 +5869,48 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
-	proxyLoadBalancerHashPolicyHeaderAllInvalid := &contour_api_v1.HTTPProxy{
+	proxyLoadBalancerHashPolicySourceIP := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "example-com",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "example.com",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "nginx",
+					Port: 80,
+				}},
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "RequestHash",
+					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+						{
+							// Ensure header hash policies and source IP hashing
+							// can coexist.
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Some-Header",
+							},
+						},
+						{
+							Terminal:     true,
+							HashSourceIP: true,
+						},
+						{
+							// Duplicate should be ignored.
+							HashSourceIP: true,
+						},
+					},
+				},
+			}},
+		},
+	}
+
+	proxyLoadBalancerHashPolicyAllInvalid := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "example-com",
 			Namespace: "default",
@@ -5896,6 +5937,12 @@ func TestDAGInsert(t *testing.T) {
 							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
 								HeaderName: "",
 							},
+						},
+						{
+							HeaderHashOptions: &contour_api_v1.HeaderHashOptions{
+								HeaderName: "X-Foo",
+							},
+							HashSourceIP: true,
 						},
 					},
 				},
@@ -9132,6 +9179,36 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"insert proxy with load balancer hash source ip": {
+			objs: []interface{}{
+				proxyLoadBalancerHashPolicySourceIP,
+				s9,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("example.com", &Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{
+								{Upstream: service(s9), LoadBalancerPolicy: "RequestHash"},
+							},
+							RequestHashPolicies: []RequestHashPolicy{
+								{
+									HeaderHashOptions: &HeaderHashOptions{
+										HeaderName: "X-Some-Header",
+									},
+								},
+								{
+									Terminal:     true,
+									HashSourceIP: true,
+								},
+							},
+						}),
+					),
+				},
+			),
+		},
 		"insert proxy with load balancer request header hash policies": {
 			objs: []interface{}{
 				proxyLoadBalancerHashPolicyHeader,
@@ -9164,9 +9241,9 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"insert proxy with all invalid request header hash policies": {
+		"insert proxy with all invalid request hash policies": {
 			objs: []interface{}{
-				proxyLoadBalancerHashPolicyHeaderAllInvalid,
+				proxyLoadBalancerHashPolicyAllInvalid,
 				s9,
 			},
 			want: listeners(

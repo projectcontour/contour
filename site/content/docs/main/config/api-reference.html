@@ -2123,8 +2123,24 @@ HeaderHashOptions
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>HeaderHashOptions should be set when request header hash based load
 balancing is desired. It must be the only hash option field set,
+otherwise this request hash policy object will be ignored.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>hashSourceIP</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>HashSourceIP should be set to true when request source IP hash based
+load balancing is desired. It must be the only hash option field set,
 otherwise this request hash policy object will be ignored.</p>
 </td>
 </tr>
