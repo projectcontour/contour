@@ -1,0 +1,3 @@
+### Source IP hash based load balancing
+
+Contour users can now configure their load balancing policies on `HTTPProxy` resources to hash the source IP of a client to ensure consistent routing to a backend service instance. Using this feature combined with header value hashing can implement advanced request routing and session affinity. See [this page](https://projectcontour.io/docs/v1.20.0/config/request-routing/#load-balancing-strategy) for more details.
