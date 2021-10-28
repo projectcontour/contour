@@ -24,6 +24,7 @@ import (
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xdscache"
 	xdscache_v3 "github.com/projectcontour/contour/internal/xdscache/v3"
 	v1 "k8s.io/api/core/v1"
@@ -915,7 +916,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(
-		envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil), 0, 0),
+		envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil), 0),
 	)
 
 	httpsListener := &envoy_listener_v3.Listener{
@@ -1269,7 +1270,15 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 
 	// verify that the xff-num-trusted-hops have been set to 1.
 	httpListener := defaultHTTPListener()
-	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil), 0, 1))
+
+	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
+		RouteConfigName("ingress_http").
+		MetricsPrefix("ingress_http").
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil)).
+		RequestTimeout(timeout.DurationSetting(0)).
+		DefaultFilters().
+		AddFilter(envoy_v3.OriginalIPDetectionFilter(1)).
+		Get())
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,

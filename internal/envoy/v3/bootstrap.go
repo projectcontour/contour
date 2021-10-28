@@ -24,10 +24,12 @@ import (
 	"strings"
 	"time"
 
+	envoy_config_accesslog_v3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoy_bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
@@ -209,8 +211,21 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 			}},
 		},
 		Admin: &envoy_bootstrap_v3.Admin{
-			AccessLogPath: c.GetAdminAccessLogPath(),
-			Address:       UnixSocketAddress(c.GetAdminAddress(), c.GetAdminPort()),
+			AccessLog: adminAccessLog(c.GetAdminAccessLogPath()),
+			Address:   UnixSocketAddress(c.GetAdminAddress(), c.GetAdminPort()),
+		},
+	}
+}
+
+func adminAccessLog(logPath string) []*envoy_config_accesslog_v3.AccessLog {
+	return []*envoy_config_accesslog_v3.AccessLog{
+		{
+			Name: "envoy.access_loggers.file",
+			ConfigType: &envoy_config_accesslog_v3.AccessLog_TypedConfig{
+				TypedConfig: protobuf.MustMarshalAny(&envoy_file_v3.FileAccessLog{
+					Path: logPath,
+				}),
+			},
 		},
 	}
 }

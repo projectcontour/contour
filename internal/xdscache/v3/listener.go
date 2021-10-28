@@ -511,7 +511,7 @@ func visitListeners(root dag.Vertex, lvc *ListenerConfig) map[string]*envoy_list
 			MaxConnectionDuration(lvc.MaxConnectionDuration).
 			ConnectionShutdownGracePeriod(lvc.ConnectionShutdownGracePeriod).
 			AllowChunkedLength(lvc.AllowChunkedLength).
-			NumTrustedHops(lvc.XffNumTrustedHops).
+			AddFilter(envoy_v3.OriginalIPDetectionFilter(lvc.XffNumTrustedHops)).
 			AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(lv.RateLimitConfig))).
 			Get()
 
@@ -627,7 +627,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 				ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
 				AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
-				NumTrustedHops(v.ListenerConfig.XffNumTrustedHops).
+				AddFilter(envoy_v3.OriginalIPDetectionFilter(v.ListenerConfig.XffNumTrustedHops)).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(v.RateLimitConfig))).
 				Get()
 
@@ -691,7 +691,7 @@ func (v *listenerVisitor) visit(vertex dag.Vertex) {
 				MaxConnectionDuration(v.ListenerConfig.MaxConnectionDuration).
 				ConnectionShutdownGracePeriod(v.ListenerConfig.ConnectionShutdownGracePeriod).
 				AllowChunkedLength(v.ListenerConfig.AllowChunkedLength).
-				NumTrustedHops(v.ListenerConfig.XffNumTrustedHops).
+				AddFilter(envoy_v3.OriginalIPDetectionFilter(v.ListenerConfig.XffNumTrustedHops)).
 				AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(v.RateLimitConfig))).
 				Get()
 

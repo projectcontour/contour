@@ -31,6 +31,7 @@ import (
 	envoy_extensions_filters_http_router_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	tcp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoy_extensions_http_original_ip_detection_xff_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/http/original_ip_detection/xff/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_type "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
@@ -152,7 +153,6 @@ type httpConnectionManagerBuilder struct {
 	filters                       []*http.HttpFilter
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 	allowChunkedLength            bool
-	numTrustedHops                uint32
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -222,11 +222,6 @@ func (b *httpConnectionManagerBuilder) ConnectionShutdownGracePeriod(timeout tim
 
 func (b *httpConnectionManagerBuilder) AllowChunkedLength(enabled bool) *httpConnectionManagerBuilder {
 	b.allowChunkedLength = enabled
-	return b
-}
-
-func (b *httpConnectionManagerBuilder) NumTrustedHops(num uint32) *httpConnectionManagerBuilder {
-	b.numTrustedHops = num
 	return b
 }
 
@@ -412,7 +407,6 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),
 		DrainTimeout:        envoy.Timeout(b.connectionShutdownGracePeriod),
 		DelayedCloseTimeout: envoy.Timeout(b.delayedCloseTimeout),
-		XffNumTrustedHops:   b.numTrustedHops,
 	}
 
 	// Max connection duration is infinite/disabled by default in Envoy, so if the timeout setting
@@ -445,13 +439,12 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 
 // HTTPConnectionManager creates a new HTTP Connection Manager filter
 // for the supplied route, access log, and client request timeout.
-func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration, xffNumTrustedHops uint32) *envoy_listener_v3.Filter {
+func HTTPConnectionManager(routename string, accesslogger []*accesslog.AccessLog, requestTimeout time.Duration) *envoy_listener_v3.Filter {
 	return HTTPConnectionManagerBuilder().
 		RouteConfigName(routename).
 		MetricsPrefix(routename).
 		AccessLoggers(accesslogger).
 		RequestTimeout(timeout.DurationSetting(requestTimeout)).
-		NumTrustedHops(xffNumTrustedHops).
 		DefaultFilters().
 		Get()
 }
@@ -680,6 +673,20 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 		Name: "envoy.filters.http.ext_authz",
 		ConfigType: &http.HttpFilter_TypedConfig{
 			TypedConfig: protobuf.MustMarshalAny(&authConfig),
+		},
+	}
+}
+
+func OriginalIPDetectionFilter(xffNumTrustedHops uint32) *http.HttpFilter {
+	if xffNumTrustedHops == 0 {
+		return nil
+	}
+	return &http.HttpFilter{
+		Name: "envoy.http.original_ip_detection.xff",
+		ConfigType: &http.HttpFilter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_extensions_http_original_ip_detection_xff_v3.XffConfig{
+				XffNumTrustedHops: xffNumTrustedHops,
+			}),
 		},
 	}
 }
