@@ -13,7 +13,7 @@ versions:
         - "1.21"
         - "1.20"
       gateway-api:
-        - v1alpha1
+        - v1alpha2
       contour-operator: main
   - version: v1.19.1
     supported: "true"
