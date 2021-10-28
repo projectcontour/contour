@@ -60,8 +60,6 @@ type KubernetesCache struct {
 	gateway                   *gatewayapi_v1alpha2.Gateway
 	httproutes                map[types.NamespacedName]*gatewayapi_v1alpha2.HTTPRoute
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
-	tcproutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute
-	udproutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.UDPRoute
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
 	initialize sync.Once
@@ -78,8 +76,6 @@ func (kc *KubernetesCache) init() {
 	kc.services = make(map[types.NamespacedName]*v1.Service)
 	kc.namespaces = make(map[string]*v1.Namespace)
 	kc.httproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.HTTPRoute)
-	kc.tcproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TCPRoute)
-	kc.udproutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.UDPRoute)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
@@ -197,12 +193,6 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	case *gatewayapi_v1alpha2.HTTPRoute:
 		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
-	case *gatewayapi_v1alpha2.TCPRoute:
-		kc.tcproutes[k8s.NamespacedNameOf(obj)] = obj
-		return true
-	case *gatewayapi_v1alpha2.UDPRoute:
-		kc.udproutes[k8s.NamespacedNameOf(obj)] = obj
-		return true
 	case *gatewayapi_v1alpha2.TLSRoute:
 		kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
 		return true
@@ -280,16 +270,6 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httproutes[m]
 		delete(kc.httproutes, m)
-		return ok
-	case *gatewayapi_v1alpha2.TCPRoute:
-		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.tcproutes[m]
-		delete(kc.tcproutes, m)
-		return ok
-	case *gatewayapi_v1alpha2.UDPRoute:
-		m := k8s.NamespacedNameOf(obj)
-		_, ok := kc.udproutes[m]
-		delete(kc.udproutes, m)
 		return ok
 	case *gatewayapi_v1alpha2.TLSRoute:
 		m := k8s.NamespacedNameOf(obj)
