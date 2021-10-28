@@ -169,6 +169,10 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-host-rewrite", testWithHTTPGateway(testHostRewrite))
 
 		f.NamespacedTest("gateway-route-parent-refs", testWithHTTPGateway(testRouteParentRefs))
+
+		f.NamespacedTest("gateway-tcproute-rejected", testWithHTTPGateway(testTCPRouteIsRejected))
+
+		f.NamespacedTest("gateway-udproute-rejected", testWithHTTPGateway(testUDPRouteIsRejected))
 	})
 
 	Describe("HTTPRoute: TLS Gateway", func() {
@@ -333,6 +337,42 @@ func tlsRouteAccepted(route *gatewayapi_v1alpha2.TLSRoute) bool {
 	for _, gw := range route.Status.Parents {
 		for _, cond := range gw.Conditions {
 			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionTrue {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// tcpRouteRejected returns true if the route has a .status.conditions
+// entry of "Accepted: false".
+func tcpRouteRejected(route *gatewayapi_v1alpha2.TCPRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		for _, cond := range gw.Conditions {
+			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionFalse {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// udpRouteRejected returns true if the route has a .status.conditions
+// entry of "Accepted: false".
+func udpRouteRejected(route *gatewayapi_v1alpha2.UDPRoute) bool {
+	if route == nil {
+		return false
+	}
+
+	for _, gw := range route.Status.Parents {
+		for _, cond := range gw.Conditions {
+			if cond.Type == string(gatewayapi_v1alpha2.ConditionRouteAccepted) && cond.Status == metav1.ConditionFalse {
 				return true
 			}
 		}

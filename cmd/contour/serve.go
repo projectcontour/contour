@@ -701,14 +701,34 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 				s.log.WithError(err).Fatal("failed to create gateway-controller")
 			}
 
-			// Create and register the NewHTTPRouteController controller with the manager.
+			// Create and register the HTTPRoute controller with the manager.
 			if _, err := controller.NewHTTPRouteController(mgr, eventHandler, s.log.WithField("context", "httproute-controller")); err != nil {
 				s.log.WithError(err).Fatal("failed to create httproute-controller")
 			}
 
-			// Create and register the NewTLSRouteController controller with the manager.
+			// Create and register the TLSRoute controller with the manager.
 			if _, err := controller.NewTLSRouteController(mgr, eventHandler, s.log.WithField("context", "tlsroute-controller")); err != nil {
 				s.log.WithError(err).Fatal("failed to create tlsroute-controller")
+			}
+
+			// Create and register the TCPRoute controller with the manager.
+			if _, err := controller.NewTCPRouteController(
+				mgr,
+				sh.Writer(),
+				gatewayClassControllerName,
+				s.log.WithField("context", "tcproute-controller"),
+			); err != nil {
+				s.log.WithError(err).Fatal("failed to create tcproute-controller")
+			}
+
+			// Create and register the UDPRoute controller with the manager.
+			if _, err := controller.NewUDPRouteController(
+				mgr,
+				sh.Writer(),
+				gatewayClassControllerName,
+				s.log.WithField("context", "udproute-controller"),
+			); err != nil {
+				s.log.WithError(err).Fatal("failed to create udproute-controller")
 			}
 
 			// Inform on Namespaces.
