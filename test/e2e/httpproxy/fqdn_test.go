@@ -84,7 +84,7 @@ func testWildcardFQDN(namespace string) {
 		require.NotNil(t, err, "Expected invalid wildcard to be rejected.")
 	})
 
-	FSpecify("wildcard routing works", func() {
+	Specify("wildcard routing works", func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "wildcardprojectcontourio")
