@@ -6881,7 +6881,14 @@ func TestDAGInsert(t *testing.T) {
 				&Listener{
 					Port: 80,
 					VirtualHosts: virtualhosts(
-						virtualhost("*.projectcontour.io", prefixroute("/", service(s1))),
+						virtualhost("*.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								HeaderMatchConditions: []HeaderMatchCondition{
+									{Name: ":authority", Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io", MatchType: "regex", Invert: false},
+								},
+								Clusters: clusters(service(s1)),
+							}),
 					),
 				},
 			),

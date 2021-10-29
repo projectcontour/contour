@@ -25,36 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testWildcardSubdomainFQDN(namespace string) {
-	Specify("valid wildcard subdomain fqdn", func() {
-		t := f.T()
-
-		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
-
-		p := &contourv1.HTTPProxy{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
-				Name:      "wildcard-subdomain",
-			},
-			Spec: contourv1.HTTPProxySpec{
-				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "*.projectcontour.io",
-				},
-				Routes: []contourv1.Route{{
-					Services: []contourv1.Service{{
-						Name: "ingress-conformance-echo",
-						Port: 80,
-					}},
-				}},
-			},
-		}
-
-		// Creation should pass the kubebuilder CRD validations.
-		err := f.CreateHTTPProxy(p)
-		require.Nil(t, err, "Expected invalid subdomain wildcard to be allowed.")
-	})
-}
-
 func testWildcardFQDN(namespace string) {
 	Specify("invalid wildcard fqdn", func() {
 		t := f.T()
@@ -83,6 +53,10 @@ func testWildcardFQDN(namespace string) {
 		err := f.CreateHTTPProxy(p)
 		require.NotNil(t, err, "Expected invalid wildcard to be rejected.")
 	})
+
+}
+
+func testWildcardSubdomainFQDN(namespace string) {
 
 	Specify("wildcard routing works", func() {
 		t := f.T()
