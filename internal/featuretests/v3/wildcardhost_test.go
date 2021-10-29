@@ -143,7 +143,22 @@ func TestHTTPProxyWildcardFQDN(t *testing.T) {
 		Resources: resources(t,
 			envoy_v3.RouteConfiguration("ingress_http",
 				envoy_v3.VirtualHost("*.projectcontour.io", &envoy_route_v3.Route{
-					Match:  routePrefix("/"),
+					Match: &envoy_route_v3.RouteMatch{
+						PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
+							Prefix: "/",
+						},
+						Headers: []*envoy_route_v3.HeaderMatcher{{
+							Name: ":authority",
+							HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
+								SafeRegexMatch: &matcher.RegexMatcher{
+									EngineType: &matcher.RegexMatcher_GoogleRe2{
+										GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+									},
+									Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io",
+								},
+							},
+						}},
+					},
 					Action: routecluster("default/svc/80/da39a3ee5e"),
 				}),
 			),

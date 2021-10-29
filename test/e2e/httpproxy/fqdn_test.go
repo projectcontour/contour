@@ -84,12 +84,12 @@ func testWildcardFQDN(namespace string) {
 		require.NotNil(t, err, "Expected invalid wildcard to be rejected.")
 	})
 
-	Specify("wildcard routing works", func() {
+	FSpecify("wildcard routing works", func() {
 		t := f.T()
 
-		f.Fixtures.Echo.Deploy(namespace, "echo-slash-default")
-		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
-		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-bar")
+		f.Fixtures.Echo.Deploy(namespace, "wildcardprojectcontourio")
+		f.Fixtures.Echo.Deploy(namespace, "projectcontourio")
+		f.Fixtures.Echo.Deploy(namespace, "barprojectcontourio")
 
 		proxyWildcard := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
@@ -103,7 +103,7 @@ func testWildcardFQDN(namespace string) {
 				Routes: []contourv1.Route{{
 					Services: []contourv1.Service{
 						{
-							Name: "echo-slash-default",
+							Name: "wildcardprojectcontourio",
 							Port: 80,
 						},
 					},
@@ -122,7 +122,7 @@ func testWildcardFQDN(namespace string) {
 				Routes: []contourv1.Route{{
 					Services: []contourv1.Service{
 						{
-							Name: "ingress-conformance-echo",
+							Name: "projectcontourio",
 							Port: 80,
 						},
 					},
@@ -141,7 +141,7 @@ func testWildcardFQDN(namespace string) {
 				Routes: []contourv1.Route{{
 					Services: []contourv1.Service{
 						{
-							Name: "ingress-conformance-bar",
+							Name: "barprojectcontourio",
 							Port: 80,
 						},
 					},
@@ -152,30 +152,60 @@ func testWildcardFQDN(namespace string) {
 		f.CreateHTTPProxyAndWaitFor(proxyFullFQDN, httpProxyValid)
 		f.CreateHTTPProxyAndWaitFor(proxyFullFQDNSubdomain, httpProxyValid)
 
-		cases := map[string]string{
-			"projectcontour.io":                         "ingress-conformance-echo",
-			"www.projectcontour.io":                     "echo-slash-default",
-			"bar.projectcontour.io":                     "ingress-conformance-bar",
-			"foo.projectcontour.io":                     "echo-slash-default",
-			"foo.bar.projectcontour.io":                 "echo-slash-default",
-			"i.n.g.r.e.s.s.r.u.l.e.s.projectcontour.io": "echo-slash-default",
+		cases := map[string]ServiceResult{
+			"projectcontour.io": {
+				ServiceName:   "projectcontourio",
+				ShouldSucceed: true,
+			},
+			"www.projectcontour.io": {
+				ServiceName:   "wildcardprojectcontourio",
+				ShouldSucceed: true,
+			},
+			"bar.projectcontour.io": {
+				ServiceName:   "barprojectcontourio",
+				ShouldSucceed: true,
+			},
+			"foo.projectcontour.io": {
+				ServiceName:   "wildcardprojectcontourio",
+				ShouldSucceed: true,
+			},
+			"bar.foo.projectcontour.io": {
+				ServiceName:   "wildcardprojectcontourio",
+				ShouldSucceed: false,
+			},
 		}
 
 		for fqdn, expectedService := range cases {
-			t.Logf("Querying %q, expecting service %q", fqdn, expectedService)
+			t.Logf("Querying %q, expecting service %q", fqdn, expectedService.ServiceName)
 
-			res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-				Host:      fqdn,
-				Path:      "/",
-				Condition: e2e.HasStatusCode(200),
-			})
-			if !assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode) {
-				continue
+			if expectedService.ShouldSucceed {
+				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+					Host:      fqdn,
+					Path:      "/",
+					Condition: e2e.HasStatusCode(200),
+				})
+
+				if !assert.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode) {
+					continue
+				}
+
+				body := f.GetEchoResponseBody(res.Body)
+				assert.Equal(t, namespace, body.Namespace)
+				assert.Equal(t, expectedService.ServiceName, body.Service)
+			} else {
+				res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+					Host:      fqdn,
+					Path:      "/",
+					Condition: e2e.HasStatusCode(404),
+				})
+
+				assert.Truef(t, ok, "expected 404 response code, got %d", res.StatusCode)
 			}
-
-			body := f.GetEchoResponseBody(res.Body)
-			assert.Equal(t, namespace, body.Namespace)
-			assert.Equal(t, expectedService, body.Service)
 		}
 	})
+}
+
+type ServiceResult struct {
+	ServiceName   string
+	ShouldSucceed bool
 }
