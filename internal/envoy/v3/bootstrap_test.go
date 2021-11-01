@@ -156,7 +156,15 @@ func TestBootstrap(t *testing.T) {
     }
   },
   "admin": {
-    "access_log_path": "/dev/null",
+    "access_log": [
+      {
+        "name": "envoy.access_loggers.file",
+        "typed_config": {
+          "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+          "path": "/dev/null"
+        }
+      }
+    ],
     "address": {
    	 "pipe": {
         "path": "/admin/admin.sock",
@@ -290,7 +298,15 @@ func TestBootstrap(t *testing.T) {
     }
   },
   "admin": {
-    "access_log_path": "/dev/null",
+    "access_log": [
+      {
+        "name": "envoy.access_loggers.file",
+        "typed_config": {
+          "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+          "path": "/dev/null"
+        }
+      }
+    ],
     "address": {
       "pipe": {
         "path": "someaddr",
@@ -424,7 +440,15 @@ func TestBootstrap(t *testing.T) {
     }
   },
   "admin": {
-    "access_log_path": "/var/log/admin.log",
+    "access_log": [
+      {
+        "name": "envoy.access_loggers.file",
+        "typed_config": {
+          "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+          "path": "/var/log/admin.log"
+        }
+      }
+    ],
     "address": {
       "pipe": {
         "path": "/admin/admin.sock",
@@ -559,7 +583,15 @@ func TestBootstrap(t *testing.T) {
     }
   },
   "admin": {
-    "access_log_path": "/dev/null",
+    "access_log": [
+      {
+        "name": "envoy.access_loggers.file",
+        "typed_config": {
+          "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+          "path": "/dev/null"
+        }
+      }
+    ],
     "address": {
       "pipe": {
         "path": "/admin/admin.sock",
@@ -694,7 +726,15 @@ func TestBootstrap(t *testing.T) {
     }
   },
   "admin": {
-    "access_log_path": "/dev/null",
+    "access_log": [
+      {
+        "name": "envoy.access_loggers.file",
+        "typed_config": {
+          "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+          "path": "/dev/null"
+        }
+      }
+    ],
     "address": {
       "pipe": {
         "path": "/admin/admin.sock",
@@ -829,7 +869,15 @@ func TestBootstrap(t *testing.T) {
     }
   },
   "admin": {
-    "access_log_path": "/dev/null",
+    "access_log": [
+      {
+        "name": "envoy.access_loggers.file",
+        "typed_config": {
+          "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+          "path": "/dev/null"
+        }
+      }
+    ],
     "address": {
       "pipe": {
         "path": "/admin/admin.sock",
@@ -966,7 +1014,15 @@ func TestBootstrap(t *testing.T) {
     }
   },
   "admin": {
-    "access_log_path": "/dev/null",
+    "access_log": [
+      {
+        "name": "envoy.access_loggers.file",
+        "typed_config": {
+          "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+          "path": "/dev/null"
+        }
+      }
+    ],
     "address": {
       "pipe": {
         "path": "/admin/admin.sock",
@@ -1134,7 +1190,15 @@ func TestBootstrap(t *testing.T) {
     }
   },
   "admin": {
-    "access_log_path": "/dev/null",
+    "access_log": [
+      {
+        "name": "envoy.access_loggers.file",
+        "typed_config": {
+          "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+          "path": "/dev/null"
+        }
+      }
+    ],
     "address": {
       "pipe": {
         "path": "/admin/admin.sock",
@@ -1299,7 +1363,15 @@ func TestBootstrap(t *testing.T) {
           }
         },
         "admin": {
-          "access_log_path": "/dev/null",
+          "access_log": [
+            {
+              "name": "envoy.access_loggers.file",
+              "typed_config": {
+                "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog",
+                "path": "/dev/null"
+              }
+            }
+          ],
           "address": {
            "pipe": {
 		    "path": "/admin/admin.sock",

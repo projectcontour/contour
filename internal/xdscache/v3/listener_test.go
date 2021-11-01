@@ -51,14 +51,14 @@ func TestListenerCacheContents(t *testing.T) {
 			contents: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 			want: []proto.Message{
 				&envoy_listener_v3.Listener{
 					Name:          ENVOY_HTTP_LISTENER,
 					Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 					SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 				},
 			},
@@ -85,7 +85,7 @@ func TestListenerCacheQuery(t *testing.T) {
 			contents: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 			query: []string{ENVOY_HTTP_LISTENER},
@@ -93,7 +93,7 @@ func TestListenerCacheQuery(t *testing.T) {
 				&envoy_listener_v3.Listener{
 					Name:          ENVOY_HTTP_LISTENER,
 					Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 					SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 				},
 			},
@@ -102,7 +102,7 @@ func TestListenerCacheQuery(t *testing.T) {
 			contents: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 			query: []string{ENVOY_HTTP_LISTENER, "stats-listener"},
@@ -110,7 +110,7 @@ func TestListenerCacheQuery(t *testing.T) {
 				&envoy_listener_v3.Listener{
 					Name:          ENVOY_HTTP_LISTENER,
 					Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 					SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 				},
 			},
@@ -119,7 +119,7 @@ func TestListenerCacheQuery(t *testing.T) {
 			contents: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 			query: []string{"stats-listener"},
@@ -193,7 +193,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
@@ -236,7 +236,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
@@ -289,7 +289,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -378,7 +378,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -451,7 +451,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
@@ -502,7 +502,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -667,7 +667,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("127.0.0.100", 9100),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -740,7 +740,7 @@ func TestListenerVisit(t *testing.T) {
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.ProxyProtocol(),
 				),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -812,7 +812,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress(DEFAULT_HTTP_LISTENER_ADDRESS, DEFAULT_HTTP_LISTENER_PORT),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -888,7 +888,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -961,7 +961,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -1030,7 +1030,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -1101,7 +1101,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -1867,7 +1867,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -1981,7 +1981,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -2126,7 +2126,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0, 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -2598,7 +2598,7 @@ func TestListenerVisit(t *testing.T) {
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
 						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
 						DefaultFilters().
-						NumTrustedHops(1).
+						AddFilter(envoy_v3.OriginalIPDetectionFilter(1)).
 						Get(),
 				),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
