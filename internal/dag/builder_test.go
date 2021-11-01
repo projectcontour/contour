@@ -4881,6 +4881,27 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	proxyWildcardFQDN := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "wildcard",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "*.projectcontour.io",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "kuard",
+					Port: 8080,
+				}},
+			}},
+		},
+	}
+
 	s1 := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kuard",
@@ -7714,6 +7735,26 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s2))),
+					),
+				},
+			),
+		},
+		"insert httpproxy with a wildcard fqdn": {
+			objs: []interface{}{
+				proxyWildcardFQDN, s1,
+			},
+			want: listeners(
+				&Listener{
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("*.projectcontour.io",
+							&Route{
+								PathMatchCondition: prefixString("/"),
+								HeaderMatchConditions: []HeaderMatchCondition{
+									{Name: ":authority", Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io", MatchType: "regex", Invert: false},
+								},
+								Clusters: clusters(service(s1)),
+							}),
 					),
 				},
 			),

@@ -1,0 +1,1 @@
+HTTPProxy resources now support wildcard fqdn's in the form `*.projectcontour.io`.

@@ -16,6 +16,8 @@ package v3
 import (
 	"testing"
 
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -28,8 +30,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-// Note: Wildcard hostnames are only supported on Ingress resources for now.
 
 // Test that Ingress without TLS secrets generate the
 // appropriate route config.
@@ -102,6 +102,65 @@ func TestIngressWildcardHostHTTP(t *testing.T) {
 						Action: routeCluster("default/svc/80/da39a3ee5e"),
 					},
 				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+}
+
+// Test that HTTPProxy without TLS secrets generate the
+// appropriate route config.
+func TestHTTPProxyWildcardFQDN(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	svc := fixture.NewService("svc").
+		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(svc)
+
+	rh.OnAdd(fixture.NewProxy("wildcard").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "*.projectcontour.io",
+			}, Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "svc",
+					Port: 80,
+				}},
+			}},
+		}),
+	)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			defaultHTTPListener(),
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("*.projectcontour.io", &envoy_route_v3.Route{
+					Match: &envoy_route_v3.RouteMatch{
+						PathSpecifier: &envoy_route_v3.RouteMatch_Prefix{
+							Prefix: "/",
+						},
+						Headers: []*envoy_route_v3.HeaderMatcher{{
+							Name: ":authority",
+							HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
+								SafeRegexMatch: &matcher.RegexMatcher{
+									EngineType: &matcher.RegexMatcher_GoogleRe2{
+										GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+									},
+									Regex: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io",
+								},
+							},
+						}},
+					},
+					Action: routecluster("default/svc/80/da39a3ee5e"),
+				}),
 			),
 		),
 		TypeUrl: routeType,

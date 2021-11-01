@@ -687,6 +687,15 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		if len(r.Clusters) == 0 {
 			r.DirectResponse = directResponse(http.StatusServiceUnavailable)
 		}
+
+		// If we have a wildcard match, add a header match regex rule to match the
+		// hostname so we can be sure to only match one DNS label. This is required
+		// as Envoy's virtualhost hostname wildcard matching can match multiple
+		// labels. This match ignores a port in the hostname in case it is present.
+		if strings.HasPrefix(rootProxy.Spec.VirtualHost.Fqdn, "*.") {
+			r.HeaderMatchConditions = append(r.HeaderMatchConditions, wildcardDomainHeaderMatch(rootProxy.Spec.VirtualHost.Fqdn))
+		}
+
 		routes = append(routes, r)
 	}
 

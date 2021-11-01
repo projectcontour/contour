@@ -3634,7 +3634,7 @@ spec:
                     description: The fully qualified domain name of the root of the
                       ingress tree all leaves of the DAG rooted at this object relate
                       to the fqdn.
-                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                    pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                     type: string
                   rateLimitPolicy:
                     description: The policy for rate limiting on the virtual host.
