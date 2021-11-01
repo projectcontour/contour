@@ -315,6 +315,54 @@ func (f *Framework) CreateTLSRouteAndWaitFor(route *gatewayapi_v1alpha2.TLSRoute
 	return res, true
 }
 
+// CreateTCPRouteAndWaitFor creates the provided TCPRoute in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateTCPPRouteAndWaitFor(route *gatewayapi_v1alpha2.TCPRoute, condition func(*gatewayapi_v1alpha2.TCPRoute) bool) (*gatewayapi_v1alpha2.TCPRoute, bool) {
+	require.NoError(f.t, f.Client.Create(context.TODO(), route))
+
+	res := &gatewayapi_v1alpha2.TCPRoute{}
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
+	}
+
+	return res, true
+}
+
+// CreateUDPRouteAndWaitFor creates the provided UDPRoute in the Kubernetes API
+// and then waits for the specified condition to be true.
+func (f *Framework) CreateUDPPRouteAndWaitFor(route *gatewayapi_v1alpha2.UDPRoute, condition func(*gatewayapi_v1alpha2.UDPRoute) bool) (*gatewayapi_v1alpha2.UDPRoute, bool) {
+	require.NoError(f.t, f.Client.Create(context.TODO(), route))
+
+	res := &gatewayapi_v1alpha2.UDPRoute{}
+
+	if err := wait.PollImmediate(f.RetryInterval, f.RetryTimeout, func() (bool, error) {
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(route), res); err != nil {
+			// if there was an error, we want to keep
+			// retrying, so just return false, not an
+			// error.
+			return false, nil
+		}
+
+		return condition(res), nil
+	}); err != nil {
+		// return the last response for logging/debugging purposes
+		return res, false
+	}
+
+	return res, true
+}
+
 // CreateNamespace creates a namespace with the given name in the
 // Kubernetes API or fails the test if it encounters an error.
 func (f *Framework) CreateNamespace(name string) {

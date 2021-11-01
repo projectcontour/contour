@@ -155,37 +155,7 @@ func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
 		"name":      obj.GetName(),
 	})
 
-	gw, ok := obj.(*gatewayapi_v1alpha2.Gateway)
-	if !ok {
-		log.Debugf("unexpected object type %T, bypassing reconciliation.", obj)
-		return false
-	}
-
-	matches, err := r.hasContourOwnedClass(gw)
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-	if matches {
-		log.Debug("enqueueing gateway")
-		return true
-	}
-
-	log.Debugf("gateway's class controller is not %s; bypassing reconciliation", r.gatewayClassControllerName)
-	return false
-}
-
-// hasContourOwnedClass returns true if the class referenced by gateway exists
-// and matches the configured controllerName.
-func (r *gatewayReconciler) hasContourOwnedClass(gw *gatewayapi_v1alpha2.Gateway) (bool, error) {
-	gc := &gatewayapi_v1alpha2.GatewayClass{}
-	if err := r.client.Get(r.ctx, types.NamespacedName{Name: string(gw.Spec.GatewayClassName)}, gc); err != nil {
-		return false, fmt.Errorf("failed to get gatewayclass %s: %w", gw.Spec.GatewayClassName, err)
-	}
-	if gc.Spec.ControllerName != r.gatewayClassControllerName {
-		return false, nil
-	}
-	return true, nil
+	return gatewayHasMatchingController(obj, r.gatewayClassControllerName, r.client, log)
 }
 
 func (r *gatewayReconciler) gatewayClassHasMatchingController(obj client.Object) bool {
