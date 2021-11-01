@@ -85,15 +85,16 @@ func isRefToGateway(ref gatewayapi_v1alpha2.ParentRef, gateway types.NamespacedN
 		string(ref.Name) == gateway.Name
 }
 
-// referencesContourGateway returns whether a given list of
-// ParentRefs references a Gateway controlled by this Contour.
+// referencesContourGateway returns the first Gateway from the
+// given list of ParentRefs that matches this Contour's GatewayClass
+// controller, if one exists.
 func referencesContourGateway(
 	parentRefs []gatewayapi_v1alpha2.ParentRef,
 	routeNamespace string,
 	controllerName gatewayapi_v1alpha2.GatewayController,
 	kubeClient client.Client,
 	log logrus.FieldLogger,
-) (bool, *gatewayapi_v1alpha2.Gateway) {
+) (*gatewayapi_v1alpha2.Gateway, bool) {
 	for _, parentRef := range parentRefs {
 		if !(parentRef.Group == nil || string(*parentRef.Group) == "" || string(*parentRef.Group) == gatewayapi_v1alpha2.GroupName) {
 			continue
@@ -123,11 +124,11 @@ func referencesContourGateway(
 		}
 
 		if gatewayClass.Spec.ControllerName == controllerName {
-			return true, gateway
+			return gateway, true
 		}
 	}
 
-	return false, nil
+	return nil, false
 }
 
 // gatewayHasMatchingController returns true if the provided Gateway

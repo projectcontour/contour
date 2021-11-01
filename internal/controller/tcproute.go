@@ -127,9 +127,9 @@ func (r *tcpRouteReconciler) gatewayHasMatchingController(obj client.Object) boo
 	return gatewayHasMatchingController(obj, r.gatewayClassControllerName, r.client, log)
 }
 
-// referencesContourGateway returns whether a given TCPRoute has a parentRef
-// to a Gateway with a GatewayClass controlled by this Contour.
-func (r *tcpRouteReconciler) referencesContourGateway(obj client.Object) (bool, *gatewayapi_v1alpha2.Gateway) {
+// referencesContourGateway returns the first Gateway from the TCPRoute's
+// ParentRefs with a GatewayClass controlled by this Contour, if one exists.
+func (r *tcpRouteReconciler) referencesContourGateway(obj client.Object) (*gatewayapi_v1alpha2.Gateway, bool) {
 	log := r.log.WithFields(logrus.Fields{
 		"namespace": obj.GetNamespace(),
 		"name":      obj.GetName(),
@@ -138,7 +138,7 @@ func (r *tcpRouteReconciler) referencesContourGateway(obj client.Object) (bool, 
 	route, ok := obj.(*gatewayapi_v1alpha2.TCPRoute)
 	if !ok {
 		log.Debugf("unexpected object type %T, bypassing reconciliation.", obj)
-		return false, nil
+		return nil, false
 	}
 
 	return referencesContourGateway(
@@ -167,7 +167,7 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, request reconcile.Re
 
 	// Check if the TCPRoute is referencing a Gateway
 	// controlled by this Contour.
-	ok, gw := r.referencesContourGateway(tcpRoute)
+	gw, ok := r.referencesContourGateway(tcpRoute)
 	if !ok {
 		return reconcile.Result{}, nil
 	}
