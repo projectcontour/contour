@@ -1223,4 +1223,87 @@ func TestRouteMatch(t *testing.T) {
 	}
 }
 
+func TestRouteRedirect(t *testing.T) {
+	tests := map[string]struct {
+		redirect *dag.Redirect
+		want     *envoy_route_v3.Route_Redirect
+	}{
+		"hostname specified": {
+			redirect: &dag.Redirect{
+				Hostname: "foo.bar",
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
+					HostRedirect: "foo.bar",
+				},
+			},
+		},
+		"scheme specified": {
+			redirect: &dag.Redirect{
+				Scheme: "https",
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
+					SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_SchemeRedirect{
+						SchemeRedirect: "https",
+					},
+				},
+			},
+		},
+		"port number specified": {
+			redirect: &dag.Redirect{
+				PortNumber: 8080,
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
+					PortRedirect: 8080,
+				},
+			},
+		},
+		"status code specified": {
+			redirect: &dag.Redirect{
+				StatusCode: 302,
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
+					ResponseCode: envoy_route_v3.RedirectAction_FOUND,
+				},
+			},
+		},
+		"unsupported status code specified": {
+			redirect: &dag.Redirect{
+				StatusCode: 303,
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{},
+			},
+		},
+		"all options specified": {
+			redirect: &dag.Redirect{
+				Hostname:   "foo.bar",
+				Scheme:     "https",
+				PortNumber: 8443,
+				StatusCode: 302,
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
+					HostRedirect: "foo.bar",
+					SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_SchemeRedirect{
+						SchemeRedirect: "https",
+					},
+					PortRedirect: 8443,
+					ResponseCode: envoy_route_v3.RedirectAction_FOUND,
+				},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := RouteRedirect(tc.redirect)
+			protobuf.ExpectEqual(t, tc.want, got)
+		})
+	}
+}
+
 func virtualhosts(v ...*envoy_route_v3.VirtualHost) []*envoy_route_v3.VirtualHost { return v }

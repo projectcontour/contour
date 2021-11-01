@@ -173,6 +173,8 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-tcproute-rejected", testWithHTTPGateway(testTCPRouteIsRejected))
 
 		f.NamespacedTest("gateway-udproute-rejected", testWithHTTPGateway(testUDPRouteIsRejected))
+
+		f.NamespacedTest("gateway-request-redirect-rule", testWithHTTPGateway(testRequestRedirectRule))
 	})
 
 	Describe("HTTPRoute: TLS Gateway", func() {

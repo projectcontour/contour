@@ -117,6 +117,39 @@ func RouteDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_Dir
 	}
 }
 
+// RouteRedirect creates a *envoy_route_v3.Route_Redirect for the
+// redirect specified. This allows a redirect to be returned to the
+// client.
+func RouteRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
+	r := &envoy_route_v3.Route_Redirect{
+		Redirect: &envoy_route_v3.RedirectAction{},
+	}
+
+	if len(redirect.Hostname) > 0 {
+		r.Redirect.HostRedirect = redirect.Hostname
+	}
+
+	if len(redirect.Scheme) > 0 {
+		r.Redirect.SchemeRewriteSpecifier = &envoy_route_v3.RedirectAction_SchemeRedirect{
+			SchemeRedirect: redirect.Scheme,
+		}
+	}
+
+	if redirect.PortNumber > 0 {
+		r.Redirect.PortRedirect = redirect.PortNumber
+	}
+
+	// Envoy's default is a 301 if not otherwise specified.
+	switch redirect.StatusCode {
+	case 301:
+		r.Redirect.ResponseCode = envoy_route_v3.RedirectAction_MOVED_PERMANENTLY
+	case 302:
+		r.Redirect.ResponseCode = envoy_route_v3.RedirectAction_FOUND
+	}
+
+	return r
+}
+
 // RouteRoute creates a *envoy_route_v3.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
