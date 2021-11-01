@@ -69,6 +69,25 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 			edges[pair{listener, vhost}] = true
 			nodes[vhost] = true
 
+			for _, route := range vhost.Routes {
+				edges[pair{vhost, route}] = true
+				nodes[route] = true
+
+				clusters := route.Clusters
+				if route.MirrorPolicy != nil && route.MirrorPolicy.Cluster != nil {
+					clusters = append(clusters, route.MirrorPolicy.Cluster)
+				}
+				for _, cluster := range clusters {
+					edges[pair{route, cluster}] = true
+					nodes[cluster] = true
+
+					if service := cluster.Upstream; service != nil {
+						edges[pair{cluster, service}] = true
+						nodes[service] = true
+					}
+				}
+			}
+
 			if vhost.TCPProxy != nil {
 				edges[pair{vhost, vhost.TCPProxy}] = true
 				nodes[vhost.TCPProxy] = true
