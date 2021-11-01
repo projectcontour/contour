@@ -874,6 +874,15 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert gateway-api ReferencePolicy": {
+			obj: &gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "referencepolicy-1",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
 		"insert extension service": {
 			obj: &contour_api_v1alpha1.ExtensionService{
 				ObjectMeta: fixture.ObjectMeta("default/extension"),
@@ -1142,6 +1151,21 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			obj: &gatewayapi_v1alpha2.TLSRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "tlsroute",
+					Namespace: "default",
+				},
+			},
+			want: true,
+		},
+		"remove gateway-api ReferencePolicy": {
+			cache: cache(&gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "referencepolicy",
+					Namespace: "default",
+				},
+			}),
+			obj: &gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "referencepolicy",
 					Namespace: "default",
 				},
 			},

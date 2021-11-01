@@ -731,6 +731,11 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 				s.log.WithError(err).Fatal("failed to create udproute-controller")
 			}
 
+			// Inform on ReferencePolicies.
+			if err := informOnResource(s.clients, k8s.ReferencePoliciesResource(), eventHandler, mgr.GetCache()); err != nil {
+				s.log.WithError(err).WithField("resource", k8s.ReferencePoliciesResource()).Fatal("failed to create informer")
+			}
+
 			// Inform on Namespaces.
 			if err := informOnResource(s.clients, k8s.NamespacesResource(), eventHandler, mgr.GetCache()); err != nil {
 				s.log.WithError(err).WithField("resource", k8s.NamespacesResource()).Fatal("failed to create informer")

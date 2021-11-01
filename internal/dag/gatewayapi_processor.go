@@ -501,7 +501,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 
 		for _, backendRef := range rule.BackendRefs {
 
-			service, err := p.validateBackendRef(backendRef, route.Namespace)
+			service, err := p.validateBackendRef(backendRef, KindTLSRoute, route.Namespace)
 			if err != nil {
 				routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 				continue
@@ -704,7 +704,7 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 
 // validateBackendRef verifies that the specified BackendRef is valid.
 // Returns an error if not or the service found in the cache.
-func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.BackendRef, routeNamespace string) (*Service, error) {
+func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.BackendRef, routeKind, routeNamespace string) (*Service, error) {
 	if !(backendRef.Group == nil || *backendRef.Group == "" || *backendRef.Group == "core") {
 		return nil, fmt.Errorf("Spec.Rules.BackendRef.Group must be empty or 'core'")
 	}
@@ -721,13 +721,58 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 		return nil, fmt.Errorf("Spec.Rules.BackendRef.Port must be specified")
 	}
 
+	// If the backend is in a different namespace than the route, then we need to
+	// check for a ReferencePolicy that allows the reference.
 	if backendRef.Namespace != nil && string(*backendRef.Namespace) != routeNamespace {
-		// we haven't implemented ReferencePolicy yet, so disallow any
-		// cross-namespace reference.
-		return nil, fmt.Errorf("Spec.Rules.BackendRef.Namespace must match the route's namespace")
+		var allowed bool
+		for _, referencePolicy := range p.source.referencepolicies {
+			// The ReferencePolicy must be defined in the namespace of
+			// the "referent" (i.e. the Service).
+			if referencePolicy.Namespace != string(*backendRef.Namespace) {
+				continue
+			}
+
+			// "From" must contain an entry matching the route that is
+			// referencing the service.
+			var fromAllowed bool
+			for _, from := range referencePolicy.Spec.From {
+				if from.Namespace == gatewayapi_v1alpha2.Namespace(routeNamespace) && from.Group == gatewayapi_v1alpha2.GroupName && from.Kind == gatewayapi_v1alpha2.Kind(routeKind) {
+					fromAllowed = true
+					break
+				}
+			}
+			if !fromAllowed {
+				continue
+			}
+
+			// "To" must contain an entry matching the Service that
+			// is being referenced.
+			var toAllowed bool
+			for _, to := range referencePolicy.Spec.To {
+				if (to.Group == "" || to.Group == "core") && to.Kind == "Service" && (to.Name == nil || *to.Name == "" || *to.Name == backendRef.Name) {
+					toAllowed = true
+					break
+				}
+			}
+			if !toAllowed {
+				continue
+			}
+
+			allowed = true
+			break
+		}
+
+		if !allowed {
+			return nil, fmt.Errorf("Spec.Rules.BackendRef.Namespace must match the route's namespace or be covered by a ReferencePolicy")
+		}
 	}
 
-	meta := types.NamespacedName{Name: string(backendRef.Name), Namespace: routeNamespace}
+	var meta types.NamespacedName
+	if backendRef.Namespace != nil {
+		meta = types.NamespacedName{Name: string(backendRef.Name), Namespace: string(*backendRef.Namespace)}
+	} else {
+		meta = types.NamespacedName{Name: string(backendRef.Name), Namespace: routeNamespace}
+	}
 
 	// TODO: Refactor EnsureService to take an int32 so conversion to intstr is not needed.
 	service, err := p.dag.EnsureService(meta, intstr.FromInt(int(*backendRef.Port)), p.source, p.EnableExternalNameService)
@@ -797,7 +842,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 	// Validate the backend refs.
 	totalWeight := uint32(0)
 	for _, backendRef := range backendRefs {
-		service, err := p.validateBackendRef(backendRef.BackendRef, routeNamespace)
+		service, err := p.validateBackendRef(backendRef.BackendRef, KindHTTPRoute, routeNamespace)
 		if err != nil {
 			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, err.Error())
 			continue

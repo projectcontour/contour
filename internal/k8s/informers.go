@@ -47,7 +47,7 @@ func DefaultResources() []schema.GroupVersionResource {
 	}
 }
 
-// +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=gatewayclasses;gateways;httproutes;tlsroutes;tcproutes;udproutes,verbs=get;list;watch
+// +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=gatewayclasses;gateways;httproutes;tlsroutes;tcproutes;udproutes;referencepolicies,verbs=get;list;watch
 // +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=gatewayclasses/status;gateways/status;httproutes/status;tlsroutes/status;tcproutes/status;udproutes/status,verbs=update
 
 // GatewayAPIResources returns a list of Gateway API group/version resources.
@@ -77,6 +77,14 @@ func GatewayAPIResources() []schema.GroupVersionResource {
 		Version:  gatewayapi_v1alpha2.GroupVersion.Version,
 		Resource: "udproutes",
 	}}
+}
+
+func ReferencePoliciesResource() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    gatewayapi_v1alpha2.GroupVersion.Group,
+		Version:  gatewayapi_v1alpha2.GroupVersion.Version,
+		Resource: "referencepolicies",
+	}
 }
 
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
