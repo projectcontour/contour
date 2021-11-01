@@ -1473,7 +1473,168 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
 			}),
 		},
-		"HTTPRoute references a backend in a different namespace, with invalid ReferencePolicy": {
+		"HTTPRoute references a backend in a different namespace, with valid ReferencePolicy (service-specific)": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+							BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{{
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind:      gatewayapi.KindPtr("Service"),
+										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      gatewayapi.PortNumPtr(8080),
+									},
+									Weight: pointer.Int32(1),
+								},
+							}},
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "HTTPRoute",
+							Namespace: "default",
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Service",
+							Name: gatewayapi.ObjectNamePtr(kuardService.Name),
+						}},
+					},
+				},
+			},
+			want: listeners(&Listener{
+				Port:         80,
+				VirtualHosts: virtualhosts(virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService)))),
+			}),
+		},
+		"HTTPRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong Kind)": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+							BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{{
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind:      gatewayapi.KindPtr("Service"),
+										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      gatewayapi.PortNumPtr(8080),
+									},
+									Weight: pointer.Int32(1),
+								},
+							}},
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "TLSRoute",
+							Namespace: "default",
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Service",
+						}},
+					},
+				},
+			},
+			want: listeners(&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+				),
+			}),
+		},
+		"HTTPRoute references a backend in a different namespace, with invalid ReferencePolicy (policy in wrong namespace)": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+							BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{{
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind:      gatewayapi.KindPtr("Service"),
+										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      gatewayapi.PortNumPtr(8080),
+									},
+									Weight: pointer.Int32(1),
+								},
+							}},
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: "some-other-namespace", // would need to be "projectcontour" to be valid
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "HTTPRoute",
+							Namespace: "default",
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Service",
+						}},
+					},
+				},
+			},
+			want: listeners(&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+				),
+			}),
+		},
+		"HTTPRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong from namespace)": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,
 			objs: []interface{}{
@@ -1516,6 +1677,61 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
 							Kind: "Service",
+						}},
+					},
+				},
+			},
+			want: listeners(&Listener{
+				Port: 80,
+				VirtualHosts: virtualhosts(
+					virtualhost("*", directResponseRoute("/", http.StatusServiceUnavailable)),
+				),
+			}),
+		},
+		"HTTPRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong service name)": {
+			gatewayclass: validClass,
+			gateway:      gatewayHTTPAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches: gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+							BackendRefs: []gatewayapi_v1alpha2.HTTPBackendRef{{
+								BackendRef: gatewayapi_v1alpha2.BackendRef{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind:      gatewayapi.KindPtr("Service"),
+										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      gatewayapi.PortNumPtr(8080),
+									},
+									Weight: pointer.Int32(1),
+								},
+							}},
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "HTTPRoute",
+							Namespace: "default",
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Service",
+							Name: gatewayapi.ObjectNamePtr("some-other-service"), // would need to be "kuard" to be valid.
 						}},
 					},
 				},
@@ -2800,7 +3016,72 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				},
 			),
 		},
-		"TLSRoute references a backend in a different namespace, with invalid ReferencePolicy": {
+		"TLSRoute references a backend in a different namespace, with valid ReferencePolicy (service-specific)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSPassthroughAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
+								{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind:      gatewayapi.KindPtr("Service"),
+										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      gatewayapi.PortNumPtr(8080),
+									},
+									Weight: pointer.Int32(1),
+								},
+							},
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "TLSRoute",
+							Namespace: "default",
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Service",
+							Name: gatewayapi.ObjectNamePtr(kuardService.Name),
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					VirtualHosts: virtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "tcp.projectcontour.io",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clustersWeight(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"TLSRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong Kind)": {
 			gatewayclass: validClass,
 			gateway:      gatewayTLSPassthroughAllNamespaces,
 			objs: []interface{}{
@@ -2843,6 +3124,154 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 						}},
 						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
 							Kind: "Service",
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute references a backend in a different namespace, with invalid ReferencePolicy (policy in wrong namespace)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSPassthroughAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
+								{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind:      gatewayapi.KindPtr("Service"),
+										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      gatewayapi.PortNumPtr(8080),
+									},
+									Weight: pointer.Int32(1),
+								},
+							},
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: "some-other-namespace", // would have to be "projectcontour" to be valid
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "TLSRoute",
+							Namespace: "default",
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Service",
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong from namespace)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSPassthroughAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
+								{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind:      gatewayapi.KindPtr("Service"),
+										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      gatewayapi.PortNumPtr(8080),
+									},
+									Weight: pointer.Int32(1),
+								},
+							},
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "TLSRoute",
+							Namespace: "some-other-namespace", // would have to be "default" to be valid
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Service",
+						}},
+					},
+				},
+			},
+			want: listeners(),
+		},
+		"TLSRoute references a backend in a different namespace, with invalid ReferencePolicy (wrong service name)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSPassthroughAllNamespaces,
+			objs: []interface{}{
+				kuardService,
+				&gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "default",
+					},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{"tcp.projectcontour.io"},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: []gatewayapi_v1alpha2.BackendRef{
+								{
+									BackendObjectReference: gatewayapi_v1alpha2.BackendObjectReference{
+										Kind:      gatewayapi.KindPtr("Service"),
+										Namespace: gatewayapi.NamespacePtr(kuardService.Namespace),
+										Name:      gatewayapi_v1alpha2.ObjectName(kuardService.Name),
+										Port:      gatewayapi.PortNumPtr(8080),
+									},
+									Weight: pointer.Int32(1),
+								},
+							},
+						}},
+					},
+				},
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: kuardService.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "TLSRoute",
+							Namespace: "default",
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Service",
+							Name: gatewayapi.ObjectNamePtr("some-other-service"), // would have to be "kuard" to be valid
 						}},
 					},
 				},

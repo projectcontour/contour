@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/projectcontour/contour/internal/errors"
-	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 
@@ -750,7 +749,7 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 			// is being referenced.
 			var toAllowed bool
 			for _, to := range referencePolicy.Spec.To {
-				if (to.Group == "" || to.Group == "core") && to.Kind == "Service" && (to.Name == nil || to.Name == gatewayapi.ObjectNamePtr("") || to.Name == &backendRef.Name) {
+				if (to.Group == "" || to.Group == "core") && to.Kind == "Service" && (to.Name == nil || *to.Name == "" || *to.Name == backendRef.Name) {
 					toAllowed = true
 					break
 				}
