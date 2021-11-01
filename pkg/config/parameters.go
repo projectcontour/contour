@@ -631,9 +631,13 @@ type Parameters struct {
 
 	// Listener holds various configurable Envoy Listener values.
 	Listener ListenerParameters `yaml:"listener,omitempty"`
+
 	// RateLimitService optionally holds properties of the Rate Limit Service
 	// to be used for global rate limiting.
 	RateLimitService RateLimitService `yaml:"rateLimitService,omitempty"`
+
+	// MetricsParameters holds configurable parameters for Contour and Envoy metrics.
+	Metrics MetricsParameters `yaml:"metrics,omitempty"`
 }
 
 // RateLimitService defines properties of a global Rate Limit Service.
@@ -657,6 +661,64 @@ type RateLimitService struct {
 	//
 	// ref. https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html
 	EnableXRateLimitHeaders bool `yaml:"enableXRateLimitHeaders,omitempty"`
+}
+
+// MetricsParameters defines configuration for metrics server endpoints in both
+// Contour and Envoy.
+type MetricsParameters struct {
+	Contour MetricsServerParameters `yaml:"contour,omitempty"`
+	Envoy   MetricsServerParameters `yaml:"envoy,omitempty"`
+}
+
+// MetricsServerParameters defines configuration for metrics server.
+type MetricsServerParameters struct {
+	// Address that metrics server will bind to.
+	Address string `yaml:"address,omitempty"`
+
+	// Port that metrics server will bind to.
+	Port int `yaml:"port,omitempty"`
+
+	// ServerCert is the file path for server certificate.
+	// Optional: required only if HTTPS is used to protect the metrics endpoint.
+	ServerCert string `yaml:"server-certificate-path,omitempty"`
+
+	// ServerKey is the file path for the private key which corresponds to the server certificate.
+	// Optional: required only if HTTPS is used to protect the metrics endpoint.
+	ServerKey string `yaml:"server-key-path,omitempty"`
+
+	// CABundle is the file path for CA certificate(s) used for validating the client certificate.
+	// Optional: required only if client certificates shall be validated to protect the metrics endpoint.
+	CABundle string `yaml:"ca-certificate-path,omitempty"`
+}
+
+func (p *MetricsParameters) Validate() error {
+	if err := p.Contour.Validate(); err != nil {
+		return fmt.Errorf("metrics.contour: %v", err)
+	}
+	if err := p.Envoy.Validate(); err != nil {
+		return fmt.Errorf("metrics.envoy: %v", err)
+	}
+
+	return nil
+}
+
+func (p *MetricsServerParameters) Validate() error {
+	// Check that both certificate and key are provided if either one is provided.
+	if (p.ServerCert != "") != (p.ServerKey != "") {
+		return fmt.Errorf("you must supply at least server-certificate-path and server-key-path or none of them")
+	}
+
+	// Optional client certificate validation can be enabled if server certificate (and consequently also key) is also provided.
+	if (p.CABundle != "") && (p.ServerCert == "") {
+		return fmt.Errorf("you must supply also server-certificate-path and server-key-path if setting ca-certificate-path")
+	}
+
+	return nil
+}
+
+// HasTLS returns true if parameters have been provided to enable TLS for metrics.
+func (p *MetricsServerParameters) HasTLS() bool {
+	return p.ServerCert != "" && p.ServerKey != ""
 }
 
 // Validate verifies that the parameter values do not have any syntax errors.
@@ -703,7 +765,7 @@ func (p *Parameters) Validate() error {
 		}
 	}
 
-	return nil
+	return p.Metrics.Validate()
 }
 
 // Defaults returns the default set of parameters.

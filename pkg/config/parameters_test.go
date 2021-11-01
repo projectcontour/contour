@@ -585,3 +585,60 @@ func TestAccessLogFormatExtensions(t *testing.T) {
 	p3 := Defaults()
 	assert.Empty(t, p3.AccessLogFormatterExtensions())
 }
+
+func TestMetricsParametersValidation(t *testing.T) {
+	valid := MetricsParameters{
+		Contour: MetricsServerParameters{
+			Address: "0.0.0.0",
+			Port:    1234,
+		},
+		Envoy: MetricsServerParameters{
+			Address: "0.0.0.0",
+			Port:    1234,
+		},
+	}
+	assert.NoError(t, valid.Validate())
+
+	tlsValid := MetricsParameters{
+		Contour: MetricsServerParameters{
+			Address:    "0.0.0.0",
+			Port:       1234,
+			ServerCert: "cert.pem",
+			ServerKey:  "key.pem",
+		},
+		Envoy: MetricsServerParameters{
+			Address: "0.0.0.0",
+			Port:    1234,
+		},
+	}
+	assert.NoError(t, valid.Validate())
+	assert.True(t, tlsValid.Contour.HasTLS())
+	assert.False(t, tlsValid.Envoy.HasTLS())
+
+	tlsKeyMissing := MetricsParameters{
+		Contour: MetricsServerParameters{
+			Address:    "0.0.0.0",
+			Port:       1234,
+			ServerCert: "cert.pem",
+		},
+		Envoy: MetricsServerParameters{
+			Address: "0.0.0.0",
+			Port:    1234,
+		},
+	}
+	assert.Error(t, tlsKeyMissing.Validate())
+
+	tlsCAWithoutServerCert := MetricsParameters{
+		Contour: MetricsServerParameters{
+			Address: "0.0.0.0",
+			Port:    1234,
+		},
+		Envoy: MetricsServerParameters{
+			Address:  "0.0.0.0",
+			Port:     1234,
+			CABundle: "ca.pem",
+		},
+	}
+	assert.Error(t, tlsCAWithoutServerCert.Validate())
+
+}

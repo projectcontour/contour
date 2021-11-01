@@ -387,6 +387,26 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		}
 	}
 
+	contourMetrics := contour_api_v1alpha1.MetricsConfig{
+		Address: ctx.metricsAddr,
+		Port:    ctx.metricsPort,
+	}
+
+	envoyMetrics := contour_api_v1alpha1.MetricsConfig{
+		Address: ctx.statsAddr,
+		Port:    ctx.statsPort,
+	}
+
+	// Override metrics endpoint info from config files
+	//
+	// Note!
+	// Parameters from command line should take precedence over config file,
+	// but here we cannot know anymore if value in ctx.nnn are defaults from
+	// newServeContext() or from command line arguments. Therefore metrics
+	// configuration from config file takes precedence over command line.
+	setMetricsFromConfig(ctx.Config.Metrics.Contour, &contourMetrics)
+	setMetricsFromConfig(ctx.Config.Metrics.Envoy, &envoyMetrics)
+
 	// Convert serveContext to a ContourConfiguration
 	contourConfiguration := contour_api_v1alpha1.ContourConfigurationSpec{
 		Ingress: ingress,
@@ -424,7 +444,8 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				Port:      ctx.httpsPort,
 				AccessLog: ctx.httpsAccessLog,
 			},
-			Metrics: contour_api_v1alpha1.MetricsConfig{
+			Metrics: envoyMetrics,
+			Health: contour_api_v1alpha1.HealthConfig{
 				Address: ctx.statsAddr,
 				Port:    ctx.statsPort,
 			},
@@ -463,10 +484,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		EnableExternalNameService: ctx.Config.EnableExternalNameService,
 		RateLimitService:          rateLimitService,
 		Policy:                    policy,
-		Metrics: contour_api_v1alpha1.MetricsConfig{
-			Address: ctx.metricsAddr,
-			Port:    ctx.metricsPort,
-		},
+		Metrics:                   contourMetrics,
 	}
 
 	xdsServerType := contour_api_v1alpha1.ContourServerType
@@ -487,4 +505,30 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	}
 
 	return contourConfiguration
+}
+
+func setMetricsFromConfig(src config.MetricsServerParameters, dst *contour_api_v1alpha1.MetricsConfig) {
+	if len(src.Address) > 0 {
+		dst.Address = src.Address
+	}
+
+	if src.Port > 0 {
+		dst.Port = src.Port
+	}
+
+	if src.HasTLS() {
+		dst.TLS = &contour_api_v1alpha1.MetricsTLS{
+			CertFile: src.ServerCert,
+			KeyFile:  src.ServerKey,
+			CAFile:   src.CABundle,
+		}
+	}
+
+	if src.HasTLS() {
+		dst.TLS = &contour_api_v1alpha1.MetricsTLS{
+			CertFile: src.ServerCert,
+			KeyFile:  src.ServerKey,
+			CAFile:   src.CABundle,
+		}
+	}
 }

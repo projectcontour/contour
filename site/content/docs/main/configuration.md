@@ -87,6 +87,7 @@ Where Contour settings can also be specified with command-line flags, the comman
 | gateway                   | GatewayConfig          |                                                                                                      | The [gateway-api Gateway configuration](#gateway-configuration).                                                                                                                                                                                                                      |
 | rateLimitService          | RateLimitServiceConfig |                                                                                                      | The [rate limit service configuration](#rate-limit-service-configuration).                                                                                                                                                                                                            |
 | enableExternalNameService | boolean                | `false`                                                                                              | Enable ExternalName Service processing. Enabling this has security implications. Please see the [advisory](https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc) for more details.                                                                       |
+| metrics                   | MetricsParameters     |                                                                                                       | The [metrics configuration](#metrics-configuration) |
 
 ### TLS Configuration
 
@@ -221,6 +222,18 @@ The rate limit service configuration block is used to configure an optional glob
 | domain                  | string | contour | This field defines the rate limit domain value to pass to the rate limit service. Acts as a container for a set of rate limit definitions within the RLS.                                                                                                                                                              |
 | failOpen                | bool   | false   | This field defines whether to allow requests to proceed when the rate limit service fails to respond with a valid rate limit decision within the timeout defined on the extension service.                                                                                                                             |
 | enableXRateLimitHeaders | bool   | false   | This field defines whether to include the X-RateLimit headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset (as defined by the IETF Internet-Draft https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html), on responses to clients when the Rate Limit Service is consulted for a request. |
+
+### Metrics Configuration
+
+MetricsParameters holds configurable parameters for Contour and Envoy metrics:
+
+| Field Name              | Type   | Default                      | Description                                                                  |
+| ----------------------- | ------ | ---------------------------- | -----------------------------------------------------------------------------|
+| address                 | string | 0.0.0.0                      | Address that metrics server will bind to.                                    |
+| port                    | int    | 8000 (Contour), 8002 (Envoy) | Port that metrics server will bind to.                                       |
+| server-certificate-path | string | none                         | Optional path to the server certificate file.                                |
+| server-key-path         | string | none                         | Optional path to the server private key file.                                |
+| ca-certificate-path     | string | none                         | Optional path to the CA certificate file used to verify client certificates. |
 
 ### Configuration Example
 

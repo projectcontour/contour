@@ -34,6 +34,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -435,11 +436,15 @@ func tcpproxy(statPrefix, cluster string) *envoy_listener_v3.Filter {
 }
 
 func statsListener() *envoy_listener_v3.Listener {
-	return envoy_v3.StatsListener("0.0.0.0", 8002)
+	// Single listener with metrics and health endpoints.
+	listeners := envoy_v3.StatsListeners(
+		contour_api_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
+		contour_api_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002})
+	return listeners[0]
 }
 
 func envoyAdminListener(port int) *envoy_listener_v3.Listener {
-	return envoy_v3.EnvoyAdminListener(port)
+	return envoy_v3.AdminListener(port)
 }
 
 func defaultHTTPListener() *envoy_listener_v3.Listener {

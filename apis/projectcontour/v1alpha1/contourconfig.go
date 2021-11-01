@@ -37,8 +37,7 @@ type ContourConfigurationSpec struct {
 	// +kubebuilder:default={logLevel: "info", kubernetesLogLevel: 0}
 	Debug DebugConfig `json:"debug"`
 
-	// Health contains parameters to configure endpoints which Contour
-	// exposes to respond to Kubernetes health checks.
+	// Health defines the endpoints Contour uses to serve health checks.
 	// +optional
 	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
 	Health HealthConfig `json:"health"`
@@ -46,7 +45,7 @@ type ContourConfigurationSpec struct {
 	// Envoy contains parameters for Envoy as well
 	// as how to optionally configure a managed Envoy fleet.
 	// +optional
-	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "HTTP/1.1";"HTTP/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
+	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, health: {address: "0.0.0.0", port: 8002}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "HTTP/1.1";"HTTP/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
 	Envoy EnvoyConfig `json:"envoy"`
 
 	// Gateway contains parameters for the gateway-api Gateway that Contour
@@ -79,7 +78,7 @@ type ContourConfigurationSpec struct {
 	// +optional
 	Policy *PolicyConfig `json:"policy,omitempty"`
 
-	// Metrics defines the endpoints Contour uses to serve to metrics.
+	// Metrics defines the endpoint Contour uses to serve metrics.
 	// +optional
 	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
 	Metrics MetricsConfig `json:"metrics"`
@@ -147,13 +146,13 @@ type IngressConfig struct {
 	StatusAddress *string `json:"statusAddress,omitempty"`
 }
 
-// HealthConfig defines the endpoints Contour will serve to enable health checks.
+// HealthConfig defines the endpoints to enable health checks.
 type HealthConfig struct {
-	// Defines the Contour health address interface.
+	// Defines the health address interface.
 	// +kubebuilder:validation:MinLength=1
 	Address string `json:"address"`
 
-	// Defines the Contour health port.
+	// Defines the health port.
 	Port int `json:"port"`
 }
 
@@ -166,6 +165,25 @@ type MetricsConfig struct {
 
 	// Defines the metrics port.
 	Port int `json:"port"`
+
+	// TLS holds TLS file config details.
+	// +optional
+	TLS *MetricsTLS `json:"tls,omitempty"`
+}
+
+// TLS holds TLS file config details.
+type MetricsTLS struct {
+	// CA filename.
+	// +optional
+	CAFile string `json:"caFile,omitempty"`
+
+	// Client certificate filename.
+	// +optional
+	CertFile string `json:"certFile,omitempty"`
+
+	// Client key filename.
+	// +optional
+	KeyFile string `json:"keyFile,omitempty"`
 }
 
 // HTTPVersionType is the name of a supported HTTP version.
@@ -192,7 +210,12 @@ type EnvoyConfig struct {
 	// +kubebuilder:default={address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}
 	HTTPSListener EnvoyListener `json:"https"`
 
-	// Metrics defines the endpoints Envoy use to serve to metrics.
+	// Health defines the endpoint Envoy uses to serve health checks.
+	// +optional
+	// +kubebuilder:default={address: "0.0.0.0", port: 8002}
+	Health HealthConfig `json:"health"`
+
+	// Metrics defines the endpoint Envoy uses to serve metrics.
 	// +kubebuilder:default={address: "0.0.0.0", port: 8002}
 	Metrics MetricsConfig `json:"metrics"`
 

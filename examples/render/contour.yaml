@@ -276,6 +276,9 @@ spec:
                   defaultHTTPVersions:
                   - HTTP/1.1
                   - HTTP/2
+                  health:
+                    address: 0.0.0.0
+                    port: 8002
                   http:
                     accessLog: /dev/stdout
                     address: 0.0.0.0
@@ -359,6 +362,24 @@ spec:
                       - HTTP/2
                       type: string
                     type: array
+                  health:
+                    default:
+                      address: 0.0.0.0
+                      port: 8002
+                    description: Health defines the endpoint Envoy uses to serve health
+                      checks.
+                    properties:
+                      address:
+                        description: Defines the health address interface.
+                        minLength: 1
+                        type: string
+                      port:
+                        description: Defines the health port.
+                        type: integer
+                    required:
+                    - address
+                    - port
+                    type: object
                   http:
                     default:
                       accessLog: /dev/stdout
@@ -504,8 +525,8 @@ spec:
                     default:
                       address: 0.0.0.0
                       port: 8002
-                    description: Metrics defines the endpoints Envoy use to serve
-                      to metrics.
+                    description: Metrics defines the endpoint Envoy uses to serve
+                      metrics.
                     properties:
                       address:
                         description: Defines the metrics address interface.
@@ -515,6 +536,19 @@ spec:
                       port:
                         description: Defines the metrics port.
                         type: integer
+                      tls:
+                        description: TLS holds TLS file config details.
+                        properties:
+                          caFile:
+                            description: CA filename.
+                            type: string
+                          certFile:
+                            description: Client certificate filename.
+                            type: string
+                          keyFile:
+                            description: Client key filename.
+                            type: string
+                        type: object
                     required:
                     - address
                     - port
@@ -640,15 +674,15 @@ spec:
                 default:
                   address: 0.0.0.0
                   port: 8000
-                description: Health contains parameters to configure endpoints which
-                  Contour exposes to respond to Kubernetes health checks.
+                description: Health defines the endpoints Contour uses to serve health
+                  checks.
                 properties:
                   address:
-                    description: Defines the Contour health address interface.
+                    description: Defines the health address interface.
                     minLength: 1
                     type: string
                   port:
-                    description: Defines the Contour health port.
+                    description: Defines the health port.
                     type: integer
                 required:
                 - address
@@ -735,8 +769,7 @@ spec:
                 default:
                   address: 0.0.0.0
                   port: 8000
-                description: Metrics defines the endpoints Contour uses to serve to
-                  metrics.
+                description: Metrics defines the endpoint Contour uses to serve metrics.
                 properties:
                   address:
                     description: Defines the metrics address interface.
@@ -746,6 +779,19 @@ spec:
                   port:
                     description: Defines the metrics port.
                     type: integer
+                  tls:
+                    description: TLS holds TLS file config details.
+                    properties:
+                      caFile:
+                        description: CA filename.
+                        type: string
+                      certFile:
+                        description: Client certificate filename.
+                        type: string
+                      keyFile:
+                        description: Client key filename.
+                        type: string
+                    type: object
                 required:
                 - address
                 - port
@@ -1186,6 +1232,9 @@ spec:
                       defaultHTTPVersions:
                       - HTTP/1.1
                       - HTTP/2
+                      health:
+                        address: 0.0.0.0
+                        port: 8002
                       http:
                         accessLog: /dev/stdout
                         address: 0.0.0.0
@@ -1269,6 +1318,24 @@ spec:
                           - HTTP/2
                           type: string
                         type: array
+                      health:
+                        default:
+                          address: 0.0.0.0
+                          port: 8002
+                        description: Health defines the endpoint Envoy uses to serve
+                          health checks.
+                        properties:
+                          address:
+                            description: Defines the health address interface.
+                            minLength: 1
+                            type: string
+                          port:
+                            description: Defines the health port.
+                            type: integer
+                        required:
+                        - address
+                        - port
+                        type: object
                       http:
                         default:
                           accessLog: /dev/stdout
@@ -1417,8 +1484,8 @@ spec:
                         default:
                           address: 0.0.0.0
                           port: 8002
-                        description: Metrics defines the endpoints Envoy use to serve
-                          to metrics.
+                        description: Metrics defines the endpoint Envoy uses to serve
+                          metrics.
                         properties:
                           address:
                             description: Defines the metrics address interface.
@@ -1428,6 +1495,19 @@ spec:
                           port:
                             description: Defines the metrics port.
                             type: integer
+                          tls:
+                            description: TLS holds TLS file config details.
+                            properties:
+                              caFile:
+                                description: CA filename.
+                                type: string
+                              certFile:
+                                description: Client certificate filename.
+                                type: string
+                              keyFile:
+                                description: Client key filename.
+                                type: string
+                            type: object
                         required:
                         - address
                         - port
@@ -1556,15 +1636,15 @@ spec:
                     default:
                       address: 0.0.0.0
                       port: 8000
-                    description: Health contains parameters to configure endpoints
-                      which Contour exposes to respond to Kubernetes health checks.
+                    description: Health defines the endpoints Contour uses to serve
+                      health checks.
                     properties:
                       address:
-                        description: Defines the Contour health address interface.
+                        description: Defines the health address interface.
                         minLength: 1
                         type: string
                       port:
-                        description: Defines the Contour health port.
+                        description: Defines the health port.
                         type: integer
                     required:
                     - address
@@ -1651,8 +1731,8 @@ spec:
                     default:
                       address: 0.0.0.0
                       port: 8000
-                    description: Metrics defines the endpoints Contour uses to serve
-                      to metrics.
+                    description: Metrics defines the endpoint Contour uses to serve
+                      metrics.
                     properties:
                       address:
                         description: Defines the metrics address interface.
@@ -1662,6 +1742,19 @@ spec:
                       port:
                         description: Defines the metrics port.
                         type: integer
+                      tls:
+                        description: TLS holds TLS file config details.
+                        properties:
+                          caFile:
+                            description: CA filename.
+                            type: string
+                          certFile:
+                            description: Client certificate filename.
+                            type: string
+                          keyFile:
+                            description: Client key filename.
+                            type: string
+                        type: object
                     required:
                     - address
                     - port

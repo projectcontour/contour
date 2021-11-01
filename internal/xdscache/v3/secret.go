@@ -30,9 +30,21 @@ import (
 
 // SecretCache manages the contents of the gRPC SDS cache.
 type SecretCache struct {
-	mu     sync.Mutex
-	values map[string]*envoy_tls_v3.Secret
+	mu           sync.Mutex
+	values       map[string]*envoy_tls_v3.Secret
+	staticValues map[string]*envoy_tls_v3.Secret
 	contour.Cond
+}
+
+func NewSecretsCache(secrets []*envoy_tls_v3.Secret) *SecretCache {
+	secretCache := &SecretCache{
+		staticValues: map[string]*envoy_tls_v3.Secret{},
+	}
+
+	for _, s := range secrets {
+		secretCache.staticValues[s.Name] = s
+	}
+	return secretCache
 }
 
 // Update replaces the contents of the cache with the supplied map.
@@ -52,6 +64,9 @@ func (c *SecretCache) Contents() []proto.Message {
 	for _, v := range c.values {
 		values = append(values, v)
 	}
+	for _, v := range c.staticValues {
+		values = append(values, v)
+	}
 	sort.Stable(sorter.For(values))
 	return protobuf.AsMessages(values)
 }
@@ -64,9 +79,14 @@ func (c *SecretCache) Query(names []string) []proto.Message {
 		// we can only return secrets where their value is
 		// known. if the secret is not registered in the cache
 		// we return nothing.
-		if v, ok := c.values[n]; ok {
-			values = append(values, v)
+		v, ok := c.values[n]
+		if !ok {
+			v, ok = c.staticValues[n]
+			if !ok {
+				continue
+			}
 		}
+		values = append(values, v)
 	}
 	sort.Stable(sorter.For(values))
 	return protobuf.AsMessages(values)
