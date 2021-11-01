@@ -370,6 +370,9 @@ type RequestHashPolicy struct {
 
 	// CookieHashOptions is set when a cookie hash is desired.
 	CookieHashOptions *CookieHashOptions
+
+	// HashSourceIP is set to true when source ip hashing is desired.
+	HashSourceIP bool
 }
 
 // GlobalRateLimitPolicy holds global rate limiting parameters.

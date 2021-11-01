@@ -272,21 +272,32 @@ func withSessionAffinity(route *envoy_route_v3.Route_Route) *envoy_route_v3.Rout
 	return route
 }
 
-type headerTerminalPair struct {
-	headerName string
-	terminal   bool
+type hashPolicySpecifier struct {
+	headerName   string
+	terminal     bool
+	hashSourceIP bool
 }
 
-func withRequestHashPolicyHeader(route *envoy_route_v3.Route_Route, headerOptions ...headerTerminalPair) *envoy_route_v3.Route_Route {
-	for _, htp := range headerOptions {
-		route.Route.HashPolicy = append(route.Route.HashPolicy, &envoy_route_v3.RouteAction_HashPolicy{
-			Terminal: htp.terminal,
-			PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Header_{
-				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
-					HeaderName: htp.headerName,
+func withRequestHashPolicySpecifiers(route *envoy_route_v3.Route_Route, policies ...hashPolicySpecifier) *envoy_route_v3.Route_Route {
+	for _, p := range policies {
+		hp := &envoy_route_v3.RouteAction_HashPolicy{
+			Terminal: p.terminal,
+		}
+		if p.hashSourceIP {
+			hp.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties_{
+				ConnectionProperties: &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties{
+					SourceIp: true,
 				},
-			},
-		})
+			}
+		}
+		if len(p.headerName) > 0 {
+			hp.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Header_{
+				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+					HeaderName: p.headerName,
+				},
+			}
+		}
+		route.Route.HashPolicy = append(route.Route.HashPolicy, hp)
 	}
 	return route
 }

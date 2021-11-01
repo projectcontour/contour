@@ -799,8 +799,14 @@ type RequestHashPolicy struct {
 	// HeaderHashOptions should be set when request header hash based load
 	// balancing is desired. It must be the only hash option field set,
 	// otherwise this request hash policy object will be ignored.
-	// +kubebuilder:validation:Required
+	// +optional
 	HeaderHashOptions *HeaderHashOptions `json:"headerHashOptions,omitempty"`
+
+	// HashSourceIP should be set to true when request source IP hash based
+	// load balancing is desired. It must be the only hash option field set,
+	// otherwise this request hash policy object will be ignored.
+	// +optional
+	HashSourceIP bool `json:"hashSourceIP,omitempty"`
 }
 
 // LoadBalancerPolicy defines the load balancing policy.

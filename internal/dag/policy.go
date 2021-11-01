@@ -660,43 +660,61 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 			}},
 		}, LoadBalancerPolicyCookie
 	case LoadBalancerPolicyRequestHash:
-		rhp := []RequestHashPolicy{}
+		rhps := []RequestHashPolicy{}
 		actualStrategy := strategy
+		hashSourceIPSet := false
 		// Map of unique header names.
 		headerHashPolicies := map[string]bool{}
 		for _, hashPolicy := range lbp.RequestHashPolicies {
-			if hashPolicy.HeaderHashOptions == nil {
-				validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
-					"ignoring invalid nil hash policy options")
-				continue
-			}
-			headerName := http.CanonicalHeaderKey(hashPolicy.HeaderHashOptions.HeaderName)
-			if msgs := validation.IsHTTPHeaderName(headerName); len(msgs) != 0 {
-				validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
-					"ignoring invalid header hash policy options with invalid header name %q: %v", headerName, msgs)
-				continue
-			}
-			if _, ok := headerHashPolicies[headerName]; ok {
-				validCond.AddWarningf("SpecError", "IgnoredField",
-					"ignoring invalid header hash policy options with duplicated header name %s", headerName)
-				continue
-			}
-			headerHashPolicies[headerName] = true
-
-			rhp = append(rhp, RequestHashPolicy{
+			rhp := RequestHashPolicy{
 				Terminal: hashPolicy.Terminal,
-				HeaderHashOptions: &HeaderHashOptions{
+			}
+
+			// Ensure hashing for exactly one request attribute is set.
+			if (!hashPolicy.HashSourceIP && hashPolicy.HeaderHashOptions == nil) ||
+				(hashPolicy.HashSourceIP && hashPolicy.HeaderHashOptions != nil) {
+				validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+					"ignoring invalid request hash policy, must set exactly one of hashSourceIP or headerHashOptions")
+				continue
+			}
+
+			if hashPolicy.HashSourceIP {
+				if hashSourceIPSet {
+					validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+						"ignoring invalid request hash policy, hashSourceIP specified multiple times")
+					continue
+				}
+				rhp.HashSourceIP = true
+				hashSourceIPSet = true
+			}
+
+			if hashPolicy.HeaderHashOptions != nil {
+				headerName := http.CanonicalHeaderKey(hashPolicy.HeaderHashOptions.HeaderName)
+				if msgs := validation.IsHTTPHeaderName(headerName); len(msgs) != 0 {
+					validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+						"ignoring invalid header hash policy options with invalid header name %q: %v", headerName, msgs)
+					continue
+				}
+				if _, ok := headerHashPolicies[headerName]; ok {
+					validCond.AddWarningf("SpecError", "IgnoredField",
+						"ignoring invalid header hash policy options with duplicated header name %s", headerName)
+					continue
+				}
+				headerHashPolicies[headerName] = true
+				rhp.HeaderHashOptions = &HeaderHashOptions{
 					HeaderName: headerName,
-				},
-			})
+				}
+			}
+
+			rhps = append(rhps, rhp)
 		}
-		if len(rhp) == 0 {
+		if len(rhps) == 0 {
 			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
 				"ignoring invalid header hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
-			rhp = nil
+			rhps = nil
 			actualStrategy = LoadBalancerPolicyRoundRobin
 		}
-		return rhp, actualStrategy
+		return rhps, actualStrategy
 	default:
 		return nil, strategy
 	}

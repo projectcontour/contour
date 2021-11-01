@@ -491,6 +491,44 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"single service w/ request source ip hashing": {
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{c3},
+				RequestHashPolicies: []dag.RequestHashPolicy{
+					{
+						HashSourceIP: true,
+					},
+					{
+						HeaderHashOptions: &dag.HeaderHashOptions{
+							HeaderName: "User-Agent",
+						},
+					},
+				},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/1a2ffc1fef",
+					},
+					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{
+						{
+							PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties_{
+								ConnectionProperties: &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties{
+									SourceIp: true,
+								},
+							},
+						},
+						{
+							PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_Header_{
+								Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
+									HeaderName: "User-Agent",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"host header rewrite": {
 			route: &dag.Route{
 				RequestHeadersPolicy: &dag.HeadersPolicy{

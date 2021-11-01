@@ -191,6 +191,13 @@ func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.R
 				},
 			}
 		}
+		if rhp.HashSourceIP {
+			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties_{
+				ConnectionProperties: &envoy_route_v3.RouteAction_HashPolicy_ConnectionProperties{
+					SourceIp: true,
+				},
+			}
+		}
 		hashPolicies = append(hashPolicies, newHP)
 	}
 	return hashPolicies
