@@ -3002,7 +3002,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Port: 443,
-					VirtualHosts: virtualhosts(
+					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name:         "tcp.projectcontour.io",
@@ -3067,7 +3067,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			want: listeners(
 				&Listener{
 					Port: 443,
-					VirtualHosts: virtualhosts(
+					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
 								Name:         "tcp.projectcontour.io",
