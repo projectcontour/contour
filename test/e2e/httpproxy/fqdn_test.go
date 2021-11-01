@@ -61,9 +61,9 @@ func testWildcardSubdomainFQDN(namespace string) {
 	Specify("wildcard routing works", func() {
 		t := f.T()
 
-		f.Fixtures.Echo.Deploy(namespace, "wildcardprojectcontourio")
-		f.Fixtures.Echo.Deploy(namespace, "projectcontourio")
-		f.Fixtures.Echo.Deploy(namespace, "barprojectcontourio")
+		f.Fixtures.Echo.Deploy(namespace, "wildcarddomainio")
+		f.Fixtures.Echo.Deploy(namespace, "domainio")
+		f.Fixtures.Echo.Deploy(namespace, "bardomainio")
 
 		proxyWildcard := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
@@ -72,12 +72,12 @@ func testWildcardSubdomainFQDN(namespace string) {
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "*.projectcontour.io",
+					Fqdn: "*.domain.io",
 				},
 				Routes: []contourv1.Route{{
 					Services: []contourv1.Service{
 						{
-							Name: "wildcardprojectcontourio",
+							Name: "wildcarddomainio",
 							Port: 80,
 						},
 					},
@@ -91,12 +91,12 @@ func testWildcardSubdomainFQDN(namespace string) {
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "projectcontour.io",
+					Fqdn: "domain.io",
 				},
 				Routes: []contourv1.Route{{
 					Services: []contourv1.Service{
 						{
-							Name: "projectcontourio",
+							Name: "domainio",
 							Port: 80,
 						},
 					},
@@ -110,12 +110,12 @@ func testWildcardSubdomainFQDN(namespace string) {
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "bar.projectcontour.io",
+					Fqdn: "bar.domain.io",
 				},
 				Routes: []contourv1.Route{{
 					Services: []contourv1.Service{
 						{
-							Name: "barprojectcontourio",
+							Name: "bardomainio",
 							Port: 80,
 						},
 					},
@@ -127,24 +127,24 @@ func testWildcardSubdomainFQDN(namespace string) {
 		f.CreateHTTPProxyAndWaitFor(proxyFullFQDNSubdomain, httpProxyValid)
 
 		cases := map[string]ServiceResult{
-			"projectcontour.io": {
-				ServiceName:   "projectcontourio",
+			"domain.io": {
+				ServiceName:   "domainio",
 				ShouldSucceed: true,
 			},
-			"www.projectcontour.io": {
-				ServiceName:   "wildcardprojectcontourio",
+			"www.domain.io": {
+				ServiceName:   "wildcarddomainio",
 				ShouldSucceed: true,
 			},
-			"bar.projectcontour.io": {
-				ServiceName:   "barprojectcontourio",
+			"bar.domain.io": {
+				ServiceName:   "bardomainio",
 				ShouldSucceed: true,
 			},
-			"foo.projectcontour.io": {
-				ServiceName:   "wildcardprojectcontourio",
+			"foo.domain.io": {
+				ServiceName:   "wildcarddomainio",
 				ShouldSucceed: true,
 			},
-			"bar.foo.projectcontour.io": {
-				ServiceName:   "wildcardprojectcontourio",
+			"bar.foo.domain.io": {
+				ServiceName:   "wildcarddomainio",
 				ShouldSucceed: false,
 			},
 		}
