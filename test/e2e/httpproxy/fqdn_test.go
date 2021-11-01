@@ -144,7 +144,6 @@ func testWildcardSubdomainFQDN(namespace string) {
 				ShouldSucceed: true,
 			},
 			"bar.foo.domain.io": {
-				ServiceName:   "wildcarddomainio",
 				ShouldSucceed: false,
 			},
 		}

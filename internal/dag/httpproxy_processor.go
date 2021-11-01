@@ -16,7 +16,6 @@ package dag
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -694,16 +693,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 		// as Envoy's virtualhost hostname wildcard matching can match multiple
 		// labels. This match ignores a port in the hostname in case it is present.
 		if strings.HasPrefix(rootProxy.Spec.VirtualHost.Fqdn, "*.") {
-			r.HeaderMatchConditions = []HeaderMatchCondition{
-				{
-					// Internally Envoy uses the HTTP/2 ":authority" header in
-					// place of the HTTP/1 "host" header.
-					// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-headermatcher
-					Name:      ":authority",
-					MatchType: HeaderMatchTypeRegex,
-					Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(rootProxy.Spec.VirtualHost.Fqdn[1:]),
-				},
-			}
+			r.HeaderMatchConditions = append(r.HeaderMatchConditions, wildcardDomainHeaderMatch(rootProxy.Spec.VirtualHost.Fqdn))
 		}
 
 		routes = append(routes, r)

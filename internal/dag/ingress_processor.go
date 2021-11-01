@@ -265,16 +265,7 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 	// as Envoy's virtualhost hostname wildcard matching can match multiple
 	// labels. This match ignores a port in the hostname in case it is present.
 	if strings.HasPrefix(host, "*.") {
-		r.HeaderMatchConditions = []HeaderMatchCondition{
-			{
-				// Internally Envoy uses the HTTP/2 ":authority" header in
-				// place of the HTTP/1 "host" header.
-				// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-headermatcher
-				Name:      ":authority",
-				MatchType: HeaderMatchTypeRegex,
-				Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(host[1:]),
-			},
-		}
+		r.HeaderMatchConditions = append(r.HeaderMatchConditions, wildcardDomainHeaderMatch(host))
 	}
 
 	return r, nil

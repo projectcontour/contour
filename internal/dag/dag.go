@@ -18,6 +18,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -908,4 +909,15 @@ type ExtensionCluster struct {
 func (e *ExtensionCluster) Visit(f func(Vertex)) {
 	// Emit the upstream ServiceCluster to the visitor.
 	f(&e.Upstream)
+}
+
+func wildcardDomainHeaderMatch(fqdn string) HeaderMatchCondition {
+	return HeaderMatchCondition{
+		// Internally Envoy uses the HTTP/2 ":authority" header in
+		// place of the HTTP/1 "host" header.
+		// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#config-route-v3-headermatcher
+		Name:      ":authority",
+		MatchType: HeaderMatchTypeRegex,
+		Value:     singleDNSLabelWildcardRegex + regexp.QuoteMeta(fqdn[1:]),
+	}
 }
