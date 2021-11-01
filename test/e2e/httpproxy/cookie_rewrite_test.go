@@ -443,11 +443,11 @@ func testHeaderGlobalRewriteCookieRewrite(namespace string) {
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "header-rewrite-cookie-rewrite",
+				Name:      "global-header-rewrite-cookie-rewrite",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "header-rewrite-cookie-rewrite.projectcontour.io",
+					Fqdn: "global-header-rewrite-cookie-rewrite.projectcontour.io",
 				},
 				Routes: []contourv1.Route{
 					{
