@@ -29,8 +29,7 @@ func (p *ListenerProcessor) Run(dag *DAG, _ *KubernetesCache) {
 }
 
 // buildHTTPListener builds a *dag.Listener for the vhosts bound to port 80.
-// The list of virtual hosts will attached to the listener will be sorted
-// by hostname.
+// The list of virtual hosts attached to the listener will be sorted by hostname.
 func (p *ListenerProcessor) buildHTTPListener(dag *DAG) {
 	var vhosts []*VirtualHost
 	for _, vh := range dag.VirtualHosts {
@@ -56,8 +55,7 @@ func (p *ListenerProcessor) buildHTTPListener(dag *DAG) {
 }
 
 // buildHTTPSListener builds a *dag.Listener for the vhosts bound to port 443.
-// The list of virtual hosts will attached to the listener will be sorted
-// by hostname.
+// The list of virtual hosts attached to the listener will be sorted by hostname.
 func (p *ListenerProcessor) buildHTTPSListener(dag *DAG) {
 	var vhosts []*SecureVirtualHost
 	for _, svh := range dag.SecureVirtualHosts {
