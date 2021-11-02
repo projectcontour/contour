@@ -167,6 +167,7 @@ type MetricsConfig struct {
 	Port int `json:"port"`
 
 	// TLS holds TLS file config details.
+	// Metrics and health endpoints cannot have same port number when metrics is served over HTTPS.
 	// +optional
 	TLS *MetricsTLS `json:"tls,omitempty"`
 }

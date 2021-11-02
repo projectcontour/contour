@@ -540,7 +540,9 @@ spec:
                         description: Defines the metrics port.
                         type: integer
                       tls:
-                        description: TLS holds TLS file config details.
+                        description: TLS holds TLS file config details. Metrics and
+                          health endpoints cannot have same port number when metrics
+                          is served over HTTPS.
                         properties:
                           caFile:
                             description: CA filename.
@@ -783,7 +785,9 @@ spec:
                     description: Defines the metrics port.
                     type: integer
                   tls:
-                    description: TLS holds TLS file config details.
+                    description: TLS holds TLS file config details. Metrics and health
+                      endpoints cannot have same port number when metrics is served
+                      over HTTPS.
                     properties:
                       caFile:
                         description: CA filename.
@@ -1499,7 +1503,9 @@ spec:
                             description: Defines the metrics port.
                             type: integer
                           tls:
-                            description: TLS holds TLS file config details.
+                            description: TLS holds TLS file config details. Metrics
+                              and health endpoints cannot have same port number when
+                              metrics is served over HTTPS.
                             properties:
                               caFile:
                                 description: CA filename.
@@ -1746,7 +1752,9 @@ spec:
                         description: Defines the metrics port.
                         type: integer
                       tls:
-                        description: TLS holds TLS file config details.
+                        description: TLS holds TLS file config details. Metrics and
+                          health endpoints cannot have same port number when metrics
+                          is served over HTTPS.
                         properties:
                           caFile:
                             description: CA filename.

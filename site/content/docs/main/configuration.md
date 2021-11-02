@@ -225,7 +225,8 @@ The rate limit service configuration block is used to configure an optional glob
 
 ### Metrics Configuration
 
-MetricsParameters holds configurable parameters for Contour and Envoy metrics:
+MetricsParameters holds configurable parameters for Contour and Envoy metrics.
+Metrics and health endpoints cannot have same port number when metrics is served over HTTPS.
 
 | Field Name              | Type   | Default                      | Description                                                                  |
 | ----------------------- | ------ | ---------------------------- | -----------------------------------------------------------------------------|
