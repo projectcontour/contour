@@ -31,7 +31,7 @@ import (
 
 func clusterDefaults() *envoy_cluster_v3.Cluster {
 	return &envoy_cluster_v3.Cluster{
-		ConnectTimeout: protobuf.Duration(250 * time.Millisecond),
+		ConnectTimeout: protobuf.Duration(2 * time.Second),
 		CommonLbConfig: ClusterCommonLBConfig(),
 		LbPolicy:       lbPolicy(dag.LoadBalancerPolicyRoundRobin),
 	}
