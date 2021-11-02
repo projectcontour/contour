@@ -75,45 +75,14 @@ func (c *SecretCache) Query(names []string) []proto.Message {
 func (*SecretCache) TypeURL() string { return resource.SecretType }
 
 func (c *SecretCache) OnChange(root *dag.DAG) {
-	secrets := visitSecrets(root)
+	secrets := map[string]*envoy_tls_v3.Secret{}
+
+	for _, secret := range root.GetSecrets() {
+		name := envoy.Secretname(secret)
+		if _, ok := secrets[name]; !ok {
+			secrets[name] = envoy_v3.Secret(secret)
+		}
+	}
+
 	c.Update(secrets)
-}
-
-type secretVisitor struct {
-	secrets map[string]*envoy_tls_v3.Secret
-}
-
-// visitSecrets produces a map of *envoy_tls_v3.Secret
-func visitSecrets(root dag.Vertex) map[string]*envoy_tls_v3.Secret {
-	sv := secretVisitor{
-		secrets: make(map[string]*envoy_tls_v3.Secret),
-	}
-	sv.visit(root)
-	return sv.secrets
-}
-
-func (v *secretVisitor) addSecret(s *dag.Secret) {
-	name := envoy.Secretname(s)
-	if _, ok := v.secrets[name]; !ok {
-		envoySecret := envoy_v3.Secret(s)
-		v.secrets[envoySecret.Name] = envoySecret
-	}
-}
-
-func (v *secretVisitor) visit(vertex dag.Vertex) {
-	switch obj := vertex.(type) {
-	case *dag.SecureVirtualHost:
-		if obj.Secret != nil {
-			v.addSecret(obj.Secret)
-		}
-		if obj.FallbackCertificate != nil {
-			v.addSecret(obj.FallbackCertificate)
-		}
-	case *dag.Cluster:
-		if obj.ClientCertificate != nil {
-			v.addSecret(obj.ClientCertificate)
-		}
-	default:
-		vertex.Visit(v.visit)
-	}
 }

@@ -539,7 +539,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 		}
 
 		for host := range hosts {
-			secure := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
+			secure := p.dag.EnsureSecureVirtualHost(host)
 
 			if listenerSecret != nil {
 				secure.Secret = listenerSecret
@@ -673,11 +673,11 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 
 				switch {
 				case listenerSecret != nil:
-					svhost := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
+					svhost := p.dag.EnsureSecureVirtualHost(host)
 					svhost.Secret = listenerSecret
 					svhost.addRoute(route)
 				default:
-					vhost := p.dag.EnsureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_http"})
+					vhost := p.dag.EnsureVirtualHost(host)
 					vhost.addRoute(route)
 				}
 			}

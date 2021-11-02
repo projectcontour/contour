@@ -2144,7 +2144,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with connection idle timeout set in visitor config": {
+		"httpproxy with connection idle timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
 				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
@@ -2198,7 +2198,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with stream idle timeout set in visitor config": {
+		"httpproxy with stream idle timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
 				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
@@ -2252,7 +2252,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with max connection duration set in visitor config": {
+		"httpproxy with max connection duration set in listener config": {
 			ListenerConfig: ListenerConfig{
 				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 			},
@@ -2306,7 +2306,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with delayed close timeout set in visitor config": {
+		"httpproxy with delayed close timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
 				DelayedCloseTimeout: timeout.DurationSetting(90 * time.Second),
 			},
@@ -2360,7 +2360,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with connection shutdown grace period set in visitor config": {
+		"httpproxy with connection shutdown grace period set in listener config": {
 			ListenerConfig: ListenerConfig{
 				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 			},
@@ -2414,7 +2414,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpsproxy with secret with connection idle timeout set in visitor config": {
+		"httpsproxy with secret with connection idle timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
 				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
@@ -2496,7 +2496,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with allow_chunked_length set in visitor config": {
+		"httpproxy with allow_chunked_length set in listener config": {
 			ListenerConfig: ListenerConfig{
 				AllowChunkedLength: true,
 			},
@@ -2550,7 +2550,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpproxy with XffNumTrustedHops set in visitor config": {
+		"httpproxy with XffNumTrustedHops set in listener config": {
 			ListenerConfig: ListenerConfig{
 				XffNumTrustedHops: 1,
 			},
@@ -2604,7 +2604,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpsproxy with secret with stream idle timeout set in visitor config": {
+		"httpsproxy with secret with stream idle timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
 				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
 			},
@@ -2686,7 +2686,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpsproxy with secret with max connection duration set in visitor config": {
+		"httpsproxy with secret with max connection duration set in listener config": {
 			ListenerConfig: ListenerConfig{
 				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
 			},
@@ -2768,7 +2768,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpsproxy with secret with delayed close timeout set in visitor config": {
+		"httpsproxy with secret with delayed close timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
 				DelayedCloseTimeout: timeout.DurationSetting(90 * time.Second),
 			},
@@ -2850,7 +2850,7 @@ func TestListenerVisit(t *testing.T) {
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
-		"httpsproxy with secret with connection shutdown grace period set in visitor config": {
+		"httpsproxy with secret with connection shutdown grace period set in listener config": {
 			ListenerConfig: ListenerConfig{
 				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
 			},
@@ -3321,9 +3321,11 @@ func TestListenerVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAGFallback(t, tc.fallbackCertificate, tc.objs...)
-			got := visitListeners(root, &tc.ListenerConfig)
-			protobuf.ExpectEqual(t, tc.want, got)
+			lc := ListenerCache{
+				Config: tc.ListenerConfig,
+			}
+			lc.OnChange(buildDAGFallback(t, tc.fallbackCertificate, tc.objs...))
+			protobuf.ExpectEqual(t, tc.want, lc.values)
 		})
 	}
 }

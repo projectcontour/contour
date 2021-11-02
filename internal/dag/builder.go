@@ -59,12 +59,14 @@ func (b *Builder) Build() *DAG {
 		gatewayController = b.Source.gatewayclass.Spec.ControllerName
 	}
 
-	dag := DAG{
-		StatusCache: status.NewCache(gatewayNSName, gatewayController),
+	dag := &DAG{
+		VirtualHosts:       map[string]*VirtualHost{},
+		SecureVirtualHosts: map[string]*SecureVirtualHost{},
+		StatusCache:        status.NewCache(gatewayNSName, gatewayController),
 	}
 
 	for _, p := range b.Processors {
-		p.Run(&dag, &b.Source)
+		p.Run(dag, &b.Source)
 	}
-	return &dag
+	return dag
 }

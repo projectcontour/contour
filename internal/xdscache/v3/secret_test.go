@@ -469,9 +469,9 @@ func TestSecretVisit(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			root := buildDAG(t, tc.objs...)
-			got := visitSecrets(root)
-			protobuf.ExpectEqual(t, tc.want, got)
+			var sc SecretCache
+			sc.OnChange(buildDAG(t, tc.objs...))
+			protobuf.ExpectEqual(t, tc.want, sc.values)
 		})
 	}
 }

@@ -269,29 +269,21 @@ func (e *EndpointsTranslator) Merge(entries map[string]*envoy_endpoint_v3.Cluste
 }
 
 // OnChange observes DAG rebuild events.
-func (e *EndpointsTranslator) OnChange(d *dag.DAG) {
+func (e *EndpointsTranslator) OnChange(root *dag.DAG) {
 	clusters := []*dag.ServiceCluster{}
 	names := map[string]bool{}
 
-	var visitor func(dag.Vertex)
-	visitor = func(vertex dag.Vertex) {
-		if svc, ok := vertex.(*dag.ServiceCluster); ok {
-			if err := svc.Validate(); err != nil {
-				e.WithError(err).Errorf("dropping invalid service cluster %q", svc.ClusterName)
-			} else if _, ok := names[svc.ClusterName]; ok {
-				e.Debugf("dropping service cluster with duplicate name %q", svc.ClusterName)
-			} else {
-				e.Debugf("added ServiceCluster %q from DAG", svc.ClusterName)
-				clusters = append(clusters, svc.DeepCopy())
-				names[svc.ClusterName] = true
-			}
+	for _, svc := range root.GetServiceClusters() {
+		if err := svc.Validate(); err != nil {
+			e.WithError(err).Errorf("dropping invalid service cluster %q", svc.ClusterName)
+		} else if _, ok := names[svc.ClusterName]; ok {
+			e.Debugf("dropping service cluster with duplicate name %q", svc.ClusterName)
+		} else {
+			e.Debugf("added ServiceCluster %q from DAG", svc.ClusterName)
+			clusters = append(clusters, svc.DeepCopy())
+			names[svc.ClusterName] = true
 		}
-
-		vertex.Visit(visitor)
 	}
-
-	// Collect all the service clusters from the DAG.
-	d.Visit(visitor)
 
 	// Update the cache with the new clusters.
 	if err := e.cache.SetClusters(clusters); err != nil {

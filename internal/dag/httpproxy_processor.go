@@ -190,7 +190,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				return
 			}
 
-			svhost := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
+			svhost := p.dag.EnsureSecureVirtualHost(host)
 			svhost.Secret = sec
 			// default to a minimum TLS version of 1.2 if it's not specified
 			svhost.MinTLSVersion = annotation.MinTLSVersion(tls.MinimumProtocolVersion, "1.2")
@@ -313,7 +313,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	}
 
 	routes := p.computeRoutes(validCond, proxy, proxy, nil, nil, tlsEnabled)
-	insecure := p.dag.EnsureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_http"})
+	insecure := p.dag.EnsureVirtualHost(host)
 	cp, err := toCORSPolicy(proxy.Spec.VirtualHost.CORSPolicy)
 	if err != nil {
 		validCond.AddErrorf(contour_api_v1.ConditionTypeCORSError, "PolicyDidNotParse",
@@ -335,7 +335,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 	// if TLS is enabled for this virtual host and there is no tcp proxy defined,
 	// then add routes to the secure virtualhost definition.
 	if tlsEnabled && proxy.Spec.TCPProxy == nil {
-		secure := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
+		secure := p.dag.EnsureSecureVirtualHost(host)
 		secure.CORSPolicy = cp
 
 		rlp, err := rateLimitPolicy(proxy.Spec.VirtualHost.RateLimitPolicy)
@@ -766,7 +766,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				SNI:                  s.ExternalName,
 			})
 		}
-		secure := p.dag.EnsureSecureVirtualHost(ListenerName{Name: host, ListenerName: "ingress_https"})
+		secure := p.dag.EnsureSecureVirtualHost(host)
 		secure.TCPProxy = &proxy
 
 		return true
