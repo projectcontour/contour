@@ -592,15 +592,17 @@ func TestAccessLogFormatExtensions(t *testing.T) {
 }
 
 func TestListenerValidation(t *testing.T) {
-	l := ListenerParameters{
+	var l *ListenerParameters
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
 		ConnectionBalancer: "",
 	}
 	require.NoError(t, l.Validate())
-	l = ListenerParameters{
+	l = &ListenerParameters{
 		ConnectionBalancer: "exact",
 	}
 	require.NoError(t, l.Validate())
-	l = ListenerParameters{
+	l = &ListenerParameters{
 		ConnectionBalancer: "invalid",
 	}
 	require.Error(t, l.Validate())
