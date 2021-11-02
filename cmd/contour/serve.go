@@ -31,6 +31,7 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/contourconfiguration"
 	"github.com/projectcontour/contour/internal/controller"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
@@ -290,25 +291,48 @@ func (s *Server) doServe() error {
 		cipherSuites = append(cipherSuites, string(cs))
 	}
 
-	listenerConfig := xdscache_v3.NewListenerConfig(
-		contourConfiguration.Envoy.Listener.UseProxyProto,
-		contourConfiguration.Envoy.HTTPListener,
-		contourConfiguration.Envoy.HTTPSListener,
-		contourConfiguration.Envoy.Logging.AccessLogFormat,
-		contourConfiguration.Envoy.Logging.AccessLogFields,
-		contourConfiguration.Envoy.Logging.AccessLogFormatString,
-		AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, contourConfiguration.Envoy.Logging.AccessLogFormatString),
-		annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
-		config.SanitizeCipherSuites(cipherSuites),
-		contourConfiguration.Envoy.Timeouts,
-		parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
-		!contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
-		contourConfiguration.Envoy.Network.XffNumTrustedHops,
-		contourConfiguration.Envoy.Listener.ConnectionBalancer,
-		s.log,
-	)
+	timeouts, err := contourconfiguration.ParseTimeoutPolicy(contourConfiguration.Envoy.Timeouts)
+	if err != nil {
+		return err
+	}
 
-	if err = s.setupRateLimitService(contourConfiguration, &listenerConfig); err != nil {
+	accessLogFormatString := ""
+	if contourConfiguration.Envoy.Logging.AccessLogFormatString != nil {
+		accessLogFormatString = *contourConfiguration.Envoy.Logging.AccessLogFormatString
+	}
+
+	listenerConfig := xdscache_v3.ListenerConfig{
+		UseProxyProto: contourConfiguration.Envoy.Listener.UseProxyProto,
+		HTTPListeners: map[string]xdscache_v3.Listener{
+			"ingress_http": {
+				Name:    "ingress_http",
+				Address: contourConfiguration.Envoy.HTTPListener.Address,
+				Port:    contourConfiguration.Envoy.HTTPListener.Port,
+			},
+		},
+		HTTPAccessLog: contourConfiguration.Envoy.HTTPListener.AccessLog,
+		HTTPSListeners: map[string]xdscache_v3.Listener{
+			"ingress_https": {
+				Name:    "ingress_https",
+				Address: contourConfiguration.Envoy.HTTPSListener.Address,
+				Port:    contourConfiguration.Envoy.HTTPSListener.Port,
+			},
+		},
+		HTTPSAccessLog:               contourConfiguration.Envoy.HTTPSListener.AccessLog,
+		AccessLogType:                contourConfiguration.Envoy.Logging.AccessLogFormat,
+		AccessLogFields:              contourConfiguration.Envoy.Logging.AccessLogFields,
+		AccessLogFormatString:        accessLogFormatString,
+		AccessLogFormatterExtensions: AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, contourConfiguration.Envoy.Logging.AccessLogFormatString),
+		MinimumTLSVersion:            annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),
+		CipherSuites:                 config.SanitizeCipherSuites(cipherSuites),
+		Timeouts:                     timeouts,
+		DefaultHTTPVersions:          parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
+		AllowChunkedLength:           !contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
+		XffNumTrustedHops:            contourConfiguration.Envoy.Network.XffNumTrustedHops,
+		ConnectionBalancer:           contourConfiguration.Envoy.Listener.ConnectionBalancer,
+	}
+
+	if listenerConfig.RateLimitConfig, err = s.setupRateLimitService(contourConfiguration); err != nil {
 		return err
 	}
 
@@ -519,9 +543,9 @@ func (s *Server) doServe() error {
 	return s.group.Run(context.Background())
 }
 
-func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec, listenerConfig *xdscache_v3.ListenerConfig) error {
+func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec) (*xdscache_v3.RateLimitConfig, error) {
 	if contourConfiguration.RateLimitService == nil {
-		return nil
+		return nil, nil
 	}
 
 	namespacedName := &types.NamespacedName{
@@ -533,30 +557,28 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 	// ensure the specified ExtensionService exists
 	res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("error getting rate limit extension service %s: %v", namespacedName, err)
+		return nil, fmt.Errorf("error getting rate limit extension service %s: %v", namespacedName, err)
 	}
 	var extensionSvc contour_api_v1alpha1.ExtensionService
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &extensionSvc); err != nil {
-		return fmt.Errorf("error converting rate limit extension service %s: %v", namespacedName, err)
+		return nil, fmt.Errorf("error converting rate limit extension service %s: %v", namespacedName, err)
 	}
 	// get the response timeout from the ExtensionService
 	var responseTimeout timeout.Setting
 	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
 		responseTimeout, err = timeout.Parse(tp.Response)
 		if err != nil {
-			return fmt.Errorf("error parsing rate limit extension service %s response timeout: %v", namespacedName, err)
+			return nil, fmt.Errorf("error parsing rate limit extension service %s response timeout: %v", namespacedName, err)
 		}
 	}
 
-	listenerConfig.RateLimitConfig = &xdscache_v3.RateLimitConfig{
+	return &xdscache_v3.RateLimitConfig{
 		ExtensionService:        *namespacedName,
 		Domain:                  contourConfiguration.RateLimitService.Domain,
 		Timeout:                 responseTimeout,
 		FailOpen:                contourConfiguration.RateLimitService.FailOpen,
 		EnableXRateLimitHeaders: contourConfiguration.RateLimitService.EnableXRateLimitHeaders,
-	}
-
-	return nil
+	}, nil
 }
 
 func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, contourHandler *contour.EventHandler) {
