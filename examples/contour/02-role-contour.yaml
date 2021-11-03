@@ -21,29 +21,8 @@ rules:
   - ""
   resources:
   - endpoints
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - namespaces
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - services
   verbs:
   - get
@@ -102,37 +81,7 @@ rules:
   - projectcontour.io
   resources:
   - contourconfigurations
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - projectcontour.io
-  resources:
-  - contourconfigurations/status
-  verbs:
-  - create
-  - get
-  - update
-- apiGroups:
-  - projectcontour.io
-  resources:
   - extensionservices
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - projectcontour.io
-  resources:
-  - extensionservices/status
-  verbs:
-  - create
-  - get
-  - update
-- apiGroups:
-  - projectcontour.io
-  resources:
   - httpproxies
   - tlscertificatedelegations
   verbs:
@@ -142,6 +91,8 @@ rules:
 - apiGroups:
   - projectcontour.io
   resources:
+  - contourconfigurations/status
+  - extensionservices/status
   - httpproxies/status
   verbs:
   - create

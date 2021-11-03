@@ -14,18 +14,13 @@
 package k8s
 
 import (
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // Clients holds the various API clients required by Contour.
 type Clients struct {
-	meta.RESTMapper
-
 	core *kubernetes.Clientset
 }
 
@@ -44,11 +39,6 @@ func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 		return nil, err
 	}
 
-	clients.RESTMapper, err = apiutil.NewDiscoveryRESTMapper(config)
-	if err != nil {
-		return nil, err
-	}
-
 	return &clients, nil
 }
 
@@ -62,17 +52,4 @@ func newRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
 // ClientSet returns the Kubernetes Core v1 ClientSet.
 func (c *Clients) ClientSet() *kubernetes.Clientset {
 	return c.core
-}
-
-// ResourcesExist returns true if all of the GroupVersionResources
-// passed exists in the cluster.
-func (c *Clients) ResourcesExist(gvr ...schema.GroupVersionResource) bool {
-	for _, r := range gvr {
-		_, err := c.KindFor(r)
-		if meta.IsNoMatchError(err) {
-			return false
-		}
-	}
-
-	return true
 }
