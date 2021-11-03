@@ -52,10 +52,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	controller_config "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -164,12 +164,12 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 }
 
 type Server struct {
-	group    workgroup.Group
-	log      logrus.FieldLogger
-	ctx      *serveContext
-	clients  *k8s.Clients
-	mgr      manager.Manager
-	registry *prometheus.Registry
+	group      workgroup.Group
+	log        logrus.FieldLogger
+	ctx        *serveContext
+	coreClient *kubernetes.Clientset
+	mgr        manager.Manager
+	registry   *prometheus.Registry
 }
 
 // NewServer returns a Server object which contains the initial configuration
@@ -180,7 +180,12 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 	var group workgroup.Group
 
 	// Establish k8s core client connection.
-	clients, err := k8s.NewClients(ctx.Config.Kubeconfig, ctx.Config.InCluster)
+	restConfig, err := k8s.NewRestConfig(ctx.Config.Kubeconfig, ctx.Config.InCluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create REST config for Kubernetes clients: %w", err)
+	}
+
+	coreClient, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kubernetes clients: %w", err)
 	}
@@ -191,7 +196,7 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 	}
 
 	// Instantiate a controller-runtime manager.
-	mgr, err := manager.New(controller_config.GetConfigOrDie(), manager.Options{
+	mgr, err := manager.New(restConfig, manager.Options{
 		Scheme: scheme,
 	})
 	if err != nil {
@@ -204,12 +209,12 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 	registry.MustRegister(collectors.NewGoCollector())
 
 	return &Server{
-		group:    group,
-		log:      log,
-		ctx:      ctx,
-		clients:  clients,
-		mgr:      mgr,
-		registry: registry,
+		group:      group,
+		log:        log,
+		ctx:        ctx,
+		coreClient: coreClient,
+		mgr:        mgr,
+		registry:   registry,
 	}, nil
 }
 
@@ -371,7 +376,7 @@ func (s *Server) doServe() error {
 	if contourConfiguration.LeaderElection.DisableLeaderElection {
 		contourHandler.IsLeader = disableLeaderElection(s.log)
 	} else {
-		contourHandler.IsLeader = setupLeadershipElection(&s.group, s.log, contourConfiguration.LeaderElection, s.clients, contourHandler.UpdateNow)
+		contourHandler.IsLeader = setupLeadershipElection(&s.group, s.log, contourConfiguration.LeaderElection, s.coreClient, contourHandler.UpdateNow)
 	}
 
 	// Start setting up StatusUpdateHandler since we need it in
@@ -626,7 +631,7 @@ func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, 
 	metricsvc.ServeMux.Handle("/metrics", metrics.Handler(registry))
 
 	if healthConfig.Address == metricsConfig.Address && healthConfig.Port == metricsConfig.Port {
-		h := health.Handler(s.clients.ClientSet())
+		h := health.Handler(s.coreClient)
 		metricsvc.ServeMux.Handle("/health", h)
 		metricsvc.ServeMux.Handle("/healthz", h)
 	}
@@ -644,7 +649,7 @@ func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 			FieldLogger: s.log.WithField("context", "healthsvc"),
 		}
 
-		h := health.Handler(s.clients.ClientSet())
+		h := health.Handler(s.coreClient)
 		healthsvc.ServeMux.Handle("/health", h)
 		healthsvc.ServeMux.Handle("/healthz", h)
 

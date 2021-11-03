@@ -19,37 +19,28 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// Clients holds the various API clients required by Contour.
-type Clients struct {
-	core *kubernetes.Clientset
-}
-
-// NewClients returns a new set of the various API clients required
-// by Contour using the supplied kubeconfig path, or the cluster
-// environment variables if inCluster is true.
-func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
-	config, err := newRestConfig(kubeconfig, inCluster)
+// NewCoreClient returns a new Kubernetes core API client using
+// the supplied kubeconfig path, or the cluster environment
+// variables if inCluster is true.
+func NewCoreClient(kubeconfig string, inCluster bool) (*kubernetes.Clientset, error) {
+	config, err := NewRestConfig(kubeconfig, inCluster)
 	if err != nil {
 		return nil, err
 	}
 
-	var clients Clients
-	clients.core, err = kubernetes.NewForConfig(config)
+	coreClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
 
-	return &clients, nil
+	return coreClient, nil
 }
 
-func newRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
+// NewRestConfig returns a *rest.Config for the supplied kubeconfig
+// path, or the cluster environment variables if inCluster is true.
+func NewRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
 	if kubeconfig != "" && !inCluster {
 		return clientcmd.BuildConfigFromFlags("", kubeconfig)
 	}
 	return rest.InClusterConfig()
-}
-
-// ClientSet returns the Kubernetes Core v1 ClientSet.
-func (c *Clients) ClientSet() *kubernetes.Clientset {
-	return c.core
 }

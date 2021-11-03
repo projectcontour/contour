@@ -21,9 +21,9 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 
 	"github.com/google/uuid"
-	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/sirupsen/logrus"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
@@ -43,9 +43,9 @@ func setupLeadershipElection(
 	g *workgroup.Group,
 	log logrus.FieldLogger,
 	conf contour_api_v1alpha1.LeaderElectionConfig,
-	clients *k8s.Clients, updateNow func(),
+	client *kubernetes.Clientset, updateNow func(),
 ) chan struct{} {
-	le, leader, deposed := newLeaderElector(log, conf, clients)
+	le, leader, deposed := newLeaderElector(log, conf, client)
 
 	g.AddContext(func(electionCtx context.Context) error {
 		log.WithFields(logrus.Fields{
@@ -88,7 +88,7 @@ func setupLeadershipElection(
 func newLeaderElector(
 	log logrus.FieldLogger,
 	conf contour_api_v1alpha1.LeaderElectionConfig,
-	clients *k8s.Clients,
+	client *kubernetes.Clientset,
 ) (*leaderelection.LeaderElector, chan struct{}, chan struct{}) {
 	log = log.WithField("context", "leaderelection")
 	// leaderOK will block gRPC startup until it's closed.
@@ -97,7 +97,7 @@ func newLeaderElector(
 	// we are deposed as leader so that we can clean up.
 	deposed := make(chan struct{})
 
-	rl := newResourceLock(log, conf, clients)
+	rl := newResourceLock(log, conf, client)
 
 	leaseDuration, err := time.ParseDuration(conf.LeaseDuration)
 	if err != nil {
@@ -141,7 +141,7 @@ func newLeaderElector(
 
 // newResourceLock creates a new resourcelock.Interface based on the Pod's name,
 // or a uuid if the name cannot be determined.
-func newResourceLock(log logrus.FieldLogger, conf contour_api_v1alpha1.LeaderElectionConfig, clients *k8s.Clients) resourcelock.Interface {
+func newResourceLock(log logrus.FieldLogger, conf contour_api_v1alpha1.LeaderElectionConfig, client *kubernetes.Clientset) resourcelock.Interface {
 	resourceLockID, found := os.LookupEnv("POD_NAME")
 	if !found {
 		resourceLockID = uuid.New().String()
@@ -155,8 +155,8 @@ func newResourceLock(log logrus.FieldLogger, conf contour_api_v1alpha1.LeaderEle
 		resourcelock.ConfigMapsResourceLock,
 		conf.Configmap.Namespace,
 		conf.Configmap.Name,
-		clients.ClientSet().CoreV1(),
-		clients.ClientSet().CoordinationV1(),
+		client.CoreV1(),
+		client.CoordinationV1(),
 		resourcelock.ResourceLockConfig{
 			Identity: resourceLockID,
 		},
