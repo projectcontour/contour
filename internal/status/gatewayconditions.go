@@ -57,32 +57,6 @@ func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alp
 	return newCond
 }
 
-// GatewayConditionsAccessor returns a GatewayConditionsUpdate that allows a client to build up a list of
-// metav1.Conditions as well as a function to commit the change back to the cache when everything
-// is done. The commit function pattern is used so that the GatewayConditionsUpdate does not need
-// to know anything the cache internals.
-func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generation int64, gs *gatewayapi_v1alpha2.GatewayStatus) (*GatewayConditionsUpdate, func()) {
-	gu := &GatewayConditionsUpdate{
-		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
-		ExistingConditions: getGatewayConditions(gs),
-		GatewayRef:         c.gatewayRef,
-		Generation:         generation,
-		TransitionTime:     metav1.NewTime(clock.Now()),
-	}
-
-	return gu, func() {
-		c.commitGateway(gu)
-	}
-}
-
-func (c *Cache) commitGateway(gu *GatewayConditionsUpdate) {
-	if len(gu.Conditions) == 0 {
-		return
-	}
-	c.gatewayUpdates[gu.FullName] = gu
-}
-
 func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition {
 	conditions := make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition)
 	for _, cond := range gs.Conditions {

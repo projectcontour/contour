@@ -16,10 +16,13 @@
 package status
 
 import (
+	"time"
+
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -160,4 +163,85 @@ func (c *Cache) GetRouteUpdates() []*RouteConditionsUpdate {
 		allUpdates = append(allUpdates, conditionsUpdate)
 	}
 	return allUpdates
+}
+
+// GatewayConditionsAccessor returns a GatewayConditionsUpdate that allows a client to build up a list of
+// metav1.Conditions as well as a function to commit the change back to the cache when everything
+// is done. The commit function pattern is used so that the GatewayConditionsUpdate does not need
+// to know anything the cache internals.
+func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generation int64, gs *gatewayapi_v1alpha2.GatewayStatus) (*GatewayConditionsUpdate, func()) {
+	gu := &GatewayConditionsUpdate{
+		FullName:           nsName,
+		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
+		ExistingConditions: getGatewayConditions(gs),
+		GatewayRef:         c.gatewayRef,
+		Generation:         generation,
+		TransitionTime:     metav1.NewTime(clock.Now()),
+	}
+
+	return gu, func() {
+		if len(gu.Conditions) == 0 {
+			return
+		}
+		c.gatewayUpdates[gu.FullName] = gu
+	}
+}
+
+// ProxyAccessor returns a ProxyUpdate that allows a client to build up a list of
+// errors and warnings to go onto the proxy as conditions, and a function to commit the change
+// back to the cache when everything is done.
+// The commit function pattern is used so that the ProxyUpdate does not need to know anything
+// the cache internals.
+func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, func()) {
+	pu := &ProxyUpdate{
+		Fullname:       k8s.NamespacedNameOf(proxy),
+		Generation:     proxy.Generation,
+		TransitionTime: metav1.NewTime(time.Now()),
+		Conditions:     make(map[ConditionType]*contour_api_v1.DetailedCondition),
+	}
+
+	return pu, func() {
+		if len(pu.Conditions) == 0 {
+			return
+		}
+
+		_, ok := c.proxyUpdates[pu.Fullname]
+		if ok {
+			// When we're committing, if we already have a Valid Condition with an error, and we're trying to
+			// set the object back to Valid, skip the commit, as we've visited too far down.
+			// If this is removed, the status reporting for when a parent delegates to a child that delegates to itself
+			// will not work. Yes, I know, problems everywhere. I'm sorry.
+			// TODO(youngnick)#2968: This issue has more details.
+			if c.proxyUpdates[pu.Fullname].Conditions[ValidCondition].Status == contour_api_v1.ConditionFalse {
+				if pu.Conditions[ValidCondition].Status == contour_api_v1.ConditionTrue {
+					return
+				}
+			}
+		}
+		c.proxyUpdates[pu.Fullname] = pu
+	}
+}
+
+// RouteConditionsAccessor returns a RouteConditionsUpdate that allows a client to build up a list of
+// metav1.Conditions as well as a function to commit the change back to the cache when everything
+// is done. The commit function pattern is used so that the RouteConditionsUpdate does not need
+// to know anything the cache internals.
+func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object, gateways []gatewayapi_v1alpha2.RouteParentStatus) (*RouteConditionsUpdate, func()) {
+	pu := &RouteConditionsUpdate{
+		FullName:           nsName,
+		Conditions:         make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition),
+		ExistingConditions: c.getRouteGatewayConditions(gateways),
+		GatewayRef:         c.gatewayRef,
+		GatewayController:  c.gatewayController,
+		Generation:         generation,
+		TransitionTime:     metav1.NewTime(clock.Now()),
+		Resource:           resource,
+	}
+
+	return pu, func() {
+		if len(pu.Conditions) == 0 {
+			return
+		}
+		c.routeUpdates[pu.FullName] = pu
+	}
 }
