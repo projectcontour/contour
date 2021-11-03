@@ -50,12 +50,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	ctrl_cache "sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	controller_config "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -229,18 +228,13 @@ func (s *Server) doServe() error {
 			contourNamespace = "projectcontour"
 		}
 
-		namespacedName := types.NamespacedName{Name: s.ctx.contourConfigurationName, Namespace: contourNamespace}
-		client := s.clients.DynamicClient().Resource(contour_api_v1alpha1.ContourConfigurationGVR).Namespace(namespacedName.Namespace)
+		contourConfig := &contour_api_v1alpha1.ContourConfiguration{}
+		key := client.ObjectKey{Namespace: contourNamespace, Name: s.ctx.contourConfigurationName}
 
-		// ensure the specified ContourConfiguration exists
-		res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("error getting contour configuration %s: %v", namespacedName, err)
-		}
-
-		var contourConfig contour_api_v1alpha1.ContourConfiguration
-		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &contourConfig); err != nil {
-			return fmt.Errorf("error converting contour configuration %s: %v", namespacedName, err)
+		// Using GetAPIReader() here because the manager's caches won't be started yet,
+		// so reads from the manager's client (which uses the caches for reads) will fail.
+		if err := s.mgr.GetAPIReader().Get(context.Background(), key, contourConfig); err != nil {
+			return fmt.Errorf("error getting contour configuration %s: %v", key, err)
 		}
 
 		// Copy the Spec from the parsed Configuration
@@ -278,13 +272,6 @@ func (s *Server) doServe() error {
 		}
 	}
 
-	// Before we can build the event handler, we need to initialize the converter we'll
-	// use to convert from Unstructured.
-	converter, err := k8s.NewUnstructuredConverter()
-	if err != nil {
-		return err
-	}
-
 	cipherSuites := []string{}
 	for _, cs := range contourConfiguration.Envoy.Listener.TLS.CipherSuites {
 		cipherSuites = append(cipherSuites, string(cs))
@@ -308,7 +295,7 @@ func (s *Server) doServe() error {
 		s.log,
 	)
 
-	if err = s.setupRateLimitService(contourConfiguration, &listenerConfig); err != nil {
+	if err := s.setupRateLimitService(contourConfiguration, &listenerConfig); err != nil {
 		return err
 	}
 
@@ -391,10 +378,8 @@ func (s *Server) doServe() error {
 	// the Gateway API controllers. Will finish setting it up and
 	// start it later.
 	sh := k8s.StatusUpdateHandler{
-		Log:       s.log.WithField("context", "StatusUpdateHandler"),
-		Clients:   s.clients,
-		Cache:     s.mgr.GetCache(),
-		Converter: converter,
+		Log:    s.log.WithField("context", "StatusUpdateHandler"),
+		Client: s.mgr.GetClient(),
 	}
 
 	// Inform on DefaultResources.
@@ -468,7 +453,6 @@ func (s *Server) doServe() error {
 		lbStatus:         make(chan corev1.LoadBalancerStatus, 1),
 		ingressClassName: ingressClassName,
 		statusUpdater:    sh.Writer(),
-		Converter:        converter,
 	}
 	s.group.Add(lbsw.Start)
 
@@ -524,32 +508,32 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 		return nil
 	}
 
-	namespacedName := &types.NamespacedName{
+	// ensure the specified ExtensionService exists
+	extensionSvc := &contour_api_v1alpha1.ExtensionService{}
+	key := client.ObjectKey{
 		Namespace: contourConfiguration.RateLimitService.ExtensionService.Namespace,
 		Name:      contourConfiguration.RateLimitService.ExtensionService.Name,
 	}
-	client := s.clients.DynamicClient().Resource(contour_api_v1alpha1.ExtensionServiceGVR).Namespace(namespacedName.Namespace)
 
-	// ensure the specified ExtensionService exists
-	res, err := client.Get(context.Background(), namespacedName.Name, metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("error getting rate limit extension service %s: %v", namespacedName, err)
+	// Using GetAPIReader() here because the manager's caches won't be started yet,
+	// so reads from the manager's client (which uses the caches for reads) will fail.
+	if err := s.mgr.GetAPIReader().Get(context.Background(), key, extensionSvc); err != nil {
+		return fmt.Errorf("error getting rate limit extension service %s: %v", key, err)
 	}
-	var extensionSvc contour_api_v1alpha1.ExtensionService
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(res.Object, &extensionSvc); err != nil {
-		return fmt.Errorf("error converting rate limit extension service %s: %v", namespacedName, err)
-	}
+
 	// get the response timeout from the ExtensionService
 	var responseTimeout timeout.Setting
+	var err error
+
 	if tp := extensionSvc.Spec.TimeoutPolicy; tp != nil {
 		responseTimeout, err = timeout.Parse(tp.Response)
 		if err != nil {
-			return fmt.Errorf("error parsing rate limit extension service %s response timeout: %v", namespacedName, err)
+			return fmt.Errorf("error parsing rate limit extension service %s response timeout: %v", key, err)
 		}
 	}
 
 	listenerConfig.RateLimitConfig = &xdscache_v3.RateLimitConfig{
-		ExtensionService:        *namespacedName,
+		ExtensionService:        key,
 		Domain:                  contourConfiguration.RateLimitService.Domain,
 		Timeout:                 responseTimeout,
 		FailOpen:                contourConfiguration.RateLimitService.FailOpen,

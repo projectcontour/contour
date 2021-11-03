@@ -22,6 +22,7 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ConditionCache holds all the DetailedConditions to add to the object
@@ -64,7 +65,7 @@ type ExtensionCacheEntry struct {
 var _ CacheEntry = &ExtensionCacheEntry{}
 
 func (e *ExtensionCacheEntry) AsStatusUpdate() k8s.StatusUpdate {
-	m := k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+	m := k8s.StatusMutatorFunc(func(obj client.Object) client.Object {
 		o, ok := obj.(*contour_api_v1alpha1.ExtensionService)
 		if !ok {
 			panic(fmt.Sprintf("unsupported %T object %q in status mutator", obj, e.Name))
@@ -95,7 +96,7 @@ func (e *ExtensionCacheEntry) AsStatusUpdate() k8s.StatusUpdate {
 
 	return k8s.StatusUpdate{
 		NamespacedName: e.Name,
-		Resource:       contour_api_v1alpha1.ExtensionServiceGVR,
+		Resource:       &contour_api_v1alpha1.ExtensionService{},
 		Mutator:        m,
 	}
 }

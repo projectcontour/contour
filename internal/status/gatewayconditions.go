@@ -18,10 +18,9 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
-
-const ResourceGateway = "gateways"
 
 type GatewayReasonType string
 
@@ -35,7 +34,6 @@ type GatewayConditionsUpdate struct {
 	Conditions         map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
 	ExistingConditions map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
 	GatewayRef         types.NamespacedName
-	Resource           string
 	Generation         int64
 	TransitionTime     metav1.Time
 }
@@ -63,7 +61,7 @@ func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alp
 // metav1.Conditions as well as a function to commit the change back to the cache when everything
 // is done. The commit function pattern is used so that the GatewayConditionsUpdate does not need
 // to know anything the cache internals.
-func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gs *gatewayapi_v1alpha2.GatewayStatus) (*GatewayConditionsUpdate, func()) {
+func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generation int64, gs *gatewayapi_v1alpha2.GatewayStatus) (*GatewayConditionsUpdate, func()) {
 	gu := &GatewayConditionsUpdate{
 		FullName:           nsName,
 		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
@@ -71,7 +69,6 @@ func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generatio
 		GatewayRef:         c.gatewayRef,
 		Generation:         generation,
 		TransitionTime:     metav1.NewTime(clock.Now()),
-		Resource:           resource,
 	}
 
 	return gu, func() {
@@ -96,7 +93,7 @@ func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_
 	return conditions
 }
 
-func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj interface{}) interface{} {
+func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj client.Object) client.Object {
 
 	var conditionsToWrite []metav1.Condition
 

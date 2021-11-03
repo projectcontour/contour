@@ -16,7 +16,6 @@ package k8s
 import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -27,8 +26,7 @@ import (
 type Clients struct {
 	meta.RESTMapper
 
-	core    *kubernetes.Clientset
-	dynamic dynamic.Interface
+	core *kubernetes.Clientset
 }
 
 // NewClients returns a new set of the various API clients required
@@ -42,11 +40,6 @@ func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
 
 	var clients Clients
 	clients.core, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	clients.dynamic, err = dynamic.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -69,11 +62,6 @@ func newRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
 // ClientSet returns the Kubernetes Core v1 ClientSet.
 func (c *Clients) ClientSet() *kubernetes.Clientset {
 	return c.core
-}
-
-// DynamicClient returns the dynamic client.
-func (c *Clients) DynamicClient() dynamic.Interface {
-	return c.dynamic
 }
 
 // ResourcesExist returns true if all of the GroupVersionResources

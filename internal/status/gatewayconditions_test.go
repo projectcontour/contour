@@ -41,7 +41,6 @@ func TestGatewayAddCondition(t *testing.T) {
 		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
 		ExistingConditions: nil,
 		GatewayRef:         types.NamespacedName{},
-		Resource:           "",
 		Generation:         testGeneration,
 		TransitionTime:     metav1.Time{},
 	}
