@@ -74,6 +74,14 @@ func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_
 }
 
 func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Object {
+	o, ok := obj.(*gatewayapi_v1alpha2.Gateway)
+	if !ok {
+		panic(fmt.Sprintf("Unsupported %T object %s/%s in GatewayStatusUpdate status mutator",
+			obj, gatewayUpdate.FullName.Namespace, gatewayUpdate.FullName.Name,
+		))
+	}
+
+	updated := o.DeepCopy()
 
 	var conditionsToWrite []metav1.Condition
 
@@ -107,19 +115,10 @@ func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Objec
 		}
 	}
 
-	switch o := obj.(type) {
-	case *gatewayapi_v1alpha2.Gateway:
-		gw := o.DeepCopy()
-		gw.Status = gatewayapi_v1alpha2.GatewayStatus{
-			Conditions: conditionsToWrite,
-			// TODO: Manage addresses and listeners.
-			// xref: https://github.com/projectcontour/contour/issues/3828
-		}
-		return gw
-	default:
-		panic(fmt.Sprintf("Unsupported %T object %s/%s in GatewayStatusUpdate status mutator",
-			obj, gatewayUpdate.FullName.Namespace, gatewayUpdate.FullName.Name,
-		))
-	}
+	updated.Status.Conditions = conditionsToWrite
 
+	// TODO: Manage addresses and listeners.
+	// xref: https://github.com/projectcontour/contour/issues/3828
+
+	return updated
 }
