@@ -35,7 +35,7 @@ func TestGatewayAddCondition(t *testing.T) {
 		ObservedGeneration: testGeneration,
 	}
 
-	gatewayUpdate := GatewayConditionsUpdate{
+	gatewayUpdate := GatewayStatusUpdate{
 		FullName:           k8s.NamespacedNameFrom("test/test"),
 		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
 		ExistingConditions: nil,

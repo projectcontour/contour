@@ -29,7 +29,9 @@ const ReasonInvalidGateway = "Invalid"
 
 const MessageValidGateway = "Valid Gateway"
 
-type GatewayConditionsUpdate struct {
+// GatewayStatusUpdate represents an atomic update to a
+// Gateway's status.
+type GatewayStatusUpdate struct {
 	FullName           types.NamespacedName
 	Conditions         map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
 	ExistingConditions map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
@@ -38,7 +40,12 @@ type GatewayConditionsUpdate struct {
 }
 
 // AddCondition returns a metav1.Condition for a given GatewayConditionType.
-func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alpha2.GatewayConditionType, status metav1.ConditionStatus, reason GatewayReasonType, message string) metav1.Condition {
+func (gatewayUpdate *GatewayStatusUpdate) AddCondition(
+	cond gatewayapi_v1alpha2.GatewayConditionType,
+	status metav1.ConditionStatus,
+	reason GatewayReasonType,
+	message string,
+) metav1.Condition {
 
 	if c, ok := gatewayUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
@@ -66,7 +73,7 @@ func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_
 	return conditions
 }
 
-func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj client.Object) client.Object {
+func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Object {
 
 	var conditionsToWrite []metav1.Condition
 
@@ -110,7 +117,7 @@ func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj client.Object) client.O
 		}
 		return gw
 	default:
-		panic(fmt.Sprintf("Unsupported %T object %s/%s in GatewayConditionsUpdate status mutator",
+		panic(fmt.Sprintf("Unsupported %T object %s/%s in GatewayStatusUpdate status mutator",
 			obj, gatewayUpdate.FullName.Namespace, gatewayUpdate.FullName.Name,
 		))
 	}

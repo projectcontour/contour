@@ -455,7 +455,7 @@ func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener 
 
 func (p *GatewayAPIProcessor) computeGatewayConditions(gateway *gatewayapi_v1alpha2.Gateway, fieldErrs field.ErrorList) {
 
-	gwAccessor, commit := p.dag.StatusCache.GatewayConditionsAccessor(k8s.NamespacedNameOf(gateway), gateway.Generation, &gateway.Status)
+	gwAccessor, commit := p.dag.StatusCache.GatewayStatusAccessor(k8s.NamespacedNameOf(gateway), gateway.Generation, &gateway.Status)
 	defer commit()
 
 	// Determine the gateway status based on fieldErrs.

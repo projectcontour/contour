@@ -2625,7 +2625,7 @@ func TestDAGStatus(t *testing.T) {
 	})
 }
 
-var validGatewayConditionsUpdate = []*status.GatewayConditionsUpdate{{
+var validGatewayStatusUpdate = []*status.GatewayStatusUpdate{{
 	FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 	Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
 		gatewayapi_v1alpha2.GatewayConditionReady: {
@@ -2640,10 +2640,10 @@ var validGatewayConditionsUpdate = []*status.GatewayConditionsUpdate{{
 func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 
 	type testcase struct {
-		objs                  []interface{}
-		gateway               *gatewayapi_v1alpha2.Gateway
-		wantRouteConditions   []*status.RouteConditionsUpdate
-		wantGatewayConditions []*status.GatewayConditionsUpdate
+		objs                    []interface{}
+		gateway                 *gatewayapi_v1alpha2.Gateway
+		wantRouteConditions     []*status.RouteConditionsUpdate
+		wantGatewayStatusUpdate []*status.GatewayStatusUpdate
 	}
 
 	run := func(t *testing.T, desc string, tc testcase) {
@@ -2720,9 +2720,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "Generation"),
 				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "TransitionTime"),
 				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "Resource"),
-				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "ExistingConditions"),
-				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "Generation"),
-				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "TransitionTime"),
+				cmpopts.IgnoreFields(status.GatewayStatusUpdate{}, "ExistingConditions"),
+				cmpopts.IgnoreFields(status.GatewayStatusUpdate{}, "Generation"),
+				cmpopts.IgnoreFields(status.GatewayStatusUpdate{}, "TransitionTime"),
 				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
 					return i.Message < j.Message
 				}),
@@ -2739,8 +2739,8 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				t.Fatalf("expected route status: %v, got %v", tc.wantRouteConditions, diff)
 			}
 
-			if diff := cmp.Diff(tc.wantGatewayConditions, gotGatewayUpdates, ops...); diff != "" {
-				t.Fatalf("expected gateway status: %v, got %v", tc.wantGatewayConditions, diff)
+			if diff := cmp.Diff(tc.wantGatewayStatusUpdate, gotGatewayUpdates, ops...); diff != "" {
+				t.Fatalf("expected gateway status: %v, got %v", tc.wantGatewayStatusUpdate, diff)
 			}
 
 		})
@@ -2796,7 +2796,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "simple httproute with backendref namespace matching route's explicitly specified", testcase{
@@ -2846,7 +2846,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "invalid prefix match for httproute", testcase{
@@ -2895,7 +2895,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "regular expression match not yet supported for httproute", testcase{
@@ -2939,7 +2939,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "RegularExpression header match not yet supported for httproute", testcase{
@@ -2995,7 +2995,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "spec.rules.backendRef.name not specified", testcase{
@@ -3048,7 +3048,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "spec.rules.backendRef.serviceName invalid on two matches", testcase{
@@ -3104,7 +3104,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "spec.rules.backendRef.port not specified", testcase{
@@ -3157,7 +3157,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "spec.rules.backendRefs not specified", testcase{
@@ -3200,7 +3200,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "spec.rules.backendRef.namespace does not match route", testcase{
@@ -3255,7 +3255,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "spec.rules.hostname: invalid wildcard", testcase{
@@ -3298,7 +3298,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "spec.rules.hostname: invalid hostname", testcase{
@@ -3341,7 +3341,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "spec.rules.hostname: invalid hostname, ip address", testcase{
@@ -3384,7 +3384,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute rule", testcase{
@@ -3431,7 +3431,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "HTTPRouteFilterRequestMirror not yet supported for httproute backendref", testcase{
@@ -3485,7 +3485,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "Invalid RequestHeaderModifier due to duplicated headers", testcase{
@@ -3538,7 +3538,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "Invalid RequestHeaderModifier after forward due to invalid headers", testcase{
@@ -3596,7 +3596,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				},
 			},
 		}},
-		wantGatewayConditions: validGatewayConditionsUpdate,
+		wantGatewayStatusUpdate: validGatewayStatusUpdate,
 	})
 
 	run(t, "gateway.spec.addresses results in invalid gateway", testcase{
@@ -3621,7 +3621,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				}},
 			},
 		},
-		wantGatewayConditions: []*status.GatewayConditionsUpdate{{
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
 				gatewayapi_v1alpha2.GatewayConditionReady: {
@@ -3641,7 +3641,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 		objs                  []interface{}
 		gateway               *gatewayapi_v1alpha2.Gateway
 		wantRouteConditions   []*status.RouteConditionsUpdate
-		wantGatewayConditions []*status.GatewayConditionsUpdate
+		wantGatewayConditions []*status.GatewayStatusUpdate
 	}
 
 	run := func(t *testing.T, desc string, tc testcase) {
@@ -3700,9 +3700,9 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "Generation"),
 				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "TransitionTime"),
 				cmpopts.IgnoreFields(status.RouteConditionsUpdate{}, "Resource"),
-				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "ExistingConditions"),
-				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "Generation"),
-				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "TransitionTime"),
+				cmpopts.IgnoreFields(status.GatewayStatusUpdate{}, "ExistingConditions"),
+				cmpopts.IgnoreFields(status.GatewayStatusUpdate{}, "Generation"),
+				cmpopts.IgnoreFields(status.GatewayStatusUpdate{}, "TransitionTime"),
 				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
 					return i.Message < j.Message
 				}),
@@ -3859,7 +3859,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 				},
 			}},
-			wantGatewayConditions: validGatewayConditionsUpdate,
+			wantGatewayConditions: validGatewayStatusUpdate,
 		})
 
 		run(t, "TLSRoute: spec.rules.backendRef.name invalid on two matches", testcase{
@@ -3903,7 +3903,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 				},
 			}},
-			wantGatewayConditions: validGatewayConditionsUpdate,
+			wantGatewayConditions: validGatewayStatusUpdate,
 		})
 
 		run(t, "TLSRoute: spec.rules.backendRef.port not specified", testcase{
@@ -3954,7 +3954,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 				},
 			}},
-			wantGatewayConditions: validGatewayConditionsUpdate,
+			wantGatewayConditions: validGatewayStatusUpdate,
 		})
 
 		run(t, "TLSRoute: spec.rules.backendRefs not specified", testcase{
@@ -3998,7 +3998,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 				},
 			}},
-			wantGatewayConditions: validGatewayConditionsUpdate,
+			wantGatewayConditions: validGatewayStatusUpdate,
 		})
 
 		run(t, "TLSRoute: spec.rules.hostname: invalid wildcard", testcase{
@@ -4042,7 +4042,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 				},
 			}},
-			wantGatewayConditions: validGatewayConditionsUpdate,
+			wantGatewayConditions: validGatewayStatusUpdate,
 		})
 
 		run(t, "TLSRoute: spec.rules.hostname: invalid hostname", testcase{
@@ -4086,7 +4086,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 				},
 			}},
-			wantGatewayConditions: validGatewayConditionsUpdate,
+			wantGatewayConditions: validGatewayStatusUpdate,
 		})
 
 		run(t, "TLSRoute: spec.rules.hostname: invalid hostname, ip address", testcase{
@@ -4130,7 +4130,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 				},
 			}},
-			wantGatewayConditions: validGatewayConditionsUpdate,
+			wantGatewayConditions: validGatewayStatusUpdate,
 		})
 
 		run(t, "TLSRoute: spec.rules.backendRefs has 0 weight", testcase{
@@ -4171,7 +4171,7 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 					},
 				},
 			}},
-			wantGatewayConditions: validGatewayConditionsUpdate,
+			wantGatewayConditions: validGatewayStatusUpdate,
 		})
 	}
 }
