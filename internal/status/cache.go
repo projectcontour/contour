@@ -174,7 +174,6 @@ func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generatio
 		FullName:           nsName,
 		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
 		ExistingConditions: getGatewayConditions(gs),
-		GatewayRef:         c.gatewayRef,
 		Generation:         generation,
 		TransitionTime:     metav1.NewTime(clock.Now()),
 	}

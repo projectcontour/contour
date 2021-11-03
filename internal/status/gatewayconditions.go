@@ -33,7 +33,6 @@ type GatewayConditionsUpdate struct {
 	FullName           types.NamespacedName
 	Conditions         map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
 	ExistingConditions map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
-	GatewayRef         types.NamespacedName
 	Generation         int64
 	TransitionTime     metav1.Time
 }

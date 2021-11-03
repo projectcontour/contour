@@ -20,7 +20,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -40,7 +39,6 @@ func TestGatewayAddCondition(t *testing.T) {
 		FullName:           k8s.NamespacedNameFrom("test/test"),
 		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
 		ExistingConditions: nil,
-		GatewayRef:         types.NamespacedName{},
 		Generation:         testGeneration,
 		TransitionTime:     metav1.Time{},
 	}
