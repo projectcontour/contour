@@ -63,7 +63,7 @@ type StatusUpdateHandler struct {
 	Log           logrus.FieldLogger
 	Client        client.Client
 	UpdateChannel chan StatusUpdate
-	LeaderElected chan struct{}
+	LeaderElected <-chan struct{}
 	IsLeader      bool
 }
 

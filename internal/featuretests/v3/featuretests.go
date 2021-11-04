@@ -98,8 +98,9 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	rand.Seed(time.Now().Unix())
 
 	statusUpdateCacher := &k8s.StatusUpdateCacher{}
+	leaderChan := make(chan struct{})
 	eh := &contour.EventHandler{
-		IsLeader:      make(chan struct{}),
+		IsLeader:      leaderChan,
 		StatusUpdater: statusUpdateCacher,
 		FieldLogger:   log,
 		Sequence:      make(chan int, 1),
@@ -139,7 +140,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	}
 
 	// Make this event handler win the leader election.
-	close(eh.IsLeader)
+	close(leaderChan)
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)

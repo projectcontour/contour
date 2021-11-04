@@ -44,10 +44,14 @@ func NewHTTPRouteController(mgr manager.Manager, eventHandler cache.ResourceEven
 		eventHandler: eventHandler,
 		FieldLogger:  log,
 	}
-	c, err := controller.New("httproute-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.NewUnmanaged("httproute-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return nil, err
 	}
+	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
+		return nil, err
+	}
+
 	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.HTTPRoute{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return nil, err
 	}

@@ -66,7 +66,7 @@ type RebuildMetricsObserver struct {
 	// IsLeader will become ready to read when this EventHandler becomes
 	// the leader. If IsLeader is not readable, or nil, status events will
 	// be suppressed.
-	IsLeader chan struct{}
+	IsLeader <-chan struct{}
 
 	// NextObserver contains the stack of dag.Observers that act on DAG rebuilds.
 	NextObserver dag.Observer

@@ -523,16 +523,6 @@ func TestConvertServeContext(t *testing.T) {
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
-				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-					LeaseDuration: "15s",
-					RenewDeadline: "10s",
-					RetryPeriod:   "2s",
-					Configmap: contour_api_v1alpha1.NamespacedName{
-						Name:      "leader-elect",
-						Namespace: "projectcontour",
-					},
-					DisableLeaderElection: false,
-				},
 				EnableExternalNameService: false,
 				RateLimitService:          nil,
 				Policy: &contour_api_v1alpha1.PolicyConfig{
@@ -633,16 +623,6 @@ func TestConvertServeContext(t *testing.T) {
 				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
-				},
-				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-					LeaseDuration: "15s",
-					RenewDeadline: "10s",
-					RetryPeriod:   "2s",
-					Configmap: contour_api_v1alpha1.NamespacedName{
-						Name:      "leader-elect",
-						Namespace: "projectcontour",
-					},
-					DisableLeaderElection: false,
 				},
 				EnableExternalNameService: false,
 				RateLimitService:          nil,
@@ -751,16 +731,6 @@ func TestConvertServeContext(t *testing.T) {
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
-				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-					LeaseDuration: "15s",
-					RenewDeadline: "10s",
-					RetryPeriod:   "2s",
-					Configmap: contour_api_v1alpha1.NamespacedName{
-						Name:      "leader-elect",
-						Namespace: "projectcontour",
-					},
-					DisableLeaderElection: false,
-				},
 				EnableExternalNameService: false,
 				RateLimitService:          nil,
 				Policy: &contour_api_v1alpha1.PolicyConfig{
@@ -863,16 +833,6 @@ func TestConvertServeContext(t *testing.T) {
 				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
-				},
-				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-					LeaseDuration: "15s",
-					RenewDeadline: "10s",
-					RetryPeriod:   "2s",
-					Configmap: contour_api_v1alpha1.NamespacedName{
-						Name:      "leader-elect",
-						Namespace: "projectcontour",
-					},
-					DisableLeaderElection: false,
 				},
 				EnableExternalNameService: false,
 				RateLimitService:          nil,
@@ -978,16 +938,6 @@ func TestConvertServeContext(t *testing.T) {
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
-				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-					LeaseDuration: "15s",
-					RenewDeadline: "10s",
-					RetryPeriod:   "2s",
-					Configmap: contour_api_v1alpha1.NamespacedName{
-						Name:      "leader-elect",
-						Namespace: "projectcontour",
-					},
-					DisableLeaderElection: false,
-				},
 				EnableExternalNameService: false,
 				RateLimitService:          nil,
 				Policy: &contour_api_v1alpha1.PolicyConfig{
@@ -1092,16 +1042,6 @@ func TestConvertServeContext(t *testing.T) {
 						Namespace: "fallbacknamespace",
 					},
 				},
-				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-					LeaseDuration: "15s",
-					RenewDeadline: "10s",
-					RetryPeriod:   "2s",
-					Configmap: contour_api_v1alpha1.NamespacedName{
-						Name:      "leader-elect",
-						Namespace: "projectcontour",
-					},
-					DisableLeaderElection: false,
-				},
 				EnableExternalNameService: false,
 				RateLimitService:          nil,
 				Policy: &contour_api_v1alpha1.PolicyConfig{
@@ -1202,16 +1142,6 @@ func TestConvertServeContext(t *testing.T) {
 				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
-				},
-				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-					LeaseDuration: "15s",
-					RenewDeadline: "10s",
-					RetryPeriod:   "2s",
-					Configmap: contour_api_v1alpha1.NamespacedName{
-						Name:      "leader-elect",
-						Namespace: "projectcontour",
-					},
-					DisableLeaderElection: false,
 				},
 				EnableExternalNameService: false,
 				RateLimitService: &contour_api_v1alpha1.RateLimitServiceConfig{
@@ -1324,16 +1254,6 @@ func TestConvertServeContext(t *testing.T) {
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
-				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-					LeaseDuration: "15s",
-					RenewDeadline: "10s",
-					RetryPeriod:   "2s",
-					Configmap: contour_api_v1alpha1.NamespacedName{
-						Name:      "leader-elect",
-						Namespace: "projectcontour",
-					},
-					DisableLeaderElection: false,
-				},
 				EnableExternalNameService: false,
 				RateLimitService:          nil,
 				Policy: &contour_api_v1alpha1.PolicyConfig{
@@ -1414,16 +1334,6 @@ func TestConvertServeContext(t *testing.T) {
 				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
-				},
-				LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-					LeaseDuration: "15s",
-					RenewDeadline: "10s",
-					RetryPeriod:   "2s",
-					Configmap: contour_api_v1alpha1.NamespacedName{
-						Name:      "leader-elect",
-						Namespace: "projectcontour",
-					},
-					DisableLeaderElection: false,
 				},
 				EnableExternalNameService: false,
 				RateLimitService:          nil,

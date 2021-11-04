@@ -44,10 +44,14 @@ func NewTLSRouteController(mgr manager.Manager, eventHandler cache.ResourceEvent
 		eventHandler: eventHandler,
 		FieldLogger:  log,
 	}
-	c, err := controller.New("tlsroute-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.NewUnmanaged("tlsroute-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return nil, err
 	}
+	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
+		return nil, err
+	}
+
 	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.TLSRoute{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return nil, err
 	}

@@ -22,8 +22,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
+
+// TODO: could make this more generic for any Runnable
+type noLeaderElectionController struct {
+	controller.Controller
+}
+
+func (*noLeaderElectionController) NeedLeaderElection() bool {
+	return false
+}
 
 // setRouteCondition sets a condition on a Gateway API route
 // for a given gateway & controller. It performs an upsert,

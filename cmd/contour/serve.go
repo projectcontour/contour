@@ -120,6 +120,12 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("incluster", "Use in cluster configuration.").BoolVar(&ctx.Config.InCluster)
 	serve.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").PlaceHolder("/path/to/file").StringVar(&ctx.Config.Kubeconfig)
 
+	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
+	serve.Flag("leader-election-lease-duration", "Leader lease duration.").Default("15s").DurationVar(&ctx.Config.LeaderElection.LeaseDuration)
+	serve.Flag("leader-election-renew-deadline", "Leader refresh deadline.").Default("10s").DurationVar(&ctx.Config.LeaderElection.RenewDeadline)
+	serve.Flag("leader-election-retry-period", "Leader refresh period.").Default("2s").DurationVar(&ctx.Config.LeaderElection.RetryPeriod)
+	serve.Flag("leader-election-configmap-name", "Leader election configmap name.").Default("leader-elect").StringVar(&ctx.Config.LeaderElection.Name)
+
 	serve.Flag("xds-address", "xDS gRPC API address.").PlaceHolder("<ipaddr>").StringVar(&ctx.xdsAddr)
 	serve.Flag("xds-port", "xDS gRPC API port.").PlaceHolder("<port>").IntVar(&ctx.xdsPort)
 
@@ -153,10 +159,10 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners.").BoolVar(&ctx.useProxyProto)
 
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").PlaceHolder("<envoy|json>").StringVar((*string)(&ctx.Config.AccessLogFormat))
-	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
 
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("kubernetes-debug", "Enable Kubernetes client debug logging with log level.").PlaceHolder("<log level>").UintVar(&ctx.KubernetesDebug)
+
 	return serve, ctx
 }
 
@@ -193,9 +199,25 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 	}
 
 	// Instantiate a controller-runtime manager.
-	mgr, err := manager.New(restConfig, manager.Options{
+	options := manager.Options{
 		Scheme: scheme,
-	})
+	}
+	if ctx.DisableLeaderElection {
+		log.Info("Leader election disabled")
+		options.LeaderElection = false
+	} else {
+		options.LeaderElection = true
+		// This represents a multilock on configmaps and leases.
+		// TODO: switch to solely "leases" once a release cycle has passed.
+		options.LeaderElectionResourceLock = "configmapsleases"
+		options.LeaderElectionNamespace = ctx.Config.LeaderElection.Namespace
+		options.LeaderElectionID = ctx.Config.LeaderElection.Name
+		options.LeaseDuration = &ctx.Config.LeaderElection.LeaseDuration
+		options.RenewDeadline = &ctx.Config.LeaderElection.RenewDeadline
+		options.RetryPeriod = &ctx.Config.LeaderElection.RetryPeriod
+		options.LeaderElectionReleaseOnCancel = true
+	}
+	mgr, err := manager.New(restConfig, options)
 	if err != nil {
 		return nil, fmt.Errorf("unable to set up controller manager: %w", err)
 	}
@@ -248,6 +270,8 @@ func (s *Server) doServe() error {
 	}
 
 	// Register the manager with the workgroup.
+	// TODO: this will likely become the final step we perform when setting up the server
+	// if we move from using the workgroup to controller runtime manager runnables
 	s.group.AddContext(func(taskCtx context.Context) error {
 		return s.mgr.Start(signals.SetupSignalHandler())
 	})
@@ -361,19 +385,13 @@ func (s *Server) doServe() error {
 			fallbackCert:              fallbackCert,
 		}),
 		FieldLogger: s.log.WithField("context", "contourEventHandler"),
+		IsLeader:    s.mgr.Elected(),
 	}
 
 	// Wrap contourHandler in an EventRecorder which tracks API server events.
 	eventHandler := &contour.EventRecorder{
 		Next:    contourHandler,
 		Counter: contourMetrics.EventHandlerOperations,
-	}
-
-	// Register leadership election.
-	if contourConfiguration.LeaderElection.DisableLeaderElection {
-		contourHandler.IsLeader = disableLeaderElection(s.log)
-	} else {
-		contourHandler.IsLeader = setupLeadershipElection(&s.group, s.log, contourConfiguration.LeaderElection, s.coreClient, contourHandler.UpdateNow)
 	}
 
 	// Start setting up StatusUpdateHandler since we need it in
@@ -655,7 +673,7 @@ func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 }
 
 func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
-	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler, isLeader chan struct{}) {
+	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler, isLeader <-chan struct{}) {
 
 	// Check if GatewayAPI is configured.
 	if contourConfiguration.Gateway != nil {

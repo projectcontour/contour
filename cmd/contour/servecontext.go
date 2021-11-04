@@ -450,16 +450,6 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			RootNamespaces:        ctx.proxyRootNamespaces(),
 			FallbackCertificate:   fallbackCertificate,
 		},
-		LeaderElection: contour_api_v1alpha1.LeaderElectionConfig{
-			LeaseDuration: ctx.Config.LeaderElection.LeaseDuration.String(),
-			RenewDeadline: ctx.Config.LeaderElection.RenewDeadline.String(),
-			RetryPeriod:   ctx.Config.LeaderElection.RetryPeriod.String(),
-			Configmap: contour_api_v1alpha1.NamespacedName{
-				Name:      ctx.Config.LeaderElection.Name,
-				Namespace: ctx.Config.LeaderElection.Namespace,
-			},
-			DisableLeaderElection: ctx.DisableLeaderElection,
-		},
 		EnableExternalNameService: ctx.Config.EnableExternalNameService,
 		RateLimitService:          rateLimitService,
 		Policy:                    policy,

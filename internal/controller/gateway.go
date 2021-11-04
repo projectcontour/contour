@@ -63,8 +63,11 @@ func NewGatewayController(
 		log:                        log,
 		gatewayClassControllerName: gatewayapi_v1alpha2.GatewayController(gatewayClassControllerName),
 	}
-	c, err := controller.New("gateway-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.NewUnmanaged("gateway-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
+		return nil, err
+	}
+	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
 		return nil, err
 	}
 

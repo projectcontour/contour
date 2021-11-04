@@ -48,7 +48,7 @@ import (
 type loadBalancerStatusWriter struct {
 	log              logrus.FieldLogger
 	cache            cache.Cache
-	isLeader         chan struct{}
+	isLeader         <-chan struct{}
 	lbStatus         chan v1.LoadBalancerStatus
 	statusUpdater    k8s.StatusUpdater
 	ingressClassName string

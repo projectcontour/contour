@@ -53,8 +53,11 @@ func NewTCPRouteController(
 		gatewayClassControllerName: gatewayapi_v1alpha2.GatewayController(gatewayClassControllerName),
 		log:                        log,
 	}
-	c, err := controller.New("tcproute-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.NewUnmanaged("tcproute-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
+		return nil, err
+	}
+	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
 		return nil, err
 	}
 

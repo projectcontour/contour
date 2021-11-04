@@ -44,7 +44,7 @@ type EventHandler struct {
 	// IsLeader will become ready to read when this EventHandler becomes
 	// the leader. If IsLeader is not readable, or nil, status events will
 	// be suppressed.
-	IsLeader chan struct{}
+	IsLeader <-chan struct{}
 
 	update chan interface{}
 
