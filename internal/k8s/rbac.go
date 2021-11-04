@@ -24,3 +24,6 @@ package k8s
 // +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=gatewayclasses/status;gateways/status;httproutes/status;tlsroutes/status;tcproutes/status;udproutes/status,verbs=update
 
 // +kubebuilder:rbac:groups="",resources=secrets;endpoints;services;namespaces,verbs=get;list;watch
+
+// Add RBAC policy to support leader election.
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=create;get;update

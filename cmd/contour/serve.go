@@ -61,9 +61,6 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-// Add RBAC policy to support leader election.
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=create;get;update
-
 // registerServe registers the serve subcommand and flags
 // with the Application provided.
 func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext) {
