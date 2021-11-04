@@ -304,16 +304,16 @@ func (s *Server) doServe() error {
 	listenerConfig := xdscache_v3.ListenerConfig{
 		UseProxyProto: contourConfiguration.Envoy.Listener.UseProxyProto,
 		HTTPListeners: map[string]xdscache_v3.Listener{
-			"ingress_http": {
-				Name:    "ingress_http",
+			xdscache_v3.ENVOY_HTTP_LISTENER: {
+				Name:    xdscache_v3.ENVOY_HTTP_LISTENER,
 				Address: contourConfiguration.Envoy.HTTPListener.Address,
 				Port:    contourConfiguration.Envoy.HTTPListener.Port,
 			},
 		},
 		HTTPAccessLog: contourConfiguration.Envoy.HTTPListener.AccessLog,
 		HTTPSListeners: map[string]xdscache_v3.Listener{
-			"ingress_https": {
-				Name:    "ingress_https",
+			xdscache_v3.ENVOY_HTTPS_LISTENER: {
+				Name:    xdscache_v3.ENVOY_HTTPS_LISTENER,
 				Address: contourConfiguration.Envoy.HTTPSListener.Address,
 				Port:    contourConfiguration.Envoy.HTTPSListener.Port,
 			},
