@@ -52,7 +52,6 @@ type loadBalancerStatusWriter struct {
 	lbStatus         chan v1.LoadBalancerStatus
 	statusUpdater    k8s.StatusUpdater
 	ingressClassName string
-	Converter        k8s.Converter
 }
 
 func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
@@ -78,7 +77,6 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 		}(),
 		IngressClassName: isw.ingressClassName,
 		StatusUpdater:    isw.statusUpdater,
-		Converter:        isw.Converter,
 	}
 
 	// Create informers for the types that need load balancer

@@ -136,12 +136,12 @@ func doCertgen(config *certgenConfig, log logrus.FieldLogger) {
 		log.WithError(err).Fatal("failed to generate certificates")
 	}
 
-	clients, err := k8s.NewClients(config.KubeConfig, config.InCluster)
+	coreClient, err := k8s.NewCoreClient(config.KubeConfig, config.InCluster)
 	if err != nil {
 		log.WithError(err).Fatalf("failed to create Kubernetes client")
 	}
 
-	if oerr := OutputCerts(config, clients.ClientSet(), generatedCerts); oerr != nil {
+	if oerr := OutputCerts(config, coreClient, generatedCerts); oerr != nil {
 		log.WithError(oerr).Fatalf("failed output certificates")
 	}
 

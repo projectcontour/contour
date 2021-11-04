@@ -24,8 +24,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
@@ -175,16 +175,10 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 
 func TestStatusAddressUpdater(t *testing.T) {
 	const objName = "someobjfoo"
-	ingressGVR := networking_v1.SchemeGroupVersion.WithResource("ingresses")
-	proxyGVR := contour_api_v1.SchemeGroupVersion.WithResource("httpproxies")
 
 	log := logrus.New()
 	log.SetLevel(logrus.DebugLevel)
 	emptyLBStatus := v1.LoadBalancerStatus{}
-	converter, err := NewUnstructuredConverter()
-	if err != nil {
-		t.Error(err)
-	}
 
 	ipLBStatus := v1.LoadBalancerStatus{
 		Ingress: []v1.LoadBalancerIngress{
@@ -197,133 +191,114 @@ func TestStatusAddressUpdater(t *testing.T) {
 	testCases := map[string]struct {
 		status           v1.LoadBalancerStatus
 		ingressClassName string
-		gvr              schema.GroupVersionResource
-		preop            interface{}
-		postop           interface{}
+		preop            client.Object
+		postop           client.Object
 	}{
 		"proxy: no-op add": {
 			status:           emptyLBStatus,
 			ingressClassName: "",
-			gvr:              proxyGVR,
 			preop:            simpleProxyGenerator(objName, "", emptyLBStatus),
 			postop:           simpleProxyGenerator(objName, "", emptyLBStatus),
 		},
 		"proxy: add an IP should update": {
 			status:           ipLBStatus,
 			ingressClassName: "",
-			gvr:              proxyGVR,
 			preop:            simpleProxyGenerator(objName, "", emptyLBStatus),
 			postop:           simpleProxyGenerator(objName, "", ipLBStatus),
 		},
 		"proxy: unset ingressclass should not update": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              proxyGVR,
 			preop:            simpleProxyGenerator(objName, "", emptyLBStatus),
 			postop:           simpleProxyGenerator(objName, "", emptyLBStatus),
 		},
 		"proxy: non-matching ingressclass should not update": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              proxyGVR,
 			preop:            simpleProxyGenerator(objName, "other", emptyLBStatus),
 			postop:           simpleProxyGenerator(objName, "other", emptyLBStatus),
 		},
 		"proxy: matching ingressclass should update": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              proxyGVR,
 			preop:            simpleProxyGenerator(objName, "phony", emptyLBStatus),
 			postop:           simpleProxyGenerator(objName, "phony", ipLBStatus),
 		},
 		"ingress: no-op update": {
 			status:           emptyLBStatus,
 			ingressClassName: "",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "", "", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "", "", emptyLBStatus),
 		},
 		"ingress: add an IP should update": {
 			status:           ipLBStatus,
 			ingressClassName: "",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "", "", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "", "", ipLBStatus),
 		},
 		"ingress: unset ingressclass should not update": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "", "", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "", "", emptyLBStatus),
 		},
 		"ingress: not-configured ingressclass, annotation set to default, should update": {
 			status:           ipLBStatus,
 			ingressClassName: "",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, ingressclass.DefaultClassName, "", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, ingressclass.DefaultClassName, "", ipLBStatus),
 		},
 		"ingress: not-configured ingressclass, spec field set to default, should update": {
 			status:           ipLBStatus,
 			ingressClassName: "",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "", "contour", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "", "contour", ipLBStatus),
 		},
 		"ingress: not-configured ingressclass, annotation set, should not update": {
 			status:           ipLBStatus,
 			ingressClassName: "",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "something", "", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "something", "", emptyLBStatus),
 		},
 		"ingress: not-configured ingressclass, spec field set, should not update": {
 			status:           ipLBStatus,
 			ingressClassName: "",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "", "something", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "", "something", emptyLBStatus),
 		},
 		"ingress: non-matching ingressclass annotation should not update": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "other", "", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "other", "", emptyLBStatus),
 		},
 		"ingress: non-matching ingressclass spec field should not update": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "", "other", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "", "other", emptyLBStatus),
 		},
 		"ingress: matching ingressclass annotation should update": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "phony", "", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "phony", "", ipLBStatus),
 		},
 		"ingress: matching ingressclass spec field should update": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "", "phony", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "", "phony", ipLBStatus),
 		},
 		"ingress: non-matching ingressclass annotation should not update, overrides spec field": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "other", "phony", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "other", "phony", emptyLBStatus),
 		},
 		"ingress: matching ingressclass spec field should update, overrides spec field": {
 			status:           ipLBStatus,
 			ingressClassName: "phony",
-			gvr:              ingressGVR,
 			preop:            simpleIngressGenerator(objName, "phony", "notcorrect", emptyLBStatus),
 			postop:           simpleIngressGenerator(objName, "phony", "notcorrect", ipLBStatus),
 		},
@@ -332,37 +307,35 @@ func TestStatusAddressUpdater(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name+" OnAdd", func(t *testing.T) {
 			suc := StatusUpdateCacher{}
-			assert.True(t, suc.Add(objName, objName, tc.gvr, tc.preop), "unable to add object to cache")
+			assert.True(t, suc.Add(objName, objName, tc.preop), "unable to add object to cache")
 
 			isu := StatusAddressUpdater{
 				Logger:           log,
 				LBStatus:         tc.status,
 				IngressClassName: tc.ingressClassName,
 				StatusUpdater:    &suc,
-				Converter:        converter,
 			}
 
 			isu.OnAdd(tc.preop)
 
-			newObj := suc.Get(objName, objName, tc.gvr)
+			newObj := suc.Get(objName, objName)
 			assert.Equal(t, tc.postop, newObj)
 		})
 
 		t.Run(name+" OnUpdate", func(t *testing.T) {
 			suc := StatusUpdateCacher{}
-			assert.True(t, suc.Add(objName, objName, tc.gvr, tc.preop), "unable to add object to cache")
+			assert.True(t, suc.Add(objName, objName, tc.preop), "unable to add object to cache")
 
 			isu := StatusAddressUpdater{
 				Logger:           log,
 				LBStatus:         tc.status,
 				IngressClassName: tc.ingressClassName,
 				StatusUpdater:    &suc,
-				Converter:        converter,
 			}
 
 			isu.OnUpdate(tc.preop, tc.preop)
 
-			newObj := suc.Get(objName, objName, tc.gvr)
+			newObj := suc.Get(objName, objName)
 			assert.Equal(t, tc.postop, newObj)
 		})
 	}

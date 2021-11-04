@@ -22,7 +22,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -33,12 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
-
-var udpRouteGVR = schema.GroupVersionResource{
-	Group:    gatewayapi_v1alpha2.GroupVersion.Group,
-	Version:  gatewayapi_v1alpha2.GroupVersion.Version,
-	Resource: "udproutes",
-}
 
 type udpRouteReconciler struct {
 	client                     client.Client
@@ -177,8 +170,8 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, request reconcile.Re
 	// an unsupported route type.
 	r.statusUpdater.Send(k8s.StatusUpdate{
 		NamespacedName: k8s.NamespacedNameOf(udpRoute),
-		Resource:       udpRouteGVR,
-		Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+		Resource:       &gatewayapi_v1alpha2.UDPRoute{},
+		Mutator: k8s.StatusMutatorFunc(func(obj client.Object) client.Object {
 			route, ok := obj.(*gatewayapi_v1alpha2.UDPRoute)
 			if !ok {
 				panic(fmt.Sprintf("unsupported object type %T", obj))
