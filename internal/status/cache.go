@@ -179,7 +179,7 @@ func (c *Cache) GatewayStatusAccessor(nsName types.NamespacedName, generation in
 	}
 
 	return gu, func() {
-		if len(gu.Conditions) == 0 {
+		if len(gu.Conditions) == 0 && len(gu.ListenerStatus) == 0 {
 			return
 		}
 		c.gatewayUpdates[gu.FullName] = gu
