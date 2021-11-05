@@ -668,25 +668,19 @@ func getExtAuthzConfig(authzClusterName string, failOpen bool, timeout timeout.S
 	}
 }
 
-func FilterExternalAuthzWithBufferSettings(authzClusterName string, failOpen bool, timeout timeout.Setting, maxRequestBytes uint32, allowPartialMessage bool, packAsBytes bool) *http.HttpFilter {
-	authConfig := getExtAuthzConfig(authzClusterName, failOpen, timeout)
-	authConfig.WithRequestBody = &envoy_config_filter_http_ext_authz_v3.BufferSettings{
-		MaxRequestBytes:     maxRequestBytes,
-		AllowPartialMessage: allowPartialMessage,
-		PackAsBytes:         packAsBytes,
-	}
-	return &http.HttpFilter{
-		Name: "envoy.filters.http.ext_authz",
-		ConfigType: &http.HttpFilter_TypedConfig{
-			TypedConfig: protobuf.MustMarshalAny(&authConfig),
-		},
-	}
-}
-
 // FilterExternalAuthz returns an `ext_authz` filter configured with the
 // requested parameters.
-func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting) *http.HttpFilter {
+func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting, bufferSettings *dag.AuthorizationServerBufferSettings) *http.HttpFilter {
 	authConfig := getExtAuthzConfig(authzClusterName, failOpen, timeout)
+
+	if bufferSettings != nil {
+		authConfig.WithRequestBody = &envoy_config_filter_http_ext_authz_v3.BufferSettings{
+			MaxRequestBytes:     bufferSettings.MaxRequestBytes,
+			AllowPartialMessage: bufferSettings.AllowPartialMessage,
+			PackAsBytes:         bufferSettings.PackAsBytes,
+		}
+
+	}
 
 	return &http.HttpFilter{
 		Name: "envoy.filters.http.ext_authz",

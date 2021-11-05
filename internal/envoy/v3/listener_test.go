@@ -1657,7 +1657,7 @@ func TestAddFilter(t *testing.T) {
 		},
 		"Add to the default filters": {
 			builder: HTTPConnectionManagerBuilder().DefaultFilters(),
-			add:     FilterExternalAuthz("test", false, timeout.Setting{}),
+			add:     FilterExternalAuthz("test", false, timeout.Setting{}, nil),
 			want: []*http.HttpFilter{
 				{
 					Name: "compressor",
@@ -1706,7 +1706,7 @@ func TestAddFilter(t *testing.T) {
 						}),
 					},
 				},
-				FilterExternalAuthz("test", false, timeout.Setting{}),
+				FilterExternalAuthz("test", false, timeout.Setting{}, nil),
 				{
 					Name: "router",
 					ConfigType: &http.HttpFilter_TypedConfig{

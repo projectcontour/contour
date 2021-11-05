@@ -299,10 +299,11 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 
 				if auth.BufferSettings != nil {
-					svhost.AuthorizationBufferSettingsEnabled = true
-					svhost.AuthorizationBufferSettingsAllowPartialMessage = auth.BufferSettings.AllowPartialMessage
-					svhost.AuthorizationBufferSettingsMaxRequestBytes = auth.BufferSettings.MaxRequestBytes
-					svhost.AuthorizationBufferSettingsPackAsBytes = auth.BufferSettings.PackAsBytes
+					svhost.AuthorizationServerBufferSettings = &AuthorizationServerBufferSettings{
+						MaxRequestBytes:     auth.BufferSettings.MaxRequestBytes,
+						AllowPartialMessage: auth.BufferSettings.AllowPartialMessage,
+						PackAsBytes:         auth.BufferSettings.PackAsBytes,
+					}
 				}
 			}
 		}

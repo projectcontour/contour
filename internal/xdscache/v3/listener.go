@@ -397,25 +397,13 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				var authFilter *http.HttpFilter
 
 				if vh.AuthorizationService != nil {
-					if vh.AuthorizationBufferSettingsEnabled {
-						authFilter = envoy_v3.FilterExternalAuthzWithBufferSettings(
-							vh.AuthorizationService.Name,
-							vh.AuthorizationFailOpen,
-							vh.AuthorizationResponseTimeout,
-							vh.AuthorizationBufferSettingsMaxRequestBytes,
-							vh.AuthorizationBufferSettingsAllowPartialMessage,
-							vh.AuthorizationBufferSettingsPackAsBytes,
-						)
-
-					} else {
-						authFilter = envoy_v3.FilterExternalAuthz(
-							vh.AuthorizationService.Name,
-							vh.AuthorizationFailOpen,
-							vh.AuthorizationResponseTimeout,
-						)
-					}
+					authFilter = envoy_v3.FilterExternalAuthz(
+						vh.AuthorizationService.Name,
+						vh.AuthorizationFailOpen,
+						vh.AuthorizationResponseTimeout,
+						vh.AuthorizationServerBufferSettings,
+					)
 				}
-
 				// Create a uniquely named HTTP connection manager for
 				// this vhost, so that the SNI name the client requests
 				// only grants access to that host. See RFC 6066 for
