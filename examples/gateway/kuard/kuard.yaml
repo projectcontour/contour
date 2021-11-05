@@ -44,6 +44,10 @@ metadata:
   labels:
     app: kuard
 spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: contour
   hostnames:
   - "local.projectcontour.io"
   rules:
