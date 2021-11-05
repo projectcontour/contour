@@ -373,7 +373,8 @@ descriptors:
 
 			BeforeEach(func() {
 				if !e2e.UsingContourConfigCRD() {
-					Skip("test only applies to contour config CRD")
+					// Test only applies to contour config CRD.
+					Skip("")
 				}
 				for _, ns := range rootNamespaces {
 					f.CreateNamespace(ns)
@@ -398,7 +399,8 @@ descriptors:
 
 			BeforeEach(func() {
 				if e2e.UsingContourConfigCRD() {
-					Skip("test only applies to contour configmap")
+					// Test only applies to contour configmap.
+					Skip("")
 				}
 				for _, ns := range rootNamespaces {
 					f.CreateNamespace(ns)
