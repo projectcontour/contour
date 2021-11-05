@@ -12,7 +12,7 @@
 // limitations under the License.
 
 // Package httpsvc provides a HTTP/1.x Service which is compatible with the
-// workgroup.Group API.
+// controller-runtime manager.Runnable API.
 package httpsvc
 
 import (
@@ -25,7 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Service is a HTTP/1.x endpoint which is compatible with the workgroup.Group API.
+// Service is a HTTP/1.x endpoint which is compatible with the manager.Runnable API.
 type Service struct {
 	Addr string
 	Port int
@@ -34,9 +34,13 @@ type Service struct {
 	http.ServeMux
 }
 
+func (svc *Service) NeedLeaderElection() bool {
+	return false
+}
+
 // Start fulfills the g.Start contract.
 // When stop is closed the http server will shutdown.
-func (svc *Service) Start(stop <-chan struct{}) (err error) {
+func (svc *Service) Start(ctx context.Context) (err error) {
 	defer func() {
 		if err != nil {
 			svc.WithError(err).Error("terminated HTTP server with error")
@@ -55,7 +59,7 @@ func (svc *Service) Start(stop <-chan struct{}) (err error) {
 
 	go func() {
 		// wait for stop signal from group.
-		<-stop
+		<-ctx.Done()
 
 		// shutdown the server with 5 seconds grace.
 		ctx := context.Background()

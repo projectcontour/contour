@@ -48,23 +48,16 @@ import (
 type loadBalancerStatusWriter struct {
 	log              logrus.FieldLogger
 	cache            cache.Cache
-	isLeader         <-chan struct{}
 	lbStatus         chan v1.LoadBalancerStatus
 	statusUpdater    k8s.StatusUpdater
 	ingressClassName string
 }
 
-func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
-	// Await leadership election.
-	isw.log.Info("awaiting leadership election")
-	select {
-	case <-stop:
-		// We were asked to stop before elected leader.
-		return nil
-	case <-isw.isLeader:
-		isw.log.Info("elected leader")
-	}
+func (isw *loadBalancerStatusWriter) NeedLeaderElection() bool {
+	return true
+}
 
+func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 	u := &k8s.StatusAddressUpdater{
 		Logger: func() logrus.FieldLogger {
 			// Configure the StatusAddressUpdater logger.
@@ -98,7 +91,7 @@ func (isw *loadBalancerStatusWriter) Start(stop <-chan struct{}) error {
 
 	for {
 		select {
-		case <-stop:
+		case <-ctx.Done():
 			// Once started, there's no way to stop the
 			// informer from here. Clear the load balancer
 			// status so that subsequent informer events

@@ -202,6 +202,7 @@ func TestGRPC(t *testing.T) {
 
 			eh = &contour.EventHandler{
 				Observer:    dag.ComposeObservers(xdscache.ObserversOf(resources)...),
+				Update:      make(chan interface{}),
 				FieldLogger: log,
 			}
 
@@ -210,15 +211,14 @@ func TestGRPC(t *testing.T) {
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 			done := make(chan error, 1)
-			stop := make(chan struct{})
-			run := eh.Start()
-			go run(stop) // nolint:errcheck
+			ctx, cancel := context.WithCancel(context.Background())
+			go eh.Start(ctx) // nolint:errcheck
 			go func() {
 				done <- srv.Serve(l)
 			}()
 			defer func() {
 				srv.GracefulStop()
-				close(stop)
+				cancel()
 				<-done
 			}()
 			cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())

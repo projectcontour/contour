@@ -98,12 +98,11 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	rand.Seed(time.Now().Unix())
 
 	statusUpdateCacher := &k8s.StatusUpdateCacher{}
-	leaderChan := make(chan struct{})
 	eh := &contour.EventHandler{
-		IsLeader:      leaderChan,
 		StatusUpdater: statusUpdateCacher,
 		FieldLogger:   log,
 		Sequence:      make(chan int, 1),
+		Update:        make(chan interface{}),
 		//nolint:gosec
 		HoldoffDelay: time.Duration(rand.Intn(100)) * time.Millisecond,
 		//nolint:gosec
@@ -139,9 +138,6 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		}
 	}
 
-	// Make this event handler win the leader election.
-	close(leaderChan)
-
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
@@ -157,7 +153,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		}()
 		return srv.Serve(l) // srv now owns l and will close l before returning
 	})
-	g.Add(eh.Start())
+	g.AddContext(eh.Start)
 
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
 	require.NoError(t, err)

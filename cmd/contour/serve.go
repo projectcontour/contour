@@ -20,10 +20,8 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"regexp"
 	"strconv"
-	"syscall"
 	"time"
 
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
@@ -39,7 +37,6 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/timeout"
-	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/projectcontour/contour/internal/xds"
 	contour_xds_v3 "github.com/projectcontour/contour/internal/xds/v3"
 	"github.com/projectcontour/contour/internal/xdscache"
@@ -167,7 +164,6 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 }
 
 type Server struct {
-	group      workgroup.Group
 	log        logrus.FieldLogger
 	ctx        *serveContext
 	coreClient *kubernetes.Clientset
@@ -178,10 +174,6 @@ type Server struct {
 // NewServer returns a Server object which contains the initial configuration
 // objects required to start an instance of Contour.
 func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
-
-	// Set up workgroup runner.
-	var group workgroup.Group
-
 	// Establish k8s core client connection.
 	restConfig, err := k8s.NewRestConfig(ctx.Config.Kubeconfig, ctx.Config.InCluster)
 	if err != nil {
@@ -228,7 +220,6 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 	registry.MustRegister(collectors.NewGoCollector())
 
 	return &Server{
-		group:      group,
 		log:        log,
 		ctx:        ctx,
 		coreClient: coreClient,
@@ -268,13 +259,6 @@ func (s *Server) doServe() error {
 		// No contour configuration passed, so convert the ServeContext into a ContourConfigurationSpec.
 		contourConfiguration = s.ctx.convertToContourConfigurationSpec()
 	}
-
-	// Register the manager with the workgroup.
-	// TODO: this will likely become the final step we perform when setting up the server
-	// if we move from using the workgroup to controller runtime manager runnables
-	s.group.AddContext(func(taskCtx context.Context) error {
-		return s.mgr.Start(signals.SetupSignalHandler())
-	})
 
 	// informerNamespaces is a list of namespaces that we should start informers for.
 	var informerNamespaces []string
@@ -372,7 +356,12 @@ func (s *Server) doServe() error {
 	contourHandler := &contour.EventHandler{
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
-		Observer:        dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
+		Update:          make(chan interface{}),
+		Observer: &contour.RebuildMetricsObserver{
+			Metrics:      contourMetrics,
+			IsLeader:     s.mgr.Elected(),
+			NextObserver: dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
+		},
 		Builder: s.getDAGBuilder(dagBuilderConfig{
 			ingressClassName:          ingressClassName,
 			rootNamespaces:            contourConfiguration.HTTPProxy.RootNamespaces,
@@ -385,7 +374,6 @@ func (s *Server) doServe() error {
 			fallbackCert:              fallbackCert,
 		}),
 		FieldLogger: s.log.WithField("context", "contourEventHandler"),
-		IsLeader:    s.mgr.Elected(),
 	}
 
 	// Wrap contourHandler in an EventRecorder which tracks API server events.
@@ -397,7 +385,7 @@ func (s *Server) doServe() error {
 	// Start setting up StatusUpdateHandler since we need it in
 	// the Gateway API controllers. Will finish setting it up and
 	// start it later.
-	sh := k8s.StatusUpdateHandler{
+	sh := &k8s.StatusUpdateHandler{
 		Log:    s.log.WithField("context", "StatusUpdateHandler"),
 		Client: s.mgr.GetClient(),
 	}
@@ -418,7 +406,7 @@ func (s *Server) doServe() error {
 	}
 
 	// Inform on Gateway API resources.
-	s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler, &sh, contourHandler.IsLeader)
+	s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler, sh)
 
 	// Inform on secrets, filtering by root namespaces.
 	var handler cache.ResourceEventHandler = eventHandler
@@ -440,45 +428,46 @@ func (s *Server) doServe() error {
 		s.log.WithError(err).WithField("resource", "endpoints").Fatal("failed to create informer")
 	}
 
-	// Register our event handler with the workgroup.
-	s.group.Add(contourHandler.Start())
+	// Register our event handler with the manager.
+	if err := s.mgr.Add(contourHandler); err != nil {
+		return err
+	}
 
 	// Create metrics service.
-	s.setupMetrics(contourConfiguration.Metrics, contourConfiguration.Health, s.registry)
+	if err := s.setupMetrics(contourConfiguration.Metrics, contourConfiguration.Health, s.registry); err != nil {
+		return err
+	}
 
 	// Create a separate health service if required.
-	s.setupHealth(contourConfiguration.Health, contourConfiguration.Metrics)
+	if err := s.setupHealth(contourConfiguration.Health, contourConfiguration.Metrics); err != nil {
+		return err
+	}
 
-	// Create debug service and register with workgroup.
-	s.setupDebugService(contourConfiguration.Debug, contourHandler)
-
-	// Once we have the leadership detection channel, we can
-	// push DAG rebuild metrics onto the observer stack.
-	contourHandler.Observer = &contour.RebuildMetricsObserver{
-		Metrics:      contourMetrics,
-		IsLeader:     contourHandler.IsLeader,
-		NextObserver: contourHandler.Observer,
+	if err := s.setupDebugService(contourConfiguration.Debug, contourHandler); err != nil {
+		return err
 	}
 
 	// Finish setting up the StatusUpdateHandler and
 	// add it to the work group.
-	sh.LeaderElected = contourHandler.IsLeader
-	s.group.Add(sh.Start)
+	if err := s.mgr.Add(sh); err != nil {
+		return err
+	}
 
 	// Now we have the statusUpdateHandler, we can create the event handler's StatusUpdater, which will take the
 	// status updates from the DAG, and send them to the status update handler.
 	contourHandler.StatusUpdater = sh.Writer()
 
 	// Set up ingress load balancer status writer.
-	lbsw := loadBalancerStatusWriter{
+	lbsw := &loadBalancerStatusWriter{
 		log:              s.log.WithField("context", "loadBalancerStatusWriter"),
 		cache:            s.mgr.GetCache(),
-		isLeader:         contourHandler.IsLeader,
 		lbStatus:         make(chan corev1.LoadBalancerStatus, 1),
 		ingressClassName: ingressClassName,
 		statusUpdater:    sh.Writer(),
 	}
-	s.group.Add(lbsw.Start)
+	if err := s.mgr.Add(lbsw); err != nil {
+		return err
+	}
 
 	// Register an informer to watch envoy's service if we haven't been given static details.
 	if contourConfiguration.Ingress != nil && contourConfiguration.Ingress.StatusAddress != nil {
@@ -505,23 +494,20 @@ func (s *Server) doServe() error {
 			Info("Watching Service for Ingress status")
 	}
 
-	s.setupXDSServer(s.mgr, s.registry, contourConfiguration.XDSServer, snapshotHandler, resources)
-
-	// Set up SIGTERM handler for graceful shutdown.
-	s.group.Add(func(stop <-chan struct{}) error {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
-		select {
-		case sig := <-c:
-			s.log.WithField("context", "sigterm-handler").WithField("signal", sig).Info("shutting down")
-		case <-stop:
-			// Do nothing. The group is shutting down.
-		}
-		return nil
-	})
+	xdsServer := &xdsServer{
+		log:             s.log,
+		mgr:             s.mgr,
+		registry:        s.registry,
+		config:          contourConfiguration.XDSServer,
+		snapshotHandler: snapshotHandler,
+		resources:       resources,
+	}
+	if err := s.mgr.Add(xdsServer); err != nil {
+		return err
+	}
 
 	// GO!
-	return s.group.Run(context.Background())
+	return s.mgr.Start(signals.SetupSignalHandler())
 }
 
 func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec, listenerConfig *xdscache_v3.ListenerConfig) error {
@@ -564,8 +550,8 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 	return nil
 }
 
-func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, contourHandler *contour.EventHandler) {
-	debugsvc := debug.Service{
+func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, contourHandler *contour.EventHandler) error {
+	debugsvc := &debug.Service{
 		Service: httpsvc.Service{
 			Addr:        debugConfig.Address,
 			Port:        debugConfig.Port,
@@ -573,70 +559,78 @@ func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig,
 		},
 		Builder: &contourHandler.Builder,
 	}
-	s.group.Add(debugsvc.Start)
+	return s.mgr.Add(debugsvc)
 }
 
-func (s *Server) setupXDSServer(mgr manager.Manager, registry *prometheus.Registry, contourConfiguration contour_api_v1alpha1.XDSServerConfig,
-	snapshotHandler *xdscache.SnapshotHandler, resources []xdscache.ResourceCache) {
+type xdsServer struct {
+	log             logrus.FieldLogger
+	mgr             manager.Manager
+	registry        *prometheus.Registry
+	config          contour_api_v1alpha1.XDSServerConfig
+	snapshotHandler *xdscache.SnapshotHandler
+	resources       []xdscache.ResourceCache
+}
 
-	s.group.AddContext(func(taskCtx context.Context) error {
-		log := s.log.WithField("context", "xds")
+func (x *xdsServer) NeedLeaderElection() bool {
+	return false
+}
 
-		log.Printf("waiting for informer caches to sync")
-		if !mgr.GetCache().WaitForCacheSync(taskCtx) {
-			return errors.New("informer cache failed to sync")
+func (x *xdsServer) Start(ctx context.Context) error {
+	log := x.log.WithField("context", "xds")
+
+	log.Printf("waiting for informer caches to sync")
+	if !x.mgr.GetCache().WaitForCacheSync(ctx) {
+		return errors.New("informer cache failed to sync")
+	}
+	log.Printf("informer caches synced")
+
+	grpcServer := xds.NewServer(x.registry, grpcOptions(log, x.config.TLS)...)
+
+	switch x.config.Type {
+	case contour_api_v1alpha1.EnvoyServerType:
+		v3cache := contour_xds_v3.NewSnapshotCache(false, log)
+		x.snapshotHandler.AddSnapshotter(v3cache)
+		contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(ctx, v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
+	case contour_api_v1alpha1.ContourServerType:
+		contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(x.resources)...), grpcServer)
+	default:
+		// This can't happen due to config validation.
+		log.Fatalf("invalid xDS server type %q", x.config.Type)
+	}
+
+	addr := net.JoinHostPort(x.config.Address, strconv.Itoa(x.config.Port))
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	log = log.WithField("address", addr)
+	if tls := x.config.TLS; tls != nil {
+		if tls.Insecure {
+			log = log.WithField("insecure", true)
 		}
-		log.Printf("informer caches synced")
+	}
 
-		grpcServer := xds.NewServer(registry, grpcOptions(log, contourConfiguration.TLS)...)
+	log.Infof("started xDS server type: %q", x.config.Type)
+	defer log.Info("stopped xDS server")
 
-		switch contourConfiguration.Type {
-		case contour_api_v1alpha1.EnvoyServerType:
-			v3cache := contour_xds_v3.NewSnapshotCache(false, log)
-			snapshotHandler.AddSnapshotter(v3cache)
-			contour_xds_v3.RegisterServer(envoy_server_v3.NewServer(taskCtx, v3cache, contour_xds_v3.NewRequestLoggingCallbacks(log)), grpcServer)
-		case contour_api_v1alpha1.ContourServerType:
-			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), grpcServer)
-		default:
-			// This can't happen due to config validation.
-			log.Fatalf("invalid xDS server type %q", contourConfiguration.Type)
-		}
+	go func() {
+		<-ctx.Done()
 
-		addr := net.JoinHostPort(contourConfiguration.Address, strconv.Itoa(contourConfiguration.Port))
-		l, err := net.Listen("tcp", addr)
-		if err != nil {
-			return err
-		}
+		// We don't use GracefulStop here because envoy
+		// has long-lived hanging xDS requests. There's no
+		// mechanism to make those pending requests fail,
+		// so we forcibly terminate the TCP sessions.
+		grpcServer.Stop()
+	}()
 
-		log = log.WithField("address", addr)
-		if tls := contourConfiguration.TLS; tls != nil {
-			if tls.Insecure {
-				log = log.WithField("insecure", true)
-			}
-		}
-
-		log.Infof("started xDS server type: %q", contourConfiguration.Type)
-		defer log.Info("stopped xDS server")
-
-		go func() {
-			<-taskCtx.Done()
-
-			// We don't use GracefulStop here because envoy
-			// has long-lived hanging xDS requests. There's no
-			// mechanism to make those pending requests fail,
-			// so we forcibly terminate the TCP sessions.
-			grpcServer.Stop()
-		}()
-
-		return grpcServer.Serve(l)
-	})
+	return grpcServer.Serve(l)
 }
 
 func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, healthConfig contour_api_v1alpha1.HealthConfig,
-	registry *prometheus.Registry) {
+	registry *prometheus.Registry) error {
 
-	// Create metrics service and register with workgroup.
-	metricsvc := httpsvc.Service{
+	metricsvc := &httpsvc.Service{
 		Addr:        metricsConfig.Address,
 		Port:        metricsConfig.Port,
 		FieldLogger: s.log.WithField("context", "metricsvc"),
@@ -651,14 +645,14 @@ func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, 
 		metricsvc.ServeMux.Handle("/healthz", h)
 	}
 
-	s.group.Add(metricsvc.Start)
+	return s.mgr.Add(metricsvc)
 }
 
 func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
-	metricsConfig contour_api_v1alpha1.MetricsConfig) {
+	metricsConfig contour_api_v1alpha1.MetricsConfig) error {
 
 	if healthConfig.Address != metricsConfig.Address || healthConfig.Port != metricsConfig.Port {
-		healthsvc := httpsvc.Service{
+		healthsvc := &httpsvc.Service{
 			Addr:        healthConfig.Address,
 			Port:        healthConfig.Port,
 			FieldLogger: s.log.WithField("context", "healthsvc"),
@@ -668,12 +662,14 @@ func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 		healthsvc.ServeMux.Handle("/health", h)
 		healthsvc.ServeMux.Handle("/healthz", h)
 
-		s.group.Add(healthsvc.Start)
+		return s.mgr.Add(healthsvc)
 	}
+
+	return nil
 }
 
 func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
-	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler, isLeader <-chan struct{}) {
+	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler) {
 
 	// Check if GatewayAPI is configured.
 	if contourConfiguration.Gateway != nil {
@@ -685,7 +681,6 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			sh.Writer(),
 			s.log.WithField("context", "gatewayclass-controller"),
 			gatewayClassControllerName,
-			isLeader,
 		); err != nil {
 			s.log.WithError(err).Fatal("failed to create gatewayclass-controller")
 		}
@@ -697,7 +692,6 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			sh.Writer(),
 			s.log.WithField("context", "gateway-controller"),
 			gatewayClassControllerName,
-			isLeader,
 		); err != nil {
 			s.log.WithError(err).Fatal("failed to create gateway-controller")
 		}

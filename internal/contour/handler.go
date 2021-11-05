@@ -17,6 +17,7 @@
 package contour
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -41,12 +42,12 @@ type EventHandler struct {
 
 	logrus.FieldLogger
 
-	// IsLeader will become ready to read when this EventHandler becomes
-	// the leader. If IsLeader is not readable, or nil, status events will
-	// be suppressed.
-	IsLeader <-chan struct{}
-
-	update chan interface{}
+	// TODO: Made public as a hack
+	// Needs to exist before Start is called so writes to this channel block
+	// otherwise they are lost if they come in before it exists.
+	// Consider moving to a constructor or some other form to initialize this
+	// structure.
+	Update chan interface{}
 
 	// Sequence is a channel that receives a incrementing sequence number
 	// for each update processed. The updates may be processed immediately, or
@@ -73,31 +74,27 @@ type opDelete struct {
 }
 
 func (e *EventHandler) OnAdd(obj interface{}) {
-	e.update <- opAdd{obj: obj}
+	e.Update <- opAdd{obj: obj}
 }
 
 func (e *EventHandler) OnUpdate(oldObj, newObj interface{}) {
-	e.update <- opUpdate{oldObj: oldObj, newObj: newObj}
+	e.Update <- opUpdate{oldObj: oldObj, newObj: newObj}
 }
 
 func (e *EventHandler) OnDelete(obj interface{}) {
-	e.update <- opDelete{obj: obj}
+	e.Update <- opDelete{obj: obj}
 }
 
 // UpdateNow enqueues a DAG update subject to the holdoff timer.
 func (e *EventHandler) UpdateNow() {
-	e.update <- true
+	e.Update <- true
 }
 
-// Start initializes the EventHandler and returns a function suitable
-// for registration with a workgroup.Group.
-func (e *EventHandler) Start() func(<-chan struct{}) error {
-	e.update = make(chan interface{})
-	return e.run
+func (e *EventHandler) NeedLeaderElection() bool {
+	return false
 }
 
-// run is the main event handling loop.
-func (e *EventHandler) run(stop <-chan struct{}) error {
+func (e *EventHandler) Start(ctx context.Context) error {
 	e.Info("started event handler")
 	defer e.Info("stopped event handler")
 
@@ -135,7 +132,7 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 		//
 		// Only one of these things can happen at a time.
 		select {
-		case op := <-e.update:
+		case op := <-e.Update:
 			if e.onUpdate(op) {
 				outstanding++
 				// If there is already a timer running, stop it.
@@ -161,7 +158,7 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 			e.rebuildDAG()
 			e.incSequence()
 			lastDAGRebuild = time.Now()
-		case <-stop:
+		case <-ctx.Done():
 			// shutdown
 			return nil
 		}

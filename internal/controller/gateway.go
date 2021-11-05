@@ -53,7 +53,6 @@ func NewGatewayController(
 	statusUpdater k8s.StatusUpdater,
 	log logrus.FieldLogger,
 	gatewayClassControllerName string,
-	isLeader <-chan struct{},
 ) (controller.Controller, error) {
 	r := &gatewayReconciler{
 		ctx:                        context.Background(),
@@ -95,7 +94,7 @@ func NewGatewayController(
 	// to date.
 	eventSource := make(chan event.GenericEvent)
 	go func() {
-		<-isLeader
+		<-mgr.Elected()
 		log.Info("elected leader, triggering reconciles for all gateways")
 
 		var gateways gatewayapi_v1alpha2.GatewayList
