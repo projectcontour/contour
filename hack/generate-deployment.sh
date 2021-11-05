@@ -27,7 +27,8 @@ case $MODE in
 esac
 
 # Files defines the set of source files to render together.
-readonly FILES=("examples/contour/*.yaml")
+readonly FILES="examples/contour/*.yaml
+examples/deployment/03-envoy-deployment.yaml"
 
 exec > >(git stripspace >"$TARGET")
 
@@ -39,6 +40,7 @@ cat <<EOF
 EOF
 
 for f in $FILES; do
+
    case $f in
    $SKIP_FILE)
       # skip this file

@@ -34,7 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var f = e2e.NewFramework(false)
+var f = e2e.NewFramework(false, e2e.DaemonsetMode)
 
 func TestHTTPProxy(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -42,7 +42,7 @@ func TestHTTPProxy(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour(e2e.UseEnvoyDaemonsetDeploymentModel()))
+	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
 })
 
 var _ = AfterSuite(func() {

@@ -35,7 +35,7 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-var f = e2e.NewFramework(false)
+var f = e2e.NewFramework(false, e2e.DaemonsetMode)
 
 func TestGatewayAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -43,7 +43,7 @@ func TestGatewayAPI(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour(e2e.UseEnvoyDaemonsetDeploymentModel()))
+	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
 })
 
 var _ = AfterSuite(func() {
