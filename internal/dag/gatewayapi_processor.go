@@ -146,7 +146,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 
 		// Get a list of the route kinds that the listener accepts.
-		listenerRouteKinds := p.getListenerRouteKinds(listener)
+		listenerRouteKinds := p.getListenerRouteKinds(listener, gwAccessor)
 		gwAccessor.SetListenerSupportedKinds(string(listener.Name), listenerRouteKinds)
 
 		attachedRoutes := 0
@@ -205,7 +205,7 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 
 // getListenerRouteKinds gets a list of the valid route kinds that
 // the listener accepts.
-func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1alpha2.Listener) []gatewayapi_v1alpha2.Kind {
+func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1alpha2.Listener, gwAccessor *status.GatewayStatusUpdate) []gatewayapi_v1alpha2.Kind {
 	// None specified on the listener: return the default based on
 	// the listener's protocol.
 	if len(listener.AllowedRoutes.Kinds) == 0 {
@@ -221,24 +221,35 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1alpha2
 
 	var routeKinds []gatewayapi_v1alpha2.Kind
 
-	// TODO if a kind is invalid, set "ResolvedRefs: false" condition
-	// on the listener with "InvalidRouteKinds" reason.
-
 	for _, routeKind := range listener.AllowedRoutes.Kinds {
-		if routeKind.Group == nil {
-			p.Errorf("Listener.AllowedRoutes.Group not specified")
-			continue
-		}
-		if *routeKind.Group != gatewayapi_v1alpha2.GroupName {
-			p.Errorf("Listener.AllowedRoutes.Group %q not supported", *routeKind.Group)
+		if routeKind.Group != nil && *routeKind.Group != gatewayapi_v1alpha2.GroupName {
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1alpha2.ListenerConditionResolvedRefs,
+				metav1.ConditionFalse,
+				gatewayapi_v1alpha2.ListenerReasonInvalidRouteKinds,
+				fmt.Sprintf("Group %q is not supported", *routeKind.Group),
+			)
 			continue
 		}
 		if routeKind.Kind != gatewayapi_v1alpha2.Kind(KindHTTPRoute) && routeKind.Kind != gatewayapi_v1alpha2.Kind(KindTLSRoute) {
-			p.Errorf("Listener.AllowedRoutes.Kind %q not supported", routeKind.Kind)
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1alpha2.ListenerConditionResolvedRefs,
+				metav1.ConditionFalse,
+				gatewayapi_v1alpha2.ListenerReasonInvalidRouteKinds,
+				fmt.Sprintf("Kind %q is not supported", routeKind.Kind),
+			)
 			continue
 		}
 		if routeKind.Kind == gatewayapi_v1alpha2.Kind(KindTLSRoute) && listener.Protocol != gatewayapi_v1alpha2.TLSProtocolType {
-			p.Errorf("invalid listener protocol %q for Kind: TLSRoute", listener.Protocol)
+			gwAccessor.AddListenerCondition(
+				string(listener.Name),
+				gatewayapi_v1alpha2.ListenerConditionResolvedRefs,
+				metav1.ConditionFalse,
+				gatewayapi_v1alpha2.ListenerReasonInvalidRouteKinds,
+				fmt.Sprintf("TLSRoutes are incompatible with listener protocol %q", listener.Protocol),
+			)
 			continue
 		}
 
