@@ -55,6 +55,15 @@ var _ = AfterSuite(func() {
 	gexec.CleanupBuildArtifacts()
 })
 
+// Contains specs that test that kubebuilder API validations
+// work as expected, and do not require a Contour instance to
+// be running.
+var _ = Describe("HTTPProxy API validation", func() {
+	f.NamespacedTest("httpproxy-required-field-validation", testRequiredFieldValidation)
+
+	f.NamespacedTest("httpproxy-invalid-wildcard-fqdn", testWildcardFQDN)
+})
+
 var _ = Describe("HTTPProxy", func() {
 	var (
 		contourCmd            *gexec.Session
@@ -95,8 +104,6 @@ var _ = Describe("HTTPProxy", func() {
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
-	f.NamespacedTest("httpproxy-required-field-validation", testRequiredFieldValidation)
-
 	f.NamespacedTest("httpproxy-header-condition-match", testHeaderConditionMatch)
 
 	f.NamespacedTest("httpproxy-path-condition-match", testPathConditionMatch)
@@ -117,8 +124,7 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-retry-policy-validation", testRetryPolicyValidation)
 
-	f.NamespacedTest("httpproxy-invalid-wildcard-subdomain-fqdn", testWildcardSubdomainFQDN)
-	f.NamespacedTest("httpproxy-invalid-wildcard-fqdn", testWildcardFQDN)
+	f.NamespacedTest("httpproxy-wildcard-subdomain-fqdn", testWildcardSubdomainFQDN)
 
 	f.NamespacedTest("httpproxy-https-fallback-certificate", func(namespace string) {
 		Context("with fallback certificate", func() {
