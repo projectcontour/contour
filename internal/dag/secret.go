@@ -40,7 +40,7 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 			return false, errors.New("missing TLS certificate")
 		}
 
-		if err := validateCertificate(data); err != nil {
+		if err := validateServingBundle(data); err != nil {
 			return false, fmt.Errorf("invalid TLS certificate: %v", err)
 		}
 
@@ -55,16 +55,20 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 
 	// Generic secrets may have a 'ca.crt' only.
 	case v1.SecretTypeOpaque, "":
+		// Note that we can't return an error in the first two cases
+		// because we have to watch all the secrets in the cluster, and most
+		// will be Opaque Secrets that Contour doesn't care about.
 		if _, ok := secret.Data[v1.TLSCertKey]; ok {
 			return false, nil
 		}
-
 		if _, ok := secret.Data[v1.TLSPrivateKeyKey]; ok {
 			return false, nil
 		}
 
+		// If there's an Opaque Secret with a `ca.crt` key, and it's zero
+		// length, Contour can't use it, so return an error.
 		if data := secret.Data[CACertificateKey]; len(data) == 0 {
-			return false, nil
+			return false, errors.New("can't use zero-length ca.crt value")
 		}
 
 	default:
@@ -77,7 +81,7 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 	// CA bundle on TLS secrets is allowed to be an empty string
 	// (see https://github.com/projectcontour/contour/issues/1644).
 	if data := secret.Data[CACertificateKey]; len(data) > 0 {
-		if err := validateCertificate(data); err != nil {
+		if err := validateCABundle(data); err != nil {
 			return false, fmt.Errorf("invalid CA certificate bundle: %v", err)
 		}
 	}
@@ -114,8 +118,14 @@ func containsPEMHeader(data []byte) bool {
 	return true
 }
 
-func validateCertificate(data []byte) error {
+// validateServingBundle validates that a PEM bundle contains at least one
+// valid certificate, and that the first certificate has a
+// CN or SAN set.
+func validateServingBundle(data []byte) error {
 	var exists bool
+
+	// The first PEM in a bundle should always have a CN set.
+	i := 0
 
 	for containsPEMHeader(data) {
 		var block *pem.Block
@@ -131,8 +141,35 @@ func validateCertificate(data []byte) error {
 			return err
 		}
 
-		if !hasCommonName(cert) && !hasSubjectAltNames(cert) {
+		// Only run the CN and SAN checks on the first cert in a bundle
+		if i == 0 && !hasCommonName(cert) && !hasSubjectAltNames(cert) {
 			return errors.New("certificate has no common name or subject alt name")
+		}
+
+		exists = true
+		i++
+	}
+
+	if !exists {
+		return errors.New("failed to locate certificate")
+	}
+
+	return nil
+}
+
+// validateCABundle validates that a PEM bundle contains at least
+// one valid certificate.
+func validateCABundle(data []byte) error {
+	var exists bool
+
+	for containsPEMHeader(data) {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			return errors.New("failed to parse PEM block")
+		}
+		if block.Type != "CERTIFICATE" {
+			return fmt.Errorf("unexpected block type '%s'", block.Type)
 		}
 
 		exists = true
@@ -141,7 +178,6 @@ func validateCertificate(data []byte) error {
 	if !exists {
 		return errors.New("failed to locate certificate")
 	}
-
 	return nil
 }
 

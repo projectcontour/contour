@@ -89,6 +89,18 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+		"insert CA bundle secret w/ no CN for CA": {
+			obj: &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "caNoCN",
+					Namespace: "default",
+				},
+				Type: v1.SecretTypeOpaque,
+				Data: caBundleData(fixture.CA_CERT_NO_CN),
+			},
+			want: true,
+		},
+
 		"insert CA bundle secret w/ non-PEM data and no certificates": {
 			obj: &v1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
