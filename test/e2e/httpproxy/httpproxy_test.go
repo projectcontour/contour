@@ -62,6 +62,8 @@ var _ = Describe("HTTPProxy API validation", func() {
 	f.NamespacedTest("httpproxy-required-field-validation", testRequiredFieldValidation)
 
 	f.NamespacedTest("httpproxy-invalid-wildcard-fqdn", testWildcardFQDN)
+
+	f.NamespacedTest("invalid-cookie-rewrite-fields", testInvalidCookieRewriteFields)
 })
 
 var _ = Describe("HTTPProxy", func() {
@@ -340,8 +342,6 @@ descriptors:
 	})
 
 	Context("cookie-rewriting", func() {
-		f.NamespacedTest("invalid-cookie-rewrite-fields", testInvalidCookieRewriteFields)
-
 		f.NamespacedTest("app-cookie-rewrite", testAppCookieRewrite)
 
 		f.NamespacedTest("cookie-rewrite-tls", testCookieRewriteTLS)
