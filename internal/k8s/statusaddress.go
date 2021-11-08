@@ -24,8 +24,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // StatusAddressUpdater observes informer OnAdd and OnUpdate events and
@@ -38,7 +38,6 @@ type StatusAddressUpdater struct {
 	LBStatus         v1.LoadBalancerStatus
 	IngressClassName string
 	StatusUpdater    StatusUpdater
-	Converter        Converter
 
 	// mu guards the LBStatus field, which can be updated dynamically.
 	mu sync.Mutex
@@ -67,15 +66,6 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		return
 	}
 
-	obj, err := s.Converter.FromUnstructured(obj)
-	if err != nil {
-		s.Logger.Error("unable to convert object from Unstructured")
-		return
-	}
-
-	var typed metav1.Object
-	var gvr schema.GroupVersionResource
-
 	logNoMatch := func(logger logrus.FieldLogger, obj metav1.Object) {
 		logger.WithField("name", obj.GetName()).
 			WithField("namespace", obj.GetNamespace()).
@@ -91,51 +81,53 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 			logNoMatch(s.Logger.WithField("ingress-class-name", pointer.StringPtrDerefOr(o.Spec.IngressClassName, "")), o)
 			return
 		}
-		o.GetObjectKind().SetGroupVersionKind(networking_v1.SchemeGroupVersion.WithKind("ingress"))
-		typed = o.DeepCopy()
-		gvr = networking_v1.SchemeGroupVersion.WithResource("ingresses")
+
+		s.StatusUpdater.Send(NewStatusUpdate(
+			o.Name,
+			o.Namespace,
+			&networking_v1.Ingress{},
+			StatusMutatorFunc(func(obj client.Object) client.Object {
+				ing, ok := obj.(*networking_v1.Ingress)
+				if !ok {
+					panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
+						obj.GetName(), obj.GetNamespace(),
+					))
+				}
+
+				dco := ing.DeepCopy()
+				dco.Status.LoadBalancer = loadBalancerStatus
+				return dco
+			}),
+		))
+
 	case *contour_api_v1.HTTPProxy:
 		if !ingressclass.MatchesHTTPProxy(o, s.IngressClassName) {
 			logNoMatch(s.Logger, o)
 			return
 		}
-		o.GetObjectKind().SetGroupVersionKind(contour_api_v1.SchemeGroupVersion.WithKind("httpproxy"))
-		typed = o.DeepCopy()
-		gvr = contour_api_v1.SchemeGroupVersion.WithResource("httpproxies")
+
+		s.StatusUpdater.Send(NewStatusUpdate(
+			o.Name,
+			o.Namespace,
+			&contour_api_v1.HTTPProxy{},
+			StatusMutatorFunc(func(obj client.Object) client.Object {
+				proxy, ok := obj.(*contour_api_v1.HTTPProxy)
+				if !ok {
+					panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
+						obj.GetName(), obj.GetNamespace(),
+					))
+				}
+
+				dco := proxy.DeepCopy()
+				dco.Status.LoadBalancer = loadBalancerStatus
+				return dco
+			}),
+		))
+
 	default:
 		s.Logger.Debugf("unsupported type %T received", o)
 		return
 	}
-
-	s.Logger.
-		WithField("name", typed.GetName()).
-		WithField("namespace", typed.GetNamespace()).
-		WithField("ingress-class", annotation.IngressClass(typed)).
-		WithField("kind", KindOf(obj)).
-		WithField("defined-ingress-class", s.IngressClassName).
-		Debug("received an object, sending status address update")
-
-	s.StatusUpdater.Send(NewStatusUpdate(
-		typed.GetName(),
-		typed.GetNamespace(),
-		gvr,
-		StatusMutatorFunc(func(obj interface{}) interface{} {
-			switch o := obj.(type) {
-			case *networking_v1.Ingress:
-				dco := o.DeepCopy()
-				dco.Status.LoadBalancer = loadBalancerStatus
-				return dco
-			case *contour_api_v1.HTTPProxy:
-				dco := o.DeepCopy()
-				dco.Status.LoadBalancer = loadBalancerStatus
-				return dco
-			default:
-				panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
-					typed.GetName(), typed.GetNamespace(),
-				))
-			}
-		}),
-	))
 }
 
 func (s *StatusAddressUpdater) OnUpdate(oldObj, newObj interface{}) {

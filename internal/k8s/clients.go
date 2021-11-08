@@ -14,77 +14,33 @@
 package k8s
 
 import (
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
-// Clients holds the various API clients required by Contour.
-type Clients struct {
-	meta.RESTMapper
+// NewCoreClient returns a new Kubernetes core API client using
+// the supplied kubeconfig path, or the cluster environment
+// variables if inCluster is true.
+func NewCoreClient(kubeconfig string, inCluster bool) (*kubernetes.Clientset, error) {
+	config, err := NewRestConfig(kubeconfig, inCluster)
+	if err != nil {
+		return nil, err
+	}
 
-	core    *kubernetes.Clientset
-	dynamic dynamic.Interface
+	coreClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return coreClient, nil
 }
 
-// NewClients returns a new set of the various API clients required
-// by Contour using the supplied kubeconfig path, or the cluster
-// environment variables if inCluster is true.
-func NewClients(kubeconfig string, inCluster bool) (*Clients, error) {
-	config, err := newRestConfig(kubeconfig, inCluster)
-	if err != nil {
-		return nil, err
-	}
-
-	var clients Clients
-	clients.core, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	clients.dynamic, err = dynamic.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	clients.RESTMapper, err = apiutil.NewDiscoveryRESTMapper(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return &clients, nil
-}
-
-func newRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
+// NewRestConfig returns a *rest.Config for the supplied kubeconfig
+// path, or the cluster environment variables if inCluster is true.
+func NewRestConfig(kubeconfig string, inCluster bool) (*rest.Config, error) {
 	if kubeconfig != "" && !inCluster {
 		return clientcmd.BuildConfigFromFlags("", kubeconfig)
 	}
 	return rest.InClusterConfig()
-}
-
-// ClientSet returns the Kubernetes Core v1 ClientSet.
-func (c *Clients) ClientSet() *kubernetes.Clientset {
-	return c.core
-}
-
-// DynamicClient returns the dynamic client.
-func (c *Clients) DynamicClient() dynamic.Interface {
-	return c.dynamic
-}
-
-// ResourcesExist returns true if all of the GroupVersionResources
-// passed exists in the cluster.
-func (c *Clients) ResourcesExist(gvr ...schema.GroupVersionResource) bool {
-	for _, r := range gvr {
-		_, err := c.KindFor(r)
-		if meta.IsNoMatchError(err) {
-			return false
-		}
-	}
-
-	return true
 }

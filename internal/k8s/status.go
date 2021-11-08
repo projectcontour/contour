@@ -15,14 +15,10 @@ package k8s
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -30,31 +26,31 @@ import (
 // Send down a channel to the goroutine that actually writes the changes back.
 type StatusUpdate struct {
 	NamespacedName types.NamespacedName
-	Resource       schema.GroupVersionResource
+	Resource       client.Object
 	Mutator        StatusMutator
 }
 
-func NewStatusUpdate(name, namespace string, gvr schema.GroupVersionResource, mutator StatusMutator) StatusUpdate {
+func NewStatusUpdate(name, namespace string, resource client.Object, mutator StatusMutator) StatusUpdate {
 	return StatusUpdate{
 		NamespacedName: types.NamespacedName{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Resource: gvr,
+		Resource: resource,
 		Mutator:  mutator,
 	}
 }
 
 // StatusMutator is an interface to hold mutator functions for status updates.
 type StatusMutator interface {
-	Mutate(obj interface{}) interface{}
+	Mutate(obj client.Object) client.Object
 }
 
 // StatusMutatorFunc is a function adaptor for StatusMutators.
-type StatusMutatorFunc func(interface{}) interface{}
+type StatusMutatorFunc func(client.Object) client.Object
 
 // Mutate adapts the StatusMutatorFunc to fit through the StatusMutator interface.
-func (m StatusMutatorFunc) Mutate(old interface{}) interface{} {
+func (m StatusMutatorFunc) Mutate(old client.Object) client.Object {
 	if m == nil {
 		return nil
 	}
@@ -65,49 +61,18 @@ func (m StatusMutatorFunc) Mutate(old interface{}) interface{} {
 // StatusUpdateHandler holds the details required to actually write an Update back to the referenced object.
 type StatusUpdateHandler struct {
 	Log           logrus.FieldLogger
-	Clients       *Clients
-	Cache         cache.Cache
+	Client        client.Client
 	UpdateChannel chan StatusUpdate
 	LeaderElected chan struct{}
 	IsLeader      bool
-	Converter     *UnstructuredConverter
 }
 
 func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
-	gvk, err := suh.Clients.KindFor(upd.Resource)
-
-	if err != nil {
-		suh.Log.WithError(err).
-			WithField("name", upd.NamespacedName.Name).
-			WithField("namespace", upd.NamespacedName.Namespace).
-			WithField("resource", upd.Resource).
-			Error("failed to map Resource to Kind ")
-		return
-	}
-
-	tmpl, err := suh.Converter.scheme.New(gvk)
-	if err != nil {
-		suh.Log.WithError(err).
-			WithField("name", upd.NamespacedName.Name).
-			WithField("namespace", upd.NamespacedName.Namespace).
-			WithField("kind", gvk).
-			Error("failed to allocate template object")
-		return
-	}
-
-	obj, ok := tmpl.(client.Object)
-	if !ok {
-		suh.Log.
-			WithField("name", upd.NamespacedName.Name).
-			WithField("namespace", upd.NamespacedName.Namespace).
-			WithField("kind", gvk).
-			Error("failed to type-assert to client.Object")
-		return
-	}
-
 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		// Get the resource from the informer cache.
-		if err := suh.Cache.Get(context.Background(), upd.NamespacedName, obj); err != nil {
+		obj := upd.Resource
+
+		// Get the resource.
+		if err := suh.Client.Get(context.Background(), upd.NamespacedName, obj); err != nil {
 			return err
 		}
 
@@ -120,16 +85,7 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 			return nil
 		}
 
-		usNewObj, err := suh.Converter.ToUnstructured(newObj)
-		if err != nil {
-			return fmt.Errorf("unable to convert object: %w", err)
-		}
-
-		_, err = suh.Clients.DynamicClient().
-			Resource(upd.Resource).
-			Namespace(upd.NamespacedName.Namespace).
-			UpdateStatus(context.Background(), usNewObj, metav1.UpdateOptions{})
-		return err
+		return suh.Client.Status().Update(context.Background(), newObj)
 	}); err != nil {
 		suh.Log.WithError(err).
 			WithField("name", upd.NamespacedName.Name).
