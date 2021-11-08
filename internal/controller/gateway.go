@@ -35,7 +35,6 @@ import (
 )
 
 type gatewayReconciler struct {
-	ctx           context.Context
 	client        client.Client
 	eventHandler  cache.ResourceEventHandler
 	statusUpdater k8s.StatusUpdater
@@ -45,29 +44,28 @@ type gatewayReconciler struct {
 	gatewayClassControllerName gatewayapi_v1alpha2.GatewayController
 }
 
-// NewGatewayController creates the gateway controller from mgr. The controller will be pre-configured
+// RegisterGatewayController creates the gateway controller from mgr. The controller will be pre-configured
 // to watch for Gateway objects across all namespaces and reconcile those that match class.
-func NewGatewayController(
+func RegisterGatewayController(
+	log logrus.FieldLogger,
 	mgr manager.Manager,
 	eventHandler cache.ResourceEventHandler,
 	statusUpdater k8s.StatusUpdater,
-	log logrus.FieldLogger,
 	gatewayClassControllerName string,
-) (controller.Controller, error) {
+) error {
 	r := &gatewayReconciler{
-		ctx:                        context.Background(),
+		log:                        log,
 		client:                     mgr.GetClient(),
 		eventHandler:               eventHandler,
 		statusUpdater:              statusUpdater,
-		log:                        log,
 		gatewayClassControllerName: gatewayapi_v1alpha2.GatewayController(gatewayClassControllerName),
 	}
 	c, err := controller.NewUnmanaged("gateway-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := c.Watch(
@@ -75,7 +73,7 @@ func NewGatewayController(
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Watch GatewayClasses and reconcile their associated Gateways
@@ -85,7 +83,7 @@ func NewGatewayController(
 		handler.EnqueueRequestsFromMapFunc(r.mapGatewayClassToGateways),
 		predicate.NewPredicateFuncs(r.gatewayClassHasMatchingController),
 	); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Set up a source.Channel that will trigger reconciles
@@ -113,10 +111,10 @@ func NewGatewayController(
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
-		return nil, err
+		return err
 	}
 
-	return c, nil
+	return nil
 }
 
 func (r *gatewayReconciler) mapGatewayClassToGateways(gatewayClass client.Object) []reconcile.Request {

@@ -205,7 +205,7 @@ lint-flags:
 
 .PHONY: generate
 generate: ## Re-generate generated code and documentation
-generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-gateway-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml
+generate: generate-rbac generate-crd-deepcopy generate-crd-yaml generate-gateway-crd-yaml generate-deployment generate-api-docs generate-metrics-docs generate-uml generate-go
 
 .PHONY: generate-rbac
 generate-rbac:
@@ -240,8 +240,13 @@ generate-api-docs:
 
 .PHONY: generate-metrics-docs
 generate-metrics-docs:
-	@echo Generating metrics documentation ...
+	@echo "Generating metrics documentation..."
 	@cd site/content/guides/metrics && rm -f *.md && go run ../../../../hack/generate-metrics-doc.go
+
+.PHONY: generate-go
+generate-go:
+	@echo "Generating mocks..."
+	@go generate ./...
 
 .PHONY: check-generate
 check-generate: generate

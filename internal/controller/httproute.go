@@ -36,9 +36,9 @@ type httpRouteReconciler struct {
 	logrus.FieldLogger
 }
 
-// NewHTTPRouteController creates the httproute controller from mgr. The controller will be pre-configured
+// RegisterHTTPRouteController creates the httproute controller from mgr. The controller will be pre-configured
 // to watch for HTTPRoute objects across all namespaces.
-func NewHTTPRouteController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger) (controller.Controller, error) {
+func RegisterHTTPRouteController(log logrus.FieldLogger, mgr manager.Manager, eventHandler cache.ResourceEventHandler) error {
 	r := &httpRouteReconciler{
 		client:       mgr.GetClient(),
 		eventHandler: eventHandler,
@@ -46,16 +46,16 @@ func NewHTTPRouteController(mgr manager.Manager, eventHandler cache.ResourceEven
 	}
 	c, err := controller.NewUnmanaged("httproute-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.HTTPRoute{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return nil, err
+		return err
 	}
-	return c, nil
+	return nil
 }
 
 func (r *httpRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

@@ -11,7 +11,6 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.6
 	github.com/google/go-github/v39 v39.0.0
-	github.com/google/uuid v1.1.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/jetstack/cert-manager v1.5.1
 	github.com/onsi/ginkgo v1.16.5-0.20211011165036-638dfbc0fced

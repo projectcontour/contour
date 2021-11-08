@@ -40,13 +40,14 @@ type tcpRouteReconciler struct {
 	log                        logrus.FieldLogger
 }
 
-// NewTCPRouteController creates the tcproute controller from mgr. The controller will be pre-configured
+// RegisterTCPRouteController creates the tcproute controller from mgr. The controller will be pre-configured
 // to watch for TCPRoute objects across all namespaces.
-func NewTCPRouteController(
+func RegisterTCPRouteController(
+	log logrus.FieldLogger,
 	mgr manager.Manager,
 	statusUpdater k8s.StatusUpdater,
 	gatewayClassControllerName string,
-	log logrus.FieldLogger) (controller.Controller, error) {
+) error {
 	r := &tcpRouteReconciler{
 		client:                     mgr.GetClient(),
 		statusUpdater:              statusUpdater,
@@ -55,10 +56,10 @@ func NewTCPRouteController(
 	}
 	c, err := controller.NewUnmanaged("tcproute-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Watch TCPRoutes to update their status whenever they
@@ -67,7 +68,7 @@ func NewTCPRouteController(
 		&source.Kind{Type: &gatewayapi_v1alpha2.TCPRoute{}},
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Watch Gateways to update associated TCPRoutes' status
@@ -79,10 +80,10 @@ func NewTCPRouteController(
 		handler.EnqueueRequestsFromMapFunc(r.mapGatewayToTCPRoutes),
 		predicate.NewPredicateFuncs(r.gatewayHasMatchingController),
 	); err != nil {
-		return nil, err
+		return err
 	}
 
-	return c, nil
+	return nil
 }
 
 // mapGatewayToTCPRoutes returns a list of reconcile requests for all TCPRoutes

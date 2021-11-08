@@ -42,16 +42,16 @@ type gatewayClassReconciler struct {
 	controller    gatewayapi_v1alpha2.GatewayController
 }
 
-// NewGatewayClassController creates the gatewayclass controller. The controller
+// RegisterGatewayClassController creates the gatewayclass controller. The controller
 // will be pre-configured to watch for cluster-scoped GatewayClass objects with
 // a controller field that matches name.
-func NewGatewayClassController(
+func RegisterGatewayClassController(
+	log logrus.FieldLogger,
 	mgr manager.Manager,
 	eventHandler cache.ResourceEventHandler,
 	statusUpdater k8s.StatusUpdater,
-	log logrus.FieldLogger,
 	name string,
-) (controller.Controller, error) {
+) error {
 	r := &gatewayClassReconciler{
 		client:        mgr.GetClient(),
 		eventHandler:  eventHandler,
@@ -62,10 +62,10 @@ func NewGatewayClassController(
 
 	c, err := controller.NewUnmanaged("gatewayclass-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Only enqueue GatewayClass objects that match name.
@@ -74,7 +74,7 @@ func NewGatewayClassController(
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Set up a source.Channel that will trigger reconciles
@@ -102,10 +102,10 @@ func NewGatewayClassController(
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
-		return nil, err
+		return err
 	}
 
-	return c, nil
+	return nil
 }
 
 // hasMatchingController returns true if the provided object is a GatewayClass

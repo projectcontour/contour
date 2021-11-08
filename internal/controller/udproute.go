@@ -40,13 +40,14 @@ type udpRouteReconciler struct {
 	log                        logrus.FieldLogger
 }
 
-// NewUDPRouteController creates the udproute controller from mgr. The controller will be pre-configured
+// RegisterUDPRouteController creates the udproute controller from mgr. The controller will be pre-configured
 // to watch for UDPRoute objects across all namespaces.
-func NewUDPRouteController(
+func RegisterUDPRouteController(
+	log logrus.FieldLogger,
 	mgr manager.Manager,
 	statusUpdater k8s.StatusUpdater,
 	gatewayClassControllerName string,
-	log logrus.FieldLogger) (controller.Controller, error) {
+) error {
 	r := &udpRouteReconciler{
 		client:                     mgr.GetClient(),
 		statusUpdater:              statusUpdater,
@@ -55,10 +56,10 @@ func NewUDPRouteController(
 	}
 	c, err := controller.NewUnmanaged("udproute-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Watch UDPRoutes to update their status whenever they
@@ -67,7 +68,7 @@ func NewUDPRouteController(
 		&source.Kind{Type: &gatewayapi_v1alpha2.UDPRoute{}},
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
-		return nil, err
+		return err
 	}
 
 	// Watch Gateways to update associated UDPRoutes' status
@@ -79,10 +80,10 @@ func NewUDPRouteController(
 		handler.EnqueueRequestsFromMapFunc(r.mapGatewayToUDPRoutes),
 		predicate.NewPredicateFuncs(r.gatewayHasMatchingController),
 	); err != nil {
-		return nil, err
+		return err
 	}
 
-	return c, nil
+	return nil
 }
 
 // mapGatewayToUDPRoutes returns a list of reconcile requests for all UDPRoutes
