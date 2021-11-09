@@ -433,6 +433,11 @@ default-http-versions:
 - http/0.9
 `)
 
+	check(`
+listener:
+  connection-balancer: notexact
+`)
+
 }
 
 func TestConfigFileDefaultOverrideImport(t *testing.T) {
@@ -584,4 +589,21 @@ func TestAccessLogFormatExtensions(t *testing.T) {
 
 	p3 := Defaults()
 	assert.Empty(t, p3.AccessLogFormatterExtensions())
+}
+
+func TestListenerValidation(t *testing.T) {
+	var l *ListenerParameters
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		ConnectionBalancer: "",
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		ConnectionBalancer: "exact",
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		ConnectionBalancer: "invalid",
+	}
+	require.Error(t, l.Validate())
 }

@@ -544,6 +544,17 @@ type ListenerParameters struct {
 	ConnectionBalancer string `yaml:"connection-balancer"`
 }
 
+func (p *ListenerParameters) Validate() error {
+	if p == nil {
+		return nil
+	}
+
+	if p.ConnectionBalancer != "" && p.ConnectionBalancer != "exact" {
+		return fmt.Errorf("invalid listener connection balancer value %q, only 'exact' connection balancing is supported for now", p.ConnectionBalancer)
+	}
+	return nil
+}
+
 // Parameters contains the configuration file parameters for the
 // Contour ingress controller.
 type Parameters struct {
@@ -701,6 +712,10 @@ func (p *Parameters) Validate() error {
 		if err := v.Validate(); err != nil {
 			return err
 		}
+	}
+
+	if err := p.Listener.Validate(); err != nil {
+		return err
 	}
 
 	return nil

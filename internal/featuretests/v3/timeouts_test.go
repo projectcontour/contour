@@ -19,6 +19,7 @@ import (
 
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/contourconfig"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -76,10 +77,12 @@ func TestTimeoutsNotSpecified(t *testing.T) {
 
 func TestNonZeroTimeoutsSpecified(t *testing.T) {
 	withTimeouts := func(conf *xdscache_v3.ListenerConfig) {
-		conf.ConnectionIdleTimeout = timeout.DurationSetting(7 * time.Second)
-		conf.StreamIdleTimeout = timeout.DurationSetting(70 * time.Second)
-		conf.MaxConnectionDuration = timeout.DurationSetting(700 * time.Second)
-		conf.ConnectionShutdownGracePeriod = timeout.DurationSetting(7000 * time.Second)
+		conf.Timeouts = contourconfig.Timeouts{
+			ConnectionIdle:                timeout.DurationSetting(7 * time.Second),
+			StreamIdle:                    timeout.DurationSetting(70 * time.Second),
+			MaxConnectionDuration:         timeout.DurationSetting(700 * time.Second),
+			ConnectionShutdownGracePeriod: timeout.DurationSetting(7000 * time.Second),
+		}
 	}
 
 	rh, c, done := setup(t, withTimeouts)
