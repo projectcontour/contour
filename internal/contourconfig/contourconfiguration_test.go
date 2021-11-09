@@ -11,14 +11,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contourconfiguration_test
+package contourconfig_test
 
 import (
 	"testing"
 	"time"
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/contourconfiguration"
+	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/pointer"
@@ -27,12 +27,12 @@ import (
 func TestParseTimeoutPolicy(t *testing.T) {
 	testCases := map[string]struct {
 		config   *contour_api_v1alpha1.TimeoutParameters
-		expected contourconfiguration.Timeouts
+		expected contourconfig.Timeouts
 		errorMsg string
 	}{
 		"nil timeout parameters": {
 			config: nil,
-			expected: contourconfiguration.Timeouts{
+			expected: contourconfig.Timeouts{
 				Request:                       timeout.DefaultSetting(),
 				ConnectionIdle:                timeout.DefaultSetting(),
 				StreamIdle:                    timeout.DefaultSetting(),
@@ -43,7 +43,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 		},
 		"timeouts not set": {
 			config: &contour_api_v1alpha1.TimeoutParameters{},
-			expected: contourconfiguration.Timeouts{
+			expected: contourconfig.Timeouts{
 				Request:                       timeout.DefaultSetting(),
 				ConnectionIdle:                timeout.DefaultSetting(),
 				StreamIdle:                    timeout.DefaultSetting(),
@@ -61,7 +61,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				DelayedCloseTimeout:           pointer.String("5s"),
 				ConnectionShutdownGracePeriod: pointer.String("6s"),
 			},
-			expected: contourconfiguration.Timeouts{
+			expected: contourconfig.Timeouts{
 				Request:                       timeout.DurationSetting(time.Second),
 				ConnectionIdle:                timeout.DurationSetting(time.Second * 2),
 				StreamIdle:                    timeout.DurationSetting(time.Second * 3),
@@ -110,7 +110,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			parsed, err := contourconfiguration.ParseTimeoutPolicy(tc.config)
+			parsed, err := contourconfig.ParseTimeoutPolicy(tc.config)
 			if len(tc.errorMsg) > 0 {
 				require.Error(t, err, "expected error to be returned")
 				require.Contains(t, err.Error(), tc.errorMsg)

@@ -31,7 +31,7 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/annotation"
 	"github.com/projectcontour/contour/internal/contour"
-	"github.com/projectcontour/contour/internal/contourconfiguration"
+	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/controller"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
@@ -281,7 +281,7 @@ func (s *Server) doServe() error {
 		cipherSuites = append(cipherSuites, string(cs))
 	}
 
-	timeouts, err := contourconfiguration.ParseTimeoutPolicy(contourConfiguration.Envoy.Timeouts)
+	timeouts, err := contourconfig.ParseTimeoutPolicy(contourConfiguration.Envoy.Timeouts)
 	if err != nil {
 		return err
 	}

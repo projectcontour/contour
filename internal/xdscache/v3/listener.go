@@ -26,7 +26,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
-	"github.com/projectcontour/contour/internal/contourconfiguration"
+	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
@@ -113,7 +113,7 @@ type ListenerConfig struct {
 	AccessLogFormatterExtensions []string
 
 	// Timeouts holds Listener timeout settings.
-	Timeouts contourconfiguration.Timeouts
+	Timeouts contourconfig.Timeouts
 
 	// AllowChunkedLength enables setting allow_chunked_length on the HTTP1 options for all
 	// listeners.
