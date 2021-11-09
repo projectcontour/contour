@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ProxyStatus string
@@ -107,7 +108,7 @@ func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projectcontour.Detailed
 
 }
 
-func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
+func (pu *ProxyUpdate) Mutate(obj client.Object) client.Object {
 	o, ok := obj.(*projectcontour.HTTPProxy)
 	if !ok {
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in status mutator",

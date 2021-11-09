@@ -2724,7 +2724,6 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "GatewayRef"),
 				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "Generation"),
 				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "TransitionTime"),
-				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "Resource"),
 				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
 					return i.Message < j.Message
 				}),
@@ -3706,7 +3705,6 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "GatewayRef"),
 				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "Generation"),
 				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "TransitionTime"),
-				cmpopts.IgnoreFields(status.GatewayConditionsUpdate{}, "Resource"),
 				cmpopts.SortSlices(func(i, j metav1.Condition) bool {
 					return i.Message < j.Message
 				}),

@@ -236,7 +236,7 @@ func TestTlsVersionDeprecation(t *testing.T) {
 	tlsConfig, err := preliminaryTLSConfig.GetConfigForClient(nil)
 	checkFatalErr(t, err)
 
-	assert.Equal(t, tlsConfig.MinVersion, uint16(tls.VersionTLS12))
+	assert.Equal(t, tlsConfig.MinVersion, uint16(tls.VersionTLS13))
 }
 
 func checkFatalErr(t *testing.T, err error) {

@@ -17,12 +17,12 @@ import (
 	"fmt"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // StatusUpdateCacher takes status updates and applies them to a cache, to be used for testing.
 type StatusUpdateCacher struct {
-	objectCache map[string]interface{}
+	objectCache map[string]client.Object
 }
 
 // IsCacheable returns whether this type of object can be stored in
@@ -41,7 +41,7 @@ func (suc *StatusUpdateCacher) OnDelete(obj interface{}) {
 	if suc.objectCache != nil {
 		switch o := obj.(type) {
 		case *contour_api_v1.HTTPProxy:
-			delete(suc.objectCache, suc.objKey(o.Name, o.Namespace, contour_api_v1.HTTPProxyGVR))
+			delete(suc.objectCache, suc.objKey(o.Name, o.Namespace))
 		default:
 			panic(fmt.Sprintf("status caching not supported for object type %T", obj))
 		}
@@ -52,12 +52,12 @@ func (suc *StatusUpdateCacher) OnDelete(obj interface{}) {
 // OnAdd adds an object to the status cache.
 func (suc *StatusUpdateCacher) OnAdd(obj interface{}) {
 	if suc.objectCache == nil {
-		suc.objectCache = make(map[string]interface{})
+		suc.objectCache = make(map[string]client.Object)
 	}
 
 	switch o := obj.(type) {
 	case *contour_api_v1.HTTPProxy:
-		suc.objectCache[suc.objKey(o.Name, o.Namespace, contour_api_v1.HTTPProxyGVR)] = obj
+		suc.objectCache[suc.objKey(o.Name, o.Namespace)] = o
 	default:
 		panic(fmt.Sprintf("status caching not supported for object type %T", obj))
 	}
@@ -65,13 +65,13 @@ func (suc *StatusUpdateCacher) OnAdd(obj interface{}) {
 }
 
 // Get allows retrieval of objects from the cache.
-func (suc *StatusUpdateCacher) Get(name, namespace string, gvr schema.GroupVersionResource) interface{} {
+func (suc *StatusUpdateCacher) Get(name, namespace string) interface{} {
 
 	if suc.objectCache == nil {
-		suc.objectCache = make(map[string]interface{})
+		suc.objectCache = make(map[string]client.Object)
 	}
 
-	obj, ok := suc.objectCache[suc.objKey(name, namespace, gvr)]
+	obj, ok := suc.objectCache[suc.objKey(name, namespace)]
 	if ok {
 		return obj
 	}
@@ -79,13 +79,12 @@ func (suc *StatusUpdateCacher) Get(name, namespace string, gvr schema.GroupVersi
 
 }
 
-func (suc *StatusUpdateCacher) Add(name, namespace string, gvr schema.GroupVersionResource, obj interface{}) bool {
-
+func (suc *StatusUpdateCacher) Add(name, namespace string, obj client.Object) bool {
 	if suc.objectCache == nil {
-		suc.objectCache = make(map[string]interface{})
+		suc.objectCache = make(map[string]client.Object)
 	}
 
-	prefix := suc.objKey(name, namespace, gvr)
+	prefix := suc.objKey(name, namespace)
 	_, ok := suc.objectCache[prefix]
 	if ok {
 		return false
@@ -100,7 +99,7 @@ func (suc *StatusUpdateCacher) Add(name, namespace string, gvr schema.GroupVersi
 func (suc *StatusUpdateCacher) GetStatus(obj interface{}) (*contour_api_v1.HTTPProxyStatus, error) {
 	switch o := obj.(type) {
 	case *contour_api_v1.HTTPProxy:
-		objectKey := suc.objKey(o.Name, o.Namespace, contour_api_v1.HTTPProxyGVR)
+		objectKey := suc.objKey(o.Name, o.Namespace)
 		cachedObj, ok := suc.objectCache[objectKey]
 		if ok {
 			if c, ok := cachedObj.(*contour_api_v1.HTTPProxy); ok {
@@ -113,19 +112,19 @@ func (suc *StatusUpdateCacher) GetStatus(obj interface{}) (*contour_api_v1.HTTPP
 	}
 }
 
-func (suc *StatusUpdateCacher) objKey(name, namespace string, gvr schema.GroupVersionResource) string {
+func (suc *StatusUpdateCacher) objKey(name, namespace string) string {
 
-	return fmt.Sprintf("%s/%s/%s/%s", gvr.Group, gvr.Resource, namespace, name)
+	return fmt.Sprintf("%s/%s", namespace, name)
 }
 
 func (suc *StatusUpdateCacher) Send(su StatusUpdate) {
 	if suc.objectCache == nil {
-		suc.objectCache = make(map[string]interface{})
+		suc.objectCache = make(map[string]client.Object)
 	}
-	objKey := suc.objKey(su.NamespacedName.Name, su.NamespacedName.Namespace, su.Resource)
+
+	objKey := suc.objKey(su.NamespacedName.Name, su.NamespacedName.Namespace)
 	obj, ok := suc.objectCache[objKey]
 	if ok {
 		suc.objectCache[objKey] = su.Mutator.Mutate(obj)
 	}
-
 }

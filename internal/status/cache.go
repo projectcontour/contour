@@ -19,7 +19,6 @@ import (
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -97,7 +96,7 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, pu := range c.proxyUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource:       contour_api_v1.HTTPProxyGVR,
+			Resource:       &contour_api_v1.HTTPProxy{},
 			Mutator:        pu,
 		}
 
@@ -107,12 +106,8 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, routeUpdate := range c.routeUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource: schema.GroupVersionResource{
-				Group:    gatewayapi_v1alpha2.GroupVersion.Group,
-				Version:  gatewayapi_v1alpha2.GroupVersion.Version,
-				Resource: routeUpdate.Resource,
-			},
-			Mutator: routeUpdate,
+			Resource:       routeUpdate.Resource,
+			Mutator:        routeUpdate,
 		}
 
 		flattened = append(flattened, update)
@@ -121,12 +116,8 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, gwUpdate := range c.gatewayUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource: schema.GroupVersionResource{
-				Group:    gatewayapi_v1alpha2.GroupVersion.Group,
-				Version:  gatewayapi_v1alpha2.GroupVersion.Version,
-				Resource: gwUpdate.Resource,
-			},
-			Mutator: gwUpdate,
+			Resource:       &gatewayapi_v1alpha2.Gateway{},
+			Mutator:        gwUpdate,
 		}
 
 		flattened = append(flattened, update)
