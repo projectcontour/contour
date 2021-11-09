@@ -192,7 +192,7 @@ func tlsconfig(log logrus.FieldLogger, contourXDSTLS *contour_api_v1alpha1.TLS) 
 			Certificates: []tls.Certificate{cert},
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 			ClientCAs:    certPool,
-			MinVersion:   tls.VersionTLS12,
+			MinVersion:   tls.VersionTLS13,
 		}, nil
 	}
 
@@ -202,7 +202,7 @@ func tlsconfig(log logrus.FieldLogger, contourXDSTLS *contour_api_v1alpha1.TLS) 
 	}
 
 	return &tls.Config{
-		MinVersion: tls.VersionTLS12,
+		MinVersion: tls.VersionTLS13,
 		ClientAuth: tls.RequireAndVerifyClientCert,
 		Rand:       rand.Reader,
 		GetConfigForClient: func(*tls.ClientHelloInfo) (*tls.Config, error) {
