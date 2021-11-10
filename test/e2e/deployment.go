@@ -655,7 +655,7 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 // - Contour deployment
 // - Envoy DaemonSet
 func (d *Deployment) EnsureResourcesForInclusterContour() error {
-	fmt.Fprintf(d.cmdOutputWriter, "Deploying Contour with image: %s", d.contourImage)
+	fmt.Fprintf(d.cmdOutputWriter, "Deploying Contour with image: %s\n", d.contourImage)
 
 	if err := d.EnsureNamespace(); err != nil {
 		return err
