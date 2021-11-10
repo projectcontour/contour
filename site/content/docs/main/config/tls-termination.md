@@ -18,12 +18,7 @@ The TLS secret must:
 
 The TLS secret may also:
 - add any additional certificates required for validation into the `tls.crt` PEM bundle. If this is the case, the serving certificate must be the first certificate in the bundle.
-- contain a `ca.crt` key that contains a certificate bundle to use for CA validation.
-
-We recommend using only one of these options.
-
-Practically, this means that, if you have been issued a certificate bundle from a CA that contains the certificate plus intermediate certificates, you can put the contents of that bundle into `tls.crt`, and everything will work.
-If you have a separate file with an intermediate certificate chain, you may put those details into a `ca.crt` key, and everything will work.
+- add any chain CA certificates required for validation into the `tls.crt` PEM bundle. If this is the case, the serving certificate must be the first certificate in the bundle and the intermediate CA certificates must be appended in issuing order.
 
 ```yaml
 # ingress-tls.secret.yaml

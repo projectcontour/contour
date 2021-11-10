@@ -119,7 +119,7 @@ func containsPEMHeader(data []byte) bool {
 }
 
 // validateServingBundle validates that a PEM bundle contains at least one
-// valid certificate, and that the first certificate has a
+// certificate, and that the first certificate has a
 // CN or SAN set.
 func validateServingBundle(data []byte) error {
 	var exists bool

@@ -14,7 +14,7 @@ For certificates that identify a server, they must:
 
 They may:
 - have the `tls.crt` key contain a certificate chain, as long as the first certificate in the chain is the server certificate.
-- add a `ca.crt` key that contains a certificate chain.
+- add a `ca.crt` key that contains a Certificate Authority (CA) certificate or certificates.
 
 Certificates in the certificate chain that are not server certificates do not need to have a CN or SAN.
 
@@ -22,5 +22,5 @@ For CA secrets, they must:
 - be `Opaque` type
 - contain only a `ca.crt` key, not `tls.crt` or `tls.key`
 
-The `ca.crt` key may contain a certificate chain, and the certificates in the chain do not need to have a CN or SAN.
+The `ca.crt` key may contain one or more CA certificates, that do not need to have a CN or SAN.
 
