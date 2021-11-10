@@ -17,7 +17,6 @@ The TLS secret must:
 - be a Secret of type `kubernetes.io/tls`. This means that it must contain keys named `tls.crt` and `tls.key` that contain the certificate and private key to use for TLS, in PEM format.
 
 The TLS secret may also:
-- add any additional certificates required for validation into the `tls.crt` PEM bundle. If this is the case, the serving certificate must be the first certificate in the bundle.
 - add any chain CA certificates required for validation into the `tls.crt` PEM bundle. If this is the case, the serving certificate must be the first certificate in the bundle and the intermediate CA certificates must be appended in issuing order.
 
 ```yaml
