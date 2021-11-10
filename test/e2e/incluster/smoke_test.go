@@ -14,43 +14,35 @@
 //go:build e2e
 // +build e2e
 
-package httpproxy
+package incluster
 
 import (
 	. "github.com/onsi/ginkgo"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func testMergeSlash(namespace string) {
-	Specify("requests with many slashes are merged and matched", func() {
-		t := f.T()
-
-		f.Fixtures.Echo.Deploy(namespace, "ingress-conformance-echo")
+func testSimpleSmoke(namespace string) {
+	Specify("simple smoke test", func() {
+		f.Fixtures.Echo.Deploy(namespace, "echo")
 
 		p := &contourv1.HTTPProxy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      "echo",
+				Name:      "smoke-test",
 			},
 			Spec: contourv1.HTTPProxySpec{
 				VirtualHost: &contourv1.VirtualHost{
-					Fqdn: "mergeslash.projectcontour.io",
+					Fqdn: "smoke-test.projectcontour.io",
 				},
 				Routes: []contourv1.Route{
 					{
 						Services: []contourv1.Service{
 							{
-								Name: "ingress-conformance-echo",
+								Name: "echo",
 								Port: 80,
-							},
-						},
-						Conditions: []contourv1.MatchCondition{
-							{
-								Prefix: "/",
 							},
 						},
 					},
@@ -61,12 +53,9 @@ func testMergeSlash(namespace string) {
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 			Host:      p.Spec.VirtualHost.Fqdn,
-			Path:      "/anything/this//has//lots////of/slashes",
 			Condition: e2e.HasStatusCode(200),
 		})
-		require.NotNil(t, res, "request never succeeded")
-		require.Truef(t, ok, "expected 200 response code, got %d", res.StatusCode)
-
-		assert.Contains(t, f.GetEchoResponseBody(res.Body).Path, "/this/has/lots/of/slashes")
+		require.NotNil(f.T(), res, "request never succeeded")
+		require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
 	})
 }

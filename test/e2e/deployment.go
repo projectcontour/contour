@@ -64,6 +64,9 @@ type Deployment struct {
 	// Path to Contour binary for use when running locally.
 	contourBin string
 
+	// Contour image to use in in-cluster deployment.
+	contourImage string
+
 	Namespace                 *v1.Namespace
 	ContourServiceAccount     *v1.ServiceAccount
 	EnvoyServiceAccount       *v1.ServiceAccount
@@ -514,31 +517,6 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 // optimization, because deleting non-empty namespaces can take up to a
 // couple minutes to complete.
 func (d *Deployment) DeleteResourcesForLocalContour() error {
-	ensureDeleted := func(obj client.Object) error {
-		// Delete the object; if it already doesn't exist,
-		// then we're done.
-		err := d.client.Delete(context.Background(), obj)
-		if api_errors.IsNotFound(err) {
-			return nil
-		}
-		if err != nil {
-			return fmt.Errorf("error deleting resource %T %s/%s: %v", obj, obj.GetNamespace(), obj.GetName(), err)
-		}
-
-		// Wait to ensure it's fully deleted.
-		if err := wait.PollImmediate(100*time.Millisecond, time.Minute, func() (bool, error) {
-			err := d.client.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
-			if api_errors.IsNotFound(err) {
-				return true, nil
-			}
-			return false, nil
-		}); err != nil {
-			return fmt.Errorf("error waiting for deletion of resource %T %s/%s: %v", obj, obj.GetNamespace(), obj.GetName(), err)
-		}
-
-		return nil
-	}
-
 	for _, r := range []client.Object{
 		d.EnvoyDaemonSet,
 		d.ContourConfigMap,
@@ -548,7 +526,7 @@ func (d *Deployment) DeleteResourcesForLocalContour() error {
 		d.HTTPProxyCRD,
 		d.EnvoyServiceAccount,
 	} {
-		if err := ensureDeleted(r); err != nil {
+		if err := d.ensureDeleted(r); err != nil {
 			return err
 		}
 	}
@@ -656,6 +634,176 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 	// a minute should be more than enough to avoid them.
 	contourCmd.Terminate().Wait(time.Minute)
 	return os.RemoveAll(configFile)
+}
+
+// Convenience method for deploying the pieces of the deployment needed for
+// testing Contour running in-cluster.
+// Includes:
+// - namespace
+// - Contour service account
+// - Envoy service account
+// - Contour configmap
+// - CRDs
+// - Certgen service account
+// - Contour role binding
+// - Certgen role
+// - Certgen job
+// - Contour cluster role binding
+// - Contour cluster role
+// - Contour service
+// - Envoy service
+// - Contour deployment
+// - Envoy DaemonSet
+func (d *Deployment) EnsureResourcesForInclusterContour() error {
+	fmt.Fprintf(d.cmdOutputWriter, "Deploying Contour with image: %s", d.contourImage)
+
+	if err := d.EnsureNamespace(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourServiceAccount(); err != nil {
+		return err
+	}
+	if err := d.EnsureEnvoyServiceAccount(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourConfigMap(); err != nil {
+		return err
+	}
+	if err := d.EnsureExtensionServiceCRD(); err != nil {
+		return err
+	}
+	if err := d.EnsureHTTPProxyCRD(); err != nil {
+		return err
+	}
+	if err := d.EnsureTLSCertDelegationCRD(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourConfigurationCRD(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourDeploymentCRD(); err != nil {
+		return err
+	}
+	if err := d.EnsureCertgenServiceAccount(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourRoleBinding(); err != nil {
+		return err
+	}
+	if err := d.EnsureCertgenRole(); err != nil {
+		return err
+	}
+	// Update container image.
+	if l := len(d.CertgenJob.Spec.Template.Spec.Containers); l != 1 {
+		return fmt.Errorf("invalid certgen job containers, expected 1, got %d", l)
+	}
+	d.CertgenJob.Spec.Template.Spec.Containers[0].Image = d.contourImage
+	d.CertgenJob.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	if err := d.EnsureCertgenJob(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourClusterRoleBinding(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourClusterRole(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourService(); err != nil {
+		return err
+	}
+	if err := d.EnsureEnvoyService(); err != nil {
+		return err
+	}
+	// Update container image.
+	if l := len(d.ContourDeployment.Spec.Template.Spec.Containers); l != 1 {
+		return fmt.Errorf("invalid contour deployment containers, expected 1, got %d", l)
+	}
+	d.ContourDeployment.Spec.Template.Spec.Containers[0].Image = d.contourImage
+	d.ContourDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	if err := d.EnsureContourDeployment(); err != nil {
+		return err
+	}
+	// Update container image.
+	if l := len(d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers); l != 1 {
+		return fmt.Errorf("invalid envoy daemonset init containers, expected 1, got %d", l)
+	}
+	d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers[0].Image = d.contourImage
+	d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers[0].ImagePullPolicy = v1.PullIfNotPresent
+	if l := len(d.EnvoyDaemonSet.Spec.Template.Spec.Containers); l != 2 {
+		return fmt.Errorf("invalid envoy daemonset containers, expected 2, got %d", l)
+	}
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Image = d.contourImage
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	// Set shutdown check-delay to 0s to ensure cleanup is fast.
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Lifecycle.PreStop.Exec.Command = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Lifecycle.PreStop.Exec.Command, "--check-delay=0s")
+	return d.EnsureEnvoyDaemonSet()
+}
+
+// DeleteResourcesForInclusterContour ensures deletion of all resources
+// created in the projectcontour namespace for running a contour incluster.
+// This is done instead of deleting the entire namespace as a performance
+// optimization, because deleting non-empty namespaces can take up to a
+// couple minutes to complete.
+func (d *Deployment) DeleteResourcesForInclusterContour() error {
+	// Also need to delete leader election resources to ensure
+	// multiple test runs can be run cleanly.
+	leaderElectionConfigMap := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "leader-elect",
+			Namespace: d.Namespace.Name,
+		},
+	}
+
+	for _, r := range []client.Object{
+		d.EnvoyDaemonSet,
+		d.ContourDeployment,
+		leaderElectionConfigMap,
+		d.EnvoyService,
+		d.ContourService,
+		d.ContourClusterRole,
+		d.ContourClusterRoleBinding,
+		d.CertgenJob,
+		d.CertgenRole,
+		d.ContourRoleBinding,
+		d.CertgenServiceAccount,
+		d.TLSCertDelegationCRD,
+		d.ExtensionServiceCRD,
+		d.HTTPProxyCRD,
+		d.ContourConfigMap,
+		d.EnvoyServiceAccount,
+		d.ContourServiceAccount,
+	} {
+		if err := d.ensureDeleted(r); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (d *Deployment) ensureDeleted(obj client.Object) error {
+	// Delete the object; if it already doesn't exist,
+	// then we're done.
+	err := d.client.Delete(context.Background(), obj)
+	if api_errors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("error deleting resource %T %s/%s: %v", obj, obj.GetNamespace(), obj.GetName(), err)
+	}
+
+	// Wait to ensure it's fully deleted.
+	if err := wait.PollImmediate(100*time.Millisecond, time.Minute, func() (bool, error) {
+		err := d.client.Get(context.Background(), client.ObjectKeyFromObject(obj), obj)
+		if api_errors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, nil
+	}); err != nil {
+		return fmt.Errorf("error waiting for deletion of resource %T %s/%s: %v", obj, obj.GetNamespace(), obj.GetName(), err)
+	}
+
+	return nil
 }
 
 func randomString(n int) string {

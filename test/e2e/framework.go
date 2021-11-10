@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega/gexec"
@@ -137,13 +138,17 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	}
 
 	var (
-		kubeConfig  string
-		contourHost string
-		contourPort string
-		contourBin  string
+		kubeConfig   string
+		contourHost  string
+		contourPort  string
+		contourBin   string
+		contourImage string
 	)
 	if inClusterTestSuite {
-		// TODO
+		var found bool
+		if contourImage, found = os.LookupEnv("CONTOUR_E2E_IMAGE"); !found {
+			contourImage = "ghcr.io/projectcontour/contour:main"
+		}
 	} else {
 		var found bool
 		if kubeConfig, found = os.LookupEnv("KUBECONFIG"); !found {
@@ -169,6 +174,7 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 		localContourHost: contourHost,
 		localContourPort: contourPort,
 		contourBin:       contourBin,
+		contourImage:     contourImage,
 	}
 
 	kubectl := &Kubectl{
@@ -494,4 +500,50 @@ type EchoResponseBody struct {
 func UsingContourConfigCRD() bool {
 	useContourConfiguration, found := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD")
 	return found && useContourConfiguration == "true"
+}
+
+// HTTPProxyValid returns true if the proxy has a .status.currentStatus
+// of "valid".
+func HTTPProxyValid(proxy *contourv1.HTTPProxy) bool {
+
+	if proxy == nil {
+		return false
+	}
+
+	if len(proxy.Status.Conditions) == 0 {
+		return false
+	}
+
+	cond := proxy.Status.GetConditionFor("Valid")
+	return cond.Status == "True"
+
+}
+
+// HTTPProxyInvalid returns true if the proxy has a .status.currentStatus
+// of "valid".
+func HTTPProxyInvalid(proxy *contourv1.HTTPProxy) bool {
+	return proxy != nil && proxy.Status.CurrentStatus == "invalid"
+}
+
+// HTTPProxyErrors provides a pretty summary of any Errors on the HTTPProxy Valid condition.
+// If there are no errors, the return value will be empty.
+func HTTPProxyErrors(proxy *contourv1.HTTPProxy) string {
+	cond := proxy.Status.GetConditionFor("Valid")
+	errors := cond.Errors
+	if len(errors) > 0 {
+		return spew.Sdump(errors)
+	}
+
+	return ""
+}
+
+// DetailedConditionInvalid returns true if the provided detailed condition
+// list contains a condition of type "Valid" and status "False".
+func DetailedConditionInvalid(conditions []contourv1.DetailedCondition) bool {
+	for _, c := range conditions {
+		if c.Condition.Type == "Valid" {
+			return c.Condition.Status == "False"
+		}
+	}
+	return false
 }

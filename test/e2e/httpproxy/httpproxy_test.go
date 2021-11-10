@@ -22,13 +22,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
@@ -426,32 +424,3 @@ descriptors:
 		})
 	})
 })
-
-// httpProxyValid returns true if the proxy has a .status.currentStatus
-// of "valid".
-func httpProxyValid(proxy *contourv1.HTTPProxy) bool {
-
-	if proxy == nil {
-		return false
-	}
-
-	if len(proxy.Status.Conditions) == 0 {
-		return false
-	}
-
-	cond := proxy.Status.GetConditionFor("Valid")
-	return cond.Status == "True"
-
-}
-
-// httpProxyErrors provides a pretty summary of any Errors on the HTTPProxy Valid condition.
-// If there are no errors, the return value will be empty.
-func httpProxyErrors(proxy *contourv1.HTTPProxy) string {
-	cond := proxy.Status.GetConditionFor("Valid")
-	errors := cond.Errors
-	if len(errors) > 0 {
-		return spew.Sdump(errors)
-	}
-
-	return ""
-}
