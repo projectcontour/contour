@@ -610,6 +610,8 @@ type Parameters struct {
 	EnableExternalNameService bool `yaml:"enableExternalNameService,omitempty"`
 
 	// LeaderElection contains leader election parameters.
+	// Note: This method of configuring leader election is deprecated,
+	// please use command line flags instead.
 	LeaderElection LeaderElectionParameters `yaml:"leaderelection,omitempty"`
 
 	// Timeouts holds various configurable timeouts that can

@@ -50,6 +50,10 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--use-proxy-protocol`                                   | Use PROXY protocol for all listeners                                   |
 | `--accesslog-format=<envoy\|json>`                       | Format for Envoy access logs                                           |
 | `--disable-leader-election`                              | Disable leader election mechanism                                      |
+| `--leader-election-lease-duration`                       | The duration of the leadership lease.                                  |
+| `--leader-election-renew-deadline`                       | The duration leader will retry refreshing leadership before giving up. |
+| `--leader-election-retry-period`                         | The interval which Contour will attempt to acquire leadership lease.   |
+| `--leader-election-resource-name`                        | The name of the resource (ConfigMap) leader election will lease.       |
 | `-d, --debug`                                            | Enable debug logging                                                   |
 | `--kubernetes-debug=<log level>`                         | Enable Kubernetes client debug logging                                 |
 
@@ -120,6 +124,8 @@ Contour should provision TLS hosts.
 The leader election configuration block configures how a deployment with more than one Contour pod elects a leader.
 The Contour leader is responsible for updating the status field on Ingress and HTTPProxy documents.
 In the vast majority of deployments, only the `configmap-name` and `configmap-namespace` fields should require any configuration.
+
+_Note:_ Configuring leader election via the configuration file is deprecated, please use the `contour serve` command line flags instead.
 
 | Field Name          | Type          | Default          | Description                                                                                                                                                                          |
 | ------------------- | ------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
