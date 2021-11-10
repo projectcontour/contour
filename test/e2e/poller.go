@@ -25,17 +25,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-type appPoller struct {
+type AppPoller struct {
 	cancel             context.CancelFunc
 	wg                 *sync.WaitGroup
 	totalRequests      uint
 	successfulRequests uint
 }
 
-func StartAppPoller(address string, hostName string, expectedStatus int) (*appPoller, error) {
+func StartAppPoller(address string, hostName string, expectedStatus int) (*AppPoller, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	poller := &appPoller{
+	poller := &AppPoller{
 		wg:     new(sync.WaitGroup),
 		cancel: cancel,
 	}
@@ -52,7 +52,9 @@ func StartAppPoller(address string, hostName string, expectedStatus int) (*appPo
 	poller.wg.Add(1)
 	go func() {
 		defer poller.wg.Done()
-		wait.PollImmediateInfiniteWithContext(ctx, 200*time.Millisecond, func(ctx context.Context) (bool, error) {
+		// Ignore error here since we know we are just polling until
+		// told to stop.
+		_ = wait.PollImmediateInfiniteWithContext(ctx, 200*time.Millisecond, func(ctx context.Context) (bool, error) {
 			// Stop polling if we are being shut down so we don't
 			// get extra failures.
 			select {
@@ -76,11 +78,11 @@ func StartAppPoller(address string, hostName string, expectedStatus int) (*appPo
 	return poller, nil
 }
 
-func (p *appPoller) Stop() {
+func (p *AppPoller) Stop() {
 	p.cancel()
 	p.wg.Wait()
 }
 
-func (p *appPoller) Results() (uint, uint) {
+func (p *AppPoller) Results() (uint, uint) {
 	return p.totalRequests, p.successfulRequests
 }
