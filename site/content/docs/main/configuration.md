@@ -54,6 +54,7 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--leader-election-renew-deadline`                       | The duration leader will retry refreshing leadership before giving up. |
 | `--leader-election-retry-period`                         | The interval which Contour will attempt to acquire leadership lease.   |
 | `--leader-election-resource-name`                        | The name of the resource (ConfigMap) leader election will lease.       |
+| `--leader-election-resource-namespace`                   | The namespace of the resource (ConfigMap) leader election will lease.  |
 | `-d, --debug`                                            | Enable debug logging                                                   |
 | `--kubernetes-debug=<log level>`                         | Enable Kubernetes client debug logging                                 |
 
