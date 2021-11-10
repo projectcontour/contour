@@ -716,26 +716,6 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			s.log.WithError(err).Fatal("failed to create tlsroute-controller")
 		}
 
-		// Create and register the TCPRoute controller with the manager.
-		if _, err := controller.NewTCPRouteController(
-			mgr,
-			sh.Writer(),
-			gatewayClassControllerName,
-			s.log.WithField("context", "tcproute-controller"),
-		); err != nil {
-			s.log.WithError(err).Fatal("failed to create tcproute-controller")
-		}
-
-		// Create and register the UDPRoute controller with the manager.
-		if _, err := controller.NewUDPRouteController(
-			mgr,
-			sh.Writer(),
-			gatewayClassControllerName,
-			s.log.WithField("context", "udproute-controller"),
-		); err != nil {
-			s.log.WithError(err).Fatal("failed to create udproute-controller")
-		}
-
 		// Inform on ReferencePolicies.
 		if err := informOnResource(&gatewayapi_v1alpha2.ReferencePolicy{}, eventHandler, mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", "referencepolicies").Fatal("failed to create informer")

@@ -148,7 +148,23 @@ func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
 		"name":      obj.GetName(),
 	})
 
-	return gatewayHasMatchingController(obj, r.gatewayClassControllerName, r.client, log)
+	gw, ok := obj.(*gatewayapi_v1alpha2.Gateway)
+	if !ok {
+		log.Debugf("unexpected object type %T, bypassing reconciliation.", obj)
+		return false
+	}
+
+	gc := &gatewayapi_v1alpha2.GatewayClass{}
+	if err := r.client.Get(context.Background(), types.NamespacedName{Name: string(gw.Spec.GatewayClassName)}, gc); err != nil {
+		log.WithError(err).Errorf("failed to get gatewayclass %s", gw.Spec.GatewayClassName)
+		return false
+	}
+	if gc.Spec.ControllerName != r.gatewayClassControllerName {
+		log.Debugf("gateway's class controller is not %s; bypassing reconciliation", r.gatewayClassControllerName)
+		return false
+	}
+
+	return true
 }
 
 func (r *gatewayReconciler) gatewayClassHasMatchingController(obj client.Object) bool {
