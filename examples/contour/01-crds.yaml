@@ -502,42 +502,6 @@ spec:
                     description: Address to set in Ingress object status.
                     type: string
                 type: object
-              leaderElection:
-                default:
-                  configmap:
-                    name: leader-elect
-                    namespace: projectcontour
-                  disableLeaderElection: false
-                  leaseDuration: 15s
-                  renewDeadline: 10s
-                  retryPeriod: 2s
-                description: LeaderElection contains leader election parameters.
-                properties:
-                  configmap:
-                    description: NamespacedName defines the namespace/name of the
-                      Kubernetes resource referred from the config file. Used for
-                      Contour config YAML file parsing, otherwise we could use K8s
-                      types.NamespacedName.
-                    properties:
-                      name:
-                        type: string
-                      namespace:
-                        type: string
-                    required:
-                    - name
-                    - namespace
-                    type: object
-                  disableLeaderElection:
-                    type: boolean
-                  leaseDuration:
-                    type: string
-                  renewDeadline:
-                    type: string
-                  retryPeriod:
-                    type: string
-                required:
-                - disableLeaderElection
-                type: object
               metrics:
                 default:
                   address: 0.0.0.0
@@ -1417,42 +1381,6 @@ spec:
                       statusAddress:
                         description: Address to set in Ingress object status.
                         type: string
-                    type: object
-                  leaderElection:
-                    default:
-                      configmap:
-                        name: leader-elect
-                        namespace: projectcontour
-                      disableLeaderElection: false
-                      leaseDuration: 15s
-                      renewDeadline: 10s
-                      retryPeriod: 2s
-                    description: LeaderElection contains leader election parameters.
-                    properties:
-                      configmap:
-                        description: NamespacedName defines the namespace/name of
-                          the Kubernetes resource referred from the config file. Used
-                          for Contour config YAML file parsing, otherwise we could
-                          use K8s types.NamespacedName.
-                        properties:
-                          name:
-                            type: string
-                          namespace:
-                            type: string
-                        required:
-                        - name
-                        - namespace
-                        type: object
-                      disableLeaderElection:
-                        type: boolean
-                      leaseDuration:
-                        type: string
-                      renewDeadline:
-                        type: string
-                      retryPeriod:
-                        type: string
-                    required:
-                    - disableLeaderElection
                     type: object
                   metrics:
                     default:
