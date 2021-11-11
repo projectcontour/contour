@@ -10737,7 +10737,140 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
-		"multiple services with weight and missing service reference": {},
+		"httpproxy with tcpproxy with multiple services, no explicit weights": {
+			objs: []interface{}{
+				s1, s2, s9,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "weighted-tcpproxy",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &contour_api_v1.TLS{
+								Passthrough: true,
+							},
+						},
+						TCPProxy: &contour_api_v1.TCPProxy{
+							Services: []contour_api_v1.Service{
+								{Name: s1.Name, Port: int(s1.Spec.Ports[0].Port)},
+								{Name: s2.Name, Port: int(s2.Spec.Ports[0].Port)},
+								{Name: s9.Name, Port: int(s9.Spec.Ports[0].Port)},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: clusters(service(s1), service(s2), service(s9)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"httpproxy with tcpproxy with multiple weighted services": {
+			objs: []interface{}{
+				s1, s2, s9,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "weighted-tcpproxy",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &contour_api_v1.TLS{
+								Passthrough: true,
+							},
+						},
+						TCPProxy: &contour_api_v1.TCPProxy{
+							Services: []contour_api_v1.Service{
+								{Name: s1.Name, Port: int(s1.Spec.Ports[0].Port), Weight: 1},
+								{Name: s2.Name, Port: int(s2.Spec.Ports[0].Port), Weight: 2},
+								{Name: s9.Name, Port: int(s9.Spec.Ports[0].Port), Weight: 3},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: []*Cluster{
+									{Upstream: service(s1), Weight: 1},
+									{Upstream: service(s2), Weight: 2},
+									{Upstream: service(s9), Weight: 3},
+								},
+							},
+						},
+					),
+				},
+			),
+		},
+		"httpproxy with tcpproxy with multiple services, some weighted, some not": {
+			objs: []interface{}{
+				s1, s2, s9,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "weighted-tcpproxy",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "example.com",
+							TLS: &contour_api_v1.TLS{
+								Passthrough: true,
+							},
+						},
+						TCPProxy: &contour_api_v1.TCPProxy{
+							Services: []contour_api_v1.Service{
+								{Name: s1.Name, Port: int(s1.Spec.Ports[0].Port), Weight: 1},
+								{Name: s2.Name, Port: int(s2.Spec.Ports[0].Port), Weight: 0},
+								{Name: s9.Name, Port: int(s9.Spec.Ports[0].Port), Weight: 3},
+							},
+						},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name:         "example.com",
+								ListenerName: "ingress_https",
+							},
+							TCPProxy: &TCPProxy{
+								Clusters: []*Cluster{
+									{Upstream: service(s1), Weight: 1},
+									{Upstream: service(s2), Weight: 0},
+									{Upstream: service(s9), Weight: 3},
+								},
+							},
+						},
+					),
+				},
+			),
+		},
 	}
 
 	for name, tc := range tests {

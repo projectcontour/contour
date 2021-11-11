@@ -760,6 +760,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
 				Upstream:             s,
+				Weight:               uint32(service.Weight),
 				Protocol:             protocol,
 				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
