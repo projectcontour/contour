@@ -10764,12 +10764,12 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
+					Name: HTTPS_LISTENER_NAME,
 					Port: 443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:         "example.com",
-								ListenerName: "ingress_https",
+								Name: "example.com",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: clusters(service(s1), service(s2), service(s9)),
@@ -10806,12 +10806,12 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
+					Name: HTTPS_LISTENER_NAME,
 					Port: 443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:         "example.com",
-								ListenerName: "ingress_https",
+								Name: "example.com",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: []*Cluster{
@@ -10852,12 +10852,12 @@ func TestDAGInsert(t *testing.T) {
 			},
 			want: listeners(
 				&Listener{
+					Name: HTTPS_LISTENER_NAME,
 					Port: 443,
 					SecureVirtualHosts: securevirtualhosts(
 						&SecureVirtualHost{
 							VirtualHost: VirtualHost{
-								Name:         "example.com",
-								ListenerName: "ingress_https",
+								Name: "example.com",
 							},
 							TCPProxy: &TCPProxy{
 								Clusters: []*Cluster{
