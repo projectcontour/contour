@@ -34,6 +34,96 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 )
 
+// VirtualHostAndRoutes converts a DAG virtual host and routes to an Envoy virtual host.
+func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bool, authService *dag.ExtensionCluster) *envoy_route_v3.VirtualHost {
+	var envoyRoutes []*envoy_route_v3.Route
+	for _, route := range dagRoutes {
+		envoyRoutes = append(envoyRoutes, Route(route, vh.Name, secure, authService))
+	}
+
+	evh := VirtualHost(vh.Name, envoyRoutes...)
+
+	if vh.CORSPolicy != nil {
+		evh.Cors = CORSPolicy(vh.CORSPolicy)
+	}
+	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Local != nil {
+		if evh.TypedPerFilterConfig == nil {
+			evh.TypedPerFilterConfig = map[string]*any.Any{}
+		}
+		evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
+	}
+
+	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Global != nil {
+		evh.RateLimits = GlobalRateLimits(vh.RateLimitPolicy.Global.Descriptors)
+	}
+
+	return evh
+}
+
+// Route converts a DAG route to an Envoy route.
+func Route(dagRoute *dag.Route, vhostName string, secure bool, authService *dag.ExtensionCluster) *envoy_route_v3.Route {
+	switch {
+	case dagRoute.HTTPSUpgrade && !secure:
+		// TODO(dfc) if we ensure the builder never returns a dag.Route connected
+		// to a SecureVirtualHost that requires upgrade, this logic can move to
+		// envoy.RouteRoute. Currently the DAG processor adds any HTTP->HTTPS
+		// redirect routes to *both* the insecure and secure vhosts.
+		return &envoy_route_v3.Route{
+			Match:  RouteMatch(dagRoute),
+			Action: UpgradeHTTPS(),
+		}
+	case dagRoute.DirectResponse != nil:
+		return &envoy_route_v3.Route{
+			Match:  RouteMatch(dagRoute),
+			Action: RouteDirectResponse(dagRoute.DirectResponse),
+		}
+	case dagRoute.Redirect != nil:
+		// TODO request/response headers?
+		return &envoy_route_v3.Route{
+			Match:  RouteMatch(dagRoute),
+			Action: RouteRedirect(dagRoute.Redirect),
+		}
+	default:
+		rt := &envoy_route_v3.Route{
+			Match:  RouteMatch(dagRoute),
+			Action: RouteRoute(dagRoute),
+		}
+
+		if dagRoute.RequestHeadersPolicy != nil {
+			rt.RequestHeadersToAdd = append(HeaderValueList(dagRoute.RequestHeadersPolicy.Set, false), HeaderValueList(dagRoute.RequestHeadersPolicy.Add, true)...)
+			rt.RequestHeadersToRemove = dagRoute.RequestHeadersPolicy.Remove
+		}
+		if dagRoute.ResponseHeadersPolicy != nil {
+			rt.ResponseHeadersToAdd = HeaderValueList(dagRoute.ResponseHeadersPolicy.Set, false)
+			rt.ResponseHeadersToRemove = dagRoute.ResponseHeadersPolicy.Remove
+		}
+		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
+		}
+
+		// If authorization is enabled on this host, we may need to set per-route filter overrides.
+		if authService != nil {
+			// Apply per-route authorization policy modifications.
+			if dagRoute.AuthDisabled {
+				if rt.TypedPerFilterConfig == nil {
+					rt.TypedPerFilterConfig = map[string]*any.Any{}
+				}
+				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = RouteAuthzDisabled()
+			} else if len(dagRoute.AuthContext) > 0 {
+				if rt.TypedPerFilterConfig == nil {
+					rt.TypedPerFilterConfig = map[string]*any.Any{}
+				}
+				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = RouteAuthzContext(dagRoute.AuthContext)
+			}
+		}
+
+		return rt
+	}
+}
+
 // RouteAuthzDisabled returns a per-route config to disable authorization.
 func RouteAuthzDisabled() *any.Any {
 	return protobuf.MustMarshalAny(
