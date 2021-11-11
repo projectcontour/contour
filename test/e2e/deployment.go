@@ -339,15 +339,28 @@ func (d *Deployment) EnsureEnvoyDaemonSet() error {
 	return d.ensureResource(d.EnvoyDaemonSet, new(apps_v1.DaemonSet))
 }
 
+// Wait for Envoy daemonset update to go out of date due to the
+// update propagating. Possibly needed before calling WaitForEnvoyDaemonSetUpdated
+// to ensure that does not pass without waiting for update to propagate.
+func (d *Deployment) WaitForEnvoyDaemonSetOutOfDate() error {
+	daemonSetUpdated := func() (bool, error) {
+		tempDS := new(apps_v1.DaemonSet)
+		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDaemonSet), tempDS); err != nil {
+			return false, err
+		}
+		return tempDS.Status.UpdatedNumberScheduled < tempDS.Status.DesiredNumberScheduled, nil
+	}
+	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
+}
+
 func (d *Deployment) WaitForEnvoyDaemonSetUpdated() error {
 	daemonSetUpdated := func() (bool, error) {
 		tempDS := new(apps_v1.DaemonSet)
 		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDaemonSet), tempDS); err != nil {
 			return false, err
 		}
-		// This might work for now while we have only one worker node, but
-		// if we expand to more, we will have to rethink this.
-		return tempDS.Status.NumberReady > 0, nil
+		return tempDS.Status.NumberReady == tempDS.Status.DesiredNumberScheduled &&
+			tempDS.Status.UpdatedNumberScheduled == tempDS.Status.DesiredNumberScheduled, nil
 	}
 	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
 }

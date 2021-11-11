@@ -56,6 +56,14 @@ var _ = BeforeSuite(func() {
 	contourUpgradeToImage = os.Getenv("CONTOUR_UPGRADE_TO_IMAGE")
 	require.NotEmpty(f.T(), contourUpgradeToImage, "CONTOUR_UPGRADE_TO_IMAGE environment variable not supplied")
 	By("upgrading Contour image to " + contourUpgradeToImage)
+
+	// We should be running in a multi-node cluster with a proper load
+	// balancer, so fetch load balancer ip to make requests to.
+	require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(f.Deployment.EnvoyService), f.Deployment.EnvoyService))
+	require.Greater(f.T(), len(f.Deployment.EnvoyService.Status.LoadBalancer.Ingress), 0)
+	require.NotEmpty(f.T(), f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP)
+	f.HTTP.HTTPURLBase = "http://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP
+	f.HTTP.HTTPSURLBase = "https://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP
 })
 
 var _ = Describe("upgrading Contour", func() {
@@ -64,7 +72,7 @@ var _ = Describe("upgrading Contour", func() {
 	f.NamespacedTest("contour-upgrade-test", func(namespace string) {
 		Specify("applications remain routable after the upgrade", func() {
 			By("deploying an app")
-			f.Fixtures.Echo.Deploy(namespace, "echo")
+			f.Fixtures.Echo.DeployN(namespace, "echo", 2)
 			i := &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
@@ -108,6 +116,7 @@ var _ = Describe("upgrading Contour", func() {
 			require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
 
 			By("waiting for envoy daemonset to be updated")
+			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetOutOfDate())
 			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
 
 			By("ensuring app is still routable")

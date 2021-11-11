@@ -24,6 +24,7 @@ set -o nounset
 readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
+readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
 readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.22.0"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
@@ -36,11 +37,15 @@ kind::cluster::exists() {
 }
 
 kind::cluster::create() {
+    local config_file="${REPO}/test/scripts/kind-expose-port.yaml"
+    if [[ "${MULTINODE_CLUSTER}" == "true" ]]; then
+        config_file="${REPO}/test/scripts/kind-multinode.yaml"
+    fi
     ${KIND} create cluster \
         --name "${CLUSTERNAME}" \
         --image "${NODEIMAGE}" \
         --wait "${WAITTIME}" \
-        --config "${REPO}/test/scripts/kind-expose-port.yaml"
+        --config "${config_file}"
 }
 
 kind::cluster::load() {
@@ -76,6 +81,14 @@ do
     docker pull "$image"
     kind::cluster::load "$image"
 done
+
+if [[ "${MULTINODE_CLUSTER}" == "true" ]]; then
+    # Install metallb.
+    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/master/manifests/namespace.yaml
+    ${KUBECTL} create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/master/manifests/metallb.yaml
+    ${KUBECTL} apply -f https://kind.sigs.k8s.io/examples/loadbalancer/metallb-configmap.yaml
+fi
 
 # Install cert-manager.
 ${KUBECTL} apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.1/cert-manager.yaml
