@@ -359,7 +359,7 @@ func (d *Deployment) WaitForEnvoyDaemonSetUpdated() error {
 		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDaemonSet), tempDS); err != nil {
 			return false, err
 		}
-		return tempDS.Status.NumberReady == tempDS.Status.DesiredNumberScheduled &&
+		return tempDS.Status.NumberAvailable == tempDS.Status.DesiredNumberScheduled &&
 			tempDS.Status.UpdatedNumberScheduled == tempDS.Status.DesiredNumberScheduled, nil
 	}
 	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
