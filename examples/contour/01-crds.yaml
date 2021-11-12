@@ -1041,10 +1041,13 @@ spec:
                       description: The retry policy for this route.
                       properties:
                         count:
+                          default: 1
                           description: NumRetries is maximum allowed number of retries.
-                            If not supplied, the number of retries is one.
+                            If set to -1, then retries are disabled. If set to 0 or
+                            not supplied, the value is set to the Envoy default of
+                            1.
                           format: int64
-                          minimum: 0
+                          minimum: -1
                           type: integer
                         perTryTimeout:
                           description: PerTryTimeout specifies the timeout per retry

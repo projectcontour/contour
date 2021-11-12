@@ -216,7 +216,7 @@ The string 'infinity' is also a valid input and specifies no timeout.
 
 - `retryPolicy`: A retry will be attempted if the server returns an error code in the 5xx range, or if the server takes more than `retryPolicy.perTryTimeout` to process a request.
 
-- `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1.
+- `retryPolicy.count` specifies the maximum number of retries allowed. This parameter is optional and defaults to 1. Set to -1 to disable. If set to 0, the Envoy default of 1 is used.
 
 - `retryPolicy.perTryTimeout` specifies the timeout per retry. If this field is greater than the request timeout, it is ignored. This parameter is optional.
   If left unspecified, `timeoutPolicy.request` will be used.
