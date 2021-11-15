@@ -716,11 +716,7 @@ func (p *Parameters) Validate() error {
 		}
 	}
 
-	if err := p.Listener.Validate(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.Listener.Validate()
 }
 
 // Defaults returns the default set of parameters.
