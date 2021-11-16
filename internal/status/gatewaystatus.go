@@ -16,6 +16,7 @@ package status
 import (
 	"fmt"
 
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,17 +30,24 @@ const ReasonInvalidGateway = "Invalid"
 
 const MessageValidGateway = "Valid Gateway"
 
-type GatewayConditionsUpdate struct {
+// GatewayStatusUpdate represents an atomic update to a
+// Gateway's status.
+type GatewayStatusUpdate struct {
 	FullName           types.NamespacedName
 	Conditions         map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
 	ExistingConditions map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
-	GatewayRef         types.NamespacedName
+	ListenerStatus     map[string]*gatewayapi_v1alpha2.ListenerStatus
 	Generation         int64
 	TransitionTime     metav1.Time
 }
 
 // AddCondition returns a metav1.Condition for a given GatewayConditionType.
-func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alpha2.GatewayConditionType, status metav1.ConditionStatus, reason GatewayReasonType, message string) metav1.Condition {
+func (gatewayUpdate *GatewayStatusUpdate) AddCondition(
+	cond gatewayapi_v1alpha2.GatewayConditionType,
+	status metav1.ConditionStatus,
+	reason GatewayReasonType,
+	message string,
+) metav1.Condition {
 
 	if c, ok := gatewayUpdate.Conditions[cond]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
@@ -57,30 +65,37 @@ func (gatewayUpdate *GatewayConditionsUpdate) AddCondition(cond gatewayapi_v1alp
 	return newCond
 }
 
-// GatewayConditionsAccessor returns a GatewayConditionsUpdate that allows a client to build up a list of
-// metav1.Conditions as well as a function to commit the change back to the cache when everything
-// is done. The commit function pattern is used so that the GatewayConditionsUpdate does not need
-// to know anything the cache internals.
-func (c *Cache) GatewayConditionsAccessor(nsName types.NamespacedName, generation int64, gs *gatewayapi_v1alpha2.GatewayStatus) (*GatewayConditionsUpdate, func()) {
-	gu := &GatewayConditionsUpdate{
-		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
-		ExistingConditions: getGatewayConditions(gs),
-		GatewayRef:         c.gatewayRef,
-		Generation:         generation,
-		TransitionTime:     metav1.NewTime(clock.Now()),
+func (gatewayUpdate *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName string, kinds []gatewayapi_v1alpha2.Kind) {
+	if gatewayUpdate.ListenerStatus == nil {
+		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1alpha2.ListenerStatus{}
+	}
+	if gatewayUpdate.ListenerStatus[listenerName] == nil {
+		gatewayUpdate.ListenerStatus[listenerName] = &gatewayapi_v1alpha2.ListenerStatus{
+			Name: gatewayapi_v1alpha2.SectionName(listenerName),
+		}
 	}
 
-	return gu, func() {
-		c.commitGateway(gu)
+	for _, kind := range kinds {
+		groupKind := gatewayapi_v1alpha2.RouteGroupKind{
+			Group: gatewayapi.GroupPtr(gatewayapi_v1alpha2.GroupName),
+			Kind:  kind,
+		}
+
+		gatewayUpdate.ListenerStatus[listenerName].SupportedKinds = append(gatewayUpdate.ListenerStatus[listenerName].SupportedKinds, groupKind)
 	}
 }
 
-func (c *Cache) commitGateway(gu *GatewayConditionsUpdate) {
-	if len(gu.Conditions) == 0 {
-		return
+func (gatewayUpdate *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName string, numRoutes int) {
+	if gatewayUpdate.ListenerStatus == nil {
+		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1alpha2.ListenerStatus{}
 	}
-	c.gatewayUpdates[gu.FullName] = gu
+	if gatewayUpdate.ListenerStatus[listenerName] == nil {
+		gatewayUpdate.ListenerStatus[listenerName] = &gatewayapi_v1alpha2.ListenerStatus{
+			Name: gatewayapi_v1alpha2.SectionName(listenerName),
+		}
+	}
+
+	gatewayUpdate.ListenerStatus[listenerName].AttachedRoutes = int32(numRoutes)
 }
 
 func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition {
@@ -93,7 +108,15 @@ func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_
 	return conditions
 }
 
-func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj client.Object) client.Object {
+func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Object {
+	o, ok := obj.(*gatewayapi_v1alpha2.Gateway)
+	if !ok {
+		panic(fmt.Sprintf("Unsupported %T object %s/%s in GatewayStatusUpdate status mutator",
+			obj, gatewayUpdate.FullName.Namespace, gatewayUpdate.FullName.Name,
+		))
+	}
+
+	updated := o.DeepCopy()
 
 	var conditionsToWrite []metav1.Condition
 
@@ -127,19 +150,20 @@ func (gatewayUpdate *GatewayConditionsUpdate) Mutate(obj client.Object) client.O
 		}
 	}
 
-	switch o := obj.(type) {
-	case *gatewayapi_v1alpha2.Gateway:
-		gw := o.DeepCopy()
-		gw.Status = gatewayapi_v1alpha2.GatewayStatus{
-			Conditions: conditionsToWrite,
-			// TODO: Manage addresses and listeners.
-			// xref: https://github.com/projectcontour/contour/issues/3828
-		}
-		return gw
-	default:
-		panic(fmt.Sprintf("Unsupported %T object %s/%s in GatewayConditionsUpdate status mutator",
-			obj, gatewayUpdate.FullName.Namespace, gatewayUpdate.FullName.Name,
-		))
+	updated.Status.Conditions = conditionsToWrite
+
+	// Overwrite all listener statuses since we re-compute all of them
+	// for each Gateway status update.
+	var listenerStatusToWrite []gatewayapi_v1alpha2.ListenerStatus
+	for _, status := range gatewayUpdate.ListenerStatus {
+		status.Conditions = []metav1.Condition{} // Conditions is a required field so we have to specify an empty slice here
+		listenerStatusToWrite = append(listenerStatusToWrite, *status)
 	}
 
+	updated.Status.Listeners = listenerStatusToWrite
+
+	// TODO: Manage addresses.
+	// xref: https://github.com/projectcontour/contour/issues/3828
+
+	return updated
 }
