@@ -24,6 +24,7 @@ set -o nounset
 readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
+readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
 readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.22.0"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
@@ -36,11 +37,15 @@ kind::cluster::exists() {
 }
 
 kind::cluster::create() {
+    local config_file="${REPO}/test/scripts/kind-expose-port.yaml"
+    if [[ "${MULTINODE_CLUSTER}" == "true" ]]; then
+        config_file="${REPO}/test/scripts/kind-multinode.yaml"
+    fi
     ${KIND} create cluster \
         --name "${CLUSTERNAME}" \
         --image "${NODEIMAGE}" \
         --wait "${WAITTIME}" \
-        --config "${REPO}/test/scripts/kind-expose-port.yaml"
+        --config "${config_file}"
 }
 
 kind::cluster::load() {
@@ -76,6 +81,34 @@ do
     docker pull "$image"
     kind::cluster::load "$image"
 done
+
+if [[ "${MULTINODE_CLUSTER}" == "true" ]]; then
+    # Install metallb.
+    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
+    if ! kubectl get secret -n metallb-system memberlist; then
+        ${KUBECTL} create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+    fi
+    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
+    # Apply config with addresses based on docker network IPAM
+    subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":") | not)')
+    # Assume default kind network subnet prefix of 16, and choose addresses in that range.
+    address_first_octets=$(echo ${subnet} | awk -F. '{printf "%s.%s",$1,$2}')
+    address_range="${address_first_octets}.255.200-${address_first_octets}.255.250"
+    ${KUBECTL} apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+  config: |
+    address-pools:
+    - name: default
+      protocol: layer2
+      addresses:
+      - ${address_range}
+EOF
+fi
 
 # Install cert-manager.
 ${KUBECTL} apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.1/cert-manager.yaml

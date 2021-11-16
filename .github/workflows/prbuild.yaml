@@ -225,6 +225,7 @@ jobs:
         env:
           NODEIMAGE: ${{ matrix.node_image }}
           LOAD_PREBUILT_IMAGE: "true"
+          MULTINODE_CLUSTER: "true"
         run: |
           export CONTOUR_UPGRADE_TO_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make upgrade
