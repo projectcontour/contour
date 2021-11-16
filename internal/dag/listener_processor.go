@@ -15,6 +15,12 @@ package dag
 
 import "sort"
 
+// nolint:revive
+const (
+	HTTP_LISTENER_NAME  = "ingress_http"
+	HTTPS_LISTENER_NAME = "ingress_https"
+)
+
 // ListenerProcessor adds an HTTP and an HTTPS listener to
 // the DAG if there are virtual hosts and secure virtual
 // hosts already defined as roots in the DAG.
@@ -47,6 +53,7 @@ func (p *ListenerProcessor) buildHTTPListener(dag *DAG) {
 	})
 
 	http := &Listener{
+		Name:         HTTP_LISTENER_NAME,
 		Port:         80,
 		VirtualHosts: vhosts,
 	}
@@ -73,6 +80,7 @@ func (p *ListenerProcessor) buildHTTPSListener(dag *DAG) {
 	})
 
 	https := &Listener{
+		Name:               HTTPS_LISTENER_NAME,
 		Port:               443,
 		SecureVirtualHosts: vhosts,
 	}

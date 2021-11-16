@@ -18,6 +18,8 @@ package upgrade
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"os"
 	"testing"
 
@@ -86,6 +88,9 @@ var _ = Describe("upgrading Contour", func() {
 			By("ensuring it is routable")
 			checkRoutability(appHost)
 
+			poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK)
+			require.NoError(f.T(), err)
+
 			By("deploying updated contour resources")
 			require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour())
 
@@ -97,6 +102,13 @@ var _ = Describe("upgrading Contour", func() {
 
 			By("ensuring app is still routable")
 			checkRoutability(appHost)
+
+			poller.Stop()
+			totalRequests, successfulRequests := poller.Results()
+			fmt.Fprintf(GinkgoWriter, "Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
+			require.Greater(f.T(), totalRequests, uint(0))
+			successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
+			require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%", successPercentage)
 		})
 	})
 })

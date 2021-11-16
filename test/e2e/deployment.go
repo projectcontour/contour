@@ -561,11 +561,6 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 			},
 		}
 
-		// Disable leader election.
-		contourConfiguration.Spec.LeaderElection = contour_api_v1alpha1.LeaderElectionConfig{
-			DisableLeaderElection: true,
-		}
-
 		if err := d.client.Create(context.TODO(), contourConfiguration); err != nil {
 			return nil, "", fmt.Errorf("could not create ContourConfiguration: %v", err)
 		}
@@ -574,6 +569,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 			"serve",
 			"--kubeconfig=" + d.kubeConfig,
 			"--contour-config-name=" + contourConfiguration.Name,
+			"--disable-leader-election",
 		}, additionalArgs...)
 
 		configReferenceName = contourConfiguration.Name

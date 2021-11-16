@@ -125,8 +125,7 @@ func (d *DAG) EnsureSecureVirtualHost(hostname string) *SecureVirtualHost {
 
 	svh := &SecureVirtualHost{
 		VirtualHost: VirtualHost{
-			Name:         hostname,
-			ListenerName: "ingress_https",
+			Name: hostname,
 		},
 	}
 	d.SecureVirtualHosts[hostname] = svh
@@ -147,8 +146,7 @@ func (d *DAG) EnsureVirtualHost(hostname string) *VirtualHost {
 	}
 
 	vhost := &VirtualHost{
-		Name:         hostname,
-		ListenerName: "ingress_http",
+		Name: hostname,
 	}
 	d.VirtualHosts[hostname] = vhost
 	return vhost

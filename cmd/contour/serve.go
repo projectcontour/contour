@@ -121,6 +121,13 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("incluster", "Use in cluster configuration.").BoolVar(&ctx.Config.InCluster)
 	serve.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").PlaceHolder("/path/to/file").StringVar(&ctx.Config.Kubeconfig)
 
+	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
+	serve.Flag("leader-election-lease-duration", "The duration of the leadership lease.").Default("15s").DurationVar(&ctx.Config.LeaderElection.LeaseDuration)
+	serve.Flag("leader-election-renew-deadline", "The duration leader will retry refreshing leadership before giving up.").Default("10s").DurationVar(&ctx.Config.LeaderElection.RenewDeadline)
+	serve.Flag("leader-election-retry-period", "The interval which Contour will attempt to acquire leadership lease.").Default("2s").DurationVar(&ctx.Config.LeaderElection.RetryPeriod)
+	serve.Flag("leader-election-resource-name", "The name of the resource (ConfigMap) leader election will lease.").Default("leader-elect").StringVar(&ctx.Config.LeaderElection.Name)
+	serve.Flag("leader-election-resource-namespace", "The namespace of the resource (ConfigMap) leader election will lease.").Default(ctx.Config.LeaderElection.Namespace).StringVar(&ctx.Config.LeaderElection.Namespace)
+
 	serve.Flag("xds-address", "xDS gRPC API address.").PlaceHolder("<ipaddr>").StringVar(&ctx.xdsAddr)
 	serve.Flag("xds-port", "xDS gRPC API port.").PlaceHolder("<port>").IntVar(&ctx.xdsPort)
 
@@ -154,7 +161,6 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("use-proxy-protocol", "Use PROXY protocol for all listeners.").BoolVar(&ctx.useProxyProto)
 
 	serve.Flag("accesslog-format", "Format for Envoy access logs.").PlaceHolder("<envoy|json>").StringVar((*string)(&ctx.Config.AccessLogFormat))
-	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
 
 	serve.Flag("debug", "Enable debug logging.").Short('d').BoolVar(&ctx.Config.Debug)
 	serve.Flag("kubernetes-debug", "Enable Kubernetes client debug logging with log level.").PlaceHolder("<log level>").UintVar(&ctx.KubernetesDebug)
@@ -394,10 +400,10 @@ func (s *Server) doServe() error {
 	}
 
 	// Register leadership election.
-	if contourConfiguration.LeaderElection.DisableLeaderElection {
+	if s.ctx.DisableLeaderElection {
 		contourHandler.IsLeader = disableLeaderElection(s.log)
 	} else {
-		contourHandler.IsLeader = setupLeadershipElection(&s.group, s.log, contourConfiguration.LeaderElection, s.coreClient, contourHandler.UpdateNow)
+		contourHandler.IsLeader = setupLeadershipElection(&s.group, s.log, s.ctx.Config.LeaderElection, s.coreClient, contourHandler.UpdateNow)
 	}
 
 	// Start setting up StatusUpdateHandler since we need it in
@@ -714,26 +720,6 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 		// Create and register the TLSRoute controller with the manager.
 		if _, err := controller.NewTLSRouteController(mgr, eventHandler, s.log.WithField("context", "tlsroute-controller")); err != nil {
 			s.log.WithError(err).Fatal("failed to create tlsroute-controller")
-		}
-
-		// Create and register the TCPRoute controller with the manager.
-		if _, err := controller.NewTCPRouteController(
-			mgr,
-			sh.Writer(),
-			gatewayClassControllerName,
-			s.log.WithField("context", "tcproute-controller"),
-		); err != nil {
-			s.log.WithError(err).Fatal("failed to create tcproute-controller")
-		}
-
-		// Create and register the UDPRoute controller with the manager.
-		if _, err := controller.NewUDPRouteController(
-			mgr,
-			sh.Writer(),
-			gatewayClassControllerName,
-			s.log.WithField("context", "udproute-controller"),
-		); err != nil {
-			s.log.WithError(err).Fatal("failed to create udproute-controller")
 		}
 
 		// Inform on ReferencePolicies.

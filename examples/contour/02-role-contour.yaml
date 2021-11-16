@@ -35,9 +35,7 @@ rules:
   - gateways
   - httproutes
   - referencepolicies
-  - tcproutes
   - tlsroutes
-  - udproutes
   verbs:
   - get
   - list
@@ -48,9 +46,7 @@ rules:
   - gatewayclasses/status
   - gateways/status
   - httproutes/status
-  - tcproutes/status
   - tlsroutes/status
-  - udproutes/status
   verbs:
   - update
 - apiGroups:

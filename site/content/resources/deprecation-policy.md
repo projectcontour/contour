@@ -15,15 +15,16 @@ Our Kubernetes CRDs use the Kubernetes API deprecation conventions, including a 
 - There are three levels of stability, Alpha, Beta and GA (in increasing order).
 - We may skip the Beta level when we are reasonably confident the schema is good.
 
-We use the same rules as Kubernetes:
-- API elements may only be removed by incrementing the version of the API group.
+We use similar rules as Kubernetes:
+- For Beta and GA versions, API elements may only be removed by incrementing the version of the API group.
+- For Alpha versions, rules on behavior changes and API field removal are more lenient, a version bump will not always be required.
 - An API version in a given track may not be deprecated until a new API version at least as stable is released.
 
 
 | Sample Version Tag | State | Deprecation timeframe | Notes                                                                                                      |
 | ------------------ | ----- | --------------------- | ---------------------------------------------------------------------------------------------------------- |
 | v1alpha1           | Alpha | Any time              | Behavior can change any time, Fields can be removed at any time                                            |
-| v1beta1            | Beta  | 1 release            | Behavior can change any time, fields won't be removed without a version bump (ie `v1alpha1` to `v1alpha2`) |
+| v1beta1            | Beta  | 1 release             | Behavior can change any time, fields won't be removed without a version bump (ie `v1beta1` to `v1beta2`) |
 | v1                 | GA    | 1 year                | No fields will be removed, no behavior will substantially change. Fields can be added.                     |
 
 

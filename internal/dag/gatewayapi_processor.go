@@ -84,14 +84,19 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		return
 	}
 
+	gwAccessor, commit := p.dag.StatusCache.GatewayStatusAccessor(
+		k8s.NamespacedNameOf(p.source.gateway),
+		p.source.gateway.Generation,
+		&p.source.gateway.Status,
+	)
+	defer commit()
+
 	if len(p.source.gateway.Spec.Addresses) > 0 {
 		gatewayErrors = append(gatewayErrors, &field.Error{Type: field.ErrorTypeNotSupported, Field: path.String(), BadValue: p.source.gateway.Spec.Addresses, Detail: "Spec.Addresses is not supported"})
 	}
 
 	for _, listener := range p.source.gateway.Spec.Listeners {
 
-		var matchingHTTPRoutes []*gatewayapi_v1alpha2.HTTPRoute
-		var matchingTLSRoutes []*gatewayapi_v1alpha2.TLSRoute
 		var listenerSecret *Secret
 
 		// Validate the listener protocol is a supported type.
@@ -140,14 +145,12 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 			continue
 		}
 
-		// Get a list of the kinds of routes that the listener accepts.
-		routeKinds, err := getListenerRouteKinds(listener)
-		if err != nil {
-			p.Errorf("error getting listener route kinds: %v", err)
-			continue
-		}
+		// Get a list of the route kinds that the listener accepts.
+		listenerRouteKinds := p.getListenerRouteKinds(listener)
+		gwAccessor.SetListenerSupportedKinds(string(listener.Name), listenerRouteKinds)
 
-		for _, routeKind := range routeKinds {
+		attachedRoutes := 0
+		for _, routeKind := range listenerRouteKinds {
 			switch routeKind {
 			case KindHTTPRoute:
 				for _, route := range p.source.httproutes {
@@ -166,16 +169,11 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						continue
 					}
 
-					matchingHTTPRoutes = append(matchingHTTPRoutes, route)
+					if p.computeHTTPRoute(route, listenerSecret, listener.Hostname, len(gatewayErrors) == 0) {
+						attachedRoutes++
+					}
 				}
 			case KindTLSRoute:
-
-				// Validate the listener protocol is type=TLS.
-				if listener.Protocol != gatewayapi_v1alpha2.TLSProtocolType {
-					p.Errorf("invalid listener protocol %q for Kind: TLSRoute", listener.Protocol)
-					continue
-				}
-
 				for _, route := range p.source.tlsroutes {
 					// Check if the route is in a namespace that the listener allows.
 					nsMatches, err := p.namespaceMatches(listener.AllowedRoutes.Namespaces, route.Namespace)
@@ -192,58 +190,62 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 						continue
 					}
 
-					matchingTLSRoutes = append(matchingTLSRoutes, route)
+					if p.computeTLSRoute(route, listenerSecret, listener.Hostname, len(gatewayErrors) == 0) {
+						attachedRoutes++
+					}
 				}
 			}
 		}
 
-		validGateway := len(gatewayErrors) == 0
-
-		// Process all the HTTPRoutes that match this Gateway.
-		for _, matchingRoute := range matchingHTTPRoutes {
-			p.computeHTTPRoute(matchingRoute, listenerSecret, listener.Hostname, validGateway)
-		}
-
-		// Process all the TLSRoutes that match this Gateway.
-		for _, matchingRoute := range matchingTLSRoutes {
-			p.computeTLSRoute(matchingRoute, validGateway, listenerSecret, listener.Hostname)
-		}
+		gwAccessor.SetListenerAttachedRoutes(string(listener.Name), attachedRoutes)
 	}
 
-	p.computeGatewayConditions(p.source.gateway, gatewayErrors)
+	p.computeGatewayConditions(gwAccessor, gatewayErrors)
 }
 
-// getListenerRouteKinds gets a list of the kinds of routes that
+// getListenerRouteKinds gets a list of the valid route kinds that
 // the listener accepts.
-func getListenerRouteKinds(listener gatewayapi_v1alpha2.Listener) ([]string, error) {
+func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1alpha2.Listener) []gatewayapi_v1alpha2.Kind {
+	// None specified on the listener: return the default based on
+	// the listener's protocol.
 	if len(listener.AllowedRoutes.Kinds) == 0 {
 		switch listener.Protocol {
 		case gatewayapi_v1alpha2.HTTPProtocolType:
-			return []string{KindHTTPRoute}, nil
+			return []gatewayapi_v1alpha2.Kind{KindHTTPRoute}
 		case gatewayapi_v1alpha2.HTTPSProtocolType:
-			return []string{KindHTTPRoute}, nil
+			return []gatewayapi_v1alpha2.Kind{KindHTTPRoute}
 		case gatewayapi_v1alpha2.TLSProtocolType:
-			return []string{KindTLSRoute}, nil
+			return []gatewayapi_v1alpha2.Kind{KindTLSRoute}
 		}
 	}
 
-	var routeKinds []string
+	var routeKinds []gatewayapi_v1alpha2.Kind
+
+	// TODO if a kind is invalid, set "ResolvedRefs: false" condition
+	// on the listener with "InvalidRouteKinds" reason.
 
 	for _, routeKind := range listener.AllowedRoutes.Kinds {
 		if routeKind.Group == nil {
-			return nil, fmt.Errorf("Listener.AllowedRoutes.Group not specified")
+			p.Errorf("Listener.AllowedRoutes.Group not specified")
+			continue
 		}
 		if *routeKind.Group != gatewayapi_v1alpha2.GroupName {
-			return nil, fmt.Errorf("Listener.AllowedRoutes.Group %q not supported", *routeKind.Group)
+			p.Errorf("Listener.AllowedRoutes.Group %q not supported", *routeKind.Group)
+			continue
 		}
 		if routeKind.Kind != gatewayapi_v1alpha2.Kind(KindHTTPRoute) && routeKind.Kind != gatewayapi_v1alpha2.Kind(KindTLSRoute) {
-			return nil, fmt.Errorf("Listener.AllowedRoutes.Kind %q not supported", routeKind.Kind)
+			p.Errorf("Listener.AllowedRoutes.Kind %q not supported", routeKind.Kind)
+			continue
+		}
+		if routeKind.Kind == gatewayapi_v1alpha2.Kind(KindTLSRoute) && listener.Protocol != gatewayapi_v1alpha2.TLSProtocolType {
+			p.Errorf("invalid listener protocol %q for Kind: TLSRoute", listener.Protocol)
+			continue
 		}
 
-		routeKinds = append(routeKinds, string(routeKind.Kind))
+		routeKinds = append(routeKinds, routeKind.Kind)
 	}
 
-	return routeKinds, nil
+	return routeKinds
 }
 
 func (p *GatewayAPIProcessor) validGatewayTLS(listener gatewayapi_v1alpha2.Listener) *Secret {
@@ -453,11 +455,7 @@ func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener 
 	return false
 }
 
-func (p *GatewayAPIProcessor) computeGatewayConditions(gateway *gatewayapi_v1alpha2.Gateway, fieldErrs field.ErrorList) {
-
-	gwAccessor, commit := p.dag.StatusCache.GatewayConditionsAccessor(k8s.NamespacedNameOf(gateway), gateway.Generation, &gateway.Status)
-	defer commit()
-
+func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.GatewayStatusUpdate, fieldErrs field.ErrorList) {
 	// Determine the gateway status based on fieldErrs.
 	switch len(fieldErrs) {
 	case 0:
@@ -467,7 +465,7 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gateway *gatewayapi_v1alp
 	}
 }
 
-func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, validGateway bool, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname) {
+func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname, validGateway bool) bool {
 
 	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, &gatewayapi_v1alpha2.TLSRoute{}, route.Status.Parents)
 	defer commit()
@@ -475,7 +473,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 	// If the Gateway is invalid, set status on the route.
 	if !validGateway {
 		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
-		return
+		return false
 	}
 
 	hosts, errs := p.computeHosts(route.Spec.Hostnames, listenerHostname)
@@ -486,9 +484,10 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 	// Check if all the hostnames are invalid.
 	if len(hosts) == 0 {
 		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
-		return
+		return false
 	}
 
+	var programmed bool
 	for _, rule := range route.Spec.Rules {
 		if len(rule.BackendRefs) == 0 {
 			routeAccessor.AddCondition(status.ConditionResolvedRefs, metav1.ConditionFalse, status.ReasonDegraded, "At least one Spec.Rules.BackendRef must be specified.")
@@ -546,6 +545,8 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 			}
 
 			secure.TCPProxy = &proxy
+
+			programmed = true
 		}
 	}
 
@@ -557,16 +558,18 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 	default:
 		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 	}
+
+	return programmed
 }
 
-func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname, validGateway bool) {
+func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRoute, listenerSecret *Secret, listenerHostname *gatewayapi_v1alpha2.Hostname, validGateway bool) bool {
 	routeAccessor, commit := p.dag.StatusCache.RouteConditionsAccessor(k8s.NamespacedNameOf(route), route.Generation, &gatewayapi_v1alpha2.HTTPRoute{}, route.Status.Parents)
 	defer commit()
 
 	// If the Gateway is invalid, set status on the route.
 	if !validGateway {
 		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonInvalidGateway, "Invalid Gateway")
-		return
+		return false
 	}
 
 	hosts, errs := p.computeHosts(route.Spec.Hostnames, listenerHostname)
@@ -577,9 +580,10 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 	// Check if all the hostnames are invalid.
 	if len(hosts) == 0 {
 		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
-		return
+		return false
 	}
 
+	var programmed bool
 	for _, rule := range route.Spec.Rules {
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
@@ -680,6 +684,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 					vhost := p.dag.EnsureVirtualHost(host)
 					vhost.addRoute(route)
 				}
+
+				programmed = true
 			}
 		}
 	}
@@ -692,6 +698,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 	default:
 		routeAccessor.AddCondition(gatewayapi_v1alpha2.ConditionRouteAccepted, metav1.ConditionFalse, status.ReasonErrorsExist, "Errors found, check other Conditions for details.")
 	}
+
+	return programmed
 }
 
 // validateBackendRef verifies that the specified BackendRef is valid.

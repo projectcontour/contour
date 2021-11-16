@@ -59,11 +59,6 @@ type ContourConfigurationSpec struct {
 	// +kubebuilder:default={disablePermitInsecure: false}
 	HTTPProxy HTTPProxyConfig `json:"httpproxy"`
 
-	// LeaderElection contains leader election parameters.
-	// +optional
-	// +kubebuilder:default={leaseDuration: "15s", renewDeadline: "10s", retryPeriod: "2s", disableLeaderElection: false, configmap: {name: "leader-elect", namespace: "projectcontour"}}
-	LeaderElection LeaderElectionConfig `json:"leaderElection"`
-
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
 	// +optional
@@ -435,24 +430,6 @@ type HTTPProxyConfig struct {
 	// use as fallback when a non-SNI request is received.
 	// +optional
 	FallbackCertificate *NamespacedName `json:"fallbackCertificate,omitempty"`
-}
-
-// LeaderElectionConfig holds the config bits for leader election
-// inside the  config file.
-type LeaderElectionConfig struct {
-	// +optional
-	LeaseDuration string `json:"leaseDuration,omitempty"`
-
-	// +optional
-	RenewDeadline string `json:"renewDeadline,omitempty"`
-
-	// +optional
-	RetryPeriod string `json:"retryPeriod,omitempty"`
-
-	// +optional
-	Configmap NamespacedName `json:"configmap,omitempty"`
-
-	DisableLeaderElection bool `json:"disableLeaderElection"`
 }
 
 // NetworkParameters hold various configurable network values.

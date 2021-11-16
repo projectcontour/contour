@@ -16,13 +16,10 @@ package v3
 
 import (
 	"testing"
-	"time"
 
 	envoy_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoy_tcp_proxy_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -108,6 +105,251 @@ func TestHTTPProxy_RouteWithAServiceWeight(t *testing.T) {
 			},
 		),
 	), nil)
+}
+
+func TestHTTPProxy_TCPProxyWithAServiceWeight(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	rh.OnAdd(fixture.NewService("kuard-1").WithPorts(v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8443)}))
+	rh.OnAdd(fixture.NewService("kuard-2").WithPorts(v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8443)}))
+	rh.OnAdd(fixture.NewService("kuard-3").WithPorts(v1.ServicePort{Port: 443, TargetPort: intstr.FromInt(8443)}))
+
+	// proxy1 has a TCPProxy with a single service.
+	proxy1 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "tcpproxy.test.com",
+				TLS: &contour_api_v1.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{
+					{
+						Name:   "kuard-1",
+						Port:   443,
+						Weight: 70, // ignored
+					},
+				},
+			},
+		},
+	}
+
+	rh.OnAdd(proxy1)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					Filters: envoy_v3.Filters(
+						tcpproxy("ingress_https", "default/kuard-1/443/da39a3ee5e"),
+					),
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"tcpproxy.test.com"},
+					},
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	// check that ingress_http is empty
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+
+	// proxy2 has a TCPProxy with multiple services,
+	// each with an explicit weight.
+	proxy2 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "tcpproxy.test.com",
+				TLS: &contour_api_v1.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{
+					{Name: "kuard-1", Port: 443, Weight: 7},
+					{Name: "kuard-2", Port: 443, Weight: 77},
+				},
+			},
+		},
+	}
+	rh.OnUpdate(proxy1, proxy2)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					Filters: envoy_v3.Filters(
+						tcpproxyWeighted(
+							"ingress_https",
+							clusterWeight{name: "default/kuard-1/443/da39a3ee5e", weight: 7},
+							clusterWeight{name: "default/kuard-2/443/da39a3ee5e", weight: 77},
+						),
+					),
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"tcpproxy.test.com"},
+					},
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	// check that ingress_http is empty
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+
+	// proxy3 has a TCPProxy with multiple services,
+	// each with no weight specified.
+	proxy3 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "tcpproxy.test.com",
+				TLS: &contour_api_v1.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{
+					{Name: "kuard-1", Port: 443},
+					{Name: "kuard-2", Port: 443},
+				},
+			},
+		},
+	}
+	rh.OnUpdate(proxy2, proxy3)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					Filters: envoy_v3.Filters(
+						tcpproxyWeighted(
+							"ingress_https",
+							clusterWeight{name: "default/kuard-1/443/da39a3ee5e", weight: 1},
+							clusterWeight{name: "default/kuard-2/443/da39a3ee5e", weight: 1},
+						),
+					),
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"tcpproxy.test.com"},
+					},
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	// check that ingress_http is empty
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
+
+	// proxy4 has a TCPProxy with multiple services,
+	// some with weights specified and some without.
+	proxy4 := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: "default",
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "tcpproxy.test.com",
+				TLS: &contour_api_v1.TLS{
+					Passthrough: true,
+				},
+			},
+			TCPProxy: &contour_api_v1.TCPProxy{
+				Services: []contour_api_v1.Service{
+					{Name: "kuard-1", Port: 443, Weight: 77},
+					{Name: "kuard-2", Port: 443},
+					{Name: "kuard-3", Port: 443, Weight: 7},
+				},
+			},
+		},
+	}
+	rh.OnUpdate(proxy3, proxy4)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				FilterChains: []*envoy_listener_v3.FilterChain{{
+					Filters: envoy_v3.Filters(
+						tcpproxyWeighted(
+							"ingress_https",
+							clusterWeight{name: "default/kuard-1/443/da39a3ee5e", weight: 77},
+							clusterWeight{name: "default/kuard-3/443/da39a3ee5e", weight: 7},
+						),
+					),
+					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+						ServerNames: []string{"tcpproxy.test.com"},
+					},
+				}},
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	// check that ingress_http is empty
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
+		),
+		TypeUrl: routeType,
+	})
 }
 
 func TestHTTPRoute_RouteWithAServiceWeight(t *testing.T) {
@@ -375,24 +617,11 @@ func TestTLSRoute_RouteWithAServiceWeight(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: []*envoy_listener_v3.FilterChain{{
 					Filters: envoy_v3.Filters(
-						&envoy_listener_v3.Filter{
-							Name: wellknown.TCPProxy,
-							ConfigType: &envoy_listener_v3.Filter_TypedConfig{
-								TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
-									StatPrefix: "ingress_https",
-									ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_WeightedClusters{
-										WeightedClusters: &envoy_tcp_proxy_v3.TcpProxy_WeightedCluster{
-											Clusters: []*envoy_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
-												{Name: "default/svc1/443/da39a3ee5e", Weight: 1},
-												{Name: "default/svc2/443/da39a3ee5e", Weight: 7},
-											},
-										},
-									},
-									AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil),
-									IdleTimeout: protobuf.Duration(9001 * time.Second),
-								}),
-							},
-						},
+						tcpproxyWeighted(
+							"ingress_https",
+							clusterWeight{name: "default/svc1/443/da39a3ee5e", weight: 1},
+							clusterWeight{name: "default/svc2/443/da39a3ee5e", weight: 7},
+						),
 					),
 					FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
 						ServerNames: []string{"test.projectcontour.io"},

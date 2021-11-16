@@ -360,7 +360,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	// by the listener processor.
 	for _, listener := range root.Listeners {
 		if len(listener.VirtualHosts) > 0 {
-			if httpListener, ok := cfg.HTTPListeners[listener.VirtualHosts[0].ListenerName]; ok {
+			if httpListener, ok := cfg.HTTPListeners[listener.Name]; ok {
 				// Add a listener if there are vhosts bound to http.
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
@@ -417,7 +417,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					DefaultFilters().
 					AddFilter(authFilter).
 					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
-					MetricsPrefix(vh.ListenerName).
+					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
 					RequestTimeout(cfg.Timeouts.Request).
 					ConnectionIdleTimeout(cfg.Timeouts.ConnectionIdle).
@@ -435,7 +435,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				alpnProtos = envoy_v3.ProtoNamesForVersions(cfg.DefaultHTTPVersions...)
 			} else {
 				filters = envoy_v3.Filters(
-					envoy_v3.TCPProxy(vh.ListenerName,
+					envoy_v3.TCPProxy(listener.Name,
 						vh.TCPProxy,
 						cfg.newSecureAccessLog()),
 				)
@@ -460,14 +460,14 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					alpnProtos...)
 			}
 
-			listeners[vh.ListenerName].FilterChains = append(listeners[vh.ListenerName].FilterChains, envoy_v3.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
+			listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
 
 			// If this VirtualHost has enabled the fallback certificate then set a default
 			// FilterChain which will allow routes with this vhost to accept non-SNI TLS requests.
 			// Note that we don't add the misdirected requests filter on this chain because at this
 			// point we don't actually know the full set of server names that will be bound to the
 			// filter chain through the ENVOY_FALLBACK_ROUTECONFIG route configuration.
-			if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(listeners[vh.ListenerName].FilterChains) {
+			if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(listeners[listener.Name].FilterChains) {
 				// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
 				// the value defined in the Contour Configuration file if defined.
 				downstreamTLS = envoy_v3.DownstreamTLSContext(
@@ -481,7 +481,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
 					DefaultFilters().
 					RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-					MetricsPrefix(vh.ListenerName).
+					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
 					RequestTimeout(cfg.Timeouts.Request).
 					ConnectionIdleTimeout(cfg.Timeouts.ConnectionIdle).
@@ -497,7 +497,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// Default filter chain
 				filters = envoy_v3.Filters(cm)
 
-				listeners[vh.ListenerName].FilterChains = append(listeners[vh.ListenerName].FilterChains, envoy_v3.FilterChainTLSFallback(downstreamTLS, filters))
+				listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChainTLSFallback(downstreamTLS, filters))
 			}
 		}
 	}

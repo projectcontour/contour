@@ -610,6 +610,8 @@ type Parameters struct {
 	EnableExternalNameService bool `yaml:"enableExternalNameService,omitempty"`
 
 	// LeaderElection contains leader election parameters.
+	// Note: This method of configuring leader election is deprecated,
+	// please use command line flags instead.
 	LeaderElection LeaderElectionParameters `yaml:"leaderelection,omitempty"`
 
 	// Timeouts holds various configurable timeouts that can
@@ -714,11 +716,7 @@ func (p *Parameters) Validate() error {
 		}
 	}
 
-	if err := p.Listener.Validate(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.Listener.Validate()
 }
 
 // Defaults returns the default set of parameters.
