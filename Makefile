@@ -269,7 +269,7 @@ site-check: ## Test the site's links
 # Tools for testing and troubleshooting
 
 .PHONY: setup-kind-cluster
-setup-kind-cluster: ## Make a kind cluster with standard ports forwarded
+setup-kind-cluster: ## Make a kind cluster for testing
 	./test/scripts/make-kind-cluster.sh
 
 .PHONY: install-contour-working

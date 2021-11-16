@@ -216,6 +216,7 @@ jobs:
       - name: upgrade tests
         env:
           NODEIMAGE: ${{ matrix.node_image }}
+          MULTINODE_CLUSTER: "true"
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make upgrade

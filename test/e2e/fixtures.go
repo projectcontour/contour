@@ -28,6 +28,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -48,12 +49,18 @@ type Echo struct {
 	t      ginkgo.GinkgoTInterface
 }
 
-// Deploy creates the ingress-conformance-echo fixture, specifically
+// Deploy runs DeployN with a default of 1 replica.
+func (e *Echo) Deploy(ns, name string) func() {
+	return e.DeployN(ns, name, 1)
+}
+
+// DeployN creates the ingress-conformance-echo fixture, specifically
 // the deployment and service, in the given namespace and with the given name, or
-// fails the test if it encounters an error. Namespace is defaulted to "default"
+// fails the test if it encounters an error. Number of replicas of the deployment
+// can be configured. Namespace is defaulted to "default"
 // and name is defaulted to "ingress-conformance-echo" if not provided. Returns
 // a cleanup function.
-func (e *Echo) Deploy(ns, name string) func() {
+func (e *Echo) DeployN(ns, name string, replicas int32) func() {
 	valOrDefault := func(val, defaultVal string) string {
 		if val != "" {
 			return val
@@ -70,6 +77,7 @@ func (e *Echo) Deploy(ns, name string) func() {
 			Name:      name,
 		},
 		Spec: appsv1.DeploymentSpec{
+			Replicas: pointer.Int32(replicas),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 			},
@@ -78,6 +86,17 @@ func (e *Echo) Deploy(ns, name string) func() {
 					Labels: map[string]string{"app.kubernetes.io/name": name},
 				},
 				Spec: corev1.PodSpec{
+					TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+						{
+							// Attempt to spread pods across different nodes if possible.
+							TopologyKey:       "kubernetes.io/hostname",
+							MaxSkew:           1,
+							WhenUnsatisfiable: corev1.ScheduleAnyway,
+							LabelSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{"app.kubernetes.io/name": name},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:  "conformance-echo",
