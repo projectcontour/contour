@@ -84,12 +84,11 @@ done
 
 if [[ "${MULTINODE_CLUSTER}" == "true" ]]; then
     # Install metallb.
-    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/master/manifests/namespace.yaml
+    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
     if ! kubectl get secret -n metallb-system memberlist; then
         ${KUBECTL} create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
     fi
-    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/master/manifests/metallb.yaml
-    ${KUBECTL} apply -f https://kind.sigs.k8s.io/examples/loadbalancer/metallb-configmap.yaml
+    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
     # Apply config with addresses based on docker network IPAM
     subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":") | not)')
     # Assume default kind network subnet prefix of 16, and choose addresses in that range.
