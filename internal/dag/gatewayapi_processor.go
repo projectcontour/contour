@@ -328,7 +328,7 @@ func (p *GatewayAPIProcessor) getListenerRouteKinds(listener gatewayapi_v1alpha2
 func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1alpha2.GatewayTLSConfig, listenerName string, gwAccessor *status.GatewayStatusUpdate) *Secret {
 	if len(listenerTLS.CertificateRefs) != 1 {
 		gwAccessor.AddListenerCondition(
-			string(listenerName),
+			listenerName,
 			gatewayapi_v1alpha2.ListenerConditionReady,
 			metav1.ConditionFalse,
 			gatewayapi_v1alpha2.ListenerReasonInvalid,
@@ -343,7 +343,7 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1alpha2.Ga
 	// ref: https://github.com/kubernetes-sigs/gateway-api/pull/562
 	if !isSecretRef(*certificateRef) {
 		gwAccessor.AddListenerCondition(
-			string(listenerName),
+			listenerName,
 			gatewayapi_v1alpha2.ListenerConditionResolvedRefs,
 			metav1.ConditionFalse,
 			gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef,
@@ -355,7 +355,7 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1alpha2.Ga
 	listenerSecret, err := p.source.LookupSecret(types.NamespacedName{Name: string(certificateRef.Name), Namespace: p.source.gateway.Namespace}, validSecret)
 	if err != nil {
 		gwAccessor.AddListenerCondition(
-			string(listenerName),
+			listenerName,
 			gatewayapi_v1alpha2.ListenerConditionResolvedRefs,
 			metav1.ConditionFalse,
 			gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef,
