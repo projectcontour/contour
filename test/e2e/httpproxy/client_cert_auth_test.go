@@ -395,8 +395,8 @@ func testClientCertAuth(namespace string) {
 		f.CreateHTTPProxyAndWaitFor(authSkipVerifyWithCAProxy, httpProxyValid)
 
 		// get the valid & invalid client certs
-		validClientCert := f.Certs.GetTLSCertificate(namespace, clientCert.Spec.SecretName)
-		invalidClientCert := f.Certs.GetTLSCertificate(namespace, clientCertInvalid.Spec.SecretName)
+		validClientCert, _ := f.Certs.GetTLSCertificate(namespace, clientCert.Spec.SecretName)
+		invalidClientCert, _ := f.Certs.GetTLSCertificate(namespace, clientCertInvalid.Spec.SecretName)
 
 		cases := map[string]struct {
 			host       string

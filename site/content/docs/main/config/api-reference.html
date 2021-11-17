@@ -3546,8 +3546,7 @@ HealthConfig
 </td>
 <td>
 <em>(Optional)</em>
-<p>Health contains parameters to configure endpoints which Contour
-exposes to respond to Kubernetes health checks.</p>
+<p>Health defines the endpoints Contour uses to serve health checks.</p>
 </td>
 </tr>
 <tr>
@@ -3654,7 +3653,7 @@ MetricsConfig
 </td>
 <td>
 <em>(Optional)</em>
-<p>Metrics defines the endpoints Contour uses to serve to metrics.</p>
+<p>Metrics defines the endpoint Contour uses to serve metrics.</p>
 </td>
 </tr>
 </table>
@@ -4110,8 +4109,7 @@ HealthConfig
 </td>
 <td>
 <em>(Optional)</em>
-<p>Health contains parameters to configure endpoints which Contour
-exposes to respond to Kubernetes health checks.</p>
+<p>Health defines the endpoints Contour uses to serve health checks.</p>
 </td>
 </tr>
 <tr>
@@ -4218,7 +4216,7 @@ MetricsConfig
 </td>
 <td>
 <em>(Optional)</em>
-<p>Metrics defines the endpoints Contour uses to serve to metrics.</p>
+<p>Metrics defines the endpoint Contour uses to serve metrics.</p>
 </td>
 </tr>
 </tbody>
@@ -4494,6 +4492,21 @@ EnvoyListener
 </tr>
 <tr>
 <td style="white-space:nowrap">
+<code>health</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.HealthConfig">
+HealthConfig
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Health defines the endpoint Envoy uses to serve health checks.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
 <code>metrics</code>
 <br>
 <em>
@@ -4503,7 +4516,7 @@ MetricsConfig
 </em>
 </td>
 <td>
-<p>Metrics defines the endpoints Envoy use to serve to metrics.</p>
+<p>Metrics defines the endpoint Envoy uses to serve metrics.</p>
 </td>
 </tr>
 <tr>
@@ -5223,10 +5236,11 @@ map[string]string
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
+<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>, 
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
 </p>
 <p>
-<p>HealthConfig defines the endpoints Contour will serve to enable health checks.</p>
+<p>HealthConfig defines the endpoints to enable health checks.</p>
 </p>
 <table class="table table-striped table-borderless" style="border:none">
 <thead class="border-bottom">
@@ -5245,7 +5259,7 @@ string
 </em>
 </td>
 <td>
-<p>Defines the Contour health address interface.</p>
+<p>Defines the health address interface.</p>
 </td>
 </tr>
 <tr>
@@ -5257,7 +5271,7 @@ int
 </em>
 </td>
 <td>
-<p>Defines the Contour health port.</p>
+<p>Defines the health port.</p>
 </td>
 </tr>
 </tbody>
@@ -5356,6 +5370,80 @@ int
 </td>
 <td>
 <p>Defines the metrics port.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>tls</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.MetricsTLS">
+MetricsTLS
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>TLS holds TLS file config details.
+Metrics and health endpoints cannot have same port number when metrics is served over HTTPS.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.MetricsTLS">MetricsTLS
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.MetricsConfig">MetricsConfig</a>)
+</p>
+<p>
+<p>TLS holds TLS file config details.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>caFile</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>CA filename.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>certFile</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Client certificate filename.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>keyFile</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Client key filename.</p>
 </td>
 </tr>
 </tbody>

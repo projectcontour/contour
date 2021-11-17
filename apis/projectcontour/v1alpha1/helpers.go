@@ -13,7 +13,11 @@
 
 package v1alpha1
 
-import contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+import (
+	"fmt"
+
+	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+)
 
 // GetConditionFor returns the a pointer to the condition for a given type,
 // or nil if there are none currently present.
@@ -24,5 +28,34 @@ func (status *ExtensionServiceStatus) GetConditionFor(condType string) *contour_
 		}
 	}
 
+	return nil
+}
+
+// Validate configuration that is not already covered by CRD validation.
+func (c *ContourConfigurationSpec) Validate() error {
+	if err := endpointsInConfict(c.Health, c.Metrics); err != nil {
+		return fmt.Errorf("invalid contour configuration: %v", err)
+	}
+
+	if err := c.Envoy.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Validate configuration that cannot be handled with CRD validation.
+func (e *EnvoyConfig) Validate() error {
+	if err := endpointsInConfict(e.Health, e.Metrics); err != nil {
+		return fmt.Errorf("invalid envoy configuration: %v", err)
+	}
+	return nil
+}
+
+// endpointsInConfict returns error if different protocol are configured to use single port.
+func endpointsInConfict(health HealthConfig, metrics MetricsConfig) error {
+	if metrics.TLS != nil && health.Address == metrics.Address && health.Port == metrics.Port {
+		return fmt.Errorf("cannot use single port for health over HTTP and metrics over HTTPS")
+	}
 	return nil
 }

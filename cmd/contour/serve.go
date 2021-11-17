@@ -35,6 +35,7 @@ import (
 	"github.com/projectcontour/contour/internal/controller"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/debug"
+	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/health"
 	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -254,6 +255,11 @@ func (s *Server) doServe() error {
 		contourConfiguration = s.ctx.convertToContourConfigurationSpec()
 	}
 
+	err := contourConfiguration.Validate()
+	if err != nil {
+		return err
+	}
+
 	// Register the manager with the workgroup.
 	s.group.AddContext(func(taskCtx context.Context) error {
 		return s.mgr.Start(signals.SetupSignalHandler())
@@ -339,8 +345,8 @@ func (s *Server) doServe() error {
 	endpointHandler := xdscache_v3.NewEndpointsTranslator(s.log.WithField("context", "endpointstranslator"))
 
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(listenerConfig, contourConfiguration.Envoy.Metrics.Address, contourConfiguration.Envoy.Metrics.Port, contourConfiguration.Envoy.Network.EnvoyAdminPort),
-		&xdscache_v3.SecretCache{},
+		xdscache_v3.NewListenerCache(contourConfiguration.Envoy, listenerConfig),
+		xdscache_v3.NewSecretsCache(envoy_v3.StatsSecrets(contourConfiguration.Envoy.Metrics.TLS)),
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},
 		endpointHandler,
@@ -642,6 +648,7 @@ func (s *Server) setupXDSServer(mgr manager.Manager, registry *prometheus.Regist
 	})
 }
 
+// setupMetrics creates metrics service for Contour.
 func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, healthConfig contour_api_v1alpha1.HealthConfig,
 	registry *prometheus.Registry) {
 
@@ -654,6 +661,12 @@ func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, 
 	}
 
 	metricsvc.ServeMux.Handle("/metrics", metrics.Handler(registry))
+
+	if metricsConfig.TLS != nil {
+		metricsvc.Cert = metricsConfig.TLS.CertFile
+		metricsvc.Key = metricsConfig.TLS.KeyFile
+		metricsvc.CABundle = metricsConfig.TLS.CAFile
+	}
 
 	if healthConfig.Address == metricsConfig.Address && healthConfig.Port == metricsConfig.Port {
 		h := health.Handler(s.coreClient)

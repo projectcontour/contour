@@ -83,6 +83,10 @@ type Framework struct {
 func NewFramework(inClusterTestSuite bool) *Framework {
 	t := ginkgo.GinkgoT()
 
+	// Deferring GinkgoRecover() provides better error messages in case of panic
+	// e.g. when CONTOUR_E2E_LOCAL_HOST environment variable is not set.
+	defer ginkgo.GinkgoRecover()
+
 	scheme := runtime.NewScheme()
 	require.NoError(t, kubescheme.AddToScheme(scheme))
 	require.NoError(t, contourv1.AddToScheme(scheme))
