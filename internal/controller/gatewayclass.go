@@ -21,7 +21,6 @@ import (
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,12 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
-
-var gatewayClassGVR = schema.GroupVersionResource{
-	Group:    gatewayapi_v1alpha2.GroupVersion.Group,
-	Version:  gatewayapi_v1alpha2.GroupVersion.Version,
-	Resource: "gatewayclasses",
-}
 
 type gatewayClassReconciler struct {
 	client        client.Client
@@ -174,8 +167,8 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 		if r.statusUpdater != nil {
 			r.statusUpdater.Send(k8s.StatusUpdate{
 				NamespacedName: types.NamespacedName{Name: gc.Name},
-				Resource:       gatewayClassGVR,
-				Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+				Resource:       &gatewayapi_v1alpha2.GatewayClass{},
+				Mutator: k8s.StatusMutatorFunc(func(obj client.Object) client.Object {
 					gc, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
 					if !ok {
 						panic(fmt.Sprintf("unsupported object type %T", obj))
@@ -198,8 +191,8 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, request reconcil
 	if r.statusUpdater != nil {
 		r.statusUpdater.Send(k8s.StatusUpdate{
 			NamespacedName: types.NamespacedName{Name: controlledClasses.acceptedClass().Name},
-			Resource:       gatewayClassGVR,
-			Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+			Resource:       &gatewayapi_v1alpha2.GatewayClass{},
+			Mutator: k8s.StatusMutatorFunc(func(obj client.Object) client.Object {
 				gc, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
 				if !ok {
 					panic(fmt.Sprintf("unsupported object type %T", obj))

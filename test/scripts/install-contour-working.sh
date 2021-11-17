@@ -112,8 +112,6 @@ data:
   contour.yaml: |
     gateway:
       controllerName: projectcontour.io/ingress-controller
-      name: contour
-      namespace: projectcontour
     rateLimitService:
       extensionService: projectcontour/ratelimit
       domain: contour

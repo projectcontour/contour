@@ -3598,21 +3598,6 @@ HTTPProxyConfig
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>leaderElection</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.LeaderElectionConfig">
-LeaderElectionConfig
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>LeaderElection contains leader election parameters.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
 <code>enableExternalNameService</code>
 <br>
 <em>
@@ -4172,21 +4157,6 @@ HTTPProxyConfig
 <td>
 <em>(Optional)</em>
 <p>HTTPProxy defines parameters on HTTPProxy.</p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>leaderElection</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.LeaderElectionConfig">
-LeaderElectionConfig
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>LeaderElection contains leader election parameters.</p>
 </td>
 </tr>
 <tr>
@@ -5351,87 +5321,6 @@ string
 </tr>
 </tbody>
 </table>
-<h3 id="projectcontour.io/v1alpha1.LeaderElectionConfig">LeaderElectionConfig
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.ContourConfigurationSpec">ContourConfigurationSpec</a>)
-</p>
-<p>
-<p>LeaderElectionConfig holds the config bits for leader election
-inside the  config file.</p>
-</p>
-<table class="table table-striped table-borderless" style="border:none">
-<thead class="border-bottom">
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody class="border-top">
-<tr>
-<td style="white-space:nowrap">
-<code>leaseDuration</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>renewDeadline</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>retryPeriod</code>
-<br>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>configmap</code>
-<br>
-<em>
-<a href="#projectcontour.io/v1alpha1.NamespacedName">
-NamespacedName
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>disableLeaderElection</code>
-<br>
-<em>
-bool
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
 <h3 id="projectcontour.io/v1alpha1.LogLevel">LogLevel
 (<code>string</code> alias)</h3>
 <p>
@@ -5565,7 +5454,6 @@ string
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>, 
 <a href="#projectcontour.io/v1alpha1.HTTPProxyConfig">HTTPProxyConfig</a>, 
-<a href="#projectcontour.io/v1alpha1.LeaderElectionConfig">LeaderElectionConfig</a>, 
 <a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>)
 </p>
 <p>

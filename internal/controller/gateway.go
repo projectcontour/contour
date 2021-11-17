@@ -21,7 +21,6 @@ import (
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,12 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
-
-var gatewayGVR = schema.GroupVersionResource{
-	Group:    gatewayapi_v1alpha2.GroupVersion.Group,
-	Version:  gatewayapi_v1alpha2.GroupVersion.Version,
-	Resource: "gateways",
-}
 
 type gatewayReconciler struct {
 	ctx           context.Context
@@ -155,7 +148,23 @@ func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
 		"name":      obj.GetName(),
 	})
 
-	return gatewayHasMatchingController(obj, r.gatewayClassControllerName, r.client, log)
+	gw, ok := obj.(*gatewayapi_v1alpha2.Gateway)
+	if !ok {
+		log.Debugf("unexpected object type %T, bypassing reconciliation.", obj)
+		return false
+	}
+
+	gc := &gatewayapi_v1alpha2.GatewayClass{}
+	if err := r.client.Get(context.Background(), types.NamespacedName{Name: string(gw.Spec.GatewayClassName)}, gc); err != nil {
+		log.WithError(err).Errorf("failed to get gatewayclass %s", gw.Spec.GatewayClassName)
+		return false
+	}
+	if gc.Spec.ControllerName != r.gatewayClassControllerName {
+		log.Debugf("gateway's class controller is not %s; bypassing reconciliation", r.gatewayClassControllerName)
+		return false
+	}
+
+	return true
 }
 
 func (r *gatewayReconciler) gatewayClassHasMatchingController(obj client.Object) bool {
@@ -255,8 +264,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		if r.statusUpdater != nil {
 			r.statusUpdater.Send(k8s.StatusUpdate{
 				NamespacedName: k8s.NamespacedNameOf(gw),
-				Resource:       gatewayGVR,
-				Mutator: k8s.StatusMutatorFunc(func(obj interface{}) interface{} {
+				Resource:       &gatewayapi_v1alpha2.Gateway{},
+				Mutator: k8s.StatusMutatorFunc(func(obj client.Object) client.Object {
 					gw, ok := obj.(*gatewayapi_v1alpha2.Gateway)
 					if !ok {
 						panic(fmt.Sprintf("unsupported object type %T", obj))

@@ -544,6 +544,17 @@ type ListenerParameters struct {
 	ConnectionBalancer string `yaml:"connection-balancer"`
 }
 
+func (p *ListenerParameters) Validate() error {
+	if p == nil {
+		return nil
+	}
+
+	if p.ConnectionBalancer != "" && p.ConnectionBalancer != "exact" {
+		return fmt.Errorf("invalid listener connection balancer value %q, only 'exact' connection balancing is supported for now", p.ConnectionBalancer)
+	}
+	return nil
+}
+
 // Parameters contains the configuration file parameters for the
 // Contour ingress controller.
 type Parameters struct {
@@ -599,6 +610,8 @@ type Parameters struct {
 	EnableExternalNameService bool `yaml:"enableExternalNameService,omitempty"`
 
 	// LeaderElection contains leader election parameters.
+	// Note: This method of configuring leader election is deprecated,
+	// please use command line flags instead.
 	LeaderElection LeaderElectionParameters `yaml:"leaderelection,omitempty"`
 
 	// Timeouts holds various configurable timeouts that can
@@ -765,7 +778,11 @@ func (p *Parameters) Validate() error {
 		}
 	}
 
-	return p.Metrics.Validate()
+	if err := p.Metrics.Validate(); err != nil {
+		return err
+	}
+
+	return p.Listener.Validate()
 }
 
 // Defaults returns the default set of parameters.

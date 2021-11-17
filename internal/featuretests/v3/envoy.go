@@ -435,6 +435,35 @@ func tcpproxy(statPrefix, cluster string) *envoy_listener_v3.Filter {
 	}
 }
 
+type clusterWeight struct {
+	name   string
+	weight uint32
+}
+
+func tcpproxyWeighted(statPrefix string, clusters ...clusterWeight) *envoy_listener_v3.Filter {
+	weightedClusters := &envoy_tcp_proxy_v3.TcpProxy_WeightedCluster{}
+	for _, clusterWeight := range clusters {
+		weightedClusters.Clusters = append(weightedClusters.Clusters, &envoy_tcp_proxy_v3.TcpProxy_WeightedCluster_ClusterWeight{
+			Name:   clusterWeight.name,
+			Weight: clusterWeight.weight,
+		})
+	}
+
+	return &envoy_listener_v3.Filter{
+		Name: wellknown.TCPProxy,
+		ConfigType: &envoy_listener_v3.Filter_TypedConfig{
+			TypedConfig: protobuf.MustMarshalAny(&envoy_tcp_proxy_v3.TcpProxy{
+				StatPrefix: statPrefix,
+				ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_WeightedClusters{
+					WeightedClusters: weightedClusters,
+				},
+				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil),
+				IdleTimeout: protobuf.Duration(9001 * time.Second),
+			}),
+		},
+	}
+}
+
 func statsListener() *envoy_listener_v3.Listener {
 	// Single listener with metrics and health endpoints.
 	listeners := envoy_v3.StatsListeners(

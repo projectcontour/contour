@@ -343,15 +343,29 @@ func (d *Deployment) EnsureEnvoyDaemonSet() error {
 	return d.ensureResource(d.EnvoyDaemonSet, new(apps_v1.DaemonSet))
 }
 
+// Wait for Envoy daemonset update to go out of date due to the
+// update propagating. Possibly needed before calling WaitForEnvoyDaemonSetUpdated
+// to ensure that does not pass without waiting for update to propagate.
+func (d *Deployment) WaitForEnvoyDaemonSetOutOfDate() error {
+	daemonSetUpdated := func() (bool, error) {
+		tempDS := new(apps_v1.DaemonSet)
+		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDaemonSet), tempDS); err != nil {
+			return false, err
+		}
+		return tempDS.Status.UpdatedNumberScheduled < tempDS.Status.DesiredNumberScheduled, nil
+	}
+	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
+}
+
 func (d *Deployment) WaitForEnvoyDaemonSetUpdated() error {
 	daemonSetUpdated := func() (bool, error) {
 		tempDS := new(apps_v1.DaemonSet)
 		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDaemonSet), tempDS); err != nil {
 			return false, err
 		}
-		// This might work for now while we have only one worker node, but
-		// if we expand to more, we will have to rethink this.
-		return tempDS.Status.NumberReady > 0, nil
+		return tempDS.Status.NumberAvailable > 0 &&
+			tempDS.Status.NumberAvailable == tempDS.Status.DesiredNumberScheduled &&
+			tempDS.Status.UpdatedNumberScheduled == tempDS.Status.DesiredNumberScheduled, nil
 	}
 	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
 }
@@ -590,11 +604,6 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 			},
 		}
 
-		// Disable leader election.
-		contourConfiguration.Spec.LeaderElection = contour_api_v1alpha1.LeaderElectionConfig{
-			DisableLeaderElection: true,
-		}
-
 		if err := d.client.Create(context.TODO(), contourConfiguration); err != nil {
 			return nil, "", fmt.Errorf("could not create ContourConfiguration: %v", err)
 		}
@@ -603,6 +612,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 			"serve",
 			"--kubeconfig=" + d.kubeConfig,
 			"--contour-config-name=" + contourConfiguration.Name,
+			"--disable-leader-election",
 		}, additionalArgs...)
 
 		configReferenceName = contourConfiguration.Name

@@ -433,6 +433,11 @@ default-http-versions:
 - http/0.9
 `)
 
+	check(`
+listener:
+  connection-balancer: notexact
+`)
+
 }
 
 func TestConfigFileDefaultOverrideImport(t *testing.T) {
@@ -641,4 +646,21 @@ func TestMetricsParametersValidation(t *testing.T) {
 	}
 	assert.Error(t, tlsCAWithoutServerCert.Validate())
 
+}
+
+func TestListenerValidation(t *testing.T) {
+	var l *ListenerParameters
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		ConnectionBalancer: "",
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		ConnectionBalancer: "exact",
+	}
+	require.NoError(t, l.Validate())
+	l = &ListenerParameters{
+		ConnectionBalancer: "invalid",
+	}
+	require.Error(t, l.Validate())
 }

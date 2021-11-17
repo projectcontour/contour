@@ -731,42 +731,6 @@ spec:
                     description: Address to set in Ingress object status.
                     type: string
                 type: object
-              leaderElection:
-                default:
-                  configmap:
-                    name: leader-elect
-                    namespace: projectcontour
-                  disableLeaderElection: false
-                  leaseDuration: 15s
-                  renewDeadline: 10s
-                  retryPeriod: 2s
-                description: LeaderElection contains leader election parameters.
-                properties:
-                  configmap:
-                    description: NamespacedName defines the namespace/name of the
-                      Kubernetes resource referred from the config file. Used for
-                      Contour config YAML file parsing, otherwise we could use K8s
-                      types.NamespacedName.
-                    properties:
-                      name:
-                        type: string
-                      namespace:
-                        type: string
-                    required:
-                    - name
-                    - namespace
-                    type: object
-                  disableLeaderElection:
-                    type: boolean
-                  leaseDuration:
-                    type: string
-                  renewDeadline:
-                    type: string
-                  retryPeriod:
-                    type: string
-                required:
-                - disableLeaderElection
-                type: object
               metrics:
                 default:
                   address: 0.0.0.0
@@ -1696,42 +1660,6 @@ spec:
                       statusAddress:
                         description: Address to set in Ingress object status.
                         type: string
-                    type: object
-                  leaderElection:
-                    default:
-                      configmap:
-                        name: leader-elect
-                        namespace: projectcontour
-                      disableLeaderElection: false
-                      leaseDuration: 15s
-                      renewDeadline: 10s
-                      retryPeriod: 2s
-                    description: LeaderElection contains leader election parameters.
-                    properties:
-                      configmap:
-                        description: NamespacedName defines the namespace/name of
-                          the Kubernetes resource referred from the config file. Used
-                          for Contour config YAML file parsing, otherwise we could
-                          use K8s types.NamespacedName.
-                        properties:
-                          name:
-                            type: string
-                          namespace:
-                            type: string
-                        required:
-                        - name
-                        - namespace
-                        type: object
-                      disableLeaderElection:
-                        type: boolean
-                      leaseDuration:
-                        type: string
-                      renewDeadline:
-                        type: string
-                      retryPeriod:
-                        type: string
-                    required:
-                    - disableLeaderElection
                     type: object
                   metrics:
                     default:
@@ -4920,29 +4848,8 @@ rules:
   - ""
   resources:
   - endpoints
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - namespaces
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - secrets
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - services
   verbs:
   - get
@@ -4955,9 +4862,7 @@ rules:
   - gateways
   - httproutes
   - referencepolicies
-  - tcproutes
   - tlsroutes
-  - udproutes
   verbs:
   - get
   - list
@@ -4968,9 +4873,7 @@ rules:
   - gatewayclasses/status
   - gateways/status
   - httproutes/status
-  - tcproutes/status
   - tlsroutes/status
-  - udproutes/status
   verbs:
   - update
 - apiGroups:
@@ -5001,37 +4904,7 @@ rules:
   - projectcontour.io
   resources:
   - contourconfigurations
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - projectcontour.io
-  resources:
-  - contourconfigurations/status
-  verbs:
-  - create
-  - get
-  - update
-- apiGroups:
-  - projectcontour.io
-  resources:
   - extensionservices
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - projectcontour.io
-  resources:
-  - extensionservices/status
-  verbs:
-  - create
-  - get
-  - update
-- apiGroups:
-  - projectcontour.io
-  resources:
   - httpproxies
   - tlscertificatedelegations
   verbs:
@@ -5041,6 +4914,8 @@ rules:
 - apiGroups:
   - projectcontour.io
   resources:
+  - contourconfigurations/status
+  - extensionservices/status
   - httpproxies/status
   verbs:
   - create

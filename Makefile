@@ -269,7 +269,7 @@ site-check: ## Test the site's links
 # Tools for testing and troubleshooting
 
 .PHONY: setup-kind-cluster
-setup-kind-cluster: ## Make a kind cluster with standard ports forwarded
+setup-kind-cluster: ## Make a kind cluster for testing
 	./test/scripts/make-kind-cluster.sh
 
 .PHONY: install-contour-working
@@ -286,7 +286,7 @@ e2e: | setup-kind-cluster run-e2e cleanup-kind ## Run E2E tests against a real k
 .PHONY: run-e2e
 run-e2e:
 	CONTOUR_E2E_LOCAL_HOST=$(CONTOUR_E2E_LOCAL_HOST) \
-		ginkgo -tags=e2e -mod=readonly -skip-package=upgrade -keep-going -randomize-suites -randomize-all -slow-spec-threshold=15s -r -v ./test/e2e
+		ginkgo -tags=e2e -mod=readonly -skip-package=upgrade -keep-going -randomize-suites -randomize-all -slow-spec-threshold=120s -r ./test/e2e
 
 .PHONY: cleanup-kind
 cleanup-kind:

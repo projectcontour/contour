@@ -16,11 +16,13 @@
 package status
 
 import (
+	"time"
+
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -38,7 +40,7 @@ func NewCache(gateway types.NamespacedName, gatewayController gatewayapi_v1alpha
 		gatewayRef:        gateway,
 		gatewayController: gatewayController,
 		proxyUpdates:      make(map[types.NamespacedName]*ProxyUpdate),
-		gatewayUpdates:    make(map[types.NamespacedName]*GatewayConditionsUpdate),
+		gatewayUpdates:    make(map[types.NamespacedName]*GatewayStatusUpdate),
 		routeUpdates:      make(map[types.NamespacedName]*RouteConditionsUpdate),
 		entries:           make(map[string]map[types.NamespacedName]CacheEntry),
 	}
@@ -57,7 +59,7 @@ type Cache struct {
 	gatewayController gatewayapi_v1alpha2.GatewayController
 
 	proxyUpdates   map[types.NamespacedName]*ProxyUpdate
-	gatewayUpdates map[types.NamespacedName]*GatewayConditionsUpdate
+	gatewayUpdates map[types.NamespacedName]*GatewayStatusUpdate
 	routeUpdates   map[types.NamespacedName]*RouteConditionsUpdate
 
 	// Map of cache entry maps, keyed on Kind.
@@ -97,7 +99,7 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, pu := range c.proxyUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource:       contour_api_v1.HTTPProxyGVR,
+			Resource:       &contour_api_v1.HTTPProxy{},
 			Mutator:        pu,
 		}
 
@@ -107,12 +109,8 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, routeUpdate := range c.routeUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource: schema.GroupVersionResource{
-				Group:    gatewayapi_v1alpha2.GroupVersion.Group,
-				Version:  gatewayapi_v1alpha2.GroupVersion.Version,
-				Resource: routeUpdate.Resource,
-			},
-			Mutator: routeUpdate,
+			Resource:       routeUpdate.Resource,
+			Mutator:        routeUpdate,
 		}
 
 		flattened = append(flattened, update)
@@ -121,12 +119,8 @@ func (c *Cache) GetStatusUpdates() []k8s.StatusUpdate {
 	for fullname, gwUpdate := range c.gatewayUpdates {
 		update := k8s.StatusUpdate{
 			NamespacedName: fullname,
-			Resource: schema.GroupVersionResource{
-				Group:    gatewayapi_v1alpha2.GroupVersion.Group,
-				Version:  gatewayapi_v1alpha2.GroupVersion.Version,
-				Resource: gwUpdate.Resource,
-			},
-			Mutator: gwUpdate,
+			Resource:       &gatewayapi_v1alpha2.Gateway{},
+			Mutator:        gwUpdate,
 		}
 
 		flattened = append(flattened, update)
@@ -153,9 +147,9 @@ func (c *Cache) GetProxyUpdates() []*ProxyUpdate {
 	return allUpdates
 }
 
-// GetGatewayUpdates gets the underlying GatewayConditionsUpdate objects from the cache.
-func (c *Cache) GetGatewayUpdates() []*GatewayConditionsUpdate {
-	var allUpdates []*GatewayConditionsUpdate
+// GetGatewayUpdates gets the underlying GatewayStatusUpdate objects from the cache.
+func (c *Cache) GetGatewayUpdates() []*GatewayStatusUpdate {
+	var allUpdates []*GatewayStatusUpdate
 	for _, conditionsUpdate := range c.gatewayUpdates {
 		allUpdates = append(allUpdates, conditionsUpdate)
 	}
@@ -169,4 +163,84 @@ func (c *Cache) GetRouteUpdates() []*RouteConditionsUpdate {
 		allUpdates = append(allUpdates, conditionsUpdate)
 	}
 	return allUpdates
+}
+
+// GatewayStatusAccessor returns a GatewayStatusUpdate that allows a client to build up a list of
+// status changes as well as a function to commit the change back to the cache when everything
+// is done. The commit function pattern is used so that the GatewayStatusUpdate does not need
+// to know anything the cache internals.
+func (c *Cache) GatewayStatusAccessor(nsName types.NamespacedName, generation int64, gs *gatewayapi_v1alpha2.GatewayStatus) (*GatewayStatusUpdate, func()) {
+	gu := &GatewayStatusUpdate{
+		FullName:           nsName,
+		Conditions:         make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition),
+		ExistingConditions: getGatewayConditions(gs),
+		Generation:         generation,
+		TransitionTime:     metav1.NewTime(clock.Now()),
+	}
+
+	return gu, func() {
+		if len(gu.Conditions) == 0 && len(gu.ListenerStatus) == 0 {
+			return
+		}
+		c.gatewayUpdates[gu.FullName] = gu
+	}
+}
+
+// ProxyAccessor returns a ProxyUpdate that allows a client to build up a list of
+// errors and warnings to go onto the proxy as conditions, and a function to commit the change
+// back to the cache when everything is done.
+// The commit function pattern is used so that the ProxyUpdate does not need to know anything
+// the cache internals.
+func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, func()) {
+	pu := &ProxyUpdate{
+		Fullname:       k8s.NamespacedNameOf(proxy),
+		Generation:     proxy.Generation,
+		TransitionTime: metav1.NewTime(time.Now()),
+		Conditions:     make(map[ConditionType]*contour_api_v1.DetailedCondition),
+	}
+
+	return pu, func() {
+		if len(pu.Conditions) == 0 {
+			return
+		}
+
+		_, ok := c.proxyUpdates[pu.Fullname]
+		if ok {
+			// When we're committing, if we already have a Valid Condition with an error, and we're trying to
+			// set the object back to Valid, skip the commit, as we've visited too far down.
+			// If this is removed, the status reporting for when a parent delegates to a child that delegates to itself
+			// will not work. Yes, I know, problems everywhere. I'm sorry.
+			// TODO(youngnick)#2968: This issue has more details.
+			if c.proxyUpdates[pu.Fullname].Conditions[ValidCondition].Status == contour_api_v1.ConditionFalse {
+				if pu.Conditions[ValidCondition].Status == contour_api_v1.ConditionTrue {
+					return
+				}
+			}
+		}
+		c.proxyUpdates[pu.Fullname] = pu
+	}
+}
+
+// RouteConditionsAccessor returns a RouteConditionsUpdate that allows a client to build up a list of
+// metav1.Conditions as well as a function to commit the change back to the cache when everything
+// is done. The commit function pattern is used so that the RouteConditionsUpdate does not need
+// to know anything the cache internals.
+func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource client.Object, gateways []gatewayapi_v1alpha2.RouteParentStatus) (*RouteConditionsUpdate, func()) {
+	pu := &RouteConditionsUpdate{
+		FullName:           nsName,
+		Conditions:         make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition),
+		ExistingConditions: c.getRouteGatewayConditions(gateways),
+		GatewayRef:         c.gatewayRef,
+		GatewayController:  c.gatewayController,
+		Generation:         generation,
+		TransitionTime:     metav1.NewTime(clock.Now()),
+		Resource:           resource,
+	}
+
+	return pu, func() {
+		if len(pu.Conditions) == 0 {
+			return
+		}
+		c.routeUpdates[pu.FullName] = pu
+	}
 }

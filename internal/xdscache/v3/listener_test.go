@@ -27,6 +27,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -1125,7 +1126,9 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			ListenerConfig: ListenerConfig{
-				RequestTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					Request: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -1239,7 +1242,9 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			ListenerConfig: ListenerConfig{
-				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					ConnectionIdle: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -1353,7 +1358,9 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			ListenerConfig: ListenerConfig{
-				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					StreamIdle: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -1467,7 +1474,9 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			ListenerConfig: ListenerConfig{
-				DelayedCloseTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					DelayedClose: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -1581,7 +1590,9 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			ListenerConfig: ListenerConfig{
-				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -1695,7 +1706,9 @@ func TestListenerVisit(t *testing.T) {
 				Namespace: "default",
 			},
 			ListenerConfig: ListenerConfig{
-				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2146,7 +2159,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with connection idle timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
-				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					ConnectionIdle: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2200,7 +2215,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with stream idle timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
-				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					StreamIdle: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2254,7 +2271,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with max connection duration set in listener config": {
 			ListenerConfig: ListenerConfig{
-				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2308,7 +2327,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with delayed close timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
-				DelayedCloseTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					DelayedClose: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2362,7 +2383,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpproxy with connection shutdown grace period set in listener config": {
 			ListenerConfig: ListenerConfig{
-				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2416,7 +2439,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with secret with connection idle timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
-				ConnectionIdleTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					ConnectionIdle: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2606,7 +2631,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with secret with stream idle timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
-				StreamIdleTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					StreamIdle: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2688,7 +2715,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with secret with max connection duration set in listener config": {
 			ListenerConfig: ListenerConfig{
-				MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					MaxConnectionDuration: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2770,7 +2799,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with secret with delayed close timeout set in listener config": {
 			ListenerConfig: ListenerConfig{
-				DelayedCloseTimeout: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					DelayedClose: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{
@@ -2852,7 +2883,9 @@ func TestListenerVisit(t *testing.T) {
 		},
 		"httpsproxy with secret with connection shutdown grace period set in listener config": {
 			ListenerConfig: ListenerConfig{
-				ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
+				Timeouts: contourconfig.Timeouts{
+					ConnectionShutdownGracePeriod: timeout.DurationSetting(90 * time.Second),
+				},
 			},
 			objs: []interface{}{
 				&contour_api_v1.HTTPProxy{

@@ -19,11 +19,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilclock "k8s.io/apimachinery/pkg/util/clock"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
-
-const ResourceHTTPRoute = "httproutes"
-const ResourceTLSRoute = "tlsroutes"
 
 const ConditionNotImplemented gatewayapi_v1alpha2.RouteConditionType = "NotImplemented"
 const ConditionResolvedRefs gatewayapi_v1alpha2.RouteConditionType = "ResolvedRefs"
@@ -50,7 +48,7 @@ type RouteConditionsUpdate struct {
 	ExistingConditions map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition
 	GatewayRef         types.NamespacedName
 	GatewayController  gatewayapi_v1alpha2.GatewayController
-	Resource           string
+	Resource           client.Object
 	Generation         int64
 	TransitionTime     metav1.Time
 }
@@ -74,35 +72,7 @@ func (routeUpdate *RouteConditionsUpdate) AddCondition(cond gatewayapi_v1alpha2.
 	return newDc
 }
 
-// RouteConditionsAccessor returns a RouteConditionsUpdate that allows a client to build up a list of
-// metav1.Conditions as well as a function to commit the change back to the cache when everything
-// is done. The commit function pattern is used so that the RouteConditionsUpdate does not need
-// to know anything the cache internals.
-func (c *Cache) RouteConditionsAccessor(nsName types.NamespacedName, generation int64, resource string, gateways []gatewayapi_v1alpha2.RouteParentStatus) (*RouteConditionsUpdate, func()) {
-	pu := &RouteConditionsUpdate{
-		FullName:           nsName,
-		Conditions:         make(map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition),
-		ExistingConditions: c.getRouteGatewayConditions(gateways),
-		GatewayRef:         c.gatewayRef,
-		GatewayController:  c.gatewayController,
-		Generation:         generation,
-		TransitionTime:     metav1.NewTime(clock.Now()),
-		Resource:           resource,
-	}
-
-	return pu, func() {
-		c.commitRoute(pu)
-	}
-}
-
-func (c *Cache) commitRoute(pu *RouteConditionsUpdate) {
-	if len(pu.Conditions) == 0 {
-		return
-	}
-	c.routeUpdates[pu.FullName] = pu
-}
-
-func (routeUpdate *RouteConditionsUpdate) Mutate(obj interface{}) interface{} {
+func (routeUpdate *RouteConditionsUpdate) Mutate(obj client.Object) client.Object {
 
 	var gatewayStatuses []gatewayapi_v1alpha2.RouteParentStatus
 	var conditionsToWrite []metav1.Condition

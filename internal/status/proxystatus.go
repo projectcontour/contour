@@ -15,14 +15,11 @@ package status
 
 import (
 	"fmt"
-	"time"
 
-	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	projectcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/k8s"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ProxyStatus string
@@ -44,45 +41,6 @@ type ProxyUpdate struct {
 	// keyed by the Type (since that's what the apiserver will end up
 	// doing.)
 	Conditions map[ConditionType]*projectcontour.DetailedCondition
-}
-
-// ProxyAccessor returns a ProxyUpdate that allows a client to build up a list of
-// errors and warnings to go onto the proxy as conditions, and a function to commit the change
-// back to the cache when everything is done.
-// The commit function pattern is used so that the ProxyUpdate does not need to know anything
-// the cache internals.
-func (c *Cache) ProxyAccessor(proxy *contour_api_v1.HTTPProxy) (*ProxyUpdate, func()) {
-	pu := &ProxyUpdate{
-		Fullname:       k8s.NamespacedNameOf(proxy),
-		Generation:     proxy.Generation,
-		TransitionTime: metav1.NewTime(time.Now()),
-		Conditions:     make(map[ConditionType]*contour_api_v1.DetailedCondition),
-	}
-
-	return pu, func() {
-		c.commitProxy(pu)
-	}
-}
-
-func (c *Cache) commitProxy(pu *ProxyUpdate) {
-	if len(pu.Conditions) == 0 {
-		return
-	}
-
-	_, ok := c.proxyUpdates[pu.Fullname]
-	if ok {
-		// When we're committing, if we already have a Valid Condition with an error, and we're trying to
-		// set the object back to Valid, skip the commit, as we've visited too far down.
-		// If this is removed, the status reporting for when a parent delegates to a child that delegates to itself
-		// will not work. Yes, I know, problems everywhere. I'm sorry.
-		// TODO(youngnick)#2968: This issue has more details.
-		if c.proxyUpdates[pu.Fullname].Conditions[ValidCondition].Status == contour_api_v1.ConditionFalse {
-			if pu.Conditions[ValidCondition].Status == contour_api_v1.ConditionTrue {
-				return
-			}
-		}
-	}
-	c.proxyUpdates[pu.Fullname] = pu
 }
 
 // ConditionFor returns a DetailedCondition for a given ConditionType.
@@ -107,7 +65,7 @@ func (pu *ProxyUpdate) ConditionFor(cond ConditionType) *projectcontour.Detailed
 
 }
 
-func (pu *ProxyUpdate) Mutate(obj interface{}) interface{} {
+func (pu *ProxyUpdate) Mutate(obj client.Object) client.Object {
 	o, ok := obj.(*projectcontour.HTTPProxy)
 	if !ok {
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in status mutator",

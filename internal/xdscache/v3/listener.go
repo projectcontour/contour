@@ -26,13 +26,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/protobuf"
 	"github.com/projectcontour/contour/internal/sorter"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/pkg/config"
-	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -112,25 +112,8 @@ type ListenerConfig struct {
 	// AccessLogFormatterExtensions defines the Envoy extensions to enable for access log.
 	AccessLogFormatterExtensions []string
 
-	// RequestTimeout configures the request_timeout for all Connection Managers.
-	RequestTimeout timeout.Setting
-
-	// ConnectionIdleTimeout configures the common_http_protocol_options.idle_timeout for all
-	// Connection Managers.
-	ConnectionIdleTimeout timeout.Setting
-
-	// StreamIdleTimeout configures the stream_idle_timeout for all Connection Managers.
-	StreamIdleTimeout timeout.Setting
-
-	// DelayedCloseTimeout configures the delayed_close_timeout for all Connection Managers.
-	DelayedCloseTimeout timeout.Setting
-
-	// MaxConnectionDuration configures the common_http_protocol_options.max_connection_duration for all
-	// Connection Managers.
-	MaxConnectionDuration timeout.Setting
-
-	// ConnectionShutdownGracePeriod configures the drain_timeout for all Connection Managers.
-	ConnectionShutdownGracePeriod timeout.Setting
+	// Timeouts holds Listener timeout settings.
+	Timeouts contourconfig.Timeouts
 
 	// AllowChunkedLength enables setting allow_chunked_length on the HTTP1 options for all
 	// listeners.
@@ -158,123 +141,10 @@ type RateLimitConfig struct {
 	EnableXRateLimitHeaders bool
 }
 
-func NewListenerConfig(
-	useProxyProto bool,
-	httpListener contour_api_v1alpha1.EnvoyListener,
-	httpsListener contour_api_v1alpha1.EnvoyListener,
-	accessLogType contour_api_v1alpha1.AccessLogType,
-	accessLogFields contour_api_v1alpha1.AccessLogFields,
-	accessLogFormatString *string,
-	accessLogFormatterExtensions []string,
-	minimumTLSVersion string,
-	cipherSuites []string,
-	timeoutParameters *contour_api_v1alpha1.TimeoutParameters,
-	defaultHTTPVersions []envoy_v3.HTTPVersionType,
-	allowChunkedLength bool,
-	xffNumTrustedHops uint32,
-	connectionBalancer string,
-	log logrus.FieldLogger) ListenerConfig {
-
-	// connection balancer
-	if ok := connectionBalancer == "exact" || connectionBalancer == ""; !ok {
-		log.Warnf("Invalid listener connection balancer value %q. Only 'exact' connection balancing is supported for now.", connectionBalancer)
-		connectionBalancer = ""
-	}
-
-	var connectionIdleTimeoutSetting timeout.Setting
-	var streamIdleTimeoutSetting timeout.Setting
-	var delayedCloseTimeoutSetting timeout.Setting
-	var maxConnectionDurationSetting timeout.Setting
-	var connectionShutdownGracePeriodSetting timeout.Setting
-	var requestTimeoutSetting timeout.Setting
-	var err error
-
-	if timeoutParameters != nil {
-		if timeoutParameters.ConnectionIdleTimeout != nil {
-			connectionIdleTimeoutSetting, err = timeout.Parse(*timeoutParameters.ConnectionIdleTimeout)
-			if err != nil {
-				log.Errorf("error parsing connection idle timeout: %w", err)
-			}
-		}
-		if timeoutParameters.StreamIdleTimeout != nil {
-			streamIdleTimeoutSetting, err = timeout.Parse(*timeoutParameters.StreamIdleTimeout)
-			if err != nil {
-				log.Errorf("error parsing stream idle timeout: %w", err)
-			}
-		}
-		if timeoutParameters.DelayedCloseTimeout != nil {
-			delayedCloseTimeoutSetting, err = timeout.Parse(*timeoutParameters.DelayedCloseTimeout)
-			if err != nil {
-				log.Errorf("error parsing delayed close timeout: %w", err)
-			}
-		}
-		if timeoutParameters.MaxConnectionDuration != nil {
-			maxConnectionDurationSetting, _ = timeout.Parse(*timeoutParameters.MaxConnectionDuration)
-			if err != nil {
-				log.Errorf("error parsing max connection duration: %w", err)
-			}
-		}
-		if timeoutParameters.ConnectionShutdownGracePeriod != nil {
-			connectionShutdownGracePeriodSetting, _ = timeout.Parse(*timeoutParameters.ConnectionShutdownGracePeriod)
-			if err != nil {
-				log.Errorf("error parsing connection shutdown grace period: %w", err)
-			}
-		}
-		if timeoutParameters.RequestTimeout != nil {
-			requestTimeoutSetting, _ = timeout.Parse(*timeoutParameters.RequestTimeout)
-			if err != nil {
-				log.Errorf("error parsing request timeout: %w", err)
-			}
-		}
-	}
-
-	accessLogFormatStringConverted := ""
-	if accessLogFormatString != nil {
-		accessLogFormatStringConverted = *accessLogFormatString
-	}
-
-	lc := ListenerConfig{
-		UseProxyProto: useProxyProto,
-		HTTPListeners: map[string]Listener{
-			"ingress_http": {
-				Name:    "ingress_http",
-				Address: httpListener.Address,
-				Port:    httpListener.Port,
-			},
-		},
-		HTTPSListeners: map[string]Listener{
-			"ingress_https": {
-				Name:    "ingress_https",
-				Address: httpsListener.Address,
-				Port:    httpsListener.Port,
-			},
-		},
-		HTTPAccessLog:                 httpListener.AccessLog,
-		HTTPSAccessLog:                httpsListener.AccessLog,
-		AccessLogType:                 accessLogType,
-		AccessLogFields:               accessLogFields,
-		AccessLogFormatString:         accessLogFormatStringConverted,
-		AccessLogFormatterExtensions:  accessLogFormatterExtensions,
-		MinimumTLSVersion:             minimumTLSVersion,
-		CipherSuites:                  cipherSuites,
-		RequestTimeout:                requestTimeoutSetting,
-		ConnectionIdleTimeout:         connectionIdleTimeoutSetting,
-		StreamIdleTimeout:             streamIdleTimeoutSetting,
-		DelayedCloseTimeout:           delayedCloseTimeoutSetting,
-		MaxConnectionDuration:         maxConnectionDurationSetting,
-		ConnectionShutdownGracePeriod: connectionShutdownGracePeriodSetting,
-		DefaultHTTPVersions:           defaultHTTPVersions,
-		AllowChunkedLength:            !allowChunkedLength,
-		XffNumTrustedHops:             xffNumTrustedHops,
-		ConnectionBalancer:            connectionBalancer,
-	}
-	return lc
-}
-
 // DefaultListeners returns the configured Listeners or a single
 // Insecure (http) & single Secure (https) default listeners
 // if not provided.
-func (lvc *ListenerConfig) DefaultListeners() *ListenerConfig {
+func (lvc *ListenerConfig) defaultListeners() *ListenerConfig {
 
 	httpListeners := lvc.HTTPListeners
 	httpsListeners := lvc.HTTPSListeners
@@ -304,7 +174,7 @@ func (lvc *ListenerConfig) DefaultListeners() *ListenerConfig {
 	return lvc
 }
 
-func (lvc *ListenerConfig) SecureListeners() map[string]*envoy_listener_v3.Listener {
+func (lvc *ListenerConfig) secureListeners() map[string]*envoy_listener_v3.Listener {
 	listeners := make(map[string]*envoy_listener_v3.Listener)
 
 	if len(lvc.HTTPSListeners) == 0 {
@@ -475,8 +345,8 @@ func (c *ListenerCache) Query(names []string) []proto.Message {
 func (*ListenerCache) TypeURL() string { return resource.ListenerType }
 
 func (c *ListenerCache) OnChange(root *dag.DAG) {
-	cfg := c.Config.DefaultListeners()
-	listeners := c.Config.SecureListeners()
+	cfg := c.Config.defaultListeners()
+	listeners := c.Config.secureListeners()
 
 	max := func(a, b envoy_tls_v3.TlsParameters_TlsProtocol) envoy_tls_v3.TlsParameters_TlsProtocol {
 		if a > b {
@@ -490,7 +360,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 	// by the listener processor.
 	for _, listener := range root.Listeners {
 		if len(listener.VirtualHosts) > 0 {
-			if httpListener, ok := cfg.HTTPListeners[listener.VirtualHosts[0].ListenerName]; ok {
+			if httpListener, ok := cfg.HTTPListeners[listener.Name]; ok {
 				// Add a listener if there are vhosts bound to http.
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
@@ -498,12 +368,12 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					RouteConfigName(httpListener.Name).
 					MetricsPrefix(httpListener.Name).
 					AccessLoggers(cfg.newInsecureAccessLog()).
-					RequestTimeout(cfg.RequestTimeout).
-					ConnectionIdleTimeout(cfg.ConnectionIdleTimeout).
-					StreamIdleTimeout(cfg.StreamIdleTimeout).
-					DelayedCloseTimeout(cfg.DelayedCloseTimeout).
-					MaxConnectionDuration(cfg.MaxConnectionDuration).
-					ConnectionShutdownGracePeriod(cfg.ConnectionShutdownGracePeriod).
+					RequestTimeout(cfg.Timeouts.Request).
+					ConnectionIdleTimeout(cfg.Timeouts.ConnectionIdle).
+					StreamIdleTimeout(cfg.Timeouts.StreamIdle).
+					DelayedCloseTimeout(cfg.Timeouts.DelayedClose).
+					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
+					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
@@ -547,14 +417,14 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					DefaultFilters().
 					AddFilter(authFilter).
 					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
-					MetricsPrefix(vh.ListenerName).
+					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
-					RequestTimeout(cfg.RequestTimeout).
-					ConnectionIdleTimeout(cfg.ConnectionIdleTimeout).
-					StreamIdleTimeout(cfg.StreamIdleTimeout).
-					DelayedCloseTimeout(cfg.DelayedCloseTimeout).
-					MaxConnectionDuration(cfg.MaxConnectionDuration).
-					ConnectionShutdownGracePeriod(cfg.ConnectionShutdownGracePeriod).
+					RequestTimeout(cfg.Timeouts.Request).
+					ConnectionIdleTimeout(cfg.Timeouts.ConnectionIdle).
+					StreamIdleTimeout(cfg.Timeouts.StreamIdle).
+					DelayedCloseTimeout(cfg.Timeouts.DelayedClose).
+					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
+					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
@@ -565,7 +435,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				alpnProtos = envoy_v3.ProtoNamesForVersions(cfg.DefaultHTTPVersions...)
 			} else {
 				filters = envoy_v3.Filters(
-					envoy_v3.TCPProxy(vh.ListenerName,
+					envoy_v3.TCPProxy(listener.Name,
 						vh.TCPProxy,
 						cfg.newSecureAccessLog()),
 				)
@@ -590,14 +460,14 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					alpnProtos...)
 			}
 
-			listeners[vh.ListenerName].FilterChains = append(listeners[vh.ListenerName].FilterChains, envoy_v3.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
+			listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChainTLS(vh.VirtualHost.Name, downstreamTLS, filters))
 
 			// If this VirtualHost has enabled the fallback certificate then set a default
 			// FilterChain which will allow routes with this vhost to accept non-SNI TLS requests.
 			// Note that we don't add the misdirected requests filter on this chain because at this
 			// point we don't actually know the full set of server names that will be bound to the
 			// filter chain through the ENVOY_FALLBACK_ROUTECONFIG route configuration.
-			if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(listeners[vh.ListenerName].FilterChains) {
+			if vh.FallbackCertificate != nil && !envoy_v3.ContainsFallbackFilterChain(listeners[listener.Name].FilterChains) {
 				// Construct the downstreamTLSContext passing the configured fallbackCertificate. The TLS minProtocolVersion will use
 				// the value defined in the Contour Configuration file if defined.
 				downstreamTLS = envoy_v3.DownstreamTLSContext(
@@ -611,14 +481,14 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				cm := envoy_v3.HTTPConnectionManagerBuilder().
 					DefaultFilters().
 					RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-					MetricsPrefix(vh.ListenerName).
+					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
-					RequestTimeout(cfg.RequestTimeout).
-					ConnectionIdleTimeout(cfg.ConnectionIdleTimeout).
-					StreamIdleTimeout(cfg.StreamIdleTimeout).
-					DelayedCloseTimeout(cfg.DelayedCloseTimeout).
-					MaxConnectionDuration(cfg.MaxConnectionDuration).
-					ConnectionShutdownGracePeriod(cfg.ConnectionShutdownGracePeriod).
+					RequestTimeout(cfg.Timeouts.Request).
+					ConnectionIdleTimeout(cfg.Timeouts.ConnectionIdle).
+					StreamIdleTimeout(cfg.Timeouts.StreamIdle).
+					DelayedCloseTimeout(cfg.Timeouts.DelayedClose).
+					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
+					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
 					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
@@ -627,7 +497,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// Default filter chain
 				filters = envoy_v3.Filters(cm)
 
-				listeners[vh.ListenerName].FilterChains = append(listeners[vh.ListenerName].FilterChains, envoy_v3.FilterChainTLSFallback(downstreamTLS, filters))
+				listeners[listener.Name].FilterChains = append(listeners[listener.Name].FilterChains, envoy_v3.FilterChainTLSFallback(downstreamTLS, filters))
 			}
 		}
 	}

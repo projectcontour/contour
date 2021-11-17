@@ -18,6 +18,8 @@ package upgrade
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"os"
 	"testing"
 
@@ -54,6 +56,14 @@ var _ = BeforeSuite(func() {
 	contourUpgradeToImage = os.Getenv("CONTOUR_UPGRADE_TO_IMAGE")
 	require.NotEmpty(f.T(), contourUpgradeToImage, "CONTOUR_UPGRADE_TO_IMAGE environment variable not supplied")
 	By("upgrading Contour image to " + contourUpgradeToImage)
+
+	// We should be running in a multi-node cluster with a proper load
+	// balancer, so fetch load balancer ip to make requests to.
+	require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(f.Deployment.EnvoyService), f.Deployment.EnvoyService))
+	require.Greater(f.T(), len(f.Deployment.EnvoyService.Status.LoadBalancer.Ingress), 0)
+	require.NotEmpty(f.T(), f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP)
+	f.HTTP.HTTPURLBase = "http://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP
+	f.HTTP.HTTPSURLBase = "https://" + f.Deployment.EnvoyService.Status.LoadBalancer.Ingress[0].IP
 })
 
 var _ = Describe("upgrading Contour", func() {
@@ -62,7 +72,7 @@ var _ = Describe("upgrading Contour", func() {
 	f.NamespacedTest("contour-upgrade-test", func(namespace string) {
 		Specify("applications remain routable after the upgrade", func() {
 			By("deploying an app")
-			f.Fixtures.Echo.Deploy(namespace, "echo")
+			f.Fixtures.Echo.DeployN(namespace, "echo", 2)
 			i := &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
@@ -97,16 +107,27 @@ var _ = Describe("upgrading Contour", func() {
 			By("ensuring it is routable")
 			checkRoutability(appHost)
 
+			poller, err := e2e.StartAppPoller(f.HTTP.HTTPURLBase, appHost, http.StatusOK)
+			require.NoError(f.T(), err)
+
 			updateContourDeploymentResources()
 
 			By("waiting for contour deployment to be updated")
 			require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
 
 			By("waiting for envoy daemonset to be updated")
+			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetOutOfDate())
 			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
 
 			By("ensuring app is still routable")
 			checkRoutability(appHost)
+
+			poller.Stop()
+			totalRequests, successfulRequests := poller.Results()
+			fmt.Fprintf(GinkgoWriter, "Total requests: %d, successful requests: %d\n", totalRequests, successfulRequests)
+			require.Greater(f.T(), totalRequests, uint(0))
+			successPercentage := 100 * float64(successfulRequests) / float64(totalRequests)
+			require.Greaterf(f.T(), successPercentage, float64(90.0), "success rate of %.2f%% less than 90%", successPercentage)
 		})
 	})
 })
