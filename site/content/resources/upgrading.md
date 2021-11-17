@@ -76,7 +76,7 @@ If your version of Contour is older than v1.19.0, please upgrade to v1.19.0 firs
     $ kubectl apply -f examples/contour/03-envoy.yaml
     ```
 
-## Upgrading Contour 1.18.2 to 1.19.0
+## Upgrading Contour 1.18.3 to 1.19.0
 
 ### Required Envoy version
 
@@ -105,10 +105,10 @@ You'll need to re-check where your DNS names are pointing as well, using [Get yo
 
 ### The less easy way
 
-This section contains information for administrators who wish to apply the Contour 1.18.2 to 1.19.0 changes manually.
+This section contains information for administrators who wish to apply the Contour 1.18.3 to 1.19.0 changes manually.
 The YAML files referenced in this section can be found by cloning the Contour repository and checking out the `v1.19.0` tag.
 
-If your version of Contour is older than v1.18.2, please upgrade to v1.18.2 first, then upgrade to v1.19.0.
+If your version of Contour is older than v1.18.3, please upgrade to v1.18.3 first, then upgrade to v1.19.0.
 
 1. Update the Contour CRDs:
 
