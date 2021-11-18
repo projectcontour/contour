@@ -190,7 +190,6 @@ func (d *Deployment) UnmarshalResources() error {
 	switch d.EnvoyDeploymentMode {
 	case DeploymentMode:
 		if err := decoderDeployment.Decode(d.EnvoyDeployment); err != nil {
-			fmt.Println("--- err: ", err)
 			return err
 		}
 	case DaemonsetMode:
