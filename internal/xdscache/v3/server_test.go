@@ -193,7 +193,7 @@ func TestGRPC(t *testing.T) {
 			et = NewEndpointsTranslator(fixture.NewTestLogger(t))
 
 			resources := []xdscache.ResourceCache{
-				NewListenerCache(ListenerConfig{}, "", 0, 0),
+				&ListenerCache{},
 				&SecretCache{},
 				&RouteCache{},
 				&ClusterCache{},

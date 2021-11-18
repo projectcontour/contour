@@ -19,6 +19,7 @@ package e2e
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"time"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
@@ -27,6 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	api_errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -106,13 +108,137 @@ func (c *Certs) CreateCertAndWaitFor(cert *certmanagerv1.Certificate, condition 
 }
 
 // GetTLSCertificate returns a tls.Certificate containing the data in the specified
-// secret. The secret must have the "tls.crt" and "tls.key" keys.
-func (c *Certs) GetTLSCertificate(secretNamespace, secretName string) tls.Certificate {
+// secret and optional CA certificate. The secret must have the "tls.crt" and "tls.key" keys,
+// and "ca.crt" if CA certificate is also provided.
+func (c *Certs) GetTLSCertificate(secretNamespace, secretName string) (tls.Certificate, *x509.CertPool) {
 	secret := &corev1.Secret{}
 	require.NoError(c.t, c.client.Get(context.TODO(), client.ObjectKey{Namespace: secretNamespace, Name: secretName}, secret))
 
 	cert, err := tls.X509KeyPair(secret.Data["tls.crt"], secret.Data["tls.key"])
 	require.NoError(c.t, err)
 
-	return cert
+	var caBundle *x509.CertPool
+	ca, ok := secret.Data["ca.crt"]
+	if ok {
+		caBundle = x509.NewCertPool()
+		caBundle.AppendCertsFromPEM(ca)
+	}
+
+	return cert, caBundle
+}
+
+// ensureSelfSignedIssuer ensuers that selfsigned issuer is created.
+func (c *Certs) ensureSelfSignedIssuer(ns string) *certmanagerv1.Issuer {
+	issuer := &certmanagerv1.Issuer{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      "selfsigned",
+		},
+		Spec: certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
+				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
+			},
+		},
+	}
+
+	if err := c.client.Get(context.TODO(), client.ObjectKeyFromObject(issuer), issuer); err != nil {
+		if api_errors.IsNotFound(err) {
+			require.NoError(c.t, c.client.Create(context.TODO(), issuer))
+		} else {
+			require.NoError(c.t, err)
+		}
+	}
+
+	return issuer
+}
+
+// Create CA creates root CA using selfsigned issuer.
+func (c *Certs) CreateCA(ns, name string) func() {
+	issuer := c.ensureSelfSignedIssuer(ns)
+
+	caSigningCert := &certmanagerv1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: certmanagerv1.CertificateSpec{
+			IsCA: true,
+			Usages: []certmanagerv1.KeyUsage{
+				certmanagerv1.UsageSigning,
+				certmanagerv1.UsageCertSign,
+			},
+			Subject: &certmanagerv1.X509Subject{
+				OrganizationalUnits: []string{
+					"io",
+					"projectcontour",
+					"testsuite",
+				},
+			},
+			CommonName: name,
+			SecretName: name,
+			IssuerRef: certmanagermetav1.ObjectReference{
+				Name: "selfsigned",
+			},
+		},
+	}
+	require.NoError(c.t, c.client.Create(context.TODO(), caSigningCert))
+
+	localCAIssuer := &certmanagerv1.Issuer{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
+				CA: &certmanagerv1.CAIssuer{
+					SecretName: name,
+				},
+			},
+		},
+	}
+
+	require.NoError(c.t, c.client.Create(context.TODO(), localCAIssuer))
+
+	return func() {
+		caSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: ns,
+				Name:      name,
+			},
+		}
+		require.NoError(c.t, c.client.Delete(context.TODO(), caSigningCert))
+		require.NoError(c.t, c.client.Delete(context.TODO(), localCAIssuer))
+		require.NoError(c.t, c.client.Delete(context.TODO(), issuer))
+		require.NoError(c.t, c.client.Delete(context.TODO(), caSecret))
+	}
+}
+
+// CreateCert creates end-entity certificate using given CA issuer.
+func (c *Certs) CreateCert(ns, name, issuer string, dnsNames ...string) func() {
+	cert := &certmanagerv1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: certmanagerv1.CertificateSpec{
+			CommonName: name,
+			SecretName: name,
+			DNSNames:   dnsNames,
+			IssuerRef: certmanagermetav1.ObjectReference{
+				Name: issuer,
+			},
+		},
+	}
+	require.NoError(c.t, c.client.Create(context.TODO(), cert))
+
+	return func() {
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: ns,
+				Name:      name,
+			},
+		}
+		require.NoError(c.t, c.client.Delete(context.TODO(), cert))
+		require.NoError(c.t, c.client.Delete(context.TODO(), secret))
+	}
 }

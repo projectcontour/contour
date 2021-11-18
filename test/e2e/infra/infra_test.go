@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,7 +30,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var f = e2e.NewFramework(false)
+var (
+	f = e2e.NewFramework(false)
+
+	// Functions called after suite to clean up resources.
+	cleanup []func()
+)
 
 func TestInfra(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -37,13 +43,37 @@ func TestInfra(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	// Add volume mount for the Envoy deployment for certificate and key,
+	// used only for testing metrics over HTTPS.
+	f.Deployment.EnvoyExtraVolumeMounts = []v1.VolumeMount{{
+		Name:      "metrics-certs",
+		MountPath: "/metrics-certs",
+	}}
+	f.Deployment.EnvoyExtraVolumes = []v1.Volume{{
+		Name: "metrics-certs",
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: "metrics-server",
+			}},
+	}}
+
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForLocalContour())
+
+	// Create certificate and key for metrics over HTTPS.
+	cleanup = append(cleanup,
+		f.Certs.CreateCA("projectcontour", "metrics-ca"),
+		f.Certs.CreateCert("projectcontour", "metrics-server", "metrics-ca", "localhost"),
+		f.Certs.CreateCert("projectcontour", "metrics-client", "metrics-ca"),
+	)
 })
 
 var _ = AfterSuite(func() {
 	// Delete resources individually instead of deleting the entire contour
 	// namespace as a performance optimization, because deleting non-empty
 	// namespaces can take up to a couple of minutes to complete.
+	for _, c := range cleanup {
+		c()
+	}
 	require.NoError(f.T(), f.Deployment.DeleteResourcesForLocalContour())
 	gexec.CleanupBuildArtifacts()
 })
@@ -89,12 +119,35 @@ var _ = Describe("Infra", func() {
 	})
 
 	AfterEach(func() {
-		require.NoError(f.T(), f.Kubectl.StopKubectlPortForward(kubectlCmd))
+		f.Kubectl.StopKubectlPortForward(kubectlCmd)
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
 	f.Test(testMetrics)
 	f.Test(testReady)
+
+	Context("when serving metrics over HTTPS", func() {
+		BeforeEach(func() {
+			contourConfig.Metrics.Envoy = config.MetricsServerParameters{
+				Address:    "0.0.0.0",
+				Port:       8003,
+				ServerCert: "/metrics-certs/tls.crt",
+				ServerKey:  "/metrics-certs/tls.key",
+				CABundle:   "/metrics-certs/ca.crt",
+			}
+
+			contourConfiguration.Spec.Envoy.Metrics = contour_api_v1alpha1.MetricsConfig{
+				Address: "0.0.0.0",
+				Port:    8003,
+				TLS: &contour_api_v1alpha1.MetricsTLS{
+					CertFile: "/metrics-certs/tls.crt",
+					KeyFile:  "/metrics-certs/tls.key",
+					CAFile:   "/metrics-certs/ca.crt",
+				},
+			}
+		})
+		f.Test(testEnvoyMetricsOverHTTPS)
+	})
 
 	f.Test(testAdminInterface)
 })

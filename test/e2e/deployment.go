@@ -87,6 +87,10 @@ type Deployment struct {
 	ContourDeployment         *apps_v1.Deployment
 	EnvoyDaemonSet            *apps_v1.DaemonSet
 
+	// Optional volumes that will be attached to Envoy daemonset.
+	EnvoyExtraVolumes      []v1.Volume
+	EnvoyExtraVolumeMounts []v1.VolumeMount
+
 	// Ratelimit deployment.
 	RateLimitDeployment       *apps_v1.Deployment
 	RateLimitService          *v1.Service
@@ -507,6 +511,9 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[0], // Config mount
 		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[2], // Admin mount
 	}
+
+	d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = append(d.EnvoyDaemonSet.Spec.Template.Spec.Volumes, d.EnvoyExtraVolumes...)
+	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts, d.EnvoyExtraVolumeMounts...)
 
 	// Remove init container.
 	d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers = nil

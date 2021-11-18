@@ -475,6 +475,10 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
+					Health: contour_api_v1alpha1.HealthConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
 					Metrics: contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
@@ -575,6 +579,10 @@ func TestConvertServeContext(t *testing.T) {
 						Address:   "0.0.0.0",
 						Port:      8443,
 						AccessLog: "/dev/stdout",
+					},
+					Health: contour_api_v1alpha1.HealthConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
 					},
 					Metrics: contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
@@ -683,6 +691,10 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
+					Health: contour_api_v1alpha1.HealthConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
 					Metrics: contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
@@ -783,6 +795,10 @@ func TestConvertServeContext(t *testing.T) {
 						Address:   "0.0.0.0",
 						Port:      8443,
 						AccessLog: "/dev/stdout",
+					},
+					Health: contour_api_v1alpha1.HealthConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
 					},
 					Metrics: contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
@@ -886,6 +902,10 @@ func TestConvertServeContext(t *testing.T) {
 						Address:   "0.0.0.0",
 						Port:      8443,
 						AccessLog: "/dev/stdout",
+					},
+					Health: contour_api_v1alpha1.HealthConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
 					},
 					Metrics: contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
@@ -991,6 +1011,10 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
+					Health: contour_api_v1alpha1.HealthConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
 					Metrics: contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
@@ -1094,6 +1118,10 @@ func TestConvertServeContext(t *testing.T) {
 						Address:   "0.0.0.0",
 						Port:      8443,
 						AccessLog: "/dev/stdout",
+					},
+					Health: contour_api_v1alpha1.HealthConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
 					},
 					Metrics: contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
@@ -1204,6 +1232,10 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
+					Health: contour_api_v1alpha1.HealthConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
+					},
 					Metrics: contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
@@ -1306,6 +1338,10 @@ func TestConvertServeContext(t *testing.T) {
 						Address:   "0.0.0.0",
 						Port:      8443,
 						AccessLog: "/dev/stdout",
+					},
+					Health: contour_api_v1alpha1.HealthConfig{
+						Address: "0.0.0.0",
+						Port:    8002,
 					},
 					Metrics: contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
