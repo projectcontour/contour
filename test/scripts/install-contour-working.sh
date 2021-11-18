@@ -23,8 +23,6 @@ set -o nounset
 readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
-readonly LOAD_PREBUILT_IMAGE=${LOAD_PREBUILT_IMAGE:-false}
-
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 
@@ -37,12 +35,6 @@ kind::cluster::exists() {
 
 kind::cluster::load::docker() {
     ${KIND} load docker-image \
-        --name "${CLUSTERNAME}" \
-        "$@"
-}
-
-kind::cluster::load::archive() {
-    ${KIND} load image-archive \
         --name "${CLUSTERNAME}" \
         "$@"
 }
@@ -61,19 +53,12 @@ run::sed() {
     esac
 }
 
-if [ "${LOAD_PREBUILT_IMAGE}" = "true" ]; then
-    IMAGE_FILE=$(ls ${REPO}/image/contour-*.tar)
-    VERSION=$(echo ${IMAGE_FILE} | sed -E 's/.*-(.*).tar/\1/')
-    kind::cluster::load::archive ${IMAGE_FILE}
-else
-    # Build the current version of Contour.
-    VERSION="v$$"
-    make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=$VERSION
+# Build the current version of Contour.
+VERSION="v$$"
+make -C ${REPO} container IMAGE=ghcr.io/projectcontour/contour VERSION=${VERSION}
 
-    # Push the Contour build image into the cluster.
-    kind::cluster::load::docker ghcr.io/projectcontour/contour:${VERSION}
-fi
-
+# Push the Contour build image into the cluster.
+kind::cluster::load::docker ghcr.io/projectcontour/contour:${VERSION}
 
 # Install Contour
 ${KUBECTL} apply -f ${REPO}/examples/contour/00-common.yaml

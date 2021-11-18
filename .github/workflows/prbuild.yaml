@@ -156,6 +156,7 @@ jobs:
       - name: e2e tests
         env:
           NODEIMAGE: ${{ matrix.node_image }}
+          LOAD_PREBUILT_IMAGE: "true"
           USE_CONTOUR_CONFIGURATION_CRD: ${{ matrix.use_config_crd }}
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
@@ -217,6 +218,7 @@ jobs:
         env:
           NODEIMAGE: ${{ matrix.node_image }}
           MULTINODE_CLUSTER: "true"
+          LOAD_PREBUILT_IMAGE: "true"
         run: |
           export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make upgrade

@@ -18,7 +18,6 @@ package incluster
 
 import (
 	"context"
-	"crypto/tls"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -95,10 +94,7 @@ func testProjectcontourResourcesRBAC(namespace string) {
 
 		// Check request to app works.
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
-			Host: "rbac-test.projectcontour.io",
-			TLSConfigOpts: []func(*tls.Config){
-				e2e.OptSetSNI("rbac-test.projectcontour.io"),
-			},
+			Host:      "rbac-test.projectcontour.io",
 			Condition: e2e.HasStatusCode(200),
 		})
 		assert.Truef(f.T(), ok, "expected %d response code, got %d", 200, res.StatusCode)

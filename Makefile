@@ -293,12 +293,15 @@ run-e2e:
 cleanup-kind:
 	./test/scripts/cleanup.sh
 
-## This requires the multiarch-build target to have been run,
-## which puts the Contour docker image at <repo>/image/contour-version.tar.gz
-## It can't be run as a Make dependency, because we need to do it as a pre-step
-## during our build to speed things up.
+## Loads contour image into kind cluster specified by CLUSTERNAME (default
+## contour-e2e). By default for local development will build the current
+## working contour source and load into the cluster. If LOAD_PREBUILT_IMAGE
+## is specified and set to true, it will load a pre-build image. This requires
+## the multiarch-build target to have been run which puts the Contour docker
+## image at <repo>/image/contour-version.tar.gz. This second option is chosen
+## in CI to speed up builds.
 .PHONY: load-contour-image-kind
-load-contour-image-kind: ## Load Contour image from image/ into Kind. Image can be made with `make multiarch-build`
+load-contour-image-kind: ## Load Contour image from building working source or pre-built image into Kind.
 	./test/scripts/kind-load-contour-image.sh
 
 .PHONY: upgrade
