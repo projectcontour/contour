@@ -636,8 +636,10 @@ end
 	}
 }
 
-func getExtAuthzConfig(authzClusterName string, failOpen bool, timeout timeout.Setting) envoy_config_filter_http_ext_authz_v3.ExtAuthz {
-	return envoy_config_filter_http_ext_authz_v3.ExtAuthz{
+// FilterExternalAuthz returns an `ext_authz` filter configured with the
+// requested parameters.
+func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting, bufferSettings *dag.AuthorizationServerBufferSettings) *http.HttpFilter {
+	authConfig := envoy_config_filter_http_ext_authz_v3.ExtAuthz{
 		Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
 			GrpcService: &envoy_core_v3.GrpcService{
 				TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
@@ -666,12 +668,6 @@ func getExtAuthzConfig(authzClusterName string, failOpen bool, timeout timeout.S
 		// `transport_api_version` from ExtensionServiceSpec ProtocolVersion.
 		TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 	}
-}
-
-// FilterExternalAuthz returns an `ext_authz` filter configured with the
-// requested parameters.
-func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting, bufferSettings *dag.AuthorizationServerBufferSettings) *http.HttpFilter {
-	authConfig := getExtAuthzConfig(authzClusterName, failOpen, timeout)
 
 	if bufferSettings != nil {
 		authConfig.WithRequestBody = &envoy_config_filter_http_ext_authz_v3.BufferSettings{

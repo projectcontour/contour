@@ -181,7 +181,7 @@ type AuthorizationServer struct {
 type AuthorizationServerBufferSettings struct {
 	// MaxRequestBytes sets the maximum size of message body ExtAuthz filter will hold in-memory.
 	// +optional
-	// ++kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Minimum=1
 	MaxRequestBytes uint32 `json:"maxRequestBytes,omitempty"`
 
 	// If AllowPartialMessage is true, then Envoy will buffer the body until MaxRequestBytes are reached.
