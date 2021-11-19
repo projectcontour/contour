@@ -423,9 +423,7 @@ func (d *Deployment) waitForEnvoyDeploymentUpdated() error {
 		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDeployment), tempDeploy); err != nil {
 			return false, err
 		}
-		return tempDeploy.Status.ReadyReplicas > 0 &&
-			tempDeploy.Status.ReadyReplicas == tempDeploy.Status.Replicas &&
-			tempDeploy.Status.UpdatedReplicas == tempDeploy.Status.Replicas, nil
+		return tempDeploy.Status.UnavailableReplicas == 0, nil
 	}
 	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, deploymentUpdated)
 }
