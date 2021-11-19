@@ -150,4 +150,6 @@ var _ = Describe("Infra", func() {
 	})
 
 	f.Test(testAdminInterface)
+
+	f.NamespacedTest("httpproxy-path-condition-match-deployment", testPathConditionMatch)
 })
