@@ -127,7 +127,7 @@ func (svc *Service) tlsConfig() (*tls.Config, error) {
 			Certificates: []tls.Certificate{cert},
 			ClientAuth:   clientAuth,
 			ClientCAs:    certPool,
-			MinVersion:   tls.VersionTLS12,
+			MinVersion:   tls.VersionTLS13,
 		}, nil
 	}
 
