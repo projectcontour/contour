@@ -13,7 +13,11 @@ Contour also follows a "secure first" approach.
 When TLS is enabled for a virtual host, any request to the insecure port is redirected to the secure interface with a 301 redirect.
 Specific routes can be configured to override this behavior and handle insecure requests by enabling the `spec.routes.permitInsecure` parameter on a Route.
 
-The TLS secret must contain keys named tls.crt and tls.key that contain the certificate and private key to use for TLS, e.g.:
+The TLS secret must:
+- be a Secret of type `kubernetes.io/tls`. This means that it must contain keys named `tls.crt` and `tls.key` that contain the certificate and private key to use for TLS, in PEM format.
+
+The TLS secret may also:
+- add any chain CA certificates required for validation into the `tls.crt` PEM bundle. If this is the case, the serving certificate must be the first certificate in the bundle and the intermediate CA certificates must be appended in issuing order.
 
 ```yaml
 # ingress-tls.secret.yaml
@@ -158,8 +162,9 @@ spec:
 ```
 
 The preceding example enables validation by setting the optional `clientValidation` attribute.
-Its mandatory attribute `caSecret` contains a name of an existing Kubernetes Secret that must be of type "Opaque" and have a data key named `ca.crt`.
+Its mandatory attribute `caSecret` contains a name of an existing Kubernetes Secret that must be of type "Opaque" and have only a data key named `ca.crt`.
 The data value of the key `ca.crt` must be a PEM-encoded certificate bundle and it must contain all the trusted CA certificates that are to be used for validating the client certificate.
+If the Opaque Secret also contains one of either `tls.crt` or `tls.key` keys, it will be ignored.
 
 When using external authorization, it may be desirable to use an external authorization server to validate client certificates on requests, rather than the Envoy proxy.
 

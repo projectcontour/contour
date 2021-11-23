@@ -25,26 +25,189 @@ import (
 
 func TestIsValidSecret(t *testing.T) {
 	tests := map[string]struct {
-		cert, key string
-		valid     bool
-		err       error
+		secret *v1.Secret
+		valid  bool
+		err    error
 	}{
-		"normal": {
-			cert:  fixture.CERTIFICATE,
-			key:   fixture.RSA_PRIVATE_KEY,
+		// TLS Secret, single cert
+		"TLS Secret, single certificate": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+				},
+			},
 			valid: true,
 			err:   nil,
 		},
-		"missing CN": {
-			cert:  fixture.MISSING_CN_CERT,
-			key:   fixture.MISSING_CN_KEY,
+		"TLS Secret, empty": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{},
+			},
+			valid: false,
+			err:   errors.New("missing TLS certificate"),
+		},
+		"TLS Secret, certificate plus CA in bundle": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(pemBundle(fixture.CERTIFICATE, fixture.CA_CERT)),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		"TLS Secret, certificate plus CA with no CN in bundle": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(pemBundle(fixture.CERTIFICATE, fixture.CA_CERT_NO_CN)),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		"TLS Secret, single certificate plus CA in ca.crt key": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+					CACertificateKey:    []byte(fixture.CA_CERT),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		"TLS Secret, single certificate plus CA with no CN in ca.crt key": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+					CACertificateKey:    []byte(fixture.CA_CERT_NO_CN),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		"TLS Secret, missing CN": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.MISSING_CN_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.MISSING_CN_KEY),
+				},
+			},
 			valid: false,
 			err:   errors.New("invalid TLS certificate: certificate has no common name or subject alt name"),
 		},
-		"EC cert with SubjectAltName only": {
-			cert:  fixture.EC_CERTIFICATE,
-			key:   fixture.EC_PRIVATE_KEY,
+		"TLS Secret, CA cert": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CA_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.CA_KEY),
+				},
+			},
 			valid: true,
+			err:   nil,
+		},
+		"TLS Secret, CA cert, missing CN": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CA_CERT_NO_CN),
+					v1.TLSPrivateKeyKey: []byte(fixture.CA_KEY_NO_CN),
+				},
+			},
+			valid: false,
+			err:   errors.New("invalid TLS certificate: certificate has no common name or subject alt name"),
+		},
+
+		"EC cert with SubjectAltName only": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.EC_CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.EC_PRIVATE_KEY),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		// The next two test cases are to cover
+		// #3496.
+		//
+		"TLS Secret, wildcard cert with different SANs": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.WILDCARD_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.WILDCARD_KEY),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		"TLS Secret, wildcard cert with different SANs plus CA cert": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.WILDCARD_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.WILDCARD_KEY),
+					CACertificateKey:    []byte(fixture.CA_CERT),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		"Opaque Secret, CA Cert": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					CACertificateKey: []byte(fixture.CA_CERT),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		// Opaque Secret, CA Cert with No CN
+		"Opaque Secret, CA Cert with No CN": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					CACertificateKey: []byte(fixture.CA_CERT_NO_CN),
+				},
+			},
+			valid: true,
+			err:   nil,
+		},
+		"Opaque Secret, zero length CA Cert": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					CACertificateKey: []byte(""),
+				},
+			},
+			valid: false,
+			err:   errors.New("can't use zero-length ca.crt value"),
+		},
+		// Opaque Secret with TLS cert details won't be added.
+		"Opaque Secret, with TLS Cert and Key": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.WILDCARD_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.WILDCARD_KEY),
+					CACertificateKey:    []byte(fixture.CA_CERT),
+				},
+			},
+			valid: false,
 			err:   nil,
 		},
 	}
@@ -58,11 +221,7 @@ func TestIsValidSecret(t *testing.T) {
 
 			want := Result{Valid: tc.valid, Err: tc.err}
 
-			valid, err := isValidSecret(&v1.Secret{
-				// objectmeta omitted
-				Type: v1.SecretTypeTLS,
-				Data: secretdata(tc.cert, tc.key),
-			})
+			valid, err := isValidSecret(tc.secret)
 			got := Result{Valid: valid, Err: err}
 
 			assert.Equal(t, want, got)
@@ -98,4 +257,16 @@ func caBundleData(cert ...string) map[string][]byte {
 	return map[string][]byte{
 		CACertificateKey: []byte(data),
 	}
+}
+
+// pemBundle concatenates supplied PEM strings
+// into a valid PEM bundle (just add newline!)
+func pemBundle(cert ...string) string {
+	var data string
+	for _, c := range cert {
+		data += c
+		data += "\n"
+	}
+
+	return data
 }
