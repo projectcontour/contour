@@ -457,7 +457,7 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_route_v3.VirtualHost
 	}
 }
 
-// corsPolicy returns a *envoy_route_v3.corsPolicy
+// corsPolicy returns a *envoy_route_v3.CorsPolicy
 func corsPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 	if cp == nil {
 		return nil
