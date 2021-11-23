@@ -45,7 +45,7 @@ func LocalRateLimitConfig(config *dag.LocalRateLimitPolicy, statPrefix string) *
 			TokensPerFill: protobuf.UInt32(config.TokensPerFill),
 			FillInterval:  protobuf.Duration(config.FillInterval),
 		},
-		ResponseHeadersToAdd: HeaderValueList(config.ResponseHeadersToAdd, false),
+		ResponseHeadersToAdd: headerValueList(config.ResponseHeadersToAdd, false),
 		FilterEnabled: &envoy_core_v3.RuntimeFractionalPercent{
 			DefaultValue: &envoy_type_v3.FractionalPercent{
 				Numerator:   100,
