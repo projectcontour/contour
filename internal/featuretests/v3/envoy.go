@@ -125,7 +125,7 @@ func routeSegmentPrefix(prefix string) *envoy_route_v3.RouteMatch {
 				EngineType: &matcher.RegexMatcher_GoogleRe2{
 					GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
 				},
-				Regex: regexp.QuoteMeta(prefix) + `((\/).*)?`,
+				Regex: "^" + regexp.QuoteMeta(prefix) + `(?:[\/].*)*`,
 			},
 		},
 	}

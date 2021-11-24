@@ -181,6 +181,8 @@ var _ = Describe("Ingress", func() {
 			testBackendTLS(namespace)
 		})
 	})
+
+	f.NamespacedTest("long-path-match", testLongPathMatch)
 })
 
 func pathTypePtr(val networkingv1.PathType) *networkingv1.PathType {

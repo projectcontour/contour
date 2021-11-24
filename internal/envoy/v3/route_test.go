@@ -1145,7 +1145,7 @@ func TestRouteMatch(t *testing.T) {
 			},
 			want: &envoy_route_v3.RouteMatch{
 				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-					SafeRegex: SafeRegexMatch(`/foo((\/).*)?`),
+					SafeRegex: SafeRegexMatch(`^/foo(?:[\/].*)*`),
 				},
 			},
 		},
@@ -1158,7 +1158,7 @@ func TestRouteMatch(t *testing.T) {
 			},
 			want: &envoy_route_v3.RouteMatch{
 				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-					SafeRegex: SafeRegexMatch(`/foo\.bar((\/).*)?`),
+					SafeRegex: SafeRegexMatch(`^/foo\.bar(?:[\/].*)*`),
 				},
 			},
 		},
@@ -1185,7 +1185,9 @@ func TestRouteMatch(t *testing.T) {
 					// note, unlike header conditions this is not a quoted regex because
 					// the value comes directly from the Ingress.Paths.Path value which
 					// is permitted to be a bare regex.
-					SafeRegex: SafeRegexMatch("/v.1/*"),
+					// We add an anchor since we should always have a / prefix to reduce
+					// complexity.
+					SafeRegex: SafeRegexMatch("^/v.1/*"),
 				},
 			},
 		},

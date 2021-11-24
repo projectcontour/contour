@@ -59,7 +59,7 @@ func RouteAuthzContext(settings map[string]string) *any.Any {
 	)
 }
 
-const prefixPathMatchSegmentRegex = `((\/).*)?`
+const prefixPathMatchSegmentRegex = `(?:[\/].*)*`
 
 var _ = regexp.MustCompile(prefixPathMatchSegmentRegex)
 
@@ -69,7 +69,9 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	case *dag.RegexMatchCondition:
 		return &envoy_route_v3.RouteMatch{
 			PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-				SafeRegex: SafeRegexMatch(c.Regex),
+				// Add an anchor since we at the very least have a / as a string literal prefix.
+				// Reduces regex program size so Envoy doesn't reject long prefix matches.
+				SafeRegex: SafeRegexMatch("^" + c.Regex),
 			},
 			Headers: headerMatcher(route.HeaderMatchConditions),
 		}
@@ -78,7 +80,9 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 		case dag.PrefixMatchSegment:
 			return &envoy_route_v3.RouteMatch{
 				PathSpecifier: &envoy_route_v3.RouteMatch_SafeRegex{
-					SafeRegex: SafeRegexMatch(regexp.QuoteMeta(c.Prefix) + prefixPathMatchSegmentRegex),
+					// Add anchor since we have a string literal prefix.
+					// Reduces regex program size so Envoy doesn't reject long prefix matches.
+					SafeRegex: SafeRegexMatch("^" + regexp.QuoteMeta(c.Prefix) + prefixPathMatchSegmentRegex),
 				},
 				Headers: headerMatcher(route.HeaderMatchConditions),
 			}
