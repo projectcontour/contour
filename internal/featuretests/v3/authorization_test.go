@@ -513,15 +513,85 @@ func authzInvalidReference(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 	}).Status(invalid).IsValid()
 }
 
+func authzWithRequestBodyBufferSettings(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+	const fqdn = "buffersettings.projectcontour.io"
+
+	p := fixture.NewProxy("proxy").
+		WithFQDN(fqdn).
+		WithCertificate("certificate").
+		WithAuthServer(contour_api_v1.AuthorizationServer{
+			ExtensionServiceRef: contour_api_v1.ExtensionServiceReference{
+				Namespace: "auth",
+				Name:      "extension",
+			},
+			FailOpen: true,
+			BufferSettings: &contour_api_v1.AuthorizationServerBufferSettings{
+				MaxRequestBytes:     100,
+				AllowPartialMessage: true,
+				PackAsBytes:         true,
+			},
+		}).
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{Name: "app-server", Port: 80}},
+			}},
+		})
+
+	rh.OnAdd(p)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: listenerType,
+		Resources: resources(t,
+			defaultHTTPListener(),
+			&envoy_listener_v3.Listener{
+				Name:    "ingress_https",
+				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
+				ListenerFilters: envoy_v3.ListenerFilters(
+					envoy_v3.TLSInspector(),
+				),
+				FilterChains: []*envoy_listener_v3.FilterChain{
+					filterchaintls(fqdn,
+						&corev1.Secret{
+							ObjectMeta: fixture.ObjectMeta("certificate"),
+							Type:       "kubernetes.io/tls",
+							Data:       featuretests.Secretdata(featuretests.CERTIFICATE, featuretests.RSA_PRIVATE_KEY),
+						},
+						authzFilterFor(
+							fqdn,
+							&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
+								Services:               grpcCluster("extension/auth/extension"),
+								ClearRouteCache:        true,
+								FailureModeAllow:       true,
+								IncludePeerCertificate: true,
+								StatusOnError: &envoy_type.HttpStatus{
+									Code: envoy_type.StatusCode_Forbidden,
+								},
+								TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+								WithRequestBody: &envoy_config_filter_http_ext_authz_v3.BufferSettings{
+									MaxRequestBytes:     100,
+									AllowPartialMessage: true,
+									PackAsBytes:         true,
+								},
+							},
+						),
+						nil, "h2", "http/1.1"),
+				},
+				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
+			},
+			statsListener()),
+	}).Status(p).IsValid()
+}
+
 func TestAuthorization(t *testing.T) {
 	subtests := map[string]func(*testing.T, cache.ResourceEventHandler, *Contour){
-		"MissingExtension":       authzInvalidReference,
-		"MergeRouteContext":      authzMergeRouteContext,
-		"OverrideDisabled":       authzOverrideDisabled,
-		"FallbackIncompat":       authzFallbackIncompat,
-		"FailOpen":               authzFailOpen,
-		"ResponseTimeout":        authzResponseTimeout,
-		"InvalidResponseTimeout": authzInvalidResponseTimeout,
+		"MissingExtension":                   authzInvalidReference,
+		"MergeRouteContext":                  authzMergeRouteContext,
+		"OverrideDisabled":                   authzOverrideDisabled,
+		"FallbackIncompat":                   authzFallbackIncompat,
+		"FailOpen":                           authzFailOpen,
+		"ResponseTimeout":                    authzResponseTimeout,
+		"InvalidResponseTimeout":             authzInvalidResponseTimeout,
+		"AuthzWithRequestBodyBufferSettings": authzWithRequestBodyBufferSettings,
 	}
 
 	for n, f := range subtests {
