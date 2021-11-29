@@ -29,7 +29,7 @@ import (
 )
 
 func testLongPathMatch(namespace string) {
-	FSpecify("long path matches should be properly programmed", func() {
+	Specify("long path matches should be properly programmed", func() {
 		f.Fixtures.Echo.Deploy(namespace, "echo")
 
 		// Just on the edge, should be RE2 program size 101 before regex optimizations.
