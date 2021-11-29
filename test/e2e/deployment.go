@@ -545,55 +545,21 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	}
 
 	if d.EnvoyDeploymentMode == DaemonsetMode {
-
-		// Add bootstrap ConfigMap as volume and add envoy admin volume on Envoy pods (also removes cert volume).
-		d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = []v1.Volume{{
-			Name: "envoy-config",
-			VolumeSource: v1.VolumeSource{
-				ConfigMap: &v1.ConfigMapVolumeSource{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: "envoy-bootstrap",
-					},
-				},
-			},
-		}, {
-			Name: "envoy-admin",
-			VolumeSource: v1.VolumeSource{
-				EmptyDir: &v1.EmptyDirVolumeSource{},
-			},
-		}}
-
-		// Remove cert volume mount.
-		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{
-			d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[0], // Config mount
-			d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[2], // Admin mount
-		}
-
-		d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = append(d.EnvoyDaemonSet.Spec.Template.Spec.Volumes, d.EnvoyExtraVolumes...)
-		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts, d.EnvoyExtraVolumeMounts...)
-
-		// Remove init container.
-		d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers = nil
-
-		// Remove shutdown-manager container.
-		d.EnvoyDaemonSet.Spec.Template.Spec.Containers = d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1:]
-
-		// Expose the metrics & admin interfaces via host port to test from outside the kind cluster.
-		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports,
-			v1.ContainerPort{
-				Name:          "metrics",
-				ContainerPort: 8002,
-				HostPort:      8002,
-				Protocol:      v1.ProtocolTCP,
-			})
+		d.EnvoyDaemonSet.Spec.Template = d.mutatePodTemplate(d.EnvoyDaemonSet.Spec.Template)
 		return d.EnsureEnvoyDaemonSet()
 	}
+
+	d.EnvoyDeployment.Spec.Template = d.mutatePodTemplate(d.EnvoyDeployment.Spec.Template)
 
 	// Set the ReplicaCount=1
 	d.EnvoyDeployment.Spec.Replicas = pointer.Int32(1)
 
+	return d.EnsureEnvoyDeployment()
+}
+
+func (d *Deployment) mutatePodTemplate(pts v1.PodTemplateSpec) v1.PodTemplateSpec {
 	// Add bootstrap ConfigMap as volume and add envoy admin volume on Envoy pods (also removes cert volume).
-	d.EnvoyDeployment.Spec.Template.Spec.Volumes = []v1.Volume{{
+	pts.Spec.Volumes = []v1.Volume{{
 		Name: "envoy-config",
 		VolumeSource: v1.VolumeSource{
 			ConfigMap: &v1.ConfigMapVolumeSource{
@@ -610,29 +576,30 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	}}
 
 	// Remove cert volume mount.
-	d.EnvoyDeployment.Spec.Template.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{
-		d.EnvoyDeployment.Spec.Template.Spec.Containers[1].VolumeMounts[0], // Config mount
-		d.EnvoyDeployment.Spec.Template.Spec.Containers[1].VolumeMounts[2], // Admin mount
+	pts.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{
+		pts.Spec.Containers[1].VolumeMounts[0], // Config mount
+		pts.Spec.Containers[1].VolumeMounts[2], // Admin mount
 	}
 
-	d.EnvoyDeployment.Spec.Template.Spec.Volumes = append(d.EnvoyDeployment.Spec.Template.Spec.Volumes, d.EnvoyExtraVolumes...)
-	d.EnvoyDeployment.Spec.Template.Spec.Containers[1].VolumeMounts = append(d.EnvoyDeployment.Spec.Template.Spec.Containers[1].VolumeMounts, d.EnvoyExtraVolumeMounts...)
+	pts.Spec.Volumes = append(pts.Spec.Volumes, d.EnvoyExtraVolumes...)
+	pts.Spec.Containers[1].VolumeMounts = append(pts.Spec.Containers[1].VolumeMounts, d.EnvoyExtraVolumeMounts...)
 
 	// Remove init container.
-	d.EnvoyDeployment.Spec.Template.Spec.InitContainers = nil
+	pts.Spec.InitContainers = nil
 
 	// Remove shutdown-manager container.
-	d.EnvoyDeployment.Spec.Template.Spec.Containers = d.EnvoyDeployment.Spec.Template.Spec.Containers[1:]
+	pts.Spec.Containers = pts.Spec.Containers[1:]
 
 	// Expose the metrics & admin interfaces via host port to test from outside the kind cluster.
-	d.EnvoyDeployment.Spec.Template.Spec.Containers[0].Ports = append(d.EnvoyDeployment.Spec.Template.Spec.Containers[0].Ports,
+	pts.Spec.Containers[0].Ports = append(pts.Spec.Containers[0].Ports,
 		v1.ContainerPort{
 			Name:          "metrics",
 			ContainerPort: 8002,
 			HostPort:      8002,
 			Protocol:      v1.ProtocolTCP,
 		})
-	return d.EnsureEnvoyDeployment()
+
+	return pts
 }
 
 // DeleteResourcesForLocalContour ensures deletion of all resources

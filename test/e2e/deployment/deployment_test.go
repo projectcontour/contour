@@ -37,7 +37,7 @@ var (
 	cleanup []func()
 )
 
-func TestInfra(t *testing.T) {
+func TestDeployment(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Deployment tests")
 }
