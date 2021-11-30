@@ -520,6 +520,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			CookieRewritePolicies: cookieRP,
 			RateLimitPolicy:       rlp,
 			RequestHashPolicies:   requestHashPolicies,
+			Redirect:              redirectRoutePolicy(route.RequestRedirectPolicy),
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -1067,6 +1068,40 @@ func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
 
 func directResponse(statusCode uint32) *DirectResponse {
 	return &DirectResponse{
+		StatusCode: statusCode,
+	}
+}
+
+// redirectRoutePolicy builds a *dag.Redirect for the supplied redirect policy.
+func redirectRoutePolicy(redirect *contour_api_v1.HTTPRequestRedirectPolicy) *Redirect {
+	if redirect == nil {
+		return nil
+	}
+
+	var hostname string
+	if redirect.Hostname != nil {
+		hostname = *redirect.Hostname
+	}
+
+	var portNumber uint32
+	if redirect.Port != nil {
+		portNumber = uint32(*redirect.Port)
+	}
+
+	var scheme string
+	if redirect.Scheme != nil {
+		scheme = *redirect.Scheme
+	}
+
+	var statusCode int
+	if redirect.StatusCode != nil {
+		statusCode = *redirect.StatusCode
+	}
+
+	return &Redirect{
+		Hostname:   hostname,
+		Scheme:     scheme,
+		PortNumber: portNumber,
 		StatusCode: statusCode,
 	}
 }

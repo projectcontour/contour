@@ -9775,6 +9775,143 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"HTTPProxy request redirect policy": {
+			objs: []interface{}{
+				s1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "redirect",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: s1.Name,
+								Port: 8080,
+							}},
+							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+								Scheme:     pointer.StringPtr("https"),
+								Hostname:   pointer.StringPtr("envoyproxy.io"),
+								Port:       pointer.Int32Ptr(443),
+								StatusCode: pointer.Int(301),
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s1.Name,
+										ServiceNamespace: s1.Namespace,
+										ServicePort:      s1.Spec.Ports[0],
+									},
+								},
+							}},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPProxy request redirect policy with multiple matches": {
+			objs: []interface{}{
+				s1, s2,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "redirect",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: s2.Name,
+								Port: 8080,
+							}},
+						}, {
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/blog",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: s1.Name,
+								Port: 8080,
+							}},
+							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+								Scheme:     pointer.StringPtr("https"),
+								Hostname:   pointer.StringPtr("envoyproxy.io"),
+								Port:       pointer.Int32Ptr(443),
+								StatusCode: pointer.Int(301),
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s2.Name,
+										ServiceNamespace: s2.Namespace,
+										ServicePort:      s2.Spec.Ports[0],
+									},
+								},
+							}},
+						},
+						&Route{
+							PathMatchCondition: prefixString("/blog"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s1.Name,
+										ServiceNamespace: s1.Namespace,
+										ServicePort:      s1.Spec.Ports[0],
+									},
+								},
+							}},
+						},
+					)),
+				},
+			),
+		},
 		"ingressv1: Ingress then HTTPProxy with identical details, except referencing s2a": {
 			objs: []interface{}{
 				i17V1,
