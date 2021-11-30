@@ -353,6 +353,43 @@ type Route struct {
 	// The policy for rate limiting on the route.
 	// +optional
 	RateLimitPolicy *RateLimitPolicy `json:"rateLimitPolicy,omitempty"`
+
+	// RequestRedirectPolicy defines an HTTP redirection.
+	// +optional
+	RequestRedirectPolicy *HTTPRequestRedirectPolicy `json:"requestRedirectPolicy,omitempty"`
+}
+
+// HTTPRequestRedirectPolicy defines configuration for redirecting a request.
+type HTTPRequestRedirectPolicy struct {
+	// Scheme is the scheme to be used in the value of the `Location`
+	// header in the response.
+	// When empty, the scheme of the request is used.
+	// +optional
+	// +kubebuilder:validation:Enum=http;https
+	Scheme *string `json:"scheme,omitempty"`
+
+	// Hostname is the hostname to be used in the value of the `Location`
+	// header in the response.
+	// When empty, the hostname of the request is used.
+	// +optional
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	Hostname *string `json:"hostname,omitempty"`
+
+	// Port is the port to be used in the value of the `Location`
+	// header in the response.
+	// When empty, port (if specified) of the request is used.
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	Port *int32 `json:"port,omitempty"`
+
+	// StatusCode is the HTTP status code to be used in response.
+	// +optional
+	// +kubebuilder:default=302
+	// +kubebuilder:validation:Enum=301;302
+	StatusCode *int `json:"statusCode,omitempty"`
 }
 
 type CookieRewritePolicy struct {

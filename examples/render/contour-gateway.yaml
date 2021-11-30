@@ -3131,6 +3131,42 @@ spec:
                             type: object
                           type: array
                       type: object
+                    requestRedirectPolicy:
+                      description: RequestRedirectPolicy defines an HTTP redirection.
+                      properties:
+                        hostname:
+                          description: Hostname is the hostname to be used in the
+                            value of the `Location` header in the response. When empty,
+                            the hostname of the request is used.
+                          maxLength: 253
+                          minLength: 1
+                          pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
+                        port:
+                          description: Port is the port to be used in the value of
+                            the `Location` header in the response. When empty, port
+                            (if specified) of the request is used.
+                          format: int32
+                          maximum: 65535
+                          minimum: 1
+                          type: integer
+                        scheme:
+                          description: Scheme is the scheme to be used in the value
+                            of the `Location` header in the response. When empty,
+                            the scheme of the request is used.
+                          enum:
+                          - http
+                          - https
+                          type: string
+                        statusCode:
+                          default: 302
+                          description: StatusCode is the HTTP status code to be used
+                            in response.
+                          enum:
+                          - 301
+                          - 302
+                          type: integer
+                      type: object
                     responseHeadersPolicy:
                       description: The policy for managing response headers during
                         proxying. Rewriting the 'Host' header is not supported.
