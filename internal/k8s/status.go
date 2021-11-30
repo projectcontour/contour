@@ -63,8 +63,6 @@ type StatusUpdateHandler struct {
 	Log           logrus.FieldLogger
 	Client        client.Client
 	UpdateChannel chan StatusUpdate
-	LeaderElected chan struct{}
-	IsLeader      bool
 }
 
 func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
@@ -94,26 +92,17 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 	}
 }
 
+func (suh *StatusUpdateHandler) NeedLeaderElection() bool {
+	return true
+}
+
 // Start runs the goroutine to perform status writes.
-// Until the Contour is elected leader, will drop updates on the floor.
-func (suh *StatusUpdateHandler) Start(stop <-chan struct{}) error {
+func (suh *StatusUpdateHandler) Start(ctx context.Context) error {
 	for {
 		select {
-		case <-stop:
+		case <-ctx.Done():
 			return nil
-		case <-suh.LeaderElected:
-			suh.Log.Info("elected leader")
-			suh.IsLeader = true
-			// disable this case
-			suh.LeaderElected = nil
 		case upd := <-suh.UpdateChannel:
-			if !suh.IsLeader {
-				suh.Log.WithField("name", upd.NamespacedName.Name).
-					WithField("namespace", upd.NamespacedName.Namespace).
-					Debug("not leader, not applying update")
-				continue
-			}
-
 			suh.Log.WithField("name", upd.NamespacedName.Name).
 				WithField("namespace", upd.NamespacedName.Namespace).
 				Debug("received a status update")

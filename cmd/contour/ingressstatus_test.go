@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -193,4 +194,9 @@ func Test_lbAddress(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRequireLeaderElection(t *testing.T) {
+	l := loadBalancerStatusWriter{}
+	require.True(t, l.NeedLeaderElection())
 }

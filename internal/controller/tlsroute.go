@@ -36,22 +36,26 @@ type tlsRouteReconciler struct {
 	logrus.FieldLogger
 }
 
-// NewTLSRouteController creates the tlsroute controller from mgr. The controller will be pre-configured
+// RegisterTLSRouteController creates the tlsroute controller from mgr. The controller will be pre-configured
 // to watch for TLSRoute objects across all namespaces.
-func NewTLSRouteController(mgr manager.Manager, eventHandler cache.ResourceEventHandler, log logrus.FieldLogger) (controller.Controller, error) {
+func RegisterTLSRouteController(log logrus.FieldLogger, mgr manager.Manager, eventHandler cache.ResourceEventHandler) error {
 	r := &tlsRouteReconciler{
 		client:       mgr.GetClient(),
 		eventHandler: eventHandler,
 		FieldLogger:  log,
 	}
-	c, err := controller.New("tlsroute-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.NewUnmanaged("tlsroute-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
-		return nil, err
+		return err
 	}
+	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
+		return err
+	}
+
 	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.TLSRoute{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return nil, err
+		return err
 	}
-	return c, nil
+	return nil
 }
 
 func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

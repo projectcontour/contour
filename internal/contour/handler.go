@@ -17,6 +17,7 @@
 package contour
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -31,33 +32,44 @@ import (
 // EventHandler implements cache.ResourceEventHandler, filters k8s events towards
 // a dag.Builder and calls through to the Observer to notify it that a new DAG
 // is available.
-type EventHandler struct {
-	Builder  dag.Builder
-	Observer dag.Observer
-
+type EventHandlerConfig struct {
+	Logger                        logrus.FieldLogger
+	Builder                       *dag.Builder
+	Observer                      dag.Observer
 	HoldoffDelay, HoldoffMaxDelay time.Duration
+	StatusUpdater                 k8s.StatusUpdater
+}
 
-	StatusUpdater k8s.StatusUpdater
+type EventHandler struct {
+	builder  *dag.Builder
+	observer dag.Observer
+
+	holdoffDelay, holdoffMaxDelay time.Duration
+
+	statusUpdater k8s.StatusUpdater
 
 	logrus.FieldLogger
 
-	// IsLeader will become ready to read when this EventHandler becomes
-	// the leader. If IsLeader is not readable, or nil, status events will
-	// be suppressed.
-	IsLeader chan struct{}
-
 	update chan interface{}
 
-	// Sequence is a channel that receives a incrementing sequence number
-	// for each update processed. The updates may be processed immediately, or
-	// delayed by a holdoff timer. In each case a non blocking send to Sequence
-	// will be made once the resource update is received (note
-	// that the DAG is not guaranteed to be called each time).
-	Sequence chan int
+	sequence chan int
 
 	// seq is the sequence counter of the number of times
 	// an event has been received.
 	seq int
+}
+
+func NewEventHandler(config EventHandlerConfig) *EventHandler {
+	return &EventHandler{
+		FieldLogger:     config.Logger,
+		builder:         config.Builder,
+		observer:        config.Observer,
+		holdoffDelay:    config.HoldoffDelay,
+		holdoffMaxDelay: config.HoldoffMaxDelay,
+		statusUpdater:   config.StatusUpdater,
+		update:          make(chan interface{}),
+		sequence:        make(chan int, 1),
+	}
 }
 
 type opAdd struct {
@@ -89,15 +101,11 @@ func (e *EventHandler) UpdateNow() {
 	e.update <- true
 }
 
-// Start initializes the EventHandler and returns a function suitable
-// for registration with a workgroup.Group.
-func (e *EventHandler) Start() func(<-chan struct{}) error {
-	e.update = make(chan interface{})
-	return e.run
+func (e *EventHandler) NeedLeaderElection() bool {
+	return false
 }
 
-// run is the main event handling loop.
-func (e *EventHandler) run(stop <-chan struct{}) error {
+func (e *EventHandler) Start(ctx context.Context) error {
 	e.Info("started event handler")
 	defer e.Info("stopped event handler")
 
@@ -143,8 +151,8 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 					timer.Stop()
 				}
 
-				delay := e.HoldoffDelay
-				if time.Since(lastDAGRebuild) > e.HoldoffMaxDelay {
+				delay := e.holdoffDelay
+				if time.Since(lastDAGRebuild) > e.holdoffMaxDelay {
 					// the maximum holdoff delay has been exceeded so schedule the update
 					// immediately by delaying for 0ns.
 					delay = 0
@@ -161,7 +169,7 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 			e.rebuildDAG()
 			e.incSequence()
 			lastDAGRebuild = time.Now()
-		case <-stop:
+		case <-ctx.Done():
 			// shutdown
 			return nil
 		}
@@ -174,7 +182,7 @@ func (e *EventHandler) run(stop <-chan struct{}) error {
 func (e *EventHandler) onUpdate(op interface{}) bool {
 	switch op := op.(type) {
 	case opAdd:
-		return e.Builder.Source.Insert(op.obj)
+		return e.builder.Source.Insert(op.obj)
 	case opUpdate:
 		if cmp.Equal(op.oldObj, op.newObj,
 			cmpopts.IgnoreFields(contour_api_v1.HTTPProxy{}, "Status"),
@@ -184,11 +192,11 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 			e.WithField("op", "update").Debugf("%T skipping update, only status has changed", op.newObj)
 			return false
 		}
-		remove := e.Builder.Source.Remove(op.oldObj)
-		insert := e.Builder.Source.Insert(op.newObj)
+		remove := e.builder.Source.Remove(op.oldObj)
+		insert := e.builder.Source.Insert(op.newObj)
 		return remove || insert
 	case opDelete:
-		return e.Builder.Source.Remove(op.obj)
+		return e.builder.Source.Remove(op.obj)
 	case bool:
 		return op
 	default:
@@ -196,11 +204,20 @@ func (e *EventHandler) onUpdate(op interface{}) bool {
 	}
 }
 
+// Sequence returns a channel that receives a incrementing sequence number
+// for each update processed. The updates may be processed immediately, or
+// delayed by a holdoff timer. In each case a non blocking send to the
+// sequence channel will be made once the resource update is received (note
+// that the DAG is not guaranteed to be called each time).
+func (e *EventHandler) Sequence() <-chan int {
+	return e.sequence
+}
+
 // incSequence bumps the sequence counter and sends it to e.Sequence.
 func (e *EventHandler) incSequence() {
 	e.seq++
 	select {
-	case e.Sequence <- e.seq:
+	case e.sequence <- e.seq:
 		// This is a non blocking send so if this field is nil, or the
 		// receiver is not ready this send does not block incSequence's caller.
 	default:
@@ -210,10 +227,10 @@ func (e *EventHandler) incSequence() {
 // rebuildDAG builds a new DAG and sends it to the Observer,
 // the updates the status on objects, and updates the metrics.
 func (e *EventHandler) rebuildDAG() {
-	latestDAG := e.Builder.Build()
-	e.Observer.OnChange(latestDAG)
+	latestDAG := e.builder.Build()
+	e.observer.OnChange(latestDAG)
 
 	for _, upd := range latestDAG.StatusCache.GetStatusUpdates() {
-		e.StatusUpdater.Send(upd)
+		e.statusUpdater.Send(upd)
 	}
 }

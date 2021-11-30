@@ -19,7 +19,7 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
@@ -28,8 +28,8 @@ import (
 )
 
 func TestRootNamespaces(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.RootNamespaces = []string{"roots"}
+	rh, c, done := setup(t, func(b *dag.Builder) {
+		b.Source.RootNamespaces = []string{"roots"}
 	})
 	defer done()
 

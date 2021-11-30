@@ -200,25 +200,25 @@ func TestGRPC(t *testing.T) {
 				et,
 			}
 
-			eh = &contour.EventHandler{
-				Observer:    dag.ComposeObservers(xdscache.ObserversOf(resources)...),
-				FieldLogger: log,
-			}
+			eh = contour.NewEventHandler(contour.EventHandlerConfig{
+				Logger:   log,
+				Builder:  new(dag.Builder),
+				Observer: dag.ComposeObservers(xdscache.ObserversOf(resources)...),
+			})
 
 			srv := xds.NewServer(nil)
 			contour_xds_v3.RegisterServer(contour_xds_v3.NewContourServer(log, xdscache.ResourcesOf(resources)...), srv)
 			l, err := net.Listen("tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 			done := make(chan error, 1)
-			stop := make(chan struct{})
-			run := eh.Start()
-			go run(stop) // nolint:errcheck
+			ctx, cancel := context.WithCancel(context.Background())
+			go eh.Start(ctx) // nolint:errcheck
 			go func() {
 				done <- srv.Serve(l)
 			}()
 			defer func() {
 				srv.GracefulStop()
-				close(stop)
+				cancel()
 				<-done
 			}()
 			cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())

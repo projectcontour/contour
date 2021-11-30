@@ -27,6 +27,7 @@ import (
 	"github.com/projectcontour/contour/internal/fixture"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tsaarni/certyaml"
 )
 
@@ -42,7 +43,7 @@ func TestHTTPService(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg workgroup.Group
-	wg.Add(svc.Start)
+	wg.AddContext(svc.Start)
 	done := make(chan error)
 	go func() {
 		done <- wg.Run(ctx)
@@ -115,7 +116,7 @@ func TestHTTPSService(t *testing.T) {
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg workgroup.Group
-	wg.Add(svc.Start)
+	wg.AddContext(svc.Start)
 	done := make(chan error)
 	go func() {
 		done <- wg.Run(ctx)
@@ -180,4 +181,9 @@ func tryGet(url string, clientCert tls.Certificate, caCertPool *x509.CertPool) (
 		},
 	}
 	return client.Get(url)
+}
+
+func TestServiceNotRequireLeaderElection(t *testing.T) {
+	s := Service{}
+	require.False(t, s.NeedLeaderElection())
 }

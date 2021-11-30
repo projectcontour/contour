@@ -16,6 +16,7 @@
 package debug
 
 import (
+	"context"
 	"net/http"
 	"net/http/pprof"
 
@@ -30,12 +31,16 @@ type Service struct {
 	Builder *dag.Builder
 }
 
+func (svc *Service) NeedLeaderElection() bool {
+	return false
+}
+
 // Start fulfills the g.Start contract.
 // When stop is closed the http server will shutdown.
-func (svc *Service) Start(stop <-chan struct{}) error {
+func (svc *Service) Start(ctx context.Context) error {
 	registerProfile(&svc.ServeMux)
 	registerDotWriter(&svc.ServeMux, svc.Builder)
-	return svc.Service.Start(stop)
+	return svc.Service.Start(ctx)
 }
 
 func registerProfile(mux *http.ServeMux) {
