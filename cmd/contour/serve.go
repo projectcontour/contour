@@ -464,7 +464,9 @@ func (s *Server) doServe() error {
 	}
 
 	// Register our event handler with the manager.
-	s.mgr.Add(contourHandler)
+	if err := s.mgr.Add(contourHandler); err != nil {
+		return err
+	}
 
 	// Create metrics service.
 	if err := s.setupMetrics(contourConfiguration.Metrics, contourConfiguration.Health, s.registry); err != nil {
