@@ -81,9 +81,9 @@ func testExternalNameServiceInsecure(namespace string) {
 				},
 			},
 		}
-		proxy, ok := f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		proxy, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 		if !ok {
-			t.Fatalf("The HTTPProxy did not become valid, here are the Valid condition's Errors: %s", httpProxyErrors(proxy))
+			t.Fatalf("The HTTPProxy did not become valid, here are the Valid condition's Errors: %s", e2e.HTTPProxyErrors(proxy))
 		}
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
@@ -152,9 +152,9 @@ func testExternalNameServiceTLS(namespace string) {
 				},
 			},
 		}
-		proxy, ok := f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+		proxy, ok := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 		if !ok {
-			t.Fatalf("The HTTPProxy did not become valid, here are the Valid condition's Errors: %s", httpProxyErrors(proxy))
+			t.Fatalf("The HTTPProxy did not become valid, here are the Valid condition's Errors: %s", e2e.HTTPProxyErrors(proxy))
 		}
 
 		res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{

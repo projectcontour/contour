@@ -105,13 +105,7 @@ jobs:
       if: ${{ failure() && github.ref == 'refs/heads/main' }}
   e2e:
     runs-on: ubuntu-latest
-    needs:
-      - lint
-      - codespell
-      - codegen
-      # TODO uncomment the below once we're using the image
-      # or its binary for testing.
-      # - build-image
+    needs: [build-image]
     strategy:
       matrix:
         # use stable kubernetes_version values since they're included
@@ -137,13 +131,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      # TODO uncomment the below once we're using the image
-      # or its binary for testing.
-      # - name: Download image
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: image
-      #     path: image
+      - name: Download image
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+          path: image
       - uses: actions/cache@v2
         with:
           # * Module download cache
@@ -167,6 +159,7 @@ jobs:
           LOAD_PREBUILT_IMAGE: "true"
           USE_CONTOUR_CONFIGURATION_CRD: ${{ matrix.use_config_crd }}
         run: |
+          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make e2e
       - uses: act10ns/slack@v1
         with:
@@ -224,10 +217,10 @@ jobs:
       - name: upgrade tests
         env:
           NODEIMAGE: ${{ matrix.node_image }}
-          LOAD_PREBUILT_IMAGE: "true"
           MULTINODE_CLUSTER: "true"
+          LOAD_PREBUILT_IMAGE: "true"
         run: |
-          export CONTOUR_UPGRADE_TO_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
+          export CONTOUR_E2E_IMAGE="ghcr.io/projectcontour/contour:$(ls ./image/contour-*.tar | sed -E 's/.*-(.*).tar/\1/')"
           make upgrade
       - uses: act10ns/slack@v1
         with:

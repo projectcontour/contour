@@ -16,9 +16,9 @@ LOCALIP ?= $(shell ifconfig | grep inet | grep -v '::' | grep -v 127.0.0.1 | hea
 
 # Variables needed for running e2e tests.
 CONTOUR_E2E_LOCAL_HOST ?= $(LOCALIP)
-# Variables needed for running upgrade tests.
+# Variables needed for running e2e and upgrade tests.
 CONTOUR_UPGRADE_FROM_VERSION ?= $(shell ./test/scripts/get-contour-upgrade-from-version.sh)
-CONTOUR_UPGRADE_TO_IMAGE ?= ghcr.io/projectcontour/contour:main
+CONTOUR_E2E_IMAGE ?= ghcr.io/projectcontour/contour:main
 
 TAG_LATEST ?= false
 
@@ -281,23 +281,27 @@ install-contour-release: | setup-kind-cluster ## Install the release version of 
 	./test/scripts/install-contour-release.sh $(CONTOUR_UPGRADE_FROM_VERSION)
 
 .PHONY: e2e
-e2e: | setup-kind-cluster run-e2e cleanup-kind ## Run E2E tests against a real k8s cluster
+e2e: | setup-kind-cluster load-contour-image-kind run-e2e cleanup-kind ## Run E2E tests against a real k8s cluster
 
 .PHONY: run-e2e
 run-e2e:
 	CONTOUR_E2E_LOCAL_HOST=$(CONTOUR_E2E_LOCAL_HOST) \
+		CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
 		ginkgo -tags=e2e -mod=readonly -skip-package=upgrade -keep-going -randomize-suites -randomize-all -slow-spec-threshold=120s -r ./test/e2e
 
 .PHONY: cleanup-kind
 cleanup-kind:
 	./test/scripts/cleanup.sh
 
-## This requires the multiarch-build target to have been run,
-## which puts the Contour docker image at <repo>/image/contour-version.tar.gz
-## It can't be run as a Make dependency, because we need to do it as a pre-step
-## during our build to speed things up.
+## Loads contour image into kind cluster specified by CLUSTERNAME (default
+## contour-e2e). By default for local development will build the current
+## working contour source and load into the cluster. If LOAD_PREBUILT_IMAGE
+## is specified and set to true, it will load a pre-build image. This requires
+## the multiarch-build target to have been run which puts the Contour docker
+## image at <repo>/image/contour-version.tar.gz. This second option is chosen
+## in CI to speed up builds.
 .PHONY: load-contour-image-kind
-load-contour-image-kind: ## Load Contour image from image/ into Kind. Image can be made with `make multiarch-build`
+load-contour-image-kind: ## Load Contour image from building working source or pre-built image into Kind.
 	./test/scripts/kind-load-contour-image.sh
 
 .PHONY: upgrade
@@ -306,7 +310,7 @@ upgrade: | install-contour-release load-contour-image-kind run-upgrade cleanup-k
 .PHONY: run-upgrade
 run-upgrade:
 	CONTOUR_UPGRADE_FROM_VERSION=$(CONTOUR_UPGRADE_FROM_VERSION) \
-		CONTOUR_UPGRADE_TO_IMAGE=$(CONTOUR_UPGRADE_TO_IMAGE) \
+		CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
 		ginkgo -tags=e2e -mod=readonly -randomize-all -slow-spec-threshold=300s -v ./test/e2e/upgrade
 
 .PHONY: check-ingress-conformance

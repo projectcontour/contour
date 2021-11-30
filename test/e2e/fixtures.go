@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -86,12 +86,12 @@ func (e *Echo) DeployN(ns, name string, replicas int32) func() {
 					Labels: map[string]string{"app.kubernetes.io/name": name},
 				},
 				Spec: corev1.PodSpec{
-					TopologySpreadConstraints: []v1.TopologySpreadConstraint{
+					TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
 						{
 							// Attempt to spread pods across different nodes if possible.
 							TopologyKey:       "kubernetes.io/hostname",
 							MaxSkew:           1,
-							WhenUnsatisfiable: v1.ScheduleAnyway,
+							WhenUnsatisfiable: corev1.ScheduleAnyway,
 							LabelSelector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{"app.kubernetes.io/name": name},
 							},
@@ -404,4 +404,8 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 			},
 		},
 	}
+}
+
+func IngressPathTypePtr(val networkingv1.PathType) *networkingv1.PathType {
+	return &val
 }

@@ -120,9 +120,9 @@ func testWildcardSubdomainFQDN(namespace string) {
 				}},
 			},
 		}
-		f.CreateHTTPProxyAndWaitFor(proxyWildcard, httpProxyValid)
-		f.CreateHTTPProxyAndWaitFor(proxyFullFQDN, httpProxyValid)
-		f.CreateHTTPProxyAndWaitFor(proxyFullFQDNSubdomain, httpProxyValid)
+		f.CreateHTTPProxyAndWaitFor(proxyWildcard, e2e.HTTPProxyValid)
+		f.CreateHTTPProxyAndWaitFor(proxyFullFQDN, e2e.HTTPProxyValid)
+		f.CreateHTTPProxyAndWaitFor(proxyFullFQDNSubdomain, e2e.HTTPProxyValid)
 
 		cases := map[string]ServiceResult{
 			"domain.io": {

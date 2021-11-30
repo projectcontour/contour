@@ -30,7 +30,6 @@ import (
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
-	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -182,7 +181,3 @@ var _ = Describe("Ingress", func() {
 		})
 	})
 })
-
-func pathTypePtr(val networkingv1.PathType) *networkingv1.PathType {
-	return &val
-}
