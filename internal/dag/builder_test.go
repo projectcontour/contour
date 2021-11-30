@@ -9833,6 +9833,49 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"HTTPProxy request redirect policy - no services": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "redirect",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+								Scheme:     pointer.StringPtr("https"),
+								Hostname:   pointer.StringPtr("envoyproxy.io"),
+								Port:       pointer.Int32Ptr(443),
+								StatusCode: pointer.Int(301),
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
+						},
+					)),
+				},
+			),
+		},
 		"HTTPProxy request redirect policy with multiple matches": {
 			objs: []interface{}{
 				s1, s2,

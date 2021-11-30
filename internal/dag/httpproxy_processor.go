@@ -486,7 +486,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		if len(route.Services) < 1 {
+		// A route may have no services defined only if a RequestRedirectPolicy is defined.
+		if len(route.Services) < 1 && route.RequestRedirectPolicy == nil {
 			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "NoServicesPresent",
 				"route.services must have at least one entry")
 			return nil
@@ -685,7 +686,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				r.Clusters = append(r.Clusters, c)
 			}
 		}
-		if len(r.Clusters) == 0 {
+		if len(r.Clusters) == 0 && route.RequestRedirectPolicy == nil {
 			r.DirectResponse = directResponse(http.StatusServiceUnavailable)
 		}
 
