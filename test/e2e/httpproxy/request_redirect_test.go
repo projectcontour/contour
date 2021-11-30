@@ -74,7 +74,7 @@ func testRequestRedirectRule(namespace string) {
 			},
 		}
 
-		f.CreateHTTPProxyAndWaitFor(proxy, httpProxyValid)
+		f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid)
 
 		// /basic-redirect only specifies a host name to
 		// redirect to.

@@ -306,9 +306,8 @@ type Route struct {
 	// +optional
 	Conditions []MatchCondition `json:"conditions,omitempty"`
 	// Services are the services to proxy traffic.
-	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:Required
-	Services []Service `json:"services"`
+	// +optional
+	Services []Service `json:"services,omitempty"`
 	// Enables websocket support for the route.
 	// +optional
 	EnableWebsockets bool `json:"enableWebsockets,omitempty"`
