@@ -586,7 +586,7 @@ func TestRouteRoute(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := RouteRoute(tc.route)
+			got := routeRoute(tc.route)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -617,7 +617,7 @@ func TestRouteDirectResponse(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := RouteDirectResponse(tc.directResponse)
+			got := routeDirectResponse(tc.directResponse)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -1042,7 +1042,7 @@ func TestCORSPolicy(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := CORSPolicy(tc.cp)
+			got := corsPolicy(tc.cp)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}
@@ -1300,7 +1300,7 @@ func TestRouteRedirect(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := RouteRedirect(tc.redirect)
+			got := routeRedirect(tc.redirect)
 			protobuf.ExpectEqual(t, tc.want, got)
 		})
 	}

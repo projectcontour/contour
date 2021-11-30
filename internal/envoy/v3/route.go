@@ -34,8 +34,98 @@ import (
 	"github.com/projectcontour/contour/internal/sorter"
 )
 
-// RouteAuthzDisabled returns a per-route config to disable authorization.
-func RouteAuthzDisabled() *any.Any {
+// VirtualHostAndRoutes converts a DAG virtual host and routes to an Envoy virtual host.
+func VirtualHostAndRoutes(vh *dag.VirtualHost, dagRoutes []*dag.Route, secure bool, authService *dag.ExtensionCluster) *envoy_route_v3.VirtualHost {
+	var envoyRoutes []*envoy_route_v3.Route
+	for _, route := range dagRoutes {
+		envoyRoutes = append(envoyRoutes, buildRoute(route, vh.Name, secure, authService))
+	}
+
+	evh := VirtualHost(vh.Name, envoyRoutes...)
+
+	if vh.CORSPolicy != nil {
+		evh.Cors = corsPolicy(vh.CORSPolicy)
+	}
+	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Local != nil {
+		if evh.TypedPerFilterConfig == nil {
+			evh.TypedPerFilterConfig = map[string]*any.Any{}
+		}
+		evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
+	}
+
+	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Global != nil {
+		evh.RateLimits = GlobalRateLimits(vh.RateLimitPolicy.Global.Descriptors)
+	}
+
+	return evh
+}
+
+// buildRoute converts a DAG route to an Envoy route.
+func buildRoute(dagRoute *dag.Route, vhostName string, secure bool, authService *dag.ExtensionCluster) *envoy_route_v3.Route {
+	switch {
+	case dagRoute.HTTPSUpgrade && !secure:
+		// TODO(dfc) if we ensure the builder never returns a dag.Route connected
+		// to a SecureVirtualHost that requires upgrade, this logic can move to
+		// envoy.RouteRoute. Currently the DAG processor adds any HTTP->HTTPS
+		// redirect routes to *both* the insecure and secure vhosts.
+		return &envoy_route_v3.Route{
+			Match:  RouteMatch(dagRoute),
+			Action: UpgradeHTTPS(),
+		}
+	case dagRoute.DirectResponse != nil:
+		return &envoy_route_v3.Route{
+			Match:  RouteMatch(dagRoute),
+			Action: routeDirectResponse(dagRoute.DirectResponse),
+		}
+	case dagRoute.Redirect != nil:
+		// TODO request/response headers?
+		return &envoy_route_v3.Route{
+			Match:  RouteMatch(dagRoute),
+			Action: routeRedirect(dagRoute.Redirect),
+		}
+	default:
+		rt := &envoy_route_v3.Route{
+			Match:  RouteMatch(dagRoute),
+			Action: routeRoute(dagRoute),
+		}
+
+		if dagRoute.RequestHeadersPolicy != nil {
+			rt.RequestHeadersToAdd = append(headerValueList(dagRoute.RequestHeadersPolicy.Set, false), headerValueList(dagRoute.RequestHeadersPolicy.Add, true)...)
+			rt.RequestHeadersToRemove = dagRoute.RequestHeadersPolicy.Remove
+		}
+		if dagRoute.ResponseHeadersPolicy != nil {
+			rt.ResponseHeadersToAdd = headerValueList(dagRoute.ResponseHeadersPolicy.Set, false)
+			rt.ResponseHeadersToRemove = dagRoute.ResponseHeadersPolicy.Remove
+		}
+		if dagRoute.RateLimitPolicy != nil && dagRoute.RateLimitPolicy.Local != nil {
+			if rt.TypedPerFilterConfig == nil {
+				rt.TypedPerFilterConfig = map[string]*any.Any{}
+			}
+			rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = LocalRateLimitConfig(dagRoute.RateLimitPolicy.Local, "vhost."+vhostName)
+		}
+
+		// If authorization is enabled on this host, we may need to set per-route filter overrides.
+		if authService != nil {
+			// Apply per-route authorization policy modifications.
+			if dagRoute.AuthDisabled {
+				if rt.TypedPerFilterConfig == nil {
+					rt.TypedPerFilterConfig = map[string]*any.Any{}
+				}
+				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzDisabled()
+			} else if len(dagRoute.AuthContext) > 0 {
+				if rt.TypedPerFilterConfig == nil {
+					rt.TypedPerFilterConfig = map[string]*any.Any{}
+				}
+				rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = routeAuthzContext(dagRoute.AuthContext)
+			}
+		}
+
+		return rt
+	}
+}
+
+// routeAuthzDisabled returns a per-route config to disable authorization.
+func routeAuthzDisabled() *any.Any {
 	return protobuf.MustMarshalAny(
 		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_Disabled{
@@ -45,9 +135,9 @@ func RouteAuthzDisabled() *any.Any {
 	)
 }
 
-// RouteAuthzContext returns a per-route config to pass the given
+// routeAuthzContext returns a per-route config to pass the given
 // context entries in the check request.
-func RouteAuthzContext(settings map[string]string) *any.Any {
+func routeAuthzContext(settings map[string]string) *any.Any {
 	return protobuf.MustMarshalAny(
 		&envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute{
 			Override: &envoy_config_filter_http_ext_authz_v3.ExtAuthzPerRoute_CheckSettings{
@@ -106,10 +196,10 @@ func RouteMatch(route *dag.Route) *envoy_route_v3.RouteMatch {
 	}
 }
 
-// Route_DirectResponse creates a *envoy_route_v3.Route_DirectResponse for the
+// routeDirectResponse creates a *envoy_route_v3.Route_DirectResponse for the
 // http status code supplied. This allows a direct response to a route request
 // with an HTTP status code without needing to route to a specific cluster.
-func RouteDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_DirectResponse {
+func routeDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_DirectResponse {
 	return &envoy_route_v3.Route_DirectResponse{
 		DirectResponse: &envoy_route_v3.DirectResponseAction{
 			Status: response.StatusCode,
@@ -117,10 +207,10 @@ func RouteDirectResponse(response *dag.DirectResponse) *envoy_route_v3.Route_Dir
 	}
 }
 
-// RouteRedirect creates a *envoy_route_v3.Route_Redirect for the
+// routeRedirect creates a *envoy_route_v3.Route_Redirect for the
 // redirect specified. This allows a redirect to be returned to the
 // client.
-func RouteRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
+func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 	r := &envoy_route_v3.Route_Redirect{
 		Redirect: &envoy_route_v3.RedirectAction{},
 	}
@@ -150,10 +240,10 @@ func RouteRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 	return r
 }
 
-// RouteRoute creates a *envoy_route_v3.Route_Route for the services supplied.
+// routeRoute creates a *envoy_route_v3.Route_Route for the services supplied.
 // If len(services) is greater than one, the route's action will be a
 // weighted cluster.
-func RouteRoute(r *dag.Route) *envoy_route_v3.Route_Route {
+func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 	ra := envoy_route_v3.RouteAction{
 		RetryPolicy:           retryPolicy(r),
 		Timeout:               envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
@@ -277,8 +367,8 @@ func UpgradeHTTPS() *envoy_route_v3.Route_Redirect {
 	}
 }
 
-// HeaderValueList creates a list of Envoy HeaderValueOptions from the provided map.
-func HeaderValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderValueOption {
+// headerValueList creates a list of Envoy HeaderValueOptions from the provided map.
+func headerValueList(hvm map[string]string, app bool) []*envoy_core_v3.HeaderValueOption {
 	var hvs []*envoy_core_v3.HeaderValueOption
 
 	for key, value := range hvm {
@@ -312,18 +402,18 @@ func weightedClusters(route *dag.Route) *envoy_route_v3.WeightedCluster {
 			Weight: protobuf.UInt32(cluster.Weight),
 		}
 		if cluster.RequestHeadersPolicy != nil {
-			c.RequestHeadersToAdd = append(HeaderValueList(cluster.RequestHeadersPolicy.Set, false), HeaderValueList(cluster.RequestHeadersPolicy.Add, true)...)
+			c.RequestHeadersToAdd = append(headerValueList(cluster.RequestHeadersPolicy.Set, false), headerValueList(cluster.RequestHeadersPolicy.Add, true)...)
 			c.RequestHeadersToRemove = cluster.RequestHeadersPolicy.Remove
 		}
 		if cluster.ResponseHeadersPolicy != nil {
-			c.ResponseHeadersToAdd = HeaderValueList(cluster.ResponseHeadersPolicy.Set, false)
+			c.ResponseHeadersToAdd = headerValueList(cluster.ResponseHeadersPolicy.Set, false)
 			c.ResponseHeadersToRemove = cluster.ResponseHeadersPolicy.Remove
 		}
 		if len(route.CookieRewritePolicies) > 0 || len(cluster.CookieRewritePolicies) > 0 {
 			if c.TypedPerFilterConfig == nil {
 				c.TypedPerFilterConfig = map[string]*any.Any{}
 			}
-			c.TypedPerFilterConfig["envoy.filters.http.lua"] = CookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
+			c.TypedPerFilterConfig["envoy.filters.http.lua"] = cookieRewriteConfig(route.CookieRewritePolicies, cluster.CookieRewritePolicies)
 		}
 		wc.Clusters = append(wc.Clusters, c)
 	}
@@ -361,14 +451,14 @@ func RouteConfiguration(name string, virtualhosts ...*envoy_route_v3.VirtualHost
 	return &envoy_route_v3.RouteConfiguration{
 		Name:         name,
 		VirtualHosts: virtualhosts,
-		RequestHeadersToAdd: Headers(
-			AppendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
+		RequestHeadersToAdd: headers(
+			appendHeader("x-request-start", "t=%START_TIME(%s.%3f)%"),
 		),
 	}
 }
 
-// CORSPolicy returns a *envoy_route_v3.CORSPolicy
-func CORSPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
+// corsPolicy returns a *envoy_route_v3.CorsPolicy
+func corsPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 	if cp == nil {
 		return nil
 	}
@@ -399,11 +489,11 @@ func CORSPolicy(cp *dag.CORSPolicy) *envoy_route_v3.CorsPolicy {
 	return rcp
 }
 
-func Headers(first *envoy_core_v3.HeaderValueOption, rest ...*envoy_core_v3.HeaderValueOption) []*envoy_core_v3.HeaderValueOption {
+func headers(first *envoy_core_v3.HeaderValueOption, rest ...*envoy_core_v3.HeaderValueOption) []*envoy_core_v3.HeaderValueOption {
 	return append([]*envoy_core_v3.HeaderValueOption{first}, rest...)
 }
 
-func AppendHeader(key, value string) *envoy_core_v3.HeaderValueOption {
+func appendHeader(key, value string) *envoy_core_v3.HeaderValueOption {
 	return &envoy_core_v3.HeaderValueOption{
 		Header: &envoy_core_v3.HeaderValue{
 			Key:   key,
@@ -452,7 +542,7 @@ func containsMatch(s string) *envoy_route_v3.HeaderMatcher_SafeRegexMatch {
 	}
 }
 
-func CookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *any.Any {
+func cookieRewriteConfig(routePolicies, clusterPolicies []dag.CookieRewritePolicy) *any.Any {
 	// Merge route and cluster policies
 	mergedPolicies := map[string]dag.CookieRewritePolicy{}
 	for _, p := range append(routePolicies, clusterPolicies...) {

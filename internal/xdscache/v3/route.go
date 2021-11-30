@@ -21,7 +21,6 @@ import (
 	envoy_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -97,110 +96,12 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 	}
 
 	for vhost, routes := range root.GetVirtualHostRoutes() {
-		toEnvoyRoute := func(route *dag.Route) *envoy_route_v3.Route {
-			switch {
-			case route.HTTPSUpgrade:
-				// TODO(dfc) if we ensure the builder never returns a dag.Route connected
-				// to a SecureVirtualHost that requires upgrade, this logic can move to
-				// envoy.RouteRoute.
-				return &envoy_route_v3.Route{
-					Match:  envoy_v3.RouteMatch(route),
-					Action: envoy_v3.UpgradeHTTPS(),
-				}
-			case route.DirectResponse != nil:
-				return &envoy_route_v3.Route{
-					Match:  envoy_v3.RouteMatch(route),
-					Action: envoy_v3.RouteDirectResponse(route.DirectResponse),
-				}
-			case route.Redirect != nil:
-				// TODO request/response headers?
-				return &envoy_route_v3.Route{
-					Match:  envoy_v3.RouteMatch(route),
-					Action: envoy_v3.RouteRedirect(route.Redirect),
-				}
-			default:
-				rt := &envoy_route_v3.Route{
-					Match:  envoy_v3.RouteMatch(route),
-					Action: envoy_v3.RouteRoute(route),
-				}
-				if route.RequestHeadersPolicy != nil {
-					rt.RequestHeadersToAdd = append(envoy_v3.HeaderValueList(route.RequestHeadersPolicy.Set, false), envoy_v3.HeaderValueList(route.RequestHeadersPolicy.Add, true)...)
-					rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
-				}
-				if route.ResponseHeadersPolicy != nil {
-					rt.ResponseHeadersToAdd = envoy_v3.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
-					rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
-				}
-				if route.RateLimitPolicy != nil && route.RateLimitPolicy.Local != nil {
-					if rt.TypedPerFilterConfig == nil {
-						rt.TypedPerFilterConfig = map[string]*any.Any{}
-					}
-					rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local, "vhost."+vhost.Name)
-				}
-
-				return rt
-			}
-		}
-
 		sortRoutes(routes)
-		routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts = append(routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts, toEnvoyVirtualHost(vhost, routes, toEnvoyRoute))
+		routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts = append(routeConfigs[ENVOY_HTTP_LISTENER].VirtualHosts,
+			envoy_v3.VirtualHostAndRoutes(vhost, routes, false, nil))
 	}
 
 	for vhost, routes := range root.GetSecureVirtualHostRoutes() {
-		toEnvoyRoute := func(route *dag.Route) *envoy_route_v3.Route {
-			switch {
-			case route.DirectResponse != nil:
-				return &envoy_route_v3.Route{
-					Match:  envoy_v3.RouteMatch(route),
-					Action: envoy_v3.RouteDirectResponse(route.DirectResponse),
-				}
-			case route.Redirect != nil:
-				// TODO request/response headers?
-				return &envoy_route_v3.Route{
-					Match:  envoy_v3.RouteMatch(route),
-					Action: envoy_v3.RouteRedirect(route.Redirect),
-				}
-			default:
-				rt := &envoy_route_v3.Route{
-					Match:  envoy_v3.RouteMatch(route),
-					Action: envoy_v3.RouteRoute(route),
-				}
-
-				if route.RequestHeadersPolicy != nil {
-					rt.RequestHeadersToAdd = append(envoy_v3.HeaderValueList(route.RequestHeadersPolicy.Set, false), envoy_v3.HeaderValueList(route.RequestHeadersPolicy.Add, true)...)
-					rt.RequestHeadersToRemove = route.RequestHeadersPolicy.Remove
-				}
-				if route.ResponseHeadersPolicy != nil {
-					rt.ResponseHeadersToAdd = envoy_v3.HeaderValueList(route.ResponseHeadersPolicy.Set, false)
-					rt.ResponseHeadersToRemove = route.ResponseHeadersPolicy.Remove
-				}
-				if route.RateLimitPolicy != nil && route.RateLimitPolicy.Local != nil {
-					if rt.TypedPerFilterConfig == nil {
-						rt.TypedPerFilterConfig = map[string]*any.Any{}
-					}
-					rt.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(route.RateLimitPolicy.Local, "vhost."+vhost.Name)
-				}
-
-				// If authorization is enabled on this host, we may need to set per-route filter overrides.
-				if vhost.AuthorizationService != nil {
-					// Apply per-route authorization policy modifications.
-					if route.AuthDisabled {
-						if rt.TypedPerFilterConfig == nil {
-							rt.TypedPerFilterConfig = map[string]*any.Any{}
-						}
-						rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = envoy_v3.RouteAuthzDisabled()
-					} else if len(route.AuthContext) > 0 {
-						if rt.TypedPerFilterConfig == nil {
-							rt.TypedPerFilterConfig = map[string]*any.Any{}
-						}
-						rt.TypedPerFilterConfig["envoy.filters.http.ext_authz"] = envoy_v3.RouteAuthzContext(route.AuthContext)
-					}
-				}
-
-				return rt
-			}
-		}
-
 		// Add secure vhost route config if not already present.
 		name := path.Join("https", vhost.VirtualHost.Name)
 		if _, ok := routeConfigs[name]; !ok {
@@ -208,7 +109,8 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 		}
 
 		sortRoutes(routes)
-		routeConfigs[name].VirtualHosts = append(routeConfigs[name].VirtualHosts, toEnvoyVirtualHost(&vhost.VirtualHost, routes, toEnvoyRoute))
+		routeConfigs[name].VirtualHosts = append(routeConfigs[name].VirtualHosts,
+			envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true, vhost.AuthorizationService))
 
 		// A fallback route configuration contains routes for all the vhosts that have the fallback certificate enabled.
 		// When a request is received, the default TLS filterchain will accept the connection,
@@ -219,7 +121,8 @@ func (c *RouteCache) OnChange(root *dag.DAG) {
 				routeConfigs[ENVOY_FALLBACK_ROUTECONFIG] = envoy_v3.RouteConfiguration(ENVOY_FALLBACK_ROUTECONFIG)
 			}
 
-			routeConfigs[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts = append(routeConfigs[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts, toEnvoyVirtualHost(&vhost.VirtualHost, routes, toEnvoyRoute))
+			routeConfigs[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts = append(routeConfigs[ENVOY_FALLBACK_ROUTECONFIG].VirtualHosts,
+				envoy_v3.VirtualHostAndRoutes(&vhost.VirtualHost, routes, true, vhost.AuthorizationService))
 		}
 	}
 
@@ -248,29 +151,4 @@ func sortRoutes(routes []*dag.Route) {
 	}
 
 	sort.Stable(sorter.For(routes))
-}
-
-// toEnvoyVirtualHost converts a DAG virtual host and routes to an Envoy virtual host.
-func toEnvoyVirtualHost(vh *dag.VirtualHost, routes []*dag.Route, toEnvoyRoute func(*dag.Route) *envoy_route_v3.Route) *envoy_route_v3.VirtualHost {
-	var envoyRoutes []*envoy_route_v3.Route
-	for _, route := range routes {
-		envoyRoutes = append(envoyRoutes, toEnvoyRoute(route))
-	}
-
-	evh := envoy_v3.VirtualHost(vh.Name, envoyRoutes...)
-	if vh.CORSPolicy != nil {
-		evh.Cors = envoy_v3.CORSPolicy(vh.CORSPolicy)
-	}
-	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Local != nil {
-		if evh.TypedPerFilterConfig == nil {
-			evh.TypedPerFilterConfig = map[string]*any.Any{}
-		}
-		evh.TypedPerFilterConfig["envoy.filters.http.local_ratelimit"] = envoy_v3.LocalRateLimitConfig(vh.RateLimitPolicy.Local, "vhost."+vh.Name)
-	}
-
-	if vh.RateLimitPolicy != nil && vh.RateLimitPolicy.Global != nil {
-		evh.RateLimits = envoy_v3.GlobalRateLimits(vh.RateLimitPolicy.Global.Descriptors)
-	}
-
-	return evh
 }
