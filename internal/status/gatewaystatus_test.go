@@ -157,3 +157,40 @@ func TestGatewayMutate(t *testing.T) {
 	}
 	assert.ElementsMatch(t, want, got.Status.Listeners)
 }
+
+func TestGatewayAddListenerCondition(t *testing.T) {
+	var gsu GatewayStatusUpdate
+
+	// first condition for listener-1
+	res := gsu.AddListenerCondition("listener-1", gatewayapi_v1alpha2.ListenerConditionReady, metav1.ConditionFalse, gatewayapi_v1alpha2.ListenerReasonInvalid, "message 1")
+	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 1)
+	assert.Equal(t, string(gatewayapi_v1alpha2.ListenerConditionReady), res.Type)
+	assert.Equal(t, metav1.ConditionFalse, res.Status)
+	assert.Equal(t, string(gatewayapi_v1alpha2.ListenerReasonInvalid), res.Reason)
+	assert.Equal(t, "message 1", res.Message)
+
+	// second condition (different type) for listener-1
+	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1alpha2.ListenerConditionDetached, metav1.ConditionTrue, gatewayapi_v1alpha2.ListenerReasonUnsupportedProtocol, "message 2")
+	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
+	assert.Equal(t, string(gatewayapi_v1alpha2.ListenerConditionDetached), res.Type)
+	assert.Equal(t, metav1.ConditionTrue, res.Status)
+	assert.Equal(t, string(gatewayapi_v1alpha2.ListenerReasonUnsupportedProtocol), res.Reason)
+	assert.Equal(t, "message 2", res.Message)
+
+	// first condition for listener-2
+	res = gsu.AddListenerCondition("listener-2", gatewayapi_v1alpha2.ListenerConditionReady, metav1.ConditionFalse, gatewayapi_v1alpha2.ListenerReasonInvalid, "message 3")
+	assert.Len(t, gsu.ListenerStatus["listener-2"].Conditions, 1)
+	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
+	assert.Equal(t, string(gatewayapi_v1alpha2.ListenerConditionReady), res.Type)
+	assert.Equal(t, metav1.ConditionFalse, res.Status)
+	assert.Equal(t, string(gatewayapi_v1alpha2.ListenerReasonInvalid), res.Reason)
+	assert.Equal(t, "message 3", res.Message)
+
+	// third condition (pre-existing type) for listener-1
+	res = gsu.AddListenerCondition("listener-1", gatewayapi_v1alpha2.ListenerConditionDetached, metav1.ConditionTrue, gatewayapi_v1alpha2.ListenerReasonUnsupportedProtocol, "message 4")
+	assert.Len(t, gsu.ListenerStatus["listener-1"].Conditions, 2)
+	assert.Equal(t, string(gatewayapi_v1alpha2.ListenerConditionDetached), res.Type)
+	assert.Equal(t, metav1.ConditionTrue, res.Status)
+	assert.Equal(t, string(gatewayapi_v1alpha2.ListenerReasonUnsupportedProtocol), res.Reason)
+	assert.Equal(t, "message 2, message 4", res.Message)
+}

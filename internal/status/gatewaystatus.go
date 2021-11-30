@@ -98,6 +98,52 @@ func (gatewayUpdate *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName
 	gatewayUpdate.ListenerStatus[listenerName].AttachedRoutes = int32(numRoutes)
 }
 
+// AddListenerCondition adds a Condition for the specified listener.
+func (gatewayUpdate *GatewayStatusUpdate) AddListenerCondition(
+	listenerName string,
+	cond gatewayapi_v1alpha2.ListenerConditionType,
+	status metav1.ConditionStatus,
+	reason gatewayapi_v1alpha2.ListenerConditionReason,
+	message string,
+) metav1.Condition {
+	if gatewayUpdate.ListenerStatus == nil {
+		gatewayUpdate.ListenerStatus = map[string]*gatewayapi_v1alpha2.ListenerStatus{}
+	}
+	if gatewayUpdate.ListenerStatus[listenerName] == nil {
+		gatewayUpdate.ListenerStatus[listenerName] = &gatewayapi_v1alpha2.ListenerStatus{
+			Name: gatewayapi_v1alpha2.SectionName(listenerName),
+		}
+	}
+
+	listenerStatus := gatewayUpdate.ListenerStatus[listenerName]
+
+	idx := -1
+	for i, existing := range listenerStatus.Conditions {
+		if existing.Type == string(cond) {
+			idx = i
+			message = fmt.Sprintf("%s, %s", existing.Message, message)
+			break
+		}
+	}
+
+	newCond := metav1.Condition{
+		Reason:             string(reason),
+		Status:             status,
+		Type:               string(cond),
+		Message:            message,
+		LastTransitionTime: metav1.NewTime(clock.Now()),
+		ObservedGeneration: gatewayUpdate.Generation,
+	}
+
+	if idx > -1 {
+		listenerStatus.Conditions[idx] = newCond
+	} else {
+		listenerStatus.Conditions = append(listenerStatus.Conditions, newCond)
+	}
+
+	return newCond
+}
+
 func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition {
 	conditions := make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition)
 	for _, cond := range gs.Conditions {
@@ -156,7 +202,14 @@ func (gatewayUpdate *GatewayStatusUpdate) Mutate(obj client.Object) client.Objec
 	// for each Gateway status update.
 	var listenerStatusToWrite []gatewayapi_v1alpha2.ListenerStatus
 	for _, status := range gatewayUpdate.ListenerStatus {
-		status.Conditions = []metav1.Condition{} // Conditions is a required field so we have to specify an empty slice here
+		if status.Conditions == nil {
+			// Conditions is a required field so we have to specify an empty slice here
+			status.Conditions = []metav1.Condition{}
+		}
+		if status.SupportedKinds == nil {
+			// SupportedKinds is a required field so we have to specify an empty slice here
+			status.SupportedKinds = []gatewayapi_v1alpha2.RouteGroupKind{}
+		}
 		listenerStatusToWrite = append(listenerStatusToWrite, *status)
 	}
 
