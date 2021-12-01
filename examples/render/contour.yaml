@@ -4746,7 +4746,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: contour
+  name: contour-certgen
   namespace: projectcontour
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -4811,7 +4811,6 @@ spec:
   backoffLimit: 1
 
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4819,6 +4818,20 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
+  name: contour
+subjects:
+- kind: ServiceAccount
+  name: contour
+  namespace: projectcontour
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: contour
+  namespace: projectcontour
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
   name: contour
 subjects:
 - kind: ServiceAccount
@@ -4836,14 +4849,6 @@ metadata:
   creationTimestamp: null
   name: contour
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - create
-  - get
-  - update
 - apiGroups:
   - ""
   resources:
@@ -4917,6 +4922,23 @@ rules:
   - contourconfigurations/status
   - extensionservices/status
   - httpproxies/status
+  verbs:
+  - create
+  - get
+  - update
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: contour
+  namespace: projectcontour
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
   verbs:
   - create
   - get

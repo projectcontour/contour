@@ -77,11 +77,13 @@ type Deployment struct {
 	ContourConfigurationCRD   *apiextensions_v1.CustomResourceDefinition
 	ContourDeploymentCRD      *apiextensions_v1.CustomResourceDefinition
 	CertgenServiceAccount     *v1.ServiceAccount
-	ContourRoleBinding        *rbac_v1.RoleBinding
+	CertgenRoleBinding        *rbac_v1.RoleBinding
 	CertgenRole               *rbac_v1.Role
 	CertgenJob                *batch_v1.Job
 	ContourClusterRoleBinding *rbac_v1.ClusterRoleBinding
+	ContourRoleBinding        *rbac_v1.RoleBinding
 	ContourClusterRole        *rbac_v1.ClusterRole
+	ContourRole               *rbac_v1.Role
 	ContourService            *v1.Service
 	EnvoyService              *v1.Service
 	ContourDeployment         *apps_v1.Deployment
@@ -129,11 +131,13 @@ func (d *Deployment) UnmarshalResources() error {
 	d.ContourConfigurationCRD = new(apiextensions_v1.CustomResourceDefinition)
 	d.ContourDeploymentCRD = new(apiextensions_v1.CustomResourceDefinition)
 	d.CertgenServiceAccount = new(v1.ServiceAccount)
-	d.ContourRoleBinding = new(rbac_v1.RoleBinding)
+	d.CertgenRoleBinding = new(rbac_v1.RoleBinding)
 	d.CertgenRole = new(rbac_v1.Role)
 	d.CertgenJob = new(batch_v1.Job)
 	d.ContourClusterRoleBinding = new(rbac_v1.ClusterRoleBinding)
+	d.ContourRoleBinding = new(rbac_v1.RoleBinding)
 	d.ContourClusterRole = new(rbac_v1.ClusterRole)
+	d.ContourRole = new(rbac_v1.Role)
 	d.ContourService = new(v1.Service)
 	d.EnvoyService = new(v1.Service)
 	d.ContourDeployment = new(apps_v1.Deployment)
@@ -149,11 +153,13 @@ func (d *Deployment) UnmarshalResources() error {
 		d.ContourConfigurationCRD,
 		d.ContourDeploymentCRD,
 		d.CertgenServiceAccount,
-		d.ContourRoleBinding,
+		d.CertgenRoleBinding,
 		d.CertgenRole,
 		d.CertgenJob,
 		d.ContourClusterRoleBinding,
+		d.ContourRoleBinding,
 		d.ContourClusterRole,
+		d.ContourRole,
 		d.ContourService,
 		d.EnvoyService,
 		d.ContourDeployment,
@@ -254,8 +260,8 @@ func (d *Deployment) EnsureCertgenServiceAccount() error {
 	return d.ensureResource(d.CertgenServiceAccount, new(v1.ServiceAccount))
 }
 
-func (d *Deployment) EnsureContourRoleBinding() error {
-	return d.ensureResource(d.ContourRoleBinding, new(rbac_v1.RoleBinding))
+func (d *Deployment) EnsureCertgenRoleBinding() error {
+	return d.ensureResource(d.CertgenRoleBinding, new(rbac_v1.RoleBinding))
 }
 
 func (d *Deployment) EnsureCertgenRole() error {
@@ -283,8 +289,16 @@ func (d *Deployment) EnsureContourClusterRoleBinding() error {
 	return d.ensureResource(d.ContourClusterRoleBinding, new(rbac_v1.ClusterRoleBinding))
 }
 
+func (d *Deployment) EnsureContourRoleBinding() error {
+	return d.ensureResource(d.ContourRoleBinding, new(rbac_v1.RoleBinding))
+}
+
 func (d *Deployment) EnsureContourClusterRole() error {
 	return d.ensureResource(d.ContourClusterRole, new(rbac_v1.ClusterRole))
+}
+
+func (d *Deployment) EnsureContourRole() error {
+	return d.ensureResource(d.ContourRole, new(rbac_v1.Role))
 }
 
 func (d *Deployment) EnsureContourService() error {
@@ -662,11 +676,13 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 // - Contour configmap
 // - CRDs
 // - Certgen service account
-// - Contour role binding
+// - Certgen role binding
 // - Certgen role
 // - Certgen job
 // - Contour cluster role binding
+// - Contour role binding
 // - Contour cluster role
+// - Contour role
 // - Contour service
 // - Envoy service
 // - Contour deployment
@@ -704,7 +720,7 @@ func (d *Deployment) EnsureResourcesForInclusterContour() error {
 	if err := d.EnsureCertgenServiceAccount(); err != nil {
 		return err
 	}
-	if err := d.EnsureContourRoleBinding(); err != nil {
+	if err := d.EnsureCertgenRoleBinding(); err != nil {
 		return err
 	}
 	if err := d.EnsureCertgenRole(); err != nil {
@@ -722,7 +738,13 @@ func (d *Deployment) EnsureResourcesForInclusterContour() error {
 	if err := d.EnsureContourClusterRoleBinding(); err != nil {
 		return err
 	}
+	if err := d.EnsureContourRoleBinding(); err != nil {
+		return err
+	}
 	if err := d.EnsureContourClusterRole(); err != nil {
+		return err
+	}
+	if err := d.EnsureContourRole(); err != nil {
 		return err
 	}
 	if err := d.EnsureContourService(); err != nil {
@@ -777,11 +799,13 @@ func (d *Deployment) DeleteResourcesForInclusterContour() error {
 		leaderElectionConfigMap,
 		d.EnvoyService,
 		d.ContourService,
+		d.ContourRole,
 		d.ContourClusterRole,
+		d.ContourRoleBinding,
 		d.ContourClusterRoleBinding,
 		d.CertgenJob,
 		d.CertgenRole,
-		d.ContourRoleBinding,
+		d.CertgenRoleBinding,
 		d.CertgenServiceAccount,
 		d.TLSCertDelegationCRD,
 		d.ExtensionServiceCRD,
