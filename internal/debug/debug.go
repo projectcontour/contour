@@ -35,8 +35,8 @@ func (svc *Service) NeedLeaderElection() bool {
 	return false
 }
 
-// Start fulfills the g.Start contract.
-// When stop is closed the http server will shutdown.
+// Implements controller-runtime Runnable interface.
+// When context is done, http server will shutdown.
 func (svc *Service) Start(ctx context.Context) error {
 	registerProfile(&svc.ServeMux)
 	registerDotWriter(&svc.ServeMux, svc.Builder)
