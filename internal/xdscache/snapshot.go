@@ -20,13 +20,13 @@ import (
 	"sync"
 
 	envoy_types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+	envoy_resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/sirupsen/logrus"
 )
 
 type Snapshotter interface {
-	Generate(version string, resources map[envoy_types.ResponseType][]envoy_types.Resource) error
+	Generate(version string, resources map[envoy_resource_v3.Type][]envoy_types.Resource) error
 }
 
 // SnapshotHandler implements the xDS snapshot cache
@@ -34,7 +34,7 @@ type Snapshotter interface {
 // snapshot to be created.
 type SnapshotHandler struct {
 	// resources holds the cache of xDS contents.
-	resources map[envoy_types.ResponseType]ResourceCache
+	resources map[envoy_resource_v3.Type]ResourceCache
 
 	// snapshotVersion holds the current version of the snapshot.
 	snapshotVersion int64
@@ -77,12 +77,13 @@ func (s *SnapshotHandler) generateNewSnapshot() {
 	// Generate new snapshot version.
 	version := s.newSnapshotVersion()
 
-	resources := map[envoy_types.ResponseType][]envoy_types.Resource{
-		envoy_types.Endpoint: asResources(s.resources[envoy_types.Endpoint].Contents()),
-		envoy_types.Cluster:  asResources(s.resources[envoy_types.Cluster].Contents()),
-		envoy_types.Route:    asResources(s.resources[envoy_types.Route].Contents()),
-		envoy_types.Listener: asResources(s.resources[envoy_types.Listener].Contents()),
-		envoy_types.Secret:   asResources(s.resources[envoy_types.Secret].Contents()),
+	// Convert caches to envoy xDS Resources.
+	resources := map[envoy_resource_v3.Type][]envoy_types.Resource{
+		envoy_resource_v3.EndpointType: asResources(s.resources[envoy_resource_v3.EndpointType].Contents()),
+		envoy_resource_v3.ClusterType:  asResources(s.resources[envoy_resource_v3.ClusterType].Contents()),
+		envoy_resource_v3.RouteType:    asResources(s.resources[envoy_resource_v3.RouteType].Contents()),
+		envoy_resource_v3.ListenerType: asResources(s.resources[envoy_resource_v3.ListenerType].Contents()),
+		envoy_resource_v3.SecretType:   asResources(s.resources[envoy_resource_v3.SecretType].Contents()),
 	}
 
 	s.snapLock.Lock()
@@ -129,22 +130,11 @@ func asResources(messages interface{}) []envoy_types.Resource {
 
 // parseResources converts an []ResourceCache to a map[envoy_types.ResponseType]ResourceCache
 // for faster indexing when creating new snapshots.
-func parseResources(resources []ResourceCache) map[envoy_types.ResponseType]ResourceCache {
-	resourceMap := make(map[envoy_types.ResponseType]ResourceCache, len(resources))
+func parseResources(resources []ResourceCache) map[envoy_resource_v3.Type]ResourceCache {
+	resourceMap := make(map[envoy_resource_v3.Type]ResourceCache, len(resources))
 
 	for _, r := range resources {
-		switch r.TypeURL() {
-		case resource.ClusterType:
-			resourceMap[envoy_types.Cluster] = r
-		case resource.RouteType:
-			resourceMap[envoy_types.Route] = r
-		case resource.ListenerType:
-			resourceMap[envoy_types.Listener] = r
-		case resource.SecretType:
-			resourceMap[envoy_types.Secret] = r
-		case resource.EndpointType:
-			resourceMap[envoy_types.Endpoint] = r
-		}
+		resourceMap[r.TypeURL()] = r
 	}
 	return resourceMap
 }

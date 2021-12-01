@@ -19,6 +19,7 @@ import (
 	envoy_types "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoy_cache_v3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoy_log "github.com/envoyproxy/go-control-plane/pkg/log"
+	envoy_resource_v3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/xds"
 	"github.com/projectcontour/contour/internal/xdscache"
 )
@@ -35,18 +36,15 @@ type snapshotter struct {
 	envoy_cache_v3.SnapshotCache
 }
 
-func (s *snapshotter) Generate(version string, resources map[envoy_types.ResponseType][]envoy_types.Resource) error {
+func (s *snapshotter) Generate(version string, resources map[envoy_resource_v3.Type][]envoy_types.Resource) error {
 	// Create a snapshot with all xDS resources.
-	snapshot := envoy_cache_v3.NewSnapshot(
+	snapshot, err := envoy_cache_v3.NewSnapshot(
 		version,
-		resources[envoy_types.Endpoint],
-		resources[envoy_types.Cluster],
-		resources[envoy_types.Route],
-		resources[envoy_types.Listener],
-		nil,
-		resources[envoy_types.Secret],
-		nil,
+		resources,
 	)
+	if err != nil {
+		return err
+	}
 
 	return s.SetSnapshot(context.TODO(), Hash.String(), snapshot)
 }
