@@ -52,6 +52,14 @@ for example in examples/contour/02-job-certgen.yaml ; do
         "$example"
 done
 
+# Remove spec.ttlSecondsAfterFinished from the certgen job, as it is versioned
+# for releases and doesn't need to be cleaned up.
+for example in examples/contour/02-job-certgen.yaml ; do
+    run::sed \
+        '-e/^[[:blank:]]*ttlSecondsAfterFinished:/d' \
+        "$example"
+done
+
 make generate
 
 # If pushing the tag failed, then we might have already committed the
