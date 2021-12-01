@@ -367,9 +367,10 @@ type HTTPRequestRedirectPolicy struct {
 	// +kubebuilder:validation:Enum=http;https
 	Scheme *string `json:"scheme,omitempty"`
 
-	// Hostname is the hostname to be used in the value of the `Location`
+	// Hostname is the precise hostname to be used in the value of the `Location`
 	// header in the response.
 	// When empty, the hostname of the request is used.
+	// No wildcards are allowed.
 	// +optional
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=253

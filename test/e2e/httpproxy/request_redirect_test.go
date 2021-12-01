@@ -36,7 +36,9 @@ func testRequestRedirectRuleNoService(namespace string) {
 
 		proxy := getHTTPProxy(namespace, true)
 
-		require.Equal(t, 0, len(proxy.Spec.Routes))
+		for _, route := range proxy.Spec.Routes {
+			require.Equal(t, 0, len(route.Services))
+		}
 
 		doTest(namespace, proxy, t)
 	})
@@ -46,7 +48,7 @@ func testRequestRedirectRule(namespace string) {
 	Specify("redirects can be specified on route rule", func() {
 		t := f.T()
 
-		proxy := getHTTPProxy(namespace, true)
+		proxy := getHTTPProxy(namespace, false)
 		doTest(namespace, proxy, t)
 	})
 }
@@ -129,8 +131,8 @@ func getHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPPro
 
 	if removeServices {
 		// Remove the services from the proxy.
-		for _, route := range proxy.Spec.Routes {
-			route.Services = []contour_api_v1.Service{}
+		for i := range proxy.Spec.Routes {
+			proxy.Spec.Routes[i].Services = []contour_api_v1.Service{}
 		}
 	}
 
