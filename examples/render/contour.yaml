@@ -3132,9 +3132,10 @@ spec:
                       description: RequestRedirectPolicy defines an HTTP redirection.
                       properties:
                         hostname:
-                          description: Hostname is the hostname to be used in the
-                            value of the `Location` header in the response. When empty,
-                            the hostname of the request is used.
+                          description: Hostname is the precise hostname to be used
+                            in the value of the `Location` header in the response.
+                            When empty, the hostname of the request is used. No wildcards
+                            are allowed.
                           maxLength: 253
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
