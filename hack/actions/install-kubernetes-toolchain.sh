@@ -56,9 +56,6 @@ if [[ ${GITHUB_ACTIONS} == "true" && ${OS} == "linux" ]]; then
   mv /home/runner/go/bin/ginkgo ${DESTDIR}/ginkgo
 fi
 
-# Install mockery for generating go mocks
-go install github.com/vektra/mockery/v2@v2.9.4
-
 download \
    "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERS}/kind-${OS}-amd64" \
    "${DESTDIR}/kind"
