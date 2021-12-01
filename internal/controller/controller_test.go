@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-//go:generate mockery --case=snake --name=Manager --srcpkg=sigs.k8s.io/controller-runtime/pkg/manager
+//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=Manager --srcpkg=sigs.k8s.io/controller-runtime/pkg/manager
 
 func TestRegisterControllers(t *testing.T) {
 	tests := map[string]func(*mocks.Manager) error{
