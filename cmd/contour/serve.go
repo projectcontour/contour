@@ -403,21 +403,23 @@ func (s *Server) doServe() error {
 		fallbackCert:              fallbackCert,
 	})
 
-	// Build the core Kubernetes event handler.
-	contourHandler := contour.NewEventHandler(
-		contour.EventHandlerConfig{
-			Logger:          s.log.WithField("context", "contourEventHandler"),
-			HoldoffDelay:    100 * time.Millisecond,
-			HoldoffMaxDelay: 500 * time.Millisecond,
-			Observer: &contour.RebuildMetricsObserver{
-				Metrics:      contourMetrics,
-				IsLeader:     s.mgr.Elected(),
-				NextObserver: dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
-			},
-			StatusUpdater: sh.Writer(),
-			Builder:       builder,
+	ehConfig := contour.EventHandlerConfig{
+		Logger:          s.log.WithField("context", "contourEventHandler"),
+		HoldoffDelay:    100 * time.Millisecond,
+		HoldoffMaxDelay: 500 * time.Millisecond,
+		Observer: &contour.RebuildMetricsObserver{
+			Metrics:      contourMetrics,
+			IsLeader:     s.mgr.Elected(),
+			NextObserver: dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
 		},
-	)
+		StatusUpdater: sh.Writer(),
+		Builder:       builder,
+	}
+	if !s.ctx.DisableLeaderElection {
+		ehConfig.IsLeader = s.mgr.Elected()
+	}
+	// Build the core Kubernetes event handler.
+	contourHandler := contour.NewEventHandler(ehConfig)
 
 	// Wrap contourHandler in an EventRecorder which tracks API server events.
 	eventHandler := &contour.EventRecorder{

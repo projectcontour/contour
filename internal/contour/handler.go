@@ -29,17 +29,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EventHandler implements cache.ResourceEventHandler, filters k8s events towards
-// a dag.Builder and calls through to the Observer to notify it that a new DAG
-// is available.
 type EventHandlerConfig struct {
 	Logger                        logrus.FieldLogger
 	Builder                       *dag.Builder
 	Observer                      dag.Observer
 	HoldoffDelay, HoldoffMaxDelay time.Duration
 	StatusUpdater                 k8s.StatusUpdater
+	IsLeader                      <-chan struct{}
 }
 
+// EventHandler implements cache.ResourceEventHandler, filters k8s events towards
+// a dag.Builder and calls through to the Observer to notify it that a new DAG
+// is available.
 type EventHandler struct {
 	builder  *dag.Builder
 	observer dag.Observer
@@ -57,6 +58,8 @@ type EventHandler struct {
 	// seq is the sequence counter of the number of times
 	// an event has been received.
 	seq int
+
+	isLeader <-chan struct{}
 }
 
 func NewEventHandler(config EventHandlerConfig) *EventHandler {
@@ -69,6 +72,7 @@ func NewEventHandler(config EventHandlerConfig) *EventHandler {
 		statusUpdater:   config.StatusUpdater,
 		update:          make(chan interface{}),
 		sequence:        make(chan int, 1),
+		isLeader:        config.IsLeader,
 	}
 }
 
@@ -94,11 +98,6 @@ func (e *EventHandler) OnUpdate(oldObj, newObj interface{}) {
 
 func (e *EventHandler) OnDelete(obj interface{}) {
 	e.update <- opDelete{obj: obj}
-}
-
-// UpdateNow enqueues a DAG update subject to the holdoff timer.
-func (e *EventHandler) UpdateNow() {
-	e.update <- true
 }
 
 func (e *EventHandler) NeedLeaderElection() bool {
@@ -169,6 +168,9 @@ func (e *EventHandler) Start(ctx context.Context) error {
 			e.rebuildDAG()
 			e.incSequence()
 			lastDAGRebuild = time.Now()
+		case <-e.isLeader:
+			e.isLeader = nil
+			e.update <- true
 		case <-ctx.Done():
 			// shutdown
 			return nil
