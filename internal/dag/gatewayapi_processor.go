@@ -37,6 +37,7 @@ import (
 const (
 	KindHTTPRoute = "HTTPRoute"
 	KindTLSRoute  = "TLSRoute"
+	KindGateway   = "Gateway"
 )
 
 // GatewayAPIProcessor translates Gateway API types into DAG
@@ -352,7 +353,67 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1alpha2.Ga
 		return nil
 	}
 
-	listenerSecret, err := p.source.LookupSecret(types.NamespacedName{Name: string(certificateRef.Name), Namespace: p.source.gateway.Namespace}, validSecret)
+	// If the secret is in a different namespace than the gateway, then we need to
+	// check for a ReferencePolicy that allows the reference.
+	if certificateRef.Namespace != nil && string(*certificateRef.Namespace) != p.source.gateway.Namespace {
+		var allowed bool
+		for _, referencePolicy := range p.source.referencepolicies {
+			// The ReferencePolicy must be defined in the namespace of
+			// the "referent" (i.e. the Secret).
+			if referencePolicy.Namespace != string(*certificateRef.Namespace) {
+				continue
+			}
+
+			// "From" must contain an entry matching the gateway that is
+			// referencing the secret.
+			var fromAllowed bool
+			for _, from := range referencePolicy.Spec.From {
+				if from.Namespace == gatewayapi_v1alpha2.Namespace(p.source.gateway.Namespace) && from.Group == gatewayapi_v1alpha2.GroupName && from.Kind == gatewayapi_v1alpha2.Kind(KindGateway) {
+					fromAllowed = true
+					break
+				}
+			}
+			if !fromAllowed {
+				continue
+			}
+
+			// "To" must contain an entry matching the Secret that
+			// is being referenced.
+			var toAllowed bool
+			for _, to := range referencePolicy.Spec.To {
+				if (to.Group == "" || to.Group == "core") && to.Kind == "Secret" && (to.Name == nil || *to.Name == "" || *to.Name == certificateRef.Name) {
+					toAllowed = true
+					break
+				}
+			}
+			if !toAllowed {
+				continue
+			}
+
+			allowed = true
+			break
+		}
+
+		if !allowed {
+			gwAccessor.AddListenerCondition(
+				listenerName,
+				gatewayapi_v1alpha2.ListenerConditionResolvedRefs,
+				metav1.ConditionFalse,
+				gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef,
+				fmt.Sprintf("Spec.VirtualHost.TLS.CertificateRefs %q namespace must match the Gateway's namespace or be covered by a ReferencePolicy", certificateRef.Name),
+			)
+			return nil
+		}
+	}
+
+	var meta types.NamespacedName
+	if certificateRef.Namespace != nil {
+		meta = types.NamespacedName{Name: string(certificateRef.Name), Namespace: string(*certificateRef.Namespace)}
+	} else {
+		meta = types.NamespacedName{Name: string(certificateRef.Name), Namespace: p.source.gateway.Namespace}
+	}
+
+	listenerSecret, err := p.source.LookupSecret(meta, validSecret)
 	if err != nil {
 		gwAccessor.AddListenerCondition(
 			listenerName,
