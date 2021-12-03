@@ -46,7 +46,7 @@ func TestNotifier(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		notifier.Start(ctx)
+		_ = notifier.Start(ctx)
 	}()
 
 	// Assert we don't return until cancel
