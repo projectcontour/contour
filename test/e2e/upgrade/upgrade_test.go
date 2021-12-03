@@ -101,7 +101,7 @@ var _ = Describe("upgrading Contour", func() {
 			require.NoError(f.T(), err)
 
 			By("deploying updated contour resources")
-			require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour())
+			require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
 
 			By("waiting for contour deployment to be updated")
 			require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
