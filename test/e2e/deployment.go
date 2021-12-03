@@ -37,6 +37,7 @@ import (
 	"gopkg.in/yaml.v2"
 	apps_v1 "k8s.io/api/apps/v1"
 	batch_v1 "k8s.io/api/batch/v1"
+	coordinationv1 "k8s.io/api/coordination/v1"
 	v1 "k8s.io/api/core/v1"
 	rbac_v1 "k8s.io/api/rbac/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -770,10 +771,17 @@ func (d *Deployment) DeleteResourcesForInclusterContour() error {
 			Namespace: d.Namespace.Name,
 		},
 	}
+	leaderElectionLease := &coordinationv1.Lease{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "leader-elect",
+			Namespace: d.Namespace.Name,
+		},
+	}
 
 	for _, r := range []client.Object{
 		d.EnvoyDaemonSet,
 		d.ContourDeployment,
+		leaderElectionLease,
 		leaderElectionConfigMap,
 		d.EnvoyService,
 		d.ContourService,

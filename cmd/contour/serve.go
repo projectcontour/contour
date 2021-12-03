@@ -383,10 +383,7 @@ func (s *Server) doServe() error {
 		fallbackCert = &types.NamespacedName{Name: contourConfiguration.HTTPProxy.FallbackCertificate.Name, Namespace: contourConfiguration.HTTPProxy.FallbackCertificate.Namespace}
 	}
 
-	sh := &k8s.StatusUpdateHandler{
-		Log:    s.log.WithField("context", "StatusUpdateHandler"),
-		Client: s.mgr.GetClient(),
-	}
+	sh := k8s.NewStatusUpdateHandler(s.log.WithField("context", "StatusUpdateHandler"), s.mgr.GetClient())
 	if err := s.mgr.Add(sh); err != nil {
 		return err
 	}

@@ -60,9 +60,17 @@ func (m StatusMutatorFunc) Mutate(old client.Object) client.Object {
 
 // StatusUpdateHandler holds the details required to actually write an Update back to the referenced object.
 type StatusUpdateHandler struct {
-	Log           logrus.FieldLogger
-	Client        client.Client
-	UpdateChannel chan StatusUpdate
+	log           logrus.FieldLogger
+	client        client.Client
+	updateChannel chan StatusUpdate
+}
+
+func NewStatusUpdateHandler(log logrus.FieldLogger, client client.Client) *StatusUpdateHandler {
+	return &StatusUpdateHandler{
+		log:           log,
+		client:        client,
+		updateChannel: make(chan StatusUpdate, 100),
+	}
 }
 
 func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
@@ -70,22 +78,22 @@ func (suh *StatusUpdateHandler) apply(upd StatusUpdate) {
 		obj := upd.Resource
 
 		// Get the resource.
-		if err := suh.Client.Get(context.Background(), upd.NamespacedName, obj); err != nil {
+		if err := suh.client.Get(context.Background(), upd.NamespacedName, obj); err != nil {
 			return err
 		}
 
 		newObj := upd.Mutator.Mutate(obj)
 
 		if isStatusEqual(obj, newObj) {
-			suh.Log.WithField("name", upd.NamespacedName.Name).
+			suh.log.WithField("name", upd.NamespacedName.Name).
 				WithField("namespace", upd.NamespacedName.Namespace).
 				Debug("update was a no-op")
 			return nil
 		}
 
-		return suh.Client.Status().Update(context.Background(), newObj)
+		return suh.client.Status().Update(context.Background(), newObj)
 	}); err != nil {
-		suh.Log.WithError(err).
+		suh.log.WithError(err).
 			WithField("name", upd.NamespacedName.Name).
 			WithField("namespace", upd.NamespacedName.Namespace).
 			Error("unable to update status")
@@ -98,12 +106,15 @@ func (suh *StatusUpdateHandler) NeedLeaderElection() bool {
 
 // Start runs the goroutine to perform status writes.
 func (suh *StatusUpdateHandler) Start(ctx context.Context) error {
+	suh.log.Info("started status update handler")
+	defer suh.log.Info("stopped status update handler")
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case upd := <-suh.UpdateChannel:
-			suh.Log.WithField("name", upd.NamespacedName.Name).
+		case upd := <-suh.updateChannel:
+			suh.log.WithField("name", upd.NamespacedName.Name).
 				WithField("namespace", upd.NamespacedName.Namespace).
 				Debug("received a status update")
 
@@ -116,12 +127,8 @@ func (suh *StatusUpdateHandler) Start(ctx context.Context) error {
 
 // Writer retrieves the interface that should be used to write to the StatusUpdateHandler.
 func (suh *StatusUpdateHandler) Writer() StatusUpdater {
-	if suh.UpdateChannel == nil {
-		suh.UpdateChannel = make(chan StatusUpdate, 100)
-	}
-
 	return &StatusUpdateWriter{
-		UpdateChannel: suh.UpdateChannel,
+		updateChannel: suh.updateChannel,
 	}
 }
 
@@ -132,10 +139,10 @@ type StatusUpdater interface {
 
 // StatusUpdateWriter takes status updates and sends these to the StatusUpdateHandler via a channel.
 type StatusUpdateWriter struct {
-	UpdateChannel chan StatusUpdate
+	updateChannel chan<- StatusUpdate
 }
 
 // Send sends the given StatusUpdate off to the update channel for writing by the StatusUpdateHandler.
 func (suw *StatusUpdateWriter) Send(update StatusUpdate) {
-	suw.UpdateChannel <- update
+	suw.updateChannel <- update
 }

@@ -131,6 +131,13 @@ func (e *EventHandler) Start(ctx context.Context) error {
 		return
 	}
 
+	// Trigger an update when we are elected leader to ensure resource
+	// statuses are not stale.
+	go func() {
+		<-e.isLeader
+		e.update <- true
+	}()
+
 	for {
 		// In the main loop one of four things can happen.
 		// 1. We're waiting for an event on op, stop, or pending, noting that
@@ -168,9 +175,6 @@ func (e *EventHandler) Start(ctx context.Context) error {
 			e.rebuildDAG()
 			e.incSequence()
 			lastDAGRebuild = time.Now()
-		case <-e.isLeader:
-			e.isLeader = nil
-			e.update <- true
 		case <-ctx.Done():
 			// shutdown
 			return nil
