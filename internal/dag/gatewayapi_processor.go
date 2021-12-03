@@ -456,7 +456,7 @@ func (p *GatewayAPIProcessor) validCrossNamespaceRef(from crossNamespaceFrom, to
 }
 
 func isSecretRef(certificateRef gatewayapi_v1alpha2.SecretObjectReference) bool {
-	return certificateRef.Group != nil && (*certificateRef.Group == "" || *certificateRef.Group == "core") &&
+	return certificateRef.Group != nil && *certificateRef.Group == "" &&
 		certificateRef.Kind != nil && *certificateRef.Kind == "Secret"
 }
 
@@ -907,8 +907,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 // validateBackendRef verifies that the specified BackendRef is valid.
 // Returns an error if not or the service found in the cache.
 func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.BackendRef, routeKind, routeNamespace string) (*Service, error) {
-	if !(backendRef.Group == nil || *backendRef.Group == "" || *backendRef.Group == "core") {
-		return nil, fmt.Errorf("Spec.Rules.BackendRef.Group must be empty or 'core'")
+	if !(backendRef.Group == nil || *backendRef.Group == "") {
+		return nil, fmt.Errorf("Spec.Rules.BackendRef.Group must be \"\"")
 	}
 
 	if !(backendRef.Kind != nil && *backendRef.Kind == "Service") {
