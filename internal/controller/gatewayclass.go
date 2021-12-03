@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/leadership"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +41,7 @@ type gatewayClassReconciler struct {
 	statusUpdater k8s.StatusUpdater
 	log           logrus.FieldLogger
 	controller    gatewayapi_v1alpha2.GatewayController
+	eventSource   chan event.GenericEvent
 }
 
 // RegisterGatewayClassController creates the gatewayclass controller. The controller
@@ -51,21 +53,26 @@ func RegisterGatewayClassController(
 	eventHandler cache.ResourceEventHandler,
 	statusUpdater k8s.StatusUpdater,
 	name string,
-) error {
+) (leadership.NeedLeaderElectionNotification, error) {
 	r := &gatewayClassReconciler{
 		client:        mgr.GetClient(),
 		eventHandler:  eventHandler,
 		statusUpdater: statusUpdater,
 		log:           log,
 		controller:    gatewayapi_v1alpha2.GatewayController(name),
+		// Set up a source.Channel that will trigger reconciles
+		// for all GatewayClasses when this Contour process is
+		// elected leader, to ensure that their statuses are up
+		// to date.
+		eventSource: make(chan event.GenericEvent),
 	}
 
 	c, err := controller.NewUnmanaged("gatewayclass-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Only enqueue GatewayClass objects that match name.
@@ -74,38 +81,32 @@ func RegisterGatewayClassController(
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
-		return err
+		return nil, err
 	}
 
-	// Set up a source.Channel that will trigger reconciles
-	// for all GatewayClasses when this Contour process is
-	// elected leader, to ensure that their statuses are up
-	// to date.
-	eventSource := make(chan event.GenericEvent)
-	go func() {
-		<-mgr.Elected()
-		log.Info("elected leader, triggering reconciles for all gatewayclasses")
-
-		var gatewayClasses gatewayapi_v1alpha2.GatewayClassList
-		if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
-			log.WithError(err).Error("error listing gatewayclasses")
-			return
-		}
-
-		for i := range gatewayClasses.Items {
-			eventSource <- event.GenericEvent{Object: &gatewayClasses.Items[i]}
-		}
-	}()
-
 	if err := c.Watch(
-		&source.Channel{Source: eventSource},
+		&source.Channel{Source: r.eventSource},
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return r, nil
+}
+
+func (r *gatewayClassReconciler) OnElectedLeader() {
+	r.log.Info("elected leader, triggering reconciles for all gatewayclasses")
+
+	var gatewayClasses gatewayapi_v1alpha2.GatewayClassList
+	if err := r.client.List(context.Background(), &gatewayClasses); err != nil {
+		r.log.WithError(err).Error("error listing gatewayclasses")
+		return
+	}
+
+	for i := range gatewayClasses.Items {
+		r.eventSource <- event.GenericEvent{Object: &gatewayClasses.Items[i]}
+	}
 }
 
 // hasMatchingController returns true if the provided object is a GatewayClass

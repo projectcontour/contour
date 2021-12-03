@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/leadership"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,9 +40,9 @@ type gatewayReconciler struct {
 	eventHandler  cache.ResourceEventHandler
 	statusUpdater k8s.StatusUpdater
 	log           logrus.FieldLogger
-
 	// gatewayClassControllerName is the configured controller of managed gatewayclasses.
 	gatewayClassControllerName gatewayapi_v1alpha2.GatewayController
+	eventSource                chan event.GenericEvent
 }
 
 // RegisterGatewayController creates the gateway controller from mgr. The controller will be pre-configured
@@ -52,20 +53,25 @@ func RegisterGatewayController(
 	eventHandler cache.ResourceEventHandler,
 	statusUpdater k8s.StatusUpdater,
 	gatewayClassControllerName string,
-) error {
+) (leadership.NeedLeaderElectionNotification, error) {
 	r := &gatewayReconciler{
 		log:                        log,
 		client:                     mgr.GetClient(),
 		eventHandler:               eventHandler,
 		statusUpdater:              statusUpdater,
 		gatewayClassControllerName: gatewayapi_v1alpha2.GatewayController(gatewayClassControllerName),
+		// Set up a source.Channel that will trigger reconciles
+		// for all GatewayClasses when this Contour process is
+		// elected leader, to ensure that their statuses are up
+		// to date.
+		eventSource: make(chan event.GenericEvent),
 	}
 	c, err := controller.NewUnmanaged("gateway-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := mgr.Add(&noLeaderElectionController{c}); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := c.Watch(
@@ -73,7 +79,7 @@ func RegisterGatewayController(
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Watch GatewayClasses and reconcile their associated Gateways
@@ -83,38 +89,36 @@ func RegisterGatewayController(
 		handler.EnqueueRequestsFromMapFunc(r.mapGatewayClassToGateways),
 		predicate.NewPredicateFuncs(r.gatewayClassHasMatchingController),
 	); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Set up a source.Channel that will trigger reconciles
 	// for all Gateways when this Contour process is
 	// elected leader, to ensure that their statuses are up
 	// to date.
-	eventSource := make(chan event.GenericEvent)
-	go func() {
-		<-mgr.Elected()
-		log.Info("elected leader, triggering reconciles for all gateways")
-
-		var gateways gatewayapi_v1alpha2.GatewayList
-		if err := r.client.List(context.Background(), &gateways); err != nil {
-			log.WithError(err).Error("error listing gateways")
-			return
-		}
-
-		for i := range gateways.Items {
-			eventSource <- event.GenericEvent{Object: &gateways.Items[i]}
-		}
-	}()
-
 	if err := c.Watch(
-		&source.Channel{Source: eventSource},
+		&source.Channel{Source: r.eventSource},
 		&handler.EnqueueRequestForObject{},
 		predicate.NewPredicateFuncs(r.hasMatchingController),
 	); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return r, nil
+}
+
+func (r *gatewayReconciler) OnElectedLeader() {
+	r.log.Info("elected leader, triggering reconciles for all gateways")
+
+	var gateways gatewayapi_v1alpha2.GatewayList
+	if err := r.client.List(context.Background(), &gateways); err != nil {
+		r.log.WithError(err).Error("error listing gateways")
+		return
+	}
+
+	for i := range gateways.Items {
+		r.eventSource <- event.GenericEvent{Object: &gateways.Items[i]}
+	}
 }
 
 func (r *gatewayReconciler) mapGatewayClassToGateways(gatewayClass client.Object) []reconcile.Request {

@@ -35,7 +35,6 @@ type EventHandlerConfig struct {
 	Observer                      dag.Observer
 	HoldoffDelay, HoldoffMaxDelay time.Duration
 	StatusUpdater                 k8s.StatusUpdater
-	IsLeader                      <-chan struct{}
 }
 
 // EventHandler implements cache.ResourceEventHandler, filters k8s events towards
@@ -58,8 +57,6 @@ type EventHandler struct {
 	// seq is the sequence counter of the number of times
 	// an event has been received.
 	seq int
-
-	isLeader <-chan struct{}
 }
 
 func NewEventHandler(config EventHandlerConfig) *EventHandler {
@@ -72,7 +69,6 @@ func NewEventHandler(config EventHandlerConfig) *EventHandler {
 		statusUpdater:   config.StatusUpdater,
 		update:          make(chan interface{}),
 		sequence:        make(chan int, 1),
-		isLeader:        config.IsLeader,
 	}
 }
 
@@ -104,6 +100,13 @@ func (e *EventHandler) NeedLeaderElection() bool {
 	return false
 }
 
+// Implements leadership.NeedLeaderElectionNotification
+func (e *EventHandler) OnElectedLeader() {
+	// Trigger an update when we are elected leader to ensure resource
+	// statuses are not stale.
+	e.update <- true
+}
+
 func (e *EventHandler) Start(ctx context.Context) error {
 	e.Info("started event handler")
 	defer e.Info("stopped event handler")
@@ -130,13 +133,6 @@ func (e *EventHandler) Start(ctx context.Context) error {
 		v, outstanding = outstanding, 0
 		return
 	}
-
-	// Trigger an update when we are elected leader to ensure resource
-	// statuses are not stale.
-	go func() {
-		<-e.isLeader
-		e.update <- true
-	}()
 
 	for {
 		// In the main loop one of four things can happen.

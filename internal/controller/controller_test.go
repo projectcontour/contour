@@ -30,10 +30,12 @@ import (
 func TestRegisterControllers(t *testing.T) {
 	tests := map[string]func(*mocks.Manager) error{
 		"gateway controller": func(mockManager *mocks.Manager) error {
-			return controller.RegisterGatewayController(fixture.NewTestLogger(t), mockManager, nil, nil, "some-controller")
+			_, err := controller.RegisterGatewayController(fixture.NewTestLogger(t), mockManager, nil, nil, "some-controller")
+			return err
 		},
 		"gatewayclass controller": func(mockManager *mocks.Manager) error {
-			return controller.RegisterGatewayClassController(fixture.NewTestLogger(t), mockManager, nil, nil, "some-gateway")
+			_, err := controller.RegisterGatewayClassController(fixture.NewTestLogger(t), mockManager, nil, nil, "some-gateway")
+			return err
 		},
 		"httproute controller": func(mockManager *mocks.Manager) error {
 			return controller.RegisterHTTPRouteController(fixture.NewTestLogger(t), mockManager, nil)
@@ -59,7 +61,7 @@ func TestRegisterControllers(t *testing.T) {
 
 			require.NoError(t, test(mockManager))
 
-			mockManager.AssertExpectations(t)
+			require.True(t, mockManager.AssertExpectations(t))
 		})
 	}
 }

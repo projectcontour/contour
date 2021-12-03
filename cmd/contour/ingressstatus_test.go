@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func Test_parseStatusFlag(t *testing.T) {
@@ -197,6 +198,6 @@ func Test_lbAddress(t *testing.T) {
 }
 
 func TestRequireLeaderElection(t *testing.T) {
-	l := loadBalancerStatusWriter{}
+	var l manager.LeaderElectionRunnable = &loadBalancerStatusWriter{}
 	require.True(t, l.NeedLeaderElection())
 }

@@ -61,29 +61,40 @@ func (e *EventRecorder) recordOperation(op string, obj interface{}) {
 // RebuildMetricsObserver is a dag.Observer that emits metrics for DAG rebuilds.
 type RebuildMetricsObserver struct {
 	// Metrics to emit.
-	Metrics *metrics.Metrics
+	metrics *metrics.Metrics
 
-	// IsLeader will become ready to read when this EventHandler becomes
-	// the leader. If IsLeader is not readable, or nil, status events will
+	// httpProxyMetricsEnabled will become ready to read when this EventHandler becomes
+	// the leader. If httpProxyMetricsEnabled is not readable, or nil, status events will
 	// be suppressed.
-	IsLeader <-chan struct{}
+	httpProxyMetricsEnabled chan struct{}
 
 	// NextObserver contains the stack of dag.Observers that act on DAG rebuilds.
-	NextObserver dag.Observer
+	nextObserver dag.Observer
+}
+
+func NewRebuildMetricsObserver(metrics *metrics.Metrics, nextObserver dag.Observer) *RebuildMetricsObserver {
+	return &RebuildMetricsObserver{
+		metrics:                 metrics,
+		nextObserver:            nextObserver,
+		httpProxyMetricsEnabled: make(chan struct{}),
+	}
+}
+
+func (m *RebuildMetricsObserver) OnElectedLeader() {
+	close(m.httpProxyMetricsEnabled)
 }
 
 func (m *RebuildMetricsObserver) OnChange(d *dag.DAG) {
-	m.Metrics.SetDAGLastRebuilt(time.Now())
-	m.Metrics.SetDAGRebuiltTotal()
+	m.metrics.SetDAGLastRebuilt(time.Now())
+	m.metrics.SetDAGRebuiltTotal()
 
-	timer := prometheus.NewTimer(m.Metrics.CacheHandlerOnUpdateSummary)
-	m.NextObserver.OnChange(d)
+	timer := prometheus.NewTimer(m.metrics.CacheHandlerOnUpdateSummary)
+	m.nextObserver.OnChange(d)
 	timer.ObserveDuration()
 
 	select {
-	// If we are leader, the IsLeader channel is closed.
-	case <-m.IsLeader:
-		m.Metrics.SetHTTPProxyMetric(calculateRouteMetric(d.StatusCache.GetProxyUpdates()))
+	case <-m.httpProxyMetricsEnabled:
+		m.metrics.SetHTTPProxyMetric(calculateRouteMetric(d.StatusCache.GetProxyUpdates()))
 	default:
 	}
 }

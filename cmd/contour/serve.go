@@ -37,6 +37,7 @@ import (
 	"github.com/projectcontour/contour/internal/health"
 	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/projectcontour/contour/internal/k8s"
+	"github.com/projectcontour/contour/internal/leadership"
 	"github.com/projectcontour/contour/internal/metrics"
 	"github.com/projectcontour/contour/internal/timeout"
 	"github.com/projectcontour/contour/internal/xds"
@@ -400,23 +401,19 @@ func (s *Server) doServe() error {
 		fallbackCert:              fallbackCert,
 	})
 
-	ehConfig := contour.EventHandlerConfig{
+	// Build the core Kubernetes event handler.
+	observer := contour.NewRebuildMetricsObserver(
+		contourMetrics,
+		dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
+	)
+	contourHandler := contour.NewEventHandler(contour.EventHandlerConfig{
 		Logger:          s.log.WithField("context", "contourEventHandler"),
 		HoldoffDelay:    100 * time.Millisecond,
 		HoldoffMaxDelay: 500 * time.Millisecond,
-		Observer: &contour.RebuildMetricsObserver{
-			Metrics:      contourMetrics,
-			IsLeader:     s.mgr.Elected(),
-			NextObserver: dag.ComposeObservers(append(xdscache.ObserversOf(resources), snapshotHandler)...),
-		},
-		StatusUpdater: sh.Writer(),
-		Builder:       builder,
-	}
-	if !s.ctx.DisableLeaderElection {
-		ehConfig.IsLeader = s.mgr.Elected()
-	}
-	// Build the core Kubernetes event handler.
-	contourHandler := contour.NewEventHandler(ehConfig)
+		Observer:        observer,
+		StatusUpdater:   sh.Writer(),
+		Builder:         builder,
+	})
 
 	// Wrap contourHandler in an EventRecorder which tracks API server events.
 	eventHandler := &contour.EventRecorder{
@@ -440,7 +437,7 @@ func (s *Server) doServe() error {
 	}
 
 	// Inform on Gateway API resources.
-	s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler, sh)
+	needsNotification := s.setupGatewayAPI(contourConfiguration, s.mgr, eventHandler, sh)
 
 	// Inform on secrets, filtering by root namespaces.
 	var handler cache.ResourceEventHandler = eventHandler
@@ -528,6 +525,16 @@ func (s *Server) doServe() error {
 		resources:       resources,
 	}
 	if err := s.mgr.Add(xdsServer); err != nil {
+		return err
+	}
+
+	notifier := &leadership.Notifier{
+		ToNotify: append([]leadership.NeedLeaderElectionNotification{
+			contourHandler,
+			observer,
+		}, needsNotification...),
+	}
+	if err := s.mgr.Add(notifier); err != nil {
 		return err
 	}
 
@@ -700,32 +707,38 @@ func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
 }
 
 func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec,
-	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler) {
+	mgr manager.Manager, eventHandler *contour.EventRecorder, sh *k8s.StatusUpdateHandler) []leadership.NeedLeaderElectionNotification {
+
+	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
 
 	// Check if GatewayAPI is configured.
 	if contourConfiguration.Gateway != nil {
 		// Create and register the gatewayclass controller with the manager.
 		gatewayClassControllerName := contourConfiguration.Gateway.ControllerName
-		if err := controller.RegisterGatewayClassController(
+		gwClass, err := controller.RegisterGatewayClassController(
 			s.log.WithField("context", "gatewayclass-controller"),
 			mgr,
 			eventHandler,
 			sh.Writer(),
 			gatewayClassControllerName,
-		); err != nil {
+		)
+		if err != nil {
 			s.log.WithError(err).Fatal("failed to create gatewayclass-controller")
 		}
+		needLeadershipNotification = append(needLeadershipNotification, gwClass)
 
 		// Create and register the NewGatewayController controller with the manager.
-		if err := controller.RegisterGatewayController(
+		gw, err := controller.RegisterGatewayController(
 			s.log.WithField("context", "gateway-controller"),
 			mgr,
 			eventHandler,
 			sh.Writer(),
 			gatewayClassControllerName,
-		); err != nil {
+		)
+		if err != nil {
 			s.log.WithError(err).Fatal("failed to create gateway-controller")
 		}
+		needLeadershipNotification = append(needLeadershipNotification, gw)
 
 		// Create and register the HTTPRoute controller with the manager.
 		if err := controller.RegisterHTTPRouteController(s.log.WithField("context", "httproute-controller"), mgr, eventHandler); err != nil {
@@ -747,6 +760,7 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 			s.log.WithError(err).WithField("resource", "namespaces").Fatal("failed to create informer")
 		}
 	}
+	return needLeadershipNotification
 }
 
 type dagBuilderConfig struct {

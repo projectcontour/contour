@@ -133,10 +133,10 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		HoldoffDelay: time.Duration(rand.Intn(100)) * time.Millisecond,
 		//nolint:gosec
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
-		Observer: &contour.RebuildMetricsObserver{
-			Metrics:      metrics.NewMetrics(registry),
-			NextObserver: dag.ComposeObservers(xdscache.ObserversOf(resources)...),
-		},
+		Observer: contour.NewRebuildMetricsObserver(
+			metrics.NewMetrics(registry),
+			dag.ComposeObservers(xdscache.ObserversOf(resources)...),
+		),
 		Builder: builder,
 	})
 

@@ -11,19 +11,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package debug provides http endpoints for healthcheck, metrics,
-// and pprof debugging.
-package debug_test
+package leadership
 
-import (
-	"testing"
+import "context"
 
-	"github.com/projectcontour/contour/internal/debug"
-	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-)
+type NeedLeaderElectionNotification interface {
+	OnElectedLeader()
+}
 
-func TestDebugServiceNotRequireLeaderElection(t *testing.T) {
-	var s manager.LeaderElectionRunnable = &debug.Service{}
-	require.False(t, s.NeedLeaderElection())
+// Notifier is controller-runtime manager runnable that can be used to
+// notify other components when leader election has occurred for the current
+// manager.
+type Notifier struct {
+	ToNotify []NeedLeaderElectionNotification
+}
+
+func (n *Notifier) NeedLeaderElection() bool {
+	return true
+}
+
+func (n *Notifier) Start(ctx context.Context) error {
+	for _, t := range n.ToNotify {
+		go t.OnElectedLeader()
+	}
+	<-ctx.Done()
+	return nil
 }

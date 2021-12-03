@@ -11,15 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package k8s
+package k8s_test
 
 import (
 	"testing"
 
+	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func TestStatusUpdateHandlerRequiresLeaderElection(t *testing.T) {
-	s := StatusUpdateHandler{}
+	var s manager.LeaderElectionRunnable = &k8s.StatusUpdateHandler{}
 	require.True(t, s.NeedLeaderElection())
 }

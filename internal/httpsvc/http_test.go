@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httpsvc
+package httpsvc_test
 
 import (
 	"context"
@@ -25,14 +25,16 @@ import (
 	"time"
 
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/httpsvc"
 	"github.com/projectcontour/contour/internal/workgroup"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tsaarni/certyaml"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func TestHTTPService(t *testing.T) {
-	svc := Service{
+	svc := httpsvc.Service{
 		Addr:        "localhost",
 		Port:        8001,
 		FieldLogger: fixture.NewTestLogger(t),
@@ -96,7 +98,7 @@ func TestHTTPSService(t *testing.T) {
 	checkFatalErr(t, err)
 	defer os.RemoveAll(configDir)
 
-	svc := Service{
+	svc := httpsvc.Service{
 		Addr:        "localhost",
 		Port:        8001,
 		CABundle:    filepath.Join(configDir, "ca.pem"),
@@ -184,6 +186,6 @@ func tryGet(url string, clientCert tls.Certificate, caCertPool *x509.CertPool) (
 }
 
 func TestServiceNotRequireLeaderElection(t *testing.T) {
-	s := Service{}
+	var s manager.LeaderElectionRunnable = &httpsvc.Service{}
 	require.False(t, s.NeedLeaderElection())
 }
