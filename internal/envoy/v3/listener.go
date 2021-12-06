@@ -16,7 +16,6 @@ package v3
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -84,7 +83,6 @@ func ProtoNamesForVersions(versions ...HTTPVersionType) []string {
 				return defaultVersions
 			}
 
-			log.Printf("wanted %d -> %s", v, protocols[v])
 			alpn = append(alpn, protocols[v])
 		}
 	}
