@@ -4746,7 +4746,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: contour-certgen
+  name: contour
   namespace: projectcontour
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -4827,7 +4827,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: contour
+  name: contour-rolebinding
   namespace: projectcontour
 roleRef:
   apiGroup: rbac.authorization.k8s.io
