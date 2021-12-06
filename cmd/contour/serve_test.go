@@ -41,7 +41,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily})
-		commonAssertions(t, &got)
+		commonAssertions(t, got)
 		assert.Empty(t, got.Source.ConfiguredSecretRefs)
 	})
 
@@ -52,7 +52,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert})
-		commonAssertions(t, &got)
+		commonAssertions(t, got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert})
 	})
 
@@ -63,7 +63,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, fallbackCert: fallbackCert})
-		commonAssertions(t, &got)
+		commonAssertions(t, got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{fallbackCert})
 	})
 
@@ -75,7 +75,7 @@ func TestGetDAGBuilder(t *testing.T) {
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, clientCert: clientCert, fallbackCert: fallbackCert})
-		commonAssertions(t, &got)
+		commonAssertions(t, got)
 		assert.ElementsMatch(t, got.Source.ConfiguredSecretRefs, []*types.NamespacedName{clientCert, fallbackCert})
 	})
 
@@ -103,15 +103,15 @@ func TestGetDAGBuilder(t *testing.T) {
 			log: logrus.StandardLogger(),
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, headersPolicy: policy})
-		commonAssertions(t, &got)
+		commonAssertions(t, got)
 
-		httpProxyProcessor := mustGetHTTPProxyProcessor(t, &got)
+		httpProxyProcessor := mustGetHTTPProxyProcessor(t, got)
 		assert.EqualValues(t, policy.RequestHeadersPolicy.Set, httpProxyProcessor.RequestHeadersPolicy.Set)
 		assert.ElementsMatch(t, policy.RequestHeadersPolicy.Remove, httpProxyProcessor.RequestHeadersPolicy.Remove)
 		assert.EqualValues(t, policy.ResponseHeadersPolicy.Set, httpProxyProcessor.ResponseHeadersPolicy.Set)
 		assert.ElementsMatch(t, policy.ResponseHeadersPolicy.Remove, httpProxyProcessor.ResponseHeadersPolicy.Remove)
 
-		ingressProcessor := mustGetIngressProcessor(t, &got)
+		ingressProcessor := mustGetIngressProcessor(t, got)
 		assert.EqualValues(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Set)
 		assert.ElementsMatch(t, map[string]string(nil), ingressProcessor.RequestHeadersPolicy.Remove)
 		assert.EqualValues(t, map[string]string(nil), ingressProcessor.ResponseHeadersPolicy.Set)
@@ -143,9 +143,9 @@ func TestGetDAGBuilder(t *testing.T) {
 		}
 		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
 			headersPolicy: policy, applyHeaderPolicyToIngress: true})
-		commonAssertions(t, &got)
+		commonAssertions(t, got)
 
-		ingressProcessor := mustGetIngressProcessor(t, &got)
+		ingressProcessor := mustGetIngressProcessor(t, got)
 		assert.EqualValues(t, policy.RequestHeadersPolicy.Set, ingressProcessor.RequestHeadersPolicy.Set)
 		assert.ElementsMatch(t, policy.RequestHeadersPolicy.Remove, ingressProcessor.RequestHeadersPolicy.Remove)
 		assert.EqualValues(t, policy.ResponseHeadersPolicy.Set, ingressProcessor.ResponseHeadersPolicy.Set)

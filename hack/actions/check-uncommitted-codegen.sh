@@ -7,6 +7,8 @@ set -o pipefail
 readonly HERE=$(cd $(dirname $0) && pwd)
 readonly REPO=$(cd ${HERE}/../.. && pwd)
 
+mock_dirs=$(find ${REPO} -name mocks -type d)
+
 declare -r -a TARGETS=(
 	${REPO}/apis
 	${REPO}/site/content/guides/metrics
@@ -14,6 +16,7 @@ declare -r -a TARGETS=(
 	${REPO}/examples/contour
 	${REPO}/examples/gateway
 	${REPO}/site/content/docs/main/config/api-reference.html
+	${mock_dirs}
 )
 
 if git status -s ${TARGETS[@]} 2>&1 | grep -E -q '^\s+[MADRCU]'

@@ -20,7 +20,6 @@ import (
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	projcontour "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
@@ -33,8 +32,8 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func proxyClientCertificateOpt(t *testing.T) func(eh *contour.EventHandler) {
-	return func(eh *contour.EventHandler) {
+func proxyClientCertificateOpt(t *testing.T) func(*dag.Builder) {
+	return func(b *dag.Builder) {
 		secret := types.NamespacedName{
 			Name:      "envoyclientsecret",
 			Namespace: "default",
@@ -43,7 +42,7 @@ func proxyClientCertificateOpt(t *testing.T) func(eh *contour.EventHandler) {
 		log := fixture.NewTestLogger(t)
 		log.SetLevel(logrus.DebugLevel)
 
-		eh.Builder.Processors = []dag.Processor{
+		b.Processors = []dag.Processor{
 			&dag.IngressProcessor{
 				ClientCertificate: &secret,
 				FieldLogger:       log.WithField("context", "IngressProcessor"),

@@ -101,49 +101,44 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 
 	rand.Seed(time.Now().Unix())
 
+	builder := &dag.Builder{
+		Source: dag.KubernetesCache{
+			FieldLogger: log,
+		},
+		Processors: []dag.Processor{
+			&dag.IngressProcessor{
+				FieldLogger: log.WithField("context", "IngressProcessor"),
+			},
+			&dag.ExtensionServiceProcessor{
+				FieldLogger: log.WithField("context", "ExtensionServiceProcessor"),
+			},
+			&dag.HTTPProxyProcessor{},
+			&dag.GatewayAPIProcessor{
+				FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
+			},
+			&dag.ListenerProcessor{},
+		},
+	}
+	for _, opt := range opts {
+		if opt, ok := opt.(func(*dag.Builder)); ok {
+			opt(builder)
+		}
+	}
+
 	statusUpdateCacher := &k8s.StatusUpdateCacher{}
-	eh := &contour.EventHandler{
-		IsLeader:      make(chan struct{}),
+	eh := contour.NewEventHandler(contour.EventHandlerConfig{
+		Logger:        log,
 		StatusUpdater: statusUpdateCacher,
-		FieldLogger:   log,
-		Sequence:      make(chan int, 1),
 		//nolint:gosec
 		HoldoffDelay: time.Duration(rand.Intn(100)) * time.Millisecond,
 		//nolint:gosec
 		HoldoffMaxDelay: time.Duration(rand.Intn(500)) * time.Millisecond,
-		Observer: &contour.RebuildMetricsObserver{
-			Metrics:      metrics.NewMetrics(registry),
-			NextObserver: dag.ComposeObservers(xdscache.ObserversOf(resources)...),
-		},
-		Builder: dag.Builder{
-			Source: dag.KubernetesCache{
-				FieldLogger: log,
-			},
-		},
-	}
-
-	eh.Builder.Processors = []dag.Processor{
-		&dag.IngressProcessor{
-			FieldLogger: log.WithField("context", "IngressProcessor"),
-		},
-		&dag.ExtensionServiceProcessor{
-			FieldLogger: log.WithField("context", "ExtensionServiceProcessor"),
-		},
-		&dag.HTTPProxyProcessor{},
-		&dag.GatewayAPIProcessor{
-			FieldLogger: log.WithField("context", "GatewayAPIProcessor"),
-		},
-		&dag.ListenerProcessor{},
-	}
-
-	for _, opt := range opts {
-		if opt, ok := opt.(func(*contour.EventHandler)); ok {
-			opt(eh)
-		}
-	}
-
-	// Make this event handler win the leader election.
-	close(eh.IsLeader)
+		Observer: contour.NewRebuildMetricsObserver(
+			metrics.NewMetrics(registry),
+			dag.ComposeObservers(xdscache.ObserversOf(resources)...),
+		),
+		Builder: builder,
+	})
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
@@ -160,7 +155,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 		}()
 		return srv.Serve(l) // srv now owns l and will close l before returning
 	})
-	g.Add(eh.Start())
+	g.AddContext(eh.Start)
 
 	cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
 	require.NoError(t, err)
@@ -168,7 +163,7 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	rh := &resourceEventHandler{
 		EventHandler:       eh,
 		EndpointsHandler:   et,
-		Sequence:           eh.Sequence,
+		Sequence:           eh.Sequence(),
 		statusUpdateCacher: statusUpdateCacher,
 	}
 
@@ -202,7 +197,7 @@ type resourceEventHandler struct {
 	EventHandler     cache.ResourceEventHandler
 	EndpointsHandler cache.ResourceEventHandler
 
-	Sequence chan int
+	Sequence <-chan int
 
 	statusUpdateCacher *k8s.StatusUpdateCacher
 }

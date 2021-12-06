@@ -20,6 +20,7 @@ import (
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/contour"
+	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
@@ -37,8 +38,8 @@ const (
 )
 
 func TestIngressClassAnnotation_Configured(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClassName = "linkerd"
+	rh, c, done := setup(t, func(b *dag.Builder) {
+		b.Source.IngressClassName = "linkerd"
 	})
 	defer done()
 
@@ -502,8 +503,8 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 // TODO(youngnick)#2964: Disabled as part of #2495 work.
 func TestIngressClassAnnotationUpdate(t *testing.T) {
 	t.Skip("Test disabled, see issue #2964")
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClassName = "contour"
+	rh, c, done := setup(t, func(b *dag.Builder) {
+		b.Source.IngressClassName = "contour"
 	})
 	defer done()
 
@@ -565,8 +566,8 @@ func TestIngressClassAnnotationUpdate(t *testing.T) {
 }
 
 func TestIngressClassResource_Configured(t *testing.T) {
-	rh, c, done := setup(t, func(reh *contour.EventHandler) {
-		reh.Builder.Source.IngressClassName = "testingressclass"
+	rh, c, done := setup(t, func(b *dag.Builder) {
+		b.Source.IngressClassName = "testingressclass"
 	})
 	defer done()
 

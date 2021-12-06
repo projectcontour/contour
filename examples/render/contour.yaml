@@ -4939,6 +4939,15 @@ rules:
   - ""
   resources:
   - configmaps
+  - events
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
   verbs:
   - create
   - get
