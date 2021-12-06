@@ -37,11 +37,7 @@ func (c *ContourConfigurationSpec) Validate() error {
 		return fmt.Errorf("invalid contour configuration: %v", err)
 	}
 
-	if err := c.Envoy.Validate(); err != nil {
-		return err
-	}
-
-	return nil
+	return c.Envoy.Validate()
 }
 
 // Validate configuration that cannot be handled with CRD validation.
