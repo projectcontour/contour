@@ -50,7 +50,7 @@ func testLongPathMatch(namespace string) {
 							HTTP: &networkingv1.HTTPIngressRuleValue{
 								Paths: []networkingv1.HTTPIngressPath{
 									{
-										PathType: pathTypePtr(networkingv1.PathTypePrefix),
+										PathType: e2e.IngressPathTypePtr(networkingv1.PathTypePrefix),
 										Path:     longPrefixMatch,
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{
@@ -62,7 +62,7 @@ func testLongPathMatch(namespace string) {
 										},
 									},
 									{
-										PathType: pathTypePtr(networkingv1.PathTypePrefix),
+										PathType: e2e.IngressPathTypePtr(networkingv1.PathTypePrefix),
 										Path:     reallyLongPrefixMatch,
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{
@@ -74,7 +74,7 @@ func testLongPathMatch(namespace string) {
 										},
 									},
 									{
-										PathType: pathTypePtr(networkingv1.PathTypeImplementationSpecific),
+										PathType: e2e.IngressPathTypePtr(networkingv1.PathTypeImplementationSpecific),
 										Path:     longRegexMatch,
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{
