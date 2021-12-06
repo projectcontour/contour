@@ -37,6 +37,7 @@ import (
 	"gopkg.in/yaml.v2"
 	apps_v1 "k8s.io/api/apps/v1"
 	batch_v1 "k8s.io/api/batch/v1"
+	coordinationv1 "k8s.io/api/coordination/v1"
 	v1 "k8s.io/api/core/v1"
 	rbac_v1 "k8s.io/api/rbac/v1"
 	apiextensions_v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -547,7 +548,7 @@ func (d *Deployment) DeleteResourcesForLocalContour() error {
 		d.HTTPProxyCRD,
 		d.EnvoyServiceAccount,
 	} {
-		if err := d.ensureDeleted(r); err != nil {
+		if err := d.EnsureDeleted(r); err != nil {
 			return err
 		}
 	}
@@ -669,9 +670,9 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 // - Contour cluster role
 // - Contour service
 // - Envoy service
-// - Contour deployment
+// - Contour deployment (only started if bool passed in is true)
 // - Envoy DaemonSet
-func (d *Deployment) EnsureResourcesForInclusterContour() error {
+func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment bool) error {
 	fmt.Fprintf(d.cmdOutputWriter, "Deploying Contour with image: %s\n", d.contourImage)
 
 	if err := d.EnsureNamespace(); err != nil {
@@ -737,8 +738,10 @@ func (d *Deployment) EnsureResourcesForInclusterContour() error {
 	}
 	d.ContourDeployment.Spec.Template.Spec.Containers[0].Image = d.contourImage
 	d.ContourDeployment.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
-	if err := d.EnsureContourDeployment(); err != nil {
-		return err
+	if startContourDeployment {
+		if err := d.EnsureContourDeployment(); err != nil {
+			return err
+		}
 	}
 	// Update container image.
 	if l := len(d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers); l != 1 {
@@ -770,10 +773,17 @@ func (d *Deployment) DeleteResourcesForInclusterContour() error {
 			Namespace: d.Namespace.Name,
 		},
 	}
+	leaderElectionLease := &coordinationv1.Lease{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "leader-elect",
+			Namespace: d.Namespace.Name,
+		},
+	}
 
 	for _, r := range []client.Object{
 		d.EnvoyDaemonSet,
 		d.ContourDeployment,
+		leaderElectionLease,
 		leaderElectionConfigMap,
 		d.EnvoyService,
 		d.ContourService,
@@ -790,7 +800,7 @@ func (d *Deployment) DeleteResourcesForInclusterContour() error {
 		d.EnvoyServiceAccount,
 		d.ContourServiceAccount,
 	} {
-		if err := d.ensureDeleted(r); err != nil {
+		if err := d.EnsureDeleted(r); err != nil {
 			return err
 		}
 	}
@@ -798,7 +808,7 @@ func (d *Deployment) DeleteResourcesForInclusterContour() error {
 	return nil
 }
 
-func (d *Deployment) ensureDeleted(obj client.Object) error {
+func (d *Deployment) EnsureDeleted(obj client.Object) error {
 	// Delete the object; if it already doesn't exist,
 	// then we're done.
 	err := d.client.Delete(context.Background(), obj)
@@ -819,6 +829,9 @@ func (d *Deployment) ensureDeleted(obj client.Object) error {
 	}); err != nil {
 		return fmt.Errorf("error waiting for deletion of resource %T %s/%s: %v", obj, obj.GetNamespace(), obj.GetName(), err)
 	}
+
+	// Clear out resource version to ensure object can be used again.
+	obj.SetResourceVersion("")
 
 	return nil
 }

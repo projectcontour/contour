@@ -43,9 +43,13 @@ type Service struct {
 	http.ServeMux
 }
 
-// Start fulfills the g.Start contract.
-// When stop is closed the http server will shutdown.
-func (svc *Service) Start(stop <-chan struct{}) (err error) {
+func (svc *Service) NeedLeaderElection() bool {
+	return false
+}
+
+// Implements controller-runtime Runnable interface.
+// When context is done, http server will shutdown.
+func (svc *Service) Start(ctx context.Context) (err error) {
 	defer func() {
 		if err != nil {
 			svc.WithError(err).Error("terminated HTTP server with error")
@@ -81,7 +85,7 @@ func (svc *Service) Start(stop <-chan struct{}) (err error) {
 
 	go func() {
 		// wait for stop signal from group.
-		<-stop
+		<-ctx.Done()
 
 		// shutdown the server with 5 seconds grace.
 		ctx := context.Background()

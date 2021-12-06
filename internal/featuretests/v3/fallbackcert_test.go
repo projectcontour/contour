@@ -21,7 +21,6 @@ import (
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
@@ -32,8 +31,8 @@ import (
 )
 
 func TestFallbackCertificate(t *testing.T) {
-	rh, c, done := setup(t, func(eh *contour.EventHandler) {
-		eh.Builder.Processors = []dag.Processor{
+	rh, c, done := setup(t, func(b *dag.Builder) {
+		b.Processors = []dag.Processor{
 			&dag.IngressProcessor{},
 			&dag.HTTPProxyProcessor{
 				FallbackCertificate: &types.NamespacedName{

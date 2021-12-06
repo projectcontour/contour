@@ -176,6 +176,7 @@ func testIngressResourceRBAC(namespace string) {
 			Path:      "/",
 			Condition: e2e.HasStatusCode(200),
 		})
+		require.NotNil(f.T(), res, "request never succeeded")
 		require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
 	})
 }

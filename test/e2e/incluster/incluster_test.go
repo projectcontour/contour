@@ -33,7 +33,7 @@ func TestIncluster(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour())
+	require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(false))
 })
 
 var _ = AfterSuite(func() {
@@ -44,9 +44,17 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Incluster", func() {
-	BeforeEach(func() {
+	JustBeforeEach(func() {
+		// Create contour deployment here so we can modify or do other
+		// actions in BeforeEach.
+		require.NoError(f.T(), f.Deployment.EnsureContourDeployment())
 		require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+	})
+
+	AfterEach(func() {
+		// Clean out contour after each test.
+		require.NoError(f.T(), f.Deployment.EnsureDeleted(f.Deployment.ContourDeployment))
 	})
 
 	f.NamespacedTest("smoke-test", testSimpleSmoke)

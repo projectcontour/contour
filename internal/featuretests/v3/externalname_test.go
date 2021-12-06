@@ -16,7 +16,6 @@ package v3
 import (
 	"testing"
 
-	"github.com/projectcontour/contour/internal/contour"
 	"github.com/projectcontour/contour/internal/dag"
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/sirupsen/logrus"
@@ -321,13 +320,13 @@ func TestExternalNameService(t *testing.T) {
 	})
 }
 
-func enableExternalNameService(t *testing.T) func(eh *contour.EventHandler) {
-	return func(eh *contour.EventHandler) {
+func enableExternalNameService(t *testing.T) func(*dag.Builder) {
+	return func(b *dag.Builder) {
 
 		log := fixture.NewTestLogger(t)
 		log.SetLevel(logrus.DebugLevel)
 
-		eh.Builder.Processors = []dag.Processor{
+		b.Processors = []dag.Processor{
 			&dag.IngressProcessor{
 				EnableExternalNameService: true,
 				FieldLogger:               log.WithField("context", "IngressProcessor"),

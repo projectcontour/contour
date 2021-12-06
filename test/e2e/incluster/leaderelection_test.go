@@ -26,8 +26,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/require"
+	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -39,7 +41,7 @@ func testLeaderElection(namespace string) {
 	// unit tests as it is difficult to observe e.g. which contour instance
 	// has set status on an object.
 	Specify("leader election resources are created as expected", func() {
-		getLeaderPodName := func() (string, error) {
+		getLeaderID := func() (string, error) {
 			type leaderInfo struct {
 				HolderIdentity string
 			}
@@ -50,8 +52,17 @@ func testLeaderElection(namespace string) {
 					Namespace: f.Deployment.Namespace.Name,
 				},
 			}
-
 			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(leaderElectionConfigMap), leaderElectionConfigMap); err != nil {
+				return "", err
+			}
+
+			leaderElectionLease := &coordinationv1.Lease{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "leader-elect",
+					Namespace: f.Deployment.Namespace.Name,
+				},
+			}
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(leaderElectionLease), leaderElectionLease); err != nil {
 				return "", err
 			}
 
@@ -67,30 +78,79 @@ func testLeaderElection(namespace string) {
 			if err := json.Unmarshal([]byte(infoRaw), &li); err != nil {
 				return "", err
 			}
+			leaseHolder := pointer.StringDeref(leaderElectionLease.Spec.HolderIdentity, "")
+			if leaseHolder != li.HolderIdentity {
+				return "", fmt.Errorf("lease leader %q and configmap leader %q do not match", leaseHolder, li.HolderIdentity)
+			}
 			if !strings.HasPrefix(li.HolderIdentity, "contour-") {
 				return "", fmt.Errorf("invalid leader name: %q", li.HolderIdentity)
 			}
 			return li.HolderIdentity, nil
 		}
 
-		originalLeader, err := getLeaderPodName()
-		require.NoError(f.T(), err)
+		podNameFromLeaderID := func(id string) string {
+			require.Greater(f.T(), len(id), 37)
+			return id[:len(id)-37]
+		}
+
+		var originalLeader string
+		require.Eventually(f.T(), func() bool {
+			var err error
+			originalLeader, err = getLeaderID()
+			return err == nil
+		}, 2*time.Minute, f.RetryInterval)
+
+		events := &corev1.EventList{}
+		listOptions := &client.ListOptions{
+			Namespace: f.Deployment.Namespace.Name,
+		}
+		require.NoError(f.T(), f.Client.List(context.TODO(), events, listOptions))
+		foundEvents := map[string]struct{}{}
+		for _, e := range events.Items {
+			if e.Reason == "LeaderElection" && e.Source.Component == originalLeader {
+				foundEvents[e.InvolvedObject.Kind] = struct{}{}
+			}
+		}
+		require.Contains(f.T(), foundEvents, "Lease")
+		require.Contains(f.T(), foundEvents, "ConfigMap")
 
 		// Delete contour leader pod.
 		leaderPod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      originalLeader,
+				// Chop off _UUID suffix
+				Name:      podNameFromLeaderID(originalLeader),
 				Namespace: f.Deployment.Namespace.Name,
 			},
 		}
 		require.NoError(f.T(), f.Client.Delete(context.TODO(), leaderPod))
 
+		newLeader := originalLeader
 		require.Eventually(f.T(), func() bool {
-			leader, err := getLeaderPodName()
+			var err error
+			newLeader, err = getLeaderID()
 			if err != nil {
 				return false
 			}
-			return leader != originalLeader
+			return newLeader != originalLeader
 		}, 2*time.Minute, f.RetryInterval)
+
+		require.NoError(f.T(), f.Client.List(context.TODO(), events, listOptions))
+		foundEvents = map[string]struct{}{}
+		for _, e := range events.Items {
+			if e.Reason == "LeaderElection" && e.Source.Component == newLeader {
+				foundEvents[e.InvolvedObject.Kind] = struct{}{}
+			}
+		}
+		require.Contains(f.T(), foundEvents, "Lease")
+		require.Contains(f.T(), foundEvents, "ConfigMap")
+
+		// Check leader pod exists.
+		leaderPod = &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      podNameFromLeaderID(newLeader),
+				Namespace: f.Deployment.Namespace.Name,
+			},
+		}
+		require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(leaderPod), leaderPod))
 	})
 }
