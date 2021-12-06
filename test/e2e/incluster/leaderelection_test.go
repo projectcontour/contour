@@ -88,8 +88,17 @@ func testLeaderElection(namespace string) {
 			return li.HolderIdentity, nil
 		}
 
-		originalLeader, err := getLeaderID()
-		require.NoError(f.T(), err)
+		podNameFromLeaderID := func(id string) string {
+			require.Greater(f.T(), len(id), 37)
+			return id[:len(id)-37]
+		}
+
+		var originalLeader string
+		require.Eventually(f.T(), func() bool {
+			var err error
+			originalLeader, err = getLeaderID()
+			return err == nil
+		}, 2*time.Minute, f.RetryInterval)
 
 		events := &corev1.EventList{}
 		listOptions := &client.ListOptions{
@@ -109,7 +118,7 @@ func testLeaderElection(namespace string) {
 		leaderPod := &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				// Chop off _UUID suffix
-				Name:      originalLeader[:len(originalLeader)-37],
+				Name:      podNameFromLeaderID(originalLeader),
 				Namespace: f.Deployment.Namespace.Name,
 			},
 		}
@@ -134,5 +143,14 @@ func testLeaderElection(namespace string) {
 		}
 		require.Contains(f.T(), foundEvents, "Lease")
 		require.Contains(f.T(), foundEvents, "ConfigMap")
+
+		// Check leader pod exists.
+		leaderPod = &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      podNameFromLeaderID(newLeader),
+				Namespace: f.Deployment.Namespace.Name,
+			},
+		}
+		require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(leaderPod), leaderPod))
 	})
 }
