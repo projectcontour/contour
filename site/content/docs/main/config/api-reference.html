@@ -424,6 +424,22 @@ AuthorizationServerBufferSettings
 <p>WithRequestBody specifies configuration for sending the client request&rsquo;s body to authorization server.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>authBeforeRateLimiting</code>
+<br>
+<em>
+bool
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>AuthBeforeRateLimiting defines whether the authorization server
+will be consulted before applying any rate limiting to a
+request. The default is false, i.e. to apply rate-limiting first,
+in order to protect the authorization server.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.AuthorizationServerBufferSettings">AuthorizationServerBufferSettings

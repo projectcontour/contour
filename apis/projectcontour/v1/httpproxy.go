@@ -175,6 +175,14 @@ type AuthorizationServer struct {
 	// WithRequestBody specifies configuration for sending the client request's body to authorization server.
 	// +optional
 	WithRequestBody *AuthorizationServerBufferSettings `json:"withRequestBody,omitempty"`
+
+	// AuthBeforeRateLimiting defines whether the authorization server
+	// will be consulted before applying any rate limiting to a
+	// request. The default is false, i.e. to apply rate-limiting first,
+	// in order to protect the authorization server.
+	//
+	// +optional
+	AuthBeforeRateLimiting bool `json:"authBeforeRateLimiting,omitempty"`
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client request data and send it as part of authorization request

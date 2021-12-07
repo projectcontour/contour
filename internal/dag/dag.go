@@ -536,6 +536,12 @@ type SecureVirtualHost struct {
 	// AuthorizationServerWithRequestBody specifies configuration
 	// for buffering request data sent to AuthorizationServer
 	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
+
+	// AuthBeforeRateLimiting defines whether the authorization server
+	// will be consulted before applying any rate limiting to a
+	// request. The default is false, i.e. to apply rate-limiting first,
+	// in order to protect the authorization server.
+	AuthBeforeRateLimiting bool
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client

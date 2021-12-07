@@ -287,6 +287,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 
 				svhost.AuthorizationService = ext
 				svhost.AuthorizationFailOpen = auth.FailOpen
+				svhost.AuthBeforeRateLimiting = auth.AuthBeforeRateLimiting
 
 				timeout, err := timeout.Parse(auth.ResponseTimeout)
 				if err != nil {

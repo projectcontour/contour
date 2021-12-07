@@ -411,11 +411,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				// metrics prefix to keep compatibility with previous
 				// Contour versions since the metrics prefix will be
 				// coded into monitoring dashboards.
-				cm := envoy_v3.HTTPConnectionManagerBuilder().
+				hcmBuilder := envoy_v3.HTTPConnectionManagerBuilder().
 					Codec(envoy_v3.CodecForVersions(cfg.DefaultHTTPVersions...)).
-					AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
-					DefaultFilters().
-					AddFilter(authFilter).
 					RouteConfigName(path.Join("https", vh.VirtualHost.Name)).
 					MetricsPrefix(listener.Name).
 					AccessLoggers(cfg.newSecureAccessLog()).
@@ -425,12 +422,25 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					DelayedCloseTimeout(cfg.Timeouts.DelayedClose).
 					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
-					AllowChunkedLength(cfg.AllowChunkedLength).
-					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
-					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
-					Get()
+					AllowChunkedLength(cfg.AllowChunkedLength)
 
-				filters = envoy_v3.Filters(cm)
+				if vh.AuthorizationService != nil && vh.AuthBeforeRateLimiting {
+					hcmBuilder.
+						AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
+						DefaultFilters(). // TODO this includes the local rate limit filter, which should go after the auth filter in this case
+						AddFilter(authFilter).
+						AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
+						AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig)))
+				} else {
+					hcmBuilder.
+						AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
+						DefaultFilters().
+						AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
+						AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
+						AddFilter(authFilter)
+				}
+
+				filters = envoy_v3.Filters(hcmBuilder.Get())
 
 				alpnProtos = envoy_v3.ProtoNamesForVersions(cfg.DefaultHTTPVersions...)
 			} else {

@@ -3777,6 +3777,12 @@ spec:
                       client certificate is always included in the authentication
                       check request.
                     properties:
+                      authBeforeRateLimiting:
+                        description: AuthBeforeRateLimiting defines whether the authorization
+                          server will be consulted before applying any rate limiting
+                          to a request. The default is false, i.e. to apply rate-limiting
+                          first, in order to protect the authorization server.
+                        type: boolean
                       authPolicy:
                         description: AuthPolicy sets a default authorization policy
                           for client requests. This policy will be used unless overridden
