@@ -397,11 +397,10 @@ func testAppCookieRewrite(namespace string) {
 					continue
 				}
 				for _, v := range values {
-					switch v {
-					case "service=baz; Path=/svc-new":
-						services["echo"] = struct{}{}
-					case "service=baz; Path=/svc-new-other":
+					if strings.Contains(v, "Path=/svc-new-other") {
 						services["echo-other"] = struct{}{}
+					} else if strings.Contains(v, "Path=/svc-new") {
+						services["echo"] = struct{}{}
 					}
 				}
 			}
