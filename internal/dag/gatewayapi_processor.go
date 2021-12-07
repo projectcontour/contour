@@ -790,9 +790,8 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 		// Get match conditions for the rule.
 		var matchconditions []*matchConditions
 		for _, match := range rule.Matches {
-			pathMatch, err := gatewayPathMatchCondition(match.Path)
-			if err != nil {
-				routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
+			pathMatch, ok := gatewayPathMatchCondition(match.Path, routeAccessor)
+			if !ok {
 				continue
 			}
 
@@ -959,30 +958,48 @@ func (p *GatewayAPIProcessor) validateBackendRef(backendRef gatewayapi_v1alpha2.
 	return service, nil
 }
 
-func gatewayPathMatchCondition(match *gatewayapi_v1alpha2.HTTPPathMatch) (MatchCondition, error) {
-
+func gatewayPathMatchCondition(match *gatewayapi_v1alpha2.HTTPPathMatch, routeAccessor *status.RouteConditionsUpdate) (MatchCondition, bool) {
 	if match == nil {
-		return &PrefixMatchCondition{Prefix: "/"}, nil
+		return &PrefixMatchCondition{Prefix: "/"}, true
 	}
 
 	path := pointer.StringDeref(match.Value, "/")
 
 	// If path match type is not defined, default to 'PathPrefix'.
 	if match.Type == nil || *match.Type == gatewayapi_v1alpha2.PathMatchPathPrefix {
+		if !strings.HasPrefix(path, "/") {
+			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value must start with '/'.")
+			return nil, false
+		}
+		if strings.Contains(path, "//") {
+			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value must not contain consecutive '/' characters.")
+			return nil, false
+		}
+
 		// As an optimization, if path is just "/", we can use
 		// string prefix matching instead of segment prefix
 		// matching which requires a regex.
 		if path == "/" {
-			return &PrefixMatchCondition{Prefix: path}, nil
+			return &PrefixMatchCondition{Prefix: path}, true
 		}
-		return &PrefixMatchCondition{Prefix: path, PrefixMatchType: PrefixMatchSegment}, nil
+		return &PrefixMatchCondition{Prefix: path, PrefixMatchType: PrefixMatchSegment}, true
 	}
 
 	if *match.Type == gatewayapi_v1alpha2.PathMatchExact {
-		return &ExactMatchCondition{Path: path}, nil
+		if !strings.HasPrefix(path, "/") {
+			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value must start with '/'.")
+			return nil, false
+		}
+		if strings.Contains(path, "//") {
+			routeAccessor.AddCondition(status.ConditionValidMatches, metav1.ConditionFalse, status.ReasonInvalidPathMatch, "Match.Path.Value must not contain consecutive '/' characters.")
+			return nil, false
+		}
+
+		return &ExactMatchCondition{Path: path}, true
 	}
 
-	return nil, fmt.Errorf("HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported")
+	routeAccessor.AddCondition(status.ConditionNotImplemented, metav1.ConditionTrue, status.ReasonPathMatchType, "HTTPRoute.Spec.Rules.PathMatch: Only Prefix match type and Exact match type are supported.")
+	return nil, false
 }
 
 func gatewayHeaderMatchConditions(matches []gatewayapi_v1alpha2.HTTPHeaderMatch) ([]HeaderMatchCondition, error) {

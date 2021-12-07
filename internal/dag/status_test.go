@@ -2942,7 +2942,203 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 2),
 	})
 
-	run(t, "invalid prefix match for httproute", testcase{
+	run(t, "prefix path match not starting with '/' for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+								Value: pointer.StringPtr("doesnt-start-with-slash"),
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonErrorsExist),
+					Message: "Errors found, check other Conditions for details.",
+				},
+				status.ConditionValidMatches: {
+					Type:    string(status.ConditionValidMatches),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonInvalidPathMatch),
+					Message: "Match.Path.Value must start with '/'.",
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
+	run(t, "exact path match not starting with '/' for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
+								Value: pointer.StringPtr("doesnt-start-with-slash"),
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonErrorsExist),
+					Message: "Errors found, check other Conditions for details.",
+				},
+				status.ConditionValidMatches: {
+					Type:    string(status.ConditionValidMatches),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonInvalidPathMatch),
+					Message: "Match.Path.Value must start with '/'.",
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
+	run(t, "prefix path match with consecutive '/' characters for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchPathPrefix),
+								Value: pointer.StringPtr("/foo///bar"),
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonErrorsExist),
+					Message: "Errors found, check other Conditions for details.",
+				},
+				status.ConditionValidMatches: {
+					Type:    string(status.ConditionValidMatches),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonInvalidPathMatch),
+					Message: "Match.Path.Value must not contain consecutive '/' characters.",
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
+	run(t, "exact path match with consecutive '/' characters for httproute", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1alpha2.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1alpha2.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+						Matches: []gatewayapi_v1alpha2.HTTPRouteMatch{{
+							Path: &gatewayapi_v1alpha2.HTTPPathMatch{
+								Type:  gatewayapi.PathMatchTypePtr(gatewayapi_v1alpha2.PathMatchExact),
+								Value: pointer.StringPtr("//foo/bar"),
+							},
+						}},
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteConditionsUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			Conditions: map[gatewayapi_v1alpha2.RouteConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.ConditionRouteAccepted: {
+					Type:    string(gatewayapi_v1alpha2.ConditionRouteAccepted),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonErrorsExist),
+					Message: "Errors found, check other Conditions for details.",
+				},
+				status.ConditionValidMatches: {
+					Type:    string(status.ConditionValidMatches),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(status.ReasonInvalidPathMatch),
+					Message: "Match.Path.Value must not contain consecutive '/' characters.",
+				},
+			},
+		}},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 0),
+	})
+
+	run(t, "invalid path match type for httproute", testcase{
 		objs: []interface{}{
 			kuardService,
 			&gatewayapi_v1alpha2.HTTPRoute{
