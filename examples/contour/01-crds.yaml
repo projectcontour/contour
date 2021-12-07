@@ -3578,7 +3578,7 @@ spec:
                             description: MaxRequestBytes sets the maximum size of
                               message body ExtAuthz filter will hold in-memory.
                             format: int32
-                            minimum: 1
+                            minimum: 1024
                             type: integer
                           packAsBytes:
                             description: If PackAsBytes is true, the body sent to

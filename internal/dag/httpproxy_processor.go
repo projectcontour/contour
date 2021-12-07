@@ -299,8 +299,12 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 
 				if auth.BufferSettings != nil {
+					var maxRequestBytes uint32 = 1024
+					if auth.BufferSettings.MaxRequestBytes != 0 {
+						maxRequestBytes = auth.BufferSettings.MaxRequestBytes
+					}
 					svhost.AuthorizationServerBufferSettings = &AuthorizationServerBufferSettings{
-						MaxRequestBytes:     auth.BufferSettings.MaxRequestBytes,
+						MaxRequestBytes:     maxRequestBytes,
 						AllowPartialMessage: auth.BufferSettings.AllowPartialMessage,
 						PackAsBytes:         auth.BufferSettings.PackAsBytes,
 					}
