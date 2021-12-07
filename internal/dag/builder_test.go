@@ -370,6 +370,41 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
+	sec2 := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "tls-cert-namespace",
+		},
+		Type: v1.SecretTypeTLS,
+		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+	}
+
+	gatewayTLSTerminateCertInDifferentNamespace := &gatewayapi_v1alpha2.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "contour",
+			Namespace: "projectcontour",
+		},
+		Spec: gatewayapi_v1alpha2.GatewaySpec{
+			GatewayClassName: gatewayapi_v1alpha2.ObjectName(validClass.Name),
+			Listeners: []gatewayapi_v1alpha2.Listener{{
+				Name:     "tls",
+				Port:     443,
+				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+						gatewayapi.CertificateRef(sec2.Name, sec2.Namespace),
+					},
+				},
+				AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+					},
+				},
+			}},
+		},
+	}
+
 	gatewayHTTPSAllNamespaces := &gatewayapi_v1alpha2.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "contour",
@@ -2057,6 +2092,237 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
+
+		// BEGIN TLS CertificateRef + ReferencePolicy tests
+		"Gateway references TLS cert in different namespace, with valid ReferencePolicy": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
+			objs: []interface{}{
+				sec2,
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tls-cert-reference-policy",
+						Namespace: sec2.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "Gateway",
+							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Secret",
+						}},
+					},
+				},
+				basicTLSRoute,
+				kuardService,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "test.projectcontour.io",
+							},
+							Secret: secret(sec2),
+							TCPProxy: &TCPProxy{
+								Clusters: clustersWeight(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"Gateway references TLS cert in different namespace, with no ReferencePolicy": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
+			objs: []interface{}{
+				sec2,
+				basicTLSRoute,
+				kuardService,
+			},
+			want: listeners(),
+		},
+		"Gateway references TLS cert in different namespace, with valid ReferencePolicy (secret-specific)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
+			objs: []interface{}{
+				sec2,
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tls-cert-reference-policy",
+						Namespace: sec2.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "Gateway",
+							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Secret",
+							Name: gatewayapi.ObjectNamePtr(sec2.Name),
+						}},
+					},
+				},
+				basicTLSRoute,
+				kuardService,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						&SecureVirtualHost{
+							VirtualHost: VirtualHost{
+								Name: "test.projectcontour.io",
+							},
+							Secret: secret(sec2),
+							TCPProxy: &TCPProxy{
+								Clusters: clustersWeight(service(kuardService)),
+							},
+						},
+					),
+				},
+			),
+		},
+		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (policy in wrong namespace)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
+			objs: []interface{}{
+				sec2,
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tls-cert-reference-policy",
+						Namespace: "wrong-namespace",
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "Gateway",
+							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Secret",
+						}},
+					},
+				},
+				basicTLSRoute,
+				kuardService,
+			},
+			want: listeners(),
+		},
+		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From namespace)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
+			objs: []interface{}{
+				sec2,
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tls-cert-reference-policy",
+						Namespace: sec2.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "Gateway",
+							Namespace: gatewayapi_v1alpha2.Namespace("wrong-namespace"),
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Secret",
+						}},
+					},
+				},
+				basicTLSRoute,
+				kuardService,
+			},
+			want: listeners(),
+		},
+		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From kind)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
+			objs: []interface{}{
+				sec2,
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tls-cert-reference-policy",
+						Namespace: sec2.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "WrongKind",
+							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Secret",
+						}},
+					},
+				},
+				basicTLSRoute,
+				kuardService,
+			},
+			want: listeners(),
+		},
+		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong To kind)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
+			objs: []interface{}{
+				sec2,
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tls-cert-reference-policy",
+						Namespace: sec2.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "Gateway",
+							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "WrongKind",
+						}},
+					},
+				},
+				basicTLSRoute,
+				kuardService,
+			},
+			want: listeners(),
+		},
+		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong secret name)": {
+			gatewayclass: validClass,
+			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
+			objs: []interface{}{
+				sec2,
+				&gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tls-cert-reference-policy",
+						Namespace: sec2.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "Gateway",
+							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Secret",
+							Name: gatewayapi.ObjectNamePtr("wrong-name"),
+						}},
+					},
+				},
+				basicTLSRoute,
+				kuardService,
+			},
+			want: listeners(),
+		},
+
+		// END CertificateRef ReferencePolicy tests
+
 		"No valid hostnames defined": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPAllNamespaces,

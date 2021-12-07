@@ -3355,6 +3355,615 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
+	// BEGIN TLS CertificateRef + ReferencePolicy tests
+	run(t, "Gateway references TLS cert in different namespace, with valid ReferencePolicy", testcase{
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				GatewayClassName: gatewayapi_v1alpha2.ObjectName("projectcontour.io/contour"),
+				Listeners: []gatewayapi_v1alpha2.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
+						},
+					},
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		objs: []interface{}{
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "tls-cert-namespace",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+			},
+			&gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tls-cert-reference-policy",
+					Namespace: "tls-cert-namespace",
+				},
+				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+						Group:     gatewayapi_v1alpha2.GroupName,
+						Kind:      "Gateway",
+						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+					}},
+					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						Kind: "Secret",
+					}},
+				},
+			},
+		},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("tls", "TLSRoute", 0),
+	})
+
+	run(t, "Gateway references TLS cert in different namespace, with no ReferencePolicy", testcase{
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				GatewayClassName: gatewayapi_v1alpha2.ObjectName("projectcontour.io/contour"),
+				Listeners: []gatewayapi_v1alpha2.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
+						},
+					},
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		objs: []interface{}{
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "tls-cert-namespace",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1alpha2.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
+				"tls": {
+					Name:           "tls",
+					SupportedKinds: nil,
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Invalid listener, see other listener conditions for details",
+						},
+						{
+							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
+							Status:  metav1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "Gateway references TLS cert in different namespace, with valid ReferencePolicy (secret-specific)", testcase{
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				GatewayClassName: gatewayapi_v1alpha2.ObjectName("projectcontour.io/contour"),
+				Listeners: []gatewayapi_v1alpha2.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
+						},
+					},
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		objs: []interface{}{
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "tls-cert-namespace",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+			},
+			&gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tls-cert-reference-policy",
+					Namespace: "tls-cert-namespace",
+				},
+				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+						Group:     gatewayapi_v1alpha2.GroupName,
+						Kind:      "Gateway",
+						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+					}},
+					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						Kind: "Secret",
+						Name: gatewayapi.ObjectNamePtr("secret"),
+					}},
+				},
+			},
+		},
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("tls", "TLSRoute", 0),
+	})
+
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (policy in wrong namespace)", testcase{
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				GatewayClassName: gatewayapi_v1alpha2.ObjectName("projectcontour.io/contour"),
+				Listeners: []gatewayapi_v1alpha2.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
+						},
+					},
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		objs: []interface{}{
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "tls-cert-namespace",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+			},
+			&gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tls-cert-reference-policy",
+					Namespace: "wrong-namespace",
+				},
+				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+						Group:     gatewayapi_v1alpha2.GroupName,
+						Kind:      "Gateway",
+						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+					}},
+					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						Kind: "Secret",
+					}},
+				},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1alpha2.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
+				"tls": {
+					Name:           "tls",
+					SupportedKinds: nil,
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Invalid listener, see other listener conditions for details",
+						},
+						{
+							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
+							Status:  metav1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From namespace)", testcase{
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				GatewayClassName: gatewayapi_v1alpha2.ObjectName("projectcontour.io/contour"),
+				Listeners: []gatewayapi_v1alpha2.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
+						},
+					},
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		objs: []interface{}{
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "tls-cert-namespace",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+			},
+			&gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tls-cert-reference-policy",
+					Namespace: "tls-cert-namespace",
+				},
+				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+						Group:     gatewayapi_v1alpha2.GroupName,
+						Kind:      "Gateway",
+						Namespace: gatewayapi_v1alpha2.Namespace("wrong-namespace"),
+					}},
+					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						Kind: "Secret",
+					}},
+				},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1alpha2.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
+				"tls": {
+					Name:           "tls",
+					SupportedKinds: nil,
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Invalid listener, see other listener conditions for details",
+						},
+						{
+							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
+							Status:  metav1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From kind)", testcase{
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				GatewayClassName: gatewayapi_v1alpha2.ObjectName("projectcontour.io/contour"),
+				Listeners: []gatewayapi_v1alpha2.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
+						},
+					},
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		objs: []interface{}{
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "tls-cert-namespace",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+			},
+			&gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tls-cert-reference-policy",
+					Namespace: "tls-cert-namespace",
+				},
+				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+						Group:     gatewayapi_v1alpha2.GroupName,
+						Kind:      "WrongKind",
+						Namespace: gatewayapi_v1alpha2.Namespace("projectontour"),
+					}},
+					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						Kind: "Secret",
+					}},
+				},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1alpha2.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
+				"tls": {
+					Name:           "tls",
+					SupportedKinds: nil,
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Invalid listener, see other listener conditions for details",
+						},
+						{
+							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
+							Status:  metav1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong To kind)", testcase{
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				GatewayClassName: gatewayapi_v1alpha2.ObjectName("projectcontour.io/contour"),
+				Listeners: []gatewayapi_v1alpha2.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
+						},
+					},
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		objs: []interface{}{
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "tls-cert-namespace",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+			},
+			&gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tls-cert-reference-policy",
+					Namespace: "tls-cert-namespace",
+				},
+				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+						Group:     gatewayapi_v1alpha2.GroupName,
+						Kind:      "Gateway",
+						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+					}},
+					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						Kind: "WrongKind",
+					}},
+				},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1alpha2.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
+				"tls": {
+					Name:           "tls",
+					SupportedKinds: nil,
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Invalid listener, see other listener conditions for details",
+						},
+						{
+							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
+							Status:  metav1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	run(t, "Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong secret name)", testcase{
+		gateway: &gatewayapi_v1alpha2.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "contour",
+				Namespace: "projectcontour",
+			},
+			Spec: gatewayapi_v1alpha2.GatewaySpec{
+				GatewayClassName: gatewayapi_v1alpha2.ObjectName("projectcontour.io/contour"),
+				Listeners: []gatewayapi_v1alpha2.Listener{{
+					Name:     "tls",
+					Port:     443,
+					Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+					TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+						Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+						CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+							gatewayapi.CertificateRef("secret", "tls-cert-namespace"),
+						},
+					},
+					AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+						Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+							From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+						},
+					},
+				}},
+			},
+		},
+		objs: []interface{}{
+			&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "secret",
+					Namespace: "tls-cert-namespace",
+				},
+				Type: v1.SecretTypeTLS,
+				Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
+			},
+			&gatewayapi_v1alpha2.ReferencePolicy{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "tls-cert-reference-policy",
+					Namespace: "tls-cert-namespace",
+				},
+				Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+					From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+						Group:     gatewayapi_v1alpha2.GroupName,
+						Kind:      "Gateway",
+						Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+					}},
+					To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+						Kind: "Secret",
+						Name: gatewayapi.ObjectNamePtr("wrong-name"),
+					}},
+				},
+			},
+		},
+		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
+			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionReady: {
+					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
+					Status:  contour_api_v1.ConditionFalse,
+					Reason:  string(gatewayapi_v1alpha2.GatewayReasonListenersNotValid),
+					Message: "Listeners are not valid",
+				},
+			},
+			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
+				"tls": {
+					Name:           "tls",
+					SupportedKinds: nil,
+					Conditions: []metav1.Condition{
+						{
+							Type:    "Ready",
+							Status:  metav1.ConditionFalse,
+							Reason:  "Invalid",
+							Message: "Invalid listener, see other listener conditions for details",
+						},
+						{
+							Type:    string(gatewayapi_v1alpha2.ListenerConditionResolvedRefs),
+							Status:  metav1.ConditionFalse,
+							Reason:  string(gatewayapi_v1alpha2.ListenerReasonInvalidCertificateRef),
+							Message: "Spec.VirtualHost.TLS.CertificateRefs \"secret\" namespace must match the Gateway's namespace or be covered by a ReferencePolicy",
+						},
+					},
+				},
+			},
+		}},
+	})
+
+	// END TLS CertificateRef + ReferencePolicy tests
+
 	run(t, "spec.rules.hostname: invalid wildcard", testcase{
 		objs: []interface{}{
 			kuardService,
