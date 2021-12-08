@@ -164,6 +164,16 @@ This change should be a no-op for most users, however be sure to re-apply the re
 
 (#4202, @sunjayBhatia)
 
+## HTTP Request Redirect Policy 
+
+HTTPProxy.Route now has a HTTPRequestRedirectPolicy which allows for routes to specify a RequestRedirectPolicy.
+This policy will allow a redirect to be configured for a specific set of Conditions within a single route.
+The policy can be configured with a `Hostname`, `StatusCode`, `Scheme`, and `Port`.
+
+Additionally, Services on a Route are now optional when a request redirect is defined.
+
+(#4201, @stevesloka)
+
 # Other Changes
 - Sets conditions of "Accepted: false" and "ValidBackendRefs: false" on `TLSRoutes` when all backend refs have a weight of 0 explicitly set. (#4027, @skriss)
 - Fix panic in Contour startup when using `--root-namespaces` flag (#4110, @sunjayBhatia)
