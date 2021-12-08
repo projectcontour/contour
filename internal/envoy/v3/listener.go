@@ -298,11 +298,45 @@ func (b *httpConnectionManagerBuilder) DefaultFilters() *httpConnectionManagerBu
 // AddFilter will ensure that the router filter, if present, is last, and will panic
 // if a second Router is added when one is already present.
 func (b *httpConnectionManagerBuilder) AddFilter(f *http.HttpFilter) *httpConnectionManagerBuilder {
+	return b.AddFilterBefore(f, "")
+}
+
+// AddFilterBefore inserts f into the list of filters for this HTTPConnectionManager before
+// the specified filter. If 'beforeFilter' does not exist, f will be appended to the list. f
+// may be nil, in which case it is ignored. Note that Router filters
+// (filters with TypeUrl `type.googleapis.com/envoy.extensions.filters.http.router.v3.Router`)
+// are specially treated. There may only be one of these filters, and it must be the last.
+// AddFilterBefore will ensure that the router filter, if present, is last, and will panic
+// if a second Router is added when one is already present.
+func (b *httpConnectionManagerBuilder) AddFilterBefore(f *http.HttpFilter, beforeFilter string) *httpConnectionManagerBuilder {
 	if f == nil {
 		return b
 	}
 
-	b.filters = append(b.filters, f)
+	if len(beforeFilter) > 0 {
+		var newFilters []*http.HttpFilter
+
+		for i := range b.filters {
+			// If we found the filter we want to insert before,
+			// then insert f.
+			if b.filters[i].Name == beforeFilter {
+				newFilters = append(newFilters, f)
+			}
+
+			newFilters = append(newFilters, b.filters[i])
+		}
+
+		// If we haven't inserted f yet, then append it to the
+		// end.
+		if len(newFilters) == len(b.filters) {
+			newFilters = append(newFilters, f)
+		}
+
+		b.filters = newFilters
+	} else {
+		// No beforeFilter specified: append f to the end.
+		b.filters = append(b.filters, f)
+	}
 
 	if len(b.filters) == 1 {
 		return b

@@ -840,8 +840,8 @@ func TestAuthzBeforeRateLimiting(t *testing.T) {
 						envoy_v3.HTTPConnectionManagerBuilder().
 							AddFilter(envoy_v3.FilterMisdirectedRequests(fqdn)).
 							DefaultFilters().
-							// Auth filter is expected to come *before* global rate limit filter.
-							AddFilter(&http.HttpFilter{
+							// Auth filter is expected to come *before* local/global rate limit filters.
+							AddFilterBefore(&http.HttpFilter{
 								Name: "envoy.filters.http.ext_authz",
 								ConfigType: &http.HttpFilter_TypedConfig{
 									TypedConfig: protobuf.MustMarshalAny(&envoy_config_filter_http_ext_authz_v3.ExtAuthz{
@@ -854,7 +854,7 @@ func TestAuthzBeforeRateLimiting(t *testing.T) {
 										TransportApiVersion: envoy_core_v3.ApiVersion_V3,
 									}),
 								},
-							}).
+							}, "local_ratelimit").
 							AddFilter(&http.HttpFilter{
 								Name: "envoy.filters.http.ratelimit",
 								ConfigType: &http.HttpFilter_TypedConfig{

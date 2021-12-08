@@ -427,8 +427,8 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 				if vh.AuthorizationService != nil && vh.AuthBeforeRateLimiting {
 					hcmBuilder.
 						AddFilter(envoy_v3.FilterMisdirectedRequests(vh.VirtualHost.Name)).
-						DefaultFilters(). // TODO this includes the local rate limit filter, which should go after the auth filter in this case
-						AddFilter(authFilter).
+						DefaultFilters().
+						AddFilterBefore(authFilter, "local_ratelimit").
 						AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
 						AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig)))
 				} else {

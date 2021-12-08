@@ -1838,3 +1838,123 @@ func TestAddFilter(t *testing.T) {
 		})
 	})
 }
+
+func TestAddFilterBefore(t *testing.T) {
+	routerFilter := func() *http.HttpFilter {
+		return &http.HttpFilter{
+			Name: "router",
+			ConfigType: &http.HttpFilter_TypedConfig{
+				TypedConfig: &any.Any{
+					TypeUrl: HTTPFilterRouter,
+				},
+			},
+		}
+	}
+
+	tests := map[string]struct {
+		builderFilters []*http.HttpFilter
+		add            *http.HttpFilter
+		addBefore      string
+		want           []*http.HttpFilter
+	}{
+		"empty builder, add before a nonexistent filter": {
+			builderFilters: nil,
+			add: &http.HttpFilter{
+				Name: "add",
+			},
+			addBefore: "nonexistent",
+			want: []*http.HttpFilter{
+				{Name: "add"},
+			},
+		},
+		"non-empty builder, add before router": {
+			builderFilters: []*http.HttpFilter{
+				{Name: "existing"},
+				routerFilter(),
+			},
+			add: &http.HttpFilter{
+				Name: "add",
+			},
+			addBefore: "router",
+			want: []*http.HttpFilter{
+				{Name: "existing"},
+				{Name: "add"},
+				routerFilter(),
+			},
+		},
+		"non-empty builder, add at beginning": {
+			builderFilters: []*http.HttpFilter{
+				{Name: "existing"},
+				routerFilter(),
+			},
+			add: &http.HttpFilter{
+				Name: "add",
+			},
+			addBefore: "existing",
+			want: []*http.HttpFilter{
+				{Name: "add"},
+				{Name: "existing"},
+				routerFilter(),
+			},
+		},
+		"non-empty builder, add in middle": {
+			builderFilters: []*http.HttpFilter{
+				{Name: "existing-1"},
+				{Name: "existing-2"},
+				routerFilter(),
+			},
+			add: &http.HttpFilter{
+				Name: "add",
+			},
+			addBefore: "existing-2",
+			want: []*http.HttpFilter{
+				{Name: "existing-1"},
+				{Name: "add"},
+				{Name: "existing-2"},
+				routerFilter(),
+			},
+		},
+		"non-empty builder, add before a nonexistent filter": {
+			builderFilters: []*http.HttpFilter{
+				{Name: "existing"},
+				routerFilter(),
+			},
+			add: &http.HttpFilter{
+				Name: "add",
+			},
+			addBefore: "nonexistent",
+			want: []*http.HttpFilter{
+				{Name: "existing"},
+				{Name: "add"},
+				routerFilter(),
+			},
+		},
+		"non-empty builder, no add before": {
+			builderFilters: []*http.HttpFilter{
+				{Name: "existing"},
+				routerFilter(),
+			},
+			add: &http.HttpFilter{
+				Name: "add",
+			},
+			addBefore: "",
+			want: []*http.HttpFilter{
+				{Name: "existing"},
+				{Name: "add"},
+				routerFilter(),
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			b := HTTPConnectionManagerBuilder()
+			b.filters = tc.builderFilters
+
+			b.AddFilterBefore(tc.add, tc.addBefore)
+
+			assert.Equal(t, len(tc.want), len(b.filters))
+			assert.EqualValues(t, tc.want, b.filters)
+		})
+	}
+}
