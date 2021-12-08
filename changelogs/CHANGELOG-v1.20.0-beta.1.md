@@ -102,7 +102,7 @@ object and updates the status.
 
 Contour users can now configure their load balancing policies on `HTTPProxy` resources to hash the source IP of a client to ensure consistent routing to a backend service instance. Using this feature combined with header value hashing can implement advanced request routing and session affinity. Note that if you are using a load balancer to front your Envoy deployment, you will need to ensure it preserves client source IP addresses to ensure this feature is effective.
 
-See [this page](https://projectcontour.io/docs/v1.20.0/config/request-routing/#load-balancing-strategy) for more details on this feature.
+See [this page](https://projectcontour.io/docs/main/config/request-routing/#load-balancing-strategy) for more details on this feature.
 
 (#4141, @sunjayBhatia)
 
@@ -146,7 +146,7 @@ Note that if no TCPProxy service weights are defined, traffic continues to be eq
 
 `contour serve` leader election configuration via config file has been deprecated.
 The preferred way to configure leader election parameters is now via command line flags.
-See [here](https://projectcontour.io/docs/v1.20.0/configuration/#serve-flags) for more detail on the new leader election flags.
+See [here](https://projectcontour.io/docs/main/configuration/#serve-flags) for more detail on the new leader election flags.
 
 *Note:* If you are using the v1alpha1 ContourConfiguration CRD, leader election configuration has been removed from that CRD as well.
 Leader election configuration is not something that will be dynamically configurable once Contour implements configuration reloading via that CRD.
