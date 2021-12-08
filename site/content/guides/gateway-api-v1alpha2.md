@@ -1,5 +1,5 @@
 ---
-title: Using Gateway API v1alpha1 with Contour
+title: Using Gateway API v1alpha2 with Contour
 layout: page
 ---
 
@@ -9,7 +9,8 @@ layout: page
 evolve service networking APIs within the Kubernetes ecosystem. Gateway API consists of multiple resources that provide
 user interfaces to expose Kubernetes applications- Services, Ingress, and more.
 
-This guide covers using version **v1alpha1** of the Gateway API.
+This guide covers using version **v1alpha2** of the Gateway API, with Contour `v1.20.0-beta.1`.
+Please note that this is pre-release software, and we don't recommend installing it in a production environment.
 
 ### Background
 
@@ -37,13 +38,15 @@ The following prerequisites must be met before using Gateway API with Contour:
 - A working [Kubernetes][2] cluster. Refer to the [compatibility matrix][3] for cluster version requirements.
 - The [kubectl][4] command-line tool, installed and configured to access your cluster.
 
+## Deploying Contour with Gateway API
+
 ### Option #1: Gateway API with Contour
 
 Refer to the [contour][6] design for additional background on the Gateway API implementation.
 
 Deploy Contour:
 ```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/contour-gateway.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.20.0-beta.1/examples/render/contour-gateway.yaml
 ```
 This command creates:
 
@@ -53,34 +56,10 @@ This command creates:
 - Contour RBAC resources
 - Contour Deployment / Service
 - Envoy Daemonset / Service
-- Properly configured Configuration file for Gateway API
-- GatewayAPI Gateway
-- GatewayAPI Gateway Class
+- Contour ConfigMap enabling Gateway API support
+- Gateway API GatewayClass and Gateway
 
-Create the Gateway API HTTPRoute to define how traffic should be routed:
-
-```yaml
-kind: HTTPRoute
-apiVersion: networking.x-k8s.io/v1alpha1
-metadata:
-  name: root
-  namespace: projectcontour
-spec:
-  gateways:
-    allow: All
-  hostnames:
-    - local.projectcontour.io
-  rules:
-    - matches:
-        - path:
-            type: Prefix
-            value: /
-      forwardTo:
-        - serviceName: kuard
-          port: 80
-```
-
-See the last section (Testing the Gateway API) on how to test it all out!
+See the last section ([Testing the Gateway API](#testing-the-gateway-api)) on how to test it all out!
 
 ### Option #2: Using Gateway API with Contour Operator
 
@@ -88,7 +67,7 @@ Refer to the [contour][6] and [operator][7] designs for additional background on
 
 Run the operator:
 ```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/operator.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour-operator/v1.20.0-beta.1/examples/operator/operator.yaml
 ```
 This command creates:
 
@@ -102,36 +81,34 @@ Create the Gateway API resources:
 
 Option 1: Using a LoadBalancer Service:
 ```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/gateway.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour-operator/v1.20.0-beta.1/examples/gateway/gateway.yaml
 ```
 
 Option 2: Using a NodePort Service:
 ```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/gateway-nodeport.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour-operator/v1.20.0-beta.1/examples/gateway/gateway-nodeport.yaml
 ```
 
 Either of the above options create:
 
 - Namespace `projectcontour` to run the Gateway and child resources, i.e. Envoy DaemonSet.
-- A Contour custom resource named `contour-gateway-sample` in the operator's namespace. This resource exposes
-  infrastructure-specific configuration and is referenced by the GatewayClass.
+- A Contour custom resource named `contour-gateway-sample` in the operator's namespace. This resource exposes infrastructure-specific configuration and is referenced by the GatewayClass.
 - A GatewayClass named `sample-gatewayclass` that abstracts the infrastructure-specific configuration from Gateways.
-- A Gateway named `contour` in namespace `projectcontour`. This gateway will serve the test application through routing
-  rules deployed in the next step.
+- A Gateway named `contour` in namespace `projectcontour`. This gateway will serve the test application through routing rules deployed in the next step.
 
-See the next section (Testing the Gateway API) on how to test it all out!
+See the next section ([Testing the Gateway API](#testing-the-gateway-api)) on how to test it all out!
 
-### Testing the Gateway API
+## Testing the Gateway API
 
 Run the test application:
 ```shell
-$ kubectl apply -f {{< param base_url >}}/quickstart/kuard.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour/v1.20.0-beta.1/examples/gateway/kuard/kuard.yaml
 ```
 This command creates:
 
 - A Deployment named `kuard` in namespace `projectcontour` to run kuard as the test application.
 - A Service named `kuard` in namespace `projectcontour` to expose the kuard application on TCP port 80.
-- An HTTPRoute named `kuard` in namespace `projectcontour` to route requests for "*.projectcontour.io" to the kuard
+- An HTTPRoute named `kuard` in namespace `projectcontour` to route requests for `local.projectcontour.io` to the kuard
   service.
 
 Verify the kuard resources are available:
@@ -145,8 +122,8 @@ pod/kuard-798585497b-zw42m   1/1     Running   0          21s
 NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
 service/kuard   ClusterIP   172.30.168.168   <none>        80/TCP    21s
 
-NAME                                  HOSTNAMES
-httproute.networking.x-k8s.io/kuard   ["local.projectcontour.io"]
+NAME                                        HOSTNAMES
+httproute.gateway.networking.k8s.io/kuard   ["local.projectcontour.io"]
 ```
 
 Test access to the kuard application:
