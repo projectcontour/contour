@@ -55,7 +55,7 @@ func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
 
 func CertificateRef(name, namespace string) *gatewayapi_v1alpha2.SecretObjectReference {
 	ref := &gatewayapi_v1alpha2.SecretObjectReference{
-		Group: GroupPtr("core"),
+		Group: GroupPtr(""),
 		Kind:  KindPtr("Secret"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),
 	}
