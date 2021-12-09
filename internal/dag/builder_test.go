@@ -289,53 +289,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	gatewayTLSPassthroughSameNamespace := &gatewayapi_v1alpha2.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1alpha2.GatewaySpec{
-			GatewayClassName: gatewayapi_v1alpha2.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1alpha2.Listener{{
-				Port:     80,
-				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
-				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
-				},
-				AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
-					},
-				},
-			}},
-		},
-	}
-
-	gatewayTLSPassthroughNamespaceSelector := &gatewayapi_v1alpha2.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1alpha2.GatewaySpec{
-			GatewayClassName: gatewayapi_v1alpha2.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1alpha2.Listener{{
-				Port:     80,
-				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
-				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
-				},
-				AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
-						Selector: &metav1.LabelSelector{
-							MatchLabels: map[string]string{"matching-label-key": "matching-label-value"},
-						},
-					},
-				},
-			}},
-		},
-	}
-
 	sec1 := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "secret",
@@ -377,32 +330,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 		Type: v1.SecretTypeTLS,
 		Data: secretdata(fixture.CERTIFICATE, fixture.RSA_PRIVATE_KEY),
-	}
-
-	gatewayTLSTerminateCertInDifferentNamespace := &gatewayapi_v1alpha2.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "contour",
-			Namespace: "projectcontour",
-		},
-		Spec: gatewayapi_v1alpha2.GatewaySpec{
-			GatewayClassName: gatewayapi_v1alpha2.ObjectName(validClass.Name),
-			Listeners: []gatewayapi_v1alpha2.Listener{{
-				Name:     "tls",
-				Port:     443,
-				Protocol: gatewayapi_v1alpha2.TLSProtocolType,
-				TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
-					Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
-					CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
-						gatewayapi.CertificateRef(sec2.Name, sec2.Namespace),
-					},
-				},
-				AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
-					Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
-						From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
-					},
-				},
-			}},
-		},
 	}
 
 	gatewayHTTPSAllNamespaces := &gatewayapi_v1alpha2.Gateway{
@@ -501,29 +428,14 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 		},
 	}
 
-	tests := map[string]struct {
+	type testcase struct {
 		objs         []interface{}
 		gatewayclass *gatewayapi_v1alpha2.GatewayClass
 		gateway      *gatewayapi_v1alpha2.Gateway
 		want         []*Listener
-	}{
-		"insert basic single route, single hostname": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
-				kuardService,
-				basicHTTPRoute,
-			},
-			want: listeners(
-				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
-					),
-				},
-			),
-		},
+	}
+
+	tests := map[string]testcase{
 		"gateway with addresses is unsupported": {
 			gatewayclass: validClass,
 			gateway:      gatewayHTTPWithAddresses,
@@ -692,215 +604,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			},
 			want: listeners(),
 		},
-
-		// BEGIN TLSRoute<->Gateway selection test cases
-		"TLSRoute: Gateway selects TLSRoutes in all namespaces": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
-				kuardServiceCustomNs,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "custom",
-					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(
-				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
-					SecureVirtualHosts: securevirtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "test.projectcontour.io",
-							},
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardServiceCustomNs)),
-							},
-						},
-					),
-				},
-			),
-		},
-		"TLSRoute: Gateway selects TLSRoutes in same namespace, and route is in the same namespace": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSPassthroughSameNamespace,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: gatewayTLSPassthroughSameNamespace.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(
-				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
-					SecureVirtualHosts: securevirtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "test.projectcontour.io",
-							},
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardService)),
-							},
-						},
-					),
-				},
-			),
-		},
-		"TLSRoute: Gateway selects TLSRoutes in same namespace, and route is not in the same namespace": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSPassthroughSameNamespace,
-			objs: []interface{}{
-				kuardServiceCustomNs,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: kuardServiceCustomNs.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(),
-		},
-		"TLSRoute: Gateway selects TLSRoutes in namespaces matching selector, and route is in a matching namespace": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSPassthroughNamespaceSelector,
-			objs: []interface{}{
-				kuardServiceCustomNs,
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:   kuardServiceCustomNs.Namespace,
-						Labels: map[string]string{"matching-label-key": "matching-label-value"},
-					},
-				},
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: kuardServiceCustomNs.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(
-				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
-					SecureVirtualHosts: securevirtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "test.projectcontour.io",
-							},
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardServiceCustomNs)),
-							},
-						},
-					),
-				},
-			),
-		},
-		"TLSRoute: Gateway selects TLSRoutes in namespaces matching selector, and route is in a non-matching namespace": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSPassthroughNamespaceSelector,
-			objs: []interface{}{
-				kuardServiceCustomNs,
-				&v1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:   kuardServiceCustomNs.Namespace,
-						Labels: map[string]string{"matching-label-key": "this-label-value-does-not-match"},
-					},
-				},
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: kuardServiceCustomNs.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(),
-		},
-
-		"TLSRoute: Gateway selects non-TLSRoutes": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces, // selects HTTPRoutes, not TLSRoutes
-			objs: []interface{}{
-				kuardService,
-				basicTLSRoute,
-			},
-			want: listeners(),
-		},
-
-		"TLSRoute: TLSRoute allows Gateways from list, and gateway is not in the list": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSPassthroughAllNamespaces,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.TLSRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: kuardService.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("some-other-namespace", "some-other-gateway-name")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
-						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
-							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
-						}},
-					},
-				},
-			},
-			want: listeners(),
-		},
-		// END TLSRoute<->Gateway selection test cases
 
 		"TLSRoute with TLS.Mode=Passthrough is invalid if certificateRef is specified": {
 			gatewayclass: validClass,
@@ -1168,195 +871,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 					),
 				},
 			),
-		},
-		"multiple hosts": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-					},
-					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
-							"test.projectcontour.io",
-							"test2.projectcontour.io",
-							"test3.projectcontour.io",
-							"test4.projectcontour.io",
-						},
-						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
-							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-						}},
-					},
-				},
-			},
-			want: listeners(
-				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
-						virtualhost("test2.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
-						virtualhost("test3.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
-						virtualhost("test4.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
-					),
-				},
-			),
-		},
-		"no host defined": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-					},
-					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
-							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-						}},
-					},
-				},
-			},
-			want: listeners(
-				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 80,
-					VirtualHosts: virtualhosts(
-						virtualhost("*", prefixrouteHTTPRoute("/", service(kuardService))),
-					),
-				},
-			),
-		},
-		"wildcard hostname": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-					},
-					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
-							"*.projectcontour.io",
-						},
-						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
-							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-						}},
-					},
-				},
-			},
-			want: listeners(
-				&Listener{
-					Name: HTTP_LISTENER_NAME,
-					Port: 80,
-					VirtualHosts: virtualhosts(virtualhost("*.projectcontour.io",
-						&Route{
-							PathMatchCondition: prefixString("/"),
-							HeaderMatchConditions: []HeaderMatchCondition{
-								{Name: ":authority", Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io", MatchType: "regex", Invert: false},
-							},
-							Clusters: clustersWeight(service(kuardService)),
-						}),
-					),
-				},
-			),
-		},
-		"invalid hostnames - IP": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-					},
-					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
-							"192.168.122.1",
-						},
-						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
-							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-						}},
-					},
-				},
-			},
-			want: listeners(),
-		},
-		"invalid hostnames - with port": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-					},
-					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
-							"test.projectcontour.io:80",
-						},
-						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
-							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-						}},
-					},
-				},
-			},
-			want: listeners(),
-		},
-		"invalid hostnames - wildcard label by itself": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
-				kuardService,
-				&gatewayapi_v1alpha2.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "default",
-					},
-					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
-							"*",
-						},
-						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
-							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
-						}},
-					},
-				},
-			},
-			want: listeners(),
 		},
 		// If the ServiceName referenced from an HTTPRoute is missing,
 		// the route should return an HTTP503.
@@ -2089,262 +1603,6 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 				sec1,
 				blogService,
 				basicHTTPRoute,
-			},
-			want: listeners(),
-		},
-
-		// BEGIN TLS CertificateRef + ReferencePolicy tests
-		"Gateway references TLS cert in different namespace, with valid ReferencePolicy": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
-				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
-						Namespace: sec2.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
-							Group:     gatewayapi_v1alpha2.GroupName,
-							Kind:      "Gateway",
-							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
-						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
-							Kind: "Secret",
-						}},
-					},
-				},
-				basicTLSRoute,
-				kuardService,
-			},
-			want: listeners(
-				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
-					SecureVirtualHosts: securevirtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "test.projectcontour.io",
-							},
-							Secret: secret(sec2),
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardService)),
-							},
-						},
-					),
-				},
-			),
-		},
-		"Gateway references TLS cert in different namespace, with no ReferencePolicy": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
-				sec2,
-				basicTLSRoute,
-				kuardService,
-			},
-			want: listeners(),
-		},
-		"Gateway references TLS cert in different namespace, with valid ReferencePolicy (secret-specific)": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
-				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
-						Namespace: sec2.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
-							Group:     gatewayapi_v1alpha2.GroupName,
-							Kind:      "Gateway",
-							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
-						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
-							Kind: "Secret",
-							Name: gatewayapi.ObjectNamePtr(sec2.Name),
-						}},
-					},
-				},
-				basicTLSRoute,
-				kuardService,
-			},
-			want: listeners(
-				&Listener{
-					Name: HTTPS_LISTENER_NAME,
-					Port: 443,
-					SecureVirtualHosts: securevirtualhosts(
-						&SecureVirtualHost{
-							VirtualHost: VirtualHost{
-								Name: "test.projectcontour.io",
-							},
-							Secret: secret(sec2),
-							TCPProxy: &TCPProxy{
-								Clusters: clustersWeight(service(kuardService)),
-							},
-						},
-					),
-				},
-			),
-		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (policy in wrong namespace)": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
-				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
-						Namespace: "wrong-namespace",
-					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
-							Group:     gatewayapi_v1alpha2.GroupName,
-							Kind:      "Gateway",
-							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
-						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
-							Kind: "Secret",
-						}},
-					},
-				},
-				basicTLSRoute,
-				kuardService,
-			},
-			want: listeners(),
-		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From namespace)": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
-				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
-						Namespace: sec2.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
-							Group:     gatewayapi_v1alpha2.GroupName,
-							Kind:      "Gateway",
-							Namespace: gatewayapi_v1alpha2.Namespace("wrong-namespace"),
-						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
-							Kind: "Secret",
-						}},
-					},
-				},
-				basicTLSRoute,
-				kuardService,
-			},
-			want: listeners(),
-		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From kind)": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
-				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
-						Namespace: sec2.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
-							Group:     gatewayapi_v1alpha2.GroupName,
-							Kind:      "WrongKind",
-							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
-						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
-							Kind: "Secret",
-						}},
-					},
-				},
-				basicTLSRoute,
-				kuardService,
-			},
-			want: listeners(),
-		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong To kind)": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
-				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
-						Namespace: sec2.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
-							Group:     gatewayapi_v1alpha2.GroupName,
-							Kind:      "Gateway",
-							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
-						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
-							Kind: "WrongKind",
-						}},
-					},
-				},
-				basicTLSRoute,
-				kuardService,
-			},
-			want: listeners(),
-		},
-		"Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong secret name)": {
-			gatewayclass: validClass,
-			gateway:      gatewayTLSTerminateCertInDifferentNamespace,
-			objs: []interface{}{
-				sec2,
-				&gatewayapi_v1alpha2.ReferencePolicy{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "tls-cert-reference-policy",
-						Namespace: sec2.Namespace,
-					},
-					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
-						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
-							Group:     gatewayapi_v1alpha2.GroupName,
-							Kind:      "Gateway",
-							Namespace: gatewayapi_v1alpha2.Namespace(gatewayTLSTerminateCertInDifferentNamespace.Namespace),
-						}},
-						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
-							Kind: "Secret",
-							Name: gatewayapi.ObjectNamePtr("wrong-name"),
-						}},
-					},
-				},
-				basicTLSRoute,
-				kuardService,
-			},
-			want: listeners(),
-		},
-
-		// END CertificateRef ReferencePolicy tests
-
-		"No valid hostnames defined": {
-			gatewayclass: validClass,
-			gateway:      gatewayHTTPAllNamespaces,
-			objs: []interface{}{
-				&gatewayapi_v1alpha2.HTTPRoute{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "basic",
-						Namespace: "projectcontour",
-					},
-					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
-						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
-							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
-						},
-						Hostnames: []gatewayapi_v1alpha2.Hostname{
-							"*.*.projectcontour.io",
-						},
-						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
-							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
-							BackendRefs: gatewayapi.HTTPBackendRef("blogsvc", 80, 1),
-						}},
-					},
-				},
 			},
 			want: listeners(),
 		},
@@ -3988,6 +3246,482 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 			),
 		},
 	}
+
+	// TLS certificate + ReferencePolicy tests
+	func() {
+		type tlsCertRefPolicyTestCase struct {
+			gatewayclass    *gatewayapi_v1alpha2.GatewayClass
+			gateway         *gatewayapi_v1alpha2.Gateway
+			referencePolicy *gatewayapi_v1alpha2.ReferencePolicy
+			objs            []interface{}
+			want            []*Listener
+		}
+
+		tlsCertRefPolicyTests := map[string]*tlsCertRefPolicyTestCase{}
+
+		add := func(name string, newTestCase func() *tlsCertRefPolicyTestCase) {
+			tlsCertRefPolicyTests[name] = newTestCase()
+		}
+
+		tlsSecret := sec2
+
+		baseCase := func() *tlsCertRefPolicyTestCase {
+			return &tlsCertRefPolicyTestCase{
+				gatewayclass: validClass,
+				gateway: &gatewayapi_v1alpha2.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "contour",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GatewaySpec{
+						GatewayClassName: gatewayapi_v1alpha2.ObjectName(validClass.Name),
+						Listeners: []gatewayapi_v1alpha2.Listener{{
+							Name:     "tls",
+							Port:     443,
+							Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+								Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModeTerminate),
+								CertificateRefs: []*gatewayapi_v1alpha2.SecretObjectReference{
+									gatewayapi.CertificateRef(sec2.Name, sec2.Namespace),
+								},
+							},
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+								},
+							},
+						}},
+					},
+				},
+				referencePolicy: &gatewayapi_v1alpha2.ReferencePolicy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tls-cert-reference-policy",
+						Namespace: tlsSecret.Namespace,
+					},
+					Spec: gatewayapi_v1alpha2.ReferencePolicySpec{
+						From: []gatewayapi_v1alpha2.ReferencePolicyFrom{{
+							Group:     gatewayapi_v1alpha2.GroupName,
+							Kind:      "Gateway",
+							Namespace: gatewayapi_v1alpha2.Namespace("projectcontour"),
+						}},
+						To: []gatewayapi_v1alpha2.ReferencePolicyTo{{
+							Kind: "Secret",
+						}},
+					},
+				},
+				objs: []interface{}{
+					tlsSecret,
+					basicTLSRoute,
+					kuardService,
+				},
+				want: []*Listener{
+					{
+						Name: HTTPS_LISTENER_NAME,
+						Port: 443,
+						SecureVirtualHosts: []*SecureVirtualHost{
+							{
+								VirtualHost: VirtualHost{
+									Name: "test.projectcontour.io",
+								},
+								Secret: secret(tlsSecret),
+								TCPProxy: &TCPProxy{
+									Clusters: clustersWeight(service(kuardService)),
+								},
+							},
+						},
+					},
+				},
+			}
+		}
+		add("Gateway references TLS cert in different namespace, with valid ReferencePolicy", func() *tlsCertRefPolicyTestCase {
+			return baseCase()
+		})
+
+		add("Gateway references TLS cert in different namespace, with no ReferencePolicy", func() *tlsCertRefPolicyTestCase {
+			tc := baseCase()
+			tc.referencePolicy = nil
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("Gateway references TLS cert in different namespace, with valid ReferencePolicy (secret-specific)", func() *tlsCertRefPolicyTestCase {
+			tc := baseCase()
+			tc.referencePolicy.Spec.To[0].Name = gatewayapi.ObjectNamePtr(tlsSecret.Name)
+			return tc
+		})
+
+		add("Gateway references TLS cert in different namespace, with invalid ReferencePolicy (policy in wrong namespace)", func() *tlsCertRefPolicyTestCase {
+			tc := baseCase()
+			tc.referencePolicy.Namespace = "wrong-namespace"
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From namespace)", func() *tlsCertRefPolicyTestCase {
+			tc := baseCase()
+			tc.referencePolicy.Spec.From[0].Namespace = gatewayapi_v1alpha2.Namespace("wrong-namespace")
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong From kind)", func() *tlsCertRefPolicyTestCase {
+			tc := baseCase()
+			tc.referencePolicy.Spec.From[0].Kind = "WrongKind"
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong To kind)", func() *tlsCertRefPolicyTestCase {
+			tc := baseCase()
+			tc.referencePolicy.Spec.To[0].Kind = "WrongKind"
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("Gateway references TLS cert in different namespace, with invalid ReferencePolicy (wrong secret name)", func() *tlsCertRefPolicyTestCase {
+			tc := baseCase()
+			tc.referencePolicy.Spec.To[0].Name = gatewayapi.ObjectNamePtr("wrong-name")
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		for name, tc := range tlsCertRefPolicyTests {
+			objs := tc.objs
+			if tc.referencePolicy != nil {
+				objs = append(objs, tc.referencePolicy)
+			}
+
+			tests[name] = testcase{
+				gatewayclass: tc.gatewayclass,
+				gateway:      tc.gateway,
+				want:         tc.want,
+				objs:         objs,
+			}
+		}
+	}()
+
+	// HTTPRoute hostname tests
+	func() {
+		type hostnameTestCase struct {
+			gatewayclass *gatewayapi_v1alpha2.GatewayClass
+			gateway      *gatewayapi_v1alpha2.Gateway
+			route        *gatewayapi_v1alpha2.HTTPRoute
+			objs         []interface{}
+			want         []*Listener
+		}
+
+		hostnameTests := map[string]*hostnameTestCase{}
+
+		add := func(name string, newTestCase func() *hostnameTestCase) {
+			hostnameTests[name] = newTestCase()
+		}
+
+		baseCase := func() *hostnameTestCase {
+			return &hostnameTestCase{
+				gatewayclass: validClass,
+				gateway:      gatewayHTTPAllNamespaces,
+				route: &gatewayapi_v1alpha2.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.HTTPRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{
+							"test.projectcontour.io",
+						},
+						Rules: []gatewayapi_v1alpha2.HTTPRouteRule{{
+							Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1alpha2.PathMatchPathPrefix, "/"),
+							BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						}},
+					},
+				},
+				objs: []interface{}{
+					kuardService,
+				},
+				want: []*Listener{
+					{
+						Name: HTTP_LISTENER_NAME,
+						Port: 80,
+						VirtualHosts: []*VirtualHost{
+							virtualhost("test.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
+						},
+					},
+				},
+			}
+		}
+		add("HTTPRoute with single hostname", func() *hostnameTestCase {
+			return baseCase()
+		})
+
+		add("HTTPRoute with multiple hostnames", func() *hostnameTestCase {
+			tc := baseCase()
+			tc.route.Spec.Hostnames = append(tc.route.Spec.Hostnames, "test2.projectcontour.io", "test3.projectcontour.io", "test4.projectcontour.io")
+			tc.want[0].VirtualHosts = append(tc.want[0].VirtualHosts,
+				virtualhost("test2.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
+				virtualhost("test3.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
+				virtualhost("test4.projectcontour.io", prefixrouteHTTPRoute("/", service(kuardService))),
+			)
+			return tc
+		})
+
+		add("HTTPRoute with no hostnames defined", func() *hostnameTestCase {
+			tc := baseCase()
+			tc.route.Spec.Hostnames = nil
+			tc.want[0].VirtualHosts[0].Name = "*"
+			return tc
+		})
+
+		add("HTTPRoute with wildcard hostname", func() *hostnameTestCase {
+			tc := baseCase()
+			tc.route.Spec.Hostnames = []gatewayapi_v1alpha2.Hostname{"*.projectcontour.io"}
+			tc.want[0].VirtualHosts = []*VirtualHost{
+				virtualhost("*.projectcontour.io",
+					&Route{
+						PathMatchCondition: prefixString("/"),
+						HeaderMatchConditions: []HeaderMatchCondition{
+							{Name: ":authority", Value: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?\\.projectcontour\\.io", MatchType: "regex", Invert: false},
+						},
+						Clusters: clustersWeight(service(kuardService)),
+					}),
+			}
+
+			return tc
+		})
+
+		add("HTTPRoute with invalid hostname (IP address)", func() *hostnameTestCase {
+			tc := baseCase()
+			tc.route.Spec.Hostnames = []gatewayapi_v1alpha2.Hostname{"192.168.122.1"}
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("HTTPRoute with invalid hostname (port included)", func() *hostnameTestCase {
+			tc := baseCase()
+			tc.route.Spec.Hostnames = []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io:80"}
+			tc.want = listeners()
+			return tc
+		})
+
+		add("HTTPRoute with invalid hostname (wildcard label by itself)", func() *hostnameTestCase {
+			tc := baseCase()
+			tc.route.Spec.Hostnames = []gatewayapi_v1alpha2.Hostname{"*"}
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("HTTPRoute with invalid hostname (invalid wildcard host)", func() *hostnameTestCase {
+			tc := baseCase()
+			tc.route.Spec.Hostnames = []gatewayapi_v1alpha2.Hostname{"*.*.projectcontour.io"}
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		for name, tc := range hostnameTests {
+			objs := tc.objs
+			if tc.route != nil {
+				objs = append(objs, tc.route)
+			}
+
+			tests[name] = testcase{
+				gatewayclass: tc.gatewayclass,
+				gateway:      tc.gateway,
+				want:         tc.want,
+				objs:         objs,
+			}
+		}
+	}()
+
+	// Gateway-TLSRoute selection tests
+	func() {
+		type customTestCase struct {
+			gatewayclass *gatewayapi_v1alpha2.GatewayClass
+			gateway      *gatewayapi_v1alpha2.Gateway
+			route        *gatewayapi_v1alpha2.TLSRoute
+			service      *v1.Service
+			objs         []interface{}
+			want         []*Listener
+		}
+
+		customTests := map[string]*customTestCase{}
+
+		add := func(name string, newTestCase func() *customTestCase) {
+			customTests[name] = newTestCase()
+		}
+
+		baseCase := func() *customTestCase {
+			return &customTestCase{
+				gatewayclass: validClass,
+				gateway: &gatewayapi_v1alpha2.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "contour",
+						Namespace: "projectcontour",
+					},
+					Spec: gatewayapi_v1alpha2.GatewaySpec{
+						GatewayClassName: gatewayapi_v1alpha2.ObjectName(validClass.Name),
+						Listeners: []gatewayapi_v1alpha2.Listener{{
+							Port:     80,
+							Protocol: gatewayapi_v1alpha2.TLSProtocolType,
+							TLS: &gatewayapi_v1alpha2.GatewayTLSConfig{
+								Mode: gatewayapi.TLSModeTypePtr(gatewayapi_v1alpha2.TLSModePassthrough),
+							},
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromAll),
+								},
+							},
+						}},
+					},
+				},
+				route: &gatewayapi_v1alpha2.TLSRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "basic",
+						Namespace: "custom",
+					},
+					Spec: gatewayapi_v1alpha2.TLSRouteSpec{
+						CommonRouteSpec: gatewayapi_v1alpha2.CommonRouteSpec{
+							ParentRefs: []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+						},
+						Hostnames: []gatewayapi_v1alpha2.Hostname{"test.projectcontour.io"},
+						Rules: []gatewayapi_v1alpha2.TLSRouteRule{{
+							BackendRefs: gatewayapi.TLSRouteBackendRef("kuard", 8080, nil),
+						}},
+					},
+				},
+				service: kuardServiceCustomNs.DeepCopy(),
+				want: []*Listener{
+					{
+						Name: HTTPS_LISTENER_NAME,
+						Port: 443,
+						SecureVirtualHosts: securevirtualhosts(
+							&SecureVirtualHost{
+								VirtualHost: VirtualHost{
+									Name: "test.projectcontour.io",
+								},
+								TCPProxy: &TCPProxy{
+									Clusters: clustersWeight(service(kuardServiceCustomNs)),
+								},
+							},
+						),
+					},
+				},
+			}
+		}
+		add("Gateway selects TLSRoutes in all namespaces", func() *customTestCase {
+			return baseCase()
+		})
+
+		add("Gateway selects TLSRoutes in same namespace, and route is in the same namespace", func() *customTestCase {
+			tc := baseCase()
+			tc.gateway.Spec.Listeners[0].AllowedRoutes.Namespaces = &gatewayapi_v1alpha2.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+			}
+			tc.route.Namespace = tc.gateway.Namespace
+			tc.service.Namespace = tc.gateway.Namespace
+			tc.want[0].SecureVirtualHosts[0].TCPProxy.Clusters = clustersWeight(service(tc.service))
+
+			return tc
+		})
+
+		add("Gateway selects TLSRoutes in same namespace, and route is not in the same namespace", func() *customTestCase {
+			tc := baseCase()
+			tc.gateway.Spec.Listeners[0].AllowedRoutes.Namespaces.From = gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame)
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("Gateway selects TLSRoutes in namespaces matching selector, and route is in a matching namespace", func() *customTestCase {
+			tc := baseCase()
+			tc.gateway.Spec.Listeners[0].AllowedRoutes.Namespaces = &gatewayapi_v1alpha2.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"matching-label-key": "matching-label-value"},
+				},
+			}
+			tc.objs = []interface{}{
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   kuardServiceCustomNs.Namespace,
+						Labels: map[string]string{"matching-label-key": "matching-label-value"},
+					},
+				},
+			}
+			return tc
+		})
+
+		add("Gateway selects TLSRoutes in namespaces matching selector, and route is in a non-matching namespace", func() *customTestCase {
+			tc := baseCase()
+			tc.gateway.Spec.Listeners[0].AllowedRoutes.Namespaces = &gatewayapi_v1alpha2.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"matching-label-key": "matching-label-value"},
+				},
+			}
+			tc.objs = []interface{}{
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   kuardServiceCustomNs.Namespace,
+						Labels: map[string]string{"matching-label-key": "this-label-value-does-not-match"},
+					},
+				},
+			}
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("Gateway selects TLSRoutes in namespaces matching selector, and route is in a non-matching namespace", func() *customTestCase {
+			tc := baseCase()
+			tc.gateway.Spec.Listeners[0].AllowedRoutes.Namespaces = &gatewayapi_v1alpha2.RouteNamespaces{
+				From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSelector),
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"matching-label-key": "matching-label-value"},
+				},
+			}
+			tc.objs = []interface{}{
+				&v1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:   kuardServiceCustomNs.Namespace,
+						Labels: map[string]string{"matching-label-key": "this-label-value-does-not-match"},
+					},
+				},
+			}
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("TLSRoute allows Gateways from list, and gateway is not in the list", func() *customTestCase {
+			tc := baseCase()
+			tc.route.Spec.ParentRefs = []gatewayapi_v1alpha2.ParentRef{gatewayapi.GatewayParentRef("some-other-namespace", "some-other-gateway-name")}
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		add("Gateway does not select TLSRoutes", func() *customTestCase {
+			tc := baseCase()
+			tc.gateway = gatewayHTTPAllNamespaces
+			tc.want = []*Listener{}
+			return tc
+		})
+
+		for name, tc := range customTests {
+			objs := tc.objs
+			if tc.route != nil {
+				objs = append(objs, tc.route)
+			}
+			if tc.service != nil {
+				objs = append(objs, tc.service)
+			}
+
+			tests[name] = testcase{
+				gatewayclass: tc.gatewayclass,
+				gateway:      tc.gateway,
+				want:         tc.want,
+				objs:         objs,
+			}
+		}
+	}()
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
