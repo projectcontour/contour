@@ -172,7 +172,7 @@ type AuthorizationServer struct {
 	// +optional
 	FailOpen bool `json:"failOpen,omitempty"`
 
-	// BufferSettings specifies configuration for buffering request data sent to AuthorizationServer
+	// WithRequestBody specifies configuration for sending the client request's body to authorization server.
 	// +optional
 	WithRequestBody *AuthorizationServerBufferSettings `json:"withRequestBody,omitempty"`
 }

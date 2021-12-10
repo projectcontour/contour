@@ -3604,8 +3604,8 @@ spec:
                         pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                         type: string
                       withRequestBody:
-                        description: BufferSettings specifies configuration for buffering
-                          request data sent to AuthorizationServer
+                        description: WithRequestBody specifies configuration for sending
+                          the client request's body to authorization server.
                         properties:
                           allowPartialMessage:
                             description: If AllowPartialMessage is true, then Envoy
