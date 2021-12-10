@@ -401,7 +401,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 						vh.AuthorizationService.Name,
 						vh.AuthorizationFailOpen,
 						vh.AuthorizationResponseTimeout,
-						vh.AuthorizationServerBufferSettings,
+						vh.AuthorizationServerWithRequestBody,
 					)
 				}
 				// Create a uniquely named HTTP connection manager for

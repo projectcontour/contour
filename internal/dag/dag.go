@@ -533,17 +533,25 @@ type SecureVirtualHost struct {
 	// from internal to external authorization.
 	AuthorizationFailOpen bool
 
-	// BufferSettings specifies configuration for buffering request data sent to AuthorizationServer
-	AuthorizationServerBufferSettings *AuthorizationServerBufferSettings
+	// AuthorizationServerWithRequestBody specifies configuration
+	// for buffering request data sent to AuthorizationServer
+	AuthorizationServerWithRequestBody *AuthorizationServerBufferSettings
 }
 
 // AuthorizationServerBufferSettings enables ExtAuthz filter to buffer client
 // request data and send it as part of authorization request
 type AuthorizationServerBufferSettings struct {
-	// MaxRequestBytes sets the maximum size of message body ExtAuthz filter will hold in-memory.
+	// MaxRequestBytes sets the maximum size of message body
+	// ExtAuthz filter will hold in-memory.
+	// Envoy will return HTTP 413 and will not initiate the
+	// authorization process when buffer reaches the number set
+	// in this field. Refer to
+	// https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_authz/v3/ext_authz.proto#envoy-v3-api-msg-extensions-filters-http-ext-authz-v3-buffersettings
+	// for more details.
 	MaxRequestBytes uint32
 
-	// If AllowPartialMessage is true, then Envoy will buffer the body until MaxRequestBytes are reached.
+	// If AllowPartialMessage is true,
+	// then Envoy will buffer the body until MaxRequestBytes are reached.
 	AllowPartialMessage bool
 
 	// If PackAsBytes is true, the body sent to Authorization Server is in raw bytes.

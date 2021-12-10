@@ -56,8 +56,8 @@ func (in *AuthorizationServer) DeepCopyInto(out *AuthorizationServer) {
 		*out = new(AuthorizationPolicy)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.BufferSettings != nil {
-		in, out := &in.BufferSettings, &out.BufferSettings
+	if in.WithRequestBody != nil {
+		in, out := &in.WithRequestBody, &out.WithRequestBody
 		*out = new(AuthorizationServerBufferSettings)
 		**out = **in
 	}

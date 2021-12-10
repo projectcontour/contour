@@ -1,0 +1,1 @@
+Add support for with_request_body to ExtAuthorizationServer. See [External Authorization Configuration Overview](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_authz/v3/ext_authz.proto#envoy-v3-api-msg-extensions-filters-http-ext-authz-v3-extauthz) for more information.

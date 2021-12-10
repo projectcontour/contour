@@ -31,6 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// defaultMaxRequestBytes specifies default value maxRequestBytes for AuthorizationServer
+const defaultMaxRequestBytes uint32 = 1024
+
 // defaultExtensionRef populates the unset fields in ref with default values.
 func defaultExtensionRef(ref contour_api_v1.ExtensionServiceReference) contour_api_v1.ExtensionServiceReference {
 	if ref.APIVersion == "" {
@@ -298,15 +301,15 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					svhost.AuthorizationResponseTimeout = timeout
 				}
 
-				if auth.BufferSettings != nil {
-					var maxRequestBytes uint32 = 1024
-					if auth.BufferSettings.MaxRequestBytes != 0 {
-						maxRequestBytes = auth.BufferSettings.MaxRequestBytes
+				if auth.WithRequestBody != nil {
+					var maxRequestBytes = defaultMaxRequestBytes
+					if auth.WithRequestBody.MaxRequestBytes != 0 {
+						maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
 					}
-					svhost.AuthorizationServerBufferSettings = &AuthorizationServerBufferSettings{
+					svhost.AuthorizationServerWithRequestBody = &AuthorizationServerBufferSettings{
 						MaxRequestBytes:     maxRequestBytes,
-						AllowPartialMessage: auth.BufferSettings.AllowPartialMessage,
-						PackAsBytes:         auth.BufferSettings.PackAsBytes,
+						AllowPartialMessage: auth.WithRequestBody.AllowPartialMessage,
+						PackAsBytes:         auth.WithRequestBody.PackAsBytes,
 					}
 				}
 			}

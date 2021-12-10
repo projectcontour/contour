@@ -525,7 +525,7 @@ func authzWithRequestBodyBufferSettings(t *testing.T, rh cache.ResourceEventHand
 				Name:      "extension",
 			},
 			FailOpen: true,
-			BufferSettings: &contour_api_v1.AuthorizationServerBufferSettings{
+			WithRequestBody: &contour_api_v1.AuthorizationServerBufferSettings{
 				MaxRequestBytes:     100,
 				AllowPartialMessage: true,
 				PackAsBytes:         true,
