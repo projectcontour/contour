@@ -177,8 +177,6 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 	assert.Equal(t, got, want)
 }
 
-//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=Cache --srcpkg=sigs.k8s.io/controller-runtime/pkg/cache
-
 func TestStatusAddressUpdater(t *testing.T) {
 	const objName = "someobjfoo"
 
@@ -347,6 +345,7 @@ func TestStatusAddressUpdater(t *testing.T) {
 	}
 }
 
+//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=Cache --srcpkg=sigs.k8s.io/controller-runtime/pkg/cache
 func TestStatusAddressUpdater_Gateway(t *testing.T) {
 	log := logrus.New()
 	log.SetLevel(logrus.DebugLevel)
