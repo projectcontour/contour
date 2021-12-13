@@ -18,14 +18,18 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/fixture"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
+	"github.com/projectcontour/contour/internal/k8s/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	mock "github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func TestServiceStatusLoadBalancerWatcherOnAdd(t *testing.T) {
@@ -172,6 +176,8 @@ func TestServiceStatusLoadBalancerWatcherOnDelete(t *testing.T) {
 	}
 	assert.Equal(t, got, want)
 }
+
+//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=Cache --srcpkg=sigs.k8s.io/controller-runtime/pkg/cache
 
 func TestStatusAddressUpdater(t *testing.T) {
 	const objName = "someobjfoo"
@@ -336,6 +342,253 @@ func TestStatusAddressUpdater(t *testing.T) {
 			isu.OnUpdate(tc.preop, tc.preop)
 
 			newObj := suc.Get(objName, objName)
+			assert.Equal(t, tc.postop, newObj)
+		})
+	}
+}
+
+func TestStatusAddressUpdater_Gateway(t *testing.T) {
+	log := logrus.New()
+	log.SetLevel(logrus.DebugLevel)
+
+	ipLBStatus := v1.LoadBalancerStatus{
+		Ingress: []v1.LoadBalancerIngress{
+			{
+				IP: "127.0.0.1",
+			},
+		},
+	}
+
+	hostnameLBStatus := v1.LoadBalancerStatus{
+		Ingress: []v1.LoadBalancerIngress{
+			{
+				Hostname: "ingress.projectcontour.io",
+			},
+		},
+	}
+
+	testCases := map[string]struct {
+		status                     v1.LoadBalancerStatus
+		gatewayClassControllerName string
+		preop                      *gatewayapi_v1alpha2.Gateway
+		postop                     *gatewayapi_v1alpha2.Gateway
+	}{
+		"happy path (IP)": {
+			status:                     ipLBStatus,
+			gatewayClassControllerName: "projectcontour.io/contour",
+			preop: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour-gateway",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				},
+				Status: gatewayapi_v1alpha2.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Status: metav1.ConditionTrue,
+						},
+					},
+				},
+			},
+			postop: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour-gateway",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				},
+				Status: gatewayapi_v1alpha2.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Status: metav1.ConditionTrue,
+						},
+					},
+					Addresses: []gatewayapi_v1alpha2.GatewayAddress{
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1alpha2.IPAddressType),
+							Value: ipLBStatus.Ingress[0].IP,
+						},
+					},
+				},
+			},
+		},
+		"happy path (hostname)": {
+			status:                     hostnameLBStatus,
+			gatewayClassControllerName: "projectcontour.io/contour",
+			preop: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour-gateway",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				},
+				Status: gatewayapi_v1alpha2.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Status: metav1.ConditionTrue,
+						},
+					},
+				},
+			},
+			postop: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour-gateway",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				},
+				Status: gatewayapi_v1alpha2.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Status: metav1.ConditionTrue,
+						},
+					},
+					Addresses: []gatewayapi_v1alpha2.GatewayAddress{
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1alpha2.HostnameAddressType),
+							Value: hostnameLBStatus.Ingress[0].Hostname,
+						},
+					},
+				},
+			},
+		},
+		"Gateway not ready": {
+			status:                     ipLBStatus,
+			gatewayClassControllerName: "projectcontour.io/contour",
+			preop: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour-gateway",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				},
+				Status: gatewayapi_v1alpha2.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Status: metav1.ConditionFalse,
+						},
+					},
+				},
+			},
+			postop: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour-gateway",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				},
+				Status: gatewayapi_v1alpha2.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Status: metav1.ConditionFalse,
+						},
+					},
+				},
+			},
+		},
+		"Gateway not controlled by this Contour": {
+			status:                     ipLBStatus,
+			gatewayClassControllerName: "projectcontour.io/some-other-controller",
+			preop: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour-gateway",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				},
+				Status: gatewayapi_v1alpha2.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Status: metav1.ConditionTrue,
+						},
+					},
+				},
+			},
+			postop: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "contour-gateway",
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
+				},
+				Status: gatewayapi_v1alpha2.GatewayStatus{
+					Conditions: []metav1.Condition{
+						{
+							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
+							Status: metav1.ConditionTrue,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name+" OnAdd", func(t *testing.T) {
+			suc := StatusUpdateCacher{}
+			assert.True(t, suc.Add(tc.preop.Name, tc.preop.Namespace, tc.preop), "unable to add object to cache")
+
+			mockCache := &mocks.Cache{}
+			mockCache.
+				On("Get", mock.Anything, client.ObjectKey{Name: string(tc.preop.Spec.GatewayClassName)}, mock.Anything).
+				Run(func(args mock.Arguments) {
+					args[2].(*gatewayapi_v1alpha2.GatewayClass).Spec.ControllerName = gatewayapi_v1alpha2.GatewayController(tc.gatewayClassControllerName)
+				}).
+				Return(nil)
+
+			isu := StatusAddressUpdater{
+				Logger:                log,
+				GatewayControllerName: "projectcontour.io/contour",
+				Cache:                 mockCache,
+				LBStatus:              tc.status,
+				StatusUpdater:         &suc,
+			}
+
+			isu.OnAdd(tc.preop)
+
+			newObj := suc.Get(tc.preop.Name, tc.preop.Namespace)
+			assert.Equal(t, tc.postop, newObj)
+		})
+
+		t.Run(name+" OnUpdate", func(t *testing.T) {
+			suc := StatusUpdateCacher{}
+			assert.True(t, suc.Add(tc.preop.Name, tc.preop.Namespace, tc.preop), "unable to add object to cache")
+
+			mockCache := &mocks.Cache{}
+			mockCache.
+				On("Get", mock.Anything, client.ObjectKey{Name: string(tc.preop.Spec.GatewayClassName)}, mock.Anything).
+				Run(func(args mock.Arguments) {
+					args[2].(*gatewayapi_v1alpha2.GatewayClass).Spec.ControllerName = gatewayapi_v1alpha2.GatewayController(tc.gatewayClassControllerName)
+				}).
+				Return(nil)
+
+			isu := StatusAddressUpdater{
+				Logger:                log,
+				GatewayControllerName: "projectcontour.io/contour",
+				Cache:                 mockCache,
+				LBStatus:              tc.status,
+				StatusUpdater:         &suc,
+			}
+
+			isu.OnUpdate(tc.preop, tc.preop)
+
+			newObj := suc.Get(tc.preop.Name, tc.preop.Namespace)
 			assert.Equal(t, tc.postop, newObj)
 		})
 	}
