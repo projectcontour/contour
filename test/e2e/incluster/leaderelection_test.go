@@ -100,19 +100,28 @@ func testLeaderElection(namespace string) {
 			return err == nil
 		}, 2*time.Minute, f.RetryInterval)
 
-		events := &corev1.EventList{}
-		listOptions := &client.ListOptions{
-			Namespace: f.Deployment.Namespace.Name,
-		}
-		require.NoError(f.T(), f.Client.List(context.TODO(), events, listOptions))
-		foundEvents := map[string]struct{}{}
-		for _, e := range events.Items {
-			if e.Reason == "LeaderElection" && e.Source.Component == originalLeader {
-				foundEvents[e.InvolvedObject.Kind] = struct{}{}
+		findEventsForLeader := func(leader string) func() bool {
+			return func() bool {
+				events := &corev1.EventList{}
+				listOptions := &client.ListOptions{
+					Namespace: f.Deployment.Namespace.Name,
+				}
+				if err := f.Client.List(context.TODO(), events, listOptions); err != nil {
+					return false
+				}
+				foundEvents := map[string]struct{}{}
+				for _, e := range events.Items {
+					if e.Reason == "LeaderElection" && e.Source.Component == leader {
+						foundEvents[e.InvolvedObject.Kind] = struct{}{}
+					}
+				}
+				_, foundLease := foundEvents["Lease"]
+				_, foundConfigMap := foundEvents["ConfigMap"]
+				return foundLease && foundConfigMap
 			}
 		}
-		require.Contains(f.T(), foundEvents, "Lease")
-		require.Contains(f.T(), foundEvents, "ConfigMap")
+
+		require.Eventually(f.T(), findEventsForLeader(originalLeader), f.RetryTimeout, f.RetryInterval)
 
 		// Delete contour leader pod.
 		leaderPod := &corev1.Pod{
@@ -134,15 +143,7 @@ func testLeaderElection(namespace string) {
 			return newLeader != originalLeader
 		}, 2*time.Minute, f.RetryInterval)
 
-		require.NoError(f.T(), f.Client.List(context.TODO(), events, listOptions))
-		foundEvents = map[string]struct{}{}
-		for _, e := range events.Items {
-			if e.Reason == "LeaderElection" && e.Source.Component == newLeader {
-				foundEvents[e.InvolvedObject.Kind] = struct{}{}
-			}
-		}
-		require.Contains(f.T(), foundEvents, "Lease")
-		require.Contains(f.T(), foundEvents, "ConfigMap")
+		require.Eventually(f.T(), findEventsForLeader(newLeader), f.RetryTimeout, f.RetryInterval)
 
 		// Check leader pod exists.
 		leaderPod = &corev1.Pod{
