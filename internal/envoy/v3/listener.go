@@ -636,7 +636,7 @@ end
 
 // FilterExternalAuthz returns an `ext_authz` filter configured with the
 // requested parameters.
-func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting) *http.HttpFilter {
+func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout.Setting, bufferSettings *dag.AuthorizationServerBufferSettings) *http.HttpFilter {
 	authConfig := envoy_config_filter_http_ext_authz_v3.ExtAuthz{
 		Services: &envoy_config_filter_http_ext_authz_v3.ExtAuthz_GrpcService{
 			GrpcService: &envoy_core_v3.GrpcService{
@@ -665,6 +665,15 @@ func FilterExternalAuthz(authzClusterName string, failOpen bool, timeout timeout
 		// TODO(jpeach): When we move to the Envoy v4 API, propagate the
 		// `transport_api_version` from ExtensionServiceSpec ProtocolVersion.
 		TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+	}
+
+	if bufferSettings != nil {
+		authConfig.WithRequestBody = &envoy_config_filter_http_ext_authz_v3.BufferSettings{
+			MaxRequestBytes:     bufferSettings.MaxRequestBytes,
+			AllowPartialMessage: bufferSettings.AllowPartialMessage,
+			PackAsBytes:         bufferSettings.PackAsBytes,
+		}
+
 	}
 
 	return &http.HttpFilter{
