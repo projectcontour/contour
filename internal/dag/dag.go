@@ -177,6 +177,8 @@ type Redirect struct {
 	// StatusCode is the HTTP response code to
 	// use. Valid options are 301 or 302.
 	StatusCode int
+
+	Path string
 }
 
 // Route defines the properties of a route to a Cluster.

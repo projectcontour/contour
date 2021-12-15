@@ -411,6 +411,13 @@ type HTTPRequestRedirectPolicy struct {
 	// +kubebuilder:default=302
 	// +kubebuilder:validation:Enum=301;302
 	StatusCode *int `json:"statusCode,omitempty"`
+
+	// Path allows for redirection to a different path from the
+	// original on the request. The path must start with a
+	// leading slash.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^\/.*$`
+	Path *string `json:"path,omitempty"`
 }
 
 type CookieRewritePolicy struct {

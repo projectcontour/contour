@@ -233,6 +233,12 @@ func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 		r.Redirect.PortRedirect = redirect.PortNumber
 	}
 
+	if len(redirect.Path) > 0 {
+		r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PrefixRewrite{
+			PrefixRewrite: redirect.Path,
+		}
+	}
+
 	// Envoy's default is a 301 if not otherwise specified.
 	switch redirect.StatusCode {
 	case 301:

@@ -48,6 +48,7 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 					Hostname:   pointer.StringPtr("envoyproxy.io"),
 					Port:       pointer.Int32Ptr(443),
 					StatusCode: pointer.IntPtr(301),
+					Path:       pointer.StringPtr("/blog"),
 				},
 			}},
 		}),
@@ -69,6 +70,9 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 								},
 								ResponseCode: 0,
 								StripQuery:   false,
+								PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PrefixRewrite{
+									PrefixRewrite: "/blog",
+								},
 							},
 						},
 					},

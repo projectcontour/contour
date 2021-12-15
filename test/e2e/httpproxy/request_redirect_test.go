@@ -86,6 +86,19 @@ func doTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterfac
 	require.NotNil(t, res, "request never succeeded")
 	require.Truef(t, ok, "expected 301 response code, got %d", res.StatusCode)
 	assert.Equal(t, "https://envoyproxy.io:8080/complex-redirect", res.Headers.Get("Location"))
+
+	// /path-rewrite specifies a path to redirect to.
+	res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+		Host: proxy.Spec.VirtualHost.Fqdn,
+		Path: "/path-rewrite",
+		ClientOpts: []func(*http.Client){
+			e2e.OptDontFollowRedirects,
+		},
+		Condition: e2e.HasStatusCode(302),
+	})
+	require.NotNil(t, res, "request never succeeded")
+	require.Truef(t, ok, "expected 303 response code, got %d", res.StatusCode)
+	assert.Equal(t, "http://requestredirectrule.projectcontour.io/blog", res.Headers.Get("Location"))
 }
 
 func getHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPProxy {
@@ -123,6 +136,17 @@ func getHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPPro
 					Hostname:   pointer.StringPtr("envoyproxy.io"),
 					Port:       pointer.Int32Ptr(8080),
 					StatusCode: pointer.Int(301),
+				},
+			}, {
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/path-rewrite",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "echo",
+					Port: 80,
+				}},
+				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+					Path: pointer.StringPtr("/blog"),
 				},
 			}},
 		},

@@ -1114,10 +1114,16 @@ func redirectRoutePolicy(redirect *contour_api_v1.HTTPRequestRedirectPolicy) *Re
 		statusCode = *redirect.StatusCode
 	}
 
+	var path string
+	if redirect.Path != nil {
+		path = *redirect.Path
+	}
+
 	return &Redirect{
 		Hostname:   hostname,
 		Scheme:     scheme,
 		PortNumber: portNumber,
 		StatusCode: statusCode,
+		Path:       path,
 	}
 }
