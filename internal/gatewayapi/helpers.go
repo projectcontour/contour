@@ -48,6 +48,10 @@ func HTTPMethodPtr(method gatewayapi_v1alpha2.HTTPMethod) *gatewayapi_v1alpha2.H
 	return &method
 }
 
+func AddressTypePtr(addressType gatewayapi_v1alpha2.AddressType) *gatewayapi_v1alpha2.AddressType {
+	return &addressType
+}
+
 func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
 	h := gatewayapi_v1alpha2.Hostname(host)
 	return &h

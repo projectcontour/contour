@@ -25,10 +25,11 @@ import (
 	networking_v1 "k8s.io/api/networking/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // loadBalancerStatusWriter orchestrates LoadBalancer address status
-// updates for HTTPProxy and Ingress objects. Actually updating the
+// updates for HTTPProxy, Ingress and Gateway objects. Actually updating the
 // address in the object status is performed by k8s.StatusAddressUpdater.
 //
 // The theory of operation of the loadBalancerStatusWriter is as follows:
@@ -39,18 +40,19 @@ import (
 // 3. Once a v1.LoadBalancerStatus value has been received, the
 //    cached address is updated so that it will be applied to objects
 //    received in any subsequent informer events.
-// 4. All Ingress and HTTPProxy objects are listed from the informer
+// 4. All Ingress, HTTPProxy and Gateway objects are listed from the informer
 //    cache and an attempt is made to update their status with the new
 //    address. This update may end up being a no-op in which case it
 //    doesn't make an API server call.
 // 5. If the worker is stopped, the informer continues but no further
 //    status updates are made.
 type loadBalancerStatusWriter struct {
-	log              logrus.FieldLogger
-	cache            cache.Cache
-	lbStatus         chan v1.LoadBalancerStatus
-	statusUpdater    k8s.StatusUpdater
-	ingressClassName string
+	log                   logrus.FieldLogger
+	cache                 cache.Cache
+	lbStatus              chan v1.LoadBalancerStatus
+	statusUpdater         k8s.StatusUpdater
+	ingressClassName      string
+	gatewayControllerName string
 }
 
 func (isw *loadBalancerStatusWriter) NeedLeaderElection() bool {
@@ -68,8 +70,10 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 
 			return log
 		}(),
-		IngressClassName: isw.ingressClassName,
-		StatusUpdater:    isw.statusUpdater,
+		Cache:                 isw.cache,
+		IngressClassName:      isw.ingressClassName,
+		GatewayControllerName: isw.gatewayControllerName,
+		StatusUpdater:         isw.statusUpdater,
 	}
 
 	// Create informers for the types that need load balancer
@@ -78,6 +82,12 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 	resources := []client.Object{
 		&contour_api_v1.HTTPProxy{},
 		&networking_v1.Ingress{},
+	}
+
+	// Only create Gateway informer if a controller name was provided,
+	// otherwise the API may not exist in the cluster.
+	if len(isw.gatewayControllerName) > 0 {
+		resources = append(resources, &gatewayapi_v1alpha2.Gateway{})
 	}
 
 	for _, r := range resources {
@@ -119,6 +129,19 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 			} else {
 				for i := range proxyList.Items {
 					u.OnAdd(&proxyList.Items[i])
+				}
+			}
+
+			// Only list Gateways if a controller name was configured,
+			// otherwise the API may not exist in the cluster.
+			if len(isw.gatewayControllerName) > 0 {
+				var gatewayList gatewayapi_v1alpha2.GatewayList
+				if err := isw.cache.List(context.Background(), &gatewayList); err != nil {
+					isw.log.WithError(err).WithField("kind", "Gateway").Error("failed to list objects")
+				} else {
+					for i := range gatewayList.Items {
+						u.OnAdd(&gatewayList.Items[i])
+					}
 				}
 			}
 		}

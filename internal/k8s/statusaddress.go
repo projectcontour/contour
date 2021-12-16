@@ -14,18 +14,22 @@
 package k8s
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/ingressclass"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // StatusAddressUpdater observes informer OnAdd and OnUpdate events and
@@ -34,10 +38,12 @@ import (
 // Note that this is intended to handle updating the status.loadBalancer struct only,
 // not more general status updates. That's a job for the StatusUpdater.
 type StatusAddressUpdater struct {
-	Logger           logrus.FieldLogger
-	LBStatus         v1.LoadBalancerStatus
-	IngressClassName string
-	StatusUpdater    StatusUpdater
+	Logger                logrus.FieldLogger
+	Cache                 cache.Cache
+	LBStatus              v1.LoadBalancerStatus
+	IngressClassName      string
+	GatewayControllerName string
+	StatusUpdater         StatusUpdater
 
 	// mu guards the LBStatus field, which can be updated dynamically.
 	mu sync.Mutex
@@ -51,7 +57,7 @@ func (s *StatusAddressUpdater) Set(status v1.LoadBalancerStatus) {
 	s.LBStatus = status
 }
 
-// OnAdd updates the given Ingress or HTTPProxy object with the
+// OnAdd updates the given Ingress/HTTPProxy/Gateway object with the
 // current load balancer address. Note that this method can be called
 // concurrently from an informer or from Contour itself.
 func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
@@ -120,6 +126,82 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 
 				dco := proxy.DeepCopy()
 				dco.Status.LoadBalancer = loadBalancerStatus
+				return dco
+			}),
+		))
+
+	case *gatewayapi_v1alpha2.Gateway:
+		// Check if the Gateway's class is controlled by this Contour
+		gc := &gatewayapi_v1alpha2.GatewayClass{}
+		if err := s.Cache.Get(context.Background(), client.ObjectKey{Name: string(o.Spec.GatewayClassName)}, gc); err != nil {
+			s.Logger.
+				WithField("name", o.Name).
+				WithField("namespace", o.Namespace).
+				WithField("gatewayclass-name", o.Spec.GatewayClassName).
+				WithError(err).
+				Error("error getting gateway class for gateway")
+			return
+		}
+		if string(gc.Spec.ControllerName) != s.GatewayControllerName {
+			s.Logger.
+				WithField("name", o.Name).
+				WithField("namespace", o.Namespace).
+				WithField("gatewayclass-name", o.Spec.GatewayClassName).
+				WithField("gatewayclass-controller-name", gc.Spec.ControllerName).
+				Debug("Gateway's class is not controlled by this Contour, not setting address")
+			return
+		}
+
+		// Only set the Gateway's address if it has a condition of "Ready: true".
+		var ready bool
+		for _, cond := range o.Status.Conditions {
+			if cond.Type == string(gatewayapi_v1alpha2.GatewayConditionReady) && cond.Status == metav1.ConditionTrue {
+				ready = true
+				break
+			}
+		}
+		if !ready {
+			s.Logger.
+				WithField("name", o.Name).
+				WithField("namespace", o.Namespace).
+				Debug("Gateway is not ready, not setting address")
+			return
+		}
+
+		s.StatusUpdater.Send(NewStatusUpdate(
+			o.Name,
+			o.Namespace,
+			&gatewayapi_v1alpha2.Gateway{},
+			StatusMutatorFunc(func(obj client.Object) client.Object {
+				gateway, ok := obj.(*gatewayapi_v1alpha2.Gateway)
+				if !ok {
+					panic(fmt.Sprintf("Unsupported object %s/%s in status Address mutator",
+						obj.GetName(), obj.GetNamespace(),
+					))
+				}
+
+				dco := gateway.DeepCopy()
+
+				if len(loadBalancerStatus.Ingress) == 0 {
+					return dco
+				}
+
+				if ip := loadBalancerStatus.Ingress[0].IP; len(ip) > 0 {
+					dco.Status.Addresses = []gatewayapi_v1alpha2.GatewayAddress{
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1alpha2.IPAddressType),
+							Value: ip,
+						},
+					}
+				} else if hostname := loadBalancerStatus.Ingress[0].Hostname; len(hostname) > 0 {
+					dco.Status.Addresses = []gatewayapi_v1alpha2.GatewayAddress{
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayapi_v1alpha2.HostnameAddressType),
+							Value: hostname,
+						},
+					}
+				}
+
 				return dco
 			}),
 		))

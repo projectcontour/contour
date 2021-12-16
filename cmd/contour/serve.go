@@ -479,13 +479,19 @@ func (s *Server) doServe() error {
 		return err
 	}
 
+	var gatewayControllerName string
+	if contourConfiguration.Gateway != nil {
+		gatewayControllerName = contourConfiguration.Gateway.ControllerName
+	}
+
 	// Set up ingress load balancer status writer.
 	lbsw := &loadBalancerStatusWriter{
-		log:              s.log.WithField("context", "loadBalancerStatusWriter"),
-		cache:            s.mgr.GetCache(),
-		lbStatus:         make(chan corev1.LoadBalancerStatus, 1),
-		ingressClassName: ingressClassName,
-		statusUpdater:    sh.Writer(),
+		log:                   s.log.WithField("context", "loadBalancerStatusWriter"),
+		cache:                 s.mgr.GetCache(),
+		lbStatus:              make(chan corev1.LoadBalancerStatus, 1),
+		ingressClassName:      ingressClassName,
+		gatewayControllerName: gatewayControllerName,
+		statusUpdater:         sh.Writer(),
 	}
 	if err := s.mgr.Add(lbsw); err != nil {
 		return err
