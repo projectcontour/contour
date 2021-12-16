@@ -1,8 +1,10 @@
 ## HTTPRedirectPolicy allows for Path rewriting
 
-Adds a `Path` field to the `HTTPProxy.Spec.Route.RequestRedirectPolicy` which allows
-for redirects to also specify the path to redirect to. When specified, an
-HTTP 302 response will be sent to the requestor with the new path specified.
+Adds a `Path` & `Prefix` field to the `HTTPProxy.Spec.Route.RequestRedirectPolicy` which allows
+for redirects to also specify the path or prefix to redirect to. When specified, an
+HTTP 302 response will be sent to the requestor with the new path or prefix specified.
+
+_Note: Only one of path or prefix can be specified on a single route._
 
 Sample HTTPProxy: 
 
@@ -10,10 +12,10 @@ Sample HTTPProxy:
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: rewrite-path
+  name: redirect-path
 spec:
   virtualhost:
-    fqdn: rewrite.projectcontour.io
+    fqdn: redirect.projectcontour.io
   routes:
     - conditions:
         - prefix: /blog

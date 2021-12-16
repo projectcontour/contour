@@ -1278,6 +1278,18 @@ func TestRouteRedirect(t *testing.T) {
 			},
 			want: &envoy_route_v3.Route_Redirect{
 				Redirect: &envoy_route_v3.RedirectAction{
+					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PathRedirect{
+						PathRedirect: "/blog",
+					},
+				},
+			},
+		},
+		"prefix specified": {
+			redirect: &dag.Redirect{
+				Prefix: "/blog",
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
 					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PrefixRewrite{
 						PrefixRewrite: "/blog",
 					},
@@ -1308,8 +1320,8 @@ func TestRouteRedirect(t *testing.T) {
 					},
 					PortRedirect: 8443,
 					ResponseCode: envoy_route_v3.RedirectAction_FOUND,
-					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PrefixRewrite{
-						PrefixRewrite: "/blog",
+					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PathRedirect{
+						PathRedirect: "/blog",
 					},
 				},
 			},

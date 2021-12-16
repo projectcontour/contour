@@ -415,9 +415,21 @@ type HTTPRequestRedirectPolicy struct {
 	// Path allows for redirection to a different path from the
 	// original on the request. The path must start with a
 	// leading slash.
+	//
+	// Note: Only one of Path or Prefix can be defined.
+	//
 	// +optional
 	// +kubebuilder:validation:Pattern=`^\/.*$`
 	Path *string `json:"path,omitempty"`
+
+	// Prefix defines the value to swap the matched prefix or path with.
+	// The prefix must start with a leading slash.
+	//
+	// Note: Only one of Path or Prefix can be defined.
+	//
+	// +optional
+	// +kubebuilder:validation:Pattern=`^\/.*$`
+	Prefix *string `json:"prefix,omitempty"`
 }
 
 type CookieRewritePolicy struct {

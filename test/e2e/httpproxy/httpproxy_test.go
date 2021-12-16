@@ -106,6 +106,7 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-request-redirect-policy", testRequestRedirectRule)
 	f.NamespacedTest("httpproxy-request-redirect-policy-nosvc", testRequestRedirectRuleNoService)
+	f.NamespacedTest("httpproxy-request-redirect-policy-invalid", testRequestRedirectRuleInvalid)
 
 	f.NamespacedTest("httpproxy-header-condition-match", testHeaderConditionMatch)
 

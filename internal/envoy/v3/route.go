@@ -234,8 +234,14 @@ func routeRedirect(redirect *dag.Redirect) *envoy_route_v3.Route_Redirect {
 	}
 
 	if len(redirect.Path) > 0 {
+		r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PathRedirect{
+			PathRedirect: redirect.Path,
+		}
+	}
+
+	if len(redirect.Prefix) > 0 {
 		r.Redirect.PathRewriteSpecifier = &envoy_route_v3.RedirectAction_PrefixRewrite{
-			PrefixRewrite: redirect.Path,
+			PrefixRewrite: redirect.Prefix,
 		}
 	}
 
