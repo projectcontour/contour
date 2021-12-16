@@ -547,6 +547,10 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 			mockCache.
 				On("Get", mock.Anything, client.ObjectKey{Name: string(tc.preop.Spec.GatewayClassName)}, mock.Anything).
 				Run(func(args mock.Arguments) {
+					// The cache's Get function takes a pointer to a struct and updates it
+					// with the data from the API server; this simulates that behavior by
+					// updating the struct pointed to by the third argument with the fields
+					// we care about. See Run's godoc for more info.
 					args[2].(*gatewayapi_v1alpha2.GatewayClass).Spec.ControllerName = gatewayapi_v1alpha2.GatewayController(tc.gatewayClassControllerName)
 				}).
 				Return(nil)
@@ -573,6 +577,10 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 			mockCache.
 				On("Get", mock.Anything, client.ObjectKey{Name: string(tc.preop.Spec.GatewayClassName)}, mock.Anything).
 				Run(func(args mock.Arguments) {
+					// The cache's Get function takes a pointer to a struct and updates it
+					// with the data from the API server; this simulates that behavior by
+					// updating the struct pointed to by the third argument with the fields
+					// we care about. See Run's godoc for more info.
 					args[2].(*gatewayapi_v1alpha2.GatewayClass).Spec.ControllerName = gatewayapi_v1alpha2.GatewayController(tc.gatewayClassControllerName)
 				}).
 				Return(nil)
