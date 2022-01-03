@@ -114,14 +114,14 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	assert.Equal(t, infoLog+"\n", infoEntry.Message)
 	assert.Len(t, infoEntry.Data, 2)
 	assert.Equal(t, "bar", infoEntry.Data["foo"])
-	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, infoLine), infoEntry.Data["location"])
+	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, infoLine), infoEntry.Data["caller"])
 
 	errorEntry := logHook.AllEntries()[1]
 	assert.Equal(t, errorLog, errorEntry.Message)
 	assert.Len(t, errorEntry.Data, 3)
 	assert.Equal(t, "bar", errorEntry.Data["foo"])
 	assert.Equal(t, errorLogged, errorEntry.Data["error"])
-	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, errorLine), errorEntry.Data["location"])
+	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, errorLine), errorEntry.Data["caller"])
 }
 
 // Last LogWriterOption passed in should be used.

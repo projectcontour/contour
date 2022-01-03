@@ -52,10 +52,7 @@ func RegisterTLSRouteController(log logrus.FieldLogger, mgr manager.Manager, eve
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.TLSRoute{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return err
-	}
-	return nil
+	return c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.TLSRoute{}}, &handler.EnqueueRequestForObject{})
 }
 
 func (r *tlsRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

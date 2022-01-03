@@ -52,10 +52,7 @@ func RegisterHTTPRouteController(log logrus.FieldLogger, mgr manager.Manager, ev
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.HTTPRoute{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return err
-	}
-	return nil
+	return c.Watch(&source.Kind{Type: &gatewayapi_v1alpha2.HTTPRoute{}}, &handler.EnqueueRequestForObject{})
 }
 
 func (r *httpRouteReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
