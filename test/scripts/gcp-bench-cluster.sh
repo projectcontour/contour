@@ -5,11 +5,11 @@ set -o nounset
 set -o pipefail
 
 readonly OPERATION=$1
-readonly CLUSTER_NAME=contour-bench-$$
-readonly CLUSTER_ZONE=us-east1-d
-readonly CLUSTER_VERSION=latest
-readonly NODE_MACHINE_TYPE=e2-standard-4
-readonly NUM_APP_POOL_NODES=10
+readonly CLUSTER_NAME=${CLUSTER_NAME:-contour-bench-$$}
+readonly CLUSTER_ZONE=${CLUSTER_ZONE:-us-east1-d}
+readonly CLUSTER_VERSION=${CLUSTER_VERSION:-latest}
+readonly NODE_MACHINE_TYPE=${NODE_MACHINE_TYPE:-e2-standard-4}
+readonly NUM_APP_POOL_NODES=${NUM_APP_POOL_NODES:-10}
 
 # TODO: If credentials available in environment, log in.
 
