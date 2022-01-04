@@ -45,15 +45,10 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a new local feature branch from `main`.
-1. Generate a new set of versioned docs:
+1. Generate a new set of versioned docs, plus a changelog:
     
     ```bash
-    go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION
-    ```
-1. Generate the release notes:
-
-    ```bash
-    go run ./hack/release/releasenotes/make-release-notes.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
+    go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
     ```
 1. Proofread the release notes and do any reordering, rewording, reformatting necessary, including editing or deleting the "Deprecation and Removal Notices" section.
 1. Add the new release to the compatibility matrix (`site/content/resources/compatibility-matrix.md`).
@@ -203,15 +198,10 @@ git cherry-pick <SHA>
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a new local feature branch from `main`.
-1. Generate a new set of versioned docs:
+1. Generate a new set of versioned docs, plus a changelog:
     
     ```bash
-    go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
-    ```
-1. Generate the release notes:
-
-    ```bash
-    go run ./hack/release/releasenotes/make-release-notes.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
+    go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
     ```
 1. Proofread the release notes and do any reordering, rewording, reformatting necessary. Note that you will likely have to delete changelog entries that were not part of this patch release, as well as empty sections in the changelog.
 1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).

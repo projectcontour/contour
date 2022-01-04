@@ -11,7 +11,10 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"sort"
 	"strings"
+	"text/template"
 
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
@@ -136,17 +139,25 @@ func updateIndexFile(filePath, oldVers, newVers string) error {
 }
 
 func main() {
-	oldVers := "main"
-	newVers := ""
+	var (
+		oldVers     = "main"
+		newVers     = ""
+		kubeMinVers = ""
+		kubeMaxVers = ""
+	)
 
 	switch len(os.Args) {
-	case 2:
+	case 4:
 		newVers = os.Args[1]
-	case 3:
+		kubeMinVers = os.Args[2]
+		kubeMaxVers = os.Args[3]
+	case 5:
 		oldVers = os.Args[1]
 		newVers = os.Args[2]
+		kubeMinVers = os.Args[3]
+		kubeMaxVers = os.Args[4]
 	default:
-		fmt.Printf("Usage: %s NEWVERS | OLDVERS NEWVERS\n", path.Base(os.Args[0]))
+		fmt.Printf("Usage: %s NEWVERS KUBEMINVERS KUBEMAXVERS | OLDVERS NEWVERS KUBEMINVERS KUBEMAXVERS\n", path.Base(os.Args[0]))
 		os.Exit(1)
 	}
 
@@ -188,4 +199,116 @@ func main() {
 
 	// Now commit everything
 	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Prepare documentation site for %s release.", newVers)})
+
+	must(generateReleaseNotes(newVers, kubeMinVers, kubeMaxVers))
+	run([]string{"git", "add", "changelogs/*"})
+	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Add changelog for %s release.", newVers)})
+}
+
+func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error {
+	d := Data{
+		Version:              version,
+		KubernetesMinVersion: kubeMinVersion,
+		KubernetesMaxVersion: kubeMaxVersion,
+	}
+
+	if strings.Contains(d.Version, "alpha") || strings.Contains(d.Version, "beta") || strings.Contains(d.Version, "rc") {
+		d.Prerelease = true
+	}
+
+	dirEntries, err := os.ReadDir("changelogs/unreleased")
+	if err != nil {
+		return err
+	}
+
+	for _, dirEntry := range dirEntries {
+		if strings.HasSuffix(dirEntry.Name(), "-sample.md") {
+			continue
+		}
+
+		nameParts := strings.Split(strings.TrimSuffix(dirEntry.Name(), ".md"), "-")
+
+		if len(nameParts) != 3 {
+			fmt.Printf("Skipping changelog file with invalid name format %q\n", dirEntry.Name())
+			continue
+		}
+
+		contents, err := ioutil.ReadFile(filepath.Join("changelogs", "unreleased", dirEntry.Name()))
+		if err != nil {
+			return fmt.Errorf("error reading file %s: %v", filepath.Join("changelogs", "unreleased", dirEntry.Name()), err)
+		}
+
+		entry := Entry{
+			PRNumber: nameParts[0],
+			Author:   "@" + nameParts[1],
+			Content:  strings.TrimSpace(string(contents)),
+		}
+
+		switch strings.ToLower(nameParts[2]) {
+		case "major":
+			d.Major = append(d.Major, entry)
+		case "minor":
+			d.Minor = append(d.Minor, entry)
+		case "small":
+			entry.Content = strings.TrimSpace(entry.Content)
+			d.Small = append(d.Small, entry)
+		case "docs":
+			d.Docs = append(d.Docs, entry)
+		default:
+			fmt.Printf("Unrecognized category %s\n", nameParts[2])
+		}
+
+		d.Contributors = recordContributor(d.Contributors, entry.Author)
+	}
+
+	sort.Strings(d.Contributors)
+
+	tmpl, err := template.ParseFiles("hack/release/release-notes-template.md")
+	if err != nil {
+		return fmt.Errorf("error parsing release notes template: %v", err)
+	}
+
+	f, err := os.Create("changelogs/CHANGELOG-" + d.Version + ".md")
+	if err != nil {
+		return fmt.Errorf("error creating changelog file: %v", err)
+	}
+	defer f.Close()
+
+	return tmpl.Execute(f, d)
+}
+
+// recordContributor adds contributor to contributors if they
+// are not already present and are not a maintainer.
+func recordContributor(contributors []string, contributor string) []string {
+	for _, existing := range contributors {
+		if contributor == existing {
+			return contributors
+		}
+	}
+
+	for _, maintainer := range []string{"@skriss", "@stevesloka", "@sunjayBhatia", "@tsaarni", "@youngnick"} {
+		if contributor == maintainer {
+			return contributors
+		}
+	}
+
+	return append(contributors, contributor)
+}
+
+type Entry struct {
+	PRNumber string
+	Author   string
+	Content  string
+}
+
+type Data struct {
+	Version              string
+	Prerelease           bool
+	Major                []Entry
+	Minor                []Entry
+	Small                []Entry
+	Docs                 []Entry
+	Contributors         []string
+	KubernetesMinVersion string
+	KubernetesMaxVersion string
 }
