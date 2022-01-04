@@ -49,10 +49,9 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
-		contourConfig = &config.Parameters{
-			GatewayConfig: &config.GatewayParameters{
-				ControllerName: controllerName,
-			},
+		contourConfig = e2e.DefaultContourConfigFileParams()
+		contourConfig.GatewayConfig = &config.GatewayParameters{
+			ControllerName: controllerName,
 		}
 
 		// Update contour configuration to point to specified gateway.

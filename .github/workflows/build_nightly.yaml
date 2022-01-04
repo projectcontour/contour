@@ -1,0 +1,70 @@
+name: Nightly build
+
+on:
+  # Run every day
+  schedule:
+    - cron: '0 12 * * *'
+
+env:
+  GOPROXY: https://proxy.golang.org/
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+jobs:
+  e2e-envoy-xds:
+    runs-on: ubuntu-latest
+    needs: [build-image]
+    strategy:
+      matrix:
+        # use stable kubernetes_version values since they're included
+        # in the name of the GitHub Actions job, and we don't want to
+        # have to update branch protection rules every time we change
+        # a Kubernetes version number.
+        kubernetes_version: ["kubernetes:latest", "kubernetes:n-1", "kubernetes:n-2"]
+        # run tests using the configuration crd as well as without
+        config_type: ["ConfigmapConfiguration", "ContourConfiguration"]
+        # include defines an additional variable (the specific node
+        # image to use) for each kubernetes_version value.
+        include:
+          - kubernetes_version: "kubernetes:latest"
+            node_image: "docker.io/kindest/node:v1.22.0@sha256:f97edf7f7ed53c57762b24f90a34fad101386c5bd4d93baeb45449557148c717"
+          - kubernetes_version: "kubernetes:n-1"
+            node_image: "docker.io/kindest/node:v1.21.2@sha256:9d07ff05e4afefbba983fac311807b3c17a5f36e7061f6cb7e2ba756255b2be4"
+          - kubernetes_version: "kubernetes:n-2"
+            node_image: "docker.io/kindest/node:v1.20.7@sha256:cbeaf907fc78ac97ce7b625e4bf0de16e3ea725daf6b04f930bd14c67c671ff9"
+          - config_type: "ConfigmapConfiguration"
+            use_config_crd: "false"
+          - config_type: "ContourConfiguration"
+            use_config_crd: "true"
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.17.5'
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: e2e tests
+        env:
+          NODEIMAGE: ${{ matrix.node_image }}
+          USE_CONTOUR_CONFIGURATION_CRD: ${{ matrix.use_config_crd }}
+          CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
+          CONTOUR_E2E_XDS_SERVER_TYPE: envoy
+        run: |
+          make e2e
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
