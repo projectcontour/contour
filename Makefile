@@ -327,7 +327,7 @@ run-ingress-conformance:
 
 .PHONY: deploy-gcp-bench-cluster
 deploy-gcp-bench-cluster:
-	./test/scripts/deploy-gcp-bench-cluster.sh
+	./test/scripts/gcp-bench-cluster.sh deploy
 
 .PHONY: run-bench
 run-bench:
