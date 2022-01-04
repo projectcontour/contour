@@ -20,7 +20,7 @@ function deploy() {
     --no-enable-autoupgrade \
     --machine-type=${NODE_MACHINE_TYPE} \
     --num-nodes=${NUM_APP_POOL_NODES} \
-    --addons=NodeLocalDNS \
+    --addons=NodeLocalDNS
 
   # Enable system and workload monitoring to enable contour/envoy prometheus
   # endpoints.
