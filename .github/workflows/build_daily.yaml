@@ -1,4 +1,4 @@
-name: Nightly build
+name: Daily build
 
 on:
   # Run every day
