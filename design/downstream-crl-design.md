@@ -12,6 +12,7 @@ Currently Contour allows specifying a CA Certificate bundle that is used to vali
 This is done using Envoy's Common TLS Context inside of a Downstream TLS context.
 Envoy's Common TLS Context also supports a CRL data source, which is a set of CRL's that are used when validating a clients certificate.
 This CRL data source can be exposed the same way that we expose the CA Certificate data source, through Contour's `DownstreamValidation` structure.
+This data source will give admins the ability to have finer grained control over their ingress, and enable CRLs for HTTPProxies that use client cert authentication
 
 ## Goals
 - Allow a Kubernetes secret containing a PEM encoded CRL to be used when validating client connections
@@ -72,24 +73,7 @@ kubectl create secret generic crl-for-client-validation --from-file=./crl.pem
 ```go
 // DownstreamValidation defines how to verify the client certificate.
 type DownstreamValidation struct {
-	// Name of a Kubernetes secret that contains a CA certificate bundle.
-	// The client certificate must validate against the certificates in the bundle.
-	// If specified and SkipClientCertValidation is true, client certificates will
-	// be required on requests.
-	// +optional
-	// +kubebuilder:validation:MinLength=1
-	CACertificate string `json:"caSecret,omitempty"`
-
-	// SkipClientCertValidation disables downstream client certificate
-	// validation. Defaults to false. This field is intended to be used in
-	// conjunction with external authorization in order to enable the external
-	// authorization server to validate client certificates. When this field
-	// is set to true, client certificates are requested but not verified by
-	// Envoy. If CACertificate is specified, client certificates are required on
-	// requests, but not verified. If external authorization is in use, they are
-	// presented to the external authorization server.
-	// +optional
-	SkipClientCertValidation bool `json:"skipClientCertValidation"`
+  ...
 
 	// Name of a Kubernetes Opaque secret that contains a concatenated list of
   // pem encoded crls.
@@ -117,18 +101,28 @@ Validation is also performed to make sure that the CA Bundle has the correct PEM
 The same validation would be performed, but checking for type `CRL`
 
 ## Alternatives Considered
+
 N/A
 
 ## Security Considerations
-N/A
+
+Secret must be in the same namespace as the HTTPProxy, similar requirements to the CA when using client cert authentication
 
 ## Compatibility
+
 This change should be additive, so there should be no compatibility issues
 
 ## Implementation
-N/A
+
+E2E tests required:
+  * Happy path
+    * 1 CRL to one certificate
+    * 2+ CRL to 2+ certificates (same length)
+  * Errors
+    * Mismatch in CRL/Cert chain length
 
 ## Open Issues
 
+- K8s secrets are limited in size, so there will be an inherent limitation to the CRL bundle in this design
 - How to handle an error where a user supplies a CRL for one certificate in a chain, but not all. In which case Envoy will fail to verify
   - Short of decoding both the certificate list and CRL list, and making sure one exists for both, I don't have another answer. This seems out of scope for Contour here.
