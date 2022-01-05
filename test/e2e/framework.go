@@ -27,7 +27,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/gexec"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"

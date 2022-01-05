@@ -19,7 +19,7 @@ package httpproxy
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"

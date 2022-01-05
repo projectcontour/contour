@@ -51,8 +51,7 @@ echo "Installing Kubernetes toolchain..."
 
 # Install ginkgo CLI
 if [[ ${GITHUB_ACTIONS} == "true" && ${OS} == "linux" ]]; then
-  # Lock Ginkgo to v2.0.0-rc1
-  go install github.com/onsi/ginkgo/ginkgo@638dfbc0fcedb7757e191d8bdd6ae03d3d8c17ae
+  go install github.com/onsi/ginkgo/v2/ginkgo@v2.0.0
   mv /home/runner/go/bin/ginkgo ${DESTDIR}/ginkgo
 fi
 
