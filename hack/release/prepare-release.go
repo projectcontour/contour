@@ -221,6 +221,8 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 		return err
 	}
 
+	var deletions []string
+
 	for _, dirEntry := range dirEntries {
 		if strings.HasSuffix(dirEntry.Name(), "-sample.md") {
 			continue
@@ -250,15 +252,22 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 		case "minor":
 			d.Minor = append(d.Minor, entry)
 		case "small":
-			entry.Content = strings.TrimSpace(entry.Content)
 			d.Small = append(d.Small, entry)
 		case "docs":
 			d.Docs = append(d.Docs, entry)
 		default:
 			fmt.Printf("Unrecognized category %s\n", nameParts[2])
+			continue
 		}
 
 		d.Contributors = recordContributor(d.Contributors, entry.Author)
+
+		// If a prerelease, don't delete the individual changelog
+		// files since we want to keep them around for the GA release
+		// notes.
+		if !d.Prerelease {
+			deletions = append(deletions, filepath.Join("changelogs", "unreleased", dirEntry.Name()))
+		}
 	}
 
 	sort.Strings(d.Contributors)
@@ -274,25 +283,41 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 	}
 	defer f.Close()
 
-	return tmpl.Execute(f, d)
+	if err := tmpl.Execute(f, d); err != nil {
+		return fmt.Errorf("error executing template: %v", err)
+	}
+
+	for _, deletion := range deletions {
+		if err := os.Remove(deletion); err != nil {
+			fmt.Printf("Error deleting changelog file %s: %v. Remove manually.\n", deletion, err)
+		}
+	}
+
+	return nil
 }
 
 // recordContributor adds contributor to contributors if they
-// are not already present and are not a maintainer.
+// are not a maintainer and not already present.
 func recordContributor(contributors []string, contributor string) []string {
+	if _, found := maintainers[contributor]; found {
+		return contributors
+	}
+
 	for _, existing := range contributors {
 		if contributor == existing {
 			return contributors
 		}
 	}
 
-	for _, maintainer := range []string{"@skriss", "@stevesloka", "@sunjayBhatia", "@tsaarni", "@youngnick"} {
-		if contributor == maintainer {
-			return contributors
-		}
-	}
-
 	return append(contributors, contributor)
+}
+
+var maintainers = map[string]bool{
+	"@skriss":       true,
+	"@stevesloka":   true,
+	"@sunjayBhatia": true,
+	"@tsaarni":      true,
+	"@youngnick":    true,
 }
 
 type Entry struct {
