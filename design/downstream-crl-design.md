@@ -43,7 +43,7 @@ spec:
       secretName: server-credentials
       clientValidation:
         caSecret: ca-cert-for-client-validation
-        caCrlSecret: crl-for-client-validation
+        crlSecret: crl-for-client-validation
   routes:
     - services:
         - name: service
@@ -80,7 +80,7 @@ type DownstreamValidation struct {
 	// This will be used to verify that a client certificate has not been revoked
 	// +optional
 	// +kubebuilder:validation:MinLength=1
-	CACertificateRevocationList string `json:"caCrlSecret,omitempty"`
+	CACertificateRevocationList string `json:"crlSecret,omitempty"`
 }
 ```
 
@@ -88,7 +88,7 @@ type DownstreamValidation struct {
 
 The new fields from `spec.virtualhost.tls.clientValidation` must be parsed and mapped to `auth.CommonTlsContext.ValidationContextType`
 
-- `spec.virtualhost.tls.clientValidation.caCrlSecret` -> `envoy_v3_tls.CommonTlsContext_ValidationContext.Crl`
+- `spec.virtualhost.tls.clientValidation.crlSecret` -> `envoy_v3_tls.CommonTlsContext_ValidationContext.Crl`
   - `internal.envoy.v3.auth.validationContext()` will be updated to accept a `crl` the same way it accepts a `ca`
   - If empty it will not set the `crl` field, maintaining backward compatibility
 
@@ -98,7 +98,7 @@ Currently basic validation is done on Opaque secrets with a `ca.crt` key, just t
 This validation would also be performed for the CRL.
 
 Validation is also performed to make sure that the CA Bundle has the correct PEM header and is of type `CERTIFICATE`.
-The same validation would be performed, but checking for type `CRL`
+The same validation would be performed, but checking for type `X509 CRL`
 
 ## Alternatives Considered
 
