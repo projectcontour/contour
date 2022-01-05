@@ -933,7 +933,7 @@ type DownstreamValidation struct {
 	// This will be used to verify that a client certificate has not been revoked
 	// +optional
 	// +kubebuilder:validation:MinLength=1
-	CACertificateRevocationList string `json:"caCrlSecret,omitempty"`
+	CACertificateRevocationList string `json:"crlSecret,omitempty"`
 
 	// SkipClientCertValidation disables downstream client certificate
 	// validation. Defaults to false. This field is intended to be used in
