@@ -33,13 +33,13 @@ func testRequestRedirectRuleNoService(namespace string) {
 	Specify("redirects can be specified on route rule", func() {
 		t := f.T()
 
-		proxy := getHTTPProxy(namespace, true)
+		proxy := getRedirectHTTPProxy(namespace, true)
 
 		for _, route := range proxy.Spec.Routes {
 			require.Equal(t, 0, len(route.Services))
 		}
 
-		doTest(namespace, proxy, t)
+		doRedirectTest(namespace, proxy, t)
 	})
 }
 
@@ -47,48 +47,63 @@ func testRequestRedirectRule(namespace string) {
 	Specify("redirects can be specified on route rule", func() {
 		t := f.T()
 
-		proxy := getHTTPProxy(namespace, false)
-		doTest(namespace, proxy, t)
+		proxy := getRedirectHTTPProxy(namespace, false)
+		doRedirectTest(namespace, proxy, t)
 	})
 }
 
-func doTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
+func testRequestRedirectRuleInvalid(namespace string) {
+	Specify("invalid policy specified on route rule", func() {
+
+		f.Fixtures.Echo.Deploy(namespace, "echo")
+		proxy := getRedirectHTTPProxyInvalid(namespace)
+
+		f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyInvalid)
+	})
+}
+
+func doRedirectTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
 
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
 	f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyValid)
 
-	// /basic-redirect only specifies a host name to
-	// redirect to.
-	res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host: proxy.Spec.VirtualHost.Fqdn,
-		Path: "/basic-redirect",
-		ClientOpts: []func(*http.Client){
-			e2e.OptDontFollowRedirects,
-		},
-		Condition: e2e.HasStatusCode(302),
-	})
-	require.NotNil(t, res, "request never succeeded")
-	require.Truef(t, ok, "expected 302 response code, got %d", res.StatusCode)
-	assert.Equal(t, "http://projectcontour.io/basic-redirect", res.Headers.Get("Location"))
+	// /basic-redirect only specifies a host name to redirect to.
+	assertRequest(t, proxy.Spec.VirtualHost.Fqdn, "/basic-redirect",
+		"http://projectcontour.io/basic-redirect", 302)
 
-	// /complex-redirect specifies a host name,
-	// scheme, port and response code for the
-	// redirect.
-	res, ok = f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
-		Host: proxy.Spec.VirtualHost.Fqdn,
-		Path: "/complex-redirect",
-		ClientOpts: []func(*http.Client){
-			e2e.OptDontFollowRedirects,
-		},
-		Condition: e2e.HasStatusCode(301),
-	})
-	require.NotNil(t, res, "request never succeeded")
-	require.Truef(t, ok, "expected 301 response code, got %d", res.StatusCode)
-	assert.Equal(t, "https://envoyproxy.io:8080/complex-redirect", res.Headers.Get("Location"))
+	// /complex-redirect specifies a host name, scheme, port and response code for the redirect.
+	assertRequest(t, proxy.Spec.VirtualHost.Fqdn, "/complex-redirect",
+		"https://envoyproxy.io:8080/complex-redirect", 301)
+
+	// /path-rewrite specifies a path to redirect to.
+	assertRequest(t, proxy.Spec.VirtualHost.Fqdn, "/path-rewrite",
+		"http://requestredirectrule.projectcontour.io/path", 302)
+
+	// /prefix-rewrite specifies a prefix to redirect to.
+	assertRequest(t, proxy.Spec.VirtualHost.Fqdn, "/prefix-rewrite/foo/bar/zed",
+		"http://requestredirectrule.projectcontour.io/v2/foo/bar/zed", 302)
+
+	// //prefix-rewrite-trailing-slash specifies a prefix with a trailing slash and a prefix redirect.
+	assertRequest(t, proxy.Spec.VirtualHost.Fqdn, "/prefix-rewrite-trailing-slash/foo/bar",
+		"http://requestredirectrule.projectcontour.io/v2foo/bar", 302)
 }
 
-func getHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPProxy {
+func assertRequest(t GinkgoTInterface, fqdn, path, expectedLocation string, expectedStatusCode int) {
+	res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+		Host: fqdn,
+		Path: path,
+		ClientOpts: []func(*http.Client){
+			e2e.OptDontFollowRedirects,
+		},
+		Condition: e2e.HasStatusCode(expectedStatusCode),
+	})
+	require.NotNil(t, res, "request never succeeded")
+	require.Truef(t, ok, "expected %d response code, got %d", expectedStatusCode, res.StatusCode)
+	assert.Equal(t, expectedLocation, res.Headers.Get("Location"))
+}
+
+func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPProxy {
 
 	proxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -124,6 +139,39 @@ func getHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPPro
 					Port:       pointer.Int32Ptr(8080),
 					StatusCode: pointer.Int(301),
 				},
+			}, {
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/path-rewrite",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "echo",
+					Port: 80,
+				}},
+				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+					Path: pointer.StringPtr("/path"),
+				},
+			}, {
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/prefix-rewrite",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "echo",
+					Port: 80,
+				}},
+				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+					Prefix: pointer.StringPtr("/v2"),
+				},
+			}, {
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/prefix-rewrite-trailing-slash/",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "echo",
+					Port: 80,
+				}},
+				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+					Prefix: pointer.StringPtr("/v2"),
+				},
 			}},
 		},
 	}
@@ -133,6 +181,36 @@ func getHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPPro
 		for i := range proxy.Spec.Routes {
 			proxy.Spec.Routes[i].Services = []contour_api_v1.Service{}
 		}
+	}
+
+	return proxy
+}
+
+func getRedirectHTTPProxyInvalid(namespace string) *contour_api_v1.HTTPProxy {
+
+	proxy := &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "invalid",
+			Namespace: namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{
+				Fqdn: "requestredirectrule.projectcontour.io",
+			},
+			Routes: []contour_api_v1.Route{{
+				Conditions: []contour_api_v1.MatchCondition{{
+					Prefix: "/basic-redirect",
+				}},
+				Services: []contour_api_v1.Service{{
+					Name: "echo",
+					Port: 80,
+				}},
+				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+					Path:   pointer.StringPtr("/path"),
+					Prefix: pointer.StringPtr("/path"),
+				},
+			}},
+		},
 	}
 
 	return proxy

@@ -3140,6 +3140,13 @@ spec:
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                           type: string
+                        path:
+                          description: "Path allows for redirection to a different
+                            path from the original on the request. The path must start
+                            with a leading slash. \n Note: Only one of Path or Prefix
+                            can be defined."
+                          pattern: ^\/.*$
+                          type: string
                         port:
                           description: Port is the port to be used in the value of
                             the `Location` header in the response. When empty, port
@@ -3148,6 +3155,12 @@ spec:
                           maximum: 65535
                           minimum: 1
                           type: integer
+                        prefix:
+                          description: "Prefix defines the value to swap the matched
+                            prefix or path with. The prefix must start with a leading
+                            slash. \n Note: Only one of Path or Prefix can be defined."
+                          pattern: ^\/.*$
+                          type: string
                         scheme:
                           description: Scheme is the scheme to be used in the value
                             of the `Location` header in the response. When empty,

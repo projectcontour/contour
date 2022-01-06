@@ -35,7 +35,7 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 		WithPorts(v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)}),
 	)
 
-	rh.OnAdd(fixture.NewProxy("simple").WithSpec(
+	proxy := fixture.NewProxy("simple").WithSpec(
 		contour_api_v1.HTTPProxySpec{
 			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
 			Routes: []contour_api_v1.Route{{
@@ -48,10 +48,12 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 					Hostname:   pointer.StringPtr("envoyproxy.io"),
 					Port:       pointer.Int32Ptr(443),
 					StatusCode: pointer.IntPtr(301),
+					Path:       pointer.StringPtr("/blog"),
 				},
 			}},
-		}),
-	)
+		})
+
+	rh.OnAdd(proxy)
 
 	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
@@ -69,11 +71,90 @@ func TestRedirectResponsePolicy_HTTProxy(t *testing.T) {
 								},
 								ResponseCode: 0,
 								StripQuery:   false,
+								PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PathRedirect{
+									PathRedirect: "/blog",
+								},
 							},
 						},
 					},
 				),
 			),
+		),
+		TypeUrl: routeType,
+	})
+
+	proxyPrefixRewrite := fixture.NewProxy("simple").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+					Scheme:     pointer.StringPtr("https"),
+					Hostname:   pointer.StringPtr("envoyproxy.io"),
+					Port:       pointer.Int32Ptr(443),
+					StatusCode: pointer.IntPtr(301),
+					Prefix:     pointer.StringPtr("/blogprefix"),
+				},
+			}},
+		})
+
+	rh.OnUpdate(proxy, proxyPrefixRewrite)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("hello.world",
+
+					&envoy_route_v3.Route{
+						Match: routePrefix("/"),
+						Action: &envoy_route_v3.Route_Redirect{
+							Redirect: &envoy_route_v3.RedirectAction{
+								HostRedirect: "envoyproxy.io",
+								PortRedirect: 443,
+								SchemeRewriteSpecifier: &envoy_route_v3.RedirectAction_SchemeRedirect{
+									SchemeRedirect: "https",
+								},
+								ResponseCode: 0,
+								StripQuery:   false,
+								PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PrefixRewrite{
+									PrefixRewrite: "/blogprefix",
+								},
+							},
+						},
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+
+	proxyInvalid := fixture.NewProxy("simple").WithSpec(
+		contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "hello.world"},
+			Routes: []contour_api_v1.Route{{
+				Services: []contour_api_v1.Service{{
+					Name: "svc1",
+					Port: 80,
+				}},
+				RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+					Scheme:     pointer.StringPtr("https"),
+					Hostname:   pointer.StringPtr("envoyproxy.io"),
+					Port:       pointer.Int32Ptr(443),
+					StatusCode: pointer.IntPtr(301),
+					Prefix:     pointer.StringPtr("/blogprefix"),
+					Path:       pointer.StringPtr("/blogprefix"),
+				},
+			}},
+		})
+
+	rh.OnUpdate(proxyPrefixRewrite, proxyInvalid)
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http"),
 		),
 		TypeUrl: routeType,
 	})
