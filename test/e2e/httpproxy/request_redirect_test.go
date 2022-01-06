@@ -21,7 +21,6 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 
-	"github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +62,7 @@ func testRequestRedirectRuleInvalid(namespace string) {
 	})
 }
 
-func doTest(namespace string, proxy *contour_api_v1.HTTPProxy, t ginkgo.GinkgoTInterface) {
+func doTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
 
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
@@ -90,7 +89,7 @@ func doTest(namespace string, proxy *contour_api_v1.HTTPProxy, t ginkgo.GinkgoTI
 		"http://requestredirectrule.projectcontour.io/v2foo/bar", 302)
 }
 
-func assertRequest(t ginkgo.GinkgoTInterface, fqdn, path, expectedLocation string, expectedStatusCode int) {
+func assertRequest(t GinkgoTInterface, fqdn, path, expectedLocation string, expectedStatusCode int) {
 	res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
 		Host: fqdn,
 		Path: path,
