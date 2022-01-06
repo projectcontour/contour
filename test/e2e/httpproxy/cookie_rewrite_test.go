@@ -863,7 +863,7 @@ func deployEchoServer(t require.TestingT, c client.Client, ns, name string) {
 								},
 							},
 							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/ping",
 										Port: intstr.FromInt(3000),

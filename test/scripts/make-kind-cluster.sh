@@ -25,7 +25,7 @@ readonly KIND=${KIND:-kind}
 readonly KUBECTL=${KUBECTL:-kubectl}
 
 readonly MULTINODE_CLUSTER=${MULTINODE_CLUSTER:-"false"}
-readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.22.0"}
+readonly NODEIMAGE=${NODEIMAGE:-"docker.io/kindest/node:v1.23.0"}
 readonly CLUSTERNAME=${CLUSTERNAME:-contour-e2e}
 readonly WAITTIME=${WAITTIME:-5m}
 

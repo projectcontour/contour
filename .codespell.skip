@@ -11,3 +11,5 @@
 ./vendor
 ./site/public
 ./hack/actions/check-changefile-exists.go
+go.mod
+go.sum
