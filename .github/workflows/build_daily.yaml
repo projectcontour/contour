@@ -13,7 +13,6 @@ env:
 jobs:
   e2e-envoy-xds:
     runs-on: ubuntu-latest
-    needs: [build-image]
     strategy:
       matrix:
         # use stable kubernetes_version values since they're included
