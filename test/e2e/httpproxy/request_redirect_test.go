@@ -21,8 +21,7 @@ import (
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 
-	"github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,7 +52,7 @@ func testRequestRedirectRule(namespace string) {
 	})
 }
 
-func doTest(namespace string, proxy *contour_api_v1.HTTPProxy, t ginkgo.GinkgoTInterface) {
+func doTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
 
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
