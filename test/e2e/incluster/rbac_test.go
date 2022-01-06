@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -82,9 +83,15 @@ func testProjectcontourResourcesRBAC(namespace string) {
 		assert.True(f.T(), success)
 
 		// Update HTTPProxy to valid service.
-		require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p))
-		p.Spec.Routes[0].Services[0].Name = "echo"
-		require.NoError(f.T(), f.Client.Update(context.TODO(), p))
+		require.NoError(f.T(), retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
+				return err
+			}
+
+			p.Spec.Routes[0].Services[0].Name = "echo"
+			return f.Client.Update(context.TODO(), p)
+		}))
+
 		assert.Eventually(f.T(), func() bool {
 			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(p), p); err != nil {
 				return false

@@ -48,6 +48,10 @@ func HTTPMethodPtr(method gatewayapi_v1alpha2.HTTPMethod) *gatewayapi_v1alpha2.H
 	return &method
 }
 
+func AddressTypePtr(addressType gatewayapi_v1alpha2.AddressType) *gatewayapi_v1alpha2.AddressType {
+	return &addressType
+}
+
 func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
 	h := gatewayapi_v1alpha2.Hostname(host)
 	return &h
@@ -55,7 +59,7 @@ func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
 
 func CertificateRef(name, namespace string) *gatewayapi_v1alpha2.SecretObjectReference {
 	ref := &gatewayapi_v1alpha2.SecretObjectReference{
-		Group: GroupPtr("core"),
+		Group: GroupPtr(""),
 		Kind:  KindPtr("Secret"),
 		Name:  gatewayapi_v1alpha2.ObjectName(name),
 	}

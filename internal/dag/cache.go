@@ -360,7 +360,7 @@ func (kc *KubernetesCache) serviceTriggersRebuild(service *v1.Service) bool {
 }
 
 func isRefToService(ref gatewayapi_v1alpha2.BackendObjectReference, service *v1.Service, routeNamespace string) bool {
-	return ref.Group != nil && (*ref.Group == "" || *ref.Group == "core") &&
+	return ref.Group != nil && *ref.Group == "" &&
 		ref.Kind != nil && *ref.Kind == "Service" &&
 		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(service.Namespace)) || (ref.Namespace == nil && routeNamespace == service.Namespace)) &&
 		string(ref.Name) == service.Name
@@ -467,7 +467,7 @@ func (kc *KubernetesCache) secretTriggersRebuild(secret *v1.Secret) bool {
 }
 
 func isRefToSecret(ref gatewayapi_v1alpha2.SecretObjectReference, secret *v1.Secret, gatewayNamespace string) bool {
-	return ref.Group != nil && (*ref.Group == "" || *ref.Group == "core") &&
+	return ref.Group != nil && *ref.Group == "" &&
 		ref.Kind != nil && *ref.Kind == "Secret" &&
 		((ref.Namespace != nil && *ref.Namespace == gatewayapi_v1alpha2.Namespace(secret.Namespace)) || (ref.Namespace == nil && gatewayNamespace == secret.Namespace)) &&
 		string(ref.Name) == secret.Name

@@ -14,7 +14,6 @@
 package dag
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -10041,6 +10040,186 @@ func TestDAGInsert(t *testing.T) {
 				},
 			),
 		},
+		"HTTPProxy request redirect policy": {
+			objs: []interface{}{
+				s1,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "redirect",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: s1.Name,
+								Port: 8080,
+							}},
+							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+								Scheme:     pointer.StringPtr("https"),
+								Hostname:   pointer.StringPtr("envoyproxy.io"),
+								Port:       pointer.Int32Ptr(443),
+								StatusCode: pointer.Int(301),
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s1.Name,
+										ServiceNamespace: s1.Namespace,
+										ServicePort:      s1.Spec.Ports[0],
+									},
+								},
+							}},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPProxy request redirect policy - no services": {
+			objs: []interface{}{
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "redirect",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+								Scheme:     pointer.StringPtr("https"),
+								Hostname:   pointer.StringPtr("envoyproxy.io"),
+								Port:       pointer.Int32Ptr(443),
+								StatusCode: pointer.Int(301),
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
+						},
+					)),
+				},
+			),
+		},
+		"HTTPProxy request redirect policy with multiple matches": {
+			objs: []interface{}{
+				s1, s2,
+				&contour_api_v1.HTTPProxy{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "redirect",
+						Namespace: "default",
+					},
+					Spec: contour_api_v1.HTTPProxySpec{
+						VirtualHost: &contour_api_v1.VirtualHost{
+							Fqdn: "projectcontour.io",
+						},
+						Routes: []contour_api_v1.Route{{
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: s2.Name,
+								Port: 8080,
+							}},
+						}, {
+							Conditions: []contour_api_v1.MatchCondition{{
+								Prefix: "/blog",
+							}},
+							Services: []contour_api_v1.Service{{
+								Name: s1.Name,
+								Port: 8080,
+							}},
+							RequestRedirectPolicy: &contour_api_v1.HTTPRequestRedirectPolicy{
+								Scheme:     pointer.StringPtr("https"),
+								Hostname:   pointer.StringPtr("envoyproxy.io"),
+								Port:       pointer.Int32Ptr(443),
+								StatusCode: pointer.Int(301),
+							},
+						}},
+					},
+				},
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(virtualhost("projectcontour.io",
+						&Route{
+							PathMatchCondition: prefixString("/"),
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s2.Name,
+										ServiceNamespace: s2.Namespace,
+										ServicePort:      s2.Spec.Ports[0],
+									},
+								},
+							}},
+						},
+						&Route{
+							PathMatchCondition: prefixString("/blog"),
+							Redirect: &Redirect{
+								Scheme:     "https",
+								Hostname:   "envoyproxy.io",
+								PortNumber: 443,
+								StatusCode: 301,
+							},
+							Clusters: []*Cluster{{
+								Upstream: &Service{
+									Weighted: WeightedService{
+										Weight:           1,
+										ServiceName:      s1.Name,
+										ServiceNamespace: s1.Namespace,
+										ServicePort:      s1.Spec.Ports[0],
+									},
+								},
+							}},
+						},
+					)),
+				},
+			),
+		},
 		"ingressv1: Ingress then HTTPProxy with identical details, except referencing s2a": {
 			objs: []interface{}{
 				i17V1,
@@ -11349,421 +11528,6 @@ func TestDAGRootNamespaces(t *testing.T) {
 			if count := len(dag.VirtualHosts); tc.want != count {
 				t.Errorf("wanted %d vertices, but got %d", tc.want, count)
 			}
-		})
-	}
-}
-
-func TestHttpPaths(t *testing.T) {
-	tests := map[string]struct {
-		rule networking_v1.IngressRule
-		want []networking_v1.HTTPIngressPath
-	}{
-		"zero value": {
-			rule: networking_v1.IngressRule{},
-			want: nil,
-		},
-		"empty paths": {
-			rule: networking_v1.IngressRule{
-				IngressRuleValue: networking_v1.IngressRuleValue{
-					HTTP: &networking_v1.HTTPIngressRuleValue{},
-				},
-			},
-			want: nil,
-		},
-		"several paths": {
-			rule: networking_v1.IngressRule{
-				IngressRuleValue: networking_v1.IngressRuleValue{
-					HTTP: &networking_v1.HTTPIngressRuleValue{
-						Paths: []networking_v1.HTTPIngressPath{{
-							Backend: *backendv1("kuard", intstr.FromString("http")),
-						}, {
-							Path:    "/kuarder",
-							Backend: *backendv1("kuarder", intstr.FromInt(8080)),
-						}},
-					},
-				},
-			},
-			want: []networking_v1.HTTPIngressPath{{
-				Backend: *backendv1("kuard", intstr.FromString("http")),
-			}, {
-				Path:    "/kuarder",
-				Backend: *backendv1("kuarder", intstr.FromInt(8080)),
-			}},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := httppaths(tc.rule)
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestDetermineSNI(t *testing.T) {
-	tests := map[string]struct {
-		routeRequestHeaders   *HeadersPolicy
-		clusterRequestHeaders *HeadersPolicy
-		service               *Service
-		want                  string
-	}{
-		"default SNI": {
-			routeRequestHeaders:   nil,
-			clusterRequestHeaders: nil,
-			service:               &Service{},
-			want:                  "",
-		},
-		"route request headers set": {
-			routeRequestHeaders: &HeadersPolicy{
-				HostRewrite: "containersteve.com",
-			},
-			clusterRequestHeaders: nil,
-			service:               &Service{},
-			want:                  "containersteve.com",
-		},
-		"service request headers set": {
-			routeRequestHeaders: nil,
-			clusterRequestHeaders: &HeadersPolicy{
-				HostRewrite: "containersteve.com",
-			},
-			service: &Service{},
-			want:    "containersteve.com",
-		},
-		"service request headers set overrides route": {
-			routeRequestHeaders: &HeadersPolicy{
-				HostRewrite: "incorrect.com",
-			},
-			clusterRequestHeaders: &HeadersPolicy{
-				HostRewrite: "containersteve.com",
-			},
-			service: &Service{},
-			want:    "containersteve.com",
-		},
-		"route request headers override externalName": {
-			routeRequestHeaders: &HeadersPolicy{
-				HostRewrite: "containersteve.com",
-			},
-			clusterRequestHeaders: nil,
-			service: &Service{
-				ExternalName: "externalname.com",
-			},
-			want: "containersteve.com",
-		},
-		"service request headers override externalName": {
-			routeRequestHeaders: nil,
-			clusterRequestHeaders: &HeadersPolicy{
-				HostRewrite: "containersteve.com",
-			},
-			service: &Service{
-				ExternalName: "externalname.com",
-			},
-			want: "containersteve.com",
-		},
-		"only externalName set": {
-			routeRequestHeaders:   nil,
-			clusterRequestHeaders: nil,
-			service: &Service{
-				ExternalName: "externalname.com",
-			},
-			want: "externalname.com",
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := determineSNI(tc.routeRequestHeaders, tc.clusterRequestHeaders, tc.service)
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestEnforceRoute(t *testing.T) {
-	tests := map[string]struct {
-		tlsEnabled     bool
-		permitInsecure bool
-		want           bool
-	}{
-		"tls not enabled": {
-			tlsEnabled:     false,
-			permitInsecure: false,
-			want:           false,
-		},
-		"tls enabled": {
-			tlsEnabled:     true,
-			permitInsecure: false,
-			want:           true,
-		},
-		"tls enabled but insecure requested": {
-			tlsEnabled:     true,
-			permitInsecure: true,
-			want:           false,
-		},
-		"tls not enabled but insecure requested": {
-			tlsEnabled:     false,
-			permitInsecure: true,
-			want:           false,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := routeEnforceTLS(tc.tlsEnabled, tc.permitInsecure)
-			assert.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestValidateHeaderAlteration(t *testing.T) {
-	tests := []struct {
-		name    string
-		in      *contour_api_v1.HeadersPolicy
-		dyn     map[string]string
-		dhp     *HeadersPolicy
-		want    *HeadersPolicy
-		wantErr error
-	}{{
-		name: "empty is fine",
-	}, {
-		name: "set two, remove one",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "K-Foo",
-				Value: "bar",
-			}, {
-				Name:  "k-baz", // This gets canonicalized
-				Value: "blah",
-			}},
-			Remove: []string{"K-Nada"},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: nil,
-		want: &HeadersPolicy{
-			Set: map[string]string{
-				"K-Foo": "bar",
-				"K-Baz": "blah",
-			},
-			Remove: []string{"K-Nada"},
-		},
-	}, {
-		name: "duplicate set",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "K-Foo",
-				Value: "bar",
-			}, {
-				Name:  "k-foo", // This gets canonicalized
-				Value: "blah",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp:     nil,
-		wantErr: errors.New(`duplicate header addition: "K-Foo"`),
-	}, {
-		name: "duplicate remove",
-		in: &contour_api_v1.HeadersPolicy{
-			Remove: []string{"K-Foo", "k-foo"},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp:     nil,
-		wantErr: errors.New(`duplicate header removal: "K-Foo"`),
-	}, {
-		name: "invalid set header",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "  K-Foo",
-				Value: "bar",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp:     nil,
-		wantErr: errors.New(`invalid set header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
-	}, {
-		name: "invalid set default header",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: &HeadersPolicy{
-			Set: map[string]string{
-				"  K-Foo": "bar",
-			},
-		},
-		wantErr: errors.New(`invalid set header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
-	}, {
-		name: "invalid remove header",
-		in: &contour_api_v1.HeadersPolicy{
-			Remove: []string{"  K-Foo"},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp:     nil,
-		wantErr: errors.New(`invalid remove header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
-	}, {
-		name: "invalid remove default header",
-		in: &contour_api_v1.HeadersPolicy{
-			Remove: []string{"  K-Foo"},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: &HeadersPolicy{
-			Remove: []string{"  K-Foo"},
-		},
-		wantErr: errors.New(`invalid remove header "  K-Foo": [a valid HTTP header must consist of alphanumeric characters or '-' (e.g. 'X-Header-Name', regex used for validation is '[-A-Za-z0-9]+')]`),
-	}, {
-		name: "invalid set header (special headers)",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "Host",
-				Value: "bar",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp:     nil,
-		wantErr: errors.New(`rewriting "Host" header is not supported`),
-	}, {
-		name: "invalid set default header (special headers)",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "K-Foo",
-				Value: "ook?",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: &HeadersPolicy{
-			Set: map[string]string{
-				"Host": "bar",
-			},
-		},
-		wantErr: errors.New(`rewriting "Host" header is not supported`),
-	}, {
-		name: "percents are escaped",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "K-Foo",
-				Value: "100%",
-			}, {
-				Name:  "Lot-Of-Percents",
-				Value: "%%%%%",
-			}, {
-				Name:  "k-baz",                      // This gets canonicalized
-				Value: "%DOWNSTREAM_LOCAL_ADDRESS%", // This is a known Envoy dynamic header
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: nil,
-		want: &HeadersPolicy{
-			Set: map[string]string{
-				"K-Foo":           "100%%",
-				"K-Baz":           "%DOWNSTREAM_LOCAL_ADDRESS%",
-				"Lot-Of-Percents": "%%%%%%%%%%",
-			},
-		},
-	}, {
-		name: "dynamic service headers",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "l5d-dst-override",
-				Value: "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE":    "myns",
-			"CONTOUR_SERVICE_NAME": "myservice",
-			"CONTOUR_SERVICE_PORT": "80",
-		},
-		dhp: nil,
-		want: &HeadersPolicy{
-			Set: map[string]string{
-				"L5d-Dst-Override": "myservice.myns.svc.cluster.local:80",
-			},
-		},
-	}, {
-		name: "dynamic service headers without service name and port",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "l5d-dst-override",
-				Value: "%CONTOUR_SERVICE_NAME%.%CONTOUR_NAMESPACE%.svc.cluster.local:%CONTOUR_SERVICE_PORT%",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: nil,
-		want: &HeadersPolicy{
-			Set: map[string]string{
-				"L5d-Dst-Override": "%%CONTOUR_SERVICE_NAME%%.myns.svc.cluster.local:%%CONTOUR_SERVICE_PORT%%",
-			},
-		},
-	}, {
-		name: "default headers are combined with given headers and escaped",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "K-Foo",
-				Value: "100%",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: &HeadersPolicy{
-			Set: map[string]string{
-				"k-baz":           "%DOWNSTREAM_LOCAL_ADDRESS%", // This gets canonicalized
-				"Lot-Of-Percents": "%%%%%",
-			},
-		},
-		want: &HeadersPolicy{
-			Set: map[string]string{
-				"K-Foo":           "100%%",
-				"K-Baz":           "%DOWNSTREAM_LOCAL_ADDRESS%",
-				"Lot-Of-Percents": "%%%%%%%%%%",
-			},
-		},
-	}, {
-		name: "default headers do not replace given headers",
-		in: &contour_api_v1.HeadersPolicy{
-			Set: []contour_api_v1.HeaderValue{{
-				Name:  "K-Foo",
-				Value: "100%",
-			}},
-		},
-		dyn: map[string]string{
-			"CONTOUR_NAMESPACE": "myns",
-		},
-		dhp: &HeadersPolicy{
-			Set: map[string]string{
-				"K-Foo": "50%",
-			},
-		},
-		want: &HeadersPolicy{
-			Set: map[string]string{
-				"K-Foo": "100%%",
-			},
-		},
-	}}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, gotErr := headersPolicyService(test.dhp, test.in, test.dyn)
-			assert.Equal(t, test.want, got)
-			assert.Equal(t, test.wantErr, gotErr)
 		})
 	}
 }

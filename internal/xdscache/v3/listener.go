@@ -401,9 +401,9 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 						vh.AuthorizationService.Name,
 						vh.AuthorizationFailOpen,
 						vh.AuthorizationResponseTimeout,
+						vh.AuthorizationServerWithRequestBody,
 					)
 				}
-
 				// Create a uniquely named HTTP connection manager for
 				// this vhost, so that the SNI name the client requests
 				// only grants access to that host. See RFC 6066 for

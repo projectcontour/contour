@@ -31,6 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// defaultMaxRequestBytes specifies default value maxRequestBytes for AuthorizationServer
+const defaultMaxRequestBytes uint32 = 1024
+
 // defaultExtensionRef populates the unset fields in ref with default values.
 func defaultExtensionRef(ref contour_api_v1.ExtensionServiceReference) contour_api_v1.ExtensionServiceReference {
 	if ref.APIVersion == "" {
@@ -297,6 +300,18 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				} else {
 					svhost.AuthorizationResponseTimeout = timeout
 				}
+
+				if auth.WithRequestBody != nil {
+					var maxRequestBytes = defaultMaxRequestBytes
+					if auth.WithRequestBody.MaxRequestBytes != 0 {
+						maxRequestBytes = auth.WithRequestBody.MaxRequestBytes
+					}
+					svhost.AuthorizationServerWithRequestBody = &AuthorizationServerBufferSettings{
+						MaxRequestBytes:     maxRequestBytes,
+						AllowPartialMessage: auth.WithRequestBody.AllowPartialMessage,
+						PackAsBytes:         auth.WithRequestBody.PackAsBytes,
+					}
+				}
 			}
 		}
 	}
@@ -486,7 +501,8 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		if len(route.Services) < 1 {
+		// A route may have no services defined only if a RequestRedirectPolicy is defined.
+		if len(route.Services) < 1 && route.RequestRedirectPolicy == nil {
 			validCond.AddError(contour_api_v1.ConditionTypeRouteError, "NoServicesPresent",
 				"route.services must have at least one entry")
 			return nil
@@ -520,6 +536,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			CookieRewritePolicies: cookieRP,
 			RateLimitPolicy:       rlp,
 			RequestHashPolicies:   requestHashPolicies,
+			Redirect:              redirectRoutePolicy(route.RequestRedirectPolicy),
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -684,7 +701,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				r.Clusters = append(r.Clusters, c)
 			}
 		}
-		if len(r.Clusters) == 0 {
+		if len(r.Clusters) == 0 && route.RequestRedirectPolicy == nil {
 			r.DirectResponse = directResponse(http.StatusServiceUnavailable)
 		}
 
@@ -1067,6 +1084,40 @@ func routeEnforceTLS(enforceTLS, permitInsecure bool) bool {
 
 func directResponse(statusCode uint32) *DirectResponse {
 	return &DirectResponse{
+		StatusCode: statusCode,
+	}
+}
+
+// redirectRoutePolicy builds a *dag.Redirect for the supplied redirect policy.
+func redirectRoutePolicy(redirect *contour_api_v1.HTTPRequestRedirectPolicy) *Redirect {
+	if redirect == nil {
+		return nil
+	}
+
+	var hostname string
+	if redirect.Hostname != nil {
+		hostname = *redirect.Hostname
+	}
+
+	var portNumber uint32
+	if redirect.Port != nil {
+		portNumber = uint32(*redirect.Port)
+	}
+
+	var scheme string
+	if redirect.Scheme != nil {
+		scheme = *redirect.Scheme
+	}
+
+	var statusCode int
+	if redirect.StatusCode != nil {
+		statusCode = *redirect.StatusCode
+	}
+
+	return &Redirect{
+		Hostname:   hostname,
+		Scheme:     scheme,
+		PortNumber: portNumber,
 		StatusCode: statusCode,
 	}
 }
