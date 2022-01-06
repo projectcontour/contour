@@ -33,13 +33,13 @@ func testRequestRedirectRuleNoService(namespace string) {
 	Specify("redirects can be specified on route rule", func() {
 		t := f.T()
 
-		proxy := getHTTPProxy(namespace, true)
+		proxy := getRedirectHTTPProxy(namespace, true)
 
 		for _, route := range proxy.Spec.Routes {
 			require.Equal(t, 0, len(route.Services))
 		}
 
-		doTest(namespace, proxy, t)
+		doRedirectTest(namespace, proxy, t)
 	})
 }
 
@@ -47,8 +47,8 @@ func testRequestRedirectRule(namespace string) {
 	Specify("redirects can be specified on route rule", func() {
 		t := f.T()
 
-		proxy := getHTTPProxy(namespace, false)
-		doTest(namespace, proxy, t)
+		proxy := getRedirectHTTPProxy(namespace, false)
+		doRedirectTest(namespace, proxy, t)
 	})
 }
 
@@ -56,13 +56,13 @@ func testRequestRedirectRuleInvalid(namespace string) {
 	Specify("invalid policy specified on route rule", func() {
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
-		proxy := getHTTPProxyInvalid(namespace)
+		proxy := getRedirectHTTPProxyInvalid(namespace)
 
 		f.CreateHTTPProxyAndWaitFor(proxy, e2e.HTTPProxyInvalid)
 	})
 }
 
-func doTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
+func doRedirectTest(namespace string, proxy *contour_api_v1.HTTPProxy, t GinkgoTInterface) {
 
 	f.Fixtures.Echo.Deploy(namespace, "echo")
 
@@ -103,7 +103,7 @@ func assertRequest(t GinkgoTInterface, fqdn, path, expectedLocation string, expe
 	assert.Equal(t, expectedLocation, res.Headers.Get("Location"))
 }
 
-func getHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPProxy {
+func getRedirectHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPProxy {
 
 	proxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{
@@ -186,7 +186,7 @@ func getHTTPProxy(namespace string, removeServices bool) *contour_api_v1.HTTPPro
 	return proxy
 }
 
-func getHTTPProxyInvalid(namespace string) *contour_api_v1.HTTPProxy {
+func getRedirectHTTPProxyInvalid(namespace string) *contour_api_v1.HTTPProxy {
 
 	proxy := &contour_api_v1.HTTPProxy{
 		ObjectMeta: metav1.ObjectMeta{

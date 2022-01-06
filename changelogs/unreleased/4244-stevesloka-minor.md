@@ -28,10 +28,10 @@ spec:
 
 Request: 
 ```bash
-$ curl -i http://rewrite.projectcontour.io/blog                                                                                                
+$ curl -i http://redirect.projectcontour.io/blog                                                                                                
 
 HTTP/2 302 
-location: http://rewrite.projectcontour.io/blog/site
+location: http://redirect.projectcontour.io/blog/site
 vary: Accept-Encoding
 date: Wed, 15 Dec 2021 20:42:04 GMT
 server: envoy
