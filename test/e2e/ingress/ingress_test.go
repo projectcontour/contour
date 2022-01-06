@@ -64,7 +64,7 @@ var _ = Describe("Ingress", func() {
 	BeforeEach(func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
-		contourConfig = &config.Parameters{}
+		contourConfig = e2e.DefaultContourConfigFileParams()
 
 		contourConfiguration = e2e.DefaultContourConfiguration()
 

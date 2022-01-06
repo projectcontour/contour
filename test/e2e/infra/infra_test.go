@@ -91,7 +91,7 @@ var _ = Describe("Infra", func() {
 	BeforeEach(func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
-		contourConfig = &config.Parameters{}
+		contourConfig = e2e.DefaultContourConfigFileParams()
 
 		// Contour configuration crd, can be modified in nested
 		// BeforeEach.

@@ -574,13 +574,10 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		contourConfiguration.Name = randomString(14)
 
 		// Set the xds server to the defined testing port as well as enable insecure communication.
-		contourConfiguration.Spec.XDSServer = contour_api_v1alpha1.XDSServerConfig{
-			Type:    contour_api_v1alpha1.ContourServerType,
-			Address: "0.0.0.0",
-			Port:    port,
-			TLS: &contour_api_v1alpha1.TLS{
-				Insecure: true,
-			},
+		contourConfiguration.Spec.XDSServer.Port = port
+		contourConfiguration.Spec.XDSServer.Address = "0.0.0.0"
+		contourConfiguration.Spec.XDSServer.TLS = &contour_api_v1alpha1.TLS{
+			Insecure: true,
 		}
 
 		if err := d.client.Create(context.TODO(), contourConfiguration); err != nil {

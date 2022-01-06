@@ -18,10 +18,11 @@ package e2e
 
 import (
 	"context"
-
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"os"
 
 	"github.com/onsi/ginkgo/v2"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/pkg/config"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -326,6 +327,16 @@ func (e *EchoSecure) Deploy(ns, name string) func() {
 	}
 }
 
+// DefaultContourConfigFileParams returns a default configuration in a config
+// file params object.
+func DefaultContourConfigFileParams() *config.Parameters {
+	return &config.Parameters{
+		Server: config.ServerParameters{
+			XDSServerType: config.ServerType(XDSServerTypeFromEnv()),
+		},
+	}
+}
+
 // DefaultContourConfiguration returns a default ContourConfiguration object.
 func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 	return &contour_api_v1alpha1.ContourConfiguration{
@@ -334,6 +345,17 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 			Namespace: "projectcontour",
 		},
 		Spec: contour_api_v1alpha1.ContourConfigurationSpec{
+			XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				Type:    XDSServerTypeFromEnv(),
+				Address: "0.0.0.0",
+				Port:    8001,
+				TLS: &contour_api_v1alpha1.TLS{
+					CAFile:   "/certs/ca.crt",
+					CertFile: "/certs/tls.crt",
+					KeyFile:  "/certs/tls.key",
+					Insecure: false,
+				},
+			},
 			Debug: contour_api_v1alpha1.DebugConfig{
 				Address:                 "127.0.0.1",
 				Port:                    6060,
@@ -408,4 +430,14 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 
 func IngressPathTypePtr(val networkingv1.PathType) *networkingv1.PathType {
 	return &val
+}
+
+func XDSServerTypeFromEnv() contour_api_v1alpha1.XDSServerType {
+	// Default to contour if not provided.
+	serverType := contour_api_v1alpha1.ContourServerType
+	typeFromEnv, found := os.LookupEnv("CONTOUR_E2E_XDS_SERVER_TYPE")
+	if found {
+		serverType = contour_api_v1alpha1.XDSServerType(typeFromEnv)
+	}
+	return serverType
 }
