@@ -13,29 +13,6 @@ env:
 jobs:
   e2e-envoy-xds:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # use stable kubernetes_version values since they're included
-        # in the name of the GitHub Actions job, and we don't want to
-        # have to update branch protection rules every time we change
-        # a Kubernetes version number.
-        kubernetes_version: ["kubernetes:latest", "kubernetes:n-1", "kubernetes:n-2"]
-        # run tests using the configuration crd as well as without
-        config_type: ["ConfigmapConfiguration", "ContourConfiguration"]
-        # include defines an additional variable (the specific node
-        # image to use) for each kubernetes_version value.
-        include:
-          - kubernetes_version: "kubernetes:latest"
-            node_image: "docker.io/kindest/node:v1.23.0@sha256:2f93d3c7b12a3e93e6c1f34f331415e105979961fcddbe69a4e3ab5a93ccbb35"
-          - kubernetes_version: "kubernetes:n-1"
-            node_image: "docker.io/kindest/node:v1.22.4@sha256:ca3587e6e545a96c07bf82e2c46503d9ef86fc704f44c17577fca7bcabf5f978"
-          - kubernetes_version: "kubernetes:n-2"
-            node_image: "docker.io/kindest/node:v1.21.2@sha256:9d07ff05e4afefbba983fac311807b3c17a5f36e7061f6cb7e2ba756255b2be4"
-          - config_type: "ConfigmapConfiguration"
-            use_config_crd: "false"
-          - config_type: "ContourConfiguration"
-            use_config_crd: "true"
-
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
@@ -57,12 +34,10 @@ jobs:
           echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
       - name: e2e tests
         env:
-          NODEIMAGE: ${{ matrix.node_image }}
-          USE_CONTOUR_CONFIGURATION_CRD: ${{ matrix.use_config_crd }}
           CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
           CONTOUR_E2E_XDS_SERVER_TYPE: envoy
         run: |
-          make e2e
+          make setup-kind-cluster run-e2e cleanup-kind
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
