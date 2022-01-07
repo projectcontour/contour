@@ -19,7 +19,6 @@ package e2e
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -458,22 +457,6 @@ type EchoResponseBody struct {
 func UsingContourConfigCRD() bool {
 	useContourConfiguration, found := os.LookupEnv("USE_CONTOUR_CONFIGURATION_CRD")
 	return found && useContourConfiguration == "true"
-}
-
-// UseEnvoyDaemonsetDeploymentModel determines if Envoy should be deployed as a Daemonset or a Deployment
-// when running E2E tests. It looks for the env var "USE_ENVOY_DEPLOYMENT". If it exists and is valid, then
-// that value is returned, otherwise true is returned to indicate that the default daemonset model is to be used.
-func UseEnvoyDaemonsetDeploymentModel() bool {
-
-	if useEnvoyDeployment, found := os.LookupEnv("USE_ENVOY_DEPLOYMENT"); found {
-		got, err := strconv.ParseBool(useEnvoyDeployment)
-		if err != nil {
-			fmt.Printf("error trying to parse \"USE_ENVOY_DEPLOYMENT\" env var, defaulting to use Daemonset: %v\n", err)
-			return true
-		}
-		return !got
-	}
-	return true
 }
 
 // HTTPProxyValid returns true if the proxy has a .status.currentStatus
