@@ -623,11 +623,11 @@ func (d *Deployment) DeleteResourcesForLocalContour() error {
 
 	switch d.EnvoyDeploymentMode {
 	case DaemonsetMode:
-		if err := d.ensureDeleted(d.EnvoyDaemonSet); err != nil {
+		if err := d.EnsureDeleted(d.EnvoyDaemonSet); err != nil {
 			return err
 		}
 	case DeploymentMode:
-		if err := d.ensureDeleted(d.EnvoyDeployment); err != nil {
+		if err := d.EnsureDeleted(d.EnvoyDeployment); err != nil {
 			return err
 		}
 	}
