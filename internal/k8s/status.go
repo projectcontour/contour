@@ -151,7 +151,7 @@ type StatusUpdateWriter struct {
 
 // Send sends the given StatusUpdate off to the update channel for writing by the StatusUpdateHandler.
 func (suw *StatusUpdateWriter) Send(update StatusUpdate) {
-	// Non-blocking recieve to see if we should pass along update.
+	// Non-blocking receive to see if we should pass along update.
 	select {
 	case <-suw.enabled:
 		suw.updateChannel <- update
