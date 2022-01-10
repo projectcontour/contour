@@ -62,6 +62,7 @@ func (m StatusMutatorFunc) Mutate(old client.Object) client.Object {
 type StatusUpdateHandler struct {
 	log           logrus.FieldLogger
 	client        client.Client
+	sendUpdates   chan struct{}
 	updateChannel chan StatusUpdate
 }
 
@@ -69,6 +70,7 @@ func NewStatusUpdateHandler(log logrus.FieldLogger, client client.Client) *Statu
 	return &StatusUpdateHandler{
 		log:           log,
 		client:        client,
+		sendUpdates:   make(chan struct{}),
 		updateChannel: make(chan StatusUpdate, 100),
 	}
 }
@@ -109,6 +111,9 @@ func (suh *StatusUpdateHandler) Start(ctx context.Context) error {
 	suh.log.Info("started status update handler")
 	defer suh.log.Info("stopped status update handler")
 
+	// Enable StatusUpdaters to start sending updates to this handler.
+	close(suh.sendUpdates)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -128,6 +133,7 @@ func (suh *StatusUpdateHandler) Start(ctx context.Context) error {
 // Writer retrieves the interface that should be used to write to the StatusUpdateHandler.
 func (suh *StatusUpdateHandler) Writer() StatusUpdater {
 	return &StatusUpdateWriter{
+		enabled:       suh.sendUpdates,
 		updateChannel: suh.updateChannel,
 	}
 }
@@ -139,10 +145,16 @@ type StatusUpdater interface {
 
 // StatusUpdateWriter takes status updates and sends these to the StatusUpdateHandler via a channel.
 type StatusUpdateWriter struct {
+	enabled       <-chan struct{}
 	updateChannel chan<- StatusUpdate
 }
 
 // Send sends the given StatusUpdate off to the update channel for writing by the StatusUpdateHandler.
 func (suw *StatusUpdateWriter) Send(update StatusUpdate) {
-	suw.updateChannel <- update
+	// Non-blocking recieve to see if we should pass along update.
+	select {
+	case <-suw.enabled:
+		suw.updateChannel <- update
+	default:
+	}
 }
