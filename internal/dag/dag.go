@@ -177,6 +177,15 @@ type Redirect struct {
 	// StatusCode is the HTTP response code to
 	// use. Valid options are 301 or 302.
 	StatusCode int
+
+	// Path is the path to swap the url during a redirect.
+	// Valid options start with a `/`.
+	Path string
+
+	// Prefix is the value to swap with the  prefix of the url
+	// during a redirect.
+	// Valid options start with a `/`.
+	Prefix string
 }
 
 // Route defines the properties of a route to a Cluster.

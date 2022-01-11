@@ -24,7 +24,7 @@ import (
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/projectcontour/contour/pkg/config"
@@ -64,7 +64,7 @@ var _ = Describe("Ingress", func() {
 	BeforeEach(func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
-		contourConfig = &config.Parameters{}
+		contourConfig = e2e.DefaultContourConfigFileParams()
 
 		contourConfiguration = e2e.DefaultContourConfiguration()
 

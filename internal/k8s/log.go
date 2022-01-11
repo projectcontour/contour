@@ -17,11 +17,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strconv"
 
-	"github.com/bombsimon/logrusr"
+	"github.com/bombsimon/logrusr/v2"
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	klog "k8s.io/klog/v2"
@@ -77,42 +75,33 @@ func InitLogging(options ...LogOption) {
 		must(p.flags.Set("logtostderr", "false"))
 		must(p.flags.Set("alsologtostderr", "false"))
 
-		klog.SetLogger(&callDepthLogr{
-			Logger: logrusr.NewLogger(p.log),
-		})
+		// Use the LogSink from a logrusr Logger, but wrapped in
+		// an adapter that always returns true for Enabled() since
+		// we rely on klog to do log level filtering.
+		klog.SetLogger(logr.New(&alwaysEnabledLogSink{
+			LogSink: logrusr.New(p.log, logrusr.WithReportCaller()).GetSink(),
+		}))
 	}
 }
 
-type callDepthLogr struct {
-	logr.Logger
-	callDepth int
+type alwaysEnabledLogSink struct {
+	logr.LogSink
 }
 
-func (l *callDepthLogr) WithCallDepth(depth int) logr.Logger {
-	return &callDepthLogr{
-		Logger:    l.Logger,
-		callDepth: depth,
-	}
-}
-
-func (l *callDepthLogr) Info(msg string, keysAndValues ...interface{}) {
-	_, file, line, ok := runtime.Caller(l.callDepth + 1)
+// Satisfy the logr.CallDepthLogSink interface to get location logging.
+func (l *alwaysEnabledLogSink) WithCallDepth(depth int) logr.LogSink {
+	callDepthLogSink, ok := l.LogSink.(logr.CallDepthLogSink)
 	if ok {
-		keysAndValues = append(keysAndValues, "location", fmt.Sprintf("%s:%d", filepath.Base(file), line))
+		return &alwaysEnabledLogSink{
+			LogSink: callDepthLogSink.WithCallDepth(depth),
+		}
 	}
-	l.Logger.Info(msg, keysAndValues...)
-}
 
-func (l *callDepthLogr) Error(err error, msg string, keysAndValues ...interface{}) {
-	_, file, line, ok := runtime.Caller(l.callDepth + 1)
-	if ok {
-		keysAndValues = append(keysAndValues, "location", fmt.Sprintf("%s:%d", filepath.Base(file), line))
-	}
-	l.Logger.Error(err, msg, keysAndValues...)
-}
-
-// Override V and just pass through l since we can rely on klog itself to do log
-// level filtering.
-func (l *callDepthLogr) V(level int) logr.Logger {
 	return l
+}
+
+// Override Enabled to always return true since we rely on klog itself to do log
+// level filtering.
+func (l *alwaysEnabledLogSink) Enabled(level int) bool {
+	return true
 }

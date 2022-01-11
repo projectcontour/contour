@@ -1272,6 +1272,30 @@ func TestRouteRedirect(t *testing.T) {
 				},
 			},
 		},
+		"path specified": {
+			redirect: &dag.Redirect{
+				Path: "/blog",
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
+					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PathRedirect{
+						PathRedirect: "/blog",
+					},
+				},
+			},
+		},
+		"prefix specified": {
+			redirect: &dag.Redirect{
+				Prefix: "/blog",
+			},
+			want: &envoy_route_v3.Route_Redirect{
+				Redirect: &envoy_route_v3.RedirectAction{
+					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PrefixRewrite{
+						PrefixRewrite: "/blog",
+					},
+				},
+			},
+		},
 		"unsupported status code specified": {
 			redirect: &dag.Redirect{
 				StatusCode: 303,
@@ -1286,6 +1310,7 @@ func TestRouteRedirect(t *testing.T) {
 				Scheme:     "https",
 				PortNumber: 8443,
 				StatusCode: 302,
+				Path:       "/blog",
 			},
 			want: &envoy_route_v3.Route_Redirect{
 				Redirect: &envoy_route_v3.RedirectAction{
@@ -1295,6 +1320,9 @@ func TestRouteRedirect(t *testing.T) {
 					},
 					PortRedirect: 8443,
 					ResponseCode: envoy_route_v3.RedirectAction_FOUND,
+					PathRewriteSpecifier: &envoy_route_v3.RedirectAction_PathRedirect{
+						PathRedirect: "/blog",
+					},
 				},
 			},
 		},

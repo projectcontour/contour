@@ -19,7 +19,7 @@ package gateway
 import (
 	"net/http"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/assert"

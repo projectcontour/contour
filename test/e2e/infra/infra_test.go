@@ -22,7 +22,7 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/projectcontour/contour/pkg/config"
@@ -91,7 +91,7 @@ var _ = Describe("Infra", func() {
 	BeforeEach(func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
-		contourConfig = &config.Parameters{}
+		contourConfig = e2e.DefaultContourConfigFileParams()
 
 		// Contour configuration crd, can be modified in nested
 		// BeforeEach.

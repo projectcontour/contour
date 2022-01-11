@@ -17,7 +17,7 @@
 package gateway
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/status"
 	"github.com/projectcontour/contour/test/e2e"

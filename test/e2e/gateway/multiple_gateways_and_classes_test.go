@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/gexec"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
@@ -49,10 +49,9 @@ var _ = Describe("GatewayClass/Gateway admission tests", func() {
 
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
-		contourConfig = &config.Parameters{
-			GatewayConfig: &config.GatewayParameters{
-				ControllerName: controllerName,
-			},
+		contourConfig = e2e.DefaultContourConfigFileParams()
+		contourConfig.GatewayConfig = &config.GatewayParameters{
+			ControllerName: controllerName,
 		}
 
 		// Update contour configuration to point to specified gateway.
