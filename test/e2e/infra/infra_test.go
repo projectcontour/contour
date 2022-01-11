@@ -31,7 +31,7 @@ import (
 )
 
 var (
-	f = e2e.NewFramework(false, e2e.DaemonsetMode)
+	f = e2e.NewFramework(false)
 
 	// Functions called after suite to clean up resources.
 	cleanup []func()
@@ -114,7 +114,7 @@ var _ = Describe("Infra", func() {
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
-		kubectlCmd, err = f.Kubectl.StartKubectlPortForward(19001, 9001, "projectcontour", "daemonset/envoy", additionalContourArgs...)
+		kubectlCmd, err = f.Kubectl.StartKubectlPortForward(19001, 9001, "projectcontour", f.Deployment.EnvoyResourceAndName(), additionalContourArgs...)
 		require.NoError(f.T(), err)
 	})
 

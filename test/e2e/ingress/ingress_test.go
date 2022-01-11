@@ -33,7 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var f = e2e.NewFramework(false, e2e.DaemonsetMode)
+var f = e2e.NewFramework(false)
 
 func TestIngress(t *testing.T) {
 	RegisterFailHandler(Fail)

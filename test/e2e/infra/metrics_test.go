@@ -84,7 +84,7 @@ func testEnvoyMetricsOverHTTPS() {
 		time.Sleep(5 * time.Second)
 
 		// Port-forward for metrics over HTTPS
-		kubectlCmd, err := f.Kubectl.StartKubectlPortForward(18003, 8003, "projectcontour", "daemonset/envoy")
+		kubectlCmd, err := f.Kubectl.StartKubectlPortForward(18003, 8003, "projectcontour", f.Deployment.EnvoyResourceAndName())
 		require.NoError(t, err)
 		defer f.Kubectl.StopKubectlPortForward(kubectlCmd)
 

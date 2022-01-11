@@ -81,7 +81,7 @@ type Framework struct {
 	t ginkgo.GinkgoTInterface
 }
 
-func NewFramework(inClusterTestSuite bool, envoyDeploymentMode EnvoyDeploymentMode) *Framework {
+func NewFramework(inClusterTestSuite bool) *Framework {
 	t := ginkgo.GinkgoT()
 
 	// Deferring GinkgoRecover() provides better error messages in case of panic
@@ -169,6 +169,11 @@ func NewFramework(inClusterTestSuite bool, envoyDeploymentMode EnvoyDeploymentMo
 		var err error
 		contourBin, err = gexec.Build("github.com/projectcontour/contour/cmd/contour")
 		require.NoError(t, err)
+	}
+
+	envoyDeploymentMode := DaemonsetMode
+	if val := os.Getenv("CONTOUR_E2E_ENVOY_DEPLOYMENT_MODE"); val != "" {
+		envoyDeploymentMode = EnvoyDeploymentMode(val)
 	}
 
 	deployment := &Deployment{
