@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gmeasure"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -153,7 +153,7 @@ var _ = Describe("Benchmark", func() {
 											},
 										},
 										ReadinessProbe: &corev1.Probe{
-											Handler: corev1.Handler{
+											ProbeHandler: corev1.ProbeHandler{
 												HTTPGet: &corev1.HTTPGetAction{
 													Path: "/health",
 													Port: intstr.FromInt(3000),
