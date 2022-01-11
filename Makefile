@@ -220,7 +220,8 @@ generate-crd-deepcopy:
 .PHONY: generate-deployment
 generate-deployment:
 	@echo Generating example deployment files ...
-	@./hack/generate-deployment.sh
+	@./hack/generate-deployment.sh deployment
+	@./hack/generate-deployment.sh daemonset
 	@./hack/generate-gateway-deployment.sh
 
 .PHONY: generate-crd-yaml

@@ -81,7 +81,7 @@ type Framework struct {
 	t ginkgo.GinkgoTInterface
 }
 
-func NewFramework(inClusterTestSuite bool) *Framework {
+func NewFramework(inClusterTestSuite bool, envoyDeploymentMode EnvoyDeploymentMode) *Framework {
 	t := ginkgo.GinkgoT()
 
 	// Deferring GinkgoRecover() provides better error messages in case of panic
@@ -172,13 +172,14 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 	}
 
 	deployment := &Deployment{
-		client:           crClient,
-		cmdOutputWriter:  ginkgo.GinkgoWriter,
-		kubeConfig:       kubeConfig,
-		localContourHost: contourHost,
-		localContourPort: contourPort,
-		contourBin:       contourBin,
-		contourImage:     contourImage,
+		client:              crClient,
+		cmdOutputWriter:     ginkgo.GinkgoWriter,
+		kubeConfig:          kubeConfig,
+		localContourHost:    contourHost,
+		localContourPort:    contourPort,
+		contourBin:          contourBin,
+		contourImage:        contourImage,
+		EnvoyDeploymentMode: envoyDeploymentMode,
 	}
 
 	kubectl := &Kubectl{

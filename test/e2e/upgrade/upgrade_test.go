@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	f = e2e.NewFramework(true)
+	f = e2e.NewFramework(true, e2e.DaemonsetMode)
 
 	// Contour version we are upgrading from.
 	contourUpgradeFromVersion string
@@ -108,7 +108,7 @@ var _ = Describe("upgrading Contour", func() {
 
 			By("waiting for envoy daemonset to be updated")
 			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetOutOfDate())
-			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+			require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
 			By("ensuring app is still routable")
 			checkRoutability(appHost)
