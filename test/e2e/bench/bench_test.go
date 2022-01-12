@@ -46,7 +46,7 @@ import (
 )
 
 var (
-	f            = e2e.NewFramework(true)
+	f            = e2e.NewFramework(true, e2e.DaemonsetMode)
 	reportDir    string
 	lbExternalIP string
 	numServices  = 4000
@@ -96,7 +96,7 @@ var _ = BeforeSuite(func() {
 
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
 	require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
-	require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+	require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
 	require.Eventually(f.T(), func() bool {
 		s := &corev1.Service{}
