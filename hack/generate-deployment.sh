@@ -8,8 +8,27 @@ readonly HERE=$(cd "$(dirname "$0")" && pwd)
 readonly REPO=$(cd "${HERE}"/.. && pwd)
 readonly PROGNAME=$(basename "$0")
 
+# Target defines the file which the rendered file will be outputted.
+TARGET=""
+SKIP_FILE=""
 
-readonly TARGET="${REPO}/examples/render/contour.yaml"
+# MODE should be "deployment" or "daemonset"
+readonly MODE="$1"
+
+case $MODE in
+  deployment)
+      TARGET="${REPO}/examples/render/contour-deployment.yaml"
+      SKIP_FILE="*/03-envoy.yaml"
+      ;;
+  daemonset)
+      TARGET="${REPO}/examples/render/contour.yaml"
+      SKIP_FILE="*/03-envoy-deployment.yaml"
+      ;;
+esac
+
+# Files defines the set of source files to render together.
+readonly FILES="examples/contour/*.yaml
+examples/deployment/03-envoy-deployment.yaml"
 
 exec > >(git stripspace >"$TARGET")
 
@@ -20,19 +39,30 @@ cat <<EOF
 # Generated from:
 EOF
 
-(cd "${REPO}" && ls examples/contour/*.yaml) | \
-  awk '{printf "#       %s\n", $0}'
+for f in $FILES; do
 
-echo "#"
+   case $f in
+   $SKIP_FILE)
+      # skip this file
+      ;;
+   *)
+   (ls "$f") | awk '{printf "#       %s\n", $0}'
+      ;;
+    esac
+done
+
 echo
 
 # certgen uses the ':latest' image tag, so it always needs to be pulled. Everything
 # else correctly uses versioned image tags so we should use IfNotPresent.
-for y in "${REPO}/examples/contour/"*.yaml ; do
+for y in $FILES ; do
     echo # Ensure we have at least one newline between joined fragments.
     case $y in
     */02-job-certgen.yaml)
         cat "$y"
+        ;;
+    $SKIP_FILE)
+       # skip this file
         ;;
     *)
         sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < "$y"

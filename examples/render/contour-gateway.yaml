@@ -15,7 +15,6 @@
 #       examples/gateway/00-crds.yaml
 #       examples/gateway/01-gatewayclass.yaml
 #       examples/gateway/02-gateway.yaml
-#
 
 ---
 apiVersion: v1

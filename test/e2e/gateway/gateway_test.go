@@ -35,7 +35,7 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-var f = e2e.NewFramework(false)
+var f = e2e.NewFramework(false, e2e.DaemonsetMode)
 
 func TestGatewayAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -121,7 +121,7 @@ var _ = Describe("Gateway API", func() {
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
 		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassValid)
 		f.CreateGatewayAndWaitFor(contourGateway, gatewayValid)

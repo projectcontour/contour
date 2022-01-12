@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var f = e2e.NewFramework(true)
+var f = e2e.NewFramework(true, e2e.DaemonsetMode)
 
 func TestIncluster(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -71,7 +71,7 @@ var _ = Describe("Incluster", func() {
 		require.NoError(f.T(), f.Client.Create(context.TODO(), contourConfig))
 		require.NoError(f.T(), f.Deployment.EnsureContourDeployment())
 		require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 	})
 
 	AfterEach(func() {

@@ -11,7 +11,7 @@
 #       examples/contour/02-service-contour.yaml
 #       examples/contour/02-service-envoy.yaml
 #       examples/contour/03-contour.yaml
-#       examples/contour/03-envoy.yaml
+#       examples/deployment/03-envoy-deployment.yaml
 
 ---
 apiVersion: v1
@@ -5149,17 +5149,20 @@ spec:
 
 ---
 apiVersion: apps/v1
-kind: DaemonSet
+kind: Deployment
 metadata:
   labels:
     app: envoy
   name: envoy
   namespace: projectcontour
 spec:
-  updateStrategy:
+  replicas: 2
+  strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 10%
+      # This value of maxSurge means that during a rolling update
+      # the new ReplicaSet will be created first.
+      maxSurge: 10%
   selector:
     matchLabels:
       app: envoy
@@ -5172,110 +5175,120 @@ spec:
       labels:
         app: envoy
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - envoy
+              topologyKey: "kubernetes.io/hostname"
       containers:
-      - command:
-        - /bin/contour
-        args:
-          - envoy
-          - shutdown-manager
-        image: ghcr.io/projectcontour/contour:main
-        imagePullPolicy: IfNotPresent
-        lifecycle:
-          preStop:
-            exec:
-              command:
-                - /bin/contour
-                - envoy
-                - shutdown
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8090
-          initialDelaySeconds: 3
-          periodSeconds: 10
-        name: shutdown-manager
-        volumeMounts:
-          - name: envoy-admin
-            mountPath: /admin
-      - args:
-        - -c
-        - /config/envoy.json
-        - --service-cluster $(CONTOUR_NAMESPACE)
-        - --service-node $(ENVOY_POD_NAME)
-        - --log-level info
-        command:
-        - envoy
-        image: docker.io/envoyproxy/envoy:v1.20.1
-        imagePullPolicy: IfNotPresent
-        name: envoy
-        env:
-        - name: CONTOUR_NAMESPACE
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-        - name: ENVOY_POD_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.name
-        ports:
-        - containerPort: 8080
-          hostPort: 80
-          name: http
-          protocol: TCP
-        - containerPort: 8443
-          hostPort: 443
-          name: https
-          protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8002
-          initialDelaySeconds: 3
-          periodSeconds: 4
-        volumeMounts:
-          - name: envoy-config
-            mountPath: /config
-            readOnly: true
-          - name: envoycert
-            mountPath: /certs
-            readOnly: true
-          - name: envoy-admin
-            mountPath: /admin
-        lifecycle:
-          preStop:
+        - command:
+            - /bin/contour
+          args:
+            - envoy
+            - shutdown-manager
+          image: ghcr.io/projectcontour/contour:main
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/contour
+                  - envoy
+                  - shutdown
+          livenessProbe:
             httpGet:
-              path: /shutdown
+              path: /healthz
               port: 8090
-              scheme: HTTP
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          name: shutdown-manager
+          volumeMounts:
+            - name: envoy-admin
+              mountPath: /admin
+        - args:
+            - -c
+            - /config/envoy.json
+            - --service-cluster $(CONTOUR_NAMESPACE)
+            - --service-node $(ENVOY_POD_NAME)
+            - --log-level info
+          command:
+            - envoy
+          image: docker.io/envoyproxy/envoy:v1.19.1
+          imagePullPolicy: IfNotPresent
+          name: envoy
+          env:
+            - name: CONTOUR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: ENVOY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: 8080
+              hostPort: 80
+              name: http
+              protocol: TCP
+            - containerPort: 8443
+              hostPort: 443
+              name: https
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8002
+            initialDelaySeconds: 3
+            periodSeconds: 4
+          volumeMounts:
+            - name: envoy-config
+              mountPath: /config
+              readOnly: true
+            - name: envoycert
+              mountPath: /certs
+              readOnly: true
+            - name: envoy-admin
+              mountPath: /admin
+          lifecycle:
+            preStop:
+              httpGet:
+                path: /shutdown
+                port: 8090
+                scheme: HTTP
       initContainers:
-      - args:
-        - bootstrap
-        - /config/envoy.json
-        - --xds-address=contour
-        - --xds-port=8001
-        - --xds-resource-version=v3
-        - --resources-dir=/config/resources
-        - --envoy-cafile=/certs/ca.crt
-        - --envoy-cert-file=/certs/tls.crt
-        - --envoy-key-file=/certs/tls.key
-        command:
-        - contour
-        image: ghcr.io/projectcontour/contour:main
-        imagePullPolicy: IfNotPresent
-        name: envoy-initconfig
-        volumeMounts:
-        - name: envoy-config
-          mountPath: /config
-        - name: envoycert
-          mountPath: /certs
-          readOnly: true
-        env:
-        - name: CONTOUR_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
+        - args:
+            - bootstrap
+            - /config/envoy.json
+            - --xds-address=contour
+            - --xds-port=8001
+            - --xds-resource-version=v3
+            - --resources-dir=/config/resources
+            - --envoy-cafile=/certs/ca.crt
+            - --envoy-cert-file=/certs/tls.crt
+            - --envoy-key-file=/certs/tls.key
+          command:
+            - contour
+          image: ghcr.io/projectcontour/contour:main
+          imagePullPolicy: IfNotPresent
+          name: envoy-initconfig
+          volumeMounts:
+            - name: envoy-config
+              mountPath: /config
+            - name: envoycert
+              mountPath: /certs
+              readOnly: true
+          env:
+            - name: CONTOUR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
       automountServiceAccountToken: false
       serviceAccountName: envoy
       terminationGracePeriodSeconds: 300

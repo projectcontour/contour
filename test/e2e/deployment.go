@@ -46,7 +46,16 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apimachinery_util_yaml "k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+// EnvoyDeploymentMode determines how Envoy is deployed (daemonset or deployment)
+type EnvoyDeploymentMode string
+
+const (
+	DaemonsetMode  EnvoyDeploymentMode = "daemonset"
+	DeploymentMode EnvoyDeploymentMode = "deployment"
 )
 
 type Deployment struct {
@@ -68,6 +77,9 @@ type Deployment struct {
 	// Contour image to use in in-cluster deployment.
 	contourImage string
 
+	// EnvoyDeploymentMode determines how Envoy is deployed (daemonset or deployment)
+	EnvoyDeploymentMode
+
 	Namespace                 *v1.Namespace
 	ContourServiceAccount     *v1.ServiceAccount
 	EnvoyServiceAccount       *v1.ServiceAccount
@@ -87,6 +99,7 @@ type Deployment struct {
 	EnvoyService              *v1.Service
 	ContourDeployment         *apps_v1.Deployment
 	EnvoyDaemonSet            *apps_v1.DaemonSet
+	EnvoyDeployment           *apps_v1.Deployment
 
 	// Optional volumes that will be attached to Envoy daemonset.
 	EnvoyExtraVolumes      []v1.Volume
@@ -107,18 +120,26 @@ func (d *Deployment) UnmarshalResources() error {
 	if !ok {
 		return errors.New("could not get path to this source file (test/e2e/deployment.go)")
 	}
-	renderedManifestPath := filepath.Join(filepath.Dir(thisFile), "..", "..", "examples", "render", "contour.yaml")
-	file, err := os.Open(renderedManifestPath)
+	renderedDaemonsetManifestPath := filepath.Join(filepath.Dir(thisFile), "..", "..", "examples", "render", "contour.yaml")
+	daemonsetFile, err := os.Open(renderedDaemonsetManifestPath)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	decoder := apimachinery_util_yaml.NewYAMLToJSONDecoder(file)
+	defer daemonsetFile.Close()
+	decoder := apimachinery_util_yaml.NewYAMLToJSONDecoder(daemonsetFile)
 
 	// Discard empty document.
 	if err := decoder.Decode(new(struct{})); err != nil {
 		return err
 	}
+
+	renderedDeploymentManifestPath := filepath.Join(filepath.Dir(thisFile), "..", "..", "examples", "deployment", "03-envoy-deployment.yaml")
+	deploymentFile, err := os.Open(renderedDeploymentManifestPath)
+	if err != nil {
+		return err
+	}
+	defer deploymentFile.Close()
+	decoderDeployment := apimachinery_util_yaml.NewYAMLToJSONDecoder(deploymentFile)
 
 	d.Namespace = new(v1.Namespace)
 	d.ContourServiceAccount = new(v1.ServiceAccount)
@@ -139,6 +160,7 @@ func (d *Deployment) UnmarshalResources() error {
 	d.EnvoyService = new(v1.Service)
 	d.ContourDeployment = new(apps_v1.Deployment)
 	d.EnvoyDaemonSet = new(apps_v1.DaemonSet)
+	d.EnvoyDeployment = new(apps_v1.Deployment)
 	objects := []interface{}{
 		d.Namespace,
 		d.ContourServiceAccount,
@@ -158,10 +180,20 @@ func (d *Deployment) UnmarshalResources() error {
 		d.ContourService,
 		d.EnvoyService,
 		d.ContourDeployment,
-		d.EnvoyDaemonSet,
 	}
 	for _, o := range objects {
 		if err := decoder.Decode(o); err != nil {
+			return err
+		}
+	}
+
+	switch d.EnvoyDeploymentMode {
+	case DeploymentMode:
+		if err := decoderDeployment.Decode(d.EnvoyDeployment); err != nil {
+			return err
+		}
+	case DaemonsetMode:
+		if err := decoder.Decode(d.EnvoyDaemonSet); err != nil {
 			return err
 		}
 	}
@@ -347,6 +379,10 @@ func (d *Deployment) EnsureEnvoyDaemonSet() error {
 	return d.ensureResource(d.EnvoyDaemonSet, new(apps_v1.DaemonSet))
 }
 
+func (d *Deployment) EnsureEnvoyDeployment() error {
+	return d.ensureResource(d.EnvoyDeployment, new(apps_v1.Deployment))
+}
+
 // Wait for Envoy daemonset update to go out of date due to the
 // update propagating. Possibly needed before calling WaitForEnvoyDaemonSetUpdated
 // to ensure that does not pass without waiting for update to propagate.
@@ -361,7 +397,14 @@ func (d *Deployment) WaitForEnvoyDaemonSetOutOfDate() error {
 	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
 }
 
-func (d *Deployment) WaitForEnvoyDaemonSetUpdated() error {
+func (d *Deployment) WaitForEnvoyUpdated() error {
+	if d.EnvoyDeploymentMode == DaemonsetMode {
+		return d.waitForEnvoyDaemonSetUpdated()
+	}
+	return d.waitForEnvoyDeploymentUpdated()
+}
+
+func (d *Deployment) waitForEnvoyDaemonSetUpdated() error {
 	daemonSetUpdated := func() (bool, error) {
 		tempDS := new(apps_v1.DaemonSet)
 		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDaemonSet), tempDS); err != nil {
@@ -372,6 +415,17 @@ func (d *Deployment) WaitForEnvoyDaemonSetUpdated() error {
 			tempDS.Status.UpdatedNumberScheduled == tempDS.Status.DesiredNumberScheduled, nil
 	}
 	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, daemonSetUpdated)
+}
+
+func (d *Deployment) waitForEnvoyDeploymentUpdated() error {
+	deploymentUpdated := func() (bool, error) {
+		tempDeploy := new(apps_v1.Deployment)
+		if err := d.client.Get(context.TODO(), client.ObjectKeyFromObject(d.EnvoyDeployment), tempDeploy); err != nil {
+			return false, err
+		}
+		return tempDeploy.Status.UnavailableReplicas == 0, nil
+	}
+	return wait.PollImmediate(time.Millisecond*50, time.Minute*3, deploymentUpdated)
 }
 
 func (d *Deployment) EnsureRateLimitResources(namespace string, configContents string) error {
@@ -490,8 +544,22 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		return err
 	}
 
+	if d.EnvoyDeploymentMode == DaemonsetMode {
+		d.EnvoyDaemonSet.Spec.Template = d.mutatePodTemplate(d.EnvoyDaemonSet.Spec.Template)
+		return d.EnsureEnvoyDaemonSet()
+	}
+
+	d.EnvoyDeployment.Spec.Template = d.mutatePodTemplate(d.EnvoyDeployment.Spec.Template)
+
+	// Set the ReplicaCount=1
+	d.EnvoyDeployment.Spec.Replicas = pointer.Int32(1)
+
+	return d.EnsureEnvoyDeployment()
+}
+
+func (d *Deployment) mutatePodTemplate(pts v1.PodTemplateSpec) v1.PodTemplateSpec {
 	// Add bootstrap ConfigMap as volume and add envoy admin volume on Envoy pods (also removes cert volume).
-	d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = []v1.Volume{{
+	pts.Spec.Volumes = []v1.Volume{{
 		Name: "envoy-config",
 		VolumeSource: v1.VolumeSource{
 			ConfigMap: &v1.ConfigMapVolumeSource{
@@ -508,29 +576,30 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 	}}
 
 	// Remove cert volume mount.
-	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{
-		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[0], // Config mount
-		d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts[2], // Admin mount
+	pts.Spec.Containers[1].VolumeMounts = []v1.VolumeMount{
+		pts.Spec.Containers[1].VolumeMounts[0], // Config mount
+		pts.Spec.Containers[1].VolumeMounts[2], // Admin mount
 	}
 
-	d.EnvoyDaemonSet.Spec.Template.Spec.Volumes = append(d.EnvoyDaemonSet.Spec.Template.Spec.Volumes, d.EnvoyExtraVolumes...)
-	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1].VolumeMounts, d.EnvoyExtraVolumeMounts...)
+	pts.Spec.Volumes = append(pts.Spec.Volumes, d.EnvoyExtraVolumes...)
+	pts.Spec.Containers[1].VolumeMounts = append(pts.Spec.Containers[1].VolumeMounts, d.EnvoyExtraVolumeMounts...)
 
 	// Remove init container.
-	d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers = nil
+	pts.Spec.InitContainers = nil
 
 	// Remove shutdown-manager container.
-	d.EnvoyDaemonSet.Spec.Template.Spec.Containers = d.EnvoyDaemonSet.Spec.Template.Spec.Containers[1:]
+	pts.Spec.Containers = pts.Spec.Containers[1:]
 
 	// Expose the metrics & admin interfaces via host port to test from outside the kind cluster.
-	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Ports,
+	pts.Spec.Containers[0].Ports = append(pts.Spec.Containers[0].Ports,
 		v1.ContainerPort{
 			Name:          "metrics",
 			ContainerPort: 8002,
 			HostPort:      8002,
 			Protocol:      v1.ProtocolTCP,
 		})
-	return d.EnsureEnvoyDaemonSet()
+
+	return pts
 }
 
 // DeleteResourcesForLocalContour ensures deletion of all resources
@@ -540,7 +609,6 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 // couple minutes to complete.
 func (d *Deployment) DeleteResourcesForLocalContour() error {
 	for _, r := range []client.Object{
-		d.EnvoyDaemonSet,
 		d.ContourConfigMap,
 		d.EnvoyService,
 		d.TLSCertDelegationCRD,
@@ -549,6 +617,17 @@ func (d *Deployment) DeleteResourcesForLocalContour() error {
 		d.EnvoyServiceAccount,
 	} {
 		if err := d.EnsureDeleted(r); err != nil {
+			return err
+		}
+	}
+
+	switch d.EnvoyDeploymentMode {
+	case DaemonsetMode:
+		if err := d.EnsureDeleted(d.EnvoyDaemonSet); err != nil {
+			return err
+		}
+	case DeploymentMode:
+		if err := d.EnsureDeleted(d.EnvoyDeployment); err != nil {
 			return err
 		}
 	}

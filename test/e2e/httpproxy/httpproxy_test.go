@@ -34,7 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var f = e2e.NewFramework(false)
+var f = e2e.NewFramework(false, e2e.DaemonsetMode)
 
 func TestHTTPProxy(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -97,7 +97,7 @@ var _ = Describe("HTTPProxy", func() {
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 	})
 
 	AfterEach(func() {
