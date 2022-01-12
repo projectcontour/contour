@@ -2938,7 +2938,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1alpha2.HTTPRequestRedirectFilter{
 									Scheme:     pointer.String("https"),
-									Hostname:   gatewayapi.ListenerHostname("envoyproxy.io"),
+									Hostname:   gatewayapi.PreciseHostname("envoyproxy.io"),
 									Port:       gatewayapi.PortNumPtr(443),
 									StatusCode: pointer.Int(301),
 								},
@@ -2991,7 +2991,7 @@ func TestDAGInsertGatewayAPI(t *testing.T) {
 								Type: gatewayapi_v1alpha2.HTTPRouteFilterRequestRedirect,
 								RequestRedirect: &gatewayapi_v1alpha2.HTTPRequestRedirectFilter{
 									Scheme:     pointer.String("https"),
-									Hostname:   gatewayapi.ListenerHostname("envoyproxy.io"),
+									Hostname:   gatewayapi.PreciseHostname("envoyproxy.io"),
 									Port:       gatewayapi.PortNumPtr(443),
 									StatusCode: pointer.Int(301),
 								},
