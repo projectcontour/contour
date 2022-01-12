@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -45,8 +46,10 @@ import (
 )
 
 var (
-	f         = e2e.NewFramework(true)
-	reportDir string
+	f            = e2e.NewFramework(true)
+	reportDir    string
+	lbExternalIP string
+	numServices  = 4000
 )
 
 func TestBench(t *testing.T) {
@@ -58,6 +61,13 @@ var _ = BeforeSuite(func() {
 	var found bool
 	reportDir, found = os.LookupEnv("CONTOUR_BENCH_REPORT_DIR")
 	require.True(f.T(), found, "Must provide CONTOUR_BENCH_REPORT_DIR env var")
+
+	numServicesStr, found := os.LookupEnv("CONTOUR_BENCH_NUM_SERVICES")
+	if found {
+		var err error
+		numServices, err = strconv.Atoi(numServicesStr)
+		require.NoError(f.T(), err, "failed to parse CONTOUR_BENCH_NUM_SERVICES as integer")
+	}
 
 	// Add node selectors to Contour and Envoy resources.
 	f.Deployment.ContourDeployment.Spec.Template.Spec.NodeSelector = map[string]string{
@@ -87,6 +97,18 @@ var _ = BeforeSuite(func() {
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(true))
 	require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
 	require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+
+	require.Eventually(f.T(), func() bool {
+		s := &corev1.Service{}
+		if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(f.Deployment.EnvoyService), s); err != nil {
+			return false
+		}
+		if len(s.Status.LoadBalancer.Ingress) == 0 {
+			return false
+		}
+		lbExternalIP = s.Status.LoadBalancer.Ingress[0].IP
+		return true
+	}, f.RetryTimeout, f.RetryInterval)
 })
 
 var _ = AfterSuite(func() {
@@ -96,9 +118,7 @@ var _ = AfterSuite(func() {
 var _ = Describe("Benchmark", func() {
 	f.NamespacedTest("sequential-service-creation", func(namespace string) {
 		Context("with many services created sequentially", func() {
-			const numServices = 4000
-
-			deployApp := func(name string) string {
+			deployApp := func(name string) {
 				deployment := &appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: namespace,
@@ -189,37 +209,14 @@ var _ = Describe("Benchmark", func() {
 				// Wait for deployment availability before we continue.
 				require.Eventually(f.T(), func() bool {
 					d := &appsv1.Deployment{}
-					require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(deployment), d))
+					if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(deployment), d); err != nil {
+						return false
+					}
 					for _, c := range d.Status.Conditions {
 						return c.Type == appsv1.DeploymentAvailable && c.Status == corev1.ConditionTrue
 					}
 					return false
 				}, time.Minute*2, f.RetryInterval)
-
-				pods := &corev1.PodList{}
-				labelSelector := &client.ListOptions{
-					LabelSelector: labels.SelectorFromSet(deployment.Spec.Selector.MatchLabels),
-					Namespace:     namespace,
-				}
-				require.NoError(f.T(), f.Client.List(context.TODO(), pods, labelSelector))
-				require.Len(f.T(), pods.Items, 1)
-
-				node := &corev1.Node{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: pods.Items[0].Spec.NodeName,
-					},
-				}
-				require.NoError(f.T(), f.Client.Get(context.TODO(), client.ObjectKeyFromObject(node), node))
-
-				externalIP := ""
-				for _, a := range node.Status.Addresses {
-					if a.Type == corev1.NodeExternalIP {
-						externalIP = a.Address
-					}
-				}
-				require.NotEmpty(f.T(), externalIP, "did not find an external ip for app")
-
-				return externalIP
 			}
 
 			deployHTTPProxy := func(name string) {
@@ -252,6 +249,33 @@ var _ = Describe("Benchmark", func() {
 			BeforeEach(func() {
 				experiment = gmeasure.NewExperiment("sequential-service-creation")
 				AddReportEntry(experiment.Name, experiment)
+
+				// Warm up Envoy on each worker node to ensure no outliers.
+				deployApp("warmup")
+				deployHTTPProxy("warmup")
+				nodes := &corev1.NodeList{}
+				labelSelector := &client.ListOptions{
+					LabelSelector: labels.SelectorFromSet(f.Deployment.EnvoyDaemonSet.Spec.Template.Spec.NodeSelector),
+				}
+				require.NoError(f.T(), f.Client.List(context.Background(), nodes, labelSelector))
+
+				for _, node := range nodes.Items {
+					nodeExternalIP := ""
+					for _, a := range node.Status.Addresses {
+						if a.Type == corev1.NodeExternalIP {
+							nodeExternalIP = a.Address
+						}
+					}
+					require.NotEmpty(f.T(), nodeExternalIP, "did not find an external ip for node %s", node.Name)
+
+					res, ok := f.HTTP.RequestUntil(&e2e.HTTPRequestOpts{
+						Host:        "warmup.projectcontour.io",
+						OverrideURL: "http://" + nodeExternalIP,
+						Condition:   e2e.HasStatusCode(200),
+					})
+					require.NotNil(f.T(), res, "request never succeeded")
+					require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
+				}
 			})
 
 			AfterEach(func() {
@@ -261,15 +285,17 @@ var _ = Describe("Benchmark", func() {
 			})
 
 			Specify("time to service available does not increase drastically", func() {
-				const maxRetries = 500
+				const (
+					maxRetries = 500
+				)
 
 				client := &http.Client{
-					Timeout: time.Millisecond * 250,
+					Timeout: time.Millisecond * 500,
 				}
 				for i := 0; i < numServices; i++ {
 					appName := fmt.Sprintf("echo-%d", i)
-					externalIP := deployApp(appName)
-					req, err := http.NewRequest("GET", "http://"+externalIP, nil)
+					deployApp(appName)
+					req, err := http.NewRequest("GET", "http://"+lbExternalIP, nil)
 					require.NoError(f.T(), err, "error creating HTTP request")
 					req.Host = appName + ".projectcontour.io"
 
@@ -287,6 +313,7 @@ var _ = Describe("Benchmark", func() {
 								available = true
 							}
 							retries++
+							time.Sleep(time.Millisecond * 100)
 						}
 					}, gmeasure.Annotation(appName))
 				}
