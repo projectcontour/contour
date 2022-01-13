@@ -57,6 +57,11 @@ func ListenerHostname(host string) *gatewayapi_v1alpha2.Hostname {
 	return &h
 }
 
+func PreciseHostname(host string) *gatewayapi_v1alpha2.PreciseHostname {
+	h := gatewayapi_v1alpha2.PreciseHostname(host)
+	return &h
+}
+
 func CertificateRef(name, namespace string) *gatewayapi_v1alpha2.SecretObjectReference {
 	ref := &gatewayapi_v1alpha2.SecretObjectReference{
 		Group: GroupPtr(""),
