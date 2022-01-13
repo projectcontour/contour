@@ -5,7 +5,7 @@ The Contour Ingress controller is a collaboration between:
 * Envoy, which provides the high performance reverse proxy.
 * Contour, which acts as a management server for Envoy and provides it with configuration.
 
-These containers are deployed separately, Contour as a Deployment and Envoy as a Kubernetes Daemonset or Kubernetes Deployment, although other configurations are possible.
+These containers are deployed separately, Contour as a Deployment and Envoy as a Kubernetes Daemonset or Deployment, although other configurations are possible.
 
 In the Envoy Pods, Contour runs as an initcontainer in `bootstrap` mode and writes an Envoy bootstrap configuration to a temporary volume.
 This volume is passed to the Envoy container and directs Envoy to treat Contour as its [management server][1].
@@ -15,7 +15,7 @@ After initialization is complete, the Envoy container starts, retrieves the boot
 Envoy will gracefully retry if the management server is unavailable, which removes any container startup ordering issues.
 
 Contour is a client of the Kubernetes API.
-Contour watches Ingress, HTTPProxy, GatewayAPI, Secret, Service, and Endpoint objects, and acts as the management server for its Envoy sibling by translating its cache of objects into the relevant JSON stanzas: Service objects for CDS, Ingress for RDS, Endpoint objects for EDS, and so on).
+Contour watches Ingress, HTTPProxy, Gateway API, Secret, Service, and Endpoint objects, and acts as the management server for its Envoy sibling by translating its cache of objects into the relevant JSON stanzas: Service objects for CDS, Ingress for RDS, Endpoint objects for EDS, and so on).
 
 The transfer of information from Kubernetes to Contour is by watching the Kubernetes API utilizing [controller-runtime][4] primitives.
 
@@ -42,7 +42,7 @@ The following API objects are watched:
 - Secrets
 - Ingress
 - HTTPProxy
-- GatewayAPI (Optional)
+- Gateway API (Optional)
 
 ### Contour Deployment
 
@@ -57,6 +57,7 @@ Envoy can be deployed in two different models, as a Kubernetes Daemonset or as a
 Daemonset is the standard deployment model where a single instance of Envoy is deployed per Kubernetes Node.
 This allows for simple Envoy pod distribution across the cluster as well as being able to expose Envoy using `hostPorts` to improve network performance. 
 One potential downside of this deployment model is when a node is removed from the cluster (e.g. on a cluster scale down, etc) then the configured `preStop` hooks are not available so connections can be dropped.
+This is a limitation that applies to any Daemonset in Kubernetes.
 
 An alternative Envoy deployment model is utilizing a Kubernetes Deployment with a configured `podAntiAffinity` which attempts to mirror the Daemonset deployment model.
 A benefit of this model compared to the Daemonset version is when a node is removed from the cluster, the proper shutdown events are available so connections can be cleanly drained from Envoy before terminating.
