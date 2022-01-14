@@ -75,7 +75,7 @@ func (p *IngressProcessor) Run(dag *DAG, source *KubernetesCache) {
 func (p *IngressProcessor) computeSecureVirtualhosts() {
 	for _, ing := range p.source.ingresses {
 		for _, tls := range ing.Spec.TLS {
-			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(ing.GetNamespace()))
+			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DelegatedByAnnotationNamespace(ing), k8s.DefaultNamespace(ing.GetNamespace()))
 			sec, err := p.source.LookupSecret(secretName, validSecret)
 			if err != nil {
 				p.WithError(err).
