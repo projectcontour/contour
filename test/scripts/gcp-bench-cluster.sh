@@ -28,9 +28,9 @@ function deploy() {
 
   # Enable system and workload monitoring to enable contour/envoy prometheus
   # endpoints.
-  # gcloud beta container clusters update ${CONTOUR_BENCH_CLUSTER_NAME} \
-  #   --zone=${CONTOUR_BENCH_CLUSTER_ZONE} \
-  #   --monitoring=SYSTEM,WORKLOAD
+  gcloud beta container clusters update ${CONTOUR_BENCH_CLUSTER_NAME} \
+    --zone=${CONTOUR_BENCH_CLUSTER_ZONE} \
+    --monitoring=SYSTEM,WORKLOAD
 
   gcloud container clusters get-credentials ${CONTOUR_BENCH_CLUSTER_NAME} --zone=${CONTOUR_BENCH_CLUSTER_ZONE}
 
