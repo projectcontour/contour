@@ -5318,7 +5318,7 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.controller
+    - jsonPath: .spec.controllerName
       name: Controller
       type: string
     - jsonPath: .metadata.creationTimestamp
@@ -6690,7 +6690,7 @@ spec:
                                         of the request is used. \n Support: Core"
                                       maxLength: 253
                                       minLength: 1
-                                      pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                       type: string
                                     port:
                                       description: "Port is the port to be used in
@@ -7063,7 +7063,7 @@ spec:
                                   \n Support: Core"
                                 maxLength: 253
                                 minLength: 1
-                                pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                                 type: string
                               port:
                                 description: "Port is the port to be used in the value
@@ -7609,6 +7609,7 @@ spec:
                   required:
                   - group
                   - kind
+                  - namespace
                   type: object
                 maxItems: 16
                 minItems: 1
