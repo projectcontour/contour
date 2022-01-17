@@ -36,12 +36,12 @@ func NamespacedNameOf(obj metav1.Object) types.NamespacedName {
 	return name
 }
 
-// DelegatedByAnnotationNamespace can be used with NamespacedNameFrom to set the
-// namespace for a resource name from the tls delegation annotation
-func DelegatedByAnnotationNamespace(ing *networking_v1.Ingress) func(name *types.NamespacedName) {
+// TLSCertAnnotationNamespace can be used with NamespacedNameFrom to set the secret namespace
+// from the "projectcontour.io/tls-cert-namespace" annotation
+func TLSCertAnnotationNamespace(ing *networking_v1.Ingress) func(name *types.NamespacedName) {
 	return func(name *types.NamespacedName) {
 		if name.Namespace == "" {
-			name.Namespace = annotation.TLSDelegationNamespace(ing)
+			name.Namespace = annotation.TLSCertNamespace(ing)
 		}
 	}
 }

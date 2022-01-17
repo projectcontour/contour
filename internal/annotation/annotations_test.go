@@ -293,7 +293,7 @@ func TestWebsocketRoutes(t *testing.T) {
 	}
 }
 
-func TestTLSDelegationNamespace(t *testing.T) {
+func TestTLSCertNamespace(t *testing.T) {
 	tests := map[string]struct {
 		a    *networking_v1.Ingress
 		want string
@@ -310,7 +310,7 @@ func TestTLSDelegationNamespace(t *testing.T) {
 			a: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"projectcontour.io/tls-delegation-namespace": "",
+						"projectcontour.io/tls-cert-namespace": "",
 					},
 				},
 			},
@@ -320,7 +320,7 @@ func TestTLSDelegationNamespace(t *testing.T) {
 			a: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						"projectcontour.io/tls-delegation-namespace": "namespace-with-cert",
+						"projectcontour.io/tls-cert-namespace": "namespace-with-cert",
 					},
 				},
 			},
@@ -330,7 +330,7 @@ func TestTLSDelegationNamespace(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := TLSDelegationNamespace(tc.a)
+			got := TLSCertNamespace(tc.a)
 			assert.Equal(t, tc.want, got)
 		})
 	}
