@@ -4745,6 +4745,27 @@ func TestDAGInsert(t *testing.T) {
 		},
 	}
 
+	// i18V1 is  use secret from another namespace using annotation projectcontour.io/tls-cert-namespace
+	i18V1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tls-from-other-ns-annotation",
+			Namespace: "default",
+			Annotations: map[string]string{
+				"projectcontour.io/tls-cert-namespace": sec4.Namespace,
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"kuard.example.com"},
+				SecretName: sec4.Namespace + "/" + sec4.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host:             "kuard.example.com",
+				IngressRuleValue: ingressrulev1value(backendv1("kuard", intstr.FromInt(8080))),
+			}},
+		},
+	}
+
 	iPathMatchTypesV1 := &networking_v1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "pathmatchtypes",
@@ -10233,6 +10254,57 @@ func TestDAGInsert(t *testing.T) {
 					Port: 80,
 					VirtualHosts: virtualhosts(
 						virtualhost("example.com", prefixroute("/", service(s2a))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert service, secret, then ingress w/ tls and delegation annotation (missing delegation)": {
+			objs: []interface{}{
+				s1,
+				sec4,
+				i18V1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+					),
+				},
+			),
+		},
+		"ingressv1: insert service, secret, delegation, then ingress w/ tls and delegation annotation": {
+			objs: []interface{}{
+				s1,
+				sec4,
+				&contour_api_v1.TLSCertificateDelegation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "CertDelagation",
+						Namespace: sec4.Namespace,
+					},
+					Spec: contour_api_v1.TLSCertificateDelegationSpec{
+						Delegations: []contour_api_v1.CertificateDelegation{{
+							SecretName:       sec4.Name,
+							TargetNamespaces: []string{"*"},
+						}},
+					},
+				},
+				i18V1,
+			},
+			want: listeners(
+				&Listener{
+					Name: HTTP_LISTENER_NAME,
+					Port: 80,
+					VirtualHosts: virtualhosts(
+						virtualhost("kuard.example.com", prefixroute("/", service(s1))),
+					),
+				},
+				&Listener{
+					Name: HTTPS_LISTENER_NAME,
+					Port: 443,
+					SecureVirtualHosts: securevirtualhosts(
+						securevirtualhost("kuard.example.com", sec4, prefixroute("/", service(s1))),
 					),
 				},
 			),
