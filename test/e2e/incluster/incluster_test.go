@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var f = e2e.NewFramework(true, e2e.DaemonsetMode)
+var f = e2e.NewFramework(true)
 
 func TestIncluster(t *testing.T) {
 	RegisterFailHandler(Fail)

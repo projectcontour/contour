@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	f = e2e.NewFramework(true, e2e.DaemonsetMode)
+	f = e2e.NewFramework(true)
 
 	// Contour version we are upgrading from.
 	contourUpgradeFromVersion string
