@@ -4757,7 +4757,7 @@ func TestDAGInsert(t *testing.T) {
 		Spec: networking_v1.IngressSpec{
 			TLS: []networking_v1.IngressTLS{{
 				Hosts:      []string{"kuard.example.com"},
-				SecretName: sec4.Namespace + "/" + sec4.Name,
+				SecretName: sec4.Name,
 			}},
 			Rules: []networking_v1.IngressRule{{
 				Host:             "kuard.example.com",
