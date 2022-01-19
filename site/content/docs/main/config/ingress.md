@@ -71,6 +71,12 @@ In order to inform users of the address the Services their Ingress resources can
 If `contour serve` is run with the `--ingress-status-address` flag, Contour will use the provided value to set the Ingress status address accordingly.
 If not provided, Contour will use the address of the Envoy service using the passed in `--envoy-service-name` and `--envoy-service-namespace` flags.
 
+## Header Manipulation
+
+The Ingress resource does not allow adding or removing HTTP headers on requests or responses.
+However, Contour does allow users to set a global HTTP header [policy configuration][9] which can be optionally applied to configuration generated from Ingress resources.
+Contour enables this behavior with the `applyToIngress` boolean field (set to `true` to enable).
+
 [0]: https://github.com/kubernetes-sigs/ingress-controller-conformance
 [1]: /resources/compatibility-matrix/
 [2]: https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-class
@@ -80,3 +86,4 @@ If not provided, Contour will use the address of the Envoy service using the pas
 [6]: https://kubernetes.io/docs/concepts/services-networking/ingress/#path-types
 [7]: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
 [8]: /docs/{{< param version >}}/config/tls-delegation/
+[9]: /docs/{{< param version >}}/configuration/#policy-configuration
