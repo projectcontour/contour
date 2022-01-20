@@ -61,9 +61,12 @@ See upstream [documentation][7] on TLS configuration.
 A secret specified in an Ingress TLS element will only be applied to Ingress rules with `Host` configuration that exactly matches an element of the TLS `Hosts` field. 
 Any secrets that do not match an Ingress rule `Host` will be ignored.
 
-Ingress v1 does not allow the `secretName` field to contain a string with a full `namespace/name` identifier.
-This is a major change from Ingress v1beta1 and causes secrets referenced by v1 resources to be in the same namespace as the Ingress resource.
-This also disables Contour's [TLS secret delegation][8] behavior across namespaces in Ingress v1.
+In Ingress v1beta1, the `secretName` field could contain a string with a full `namespace/name` identifier.
+When used with Contour's [TLS certificate delegation][8], this allowed Ingresses to use a TLS certificate from a different namespace.
+However, Ingress v1 does not allow the `secretName` field to contain a string with a full `namespace/name` identifier, because the field validation disallows the `/` character.
+Instead, Ingress v1 resources can now use the `projectcontour.io/tls-cert-namespace` annotation, to define the namespace that contains the TLS certificate (if different than the Ingress's namespace).
+This enables the TLS certificate delegation functionality to continue working for Ingress v1.
+For more information and an example, see the [TLS certificate delegation documentation][8].
 
 ## Status
 
