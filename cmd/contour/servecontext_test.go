@@ -433,7 +433,7 @@ func TestConvertServeContext(t *testing.T) {
 		"default ServeContext": {
 			serveContext: defaultContext,
 			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
-				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
 					Port:    8001,
@@ -448,17 +448,17 @@ func TestConvertServeContext(t *testing.T) {
 					ClassNames:    nil,
 					StatusAddress: nil,
 				},
-				Debug: contour_api_v1alpha1.DebugConfig{
+				Debug: &contour_api_v1alpha1.DebugConfig{
 					Address:                 "127.0.0.1",
 					Port:                    6060,
 					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 					KubernetesDebugLogLevel: 0,
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
-				Envoy: contour_api_v1alpha1.EnvoyConfig{
+				Envoy: &contour_api_v1alpha1.EnvoyConfig{
 					Service: contour_api_v1alpha1.NamespacedName{
 						Name:      "envoy",
 						Namespace: "projectcontour",
@@ -473,11 +473,11 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
-					Health: contour_api_v1alpha1.HealthConfig{
+					Health: &contour_api_v1alpha1.HealthConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					Metrics: contour_api_v1alpha1.MetricsConfig{
+					Metrics: &contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
@@ -523,7 +523,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Gateway: nil,
-				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
@@ -534,7 +534,7 @@ func TestConvertServeContext(t *testing.T) {
 					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
 					ApplyToIngress:        false,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
@@ -543,7 +543,7 @@ func TestConvertServeContext(t *testing.T) {
 		"headers policy": {
 			serveContext: headersPolicyContext,
 			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
-				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
 					Port:    8001,
@@ -555,17 +555,17 @@ func TestConvertServeContext(t *testing.T) {
 					ClassNames:    nil,
 					StatusAddress: nil,
 				},
-				Debug: contour_api_v1alpha1.DebugConfig{
+				Debug: &contour_api_v1alpha1.DebugConfig{
 					Address:                 "127.0.0.1",
 					Port:                    6060,
 					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 					KubernetesDebugLogLevel: 0,
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
-				Envoy: contour_api_v1alpha1.EnvoyConfig{
+				Envoy: &contour_api_v1alpha1.EnvoyConfig{
 					Service: contour_api_v1alpha1.NamespacedName{
 						Name:      "envoy",
 						Namespace: "projectcontour",
@@ -580,11 +580,11 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
-					Health: contour_api_v1alpha1.HealthConfig{
+					Health: &contour_api_v1alpha1.HealthConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					Metrics: contour_api_v1alpha1.MetricsConfig{
+					Metrics: &contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
@@ -630,7 +630,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Gateway: nil,
-				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
@@ -647,7 +647,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 					ApplyToIngress: true,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
@@ -656,7 +656,7 @@ func TestConvertServeContext(t *testing.T) {
 		"ingress": {
 			serveContext: ingressContext,
 			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
-				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
 					Port:    8001,
@@ -668,17 +668,17 @@ func TestConvertServeContext(t *testing.T) {
 					ClassNames:    []string{"coolclass"},
 					StatusAddress: pointer.StringPtr("1.2.3.4"),
 				},
-				Debug: contour_api_v1alpha1.DebugConfig{
+				Debug: &contour_api_v1alpha1.DebugConfig{
 					Address:                 "127.0.0.1",
 					Port:                    6060,
 					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 					KubernetesDebugLogLevel: 0,
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
-				Envoy: contour_api_v1alpha1.EnvoyConfig{
+				Envoy: &contour_api_v1alpha1.EnvoyConfig{
 					Service: contour_api_v1alpha1.NamespacedName{
 						Name:      "envoy",
 						Namespace: "projectcontour",
@@ -693,11 +693,11 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
-					Health: contour_api_v1alpha1.HealthConfig{
+					Health: &contour_api_v1alpha1.HealthConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					Metrics: contour_api_v1alpha1.MetricsConfig{
+					Metrics: &contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
@@ -743,7 +743,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Gateway: nil,
-				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
@@ -754,7 +754,7 @@ func TestConvertServeContext(t *testing.T) {
 					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
 					ApplyToIngress:        false,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
@@ -763,7 +763,7 @@ func TestConvertServeContext(t *testing.T) {
 		"gatewayapi": {
 			serveContext: gatewayContext,
 			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
-				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
 					Port:    8001,
@@ -775,17 +775,17 @@ func TestConvertServeContext(t *testing.T) {
 					ClassNames:    nil,
 					StatusAddress: nil,
 				},
-				Debug: contour_api_v1alpha1.DebugConfig{
+				Debug: &contour_api_v1alpha1.DebugConfig{
 					Address:                 "127.0.0.1",
 					Port:                    6060,
 					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 					KubernetesDebugLogLevel: 0,
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
-				Envoy: contour_api_v1alpha1.EnvoyConfig{
+				Envoy: &contour_api_v1alpha1.EnvoyConfig{
 					Service: contour_api_v1alpha1.NamespacedName{
 						Name:      "envoy",
 						Namespace: "projectcontour",
@@ -800,11 +800,11 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
-					Health: contour_api_v1alpha1.HealthConfig{
+					Health: &contour_api_v1alpha1.HealthConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					Metrics: contour_api_v1alpha1.MetricsConfig{
+					Metrics: &contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
@@ -852,7 +852,7 @@ func TestConvertServeContext(t *testing.T) {
 				Gateway: &contour_api_v1alpha1.GatewayConfig{
 					ControllerName: "projectcontour.io/projectcontour/contour",
 				},
-				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
@@ -863,7 +863,7 @@ func TestConvertServeContext(t *testing.T) {
 					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
 					ApplyToIngress:        false,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
@@ -872,7 +872,7 @@ func TestConvertServeContext(t *testing.T) {
 		"client certificate": {
 			serveContext: clientCertificate,
 			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
-				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
 					Port:    8001,
@@ -884,17 +884,17 @@ func TestConvertServeContext(t *testing.T) {
 					ClassNames:    nil,
 					StatusAddress: nil,
 				},
-				Debug: contour_api_v1alpha1.DebugConfig{
+				Debug: &contour_api_v1alpha1.DebugConfig{
 					Address:                 "127.0.0.1",
 					Port:                    6060,
 					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 					KubernetesDebugLogLevel: 0,
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
-				Envoy: contour_api_v1alpha1.EnvoyConfig{
+				Envoy: &contour_api_v1alpha1.EnvoyConfig{
 					Service: contour_api_v1alpha1.NamespacedName{
 						Name:      "envoy",
 						Namespace: "projectcontour",
@@ -909,11 +909,11 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
-					Health: contour_api_v1alpha1.HealthConfig{
+					Health: &contour_api_v1alpha1.HealthConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					Metrics: contour_api_v1alpha1.MetricsConfig{
+					Metrics: &contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
@@ -962,7 +962,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Gateway: nil,
-				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
@@ -973,7 +973,7 @@ func TestConvertServeContext(t *testing.T) {
 					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
 					ApplyToIngress:        false,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
@@ -982,7 +982,7 @@ func TestConvertServeContext(t *testing.T) {
 		"httpproxy": {
 			serveContext: httpProxy,
 			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
-				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
 					Port:    8001,
@@ -994,17 +994,17 @@ func TestConvertServeContext(t *testing.T) {
 					ClassNames:    nil,
 					StatusAddress: nil,
 				},
-				Debug: contour_api_v1alpha1.DebugConfig{
+				Debug: &contour_api_v1alpha1.DebugConfig{
 					Address:                 "127.0.0.1",
 					Port:                    6060,
 					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 					KubernetesDebugLogLevel: 0,
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
-				Envoy: contour_api_v1alpha1.EnvoyConfig{
+				Envoy: &contour_api_v1alpha1.EnvoyConfig{
 					Service: contour_api_v1alpha1.NamespacedName{
 						Name:      "envoy",
 						Namespace: "projectcontour",
@@ -1019,11 +1019,11 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
-					Health: contour_api_v1alpha1.HealthConfig{
+					Health: &contour_api_v1alpha1.HealthConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					Metrics: contour_api_v1alpha1.MetricsConfig{
+					Metrics: &contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
@@ -1069,7 +1069,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Gateway: nil,
-				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: true,
 					FallbackCertificate: &contour_api_v1alpha1.NamespacedName{
 						Name:      "fallbackname",
@@ -1083,7 +1083,7 @@ func TestConvertServeContext(t *testing.T) {
 					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
 					ApplyToIngress:        false,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
@@ -1092,7 +1092,7 @@ func TestConvertServeContext(t *testing.T) {
 		"ratelimit": {
 			serveContext: rateLimit,
 			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
-				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
 					Port:    8001,
@@ -1104,17 +1104,17 @@ func TestConvertServeContext(t *testing.T) {
 					ClassNames:    nil,
 					StatusAddress: nil,
 				},
-				Debug: contour_api_v1alpha1.DebugConfig{
+				Debug: &contour_api_v1alpha1.DebugConfig{
 					Address:                 "127.0.0.1",
 					Port:                    6060,
 					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 					KubernetesDebugLogLevel: 0,
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
-				Envoy: contour_api_v1alpha1.EnvoyConfig{
+				Envoy: &contour_api_v1alpha1.EnvoyConfig{
 					Service: contour_api_v1alpha1.NamespacedName{
 						Name:      "envoy",
 						Namespace: "projectcontour",
@@ -1129,11 +1129,11 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
-					Health: contour_api_v1alpha1.HealthConfig{
+					Health: &contour_api_v1alpha1.HealthConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					Metrics: contour_api_v1alpha1.MetricsConfig{
+					Metrics: &contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
@@ -1179,7 +1179,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Gateway: nil,
-				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
@@ -1198,7 +1198,7 @@ func TestConvertServeContext(t *testing.T) {
 					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
 					ApplyToIngress:        false,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
@@ -1207,7 +1207,7 @@ func TestConvertServeContext(t *testing.T) {
 		"default http versions": {
 			serveContext: defaultHTTPVersions,
 			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
-				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
 					Port:    8001,
@@ -1219,17 +1219,17 @@ func TestConvertServeContext(t *testing.T) {
 					ClassNames:    nil,
 					StatusAddress: nil,
 				},
-				Debug: contour_api_v1alpha1.DebugConfig{
+				Debug: &contour_api_v1alpha1.DebugConfig{
 					Address:                 "127.0.0.1",
 					Port:                    6060,
 					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 					KubernetesDebugLogLevel: 0,
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
-				Envoy: contour_api_v1alpha1.EnvoyConfig{
+				Envoy: &contour_api_v1alpha1.EnvoyConfig{
 					Service: contour_api_v1alpha1.NamespacedName{
 						Name:      "envoy",
 						Namespace: "projectcontour",
@@ -1244,11 +1244,11 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
-					Health: contour_api_v1alpha1.HealthConfig{
+					Health: &contour_api_v1alpha1.HealthConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					Metrics: contour_api_v1alpha1.MetricsConfig{
+					Metrics: &contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
@@ -1296,7 +1296,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Gateway: nil,
-				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
@@ -1307,7 +1307,7 @@ func TestConvertServeContext(t *testing.T) {
 					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
 					ApplyToIngress:        false,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
@@ -1316,7 +1316,7 @@ func TestConvertServeContext(t *testing.T) {
 		"access log": {
 			serveContext: accessLog,
 			contourConfig: contour_api_v1alpha1.ContourConfigurationSpec{
-				XDSServer: contour_api_v1alpha1.XDSServerConfig{
+				XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 					Type:    contour_api_v1alpha1.ContourServerType,
 					Address: "127.0.0.1",
 					Port:    8001,
@@ -1328,17 +1328,17 @@ func TestConvertServeContext(t *testing.T) {
 					ClassNames:    nil,
 					StatusAddress: nil,
 				},
-				Debug: contour_api_v1alpha1.DebugConfig{
+				Debug: &contour_api_v1alpha1.DebugConfig{
 					Address:                 "127.0.0.1",
 					Port:                    6060,
 					DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 					KubernetesDebugLogLevel: 0,
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},
-				Envoy: contour_api_v1alpha1.EnvoyConfig{
+				Envoy: &contour_api_v1alpha1.EnvoyConfig{
 					Service: contour_api_v1alpha1.NamespacedName{
 						Name:      "envoy",
 						Namespace: "projectcontour",
@@ -1353,11 +1353,11 @@ func TestConvertServeContext(t *testing.T) {
 						Port:      8443,
 						AccessLog: "/dev/stdout",
 					},
-					Health: contour_api_v1alpha1.HealthConfig{
+					Health: &contour_api_v1alpha1.HealthConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
-					Metrics: contour_api_v1alpha1.MetricsConfig{
+					Metrics: &contour_api_v1alpha1.MetricsConfig{
 						Address: "0.0.0.0",
 						Port:    8002,
 					},
@@ -1383,7 +1383,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Gateway: nil,
-				HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+				HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 					DisablePermitInsecure: false,
 					FallbackCertificate:   nil,
 				},
@@ -1394,7 +1394,7 @@ func TestConvertServeContext(t *testing.T) {
 					ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
 					ApplyToIngress:        false,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8000,
 				},

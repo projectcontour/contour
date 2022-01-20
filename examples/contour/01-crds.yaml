@@ -670,53 +670,50 @@ spec:
                 type: object
               xdsServer:
                 default:
-                  address: 0.0.0.0
-                  port: 8001
-                  tls:
-                    caFile: /certs/ca.crt
-                    certFile: /certs/tls.crt
-                    insecure: false
-                    keyFile: /certs/tls.key
                   type: contour
                 description: XDSServer contains parameters for the xDS server.
                 properties:
                   address:
+                    default: 0.0.0.0
                     description: Defines the xDS gRPC API address which Contour will
                       serve.
                     minLength: 1
                     type: string
                   port:
+                    default: 9001
                     description: Defines the xDS gRPC API port which Contour will
                       serve.
                     type: integer
                   tls:
+                    default:
+                      insecure: false
                     description: TLS holds TLS file config details.
                     properties:
                       caFile:
+                        default: /certs/ca.crt
                         description: CA filename.
                         type: string
                       certFile:
+                        default: /certs/tls.crt
                         description: Client certificate filename.
                         type: string
                       insecure:
                         description: Allow serving the xDS gRPC API without TLS.
                         type: boolean
                       keyFile:
+                        default: /certs/tls.key
                         description: Client key filename.
                         type: string
                     required:
                     - insecure
                     type: object
                   type:
+                    default: contour
                     description: Defines the XDSServer to use for `contour serve`.
                     enum:
                     - contour
                     - envoy
                     type: string
-                required:
-                - address
-                - port
-                - type
                 type: object
             type: object
           status:
@@ -1629,53 +1626,50 @@ spec:
                     type: object
                   xdsServer:
                     default:
-                      address: 0.0.0.0
-                      port: 8001
-                      tls:
-                        caFile: /certs/ca.crt
-                        certFile: /certs/tls.crt
-                        insecure: false
-                        keyFile: /certs/tls.key
                       type: contour
                     description: XDSServer contains parameters for the xDS server.
                     properties:
                       address:
+                        default: 0.0.0.0
                         description: Defines the xDS gRPC API address which Contour
                           will serve.
                         minLength: 1
                         type: string
                       port:
+                        default: 9001
                         description: Defines the xDS gRPC API port which Contour will
                           serve.
                         type: integer
                       tls:
+                        default:
+                          insecure: false
                         description: TLS holds TLS file config details.
                         properties:
                           caFile:
+                            default: /certs/ca.crt
                             description: CA filename.
                             type: string
                           certFile:
+                            default: /certs/tls.crt
                             description: Client certificate filename.
                             type: string
                           insecure:
                             description: Allow serving the xDS gRPC API without TLS.
                             type: boolean
                           keyFile:
+                            default: /certs/tls.key
                             description: Client key filename.
                             type: string
                         required:
                         - insecure
                         type: object
                       type:
+                        default: contour
                         description: Defines the XDSServer to use for `contour serve`.
                         enum:
                         - contour
                         - envoy
                         type: string
-                    required:
-                    - address
-                    - port
-                    - type
                     type: object
                 type: object
               replicas:

@@ -467,8 +467,8 @@ func tcpproxyWeighted(statPrefix string, clusters ...clusterWeight) *envoy_liste
 func statsListener() *envoy_listener_v3.Listener {
 	// Single listener with metrics and health endpoints.
 	listeners := envoy_v3.StatsListeners(
-		contour_api_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
-		contour_api_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002})
+		&contour_api_v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
+		&contour_api_v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002})
 	return listeners[0]
 }
 

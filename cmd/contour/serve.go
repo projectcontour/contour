@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -235,7 +236,7 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 // doServe runs the contour serve subcommand.
 func (s *Server) doServe() error {
 
-	var contourConfiguration contour_api_v1alpha1.ContourConfigurationSpec
+	contourConfiguration := contour_api_v1alpha1.ContourConfigurationSpec{}
 
 	// Get the ContourConfiguration CRD if specified
 	if len(s.ctx.contourConfigurationName) > 0 {
@@ -256,7 +257,8 @@ func (s *Server) doServe() error {
 		if err := s.mgr.GetAPIReader().Get(context.Background(), key, contourConfig); err != nil {
 			return fmt.Errorf("error getting contour configuration %s: %v", key, err)
 		}
-
+		s.log.Debugf("Got contour configuration from object %s", s.ctx.contourConfigurationName)
+		spew.Dump(contourConfig)
 		// Copy the Spec from the parsed Configuration
 		contourConfiguration = contourConfig.Spec
 	} else {
@@ -589,7 +591,7 @@ func (s *Server) setupRateLimitService(contourConfiguration contour_api_v1alpha1
 	}, nil
 }
 
-func (s *Server) setupDebugService(debugConfig contour_api_v1alpha1.DebugConfig, builder *dag.Builder) error {
+func (s *Server) setupDebugService(debugConfig *contour_api_v1alpha1.DebugConfig, builder *dag.Builder) error {
 	debugsvc := &debug.Service{
 		Service: httpsvc.Service{
 			Addr:        debugConfig.Address,
@@ -605,7 +607,7 @@ type xdsServer struct {
 	log             logrus.FieldLogger
 	mgr             manager.Manager
 	registry        *prometheus.Registry
-	config          contour_api_v1alpha1.XDSServerConfig
+	config          *contour_api_v1alpha1.XDSServerConfig
 	snapshotHandler *xdscache.SnapshotHandler
 	resources       []xdscache.ResourceCache
 }
@@ -667,7 +669,7 @@ func (x *xdsServer) Start(ctx context.Context) error {
 }
 
 // setupMetrics creates metrics service for Contour.
-func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, healthConfig contour_api_v1alpha1.HealthConfig,
+func (s *Server) setupMetrics(metricsConfig *contour_api_v1alpha1.MetricsConfig, healthConfig *contour_api_v1alpha1.HealthConfig,
 	registry *prometheus.Registry) error {
 
 	// Create metrics service and register with workgroup.
@@ -695,8 +697,8 @@ func (s *Server) setupMetrics(metricsConfig contour_api_v1alpha1.MetricsConfig, 
 	return s.mgr.Add(metricsvc)
 }
 
-func (s *Server) setupHealth(healthConfig contour_api_v1alpha1.HealthConfig,
-	metricsConfig contour_api_v1alpha1.MetricsConfig) error {
+func (s *Server) setupHealth(healthConfig *contour_api_v1alpha1.HealthConfig,
+	metricsConfig *contour_api_v1alpha1.MetricsConfig) error {
 
 	if healthConfig.Address != metricsConfig.Address || healthConfig.Port != metricsConfig.Port {
 		healthsvc := &httpsvc.Service{

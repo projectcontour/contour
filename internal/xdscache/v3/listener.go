@@ -279,7 +279,7 @@ type ListenerCache struct {
 }
 
 // NewListenerCache returns an instance of a ListenerCache
-func NewListenerCache(envoyConfig contour_api_v1alpha1.EnvoyConfig, listenerConfig ListenerConfig) *ListenerCache {
+func NewListenerCache(envoyConfig *contour_api_v1alpha1.EnvoyConfig, listenerConfig ListenerConfig) *ListenerCache {
 	listenerCache := &ListenerCache{
 		Config:       listenerConfig,
 		staticValues: map[string]*envoy_listener_v3.Listener{},

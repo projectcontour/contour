@@ -345,7 +345,7 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 			Namespace: "projectcontour",
 		},
 		Spec: contour_api_v1alpha1.ContourConfigurationSpec{
-			XDSServer: contour_api_v1alpha1.XDSServerConfig{
+			XDSServer: &contour_api_v1alpha1.XDSServerConfig{
 				Type:    XDSServerTypeFromEnv(),
 				Address: "0.0.0.0",
 				Port:    8001,
@@ -356,17 +356,17 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 					Insecure: false,
 				},
 			},
-			Debug: contour_api_v1alpha1.DebugConfig{
+			Debug: &contour_api_v1alpha1.DebugConfig{
 				Address:                 "127.0.0.1",
 				Port:                    6060,
 				DebugLogLevel:           contour_api_v1alpha1.InfoLog,
 				KubernetesDebugLogLevel: 0,
 			},
-			Health: contour_api_v1alpha1.HealthConfig{
+			Health: &contour_api_v1alpha1.HealthConfig{
 				Address: "0.0.0.0",
 				Port:    8000,
 			},
-			Envoy: contour_api_v1alpha1.EnvoyConfig{
+			Envoy: &contour_api_v1alpha1.EnvoyConfig{
 				DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
 					"HTTP/1.1", "HTTP/2",
 				},
@@ -398,11 +398,11 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 					Port:      8443,
 					AccessLog: "/dev/stdout",
 				},
-				Health: contour_api_v1alpha1.HealthConfig{
+				Health: &contour_api_v1alpha1.HealthConfig{
 					Address: "0.0.0.0",
 					Port:    8002,
 				},
-				Metrics: contour_api_v1alpha1.MetricsConfig{
+				Metrics: &contour_api_v1alpha1.MetricsConfig{
 					Address: "0.0.0.0",
 					Port:    8002,
 				},
@@ -416,11 +416,11 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 					EnvoyAdminPort: 9001,
 				},
 			},
-			HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+			HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 				DisablePermitInsecure: false,
 			},
 			EnableExternalNameService: false,
-			Metrics: contour_api_v1alpha1.MetricsConfig{
+			Metrics: &contour_api_v1alpha1.MetricsConfig{
 				Address: "0.0.0.0",
 				Port:    8000,
 			},

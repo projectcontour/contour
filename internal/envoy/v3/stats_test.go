@@ -58,8 +58,8 @@ func TestStatsListeners(t *testing.T) {
 	}
 
 	type testcase struct {
-		metrics contour_api_v1alpha1.MetricsConfig
-		health  contour_api_v1alpha1.HealthConfig
+		metrics *contour_api_v1alpha1.MetricsConfig
+		health  *contour_api_v1alpha1.HealthConfig
 		want    []*envoy_listener_v3.Listener
 	}
 
@@ -73,8 +73,8 @@ func TestStatsListeners(t *testing.T) {
 	}
 
 	run(t, "stats-and-health-over-http-single-listener", testcase{
-		metrics: contour_api_v1alpha1.MetricsConfig{Address: "127.0.0.127", Port: 8123},
-		health:  contour_api_v1alpha1.HealthConfig{Address: "127.0.0.127", Port: 8123},
+		metrics: &contour_api_v1alpha1.MetricsConfig{Address: "127.0.0.127", Port: 8123},
+		health:  &contour_api_v1alpha1.HealthConfig{Address: "127.0.0.127", Port: 8123},
 		want: []*envoy_listener_v3.Listener{{
 			Name:    "stats-health",
 			Address: SocketAddress("127.0.0.127", 8123),
@@ -105,7 +105,7 @@ func TestStatsListeners(t *testing.T) {
 		}}})
 
 	run(t, "stats-over-https-and-health-over-http", testcase{
-		metrics: contour_api_v1alpha1.MetricsConfig{
+		metrics: &contour_api_v1alpha1.MetricsConfig{
 			Address: "127.0.0.127",
 			Port:    8123,
 			TLS: &contour_api_v1alpha1.MetricsTLS{
@@ -113,7 +113,7 @@ func TestStatsListeners(t *testing.T) {
 				KeyFile:  "keyfile",
 			},
 		},
-		health: contour_api_v1alpha1.HealthConfig{
+		health: &contour_api_v1alpha1.HealthConfig{
 			Address: "127.0.0.127",
 			Port:    8124},
 		want: []*envoy_listener_v3.Listener{{
@@ -187,7 +187,7 @@ func TestStatsListeners(t *testing.T) {
 		}}})
 
 	run(t, "stats-over-https-with-client-auth-and-health-over-http", testcase{
-		metrics: contour_api_v1alpha1.MetricsConfig{
+		metrics: &contour_api_v1alpha1.MetricsConfig{
 			Address: "127.0.0.127",
 			Port:    8123,
 			TLS: &contour_api_v1alpha1.MetricsTLS{
@@ -196,7 +196,7 @@ func TestStatsListeners(t *testing.T) {
 				CAFile:   "cabundle",
 			},
 		},
-		health: contour_api_v1alpha1.HealthConfig{
+		health: &contour_api_v1alpha1.HealthConfig{
 			Address: "127.0.0.127",
 			Port:    8124},
 		want: []*envoy_listener_v3.Listener{{
@@ -277,11 +277,11 @@ func TestStatsListeners(t *testing.T) {
 		}}})
 
 	run(t, "stats-and-health-over-http-but-different-listeners", testcase{
-		metrics: contour_api_v1alpha1.MetricsConfig{
+		metrics: &contour_api_v1alpha1.MetricsConfig{
 			Address: "127.0.0.127",
 			Port:    8123,
 		},
-		health: contour_api_v1alpha1.HealthConfig{
+		health: &contour_api_v1alpha1.HealthConfig{
 			Address: "127.0.0.128",
 			Port:    8124},
 		want: []*envoy_listener_v3.Listener{{

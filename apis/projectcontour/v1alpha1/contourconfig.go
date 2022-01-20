@@ -24,8 +24,8 @@ import (
 type ContourConfigurationSpec struct {
 	// XDSServer contains parameters for the xDS server.
 	// +optional
-	// +kubebuilder:default={type: "contour", address: "0.0.0.0", port: 8001, tls: { caFile: "/certs/ca.crt", certFile: "/certs/tls.crt", keyFile: "/certs/tls.key", insecure: false}}
-	XDSServer XDSServerConfig `json:"xdsServer"`
+	// +kubebuilder:default={type: "contour"}
+	XDSServer *XDSServerConfig `json:"xdsServer,omitempty"`
 
 	// Ingress contains parameters for ingress options.
 	// +optional
@@ -34,19 +34,19 @@ type ContourConfigurationSpec struct {
 	// Debug contains parameters to enable debug logging
 	// and debug interfaces inside Contour.
 	// +optional
-	// +kubebuilder:default={logLevel: "info", kubernetesLogLevel: 0}
-	Debug DebugConfig `json:"debug"`
+	// +kubebuilder:default={logLevel: "info"}
+	Debug *DebugConfig `json:"debug,omitempty"`
 
 	// Health defines the endpoints Contour uses to serve health checks.
 	// +optional
-	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
-	Health HealthConfig `json:"health"`
+	// +kubebuilder:default={port: 8000}
+	Health *HealthConfig `json:"health,omitempty"`
 
 	// Envoy contains parameters for Envoy as well
 	// as how to optionally configure a managed Envoy fleet.
 	// +optional
-	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, disableMergeSlashes: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, health: {address: "0.0.0.0", port: 8002}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "HTTP/1.1";"HTTP/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
-	Envoy EnvoyConfig `json:"envoy"`
+	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, health: {address: "0.0.0.0", port: 8002}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "HTTP/1.1";"HTTP/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
+	Envoy *EnvoyConfig `json:"envoy"`
 
 	// Gateway contains parameters for the gateway-api Gateway that Contour
 	// is configured to serve traffic.
@@ -56,7 +56,7 @@ type ContourConfigurationSpec struct {
 	// HTTPProxy defines parameters on HTTPProxy.
 	// +optional
 	// +kubebuilder:default={disablePermitInsecure: false}
-	HTTPProxy HTTPProxyConfig `json:"httpproxy"`
+	HTTPProxy *HTTPProxyConfig `json:"httpproxy"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
@@ -76,7 +76,7 @@ type ContourConfigurationSpec struct {
 	// Metrics defines the endpoint Contour uses to serve metrics.
 	// +optional
 	// +kubebuilder:default={address: "0.0.0.0", port: 8000}
-	Metrics MetricsConfig `json:"metrics"`
+	Metrics *MetricsConfig `json:"metrics"`
 }
 
 // XDSServerType is the type of xDS server implementation.
@@ -89,17 +89,24 @@ const EnvoyServerType XDSServerType = "envoy"
 type XDSServerConfig struct {
 	// Defines the XDSServer to use for `contour serve`.
 	// +kubebuilder:validation:Enum=contour;envoy
+	// +kubebuilder:default=contour
+	// +optional
 	Type XDSServerType `json:"type"`
 
 	// Defines the xDS gRPC API address which Contour will serve.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:default="0.0.0.0"
+	// +optional
 	Address string `json:"address"`
 
 	// Defines the xDS gRPC API port which Contour will serve.
+	// +kubebuilder:default=9001
+	// +optional
 	Port int `json:"port"`
 
 	// TLS holds TLS file config details.
 	// +optional
+	// +kubebuilder:default={insecure: false}
 	TLS *TLS `json:"tls,omitempty"`
 }
 
@@ -116,14 +123,17 @@ type GatewayConfig struct {
 type TLS struct {
 	// CA filename.
 	// +optional
+	// +kubebuilder:default="/certs/ca.crt"
 	CAFile string `json:"caFile,omitempty"`
 
 	// Client certificate filename.
 	// +optional
+	// +kubebuilder:default="/certs/tls.crt"
 	CertFile string `json:"certFile,omitempty"`
 
 	// Client key filename.
 	// +optional
+	// +kubebuilder:default="/certs/tls.key"
 	KeyFile string `json:"keyFile,omitempty"`
 
 	// Allow serving the xDS gRPC API without TLS.
@@ -145,6 +155,8 @@ type IngressConfig struct {
 type HealthConfig struct {
 	// Defines the health address interface.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:default="0.0.0.0"
 	Address string `json:"address"`
 
 	// Defines the health port.
@@ -156,6 +168,7 @@ type MetricsConfig struct {
 	// Defines the metrics address interface.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:default="0.0.0.0"
 	Address string `json:"address"`
 
 	// Defines the metrics port.
@@ -209,11 +222,12 @@ type EnvoyConfig struct {
 	// Health defines the endpoint Envoy uses to serve health checks.
 	// +optional
 	// +kubebuilder:default={address: "0.0.0.0", port: 8002}
-	Health HealthConfig `json:"health"`
+	Health *HealthConfig `json:"health"`
 
 	// Metrics defines the endpoint Envoy uses to serve metrics.
+	// +optional
 	// +kubebuilder:default={address: "0.0.0.0", port: 8002}
-	Metrics MetricsConfig `json:"metrics"`
+	Metrics *MetricsConfig `json:"metrics"`
 
 	// ClientCertificate defines the namespace/name of the Kubernetes
 	// secret containing the client certificate and private key
@@ -262,7 +276,12 @@ type DebugConfig struct {
 
 	// DebugLogLevel defines the log level which Contour will
 	// use when outputting log information.
-	// +kubebuilder:validation:Enum=info;debug
+	//
+	// Values:
+	// * `info`
+	// * `debug`
+	//
+	// +kubebuilder:default="info"
 	DebugLogLevel LogLevel `json:"logLevel"`
 
 	// KubernetesDebugLogLevel defines the log level which Contour will
@@ -296,10 +315,18 @@ type EnvoyListenerConfig struct {
 	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig
 	// for more information.
-	// +kubebuilder:validation:Enum="";"exact"
+	//
+	// Values:
+	// * (empty string): use the default ConnectionBalancer
+	// * `exact`: use the Exact ConnectionBalancer
+	//
+	// Other values will produce an error.
+	// +optional
 	ConnectionBalancer string `json:"connectionBalancer"`
 
 	// TLS holds various configurable Envoy TLS listener values.
+	// +optional
+	// +kubebuilder:default={minimumProtocolVersion: "1.2"}
 	TLS EnvoyTLS `json:"tls"`
 }
 
@@ -309,8 +336,14 @@ type TLSCipherType string
 // EnvoyTLS describes tls parameters for Envoy listneners.
 type EnvoyTLS struct {
 	// MinimumProtocolVersion is the minimum TLS version this vhost should
-	// negotiate. Valid options are `1.2` (default) and `1.3`.
-	// +kubebuilder:validation:Enum="1.2";"1.3"
+	// negotiate.
+	//
+	// Values:
+	// * `1.2` (default)
+	// * `1.3`
+	//
+	// Other values will produce an error.
+	// +kubebuilder:default="1.2"
 	MinimumProtocolVersion string `json:"minimumProtocolVersion"`
 
 	// CipherSuites defines the TLS ciphers to be supported by Envoy TLS
@@ -319,8 +352,15 @@ type EnvoyTLS struct {
 	// by advanced users. Note that these will be ignored when TLS 1.3 is in
 	// use.
 	//
-	//See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
+	// This field is optional; when it is undefined, a Contour-managed ciphersuite
+	// will be used, which may be updated to keep it secure.
+	//
+	// Contour recommends leaving this undefined unless you are sure you must.
+	//
+	// See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
 	// Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
+	// TODO: actually make this optional.
+	// +optional
 	CipherSuites []TLSCipherType `json:"cipherSuites"`
 }
 
@@ -328,6 +368,7 @@ type EnvoyTLS struct {
 type EnvoyListener struct {
 	// Defines an Envoy Listener Address.
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:default="0.0.0.0"
 	Address string `json:"address"`
 
 	// Defines an Envoy listener Port.
@@ -340,8 +381,13 @@ type EnvoyListener struct {
 // EnvoyLogging defines how Envoy's logs can be configured.
 type EnvoyLogging struct {
 	// AccessLogFormat sets the global access log format.
-	// Valid options are 'envoy' or 'json'
-	// +kubebuilder:validation:Enum="envoy";"json"
+	//
+	// Values:
+	// * `envoy` (default)
+	// * `json`
+	//
+	// Other values will produce an error.
+	// +kubebuilder:default="envoy"
 	AccessLogFormat AccessLogType `json:"accessLogFormat"`
 
 	// AccessLogFormatString sets the access log format when format is set to `envoy`.

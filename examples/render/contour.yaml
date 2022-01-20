@@ -865,13 +865,6 @@ spec:
                 type: object
               xdsServer:
                 default:
-                  address: 0.0.0.0
-                  port: 8001
-                  tls:
-                    caFile: /certs/ca.crt
-                    certFile: /certs/tls.crt
-                    insecure: false
-                    keyFile: /certs/tls.key
                   type: contour
                 description: XDSServer contains parameters for the xDS server.
                 properties:
@@ -1824,13 +1817,6 @@ spec:
                     type: object
                   xdsServer:
                     default:
-                      address: 0.0.0.0
-                      port: 8001
-                      tls:
-                        caFile: /certs/ca.crt
-                        certFile: /certs/tls.crt
-                        insecure: false
-                        keyFile: /certs/tls.key
                       type: contour
                     description: XDSServer contains parameters for the xDS server.
                     properties:

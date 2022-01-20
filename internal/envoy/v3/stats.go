@@ -32,7 +32,7 @@ const metricsCaBundleSDSName = "metrics-ca-certificate"
 // The listeners are configured to serve:
 //   - prometheus metrics on /stats (either over HTTP or HTTPS)
 //   - readiness probe on /ready (always over HTTP)
-func StatsListeners(metrics contour_api_v1alpha1.MetricsConfig, health contour_api_v1alpha1.HealthConfig) []*envoy_listener_v3.Listener {
+func StatsListeners(metrics *contour_api_v1alpha1.MetricsConfig, health *contour_api_v1alpha1.HealthConfig) []*envoy_listener_v3.Listener {
 	var listeners []*envoy_listener_v3.Listener
 
 	switch {

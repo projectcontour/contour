@@ -409,12 +409,12 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		}
 	}
 
-	contourMetrics := contour_api_v1alpha1.MetricsConfig{
+	contourMetrics := &contour_api_v1alpha1.MetricsConfig{
 		Address: ctx.metricsAddr,
 		Port:    ctx.metricsPort,
 	}
 
-	envoyMetrics := contour_api_v1alpha1.MetricsConfig{
+	envoyMetrics := &contour_api_v1alpha1.MetricsConfig{
 		Address: ctx.statsAddr,
 		Port:    ctx.statsPort,
 	}
@@ -426,23 +426,23 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	// but here we cannot know anymore if value in ctx.nnn are defaults from
 	// newServeContext() or from command line arguments. Therefore metrics
 	// configuration from config file takes precedence over command line.
-	setMetricsFromConfig(ctx.Config.Metrics.Contour, &contourMetrics)
-	setMetricsFromConfig(ctx.Config.Metrics.Envoy, &envoyMetrics)
+	setMetricsFromConfig(ctx.Config.Metrics.Contour, contourMetrics)
+	setMetricsFromConfig(ctx.Config.Metrics.Envoy, envoyMetrics)
 
 	// Convert serveContext to a ContourConfiguration
 	contourConfiguration := contour_api_v1alpha1.ContourConfigurationSpec{
 		Ingress: ingress,
-		Debug: contour_api_v1alpha1.DebugConfig{
+		Debug: &contour_api_v1alpha1.DebugConfig{
 			Address:                 ctx.debugAddr,
 			Port:                    ctx.debugPort,
 			DebugLogLevel:           debugLogLevel,
 			KubernetesDebugLogLevel: ctx.KubernetesDebug,
 		},
-		Health: contour_api_v1alpha1.HealthConfig{
+		Health: &contour_api_v1alpha1.HealthConfig{
 			Address: ctx.healthAddr,
 			Port:    ctx.healthPort,
 		},
-		Envoy: contour_api_v1alpha1.EnvoyConfig{
+		Envoy: &contour_api_v1alpha1.EnvoyConfig{
 			Listener: contour_api_v1alpha1.EnvoyListenerConfig{
 				UseProxyProto:             ctx.useProxyProto,
 				DisableAllowChunkedLength: ctx.Config.DisableAllowChunkedLength,
@@ -467,7 +467,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				AccessLog: ctx.httpsAccessLog,
 			},
 			Metrics: envoyMetrics,
-			Health: contour_api_v1alpha1.HealthConfig{
+			Health: &contour_api_v1alpha1.HealthConfig{
 				Address: ctx.statsAddr,
 				Port:    ctx.statsPort,
 			},
@@ -489,7 +489,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			},
 		},
 		Gateway: gatewayConfig,
-		HTTPProxy: contour_api_v1alpha1.HTTPProxyConfig{
+		HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
 			DisablePermitInsecure: ctx.Config.DisablePermitInsecure,
 			RootNamespaces:        ctx.proxyRootNamespaces(),
 			FallbackCertificate:   fallbackCertificate,
@@ -505,7 +505,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		xdsServerType = contour_api_v1alpha1.EnvoyServerType
 	}
 
-	contourConfiguration.XDSServer = contour_api_v1alpha1.XDSServerConfig{
+	contourConfiguration.XDSServer = &contour_api_v1alpha1.XDSServerConfig{
 		Type:    xdsServerType,
 		Address: ctx.xdsAddr,
 		Port:    ctx.xdsPort,
