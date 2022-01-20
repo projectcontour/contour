@@ -1,6 +1,6 @@
 # Downstream Certificate Revocation List Proposal
 
-Status: Draft
+Status: Accepted
 
 ## Abstract
 This proposal covers the implementation of CRLs (Certificate Revocation List) in Contours DownstreamValidation, using the `crl` field in Envoy's [extensions.transport_sockets.tls.v3.CertificateValidationContext](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-certificatevalidationcontext) field.
