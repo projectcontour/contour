@@ -231,6 +231,7 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 		entry, err := parseChangelogFilename(dirEntry.Name())
 		if err != nil {
 			fmt.Printf("Skipping changelog file: %v\n", err)
+			continue
 		}
 
 		contents, err := ioutil.ReadFile(filepath.Join("changelogs", "unreleased", dirEntry.Name()))
