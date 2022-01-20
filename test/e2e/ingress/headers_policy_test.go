@@ -41,6 +41,13 @@ func testGlobalHeadersPolicy(applyToIngress bool) e2e.NamespacedTestBody {
 
 			f.Fixtures.Echo.Deploy(namespace, "echo")
 
+			var host string
+			if applyToIngress {
+				host = "global-headers-policy-apply-to-ingress-false.ingress.projectcontour.io"
+			} else {
+				host = "global-headers-policy-apply-to-ingress-true.ingress.projectcontour.io"
+			}
+
 			i := &networkingv1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
@@ -49,7 +56,7 @@ func testGlobalHeadersPolicy(applyToIngress bool) e2e.NamespacedTestBody {
 				Spec: networkingv1.IngressSpec{
 					Rules: []networkingv1.IngressRule{
 						{
-							Host: "global-headers-policy.ingress.projectcontour.io",
+							Host: host,
 							IngressRuleValue: networkingv1.IngressRuleValue{
 								HTTP: &networkingv1.HTTPIngressRuleValue{
 									Paths: []networkingv1.HTTPIngressPath{
