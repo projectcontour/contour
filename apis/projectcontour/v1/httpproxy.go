@@ -929,12 +929,6 @@ type DownstreamValidation struct {
 	// +kubebuilder:validation:MinLength=1
 	CACertificate string `json:"caSecret,omitempty"`
 
-	// Name of a Kubernetes secret that contains a pem encoded crl.
-	// This will be used to verify that a client certificate has not been revoked
-	// +optional
-	// +kubebuilder:validation:MinLength=1
-	CACertificateRevocationList string `json:"crlSecret,omitempty"`
-
 	// SkipClientCertValidation disables downstream client certificate
 	// validation. Defaults to false. This field is intended to be used in
 	// conjunction with external authorization in order to enable the external
