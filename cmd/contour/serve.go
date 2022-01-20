@@ -390,15 +390,16 @@ func (s *Server) doServe() error {
 	}
 
 	builder := s.getDAGBuilder(dagBuilderConfig{
-		ingressClassName:          ingressClassName,
-		rootNamespaces:            contourConfiguration.HTTPProxy.RootNamespaces,
-		gatewayAPIConfigured:      contourConfiguration.Gateway != nil,
-		disablePermitInsecure:     contourConfiguration.HTTPProxy.DisablePermitInsecure,
-		enableExternalNameService: contourConfiguration.EnableExternalNameService,
-		dnsLookupFamily:           contourConfiguration.Envoy.Cluster.DNSLookupFamily,
-		headersPolicy:             contourConfiguration.Policy,
-		clientCert:                clientCert,
-		fallbackCert:              fallbackCert,
+		ingressClassName:           ingressClassName,
+		rootNamespaces:             contourConfiguration.HTTPProxy.RootNamespaces,
+		gatewayAPIConfigured:       contourConfiguration.Gateway != nil,
+		disablePermitInsecure:      contourConfiguration.HTTPProxy.DisablePermitInsecure,
+		enableExternalNameService:  contourConfiguration.EnableExternalNameService,
+		dnsLookupFamily:            contourConfiguration.Envoy.Cluster.DNSLookupFamily,
+		headersPolicy:              contourConfiguration.Policy,
+		applyHeaderPolicyToIngress: contourConfiguration.Policy.ApplyToIngress,
+		clientCert:                 clientCert,
+		fallbackCert:               fallbackCert,
 	})
 
 	// Build the core Kubernetes event handler.

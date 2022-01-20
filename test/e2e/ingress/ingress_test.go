@@ -182,4 +182,47 @@ var _ = Describe("Ingress", func() {
 	})
 
 	f.NamespacedTest("long-path-match", testLongPathMatch)
+
+	Context("with global headers policy defined", func() {
+		BeforeEach(func() {
+			contourConfig.Policy.RequestHeadersPolicy.Set = map[string]string{
+				"X-Contour-GlobalRequestHeader": "foo",
+			}
+			contourConfig.Policy.ResponseHeadersPolicy.Set = map[string]string{
+				"X-Contour-GlobalResponseHeader": "bar",
+			}
+
+			contourConfiguration.Spec.Policy = &contour_api_v1alpha1.PolicyConfig{
+				RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+					Set: map[string]string{
+						"X-Contour-GlobalRequestHeader": "foo",
+					},
+				},
+				ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+					Set: map[string]string{
+						"X-Contour-GlobalResponseHeader": "bar",
+					},
+				},
+			}
+		})
+
+		Context("when ApplyToIngress is false", func() {
+			BeforeEach(func() {
+				contourConfig.Policy.ApplyToIngress = false
+				contourConfiguration.Spec.Policy.ApplyToIngress = false
+			})
+
+			f.NamespacedTest("global-headers-policy-apply-to-ingress-false", testGlobalHeadersPolicy(false))
+		})
+
+		Context("when ApplyToIngress is true", func() {
+			BeforeEach(func() {
+				contourConfig.Policy.ApplyToIngress = true
+				contourConfiguration.Spec.Policy.ApplyToIngress = true
+			})
+
+			f.NamespacedTest("global-headers-policy-apply-to-ingress-true", testGlobalHeadersPolicy(true))
+		})
+
+	})
 })
