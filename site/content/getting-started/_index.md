@@ -6,7 +6,7 @@ id: getting-started
 
 # Getting Started with Contour
 
-This guide shows how to install Contour in a test environment in three different ways:
+This guide shows how to install Contour in three different ways:
 - using Contour's example YAML
 - using the Helm chart for Contour
 - using the Contour operator (exerimental)
@@ -178,7 +178,7 @@ kubectl -n projectcontour get svc/envoy -o jsonpath='{.status.loadBalancer.ingre
 kubectl -n projectcontour get svc/my-release-contour-envoy -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
-Verify access to the sample application, via Contour/Envoy, by browsing to the address. You can refresh multiple times to cycle through each pod replica.  
+Verify access to the sample application via Contour/Envoy by browsing to the above address. You can refresh multiple times to cycle through each pod replica.  
 
 Congratulations, you have installed Contour, deployed a backend application, created an `Ingress` to route traffic to the application, and successfully accessed the app with Contour!
 
