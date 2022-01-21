@@ -389,6 +389,11 @@ func (s *Server) doServe() error {
 		return err
 	}
 
+	var applyHeaderPolicyToIngress bool
+	if contourConfiguration.Policy != nil {
+		applyHeaderPolicyToIngress = contourConfiguration.Policy.ApplyToIngress
+	}
+
 	builder := s.getDAGBuilder(dagBuilderConfig{
 		ingressClassName:           ingressClassName,
 		rootNamespaces:             contourConfiguration.HTTPProxy.RootNamespaces,
@@ -397,7 +402,7 @@ func (s *Server) doServe() error {
 		enableExternalNameService:  contourConfiguration.EnableExternalNameService,
 		dnsLookupFamily:            contourConfiguration.Envoy.Cluster.DNSLookupFamily,
 		headersPolicy:              contourConfiguration.Policy,
-		applyHeaderPolicyToIngress: contourConfiguration.Policy.ApplyToIngress,
+		applyHeaderPolicyToIngress: applyHeaderPolicyToIngress,
 		clientCert:                 clientCert,
 		fallbackCert:               fallbackCert,
 	})
