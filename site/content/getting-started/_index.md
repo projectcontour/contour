@@ -4,40 +4,78 @@ description: Getting Started with Contour
 id: getting-started
 ---
 
-This guide installs Contour with a sample workload in a test environment in two ways:  
+# Getting Started with Contour
 
-- Quickstart: installs and demonstrates how Contour works with a workload application
-- Quickstart using Helm: installs contour using the helm package manager  
+This guide shows how to install Contour in a test environment in three different ways:
+- using Contour's example YAML
+- using the Helm chart for Contour
+- using the Contour operator (exerimental)
 
-The quickstart guide uses all default settings. No additional configuration is required.
+It then shows how to deploy a sample workload and route traffic to it via Contour.
 
-# What is Contour?  
+This guide uses all default settings. No additional configuration is required.
 
-Contour is an Ingress controller for Kubernetes that works by deploying the [Envoy proxy][26] as a reverse proxy and load balancer.
-Contour supports dynamic configuration updates out of the box while maintaining a lightweight profile.
+## Validate Kubernetes environment
+
+This guide is designed to work with:
+
+- a Kubernetes cluster with support for services of type `LoadBalancer` (GKE, AKS, EKS, etc.); or
+- a locally-running [kind cluster][27] with port mappings configured
+
+If you already have access to one of these Kubernetes environments, you're ready to move on to installing Contour.
+If not, you can [set up a local kind cluster][28] for testing purposes.
+ 
+## Install Contour and Envoy
+
+### Option 1: YAML
+Run the following to install Contour:
+
+```bash
+$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+```
+
+Verify the Contour pods are ready by running the following: 
+
+```bash
+$ kubectl get pods -n projectcontour -o wide
+```
+
+You should see the following:
+- 2 Contour pods with each status **Running** and 1/1 **Ready**  
+- 1+ Envoy pod(s), with each the status **Running** and 2/2 **Ready**  
+
+### Option 2: Helm
+This option requires [Helm to be installed locally][29].
+
+Add the bitnami chart repository (which contains the Contour chart) by running the following:  
+
+```bash  
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+```
+
+Install the Contour chart by running the following:
+
+```bash 
+$ helm install my-release bitnami/contour --namespace projectcontour --create-namespace
+```  
+
+Verify Contour is ready by running:
+
+```bash
+$ kubectl -n projectcontour get po,svc
+```  
+
+You should see the following:
+- 1 instance of pod/my-release-contour-contour with status **Running** and 1/1 **Ready**  
+- 1+ instance(s) of pod/my-release-contour-envoy with each status **Running** and 2/2 **Ready**  
+- 1 instance of service/my-release-contour 
+- 1 instance of service/my-release-contour-envoy
 
 
-# Quickstart
-This quickstart guide installs Contour on a kubernetes cluster with a web application workload.
-1. Set up a Kubernetes environment
-1. Install a Contour & Envoy
-1. Install a kuard workload
+### Option 3: Contour Operator (experimental)
 
-
-## Set up a Kubernetes environment
-This procedure uses Docker and kind to deploy a kubernetes cluster. 
-If you already have a cluster available, skip to step [Install Contour and Envoy](#install-contour-and-envoy).  
-
-### Prerequisites
-
-Download & install Docker and kind:
-
-- Kind [download and install instructions][22]
-- Docker [installation information][23]  
-
-### Kind configuration file  
-
-Create yaml file on your local system to allow port 80 and 443. Copy the text below into the local yaml file **kind.config.yaml**.
+**NOTE**: If you are using a kind cluster, the Contour Operator requires a different kind configuration file than [what is described in the guide][30].
+Recreate your kind cluster, following the guide but using the following Operator-compatible config file:
 ```yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -45,137 +83,106 @@ nodes:
 - role: control-plane
 - role: worker
   extraPortMappings:
-  - containerPort: 80
+  - containerPort: 30080
     hostPort: 80
-    listenAddress: "0.0.0.0"  
-  - containerPort: 443
+    listenAddress: "0.0.0.0"
+  - containerPort: 30443
     hostPort: 443
     listenAddress: "0.0.0.0"
-``` 
-	    
-### Kubernetes cluster using kind  
-
-Create a cluster using kind.config.yaml file  
-
-```yaml
-$ kind create cluster --config=kind.config.yaml
 ```
 
-Verify the nodes are ready by running:  
+Install the Contour Operator & Contour CRDs:
 
-```yaml
-$ kubectl get no
-```  
+```bash
+$ kubectl apply -f https://projectcontour.io/quickstart/operator.yaml
+```
 
-You should see a 2 nodes listed with status **Ready**:  
-- kind-control-plane
-- kind-worker
+Verify the Operator deployment is available:
 
-Congratulations, you have created your cluster environment. You're ready to install Contour.  
+```bash
+$ kubectl get deploy -n contour-operator
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+contour-operator   1/1     1            1           1m
+```
 
-_Note:_ When you are done with the cluster, you can delete it by running:
-```yaml
-$ kind delete cluster
-```  
- 
-## Install Contour and Envoy
-Run the following to install Contour:
+Install an instance of the `Contour` custom resource:
 
-```yaml
-$ kubectl apply -f https://projectcontour.io/quickstart/contour.yaml
+```bash
+# If using a kind cluster
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour-operator/{{< param latest_version >}}/examples/contour/contour-nodeport.yaml
+
+# If using a cluster with support for services of type LoadBalancer
+kubectl apply -f https://raw.githubusercontent.com/projectcontour/contour-operator/{{< param latest_version >}}/examples/contour/contour.yaml
+```
+
+Verify the `Contour` custom resource is available (it may take up to several minutes to become available):
+
+```bash
+$ kubectl get contour/contour-sample
+NAME             READY   REASON
+contour-sample   True    ContourAvailable
 ```
 
 Verify the Contour pods are ready by running the following: 
 
-```yaml
+```bash
 $ kubectl get pods -n projectcontour -o wide
-```  
+```
+
 You should see the following:
 - 2 Contour pods with each status **Running** and 1/1 **Ready**  
-- 1 Envoy pod with the status **Running** and 1/1 **Ready**  
+- 1+ Envoy pod(s), each with the status **Running** and 1/1 **Ready**  
+ 
+## Test it out!
 
 Congratulations, you have installed Contour and Envoy! Let's install a web application workload and get some traffic flowing to the backend.
- 
-### Test it out!
 
-Next, install a sample application to verify the quickstart installation in the [kuard workload section](/#install-a-kuard-workload-simple-application).
-
----
-## Quickstart using Helm
-Prerequisites: 
-- kubernetes cluster environment.  
-
-See Quickstart (above) to install a kubernetes cluster using kind and Docker.  
-
-This guide installs Contour using Helm and a simple web application workload.
-
-1. Install Helm  
-1. Add bitnami Helm repo  
-1. Install Contour  
-1. Install a kuard workload 
-
-### Add bitnami Helm repo  
-Add the bitnami repository by running the following:  
-
-```yaml  
-$ helm repo add bitnami https://charts.bitnami.com/bitnami  
-```
-Note: you may need to run the following to update your repo:
-``` yaml
-helm repo update
-```
-### Install Contour  
-Install Contour by running the following:
-```yaml 
-$ helm install my-release bitnami/contour
-```  
-Verify Contour is ready by running:
-```yaml
-$ kubectl get po,svc
-
-```  
-You should see the following:
-- 2 instances of pod/my-release-contour-contour
-- 1 instance of pod/my-release-contour-envoy
-- 1 instance of service/my-release-contour 
-- 1 instance of service/my-release-contour-envoy
-
-### Test it out!
-
-Next, install a sample application to verify the quickstart installation in the [kuard workload section](/#install-a-kuard-workload-simple-application).
-
-## Install a kuard workload (simple application)  
-Install kuard web application workload to have traffic flowing to the backend.
-
+TODO is there a different sample workload then?
 Note: It is not recommended to expose kuard to the public.
 
 To install kuard, run the following:
-```yaml
+
+```bash
 kubectl apply -f https://projectcontour.io/examples/kuard.yaml
 ```
+
 Verify the pods and service are ready by running:
-```yaml
-$ kubectl get po,svc,ing -l app=kuard
+
+```bash
+kubectl get po,svc,ing -l app=kuard
 ```  
+
 You should see the following:
 - 3 instances of pods/kuard, each with status **Running** and 1/1 **Ready**
 - 1 service/kuard CLUSTER-IP listed on port 80
 - 1 Ingress on port 80
 
-The Helm install configures Contour to filter Ingress and HTTPProxy objects based on the `contour` IngressClass name.
-To ensure Contour reconciles the created Ingress, edit the `spec` to add an `ingressClassName` field as below:
-```yaml
-spec:
-  ingressClassName: contour
+**NOTE**: the Helm install configures Contour to filter Ingress and HTTPProxy objects based on the `contour` IngressClass name.
+If using Helm, ensure the Ingress has an ingress class of `contour` with the following:
+
+```bash
+kubectl patch ingress kuard -p '{"spec":{"ingressClassName": "contour"}}'
 ```
 
-Verify web access by browsing to [127.0.0.1](http://127.0.0.1). You can refresh multiple times to cycle through each pod workload.  
+Now we're ready to send some traffic to our sample application, via Contour & Envoy.
 
-Congratulations, you have installed Contour with a backend web application workload using Helm .
+If you're using a local KinD cluster, the address you'll use is `127.0.0.1`.
 
+If you're using a cluster with support for services of type `LoadBalancer`, you'll use the external IP address of the `envoy` service:
 
----
-# Next Steps  
+```bash
+# If using YAML or the Operator
+kubectl -n projectcontour get svc/envoy -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+# If using Helm
+kubectl -n projectcontour get svc/my-release-contour-envoy -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+```
+
+Verify access to the sample application, via Contour/Envoy, by browsing to the address. You can refresh multiple times to cycle through each pod replica.  
+
+Congratulations, you have installed Contour, deployed a backend application, created an `Ingress` to route traffic to the application, and successfully accessed the app with Contour!
+
+## Next Steps  
 Now that you have a basic Contour installation, where to go from here?
 
 - Explore [HTTPProxy][2], a cluster-wide reverse proxy
@@ -192,13 +199,13 @@ Explore the documentation:
 - [Contour Architecture][18]
 - [Contour Configuration Reference][7]
   
-# Connect with the Team
+## Connect with the Team
 Have questions? Send a Slack message on the Contour channel, an email on the mailing list, or join a Contour meeting.
 - Slack: kubernetes.slack.com [#contour][12]
 - Join us in a [User Group][10] or [Office Hours][11] meeting 
 - Join the [mailing list][25] for the latest information
 
-# Troubleshooting
+## Troubleshooting
 
 If you encounter issues, review the [troubleshooting][17] page, [file an issue][6], or talk to us on the [#contour channel][12] on Kubernetes Slack.
 
@@ -225,3 +232,7 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [23]: https://docs.docker.com/desktop/#download-and-install
 [25]: https://lists.cncf.io/g/cncf-contour-users/
 [26]: https://www.envoyproxy.io/
+[27]: https://kind.sigs.k8s.io/
+[28]: /guides/kind
+[29]: https://helm.sh/docs/intro/install/
+[30]: /guides/kind/#kind-configuration-file
