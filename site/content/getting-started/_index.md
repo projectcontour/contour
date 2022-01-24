@@ -137,36 +137,33 @@ You should see the following:
 
 Congratulations, you have installed Contour and Envoy! Let's install a web application workload and get some traffic flowing to the backend.
 
-TODO is there a different sample workload then?
-Note: It is not recommended to expose kuard to the public.
-
-To install kuard, run the following:
+To install [httpbin][9], run the following:
 
 ```bash
-kubectl apply -f https://projectcontour.io/examples/kuard.yaml
+kubectl apply -f https://projectcontour.io/examples/httpbin.yaml
 ```
 
 Verify the pods and service are ready by running:
 
 ```bash
-kubectl get po,svc,ing -l app=kuard
+kubectl get po,svc,ing -l app=httpbin
 ```  
 
 You should see the following:
-- 3 instances of pods/kuard, each with status **Running** and 1/1 **Ready**
-- 1 service/kuard CLUSTER-IP listed on port 80
+- 3 instances of pods/httpbin, each with status **Running** and 1/1 **Ready**
+- 1 service/httpbin CLUSTER-IP listed on port 80
 - 1 Ingress on port 80
 
 **NOTE**: the Helm install configures Contour to filter Ingress and HTTPProxy objects based on the `contour` IngressClass name.
 If using Helm, ensure the Ingress has an ingress class of `contour` with the following:
 
 ```bash
-kubectl patch ingress kuard -p '{"spec":{"ingressClassName": "contour"}}'
+kubectl patch ingress httpbin -p '{"spec":{"ingressClassName": "contour"}}'
 ```
 
 Now we're ready to send some traffic to our sample application, via Contour & Envoy.
 
-If you're using a local KinD cluster, the address you'll use is `127.0.0.1`.
+If you're using a local kind cluster, the address you'll use is `127.0.0.1`.
 
 If you're using a cluster with support for services of type `LoadBalancer`, you'll use the external IP address of the `envoy` service:
 
@@ -178,7 +175,8 @@ kubectl -n projectcontour get svc/envoy -o jsonpath='{.status.loadBalancer.ingre
 kubectl -n projectcontour get svc/my-release-contour-envoy -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 ```
 
-Verify access to the sample application via Contour/Envoy by browsing to the above address. You can refresh multiple times to cycle through each pod replica.  
+Verify access to the sample application via Contour/Envoy by browsing to the above address, either in a browser or via `curl http://<ADDRESS>`.
+You should see the `httpbin` home page.
 
 Congratulations, you have installed Contour, deployed a backend application, created an `Ingress` to route traffic to the application, and successfully accessed the app with Contour!
 
@@ -215,7 +213,7 @@ If you encounter issues, review the [troubleshooting][17] page, [file an issue][
 [4]: {{< ref "resources/faq.md" >}}
 [6]: {{< param github_url >}}/issues
 [7]: /docs/{{< param latest_version >}}/configuration/
-[9]: https://github.com/kubernetes-up-and-running/kuard
+[9]: https://httpbin.org/
 [10]: {{< relref "community.md" >}}
 [11]: https://github.com/projectcontour/community/wiki/Office-Hours
 [12]: {{< param slack_url >}}
