@@ -1,0 +1,1 @@
+Update ContourConfiguration CRD to be more in line with upstream conventions.
