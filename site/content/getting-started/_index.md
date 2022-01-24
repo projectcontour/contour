@@ -9,7 +9,7 @@ id: getting-started
 This guide shows how to install Contour in three different ways:
 - using Contour's example YAML
 - using the Helm chart for Contour
-- using the Contour operator (exerimental)
+- using the Contour operator (experimental)
 
 It then shows how to deploy a sample workload and route traffic to it via Contour.
 
