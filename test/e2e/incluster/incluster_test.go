@@ -36,7 +36,7 @@ func TestIncluster(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	// Default to using ContourConfiguration CRD.
+	// Default to using ContourConfiguration CRD and debug logging.
 	originalArgs := f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Args
 	var newArgs []string
 	for _, arg := range originalArgs {
@@ -44,7 +44,7 @@ var _ = BeforeSuite(func() {
 			newArgs = append(newArgs, arg)
 		}
 	}
-	newArgs = append(newArgs, "--contour-config-name=incluster-tests")
+	newArgs = append(newArgs, "--contour-config-name=incluster-tests", "--debug")
 	f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Args = newArgs
 
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(false))
@@ -75,6 +75,8 @@ var _ = Describe("Incluster", func() {
 	})
 
 	AfterEach(func() {
+		require.NoError(f.T(), f.Deployment.DumpContourLogs())
+
 		// Clean out contour after each test.
 		require.NoError(f.T(), f.Deployment.EnsureDeleted(f.Deployment.ContourDeployment))
 		require.NoError(f.T(), f.Deployment.EnsureDeleted(contourConfig))
