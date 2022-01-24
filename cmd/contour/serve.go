@@ -770,22 +770,24 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 }
 
 type dagBuilderConfig struct {
-	ingressClassName           string
-	rootNamespaces             []string
-	gatewayAPIConfigured       bool
-	disablePermitInsecure      bool
-	enableExternalNameService  bool
-	dnsLookupFamily            contour_api_v1alpha1.ClusterDNSFamilyType
-	headersPolicy              *contour_api_v1alpha1.PolicyConfig
-	applyHeaderPolicyToIngress bool
-	clientCert                 *types.NamespacedName
-	fallbackCert               *types.NamespacedName
+	ingressClassName          string
+	rootNamespaces            []string
+	gatewayAPIConfigured      bool
+	disablePermitInsecure     bool
+	enableExternalNameService bool
+	dnsLookupFamily           contour_api_v1alpha1.ClusterDNSFamilyType
+	headersPolicy             *contour_api_v1alpha1.PolicyConfig
+	clientCert                *types.NamespacedName
+	fallbackCert              *types.NamespacedName
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 
-	var requestHeadersPolicy dag.HeadersPolicy
-	var responseHeadersPolicy dag.HeadersPolicy
+	var (
+		requestHeadersPolicy       dag.HeadersPolicy
+		responseHeadersPolicy      dag.HeadersPolicy
+		applyHeaderPolicyToIngress bool
+	)
 
 	if dbc.headersPolicy != nil {
 		if dbc.headersPolicy.RequestHeadersPolicy != nil {
@@ -813,11 +815,14 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 				responseHeadersPolicy.Remove = append(responseHeadersPolicy.Remove, dbc.headersPolicy.ResponseHeadersPolicy.Remove...)
 			}
 		}
+
+		applyHeaderPolicyToIngress = dbc.headersPolicy.ApplyToIngress
 	}
 
 	var requestHeadersPolicyIngress dag.HeadersPolicy
 	var responseHeadersPolicyIngress dag.HeadersPolicy
-	if dbc.applyHeaderPolicyToIngress {
+
+	if applyHeaderPolicyToIngress {
 		requestHeadersPolicyIngress = requestHeadersPolicy
 		responseHeadersPolicyIngress = responseHeadersPolicy
 	}
