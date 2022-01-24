@@ -48,6 +48,8 @@ var DefaultTLSCiphers = TLSCiphers([]string{
 // validTLSCiphers contains the list of TLS ciphers that Envoy supports
 // See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
 // Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
+// When updating this list, remember to update the list in the docs for the
+// ContourConfiguration CRD.
 var validTLSCiphers = map[string]struct{}{
 	"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]": {},
 	"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]":     {},

@@ -322,7 +322,7 @@ var _ = Describe("HTTPProxy", func() {
 							FailOpen:         false,
 						}
 						contourConfiguration.Spec.RateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
-							ExtensionService: contour_api_v1alpha1.NamespacedName{
+							ExtensionService: &contour_api_v1alpha1.NamespacedName{
 								Name:      f.Deployment.RateLimitExtensionService.Name,
 								Namespace: namespace,
 							},

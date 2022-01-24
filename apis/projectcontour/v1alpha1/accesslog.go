@@ -44,10 +44,6 @@ var DefaultFields = AccessLogFields([]string{
 	"x_forwarded_for",
 })
 
-// DEFAULT_ACCESS_LOG_TYPE is the default access log format.
-// nolint:revive
-const DEFAULT_ACCESS_LOG_TYPE = EnvoyAccessLog
-
 // jsonFields is the canonical translation table for JSON fields to Envoy log template formats,
 // used for specifying fields for Envoy to log when JSON logging is enabled.
 var jsonFields = map[string]string{
@@ -134,8 +130,18 @@ func (a AccessLogType) Validate() error {
 	}
 }
 
-const EnvoyAccessLog AccessLogType = "envoy"
-const JSONAccessLog AccessLogType = "json"
+const (
+	// Set the Envoy access logging to Envoy's standard format.
+	// Can be customised using `accessLogFormatString`.
+	EnvoyAccessLog AccessLogType = "envoy"
+	// Set the Envoy access logging to a JSON format.
+	// Can be customised using `jsonFields`.
+	JSONAccessLog AccessLogType = "json"
+)
+
+// DEFAULT_ACCESS_LOG_TYPE is the default access log format.
+// nolint:revive
+const DEFAULT_ACCESS_LOG_TYPE = EnvoyAccessLog
 
 type AccessLogFields []string
 

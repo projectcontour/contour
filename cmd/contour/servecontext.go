@@ -268,6 +268,9 @@ func parseDefaultHTTPVersions(versions []contour_api_v1alpha1.HTTPVersionType) [
 }
 
 func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha1.ContourConfigurationSpec {
+
+	// TODO: EnvoyListenerConfig needs a check-and-initialize step
+	// so that an empty servecontext area comes out with the correct defaults.
 	ingress := &contour_api_v1alpha1.IngressConfig{}
 	if len(ctx.ingressClassName) > 0 {
 		ingress.ClassNames = []string{}
@@ -290,11 +293,6 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		gatewayConfig = &contour_api_v1alpha1.GatewayConfig{
 			ControllerName: ctx.Config.GatewayConfig.ControllerName,
 		}
-	}
-
-	var cipherSuites []contour_api_v1alpha1.TLSCipherType
-	for _, suite := range ctx.Config.TLS.CipherSuites {
-		cipherSuites = append(cipherSuites, contour_api_v1alpha1.TLSCipherType(suite))
 	}
 
 	var accessLogFormat contour_api_v1alpha1.AccessLogType
@@ -353,6 +351,26 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		timeoutParams.ConnectTimeout = pointer.StringPtr(ctx.Config.Timeouts.ConnectTimeout)
 	}
 
+	var cipherSuites []contour_api_v1alpha1.TLSCipherType
+	for _, suite := range ctx.Config.TLS.CipherSuites {
+		cipherSuites = append(cipherSuites, contour_api_v1alpha1.TLSCipherType(suite))
+	}
+
+	listenerConfig := &contour_api_v1alpha1.EnvoyListenerConfig{
+		UseProxyProto:             ctx.useProxyProto,
+		DisableAllowChunkedLength: ctx.Config.DisableAllowChunkedLength,
+		ConnectionBalancer:        ctx.Config.Listener.ConnectionBalancer,
+		TLS: &contour_api_v1alpha1.EnvoyTLS{
+			// Have to set the default here to cover the same ground as the CRD default.
+			MinimumProtocolVersion: "1.2",
+			CipherSuites:           cipherSuites,
+		},
+	}
+
+	if ctx.Config.TLS.MinimumProtocolVersion != "" {
+		listenerConfig.TLS.MinimumProtocolVersion = ctx.Config.TLS.MinimumProtocolVersion
+	}
+
 	var dnsLookupFamily contour_api_v1alpha1.ClusterDNSFamilyType
 	switch ctx.Config.Cluster.DNSLookupFamily {
 	case config.AutoClusterDNSFamily:
@@ -366,7 +384,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	var rateLimitService *contour_api_v1alpha1.RateLimitServiceConfig
 	if ctx.Config.RateLimitService.ExtensionService != "" {
 		rateLimitService = &contour_api_v1alpha1.RateLimitServiceConfig{
-			ExtensionService: contour_api_v1alpha1.NamespacedName{
+			ExtensionService: &contour_api_v1alpha1.NamespacedName{
 				Name:      k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService).Name,
 				Namespace: k8s.NamespacedNameFrom(ctx.Config.RateLimitService.ExtensionService).Namespace,
 			},
@@ -443,25 +461,17 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			Port:    ctx.healthPort,
 		},
 		Envoy: &contour_api_v1alpha1.EnvoyConfig{
-			Listener: contour_api_v1alpha1.EnvoyListenerConfig{
-				UseProxyProto:             ctx.useProxyProto,
-				DisableAllowChunkedLength: ctx.Config.DisableAllowChunkedLength,
-				ConnectionBalancer:        ctx.Config.Listener.ConnectionBalancer,
-				TLS: contour_api_v1alpha1.EnvoyTLS{
-					MinimumProtocolVersion: ctx.Config.TLS.MinimumProtocolVersion,
-					CipherSuites:           cipherSuites,
-				},
-			},
-			Service: contour_api_v1alpha1.NamespacedName{
+			Listener: listenerConfig,
+			Service: &contour_api_v1alpha1.NamespacedName{
 				Name:      ctx.Config.EnvoyServiceName,
 				Namespace: ctx.Config.EnvoyServiceNamespace,
 			},
-			HTTPListener: contour_api_v1alpha1.EnvoyListener{
+			HTTPListener: &contour_api_v1alpha1.EnvoyListener{
 				Address:   ctx.httpAddr,
 				Port:      ctx.httpPort,
 				AccessLog: ctx.httpAccessLog,
 			},
-			HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+			HTTPSListener: &contour_api_v1alpha1.EnvoyListener{
 				Address:   ctx.httpsAddr,
 				Port:      ctx.httpsPort,
 				AccessLog: ctx.httpsAccessLog,
@@ -472,7 +482,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				Port:    ctx.statsPort,
 			},
 			ClientCertificate: clientCertificate,
-			Logging: contour_api_v1alpha1.EnvoyLogging{
+			Logging: &contour_api_v1alpha1.EnvoyLogging{
 				AccessLogFormat:       accessLogFormat,
 				AccessLogFormatString: accessLogFormatString,
 				AccessLogFields:       accessLogFields,
@@ -480,7 +490,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 			},
 			DefaultHTTPVersions: defaultHTTPVersions,
 			Timeouts:            timeoutParams,
-			Cluster: contour_api_v1alpha1.ClusterParameters{
+			Cluster: &contour_api_v1alpha1.ClusterParameters{
 				DNSLookupFamily: dnsLookupFamily,
 			},
 			Network: contour_api_v1alpha1.NetworkParameters{

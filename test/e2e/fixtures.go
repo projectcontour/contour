@@ -370,11 +370,11 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 				DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
 					"HTTP/1.1", "HTTP/2",
 				},
-				Listener: contour_api_v1alpha1.EnvoyListenerConfig{
+				Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
 					UseProxyProto:             false,
 					DisableAllowChunkedLength: false,
 					ConnectionBalancer:        "",
-					TLS: contour_api_v1alpha1.EnvoyTLS{
+					TLS: &contour_api_v1alpha1.EnvoyTLS{
 						MinimumProtocolVersion: "1.2",
 						CipherSuites: []contour_api_v1alpha1.TLSCipherType{
 							"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
@@ -384,16 +384,16 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 						},
 					},
 				},
-				Service: contour_api_v1alpha1.NamespacedName{
+				Service: &contour_api_v1alpha1.NamespacedName{
 					Name:      "envoy",
 					Namespace: "projectcontour",
 				},
-				HTTPListener: contour_api_v1alpha1.EnvoyListener{
+				HTTPListener: &contour_api_v1alpha1.EnvoyListener{
 					Address:   "0.0.0.0",
 					Port:      8080,
 					AccessLog: "/dev/stdout",
 				},
-				HTTPSListener: contour_api_v1alpha1.EnvoyListener{
+				HTTPSListener: &contour_api_v1alpha1.EnvoyListener{
 					Address:   "0.0.0.0",
 					Port:      8443,
 					AccessLog: "/dev/stdout",
@@ -406,10 +406,10 @@ func DefaultContourConfiguration() *contour_api_v1alpha1.ContourConfiguration {
 					Address: "0.0.0.0",
 					Port:    8002,
 				},
-				Logging: contour_api_v1alpha1.EnvoyLogging{
+				Logging: &contour_api_v1alpha1.EnvoyLogging{
 					AccessLogFormat: contour_api_v1alpha1.EnvoyAccessLog,
 				},
-				Cluster: contour_api_v1alpha1.ClusterParameters{
+				Cluster: &contour_api_v1alpha1.ClusterParameters{
 					DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
 				},
 				Network: contour_api_v1alpha1.NetworkParameters{
