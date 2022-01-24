@@ -76,43 +76,8 @@ spec:
                 type: boolean
               envoy:
                 default:
-                  cluster:
-                    dnsLookupFamily: auto
-                  defaultHTTPVersions:
-                  - HTTP/1.1
-                  - HTTP/2
-                  health:
-                    address: 0.0.0.0
-                    port: 8002
-                  http:
-                    accessLog: /dev/stdout
-                    address: 0.0.0.0
-                    port: 8080
-                  https:
-                    accessLog: /dev/stdout
-                    address: 0.0.0.0
-                    port: 8443
                   listener:
-                    connectionBalancer: ""
-                    disableAllowChunkedLength: false
-                    tls:
-                      cipherSuites:
-                      - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-                      - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-                      - ECDHE-ECDSA-AES256-GCM-SHA384
-                      - ECDHE-RSA-AES256-GCM-SHA384
-                      minimumProtocolVersion: "1.2"
                     useProxyProtocol: false
-                  logging:
-                    accessLogFormat: envoy
-                  metrics:
-                    address: 0.0.0.0
-                    port: 8002
-                  network:
-                    adminPort: 9001
-                  service:
-                    name: envoy
-                    namespace: projectcontour
                 description: Envoy contains parameters for Envoy as well as how to
                   optionally configure a managed Envoy fleet.
                 properties:
@@ -184,8 +149,6 @@ spec:
                         default: 8002
                         description: "Defines the health port. \n Defaults to `8002`."
                         type: integer
-                    required:
-                    - address
                     type: object
                   http:
                     default:
@@ -207,8 +170,6 @@ spec:
                         description: Defines an Envoy listener Port.
                         type: integer
                     required:
-                    - accessLog
-                    - address
                     - port
                     type: object
                   https:
@@ -231,8 +192,6 @@ spec:
                         description: Defines an Envoy listener Port.
                         type: integer
                     required:
-                    - accessLog
-                    - address
                     - port
                     type: object
                   listener:
@@ -372,8 +331,6 @@ spec:
                             description: Client key filename.
                             type: string
                         type: object
-                    required:
-                    - address
                     type: object
                   network:
                     default:
@@ -476,9 +433,6 @@ spec:
                           for more information."
                         type: string
                     type: object
-                required:
-                - defaultHTTPVersions
-                - logging
                 type: object
               gateway:
                 description: Gateway contains parameters for the gateway-api Gateway
@@ -509,8 +463,6 @@ spec:
                     default: 8002
                     description: "Defines the health port. \n Defaults to `8002`."
                     type: integer
-                required:
-                - address
                 type: object
               httpproxy:
                 default:
@@ -584,8 +536,6 @@ spec:
                         description: Client key filename.
                         type: string
                     type: object
-                required:
-                - address
                 type: object
               policy:
                 description: Policy specifies default policy applied if not overridden
@@ -882,43 +832,8 @@ spec:
                     type: boolean
                   envoy:
                     default:
-                      cluster:
-                        dnsLookupFamily: auto
-                      defaultHTTPVersions:
-                      - HTTP/1.1
-                      - HTTP/2
-                      health:
-                        address: 0.0.0.0
-                        port: 8002
-                      http:
-                        accessLog: /dev/stdout
-                        address: 0.0.0.0
-                        port: 8080
-                      https:
-                        accessLog: /dev/stdout
-                        address: 0.0.0.0
-                        port: 8443
                       listener:
-                        connectionBalancer: ""
-                        disableAllowChunkedLength: false
-                        tls:
-                          cipherSuites:
-                          - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-                          - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-                          - ECDHE-ECDSA-AES256-GCM-SHA384
-                          - ECDHE-RSA-AES256-GCM-SHA384
-                          minimumProtocolVersion: "1.2"
                         useProxyProtocol: false
-                      logging:
-                        accessLogFormat: envoy
-                      metrics:
-                        address: 0.0.0.0
-                        port: 8002
-                      network:
-                        adminPort: 9001
-                      service:
-                        name: envoy
-                        namespace: projectcontour
                     description: Envoy contains parameters for Envoy as well as how
                       to optionally configure a managed Envoy fleet.
                     properties:
@@ -991,8 +906,6 @@ spec:
                             description: "Defines the health port. \n Defaults to
                               `8002`."
                             type: integer
-                        required:
-                        - address
                         type: object
                       http:
                         default:
@@ -1014,8 +927,6 @@ spec:
                             description: Defines an Envoy listener Port.
                             type: integer
                         required:
-                        - accessLog
-                        - address
                         - port
                         type: object
                       https:
@@ -1038,8 +949,6 @@ spec:
                             description: Defines an Envoy listener Port.
                             type: integer
                         required:
-                        - accessLog
-                        - address
                         - port
                         type: object
                       listener:
@@ -1186,8 +1095,6 @@ spec:
                                 description: Client key filename.
                                 type: string
                             type: object
-                        required:
-                        - address
                         type: object
                       network:
                         default:
@@ -1293,9 +1200,6 @@ spec:
                               for more information."
                             type: string
                         type: object
-                    required:
-                    - defaultHTTPVersions
-                    - logging
                     type: object
                   gateway:
                     description: Gateway contains parameters for the gateway-api Gateway
@@ -1327,8 +1231,6 @@ spec:
                         default: 8002
                         description: "Defines the health port. \n Defaults to `8002`."
                         type: integer
-                    required:
-                    - address
                     type: object
                   httpproxy:
                     default:
@@ -1403,8 +1305,6 @@ spec:
                             description: Client key filename.
                             type: string
                         type: object
-                    required:
-                    - address
                     type: object
                   policy:
                     description: Policy specifies default policy applied if not overridden

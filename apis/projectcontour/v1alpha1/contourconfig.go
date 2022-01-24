@@ -44,7 +44,7 @@ type ContourConfigurationSpec struct {
 	// Envoy contains parameters for Envoy as well
 	// as how to optionally configure a managed Envoy fleet.
 	// +optional
-	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, health: {address: "0.0.0.0", port: 8002}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "HTTP/1.1";"HTTP/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
+	// +kubebuilder:default={listener: {useProxyProtocol: false}}
 	Envoy *EnvoyConfig `json:"envoy"`
 
 	// Gateway contains parameters for the gateway-api Gateway that Contour
@@ -177,7 +177,8 @@ type HealthConfig struct {
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=253
 	// +kubebuilder:default="0.0.0.0"
-	Address string `json:"address"`
+	// +optional
+	Address string `json:"address,omitempty"`
 
 	// Defines the health port.
 	//
@@ -195,7 +196,8 @@ type MetricsConfig struct {
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=253
 	// +kubebuilder:default="0.0.0.0"
-	Address string `json:"address"`
+	//+ +optional
+	Address string `json:"address,omitempty"`
 
 	// Defines the metrics port.
 	//
@@ -273,7 +275,8 @@ type EnvoyConfig struct {
 
 	// Logging defines how Envoy's logs can be configured.
 	// +kubebuilder:default={ accessLogFormat: "envoy"}
-	Logging *EnvoyLogging `json:"logging"`
+	// +optional
+	Logging *EnvoyLogging `json:"logging,omitempty"`
 
 	// DefaultHTTPVersions defines the default set of HTTPS
 	// versions the proxy should accept. HTTP versions are
@@ -285,7 +288,8 @@ type EnvoyConfig struct {
 	// Other values will produce an error.
 	// The default includes both values.
 	// +kubebuilder:default="HTTP/1.1";"HTTP/2"
-	DefaultHTTPVersions []HTTPVersionType `json:"defaultHTTPVersions"`
+	// +optional
+	DefaultHTTPVersions []HTTPVersionType `json:"defaultHTTPVersions,omitempty"`
 
 	// Timeouts holds various configurable timeouts that can
 	// be set in the config file.
@@ -440,6 +444,7 @@ type EnvoyListener struct {
 	// Defaults to `0.0.0.0`.
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:default="0.0.0.0"
+	// +optional
 	Address string `json:"address"`
 
 	// Defines an Envoy listener Port.
@@ -447,7 +452,8 @@ type EnvoyListener struct {
 
 	// AccessLog defines where Envoy logs are outputted for this listener.
 	// +kubebuilder:default="/dev/stdout"
-	AccessLog string `json:"accessLog"`
+	// +optional
+	AccessLog string `json:"accessLog,omitempty"`
 }
 
 // EnvoyLogging defines how Envoy's logs can be configured.

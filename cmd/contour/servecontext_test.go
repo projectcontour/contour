@@ -393,7 +393,7 @@ var (
 	}
 
 	defaultIngressConfig = &contour_api_v1alpha1.IngressConfig{
-		ClassName:     nil,
+		ClassNames:    nil,
 		StatusAddress: nil,
 	}
 
