@@ -937,6 +937,10 @@ func (d *Deployment) DumpContourLogs() error {
 		Container: "contour",
 	}
 	for _, pod := range pods.Items {
+		if pod.Status.Phase == v1.PodFailed {
+			continue
+		}
+
 		fmt.Fprintln(d.cmdOutputWriter, "********** Start of log output for Contour pod:", pod.Name)
 		req := coreClient.CoreV1().Pods(d.Namespace.Name).GetLogs(pod.Name, podLogOptions)
 		logs, err := req.Stream(context.TODO())
