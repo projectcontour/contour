@@ -132,10 +132,10 @@ func (a AccessLogType) Validate() error {
 
 const (
 	// Set the Envoy access logging to Envoy's standard format.
-	// Can be customised using `accessLogFormatString`.
+	// Can be customized using `accessLogFormatString`.
 	EnvoyAccessLog AccessLogType = "envoy"
 	// Set the Envoy access logging to a JSON format.
-	// Can be customised using `jsonFields`.
+	// Can be customized using `jsonFields`.
 	JSONAccessLog AccessLogType = "json"
 )
 
