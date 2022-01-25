@@ -23,6 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/featuretests"
 	"github.com/projectcontour/contour/internal/fixture"
 	v1 "k8s.io/api/core/v1"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -252,6 +253,59 @@ func TestTLSCertificateDelegation(t *testing.T) {
 		},
 	}
 	rh.OnAdd(t5)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			defaultHTTPListener(),
+			ingressHTTPS,
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	rh.OnDelete(hp1)
+
+	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			statsListener(),
+		),
+		TypeUrl: listenerType,
+	})
+
+	// add an ingress in a different namespace mentioning secret wildcard from namespace secret via annotation.
+	i1 := &networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: s1.Namespace,
+			Annotations: map[string]string{
+				"projectcontour.io/tls-cert-namespace": sec1.Namespace,
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			TLS: []networking_v1.IngressTLS{{
+				Hosts:      []string{"example.com"},
+				SecretName: sec1.Name,
+			}},
+			Rules: []networking_v1.IngressRule{{
+				Host: "example.com",
+				IngressRuleValue: networking_v1.IngressRuleValue{
+					HTTP: &networking_v1.HTTPIngressRuleValue{
+						Paths: []networking_v1.HTTPIngressPath{{
+							Backend: networking_v1.IngressBackend{
+								Service: &networking_v1.IngressServiceBackend{
+									Name: s1.Name,
+									Port: networking_v1.ServiceBackendPort{
+										Number: 8080,
+									},
+								},
+							},
+						}},
+					},
+				},
+			}},
+		},
+	}
+	rh.OnAdd(i1)
 
 	c.Request(listenerType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,

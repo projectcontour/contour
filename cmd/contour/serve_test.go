@@ -135,14 +135,17 @@ func TestGetDAGBuilder(t *testing.T) {
 				},
 				Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 			},
-			ApplyToIngress: false,
+			ApplyToIngress: true,
 		}
 
 		serve := &Server{
 			log: logrus.StandardLogger(),
 		}
-		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
-			headersPolicy: policy, applyHeaderPolicyToIngress: true})
+		got := serve.getDAGBuilder(dagBuilderConfig{
+			rootNamespaces:  []string{},
+			dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+			headersPolicy:   policy,
+		})
 		commonAssertions(t, got)
 
 		ingressProcessor := mustGetIngressProcessor(t, got)

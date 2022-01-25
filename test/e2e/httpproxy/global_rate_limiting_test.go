@@ -29,7 +29,8 @@ import (
 )
 
 func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
-	Specify("global rate limit policy set on non-TLS virtualhost is applied", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4246
+	Specify("global rate limit policy set on non-TLS virtualhost is applied", FlakeAttempts(3), func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
@@ -112,7 +113,8 @@ func testGlobalRateLimitingVirtualHostNonTLS(namespace string) {
 }
 
 func testGlobalRateLimitingRouteNonTLS(namespace string) {
-	Specify("global rate limit policy set on non-TLS route is applied", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4246
+	Specify("global rate limit policy set on non-TLS route is applied", FlakeAttempts(3), func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
@@ -219,7 +221,8 @@ func testGlobalRateLimitingRouteNonTLS(namespace string) {
 }
 
 func testGlobalRateLimitingVirtualHostTLS(namespace string) {
-	Specify("global rate limit policy set on TLS virtualhost is applied", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4246
+	Specify("global rate limit policy set on TLS virtualhost is applied", FlakeAttempts(3), func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
@@ -306,7 +309,8 @@ func testGlobalRateLimitingVirtualHostTLS(namespace string) {
 }
 
 func testGlobalRateLimitingRouteTLS(namespace string) {
-	Specify("global rate limit policy set on TLS route is applied", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4246
+	Specify("global rate limit policy set on TLS route is applied", FlakeAttempts(3), func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
