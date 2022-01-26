@@ -551,7 +551,9 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 
 	d.EnvoyDeployment.Spec.Template = d.mutatePodTemplate(d.EnvoyDeployment.Spec.Template)
 
-	// Set the ReplicaCount=1
+	// The envoy deployment uses host ports, so can have at most
+	// one replica per node, and our cluster only has one worker
+	// node, so scale the deployment to 1.
 	d.EnvoyDeployment.Spec.Replicas = pointer.Int32(1)
 
 	return d.EnsureEnvoyDeployment()
@@ -819,19 +821,38 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 			return err
 		}
 	}
+
+	var envoyPodSpec *v1.PodSpec
+	if d.EnvoyDeploymentMode == DeploymentMode {
+		envoyPodSpec = &d.EnvoyDeployment.Spec.Template.Spec
+	} else {
+		envoyPodSpec = &d.EnvoyDaemonSet.Spec.Template.Spec
+	}
+
 	// Update container image.
-	if l := len(d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers); l != 1 {
-		return fmt.Errorf("invalid envoy daemonset init containers, expected 1, got %d", l)
+	if l := len(envoyPodSpec.InitContainers); l != 1 {
+		return fmt.Errorf("invalid envoy %s init containers, expected 1, got %d", d.EnvoyDeploymentMode, l)
 	}
-	d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers[0].Image = d.contourImage
-	d.EnvoyDaemonSet.Spec.Template.Spec.InitContainers[0].ImagePullPolicy = v1.PullIfNotPresent
-	if l := len(d.EnvoyDaemonSet.Spec.Template.Spec.Containers); l != 2 {
-		return fmt.Errorf("invalid envoy daemonset containers, expected 2, got %d", l)
+	envoyPodSpec.InitContainers[0].Image = d.contourImage
+	envoyPodSpec.InitContainers[0].ImagePullPolicy = v1.PullIfNotPresent
+	if l := len(envoyPodSpec.Containers); l != 2 {
+		return fmt.Errorf("invalid envoy %s containers, expected 2, got %d", d.EnvoyDeploymentMode, l)
 	}
-	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Image = d.contourImage
-	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
+	envoyPodSpec.Containers[0].Image = d.contourImage
+	envoyPodSpec.Containers[0].ImagePullPolicy = v1.PullIfNotPresent
 	// Set shutdown check-delay to 0s to ensure cleanup is fast.
-	d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Lifecycle.PreStop.Exec.Command = append(d.EnvoyDaemonSet.Spec.Template.Spec.Containers[0].Lifecycle.PreStop.Exec.Command, "--check-delay=0s")
+	envoyPodSpec.Containers[0].Lifecycle.PreStop.Exec.Command = append(envoyPodSpec.Containers[0].Lifecycle.PreStop.Exec.Command, "--check-delay=0s")
+
+	if d.EnvoyDeploymentMode == DeploymentMode {
+		// The envoy deployment uses host ports, so can have at most
+		// one replica per node, and our cluster only has one worker
+		// node, so scale the deployment to 1.
+		d.EnvoyDeployment.Spec.Replicas = pointer.Int32(1)
+
+		return d.EnsureEnvoyDeployment()
+	}
+
+	// Otherwise, we're deploying Envoy as a DaemonSet.
 	return d.EnsureEnvoyDaemonSet()
 }
 
@@ -856,8 +877,15 @@ func (d *Deployment) DeleteResourcesForInclusterContour() error {
 		},
 	}
 
+	var envoy client.Object
+	if d.EnvoyDeploymentMode == DeploymentMode {
+		envoy = d.EnvoyDeployment
+	} else {
+		envoy = d.EnvoyDaemonSet
+	}
+
 	for _, r := range []client.Object{
-		d.EnvoyDaemonSet,
+		envoy,
 		d.ContourDeployment,
 		leaderElectionLease,
 		leaderElectionConfigMap,
@@ -910,6 +938,14 @@ func (d *Deployment) EnsureDeleted(obj client.Object) error {
 	obj.SetResourceVersion("")
 
 	return nil
+}
+
+func (d *Deployment) EnvoyResourceAndName() string {
+	if d.EnvoyDeploymentMode == DeploymentMode {
+		return "deployment/envoy"
+	}
+
+	return "daemonset/envoy"
 }
 
 func randomString(n int) string {

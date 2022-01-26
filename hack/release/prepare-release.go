@@ -228,10 +228,9 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 			continue
 		}
 
-		nameParts := strings.Split(strings.TrimSuffix(dirEntry.Name(), ".md"), "-")
-
-		if len(nameParts) != 3 {
-			fmt.Printf("Skipping changelog file with invalid name format %q\n", dirEntry.Name())
+		entry, err := parseChangelogFilename(dirEntry.Name())
+		if err != nil {
+			fmt.Printf("Skipping changelog file: %v\n", err)
 			continue
 		}
 
@@ -240,13 +239,9 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 			return fmt.Errorf("error reading file %s: %v", filepath.Join("changelogs", "unreleased", dirEntry.Name()), err)
 		}
 
-		entry := Entry{
-			PRNumber: nameParts[0],
-			Author:   "@" + nameParts[1],
-			Content:  strings.TrimSpace(string(contents)),
-		}
+		entry.Content = strings.TrimSpace(string(contents))
 
-		switch strings.ToLower(nameParts[2]) {
+		switch strings.ToLower(entry.Category) {
 		case "major":
 			d.Major = append(d.Major, entry)
 		case "minor":
@@ -256,7 +251,7 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 		case "docs":
 			d.Docs = append(d.Docs, entry)
 		default:
-			fmt.Printf("Unrecognized category %s\n", nameParts[2])
+			fmt.Printf("Unrecognized category %q\n", entry.Category)
 			continue
 		}
 
@@ -296,6 +291,22 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 	return nil
 }
 
+func parseChangelogFilename(filename string) (Entry, error) {
+	parts := strings.Split(strings.TrimSuffix(filename, ".md"), "-")
+
+	// We may have more than 3 parts if the GitHub username itself
+	// contains a '-'.
+	if len(parts) < 3 {
+		return Entry{}, fmt.Errorf("invalid name format %q\n", filename)
+	}
+
+	return Entry{
+		PRNumber: parts[0],
+		Author:   "@" + strings.Join(parts[1:len(parts)-1], "-"),
+		Category: parts[len(parts)-1],
+	}, nil
+}
+
 // recordContributor adds contributor to contributors if they
 // are not a maintainer and not already present.
 func recordContributor(contributors []string, contributor string) []string {
@@ -324,6 +335,7 @@ type Entry struct {
 	PRNumber string
 	Author   string
 	Content  string
+	Category string
 }
 
 type Data struct {

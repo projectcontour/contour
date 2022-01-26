@@ -28,7 +28,8 @@ import (
 )
 
 func testMetrics() {
-	Specify("requests to default metrics listener are served", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4229
+	Specify("requests to default metrics listener are served", FlakeAttempts(3), func() {
 		t := f.T()
 
 		res, ok := f.HTTP.MetricsRequestUntil(&e2e.HTTPRequestOpts{
@@ -84,7 +85,7 @@ func testEnvoyMetricsOverHTTPS() {
 		time.Sleep(5 * time.Second)
 
 		// Port-forward for metrics over HTTPS
-		kubectlCmd, err := f.Kubectl.StartKubectlPortForward(18003, 8003, "projectcontour", "daemonset/envoy")
+		kubectlCmd, err := f.Kubectl.StartKubectlPortForward(18003, 8003, "projectcontour", f.Deployment.EnvoyResourceAndName())
 		require.NoError(t, err)
 		defer f.Kubectl.StopKubectlPortForward(kubectlCmd)
 

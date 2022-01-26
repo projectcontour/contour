@@ -56,6 +56,7 @@ var annotationsByKind = map[string]map[string]struct{}{
 		"projectcontour.io/response-timeout":             {},
 		"projectcontour.io/retry-on":                     {},
 		"projectcontour.io/tls-minimum-protocol-version": {},
+		"projectcontour.io/tls-cert-namespace":           {},
 		"projectcontour.io/websocket-routes":             {},
 	},
 	"Service": {
@@ -145,6 +146,12 @@ func HTTPAllowed(i *networking_v1.Ingress) bool {
 // present and set to true.
 func TLSRequired(i *networking_v1.Ingress) bool {
 	return i.Annotations["ingress.kubernetes.io/force-ssl-redirect"] == "true"
+}
+
+// TLSCertNamespace returns the namespace name of the delegated certificate if
+// projectcontour.io/tls-cert-namespace annotation is present and non-empty
+func TLSCertNamespace(i *networking_v1.Ingress) string {
+	return ContourAnnotation(i, "tls-cert-namespace")
 }
 
 // WebsocketRoutes retrieves the details of routes that should have websockets enabled from the

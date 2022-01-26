@@ -35,7 +35,7 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-var f = e2e.NewFramework(false, e2e.DaemonsetMode)
+var f = e2e.NewFramework(false)
 
 func TestGatewayAPI(t *testing.T) {
 	RegisterFailHandler(Fail)

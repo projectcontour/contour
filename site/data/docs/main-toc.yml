@@ -9,6 +9,8 @@ toc:
     subfolderitems:
       - page: HTTPProxy Fundamentals
         url: /config/fundamentals
+      - page: Ingress v1 Support
+        url: /config/ingress
       - page: Virtual Hosts
         url: /config/virtual-hosts
       - page: Inclusion and Delegation
