@@ -49,7 +49,7 @@ var (
 	f            = e2e.NewFramework(true)
 	reportDir    string
 	lbExternalIP string
-	numServices  = 4000
+	numServices  = 1000
 )
 
 func TestBench(t *testing.T) {
