@@ -46,7 +46,7 @@ import (
 )
 
 var (
-	f            = e2e.NewFramework(true, e2e.DaemonsetMode)
+	f            = e2e.NewFramework(true)
 	reportDir    string
 	lbExternalIP string
 	numServices  = 4000
