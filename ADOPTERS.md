@@ -20,14 +20,13 @@ _Add yours here!_
 
 Below is a list of solutions where Contour is being used as a component.
 
-**[Knative](https://knative.dev)**
-
+**[Knative](https://knative.dev)**  
 Knative can use Contour to serve all incoming traffic via the `net-contour` ingress Gateway. The [net-contour](https://github.com/knative-sandbox/net-contour) controller enables Contour to satisfy the networking needs of Knative Serving by bridging Knative's KIngress resources to Contour's HTTPProxy resources.
 
-**[VMware](https://tanzu.vmware.com/tanzu)**
+**[VMware](https://tanzu.vmware.com/tanzu)**  
 All four [VMware Tanzu](https://tanzu.vmware.com/content/blog/simplify-your-approach-to-application-modernization-with-4-simple-editions-for-the-tanzu-portfolio) editions make the best possible use of various open source projects, starting with putting Kubernetes at their core. We’ve included leading projects to provide our customers with flexibility and a range of necessary capabilities, including Harbor (for image registry), Antrea (for container networking), Contour (for ingress control), and Cluster API (for lifecycle management).
 
-**[Flyte](https://flyte.org/)**
+**[Flyte](https://flyte.org/)**  
 Flyte's [sandbox environment](https://docs.flyte.org/en/latest/deployment/sandbox.html#deployment-sandbox) is powered by Contour and this is the default Ingress Controller. Sandbox environment has made it possible for data scientists all over to try out Flyte quickly and without contour that would not have been easy.
 
 ## Adding a logo to projectcontour.io
