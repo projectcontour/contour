@@ -40,7 +40,7 @@ For further information, see [Contour architecture](https://projectcontour.io/do
 
 # Minor Changes
 
-### Metrics over HTTPS
+## Metrics over HTTPS
 
 Both Envoy and Contour metrics can now be served over HTTPS.
 Server can alternatively also require client to present certificate which is validated against configured CA certificate.
@@ -48,14 +48,14 @@ This feature makes it possible to limit the visibility of metrics to authorized 
 
 (#3707, @tsaarni)
 
-### Performance improvement for processing configuration
+## Performance improvement for processing configuration
 
 The performance of Contour's configuration processing has been made more efficient, particularly for clusters with large numbers (i.e. >1k) of HTTPProxies and/or Ingresses.
 This means that there should be less of a delay between creating/updating an HTTPProxy/Ingress in Kubernetes, and having it reflected in Envoy's configuration.
 
 (#4099, @skriss)
 
-### Allow retry policy, num retries to be zero 
+## Allow retry policy, num retries to be zero 
 
 The field, NumRetries (e.g. count), in the RetryPolicy allows for a zero to be
 specified, however Contour's internal logic would see that as "undefined"
@@ -66,7 +66,7 @@ of 1 is used.
 
 (#4117, @stevesloka)
 
-### Gateway API: implement PathPrefix matching
+## Gateway API: implement PathPrefix matching
 
 Contour now implements Gateway API v1alpha2's "path prefix" matching for `HTTPRoutes`.
 This is now the only native form of prefix matching supported by Gateway API, and is a change from v1alpha1.
@@ -76,14 +76,14 @@ For more information, see the [Gateway API documentation](https://gateway-api.si
 
 (#4119, @skriss)
 
-### Add Envoy Deployment Example
+## Add Envoy Deployment Example
 
 The examples now include a way to deploy Envoy as a Deployment vs a Daemonset.
 This can assist in allowing Envoy to drain connections cleanly when the Kubernetes cluster size is scaled down.
 
 (#4126, @stevesloka)
 
-### Default status on HTTPProxy resources
+## Default status on HTTPProxy resources
 
 When a new HTTPProxy is created, if Contour isn't yet running or
 functioning properly, then no status is set on the resource. 
@@ -93,7 +93,7 @@ object and updates the status.
 
 (#4133, @stevesloka)
 
-### Gateway API: support ReferencePolicy
+## Gateway API: support ReferencePolicy
 
 Contour now supports the `ReferencePolicy` CRD in Gateway API v1alpha2.
 `ReferencePolicy` enables certain cross-namespace references to be allowed in Gateway API.
@@ -102,7 +102,7 @@ When Contour processes a route that references a service in a different namespac
 
 (#4138, @skriss)
 
-### Source IP hash based load balancing
+## Source IP hash based load balancing
 
 Contour users can now configure their load balancing policies on `HTTPProxy` resources to hash the source IP of a client to ensure consistent routing to a backend service instance. Using this feature combined with header value hashing can implement advanced request routing and session affinity. Note that if you are using a load balancer to front your Envoy deployment, you will need to ensure it preserves client source IP addresses to ensure this feature is effective.
 
@@ -110,7 +110,7 @@ See [this page](https://projectcontour.io/docs/v1.20.0/config/request-routing/#l
 
 (#4141, @sunjayBhatia)
 
-### Gateway API: set Gateway Listener status fields
+## Gateway API: set Gateway Listener status fields
 
 Contour now sets the `.status.listeners.supportedKinds` and `.status.listeners.attachedRoutes` fields on Gateways for Gateway API.
 The first describes the list of route groups/kinds that the listener supports, and the second captures the total number of routes that are successfully attached to the listener.
@@ -145,7 +145,7 @@ The `ca.crt` key may contain one or more CA certificates, that do not need to ha
 
 (#4165, @youngnick)
 
-### HTTPProxy TCPProxy service weights are now applied
+## HTTPProxy TCPProxy service weights are now applied
 
 Previously, Contour did not apply any service weights defined in an HTTPProxy's TCPProxy, and all services were equally weighted.
 Now, if those weights are defined, they are applied so traffic is weighted appropriately across the services.
@@ -153,7 +153,7 @@ Note that if no TCPProxy service weights are defined, traffic continues to be eq
 
 (#4169, @skriss)
 
-### Leader Election Configuration
+## Leader Election Configuration
 
 `contour serve` leader election configuration via config file has been deprecated.
 The preferred way to configure leader election parameters is now via command line flags.
@@ -164,13 +164,13 @@ Leader election configuration is not something that will be dynamically configur
 
 (#4171, @sunjayBhatia)
 
-### Set Gateway listener conditions
+## Set Gateway listener conditions
 
 Contour now sets various Gateway listener conditions as it processes them, including the "Ready", "Detached", and "ResolvedRefs" condition types, to provide more visibility to the user as to whether their listeners are defined correctly or not.
 
 (#4186, @skriss)
 
-### HTTP Request Redirect Policy 
+## HTTP Request Redirect Policy 
 
 HTTPProxy.Route now has a HTTPRequestRedirectPolicy which allows for routes to specify a RequestRedirectPolicy.
 This policy will allow a redirect to be configured for a specific set of Conditions within a single route.
@@ -180,7 +180,7 @@ Additionally, Services on a Route are now optional when a request redirect is de
 
 (#4201, @stevesloka)
 
-### Transition to controller-runtime managed leader election
+## Transition to controller-runtime managed leader election
 
 Contour now utilizes [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) Manager based leader election and coordination of subroutines.
 With this change, Contour is also transitioning away from using a ConfigMap for leader election.
@@ -238,16 +238,15 @@ server: envoy
 - Fix panic in Contour startup when using `--root-namespaces` flag (#4110, @sunjayBhatia)
 - Gateway API: adds support for HTTP method matching in `HTTPRoute` rules. See the [Gateway API documentation](https://gateway-api.sigs.k8s.io/v1alpha2/references/spec/#gateway.networking.k8s.io/v1alpha2.HTTPRouteMatch) for more information. (#4120, @skriss)
 - Gateway API: adds support for the "RequestRedirect" HTTPRoute filter type at the rule level. (#4123, @skriss)
-- Update to using Envoy bootstrap Admin [`access_log` field](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/accesslog/v3/accesslog.proto#envoy-v3-api-msg-config-accesslog-v3-accesslog) instead of deprecated `access_log_path` (deprecated in Envoy v1.18.0)
-Update to using Envoy [XFF Original IP Detection extension](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/http/original_ip_detection/xff/v3/xff.proto) instead of HTTPConnectionManager `xff_num_trusted_hops` field (deprecated in Envoy v1.19.0) (#4142, @sunjayBhatia)
+- Update to using Envoy bootstrap Admin [`access_log` field](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/accesslog/v3/accesslog.proto#envoy-v3-api-msg-config-accesslog-v3-accesslog) instead of deprecated `access_log_path` (deprecated in Envoy v1.18.0) (#4142, @sunjayBhatia)
+- Update to using Envoy [XFF Original IP Detection extension](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/http/original_ip_detection/xff/v3/xff.proto) instead of HTTPConnectionManager `xff_num_trusted_hops` field (deprecated in Envoy v1.19.0) (#4142, @sunjayBhatia)
 - HTTPProxy resources now support wildcard fqdn's in the form `*.projectcontour.io`. (#4145, @stevesloka)
 - Adds a new field, `withRequestBody`, within HTTPProxy's `authorizationServer` to allow client request body to be sent to the external authorization server. See [External Authorization Configuration Overview](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_authz/v3/ext_authz.proto#envoy-v3-api-msg-extensions-filters-http-ext-authz-v3-extauthz) for more information. (#4148, @abhide)
 - Timeout for upstream network connection timeout increased from 250 msec to 2 seconds. (#4151, @tsaarni)
 - Fix accidental negation of disableAllowChunkedLength configuration flag. (#4152, @sunjayBhatia)
 - Replaces the use of the dynamic Kubernetes client with the controller-runtime client. (#4153, @skriss)
 - Gateway API: Contour no longer sets up RBAC for TCPRoutes and UDPRoutes or watches them, since they are not supported. (#4166, @skriss)
-- Very long (~100 characters) Ingress path prefix matches should now no longer be rejected by Envoy.
-See [this issue](https://github.com/projectcontour/contour/issues/4191) for context. (#4197, @sunjayBhatia)
+- Very long (~100 characters) Ingress path prefix matches should now no longer be rejected by Envoy. See [this issue](https://github.com/projectcontour/contour/issues/4191) for context. (#4197, @sunjayBhatia)
 - Removes spec.ttlSecondsAfterFinished from certgen job in versioned releases, as immediately deleting it upon completion will not be useful for most consumers. (#4200, @lrewega)
 - Gateway API: set an HTTPRoute condition of "ValidMatches: false" when a path match does not start with '/' or contains consecutive '/' characters. (#4209, @skriss)
 - Gateway API: allow Gateways to reference TLS certificates in other namespaces when an applicable ReferencePolicy is defined. See [the Gateway API documentation](https://gateway-api.sigs.k8s.io/v1alpha2/guides/tls/#cross-namespace-certificate-references) for more information. (#4212, @skriss)
@@ -265,8 +264,7 @@ See [this issue](https://github.com/projectcontour/contour/issues/4191) for cont
 # Docs Changes
 - Pare down docs versions available in site dropdown. (#4020, @sunjayBhatia)
 - Updates the cert-manager guide to use the latest versions of Contour and cert-manager as well as Ingress v1 resources. (#4115, @skriss)
-- The [Contour deprecation policy](https://projectcontour.io/resources/deprecation-policy/) for Alpha APIs has been updated to be explicitly more lenient in regards to behavior changes and field removal.
-A new API version is not strictly required when making such changes. (#4173, @sunjayBhatia)
+- The [Contour deprecation policy](https://projectcontour.io/resources/deprecation-policy/) for Alpha APIs has been updated to be explicitly more lenient in regards to behavior changes and field removal. A new API version is not strictly required when making such changes. (#4173, @sunjayBhatia)
 - Updates the Gateway API guide to use Gateway API v1alpha2. (#4262, @skriss)
 - Adds documentation for header manipulation when using Ingress v1 resources. (#4279, @sunjayBhatia)
 - Revise the "Getting Started" guide for clarity and to cover more types of clusters and ways of installing Contour. (#4288, @skriss)
@@ -274,7 +272,10 @@ A new API version is not strictly required when making such changes. (#4173, @su
 
 # Deprecation and Removal Notices
 
-TODO
+Contour v1.20.0 is the last release that will be pushed to Docker Hub.
+We've been pushing images to [GitHub Container Registry](https://github.com/projectcontour/contour/pkgs/container/contour) (GHCR) for several releases now, and all example YAML manifests have been updated to use the GHCR image.
+If you haven't yet updated your own install, now is the time to switch to `ghcr.io/projectcontour/contour:v1.20.0`.
+Past images will be left in Docker Hub indefinitely.
 
 # Installing and Upgrading
 
