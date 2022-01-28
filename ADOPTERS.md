@@ -5,7 +5,9 @@ If you're using Contour and want to add your organization to this list, please
 
 <a href="https://knative.dev" border="0" target="_blank"><img alt="knative.dev" src="site/img/adopters/knative.svg" height="50"></a>
 
-<a href="https://www.vmware.com" border="0" target="_blank"><img alt="vmware.com" src="site/img/adopters/VMware-logo-grey.jpg" height="50"></a>&nbsp; &nbsp; &nbsp;
+<a href="https://www.vmware.com" border="0" target="_blank"><img alt="vmware.com" src="site/img/adopters/VMware-logo-grey.jpg" height="50"></a>
+
+<a href="https://flyte.org/" border="0" target="_blank"><img alt="flyte.com" src="site/img/adopters/flyte.png" height="50"></a>&nbsp; &nbsp; &nbsp;
 
 ## Success Stories
 
@@ -18,12 +20,14 @@ _Add yours here!_
 
 Below is a list of solutions where Contour is being used as a component.
 
-**[Knative](https://knative.dev)**
-
+**[Knative](https://knative.dev)**  
 Knative can use Contour to serve all incoming traffic via the `net-contour` ingress Gateway. The [net-contour](https://github.com/knative-sandbox/net-contour) controller enables Contour to satisfy the networking needs of Knative Serving by bridging Knative's KIngress resources to Contour's HTTPProxy resources.
 
-**[VMware](https://tanzu.vmware.com/tanzu)**
+**[VMware](https://tanzu.vmware.com/tanzu)**  
 All four [VMware Tanzu](https://tanzu.vmware.com/content/blog/simplify-your-approach-to-application-modernization-with-4-simple-editions-for-the-tanzu-portfolio) editions make the best possible use of various open source projects, starting with putting Kubernetes at their core. We’ve included leading projects to provide our customers with flexibility and a range of necessary capabilities, including Harbor (for image registry), Antrea (for container networking), Contour (for ingress control), and Cluster API (for lifecycle management).
+
+**[Flyte](https://flyte.org/)**  
+Flyte's [sandbox environment](https://docs.flyte.org/en/latest/deployment/sandbox.html#deployment-sandbox) is powered by Contour and this is the default Ingress Controller. Sandbox environment has made it possible for data scientists all over to try out Flyte quickly and without contour that would not have been easy.
 
 ## Adding a logo to projectcontour.io
 
