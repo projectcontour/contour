@@ -1,1 +1,0 @@
-Updates Go version to 1.17.5, which includes fixes for CVE-2021-44716 and CVE-2021-44717. See the [Go release announcement](https://groups.google.com/g/golang-announce/c/hcmEScgc00k) for more information.
