@@ -339,8 +339,7 @@ run-bench:
 	ginkgo -tags=e2e -mod=readonly -keep-going -randomize-suites -randomize-all -slow-spec-threshold=4h -timeout=5h -r -v ./test/e2e/bench
 
 .PHONY: bench
-bench: deploy-gcp-bench-cluster teardown-gcp-bench-cluster
-# bench: deploy-gcp-bench-cluster run-bench teardown-gcp-bench-cluster
+bench: deploy-gcp-bench-cluster run-bench teardown-gcp-bench-cluster
 
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes
