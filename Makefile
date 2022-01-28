@@ -293,7 +293,7 @@ e2e: | setup-kind-cluster load-contour-image-kind run-e2e cleanup-kind ## Run E2
 run-e2e:
 	CONTOUR_E2E_LOCAL_HOST=$(CONTOUR_E2E_LOCAL_HOST) \
 		CONTOUR_E2E_IMAGE=$(CONTOUR_E2E_IMAGE) \
-		ginkgo -tags=e2e -mod=readonly -skip-package=upgrade -keep-going -randomize-suites -randomize-all -slow-spec-threshold=120s -r ./test/e2e
+		ginkgo -tags=e2e -mod=readonly -skip-package=upgrade,bench -keep-going -randomize-suites -randomize-all -slow-spec-threshold=120s -r ./test/e2e
 
 .PHONY: cleanup-kind
 cleanup-kind:
@@ -325,6 +325,21 @@ check-ingress-conformance: | install-contour-working run-ingress-conformance cle
 .PHONY: run-ingress-conformance
 run-ingress-conformance:
 	./test/scripts/run-ingress-conformance.sh
+
+.PHONY: deploy-gcp-bench-cluster
+deploy-gcp-bench-cluster:
+	./test/scripts/gcp-bench-cluster.sh deploy
+
+.PHONY: teardown-gcp-bench-cluster
+teardown-gcp-bench-cluster:
+	./test/scripts/gcp-bench-cluster.sh teardown
+
+.PHONY: run-bench
+run-bench:
+	ginkgo -tags=e2e -mod=readonly -keep-going -randomize-suites -randomize-all -slow-spec-threshold=4h -timeout=5h -r -v ./test/e2e/bench
+
+.PHONY: bench
+bench: deploy-gcp-bench-cluster run-bench teardown-gcp-bench-cluster
 
 help: ## Display this help
 	@echo Contour high performance Ingress controller for Kubernetes
