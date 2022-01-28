@@ -196,7 +196,9 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
 	// Instantiate a controller-runtime manager.
 	options := manager.Options{
-		Scheme: scheme,
+		Scheme:                 scheme,
+		MetricsBindAddress:     "0",
+		HealthProbeBindAddress: "0",
 	}
 	if ctx.DisableLeaderElection {
 		log.Info("Leader election disabled")
