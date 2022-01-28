@@ -15,6 +15,11 @@ readonly CONTOUR_BENCH_NUM_APP_POOL_NODES=${CONTOUR_BENCH_NUM_APP_POOL_NODES:-10
 
 function deploy() {
   num_nodes=$CONTOUR_BENCH_NUM_APP_POOL_NODES
+  # Add one to the number of worker nodes for the node that will run contour.
+  # This separate node from the application worker nodes will allow us to more
+  # closely control contour resource limits.
+  # We use this method rather than node pools since GKE repairs the cluster when
+  # node pools are added, rendering it unusable for a few minutes.
   ((num_nodes+=1))
 
   gcloud container clusters create ${CONTOUR_BENCH_CLUSTER_NAME} \
