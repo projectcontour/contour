@@ -23,16 +23,6 @@ jobs:
       uses: docker/setup-buildx-action@v1
       with:
         version: latest
-    - name: Build and Push to Docker Hub
-      env:
-        REGISTRY: docker.io/projectcontour
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        TAG_LATEST: "false"
-      run: |
-        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        ./hack/actions/build-and-push-release-images.sh
-        docker logout
     - name: Log in to GHCR
       uses: docker/login-action@v1
       with:
