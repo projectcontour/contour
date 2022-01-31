@@ -26,7 +26,7 @@ Contour bridges other solution gaps in several ways:
 - Cleanly integrate with the Kubernetes object model
 
 ## Prerequisites
-Contour is tested with Kubernetes clusters running version [1.20 and later][4].
+Contour is tested with Kubernetes clusters running version [1.21 and later][4].
 
 ## Get started
 Getting started with Contour is as simple as one command.
@@ -43,5 +43,5 @@ If you encounter issues review the [troubleshooting][5] page, [file an issue][6]
 [6]: https://github.com/projectcontour/contour/issues
 [7]: https://kubernetes.slack.com/messages/contour
 [8]: /resources/philosophy
-[9]: /guides/gateway-api-v1alpha2
+[9]: /guides/gateway-api
 [10]: /docs/{{< param version >}}/config/ingress
