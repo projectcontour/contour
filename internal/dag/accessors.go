@@ -295,20 +295,3 @@ func (d *DAG) GetSecureVirtualHostRoutes() map[*SecureVirtualHost][]*Route {
 
 	return res
 }
-
-// validSecret returns true if the Secret contains certificate and private key material.
-func validSecret(s *v1.Secret) error {
-	if s.Type != v1.SecretTypeTLS {
-		return fmt.Errorf("Secret type is not %q", v1.SecretTypeTLS)
-	}
-
-	if len(s.Data[v1.TLSCertKey]) == 0 {
-		return fmt.Errorf("empty %q key", v1.TLSCertKey)
-	}
-
-	if len(s.Data[v1.TLSPrivateKeyKey]) == 0 {
-		return fmt.Errorf("empty %q key", v1.TLSPrivateKeyKey)
-	}
-
-	return nil
-}

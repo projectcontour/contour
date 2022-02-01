@@ -180,7 +180,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
-			sec, err := p.source.LookupSecret(secretName, validSecret)
+			sec, err := p.source.LookupSecret(secretName, validTLSSecret)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 					"Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
@@ -224,7 +224,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					return
 				}
 
-				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validSecret)
+				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validTLSSecret)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid",
 						"Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
@@ -673,7 +673,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			var clientCertSecret *Secret
 			if p.ClientCertificate != nil {
-				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validSecret)
+				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validTLSSecret)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 						"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
