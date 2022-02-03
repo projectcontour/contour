@@ -262,7 +262,8 @@ func parseDefaultHTTPVersions(versions []contour_api_v1alpha1.HTTPVersionType) [
 func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha1.ContourConfigurationSpec {
 	ingress := &contour_api_v1alpha1.IngressConfig{}
 	if len(ctx.ingressClassName) > 0 {
-		ingress.ClassName = pointer.StringPtr(ctx.ingressClassName)
+		ingress.ClassNames = []string{}
+		ingress.ClassNames = append(ingress.ClassNames, strings.Split(ctx.ingressClassName, ",")...)
 	}
 	if len(ctx.Config.IngressStatusAddress) > 0 {
 		ingress.StatusAddress = pointer.StringPtr(ctx.Config.IngressStatusAddress)

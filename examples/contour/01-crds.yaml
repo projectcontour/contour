@@ -531,9 +531,11 @@ spec:
               ingress:
                 description: Ingress contains parameters for ingress options.
                 properties:
-                  className:
-                    description: Ingress Class Name Contour should use.
-                    type: string
+                  classNames:
+                    description: Ingress Class Names Contour should use.
+                    items:
+                      type: string
+                    type: array
                   statusAddress:
                     description: Address to set in Ingress object status.
                     type: string
@@ -1461,9 +1463,11 @@ spec:
                   ingress:
                     description: Ingress contains parameters for ingress options.
                     properties:
-                      className:
-                        description: Ingress Class Name Contour should use.
-                        type: string
+                      classNames:
+                        description: Ingress Class Names Contour should use.
+                        items:
+                          type: string
+                        type: array
                       statusAddress:
                         description: Address to set in Ingress object status.
                         type: string

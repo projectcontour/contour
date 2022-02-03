@@ -22,6 +22,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
@@ -373,8 +374,8 @@ func (s *Server) doServe() error {
 	}
 
 	ingressClassName := ""
-	if contourConfiguration.Ingress != nil && contourConfiguration.Ingress.ClassName != nil {
-		ingressClassName = *contourConfiguration.Ingress.ClassName
+	if contourConfiguration.Ingress != nil && contourConfiguration.Ingress.ClassNames != nil {
+		ingressClassName = strings.Join(contourConfiguration.Ingress.ClassNames, ",")
 	}
 
 	var clientCert *types.NamespacedName

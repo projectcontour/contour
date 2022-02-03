@@ -445,7 +445,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -550,7 +550,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -661,7 +661,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     pointer.StringPtr("coolclass"),
+					ClassNames:    []string{"coolclass"},
 					StatusAddress: pointer.StringPtr("1.2.3.4"),
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -766,7 +766,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -873,7 +873,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -981,7 +981,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -1089,7 +1089,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -1202,7 +1202,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -1309,7 +1309,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{

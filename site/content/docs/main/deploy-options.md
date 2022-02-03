@@ -200,7 +200,7 @@ Also see the [upgrade guides][15] on steps to roll out a new version of Contour.
 
 If you're running multiple ingress controllers, or running on a cloudprovider that natively handles ingress,
 you can specify the annotation `kubernetes.io/ingress.class: "contour"` on all ingresses that you would like Contour to claim.
-You can customize the class name with the `--ingress-class-name` flag at runtime.
+You can customize the class name with the `--ingress-class-name` flag at runtime. (A comma-separated list of class names is allowed.)
 If the `kubernetes.io/ingress.class` annotation is present with a value other than `"contour"`, Contour will ignore that ingress.
 
 ## Uninstall Contour
