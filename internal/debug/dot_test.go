@@ -28,6 +28,7 @@ import (
 )
 
 //go:generate go run github.com/vektra/mockery/v2 --case=snake --name=DagBuilder --srcpkg=github.com/projectcontour/contour/internal/dag
+
 func TestWriteDotEscapesLabels(t *testing.T) {
 	d := dag.DAG{}
 	d.Listeners = append(d.Listeners, getTestListeners()...)
@@ -51,6 +52,35 @@ func TestWriteDotEscapesLabels(t *testing.T) {
 			require.NotContains(t, match[1], `>`, "Unescaped greater than")
 		}
 	}
+}
+
+// TestWriteDotLineCount is a pinning test to sanity check during refactor.
+func TestWriteDotLineCount(t *testing.T) {
+	d := dag.DAG{}
+	d.Listeners = append(d.Listeners, getTestListeners()...)
+	b := mocks.DagBuilder{}
+	b.On("Build").Return(&d)
+
+	dw := &dotWriter{
+		Builder: &b,
+	}
+	buf := bytes.Buffer{}
+	dw.writeDot(&buf)
+
+	require.NotNil(t, buf)
+	var line string
+	var err error
+	lineCount := 0
+	labeledLineCount := 0
+	labelMatcher := regexp.MustCompile(`label="(.*)"`)
+	for ; err == nil || len(line) > 0; line, err = buf.ReadString('\n') {
+		lineCount++
+		if match := labelMatcher.FindStringSubmatch(line); match != nil {
+			labeledLineCount++
+		}
+	}
+	require.EqualValues(t, 21, lineCount)
+	require.EqualValues(t, 9, labeledLineCount)
 }
 
 func getTestListeners() []*dag.Listener {
