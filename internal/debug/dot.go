@@ -24,7 +24,7 @@ import (
 // quick and dirty dot debugging package
 
 type dotWriter struct {
-	*dag.Builder
+	Builder dag.DagBuilder
 }
 
 type pair struct {
@@ -32,13 +32,14 @@ type pair struct {
 }
 
 func (dw *dotWriter) writeDot(w io.Writer) {
+	b := dw.Builder
 	fmt.Fprintln(w, "digraph DAG {\nrankdir=\"LR\"")
 
 	nodes := map[interface{}]bool{}
 	edges := map[pair]bool{}
 
 	// collect nodes and edges
-	for _, listener := range dw.Builder.Build().Listeners {
+	for _, listener := range b.Build().Listeners {
 		nodes[listener] = true
 
 		for _, vhost := range listener.VirtualHosts {

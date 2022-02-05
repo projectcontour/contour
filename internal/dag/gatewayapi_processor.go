@@ -880,10 +880,10 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 				case listenerSecret != nil:
 					svhost := p.dag.EnsureSecureVirtualHost(host)
 					svhost.Secret = listenerSecret
-					svhost.addRoute(route)
+					svhost.AddRoute(route)
 				default:
 					vhost := p.dag.EnsureVirtualHost(host)
-					vhost.addRoute(route)
+					vhost.AddRoute(route)
 				}
 
 				programmed = true

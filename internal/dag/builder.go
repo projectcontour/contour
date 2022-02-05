@@ -35,6 +35,12 @@ func (pf ProcessorFunc) Run(dag *DAG, source *KubernetesCache) {
 	}
 }
 
+type DagBuilder interface {
+
+	// Build builds and returns a new DAG
+	Build() *DAG
+}
+
 // Builder builds a DAG.
 type Builder struct {
 	// Source is the source of Kubernetes objects
