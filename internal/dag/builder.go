@@ -36,7 +36,6 @@ func (pf ProcessorFunc) Run(dag *DAG, source *KubernetesCache) {
 }
 
 type DagBuilder interface {
-
 	// Build builds and returns a new DAG
 	Build() *DAG
 }
