@@ -933,7 +933,7 @@ func TestDefaultBackendIsOverriddenByNoHostIngressRule(t *testing.T) {
 // tested in internal/contour/route_test.go
 func TestRDSIngressClassAnnotation(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
-		b.Source.IngressClassName = "linkerd"
+		b.Source.IngressClassNames = []string{"linkerd"}
 	})
 	defer done()
 

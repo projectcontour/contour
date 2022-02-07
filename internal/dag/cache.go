@@ -16,6 +16,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -42,9 +43,10 @@ type KubernetesCache struct {
 	// namespace.
 	RootNamespaces []string
 
-	// Contour's IngressClassName.
-	// If not set, defaults to DEFAULT_INGRESS_CLASS.
-	IngressClassName string
+	// Names of ingress classes to cache HTTPProxies/Ingresses for. If not
+	// set, objects with no ingress class or DEFAULT_INGRESS_CLASS will be
+	// cached.
+	IngressClassNames []string
 
 	// Secrets that are referred from the configuration file.
 	ConfiguredSecretRefs []*types.NamespacedName
@@ -112,14 +114,14 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			kc.namespaces[obj.Name] = obj
 			return true
 		case *networking_v1.Ingress:
-			if !ingressclass.MatchesIngress(obj, kc.IngressClassName) {
+			if !ingressclass.MatchesIngress(obj, kc.IngressClassNames) {
 				// We didn't get a match so report this object is being ignored.
 				kc.WithField("name", obj.GetName()).
 					WithField("namespace", obj.GetNamespace()).
 					WithField("kind", k8s.KindOf(obj)).
 					WithField("ingress-class-annotation", annotation.IngressClass(obj)).
 					WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
-					WithField("target-ingress-class", kc.IngressClassName).
+					WithField("target-ingress-classes", strings.Join(kc.IngressClassNames, ",")).
 					Debug("ignoring Ingress with unmatched ingress class")
 				return false
 			}
@@ -127,14 +129,14 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		case *contour_api_v1.HTTPProxy:
-			if !ingressclass.MatchesHTTPProxy(obj, kc.IngressClassName) {
+			if !ingressclass.MatchesHTTPProxy(obj, kc.IngressClassNames) {
 				// We didn't get a match so report this object is being ignored.
 				kc.WithField("name", obj.GetName()).
 					WithField("namespace", obj.GetNamespace()).
 					WithField("kind", k8s.KindOf(obj)).
 					WithField("ingress-class-annotation", annotation.IngressClass(obj)).
 					WithField("ingress-class-name", obj.Spec.IngressClassName).
-					WithField("target-ingress-class", kc.IngressClassName).
+					WithField("target-ingress-classes", strings.Join(kc.IngressClassNames, ",")).
 					Debug("ignoring HTTPProxy with unmatched ingress class")
 				return false
 			}

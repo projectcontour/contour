@@ -314,10 +314,12 @@ func TestStatusAddressUpdater(t *testing.T) {
 			assert.True(t, suc.Add(objName, objName, tc.preop), "unable to add object to cache")
 
 			isu := StatusAddressUpdater{
-				Logger:           log,
-				LBStatus:         tc.status,
-				IngressClassName: tc.ingressClassName,
-				StatusUpdater:    &suc,
+				Logger:        log,
+				LBStatus:      tc.status,
+				StatusUpdater: &suc,
+			}
+			if len(tc.ingressClassName) > 0 {
+				isu.IngressClassNames = []string{tc.ingressClassName}
 			}
 
 			isu.OnAdd(tc.preop)
@@ -331,10 +333,12 @@ func TestStatusAddressUpdater(t *testing.T) {
 			assert.True(t, suc.Add(objName, objName, tc.preop), "unable to add object to cache")
 
 			isu := StatusAddressUpdater{
-				Logger:           log,
-				LBStatus:         tc.status,
-				IngressClassName: tc.ingressClassName,
-				StatusUpdater:    &suc,
+				Logger:        log,
+				LBStatus:      tc.status,
+				StatusUpdater: &suc,
+			}
+			if len(tc.ingressClassName) > 0 {
+				isu.IngressClassNames = []string{tc.ingressClassName}
 			}
 
 			isu.OnUpdate(tc.preop, tc.preop)

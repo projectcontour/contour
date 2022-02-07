@@ -22,7 +22,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	envoy_server_v3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
@@ -373,9 +372,9 @@ func (s *Server) doServe() error {
 		s.log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", contourConfiguration.Envoy.ClientCertificate)
 	}
 
-	ingressClassName := ""
-	if contourConfiguration.Ingress != nil && contourConfiguration.Ingress.ClassNames != nil {
-		ingressClassName = strings.Join(contourConfiguration.Ingress.ClassNames, ",")
+	var ingressClassNames []string
+	if contourConfiguration.Ingress != nil {
+		ingressClassNames = contourConfiguration.Ingress.ClassNames
 	}
 
 	var clientCert *types.NamespacedName
@@ -393,7 +392,7 @@ func (s *Server) doServe() error {
 	}
 
 	builder := s.getDAGBuilder(dagBuilderConfig{
-		ingressClassName:          ingressClassName,
+		ingressClassNames:         ingressClassNames,
 		rootNamespaces:            contourConfiguration.HTTPProxy.RootNamespaces,
 		gatewayAPIConfigured:      contourConfiguration.Gateway != nil,
 		disablePermitInsecure:     contourConfiguration.HTTPProxy.DisablePermitInsecure,
@@ -491,7 +490,7 @@ func (s *Server) doServe() error {
 		log:                   s.log.WithField("context", "loadBalancerStatusWriter"),
 		cache:                 s.mgr.GetCache(),
 		lbStatus:              make(chan corev1.LoadBalancerStatus, 1),
-		ingressClassName:      ingressClassName,
+		ingressClassNames:     ingressClassNames,
 		gatewayControllerName: gatewayControllerName,
 		statusUpdater:         sh.Writer(),
 	}
@@ -772,7 +771,7 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 }
 
 type dagBuilderConfig struct {
-	ingressClassName          string
+	ingressClassNames         []string
 	rootNamespaces            []string
 	gatewayAPIConfigured      bool
 	disablePermitInsecure     bool
@@ -879,7 +878,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 	builder := &dag.Builder{
 		Source: dag.KubernetesCache{
 			RootNamespaces:       dbc.rootNamespaces,
-			IngressClassName:     dbc.ingressClassName,
+			IngressClassNames:    dbc.ingressClassNames,
 			ConfiguredSecretRefs: configuredSecretRefs,
 			FieldLogger:          s.log.WithField("context", "KubernetesCache"),
 		},
