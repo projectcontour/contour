@@ -16,6 +16,7 @@ package dag
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -92,8 +93,10 @@ func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) 
 	}
 	// Otherwise, the name of the ingress class must match what has been
 	// configured.
-	if obj.Name == kc.IngressClassName {
-		return true
+	for _, contourIngressClassEntry := range strings.Split(kc.IngressClassName, ",") {
+		if obj.Name == contourIngressClassEntry {
+			return true
+		}
 	}
 	return false
 }

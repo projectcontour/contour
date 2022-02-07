@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
@@ -249,6 +250,33 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-host-header-rewrite", testHostHeaderRewrite)
 
+	f.NamespacedTest("httpproxy-multiple-ingress-classes-field", func(namespace string) {
+		Context("with more than one ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testMultipleIngressClassesField(namespace)
+		})
+	})
+	f.NamespacedTest("httpproxy-multiple-ingress-classes-annotation", func(namespace string) {
+		Context("with more than one ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testMultipleIngressClassesAnnotation(namespace)
+		})
+	})
+
 	f.NamespacedTest("httpproxy-external-name-service-insecure", func(namespace string) {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
@@ -428,3 +456,20 @@ descriptors:
 		})
 	})
 })
+
+// httpProxyValid returns true if the proxy has a .status.currentStatus
+// of "valid".
+func httpProxyValid(proxy *contourv1.HTTPProxy) bool {
+
+	if proxy == nil {
+		return false
+	}
+
+	if len(proxy.Status.Conditions) == 0 {
+		return false
+	}
+
+	cond := proxy.Status.GetConditionFor("Valid")
+	return cond.Status == "True"
+
+}

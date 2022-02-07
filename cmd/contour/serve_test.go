@@ -155,6 +155,28 @@ func TestGetDAGBuilder(t *testing.T) {
 		assert.ElementsMatch(t, policy.ResponseHeadersPolicy.Remove, ingressProcessor.ResponseHeadersPolicy.Remove)
 	})
 
+	t.Run("single ingress class specified", func(t *testing.T) {
+		ingressClassNames := "aclass"
+
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, ingressClassName: ingressClassNames})
+		commonAssertions(t, got)
+		assert.EqualValues(t, got.Source.IngressClassName, ingressClassNames)
+	})
+
+	t.Run("multiple comma-separated ingress classes specified", func(t *testing.T) {
+		ingressClassNames := "aclass,bclass,cclass"
+
+		serve := &Server{
+			log: logrus.StandardLogger(),
+		}
+		got := serve.getDAGBuilder(dagBuilderConfig{rootNamespaces: []string{}, dnsLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily, ingressClassName: ingressClassNames})
+		commonAssertions(t, got)
+		assert.EqualValues(t, got.Source.IngressClassName, ingressClassNames)
+	})
+
 	// TODO(3453): test additional properties of the DAG builder (processor fields, cache fields, Gateway tests (requires a client fake))
 }
 

@@ -106,6 +106,42 @@ func TestMatchesIngress(t *testing.T) {
 			IngressClassName: pointer.StringPtr("something"),
 		},
 	}, "something"))
+	// Multiple classes: Annotation set, no spec field set, class configured
+	assert.False(t, MatchesIngress(&networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
+			},
+		},
+	}, "something,somethingelse"))
+	// Multiple classes: No annotation set, spec field set, class configured
+	assert.False(t, MatchesIngress(&networking_v1.Ingress{
+		Spec: networking_v1.IngressSpec{
+			IngressClassName: pointer.StringPtr("aclass"),
+		},
+	}, "something,somethingelse"))
+	// Multiple classes: Annotation set, spec field set, class configured
+	assert.True(t, MatchesIngress(&networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "something",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			IngressClassName: pointer.StringPtr("aclass"),
+		},
+	}, "somethingelse,something"))
+	// Multiple classes: Annotation set, spec field set, class configured
+	assert.False(t, MatchesIngress(&networking_v1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
+			},
+		},
+		Spec: networking_v1.IngressSpec{
+			IngressClassName: pointer.StringPtr("something"),
+		},
+	}, "something,somethingelse"))
 }
 
 func TestMatchesHTTPProxy(t *testing.T) {
@@ -191,4 +227,54 @@ func TestMatchesHTTPProxy(t *testing.T) {
 			IngressClassName: "something",
 		},
 	}, "something"))
+	// Multiple classes: Annotation set, no spec field set, class configured
+	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "something",
+			},
+		},
+	}, "something,somethingelse"))
+	// Multiple classes: No annotation set, spec field set, class configured
+	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "something",
+		},
+	}, "athing,something,somethingelse"))
+	// Multiple classes: Annotation set, no spec field set, class configured
+	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
+			},
+		},
+	}, "something,somethingelse"))
+	// Multiple classes: No annotation set, spec field set, class configured
+	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "aclass",
+		},
+	}, "somethingelse,something"))
+	// Multiple classes: Annotation set, spec field set, class configured
+	assert.True(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "something",
+			},
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "aclass",
+		},
+	}, "somethingelse,something"))
+	// Multiple classes: Annotation set, spec field set, class configured
+	assert.False(t, MatchesHTTPProxy(&contour_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				"kubernetes.io/ingress.class": "foo",
+			},
+		},
+		Spec: contour_v1.HTTPProxySpec{
+			IngressClassName: "something",
+		},
+	}, "something,somethingelse"))
 }

@@ -14,6 +14,8 @@
 package ingressclass
 
 import (
+	"strings"
+
 	contour_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/internal/annotation"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -54,6 +56,11 @@ func matches(objIngressClass, contourIngressClass string) bool {
 		return objIngressClass == "" || objIngressClass == DefaultClassName
 	}
 
-	// Otherwise, the object's ingress class must match Contour's.
-	return objIngressClass == contourIngressClass
+	// Otherwise, the object's ingress class must match one of Contour's.
+	for _, contourIngressClassEntry := range strings.Split(contourIngressClass, ",") {
+		if objIngressClass == contourIngressClassEntry {
+			return true
+		}
+	}
+	return false
 }
