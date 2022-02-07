@@ -401,6 +401,7 @@ func (s *Server) doServe() error {
 		headersPolicy:             contourConfiguration.Policy,
 		clientCert:                clientCert,
 		fallbackCert:              fallbackCert,
+		connectTimeout:            timeouts.ConnectTimeout,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -781,6 +782,7 @@ type dagBuilderConfig struct {
 	headersPolicy             *contour_api_v1alpha1.PolicyConfig
 	clientCert                *types.NamespacedName
 	fallbackCert              *types.NamespacedName
+	connectTimeout            time.Duration
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -839,12 +841,14 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ClientCertificate:         dbc.clientCert,
 			RequestHeadersPolicy:      &requestHeadersPolicyIngress,
 			ResponseHeadersPolicy:     &responseHeadersPolicyIngress,
+			ConnectTimeout:            dbc.connectTimeout,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
 			// need to bring EnableExternalNameService in here too.
 			FieldLogger:       s.log.WithField("context", "ExtensionServiceProcessor"),
 			ClientCertificate: dbc.clientCert,
+			ConnectTimeout:    dbc.connectTimeout,
 		},
 		&dag.HTTPProxyProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
@@ -854,6 +858,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ClientCertificate:         dbc.clientCert,
 			RequestHeadersPolicy:      &requestHeadersPolicy,
 			ResponseHeadersPolicy:     &responseHeadersPolicy,
+			ConnectTimeout:            dbc.connectTimeout,
 		},
 	}
 
@@ -861,6 +866,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
+			ConnectTimeout:            dbc.connectTimeout,
 		})
 	}
 

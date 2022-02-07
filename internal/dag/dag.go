@@ -685,6 +685,9 @@ type Cluster struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *Secret
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	ConnectTimeout time.Duration
 }
 
 // WeightedService represents the load balancing weight of a
@@ -856,6 +859,9 @@ type ExtensionCluster struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *Secret
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	ConnectTimeout time.Duration
 }
 
 func wildcardDomainHeaderMatch(fqdn string) HeaderMatchCondition {

@@ -49,7 +49,6 @@ import (
 func DefaultCluster(clusters ...*envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
 	// NOTE: Keep this in sync with envoy.defaultCluster().
 	defaults := &envoy_cluster_v3.Cluster{
-		ConnectTimeout: protobuf.Duration(2 * time.Second),
 		LbPolicy:       envoy_cluster_v3.Cluster_ROUND_ROBIN,
 		CommonLbConfig: envoy_v3.ClusterCommonLBConfig(),
 	}

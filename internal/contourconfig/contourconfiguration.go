@@ -15,6 +15,7 @@ package contourconfig
 
 import (
 	"fmt"
+	"time"
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/timeout"
@@ -27,6 +28,7 @@ type Timeouts struct {
 	MaxConnectionDuration         timeout.Setting
 	DelayedClose                  timeout.Setting
 	ConnectionShutdownGracePeriod timeout.Setting
+	ConnectTimeout                time.Duration // Since "infinite" is not valid ConnectTimeout value, use time.Duration instead of timeout.Setting.
 }
 
 func ParseTimeoutPolicy(timeoutParameters *contour_api_v1alpha1.TimeoutParameters) (Timeouts, error) {
@@ -70,6 +72,12 @@ func ParseTimeoutPolicy(timeoutParameters *contour_api_v1alpha1.TimeoutParameter
 			timeouts.ConnectionShutdownGracePeriod, err = timeout.Parse(*timeoutParameters.ConnectionShutdownGracePeriod)
 			if err != nil {
 				return Timeouts{}, fmt.Errorf("failed to parse connection shutdown grace period: %s", err)
+			}
+		}
+		if timeoutParameters.ConnectTimeout != nil {
+			timeouts.ConnectTimeout, err = time.ParseDuration(*timeoutParameters.ConnectTimeout)
+			if err != nil {
+				return Timeouts{}, fmt.Errorf("failed to parse connect timeout: %s", err)
 			}
 		}
 	}

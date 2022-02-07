@@ -139,6 +139,7 @@ data:
     #   max-connection-duration: infinity
     #   delayed-close-timeout: 1s
     #   connection-shutdown-grace-period: 5s
+    #   connect-timeout: 2s
     #
     # Envoy cluster settings.
     # cluster:
@@ -594,6 +595,13 @@ spec:
                     description: Timeouts holds various configurable timeouts that
                       can be set in the config file.
                     properties:
+                      connectTimeout:
+                        description: "ConnectionTimeout defines how long the proxy
+                          should wait when establishing connection to upstream service.
+                          If not set, a default value of 2 seconds will be used. \n
+                          See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
+                          for more information."
+                        type: string
                       connectionIdleTimeout:
                         description: "ConnectionIdleTimeout defines how long the proxy
                           should wait while there are no active requests (for HTTP/1.1)
@@ -1521,6 +1529,13 @@ spec:
                         description: Timeouts holds various configurable timeouts
                           that can be set in the config file.
                         properties:
+                          connectTimeout:
+                            description: "ConnectionTimeout defines how long the proxy
+                              should wait when establishing connection to upstream
+                              service. If not set, a default value of 2 seconds will
+                              be used. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
+                              for more information."
+                            type: string
                           connectionIdleTimeout:
                             description: "ConnectionIdleTimeout defines how long the
                               proxy should wait while there are no active requests

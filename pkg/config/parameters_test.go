@@ -80,6 +80,7 @@ leaderelection:
   configmap-name: leader-elect
 timeouts:
   connection-idle-timeout: 60s
+  connect-timeout: 2s
 envoy-service-namespace: projectcontour
 envoy-service-name: envoy
 default-http-versions: []
