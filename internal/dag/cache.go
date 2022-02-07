@@ -171,8 +171,6 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			kc.WithField("object", obj).Error("insert unknown object")
 			return false
 		}
-
-		return false
 	}
 
 	if maybeInsert(obj) {
