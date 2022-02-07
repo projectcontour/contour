@@ -56,7 +56,7 @@ func testMultipleIngressClassesField(namespace string) {
 				p.Spec.IngressClassName = class
 			}
 
-			proxy, valid := f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+			proxy, valid := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 			if !valid {
 				t.Fatalf("The HTTPProxy did not become valid: %+v", proxy)
 			}
@@ -105,7 +105,7 @@ func testMultipleIngressClassesAnnotation(namespace string) {
 				}
 			}
 
-			proxy, valid := f.CreateHTTPProxyAndWaitFor(p, httpProxyValid)
+			proxy, valid := f.CreateHTTPProxyAndWaitFor(p, e2e.HTTPProxyValid)
 			if !valid {
 				t.Fatalf("The HTTPProxy did not become valid - %+v", proxy)
 			}
