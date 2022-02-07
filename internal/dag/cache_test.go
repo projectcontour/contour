@@ -423,22 +423,6 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
-		"insert ingress class correct name": {
-			obj: &networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "contour",
-				},
-			},
-			want: true,
-		},
-		"insert ingress class incorrect name": {
-			obj: &networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "notagoodclass",
-				},
-			},
-			want: false,
-		},
 		"insert ingressv1 empty ingress class": {
 			obj: &networking_v1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -996,32 +980,6 @@ func TestKubernetesCacheRemove(t *testing.T) {
 				},
 			},
 			want: true,
-		},
-		"remove ingress class correct name": {
-			cache: cache(&networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "contour",
-				},
-			}),
-			obj: &networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "contour",
-				},
-			},
-			want: true,
-		},
-		"remove ingress class wrong name": {
-			cache: cache(&networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "contour",
-				},
-			}),
-			obj: &networking_v1.IngressClass{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "somethingelse",
-				},
-			},
-			want: false,
 		},
 		"remove ingress": {
 			cache: cache(&networking_v1.Ingress{

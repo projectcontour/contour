@@ -16,7 +16,6 @@ package dag
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -51,7 +50,6 @@ type KubernetesCache struct {
 	ConfiguredSecretRefs []*types.NamespacedName
 
 	ingresses                 map[types.NamespacedName]*networking_v1.Ingress
-	ingressclass              *networking_v1.IngressClass
 	httpproxies               map[types.NamespacedName]*contour_api_v1.HTTPProxy
 	secrets                   map[types.NamespacedName]*v1.Secret
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
@@ -81,24 +79,6 @@ func (kc *KubernetesCache) init() {
 	kc.referencepolicies = make(map[types.NamespacedName]*gatewayapi_v1alpha2.ReferencePolicy)
 	kc.tlsroutes = make(map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute)
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
-}
-
-// matchesIngressClass returns true if the given IngressClass
-// is the one this cache is using.
-func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) bool {
-	// If no ingress class name set, we allow an ingress class that is named
-	// with the default Contour accepted name.
-	if kc.IngressClassName == "" {
-		return obj.Name == ingressclass.DefaultClassName
-	}
-	// Otherwise, the name of the ingress class must match what has been
-	// configured.
-	for _, contourIngressClassEntry := range strings.Split(kc.IngressClassName, ",") {
-		if obj.Name == contourIngressClassEntry {
-			return true
-		}
-	}
-	return false
 }
 
 // Insert inserts obj into the KubernetesCache.
@@ -146,11 +126,6 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 
 			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
 			return true
-		case *networking_v1.IngressClass:
-			if kc.matchesIngressClass(obj) {
-				kc.ingressclass = obj
-				return true
-			}
 		case *contour_api_v1.HTTPProxy:
 			if !ingressclass.MatchesHTTPProxy(obj, kc.IngressClassName) {
 				// We didn't get a match so report this object is being ignored.
@@ -263,12 +238,6 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.ingresses[m]
 		delete(kc.ingresses, m)
 		return ok
-	case *networking_v1.IngressClass:
-		if kc.matchesIngressClass(obj) {
-			kc.ingressclass = nil
-			return true
-		}
-		return false
 	case *contour_api_v1.HTTPProxy:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httpproxies[m]
