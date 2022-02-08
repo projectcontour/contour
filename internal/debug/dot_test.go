@@ -11,8 +11,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package debug provides http endpoints for healthcheck, metrics,
-// and pprof debugging.
 package debug
 
 import (
@@ -27,12 +25,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=DagBuilder --srcpkg=github.com/projectcontour/contour/internal/dag
+//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=BuilderType --srcpkg=github.com/projectcontour/contour/internal/dag
 
 func TestWriteDotEscapesLabels(t *testing.T) {
 	d := dag.DAG{}
 	d.Listeners = append(d.Listeners, getTestListeners()...)
-	b := mocks.DagBuilder{}
+	b := mocks.BuilderType{}
 	b.On("Build").Return(&d)
 
 	dw := &dotWriter{
@@ -58,7 +56,7 @@ func TestWriteDotEscapesLabels(t *testing.T) {
 func TestWriteDotLineCount(t *testing.T) {
 	d := dag.DAG{}
 	d.Listeners = append(d.Listeners, getTestListeners()...)
-	b := mocks.DagBuilder{}
+	b := mocks.BuilderType{}
 	b.On("Build").Return(&d)
 
 	dw := &dotWriter{
