@@ -106,13 +106,11 @@ func getTestListeners() []*dag.Listener {
 func newPrefixRoute(prefix string, svc *dag.Service) *dag.Route {
 	return &dag.Route{
 		PathMatchCondition: &dag.PrefixMatchCondition{Prefix: prefix, PrefixMatchType: dag.PrefixMatchString},
-		Clusters: []*dag.Cluster{
-			&dag.Cluster{
-				Upstream: svc,
-				Protocol: svc.Protocol,
-				Weight:   svc.Weighted.Weight,
-			},
-		},
+		Clusters: []*dag.Cluster{{
+			Upstream: svc,
+			Protocol: svc.Protocol,
+			Weight:   svc.Weighted.Weight,
+		}},
 	}
 }
 
