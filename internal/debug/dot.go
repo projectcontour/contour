@@ -25,7 +25,7 @@ import (
 // quick and dirty dot debugging package
 
 type dotWriter struct {
-	Builder dag.DagBuilder
+	Builder dag.BuilderType
 }
 
 type pair struct {
@@ -46,7 +46,7 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 	fmt.Fprintln(w, "}")
 }
 
-func collectDag(b dag.DagBuilder) (nodes nodeCollection, edges edgeCollection) {
+func collectDag(b dag.BuilderType) (nodes nodeCollection, edges edgeCollection) {
 	nodes = map[interface{}]bool{}
 	edges = map[pair]bool{}
 
