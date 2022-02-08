@@ -429,7 +429,7 @@ type TimeoutParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
 	// for more information.
 	// +optional
-	ConnectTimeout string `yaml:"connect-timeout"`
+	ConnectTimeout string `yaml:"connect-timeout,omitempty"`
 }
 
 // Validate the timeout parameters.
@@ -471,8 +471,13 @@ func (t TimeoutParameters) Validate() error {
 		return fmt.Errorf("connection shutdown grace period %q: %w", t.ConnectionShutdownGracePeriod, err)
 	}
 
-	if err := v(t.ConnectTimeout); err != nil {
-		return fmt.Errorf("connect timeout %q: %w", t.ConnectTimeout, err)
+	// ConnectTimeout is normally implicitly set to 2s in Defaults().
+	// If user sets "" then Envoy built-in default should be used.
+	// ConnectTimeout cannot be "infinite" so use time.ParseDuration() directly instead of v().
+	if t.ConnectTimeout != "" {
+		if _, err := time.ParseDuration(t.ConnectTimeout); err != nil {
+			return fmt.Errorf("connect timeout %q: %w", t.ConnectTimeout, err)
+		}
 	}
 
 	return nil
