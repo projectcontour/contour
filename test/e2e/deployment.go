@@ -864,12 +864,6 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 func (d *Deployment) DeleteResourcesForInclusterContour() error {
 	// Also need to delete leader election resources to ensure
 	// multiple test runs can be run cleanly.
-	leaderElectionConfigMap := &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "leader-elect",
-			Namespace: d.Namespace.Name,
-		},
-	}
 	leaderElectionLease := &coordinationv1.Lease{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "leader-elect",
@@ -888,7 +882,6 @@ func (d *Deployment) DeleteResourcesForInclusterContour() error {
 		envoy,
 		d.ContourDeployment,
 		leaderElectionLease,
-		leaderElectionConfigMap,
 		d.EnvoyService,
 		d.ContourService,
 		d.ContourClusterRole,
