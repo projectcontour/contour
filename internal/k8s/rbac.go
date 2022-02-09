@@ -14,7 +14,6 @@
 package k8s
 
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=get;list;watch
-// +kubebuilder:rbac:groups="networking.k8s.io",resources=ingressclasses,verbs=get;list;watch
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses/status,verbs=create;get;update
 
 // +kubebuilder:rbac:groups="projectcontour.io",resources=httpproxies;tlscertificatedelegations;extensionservices;contourconfigurations,verbs=get;list;watch
