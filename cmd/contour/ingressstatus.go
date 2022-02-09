@@ -65,7 +65,7 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 			// Configure the StatusAddressUpdater logger.
 			log := isw.log.WithField("context", "StatusAddressUpdater")
 			if len(isw.ingressClassNames) > 0 {
-				return log.WithField("target-ingress-classes", strings.Join(isw.ingressClassNames, ","))
+				return log.WithField("target-ingress-classes", isw.ingressClassNames)
 			}
 
 			return log

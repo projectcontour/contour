@@ -16,7 +16,6 @@ package dag
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -121,7 +120,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 					WithField("kind", k8s.KindOf(obj)).
 					WithField("ingress-class-annotation", annotation.IngressClass(obj)).
 					WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
-					WithField("target-ingress-classes", strings.Join(kc.IngressClassNames, ",")).
+					WithField("target-ingress-classes", kc.IngressClassNames).
 					Debug("ignoring Ingress with unmatched ingress class")
 				return false
 			}
@@ -136,7 +135,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 					WithField("kind", k8s.KindOf(obj)).
 					WithField("ingress-class-annotation", annotation.IngressClass(obj)).
 					WithField("ingress-class-name", obj.Spec.IngressClassName).
-					WithField("target-ingress-classes", strings.Join(kc.IngressClassNames, ",")).
+					WithField("target-ingress-classes", kc.IngressClassNames).
 					Debug("ignoring HTTPProxy with unmatched ingress class")
 				return false
 			}

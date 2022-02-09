@@ -16,7 +16,6 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -78,7 +77,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 			WithField("namespace", obj.GetNamespace()).
 			WithField("ingress-class-annotation", annotation.IngressClass(obj)).
 			WithField("kind", KindOf(obj)).
-			WithField("target-ingress-classes", strings.Join(s.IngressClassNames, ",")).
+			WithField("target-ingress-classes", s.IngressClassNames).
 			Debug("unmatched ingress class, skipping status address update")
 	}
 
