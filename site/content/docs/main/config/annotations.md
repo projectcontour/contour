@@ -33,6 +33,8 @@ This same logic applies for these annotations on HTTPProxy objects.
 
 _Note: Both `Ingress` and `HTTPProxy` now have an `IngressClassName` field in their spec. Going forward this is the preferred way to specify an ingress class, rather than using an annotation. If both the annotation and the spec field are specified on an object, the annotation takes preference for backwards compatibility._
 
+_Note: The `--ingress-class-name` value can be a comma-separated list of class names to match against.  Contour will serve the Ingress or HTTPProxy if the annotation or IngressClassName matches any of the specified class name values.
+
 ### Other annotations 
 
  - `ingress.kubernetes.io/force-ssl-redirect`: Requires TLS/SSL for the Ingress to Envoy by setting the [Envoy virtual host option require_tls][16].
@@ -49,6 +51,7 @@ The `ingress.kubernetes.io/force-ssl-redirect` annotation takes precedence over 
  - `projectcontour.io/retry-on`: [The conditions for Envoy to retry a request][5]. See also [possible values and their meanings for `retry-on`][6].
  - `projectcontour.io/tls-minimum-protocol-version`: [The minimum TLS protocol version][7] the TLS listener should support. Valid options are `1.3`, `1.2` (default), `1.1`.
  - `projectcontour.io/websocket-routes`: [The routes supporting websocket protocol][8], the annotation value contains a list of route paths separated by a comma that must match with the ones defined in the `Ingress` definition. Defaults to Envoy's default behavior which is `use_websocket` to `false`.
+ - `projectcontour.io/tls-cert-namespace`: The namespace where all TLS secrets of this Ingress are searched. This is necessary to use [TLS Certificate Delegation][18] with Ingress v1 because the slash notation (ex: different-ns/app-cert) used by HTTPProxy and Ingress v1beta1 is not accepted. See [this issue][19] for details.
 
 ## Contour specific Service annotations
 
@@ -88,3 +91,5 @@ A [Kubernetes Service][9] maps to an [Envoy Cluster][10]. Envoy clusters have ma
 [15]: fundamentals.md
 [16]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-virtualhost-require-tls
 [17]: api/#projectcontour.io/v1.UpstreamValidation
+[18]: ../config/tls-delegation/
+[19]: https://github.com/projectcontour/contour/issues/3544

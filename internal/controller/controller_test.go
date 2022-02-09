@@ -51,7 +51,7 @@ func TestRegisterControllers(t *testing.T) {
 
 			// TODO: see if there is a way we can automatically ignore these.
 			mockManager.On("GetClient").Return(nil).Maybe()
-			mockManager.On("GetLogger").Return(logr_testing.TestLogger{T: t}).Maybe()
+			mockManager.On("GetLogger").Return(logr_testing.NewTestLogger(t)).Maybe()
 			mockManager.On("SetFields", mock.Anything).Return(nil).Maybe()
 			mockManager.On("Elected").Return(nil).Maybe()
 

@@ -24,7 +24,7 @@ import (
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/projectcontour/contour/pkg/config"
@@ -64,7 +64,7 @@ var _ = Describe("Ingress", func() {
 	BeforeEach(func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
-		contourConfig = &config.Parameters{}
+		contourConfig = e2e.DefaultContourConfigFileParams()
 
 		contourConfiguration = e2e.DefaultContourConfiguration()
 
@@ -83,7 +83,7 @@ var _ = Describe("Ingress", func() {
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 	})
 
 	AfterEach(func() {
@@ -181,5 +181,76 @@ var _ = Describe("Ingress", func() {
 		})
 	})
 
+	f.NamespacedTest("ingress-multiple-ingress-classes-contour", func(namespace string) {
+		Context("multiple ingress classes with contour ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testIngressClass(namespace, "contour")
+		})
+	})
+
+	f.NamespacedTest("ingress-multiple-ingress-classes-team1", func(namespace string) {
+		Context("multiple ingress classes with team1 ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testIngressClass(namespace, "team1")
+		})
+	})
+
 	f.NamespacedTest("long-path-match", testLongPathMatch)
+
+	Context("with global headers policy defined", func() {
+		BeforeEach(func() {
+			contourConfig.Policy.RequestHeadersPolicy.Set = map[string]string{
+				"X-Contour-GlobalRequestHeader": "foo",
+			}
+			contourConfig.Policy.ResponseHeadersPolicy.Set = map[string]string{
+				"X-Contour-GlobalResponseHeader": "bar",
+			}
+
+			contourConfiguration.Spec.Policy = &contour_api_v1alpha1.PolicyConfig{
+				RequestHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+					Set: map[string]string{
+						"X-Contour-GlobalRequestHeader": "foo",
+					},
+				},
+				ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{
+					Set: map[string]string{
+						"X-Contour-GlobalResponseHeader": "bar",
+					},
+				},
+			}
+		})
+
+		Context("when ApplyToIngress is false", func() {
+			BeforeEach(func() {
+				contourConfig.Policy.ApplyToIngress = false
+				contourConfiguration.Spec.Policy.ApplyToIngress = false
+			})
+
+			f.NamespacedTest("global-headers-policy-apply-to-ingress-false", testGlobalHeadersPolicy(false))
+		})
+
+		Context("when ApplyToIngress is true", func() {
+			BeforeEach(func() {
+				contourConfig.Policy.ApplyToIngress = true
+				contourConfiguration.Spec.Policy.ApplyToIngress = true
+			})
+
+			f.NamespacedTest("global-headers-policy-apply-to-ingress-true", testGlobalHeadersPolicy(true))
+		})
+
+	})
 })

@@ -11,7 +11,10 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"sort"
 	"strings"
+	"text/template"
 
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
@@ -136,17 +139,25 @@ func updateIndexFile(filePath, oldVers, newVers string) error {
 }
 
 func main() {
-	oldVers := "main"
-	newVers := ""
+	var (
+		oldVers     = "main"
+		newVers     = ""
+		kubeMinVers = ""
+		kubeMaxVers = ""
+	)
 
 	switch len(os.Args) {
-	case 2:
+	case 4:
 		newVers = os.Args[1]
-	case 3:
+		kubeMinVers = os.Args[2]
+		kubeMaxVers = os.Args[3]
+	case 5:
 		oldVers = os.Args[1]
 		newVers = os.Args[2]
+		kubeMinVers = os.Args[3]
+		kubeMaxVers = os.Args[4]
 	default:
-		fmt.Printf("Usage: %s NEWVERS | OLDVERS NEWVERS\n", path.Base(os.Args[0]))
+		fmt.Printf("Usage: %s NEWVERS KUBEMINVERS KUBEMAXVERS | OLDVERS NEWVERS KUBEMINVERS KUBEMAXVERS\n", path.Base(os.Args[0]))
 		os.Exit(1)
 	}
 
@@ -188,4 +199,153 @@ func main() {
 
 	// Now commit everything
 	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Prepare documentation site for %s release.", newVers)})
+
+	must(generateReleaseNotes(newVers, kubeMinVers, kubeMaxVers))
+	run([]string{"git", "add", "changelogs/*"})
+	run([]string{"git", "commit", "-s", "-m", fmt.Sprintf("Add changelog for %s release.", newVers)})
+}
+
+func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error {
+	d := Data{
+		Version:              version,
+		KubernetesMinVersion: kubeMinVersion,
+		KubernetesMaxVersion: kubeMaxVersion,
+	}
+
+	if strings.Contains(d.Version, "alpha") || strings.Contains(d.Version, "beta") || strings.Contains(d.Version, "rc") {
+		d.Prerelease = true
+	}
+
+	dirEntries, err := os.ReadDir("changelogs/unreleased")
+	if err != nil {
+		return err
+	}
+
+	var deletions []string
+
+	for _, dirEntry := range dirEntries {
+		if strings.HasSuffix(dirEntry.Name(), "-sample.md") {
+			continue
+		}
+
+		entry, err := parseChangelogFilename(dirEntry.Name())
+		if err != nil {
+			fmt.Printf("Skipping changelog file: %v\n", err)
+			continue
+		}
+
+		contents, err := ioutil.ReadFile(filepath.Join("changelogs", "unreleased", dirEntry.Name()))
+		if err != nil {
+			return fmt.Errorf("error reading file %s: %v", filepath.Join("changelogs", "unreleased", dirEntry.Name()), err)
+		}
+
+		entry.Content = strings.TrimSpace(string(contents))
+
+		switch strings.ToLower(entry.Category) {
+		case "major":
+			d.Major = append(d.Major, entry)
+		case "minor":
+			d.Minor = append(d.Minor, entry)
+		case "small":
+			d.Small = append(d.Small, entry)
+		case "docs":
+			d.Docs = append(d.Docs, entry)
+		default:
+			fmt.Printf("Unrecognized category %q\n", entry.Category)
+			continue
+		}
+
+		d.Contributors = recordContributor(d.Contributors, entry.Author)
+
+		// If a prerelease, don't delete the individual changelog
+		// files since we want to keep them around for the GA release
+		// notes.
+		if !d.Prerelease {
+			deletions = append(deletions, filepath.Join("changelogs", "unreleased", dirEntry.Name()))
+		}
+	}
+
+	sort.Strings(d.Contributors)
+
+	tmpl, err := template.ParseFiles("hack/release/release-notes-template.md")
+	if err != nil {
+		return fmt.Errorf("error parsing release notes template: %v", err)
+	}
+
+	f, err := os.Create("changelogs/CHANGELOG-" + d.Version + ".md")
+	if err != nil {
+		return fmt.Errorf("error creating changelog file: %v", err)
+	}
+	defer f.Close()
+
+	if err := tmpl.Execute(f, d); err != nil {
+		return fmt.Errorf("error executing template: %v", err)
+	}
+
+	for _, deletion := range deletions {
+		if err := os.Remove(deletion); err != nil {
+			fmt.Printf("Error deleting changelog file %s: %v. Remove manually.\n", deletion, err)
+		}
+	}
+
+	return nil
+}
+
+func parseChangelogFilename(filename string) (Entry, error) {
+	parts := strings.Split(strings.TrimSuffix(filename, ".md"), "-")
+
+	// We may have more than 3 parts if the GitHub username itself
+	// contains a '-'.
+	if len(parts) < 3 {
+		return Entry{}, fmt.Errorf("invalid name format %q\n", filename)
+	}
+
+	return Entry{
+		PRNumber: parts[0],
+		Author:   "@" + strings.Join(parts[1:len(parts)-1], "-"),
+		Category: parts[len(parts)-1],
+	}, nil
+}
+
+// recordContributor adds contributor to contributors if they
+// are not a maintainer and not already present.
+func recordContributor(contributors []string, contributor string) []string {
+	if _, found := maintainers[contributor]; found {
+		return contributors
+	}
+
+	for _, existing := range contributors {
+		if contributor == existing {
+			return contributors
+		}
+	}
+
+	return append(contributors, contributor)
+}
+
+var maintainers = map[string]bool{
+	"@skriss":       true,
+	"@stevesloka":   true,
+	"@sunjayBhatia": true,
+	"@tsaarni":      true,
+	"@youngnick":    true,
+}
+
+type Entry struct {
+	PRNumber string
+	Author   string
+	Content  string
+	Category string
+}
+
+type Data struct {
+	Version              string
+	Prerelease           bool
+	Major                []Entry
+	Minor                []Entry
+	Small                []Entry
+	Docs                 []Entry
+	Contributors         []string
+	KubernetesMinVersion string
+	KubernetesMaxVersion string
 }

@@ -1,0 +1,79 @@
+name: Daily build
+
+on:
+  # Run every day
+  schedule:
+    - cron: '0 12 * * *'
+  # Allow manual runs
+  workflow_dispatch:
+
+env:
+  GOPROXY: https://proxy.golang.org/
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+jobs:
+  e2e-envoy-xds:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.17.5'
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: e2e tests
+        env:
+          CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
+          CONTOUR_E2E_XDS_SERVER_TYPE: envoy
+        run: |
+          make setup-kind-cluster run-e2e cleanup-kind
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
+  e2e-envoy-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          # * Module download cache
+          # * Build cache (Linux)
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ github.job }}-go-
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.17.5'
+      - name: add deps to path
+        run: |
+          ./hack/actions/install-kubernetes-toolchain.sh $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+      - name: e2e tests
+        env:
+          CONTOUR_E2E_IMAGE: ghcr.io/projectcontour/contour:main
+          CONTOUR_E2E_ENVOY_DEPLOYMENT_MODE: deployment
+        run: |
+          make setup-kind-cluster run-e2e cleanup-kind
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#contour-ci-notifications'
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}

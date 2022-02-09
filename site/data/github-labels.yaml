@@ -373,6 +373,11 @@ default:
       target: prs
       addedBy: prow
     - color: "164175"
+      description: A deprecation or removal that needs about a paragraph of explanation in the release notes.
+      name: release-note/deprecation
+      target: prs
+      addedBy: prow
+    - color: "164175"
       description: Marks a PR as not requiring a release note. Should only be used for very small changes.
       name: release-note/none-required
       target: prs

@@ -24,7 +24,7 @@ Contour does not require an IngressClass resource with the name passed in the af
 Ingresses may specify an IngressClass name via the original annotation method or via the `ingressClassName` spec field.
 As the `ingressClassName` field has been introduced on Ingress v1beta1, there should be no differences in IngressClass name filtering between the two available versions of the resource.
 Contour uses its configured IngressClass name to filter Ingresses.
-If the `--ingress-class-name` flag is provided, Contour will only accept Ingress resources that exactly match the specified IngressClass name via annotation or spec field, with the value in the annotation taking precedence.
+If the `--ingress-class-name` flag is provided, Contour will only accept Ingress resources that exactly match the specified IngressClass name via annotation or spec field, with the value in the annotation taking precedence. (The `--ingress-class-name` value can be a comma-separated list of class names to match against.)
 If the flag is not passed to `contour serve` Contour will accept any Ingress resource that specifies the IngressClass name `contour` in annotation or spec fields or does not specify one at all.
 
 ## Default Backend
@@ -61,15 +61,24 @@ See upstream [documentation][7] on TLS configuration.
 A secret specified in an Ingress TLS element will only be applied to Ingress rules with `Host` configuration that exactly matches an element of the TLS `Hosts` field. 
 Any secrets that do not match an Ingress rule `Host` will be ignored.
 
-Ingress v1 does not allow the `secretName` field to contain a string with a full `namespace/name` identifier.
-This is a major change from Ingress v1beta1 and causes secrets referenced by v1 resources to be in the same namespace as the Ingress resource.
-This also disables Contour's [TLS secret delegation][8] behavior across namespaces in Ingress v1.
+In Ingress v1beta1, the `secretName` field could contain a string with a full `namespace/name` identifier.
+When used with Contour's [TLS certificate delegation][8], this allowed Ingresses to use a TLS certificate from a different namespace.
+However, Ingress v1 does not allow the `secretName` field to contain a string with a full `namespace/name` identifier, because the field validation disallows the `/` character.
+Instead, Ingress v1 resources can now use the `projectcontour.io/tls-cert-namespace` annotation, to define the namespace that contains the TLS certificate (if different than the Ingress's namespace).
+This enables the TLS certificate delegation functionality to continue working for Ingress v1.
+For more information and an example, see the [TLS certificate delegation documentation][8].
 
 ## Status
 
 In order to inform users of the address the Services their Ingress resources can be accessed at, Contour sets status on Ingress resources.
 If `contour serve` is run with the `--ingress-status-address` flag, Contour will use the provided value to set the Ingress status address accordingly.
 If not provided, Contour will use the address of the Envoy service using the passed in `--envoy-service-name` and `--envoy-service-namespace` flags.
+
+## Header Manipulation
+
+The Ingress resource does not allow adding or removing HTTP headers on requests or responses.
+However, Contour does allow users to set a global HTTP header [policy configuration][9] which can be optionally applied to configuration generated from Ingress resources.
+Contour enables this behavior with the `applyToIngress` boolean field (set to `true` to enable).
 
 [0]: https://github.com/kubernetes-sigs/ingress-controller-conformance
 [1]: /resources/compatibility-matrix/
@@ -80,3 +89,4 @@ If not provided, Contour will use the address of the Envoy service using the pas
 [6]: https://kubernetes.io/docs/concepts/services-networking/ingress/#path-types
 [7]: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
 [8]: /docs/{{< param version >}}/config/tls-delegation/
+[9]: /docs/{{< param version >}}/configuration/#policy-configuration

@@ -180,7 +180,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
-			sec, err := p.source.LookupSecret(secretName, validSecret)
+			sec, err := p.source.LookupSecret(secretName, validTLSSecret)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 					"Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
@@ -224,7 +224,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					return
 				}
 
-				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validSecret)
+				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validTLSSecret)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid",
 						"Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
@@ -524,6 +524,13 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 		requestHashPolicies, lbPolicy := loadBalancerRequestHashPolicies(route.LoadBalancerPolicy, validCond)
 
+		redirectPolicy, err := redirectRoutePolicy(route.RequestRedirectPolicy)
+		if err != nil {
+			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "RequestRedirectPolicy",
+				"route.requestRedirectPolicy is invalid: %s", err)
+			return nil
+		}
+
 		r := &Route{
 			PathMatchCondition:    mergePathMatchConditions(routeConditions),
 			HeaderMatchConditions: mergeHeaderMatchConditions(routeConditions),
@@ -536,7 +543,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			CookieRewritePolicies: cookieRP,
 			RateLimitPolicy:       rlp,
 			RequestHashPolicies:   requestHashPolicies,
-			Redirect:              redirectRoutePolicy(route.RequestRedirectPolicy),
+			Redirect:              redirectPolicy,
 		}
 
 		// If the enclosing root proxy enabled authorization,
@@ -666,7 +673,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			var clientCertSecret *Secret
 			if p.ClientCertificate != nil {
-				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validSecret)
+				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validTLSSecret)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 						"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
@@ -1089,9 +1096,9 @@ func directResponse(statusCode uint32) *DirectResponse {
 }
 
 // redirectRoutePolicy builds a *dag.Redirect for the supplied redirect policy.
-func redirectRoutePolicy(redirect *contour_api_v1.HTTPRequestRedirectPolicy) *Redirect {
+func redirectRoutePolicy(redirect *contour_api_v1.HTTPRequestRedirectPolicy) (*Redirect, error) {
 	if redirect == nil {
-		return nil
+		return nil, nil
 	}
 
 	var hostname string
@@ -1114,10 +1121,26 @@ func redirectRoutePolicy(redirect *contour_api_v1.HTTPRequestRedirectPolicy) *Re
 		statusCode = *redirect.StatusCode
 	}
 
+	if redirect.Path != nil && redirect.Prefix != nil {
+		return nil, fmt.Errorf("cannot specify both redirect path and redirect prefix")
+	}
+
+	var path string
+	if redirect.Path != nil {
+		path = *redirect.Path
+	}
+
+	var prefix string
+	if redirect.Prefix != nil {
+		prefix = *redirect.Prefix
+	}
+
 	return &Redirect{
 		Hostname:   hostname,
 		Scheme:     scheme,
 		PortNumber: portNumber,
 		StatusCode: statusCode,
-	}
+		Path:       path,
+		Prefix:     prefix,
+	}, nil
 }

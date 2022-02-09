@@ -10,25 +10,26 @@ These combinations of versions are specifically tested in CI and supported by th
 
 | Contour Version | Envoy Version        | Kubernetes Versions | Operator Version | Gateway API Version |
 | --------------- | :------------------- | ------------------- | ---------------- | --------------------|
-| main            | [1.20.1][14]         | 1.22, 1.21, 1.20    | [main][50]       | v1alpha2            |
-| 1.19.1          | [1.19.1][13]         | 1.22, 1.21, 1.20    | [1.19.1][65]       | v1alpha1            |
-| 1.19.0          | [1.19.1][13]         | 1.22, 1.21, 1.20    | [1.19.0][64]       | v1alpha1            |
+| main            | [1.21.0][14]         | 1.23, 1.22, 1.21    | [main][50]       | v1alpha2            |
+| 1.20.0          | [1.21.0][14]         | 1.23, 1.22, 1.21    | [1.20.0][67]     | v1alpha2            |
+| 1.19.1          | [1.19.1][13]         | 1.22, 1.21, 1.20    | [1.19.1][65]     | v1alpha1            |
+| 1.19.0          | [1.19.1][13]         | 1.22, 1.21, 1.20    | [1.19.0][64]     | v1alpha1            |
 | 1.18.3          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [1.18.3][66]     | v1alpha1            |
 | 1.18.2          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [1.18.2][63]     | v1alpha1            |
 | 1.18.1          | [1.19.1][13]         | 1.21, 1.20, 1.19    | [1.18.1][62]     | v1alpha1            |
 | 1.18.0          | [1.19.0][10]         | 1.21, 1.20, 1.19    | [1.18.0][61]     | v1alpha1            |
 | 1.17.2          | [1.18.4][12]         | 1.21, 1.20, 1.19    | N/A              | v1alpha1            |
-| 1.17.1          | [1.18.3][9]         | 1.21, 1.20, 1.19    | N/A              | v1alpha1            |
-| 1.17.0          | [1.18.3][9]         | 1.21, 1.20, 1.19    | [1.17.0][60]     | v1alpha1            |
+| 1.17.1          | [1.18.3][9]          | 1.21, 1.20, 1.19    | N/A              | v1alpha1            |
+| 1.17.0          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [1.17.0][60]     | v1alpha1            |
 | 1.16.1          | [1.18.4][12]         | 1.21, 1.20, 1.19    | N/A              | v1alpha1            |
-| 1.16.0          | [1.18.3][9]         | 1.21, 1.20, 1.19    | [1.16.0][59]     | v1alpha1            |
+| 1.16.0          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [1.16.0][59]     | v1alpha1            |
 | 1.15.2          | [1.18.4][12]         | 1.21, 1.20, 1.19    | N/A              | v1alpha1            |
-| 1.15.1          | [1.18.3][9]         | 1.21, 1.20, 1.19    | [1.15.1][58]     | v1alpha1            |
-| 1.15.0          | [1.18.2][8]         | 1.21, 1.20, 1.19    | [1.15.0][57]     | v1alpha1            |
+| 1.15.1          | [1.18.3][9]          | 1.21, 1.20, 1.19    | [1.15.1][58]     | v1alpha1            |
+| 1.15.0          | [1.18.2][8]          | 1.21, 1.20, 1.19    | [1.15.0][57]     | v1alpha1            |
 | 1.14.2          | [1.17.4][11]         | 1.20, 1.19, 1.18    | N/A              | v1alpha1            |
-| 1.14.1          | [1.17.2][7]         | 1.20, 1.19, 1.18    | [1.14.1][56]     | v1alpha1            |
-| 1.14.0          | [1.17.1][6]         | 1.20, 1.19, 1.18    | [1.14.0][55]     | v1alpha1            |
-| 1.13.1          | [1.17.1][6]         | 1.20, 1.19, 1.18    | [1.13.1][54]     | v1alpha1            |
+| 1.14.1          | [1.17.2][7]          | 1.20, 1.19, 1.18    | [1.14.1][56]     | v1alpha1            |
+| 1.14.0          | [1.17.1][6]          | 1.20, 1.19, 1.18    | [1.14.0][55]     | v1alpha1            |
+| 1.13.1          | [1.17.1][6]          | 1.20, 1.19, 1.18    | [1.13.1][54]     | v1alpha1            |
 | 1.13.0          | [1.17.0][5]          | 1.20, 1.19, 1.18    | [1.13.0][53]     | v1alpha1            |
 | 1.12.0          | [1.17.0][5]          | 1.19, 1.18, 1.17    | [1.12.0][52]     | N/A                 |
 | 1.11.0          | [1.16.2][4]          | 1.19, 1.18, 1.17    | [1.11.0][51]     | N/A                 |
@@ -107,7 +108,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [11]: https://www.envoyproxy.io/docs/envoy/v1.17.4/version_history/current
 [12]: https://www.envoyproxy.io/docs/envoy/v1.18.4/version_history/current
 [13]: https://www.envoyproxy.io/docs/envoy/v1.19.1/version_history/current
-[14]: https://www.envoyproxy.io/docs/envoy/v1.20.1/version_history/current
+[14]: https://www.envoyproxy.io/docs/envoy/v1.21.0/version_history/current
 
 [50]: https://github.com/projectcontour/contour-operator
 [51]: https://github.com/projectcontour/contour-operator/releases/tag/v1.11.0
@@ -126,6 +127,7 @@ __Note:__ This list of extensions was last verified to be complete with Envoy v1
 [64]: https://github.com/projectcontour/contour-operator/releases/tag/v1.19.0
 [65]: https://github.com/projectcontour/contour-operator/releases/tag/v1.19.1
 [66]: https://github.com/projectcontour/contour-operator/releases/tag/v1.18.3
+[67]: https://github.com/projectcontour/contour-operator/releases/tag/v1.20.0
 
 [98]: https://github.com/kubernetes/client-go
 [99]: https://github.com/kubernetes/client-go#compatibility-matrix

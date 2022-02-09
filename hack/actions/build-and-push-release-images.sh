@@ -28,7 +28,7 @@ fi
 
 # Fetch all tags so we can check if the current tag
 # is the highest semver.
-git fetch --tags
+git fetch --tags --force
 
 HIGHEST_SEMVER_TAG=""
 

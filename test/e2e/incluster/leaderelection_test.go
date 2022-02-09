@@ -18,13 +18,11 @@ package incluster
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -42,20 +40,6 @@ func testLeaderElection(namespace string) {
 	// has set status on an object.
 	Specify("leader election resources are created as expected", func() {
 		getLeaderID := func() (string, error) {
-			type leaderInfo struct {
-				HolderIdentity string
-			}
-
-			leaderElectionConfigMap := &corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "leader-elect",
-					Namespace: f.Deployment.Namespace.Name,
-				},
-			}
-			if err := f.Client.Get(context.TODO(), client.ObjectKeyFromObject(leaderElectionConfigMap), leaderElectionConfigMap); err != nil {
-				return "", err
-			}
-
 			leaderElectionLease := &coordinationv1.Lease{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "leader-elect",
@@ -66,26 +50,11 @@ func testLeaderElection(namespace string) {
 				return "", err
 			}
 
-			var (
-				infoRaw string
-				found   bool
-				li      leaderInfo
-			)
-
-			if infoRaw, found = leaderElectionConfigMap.Annotations["control-plane.alpha.kubernetes.io/leader"]; !found {
-				return "", errors.New("leaderelection configmap did not have leader annotation: control-plane.alpha.kubernetes.io/leader")
-			}
-			if err := json.Unmarshal([]byte(infoRaw), &li); err != nil {
-				return "", err
-			}
 			leaseHolder := pointer.StringDeref(leaderElectionLease.Spec.HolderIdentity, "")
-			if leaseHolder != li.HolderIdentity {
-				return "", fmt.Errorf("lease leader %q and configmap leader %q do not match", leaseHolder, li.HolderIdentity)
+			if !strings.HasPrefix(leaseHolder, "contour-") {
+				return "", fmt.Errorf("invalid leader name: %q", leaseHolder)
 			}
-			if !strings.HasPrefix(li.HolderIdentity, "contour-") {
-				return "", fmt.Errorf("invalid leader name: %q", li.HolderIdentity)
-			}
-			return li.HolderIdentity, nil
+			return leaseHolder, nil
 		}
 
 		podNameFromLeaderID := func(id string) string {
@@ -109,15 +78,12 @@ func testLeaderElection(namespace string) {
 				if err := f.Client.List(context.TODO(), events, listOptions); err != nil {
 					return false
 				}
-				foundEvents := map[string]struct{}{}
 				for _, e := range events.Items {
-					if e.Reason == "LeaderElection" && e.Source.Component == leader {
-						foundEvents[e.InvolvedObject.Kind] = struct{}{}
+					if e.Reason == "LeaderElection" && e.Source.Component == leader && e.InvolvedObject.Kind == "Lease" {
+						return true
 					}
 				}
-				_, foundLease := foundEvents["Lease"]
-				_, foundConfigMap := foundEvents["ConfigMap"]
-				return foundLease && foundConfigMap
+				return false
 			}
 		}
 

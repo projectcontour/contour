@@ -1441,6 +1441,37 @@ int
 <p>StatusCode is the HTTP status code to be used in response.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>path</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Path allows for redirection to a different path from the
+original on the request. The path must start with a
+leading slash.</p>
+<p>Note: Only one of Path or Prefix can be defined.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>prefix</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Prefix defines the value to swap the matched prefix or path with.
+The prefix must start with a leading slash.</p>
+<p>Note: Only one of Path or Prefix can be defined.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.HeaderHashOptions">HeaderHashOptions
@@ -5462,15 +5493,15 @@ int
 <tbody class="border-top">
 <tr>
 <td style="white-space:nowrap">
-<code>className</code>
+<code>classNames</code>
 <br>
 <em>
-string
+[]string
 </em>
 </td>
 <td>
 <em>(Optional)</em>
-<p>Ingress Class Name Contour should use.</p>
+<p>Ingress Class Names Contour should use.</p>
 </td>
 </tr>
 <tr>

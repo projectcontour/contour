@@ -24,7 +24,7 @@ import (
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -76,7 +76,7 @@ var _ = Describe("HTTPProxy", func() {
 	BeforeEach(func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
-		contourConfig = &config.Parameters{}
+		contourConfig = e2e.DefaultContourConfigFileParams()
 
 		// Contour configuration crd, can be modified in nested
 		// BeforeEach.
@@ -97,7 +97,7 @@ var _ = Describe("HTTPProxy", func() {
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 	})
 
 	AfterEach(func() {
@@ -106,6 +106,7 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-request-redirect-policy", testRequestRedirectRule)
 	f.NamespacedTest("httpproxy-request-redirect-policy-nosvc", testRequestRedirectRuleNoService)
+	f.NamespacedTest("httpproxy-request-redirect-policy-invalid", testRequestRedirectRuleInvalid)
 
 	f.NamespacedTest("httpproxy-header-condition-match", testHeaderConditionMatch)
 
@@ -247,6 +248,33 @@ var _ = Describe("HTTPProxy", func() {
 	f.NamespacedTest("httpproxy-dynamic-headers", testDynamicHeaders)
 
 	f.NamespacedTest("httpproxy-host-header-rewrite", testHostHeaderRewrite)
+
+	f.NamespacedTest("httpproxy-multiple-ingress-classes-field", func(namespace string) {
+		Context("with more than one ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testMultipleIngressClassesField(namespace)
+		})
+	})
+	f.NamespacedTest("httpproxy-multiple-ingress-classes-annotation", func(namespace string) {
+		Context("with more than one ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testMultipleIngressClassesAnnotation(namespace)
+		})
+	})
 
 	f.NamespacedTest("httpproxy-external-name-service-insecure", func(namespace string) {
 		Context("with ExternalName Services enabled", func() {

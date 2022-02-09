@@ -24,7 +24,7 @@ import (
 
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/projectcontour/contour/internal/gatewayapi"
@@ -81,7 +81,6 @@ var _ = Describe("Gateway API", func() {
 					}
 
 					// Update contour configuration to point to specified gateway.
-					contourConfiguration = e2e.DefaultContourConfiguration()
 					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
 						ControllerName: string(gatewayClass.Spec.ControllerName),
 					}
@@ -101,7 +100,11 @@ var _ = Describe("Gateway API", func() {
 	BeforeEach(func() {
 		// Contour config file contents, can be modified in nested
 		// BeforeEach.
-		contourConfig = &config.Parameters{}
+		contourConfig = e2e.DefaultContourConfigFileParams()
+
+		// Contour configuration crd, can be modified in nested
+		// BeforeEach.
+		contourConfiguration = e2e.DefaultContourConfiguration()
 
 		// Default contour serve command line arguments can be appended to in
 		// nested BeforeEach.
@@ -118,7 +121,7 @@ var _ = Describe("Gateway API", func() {
 		require.NoError(f.T(), err)
 
 		// Wait for Envoy to be healthy.
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
 		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassValid)
 		f.CreateGatewayAndWaitFor(contourGateway, gatewayValid)

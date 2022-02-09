@@ -34,6 +34,9 @@ export CONTOUR_RELEASE_VERSION=v1.11.0
 export CONTOUR_RELEASE_VERSION_MAJOR=1
 export CONTOUR_RELEASE_VERSION_MINOR=11
 
+export KUBERNETES_MIN_VERSION=1.20
+export KUBERNETES_MAX_VERSION=1.22
+
 export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
 export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 ```
@@ -42,12 +45,12 @@ export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a new local feature branch from `main`.
-1. Generate a new set of versioned docs:
+1. Generate a new set of versioned docs, plus a changelog:
     
-```bash
-go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION
-```
-
+    ```bash
+    go run ./hack/release/prepare-release.go $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
+    ```
+1. Proofread the release notes and do any reordering, rewording, reformatting necessary, including editing or deleting the "Deprecation and Removal Notices" section.
 1. Add the new release to the compatibility matrix (`site/content/resources/compatibility-matrix.md`).
 1. Add the new release to the compatibility YAML (`/versions.yaml`).
 1. Document upgrade instructions for the new release (`site/content/resources/upgrading.md`).
@@ -126,16 +129,9 @@ git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 1. Update `netlify.toml` to redirect quickstart links to the new release branch.
 1. Commit all changes, push the branch, and PR it into `main`.
 
-### Do the Github release and write release notes
+### Do the Github release
 
-Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
-
-You can use [this template][3] as a basic structure to get started.
-
-Specific items to call out in the release notes:
-- Filter on the Github label `release-note` and Github milestone which should include any PRs which should be called out in the release notes.
-- Also filter on the Github label `release-note-action-required` and ensure these are mentioned specifically with emphasis there may be user action required.
-- Be sure to include a section that specifies the compatible kubernetes versions for this version of Contour.
+Now you have a tag pushed to Github, go to the release tab on github, select the tag and paste in the release notes that were generated previously.
 
 ### Toot your horn
 
@@ -177,6 +173,9 @@ export CONTOUR_RELEASE_VERSION_MAJOR=1
 export CONTOUR_RELEASE_VERSION_MINOR=11
 export CONTOUR_PREVIOUS_VERSION=v1.11.0
 
+export KUBERNETES_MIN_VERSION=1.20
+export KUBERNETES_MAX_VERSION=1.22
+
 export CONTOUR_UPSTREAM_REMOTE_NAME=upstream
 export CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME=upstream
 ```
@@ -199,16 +198,16 @@ git cherry-pick <SHA>
 
 1. Check out `main`, ensure it's up to date, and ensure you have a clean working directory.
 1. Create a new local feature branch from `main`.
-1. Generate a new set of versioned docs:
+1. Generate a new set of versioned docs, plus a changelog:
     
-```bash
-go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION
-```
-
+    ```bash
+    go run ./hack/release/prepare-release.go $CONTOUR_PREVIOUS_VERSION $CONTOUR_RELEASE_VERSION $KUBERNETES_MIN_VERSION $KUBERNETES_MAX_VERSION
+    ```
+1. Proofread the release notes and do any reordering, rewording, reformatting necessary. Note that you will likely have to delete changelog entries that were not part of this patch release, as well as empty sections in the changelog.
 1. Add the new release to the compatibility matrix (`/site/_resources/compatibility-matrix.md`).
-2. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
-3. Add the new release to the compatibility YAML (`/versions.yaml`).
-4. Commit all changes, push the branch, and PR it into `main`.
+1. Document upgrade instructions for the new release (`/site/_resources/upgrading.md`).
+1. Add the new release to the compatibility YAML (`/versions.yaml`).
+1. Commit all changes, push the branch, and PR it into `main`.
 
 ### Update YAML and tag release
 
@@ -266,16 +265,9 @@ git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} release-${CONTOUR_RELEASE_VERS
 git push ${CONTOUR_OPERATOR_UPSTREAM_REMOTE_NAME} ${CONTOUR_RELEASE_VERSION}
 ```
 
-### Do the Github release and write release notes
+### Do the Github release
 
-Now you have a tag pushed to Github, go to the release tab on github, select the tag and write up your release notes.
-
-You can use [this template][3] as a basic structure to get started.
-
-Specific items to call out in the release notes:
-- Filter on the Github label `release-note` and Github milestone which should include any PRs which should be called out in the release notes.
-- Also filter on the Github label `release-note-action-required` and ensure these are mentioned specifically with emphasis there may be user action required.
-- Be sure to include a section that specifies the compatible kubernetes versions for this version of Contour.
+Now you have a tag pushed to Github, go to the release tab on github, select the tag and paste in the release notes that were generated previously.
 
 ### Toot your horn
 
@@ -290,6 +282,5 @@ If you encountered any problems or areas for improvement while executing the rel
 
 [1]: #minor-release-process
 [2]: #patch-release-process
-[3]: {{< param github_url >}}/blob/main/hack/release/release-notes-template.md
 [4]: https://lists.cncf.io/g/cncf-contour-users/
 [5]: https://lists.cncf.io/g/cncf-contour-distributors-announce/

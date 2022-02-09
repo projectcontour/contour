@@ -23,7 +23,7 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -108,7 +108,7 @@ var _ = Describe("upgrading Contour", func() {
 
 			By("waiting for envoy daemonset to be updated")
 			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetOutOfDate())
-			require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+			require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
 			By("ensuring app is still routable")
 			checkRoutability(appHost)

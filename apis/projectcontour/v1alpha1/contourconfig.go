@@ -132,9 +132,9 @@ type TLS struct {
 
 // IngressConfig defines ingress specific config items.
 type IngressConfig struct {
-	// Ingress Class Name Contour should use.
+	// Ingress Class Names Contour should use.
 	// +optional
-	ClassName *string `json:"className,omitempty"`
+	ClassNames []string `json:"classNames,omitempty"`
 
 	// Address to set in Ingress object status.
 	// +optional

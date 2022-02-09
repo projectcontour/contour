@@ -36,7 +36,6 @@ func (c *ContourConfigurationSpec) Validate() error {
 	if err := endpointsInConfict(c.Health, c.Metrics); err != nil {
 		return fmt.Errorf("invalid contour configuration: %v", err)
 	}
-
 	return c.Envoy.Validate()
 }
 

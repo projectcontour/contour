@@ -226,9 +226,7 @@ func (_m *Manager) GetLogger() logr.Logger {
 	if rf, ok := ret.Get(0).(func() logr.Logger); ok {
 		r0 = rf()
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(logr.Logger)
-		}
+		r0 = ret.Get(0).(logr.Logger)
 	}
 
 	return r0

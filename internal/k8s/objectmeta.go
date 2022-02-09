@@ -16,6 +16,8 @@ package k8s
 import (
 	"strings"
 
+	"github.com/projectcontour/contour/internal/annotation"
+	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -32,6 +34,16 @@ func NamespacedNameOf(obj metav1.Object) types.NamespacedName {
 	}
 
 	return name
+}
+
+// TLSCertAnnotationNamespace can be used with NamespacedNameFrom to set the secret namespace
+// from the "projectcontour.io/tls-cert-namespace" annotation
+func TLSCertAnnotationNamespace(ing *networking_v1.Ingress) func(name *types.NamespacedName) {
+	return func(name *types.NamespacedName) {
+		if name.Namespace == "" {
+			name.Namespace = annotation.TLSCertNamespace(ing)
+		}
+	}
 }
 
 // DefaultNamespace can be used with NamespacedNameFrom to set the

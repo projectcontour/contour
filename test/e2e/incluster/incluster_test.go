@@ -17,10 +17,13 @@
 package incluster
 
 import (
+	"context"
+	"strings"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 )
@@ -33,6 +36,17 @@ func TestIncluster(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	// Default to using ContourConfiguration CRD.
+	originalArgs := f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Args
+	var newArgs []string
+	for _, arg := range originalArgs {
+		if !strings.Contains(arg, "--config-path") {
+			newArgs = append(newArgs, arg)
+		}
+	}
+	newArgs = append(newArgs, "--contour-config-name=incluster-tests")
+	f.Deployment.ContourDeployment.Spec.Template.Spec.Containers[0].Args = newArgs
+
 	require.NoError(f.T(), f.Deployment.EnsureResourcesForInclusterContour(false))
 })
 
@@ -44,17 +58,26 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Incluster", func() {
+	var contourConfig *contour_api_v1alpha1.ContourConfiguration
+
+	BeforeEach(func() {
+		contourConfig = e2e.DefaultContourConfiguration()
+		contourConfig.Name = "incluster-tests"
+	})
+
 	JustBeforeEach(func() {
-		// Create contour deployment here so we can modify or do other
+		// Create contour deployment and config here so we can modify or do other
 		// actions in BeforeEach.
+		require.NoError(f.T(), f.Client.Create(context.TODO(), contourConfig))
 		require.NoError(f.T(), f.Deployment.EnsureContourDeployment())
 		require.NoError(f.T(), f.Deployment.WaitForContourDeploymentUpdated())
-		require.NoError(f.T(), f.Deployment.WaitForEnvoyDaemonSetUpdated())
+		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 	})
 
 	AfterEach(func() {
 		// Clean out contour after each test.
 		require.NoError(f.T(), f.Deployment.EnsureDeleted(f.Deployment.ContourDeployment))
+		require.NoError(f.T(), f.Deployment.EnsureDeleted(contourConfig))
 	})
 
 	f.NamespacedTest("smoke-test", testSimpleSmoke)

@@ -81,6 +81,7 @@ func validationContext(ca []byte, subjectName string, skipVerifyPeerCert bool) *
 	}
 
 	if len(subjectName) > 0 {
+		// nolint:staticcheck
 		vc.ValidationContext.MatchSubjectAltNames = []*matcher.StringMatcher{{
 			MatchPattern: &matcher.StringMatcher_Exact{
 				Exact: subjectName,

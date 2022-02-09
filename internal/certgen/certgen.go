@@ -128,9 +128,13 @@ func WriteSecretsYAML(outputDir string, secrets []*corev1.Secret, force Overwrit
 func WriteSecretsKube(client *kubernetes.Clientset, secrets []*corev1.Secret, force OverwritePolicy) error {
 	for _, s := range secrets {
 		if _, err := client.CoreV1().Secrets(s.Namespace).Create(context.TODO(), s, metav1.CreateOptions{}); err != nil {
-			if k8serrors.IsAlreadyExists(err) && force == NoOverwrite {
+			if !k8serrors.IsAlreadyExists(err) {
+				return err
+			}
+
+			if force == NoOverwrite {
 				fmt.Printf("secret/%s already exists\n", s.Name)
-				return nil
+				continue
 			}
 
 			if _, err := client.CoreV1().Secrets(s.Namespace).Update(context.TODO(), s, metav1.UpdateOptions{}); err != nil {
