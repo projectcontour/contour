@@ -1122,10 +1122,13 @@ func TestBootstrap(t *testing.T) {
                 "trusted_ca": {
                   "filename": "CA.cert"
                 },
-		"match_subject_alt_names": [
-		  {
-		    "exact": "contour"
-		  }
+                "match_typed_subject_alt_names": [
+                  {
+                    "san_type": "DNS",
+                    "matcher": {
+                      "exact": "contour"
+                    }
+                  }
                 ]
               }
             }
@@ -1405,9 +1408,12 @@ func TestBootstrap(t *testing.T) {
             "trusted_ca": {
               "filename": "CA.cert"
             },
-            "match_subject_alt_names": [
+            "match_typed_subject_alt_names": [
               {
-                "exact": "contour"
+                "san_type": "DNS",
+                "matcher": {
+                  "exact": "contour"
+                }
               }
             ]
           }
