@@ -21,6 +21,7 @@ import (
 	envoy_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
 	"github.com/projectcontour/contour/internal/featuretests"
@@ -921,7 +922,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 
 	httpListener := defaultHTTPListener()
 	httpListener.FilterChains = envoy_v3.FilterChains(
-		envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil), 0),
+		envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
 	)
 
 	httpsListener := &envoy_listener_v3.Listener{
@@ -937,7 +938,7 @@ func TestLDSCustomAccessLogPaths(t *testing.T) {
 					DefaultFilters().
 					RouteConfigName("https/kuard.example.com").
 					MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy("/tmp/https_access.log", "", nil)).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy("/tmp/https_access.log", "", nil, contour_api_v1alpha1.LogLevelInfo)).
 					Get(),
 				nil, "h2", "http/1.1"),
 		},
@@ -1279,7 +1280,7 @@ func TestHTTPProxyXffNumTrustedHops(t *testing.T) {
 	httpListener.FilterChains = envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 		RouteConfigName("ingress_http").
 		MetricsPrefix("ingress_http").
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
 		RequestTimeout(timeout.DurationSetting(0)).
 		DefaultFilters().
 		AddFilter(envoy_v3.OriginalIPDetectionFilter(1)).

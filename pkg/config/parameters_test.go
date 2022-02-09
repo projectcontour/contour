@@ -72,6 +72,7 @@ json-fields:
 - upstream_service_time
 - user_agent
 - x_forwarded_for
+accesslog-level: info
 leaderelection:
   lease-duration: 15s
   renew-deadline: 10s

@@ -4168,6 +4168,14 @@ ExtensionServiceStatus
 </p>
 <p>
 </p>
+<h3 id="projectcontour.io/v1alpha1.AccessLogLevel">AccessLogLevel
+(<code>string</code> alias)</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyLogging">EnvoyLogging</a>)
+</p>
+<p>
+</p>
 <h3 id="projectcontour.io/v1alpha1.AccessLogType">AccessLogType
 (<code>string</code> alias)</h3>
 <p>
@@ -5004,6 +5012,22 @@ AccessLogFields
 <em>(Optional)</em>
 <p>AccessLogFields sets the fields that JSON logging will
 output when AccessLogFormat is json.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>accessLogLevel</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.AccessLogLevel">
+AccessLogLevel
+</a>
+</em>
+</td>
+<td>
+<p>AccessLogLevel sets the verbosity level of the access log.
+Valid options are <code>info</code>, <code>error</code> and <code>disabled</code>.
+Default value is <code>info</code>, meaning all requests are logged.</p>
 </td>
 </tr>
 </tbody>

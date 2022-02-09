@@ -103,6 +103,7 @@ data:
     # accesslog-format-string: "...\n"
     # To enable JSON logging in Envoy
     # accesslog-format: json
+    # accesslog-level: info
     # The default fields that will be logged are specified below.
     # To customise this list, just add or remove entries.
     # The canonical list is available at
@@ -513,6 +514,16 @@ spec:
                         description: AccessLogFormatString sets the access log format
                           when format is set to `envoy`. When empty, Envoy's default
                           format is used.
+                        type: string
+                      accessLogLevel:
+                        default: info
+                        description: AccessLogLevel sets the verbosity level of the
+                          access log. Valid options are `info`, `error` and `disabled`.
+                          Default value is `info`, meaning all requests are logged.
+                        enum:
+                        - info
+                        - error
+                        - disabled
                         type: string
                       jsonFields:
                         description: AccessLogFields sets the fields that JSON logging
@@ -1440,6 +1451,17 @@ spec:
                             description: AccessLogFormatString sets the access log
                               format when format is set to `envoy`. When empty, Envoy's
                               default format is used.
+                            type: string
+                          accessLogLevel:
+                            default: info
+                            description: AccessLogLevel sets the verbosity level of
+                              the access log. Valid options are `info`, `error` and
+                              `disabled`. Default value is `info`, meaning all requests
+                              are logged.
+                            enum:
+                            - info
+                            - error
+                            - disabled
                             type: string
                           jsonFields:
                             description: AccessLogFields sets the fields that JSON

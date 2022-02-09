@@ -25,7 +25,16 @@ import (
 )
 
 // FileAccessLogEnvoy returns a new file based access log filter
-func FileAccessLogEnvoy(path string, format string, extensions []string) []*envoy_accesslog_v3.AccessLog {
+func FileAccessLogEnvoy(path string, format string, extensions []string, level contour_api_v1alpha1.AccessLogLevel) []*envoy_accesslog_v3.AccessLog {
+	if level == contour_api_v1alpha1.LogLevelDisabled {
+		return nil
+	}
+
+	var filter *envoy_accesslog_v3.AccessLogFilter
+	if level == contour_api_v1alpha1.LogLevelError {
+		filter = filterOnlyErrors()
+	}
+
 	// Nil by default to defer to Envoy's default log format.
 	var logFormat *envoy_file_v3.FileAccessLog_LogFormat
 
@@ -52,12 +61,21 @@ func FileAccessLogEnvoy(path string, format string, extensions []string) []*envo
 				AccessLogFormat: logFormat,
 			}),
 		},
+		Filter: filter,
 	}}
 }
 
 // FileAccessLogJSON returns a new file based access log filter
 // that will log in JSON format
-func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogFields, extensions []string) []*envoy_accesslog_v3.AccessLog {
+func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogFields, extensions []string, level contour_api_v1alpha1.AccessLogLevel) []*envoy_accesslog_v3.AccessLog {
+	if level == contour_api_v1alpha1.LogLevelDisabled {
+		return nil
+	}
+
+	var filter *envoy_accesslog_v3.AccessLogFilter
+	if level == contour_api_v1alpha1.LogLevelError {
+		filter = filterOnlyErrors()
+	}
 
 	jsonformat := &_struct.Struct{
 		Fields: make(map[string]*_struct.Value),
@@ -82,6 +100,7 @@ func FileAccessLogJSON(path string, fields contour_api_v1alpha1.AccessLogFields,
 				},
 			}),
 		},
+		Filter: filter,
 	}}
 }
 
@@ -111,4 +130,34 @@ func extensionConfig(extensions []string) []*envoy_config_core_v3.TypedExtension
 	}
 
 	return config
+}
+
+func filterOnlyErrors() *envoy_accesslog_v3.AccessLogFilter {
+	return &envoy_accesslog_v3.AccessLogFilter{
+		FilterSpecifier: &envoy_accesslog_v3.AccessLogFilter_OrFilter{
+			OrFilter: &envoy_accesslog_v3.OrFilter{
+				Filters: []*envoy_accesslog_v3.AccessLogFilter{
+					{
+						FilterSpecifier: &envoy_accesslog_v3.AccessLogFilter_StatusCodeFilter{
+							StatusCodeFilter: &envoy_accesslog_v3.StatusCodeFilter{
+								Comparison: &envoy_accesslog_v3.ComparisonFilter{
+									Op: envoy_accesslog_v3.ComparisonFilter_GE,
+									Value: &envoy_config_core_v3.RuntimeUInt32{
+										DefaultValue: 300,
+										RuntimeKey:   "contour.accesslog.filter.status_code",
+									},
+								},
+							},
+						},
+					},
+					{
+						FilterSpecifier: &envoy_accesslog_v3.AccessLogFilter_ResponseFlagFilter{
+							ResponseFlagFilter: &envoy_accesslog_v3.ResponseFlagFilter{
+								// Left empty to match all response flags, they all represent errors.
+							}},
+					},
+				},
+			},
+		},
+	}
 }

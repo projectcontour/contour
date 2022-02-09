@@ -381,7 +381,7 @@ func filterchaintlsfallback(fallbackSecret *v1.Secret, peerValidationContext *da
 				DefaultFilters().
 				RouteConfigName(xdscache_v3.ENVOY_FALLBACK_ROUTECONFIG).
 				MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-				AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil)).
+				AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
 				Get(),
 		),
 	)
@@ -393,7 +393,7 @@ func httpsFilterFor(vhost string) *envoy_listener_v3.Filter {
 		DefaultFilters().
 		RouteConfigName(path.Join("https", vhost)).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
 		Get()
 }
 
@@ -415,7 +415,7 @@ func authzFilterFor(
 		}).
 		RouteConfigName(path.Join("https", vhost)).
 		MetricsPrefix(xdscache_v3.ENVOY_HTTPS_LISTENER).
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo)).
 		Get()
 }
 
@@ -428,7 +428,7 @@ func tcpproxy(statPrefix, cluster string) *envoy_listener_v3.Filter {
 				ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_Cluster{
 					Cluster: cluster,
 				},
-				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil),
+				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo),
 				IdleTimeout: protobuf.Duration(9001 * time.Second),
 			}),
 		},
@@ -457,7 +457,7 @@ func tcpproxyWeighted(statPrefix string, clusters ...clusterWeight) *envoy_liste
 				ClusterSpecifier: &envoy_tcp_proxy_v3.TcpProxy_WeightedClusters{
 					WeightedClusters: weightedClusters,
 				},
-				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil),
+				AccessLog:   envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo),
 				IdleTimeout: protobuf.Duration(9001 * time.Second),
 			}),
 		},
@@ -481,7 +481,7 @@ func defaultHTTPListener() *envoy_listener_v3.Listener {
 		Name:    "ingress_http",
 		Address: envoy_v3.SocketAddress("0.0.0.0", 8080),
 		FilterChains: envoy_v3.FilterChains(
-			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil), 0),
+			envoy_v3.HTTPConnectionManager("ingress_http", envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, contour_api_v1alpha1.LogLevelInfo), 0),
 		),
 		SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 	}

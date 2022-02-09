@@ -301,6 +301,16 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		accessLogFields = append(accessLogFields, alf)
 	}
 
+	var accessLogLevel contour_api_v1alpha1.AccessLogLevel
+	switch ctx.Config.AccessLogLevel {
+	case config.LogLevelInfo:
+		accessLogLevel = contour_api_v1alpha1.LogLevelInfo
+	case config.LogLevelError:
+		accessLogLevel = contour_api_v1alpha1.LogLevelError
+	case config.LogLevelDisabled:
+		accessLogLevel = contour_api_v1alpha1.LogLevelDisabled
+	}
+
 	var defaultHTTPVersions []contour_api_v1alpha1.HTTPVersionType
 	for _, version := range ctx.Config.DefaultHTTPVersions {
 		switch version {
@@ -454,6 +464,7 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 				AccessLogFormat:       accessLogFormat,
 				AccessLogFormatString: accessLogFormatString,
 				AccessLogFields:       accessLogFields,
+				AccessLogLevel:        accessLogLevel,
 			},
 			DefaultHTTPVersions: defaultHTTPVersions,
 			Timeouts:            timeoutParams,

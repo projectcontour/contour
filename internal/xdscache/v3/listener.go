@@ -112,6 +112,9 @@ type ListenerConfig struct {
 	// AccessLogFormatterExtensions defines the Envoy extensions to enable for access log.
 	AccessLogFormatterExtensions []string
 
+	// AccessLogLevel defines the logging level for access log.
+	AccessLogLevel contour_api_v1alpha1.AccessLogLevel
+
 	// Timeouts holds Listener timeout settings.
 	Timeouts contourconfig.Timeouts
 
@@ -237,18 +240,18 @@ func (lvc *ListenerConfig) accesslogFields() contour_api_v1alpha1.AccessLogField
 func (lvc *ListenerConfig) newInsecureAccessLog() []*envoy_accesslog_v3.AccessLog {
 	switch lvc.accesslogType() {
 	case string(config.JSONAccessLog):
-		return envoy_v3.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields(), lvc.AccessLogFormatterExtensions)
+		return envoy_v3.FileAccessLogJSON(lvc.httpAccessLog(), lvc.accesslogFields(), lvc.AccessLogFormatterExtensions, lvc.AccessLogLevel)
 	default:
-		return envoy_v3.FileAccessLogEnvoy(lvc.httpAccessLog(), lvc.AccessLogFormatString, lvc.AccessLogFormatterExtensions)
+		return envoy_v3.FileAccessLogEnvoy(lvc.httpAccessLog(), lvc.AccessLogFormatString, lvc.AccessLogFormatterExtensions, lvc.AccessLogLevel)
 	}
 }
 
 func (lvc *ListenerConfig) newSecureAccessLog() []*envoy_accesslog_v3.AccessLog {
 	switch lvc.accesslogType() {
 	case "json":
-		return envoy_v3.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields(), lvc.AccessLogFormatterExtensions)
+		return envoy_v3.FileAccessLogJSON(lvc.httpsAccessLog(), lvc.accesslogFields(), lvc.AccessLogFormatterExtensions, lvc.AccessLogLevel)
 	default:
-		return envoy_v3.FileAccessLogEnvoy(lvc.httpsAccessLog(), lvc.AccessLogFormatString, lvc.AccessLogFormatterExtensions)
+		return envoy_v3.FileAccessLogEnvoy(lvc.httpsAccessLog(), lvc.AccessLogFormatString, lvc.AccessLogFormatterExtensions, lvc.AccessLogLevel)
 	}
 }
 

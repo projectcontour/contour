@@ -329,6 +329,7 @@ func (s *Server) doServe() error {
 		HTTPSAccessLog:               contourConfiguration.Envoy.HTTPSListener.AccessLog,
 		AccessLogType:                contourConfiguration.Envoy.Logging.AccessLogFormat,
 		AccessLogFields:              contourConfiguration.Envoy.Logging.AccessLogFields,
+		AccessLogLevel:               contourConfiguration.Envoy.Logging.AccessLogLevel,
 		AccessLogFormatString:        accessLogFormatString,
 		AccessLogFormatterExtensions: AccessLogFormatterExtensions(contourConfiguration.Envoy.Logging.AccessLogFormat, contourConfiguration.Envoy.Logging.AccessLogFields, contourConfiguration.Envoy.Logging.AccessLogFormatString),
 		MinimumTLSVersion:            annotation.MinTLSVersion(contourConfiguration.Envoy.Listener.TLS.MinimumProtocolVersion, "1.2"),

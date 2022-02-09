@@ -189,6 +189,21 @@ func (a AccessLogFields) AsFieldMap() map[string]string {
 	return fieldMap
 }
 
+type AccessLogLevel string
+
+func (a AccessLogLevel) Validate() error {
+	switch a {
+	case LogLevelDisabled, LogLevelError, LogLevelInfo:
+		return nil
+	default:
+		return fmt.Errorf("invalid access log level %q", a)
+	}
+}
+
+const LogLevelInfo AccessLogLevel = "info" // Default log level.
+const LogLevelError AccessLogLevel = "error"
+const LogLevelDisabled AccessLogLevel = "disabled"
+
 // TODO: Commented code since it's not yet in use, but makes the linter unhappy.
 // func validateAccessLogFormatString(format string) error {
 //	// Empty format means use default format, defined by Envoy.

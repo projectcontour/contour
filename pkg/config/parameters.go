@@ -589,6 +589,9 @@ type Parameters struct {
 	// output when AccessLogFormat is json.
 	AccessLogFields AccessLogFields `yaml:"json-fields,omitempty"`
 
+	// AccessLogLevel sets the verbosity level of the access log.
+	AccessLogLevel AccessLogLevel `yaml:"accesslog-level,omitempty"`
+
 	// TLS contains TLS policy parameters.
 	TLS TLSParameters `yaml:"tls,omitempty"`
 
@@ -734,6 +737,21 @@ func (p *MetricsServerParameters) HasTLS() bool {
 	return p.ServerCert != "" && p.ServerKey != ""
 }
 
+type AccessLogLevel string
+
+func (a AccessLogLevel) Validate() error {
+	switch a {
+	case LogLevelDisabled, LogLevelError, LogLevelInfo:
+		return nil
+	default:
+		return fmt.Errorf("invalid access log level %q", a)
+	}
+}
+
+const LogLevelInfo AccessLogLevel = "info" // Default log level.
+const LogLevelError AccessLogLevel = "error"
+const LogLevelDisabled AccessLogLevel = "disabled"
+
 // Validate verifies that the parameter values do not have any syntax errors.
 func (p *Parameters) Validate() error {
 	if err := p.Cluster.DNSLookupFamily.Validate(); err != nil {
@@ -753,6 +771,10 @@ func (p *Parameters) Validate() error {
 	}
 
 	if err := p.AccessLogFields.Validate(); err != nil {
+		return err
+	}
+
+	if err := p.AccessLogLevel.Validate(); err != nil {
 		return err
 	}
 
@@ -799,6 +821,7 @@ func Defaults() Parameters {
 		IngressStatusAddress:      "",
 		AccessLogFormat:           DEFAULT_ACCESS_LOG_TYPE,
 		AccessLogFields:           DefaultFields,
+		AccessLogLevel:            LogLevelInfo,
 		TLS:                       TLSParameters{},
 		DisablePermitInsecure:     false,
 		DisableAllowChunkedLength: false,

@@ -27,6 +27,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/proto"
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
+	"github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/dag"
 	envoy_v3 "github.com/projectcontour/contour/internal/envoy/v3"
@@ -52,14 +53,14 @@ func TestListenerCacheContents(t *testing.T) {
 			contents: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 			want: []proto.Message{
 				&envoy_listener_v3.Listener{
 					Name:          ENVOY_HTTP_LISTENER,
 					Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 					SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 				},
 			},
@@ -86,7 +87,7 @@ func TestListenerCacheQuery(t *testing.T) {
 			contents: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 			query: []string{ENVOY_HTTP_LISTENER},
@@ -94,7 +95,7 @@ func TestListenerCacheQuery(t *testing.T) {
 				&envoy_listener_v3.Listener{
 					Name:          ENVOY_HTTP_LISTENER,
 					Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 					SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 				},
 			},
@@ -103,7 +104,7 @@ func TestListenerCacheQuery(t *testing.T) {
 			contents: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 			query: []string{ENVOY_HTTP_LISTENER, "stats-listener"},
@@ -111,7 +112,7 @@ func TestListenerCacheQuery(t *testing.T) {
 				&envoy_listener_v3.Listener{
 					Name:          ENVOY_HTTP_LISTENER,
 					Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+					FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 					SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 				},
 			},
@@ -120,7 +121,7 @@ func TestListenerCacheQuery(t *testing.T) {
 			contents: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 			query: []string{"stats-listener"},
@@ -145,7 +146,7 @@ func TestListenerVisit(t *testing.T) {
 			DefaultFilters().
 			MetricsPrefix(ENVOY_HTTPS_LISTENER).
 			RouteConfigName(path.Join("https", vhost)).
-			AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+			AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 			Get()
 	}
 
@@ -153,7 +154,7 @@ func TestListenerVisit(t *testing.T) {
 		DefaultFilters().
 		MetricsPrefix(ENVOY_HTTPS_LISTENER).
 		RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-		AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+		AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 		Get()
 
 	tests := map[string]struct {
@@ -194,7 +195,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
@@ -237,7 +238,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
@@ -290,7 +291,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -379,7 +380,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -452,7 +453,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}),
 		},
@@ -503,7 +504,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -668,7 +669,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("127.0.0.100", 9100),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -741,7 +742,7 @@ func TestListenerVisit(t *testing.T) {
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.ProxyProtocol(),
 				),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -813,7 +814,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress(DEFAULT_HTTP_LISTENER_ADDRESS, DEFAULT_HTTP_LISTENER_PORT),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy("/tmp/http_access.log", "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -831,7 +832,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "whatever.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy("/tmp/https_access.log", "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy("/tmp/https_access.log", "", nil, v1alpha1.LogLevelInfo)).
 						Get()),
 				}},
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
@@ -889,7 +890,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -962,7 +963,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -1031,7 +1032,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -1102,7 +1103,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -1192,7 +1193,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						RequestTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -1211,7 +1212,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						RequestTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1224,7 +1225,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						RequestTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1308,7 +1309,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -1327,7 +1328,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1340,7 +1341,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1424,7 +1425,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -1443,7 +1444,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1456,7 +1457,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1540,7 +1541,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						DelayedCloseTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -1559,7 +1560,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DelayedCloseTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1572,7 +1573,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DelayedCloseTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1656,7 +1657,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -1675,7 +1676,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1688,7 +1689,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1772,7 +1773,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -1791,7 +1792,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1804,7 +1805,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get(),
 					),
@@ -1880,7 +1881,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -1994,7 +1995,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -2139,7 +2140,7 @@ func TestListenerVisit(t *testing.T) {
 			want: listenermap(&envoy_listener_v3.Listener{
 				Name:          ENVOY_HTTP_LISTENER,
 				Address:       envoy_v3.SocketAddress("0.0.0.0", 8080),
-				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil), 0)),
+				FilterChains:  envoy_v3.FilterChains(envoy_v3.HTTPConnectionManager(ENVOY_HTTP_LISTENER, envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo), 0)),
 				SocketOptions: envoy_v3.TCPKeepaliveSocketOptions(),
 			}, &envoy_listener_v3.Listener{
 				Name:    ENVOY_HTTPS_LISTENER,
@@ -2205,7 +2206,7 @@ func TestListenerVisit(t *testing.T) {
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -2261,7 +2262,7 @@ func TestListenerVisit(t *testing.T) {
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -2317,7 +2318,7 @@ func TestListenerVisit(t *testing.T) {
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -2373,7 +2374,7 @@ func TestListenerVisit(t *testing.T) {
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						DelayedCloseTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -2429,7 +2430,7 @@ func TestListenerVisit(t *testing.T) {
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get(),
@@ -2492,7 +2493,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 					DefaultFilters().
 					ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 					Get(),
@@ -2511,7 +2512,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						ConnectionIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
@@ -2567,7 +2568,7 @@ func TestListenerVisit(t *testing.T) {
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						AllowChunkedLength(true).
 						Get(),
@@ -2621,7 +2622,7 @@ func TestListenerVisit(t *testing.T) {
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
 						MetricsPrefix(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						AddFilter(envoy_v3.OriginalIPDetectionFilter(1)).
 						Get(),
@@ -2684,7 +2685,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 					DefaultFilters().
 					StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 					Get(),
@@ -2703,7 +2704,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						StreamIdleTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
@@ -2768,7 +2769,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 					DefaultFilters().
 					MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 					Get(),
@@ -2787,7 +2788,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						MaxConnectionDuration(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
@@ -2852,7 +2853,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 					DefaultFilters().
 					DelayedCloseTimeout(timeout.DurationSetting(90 * time.Second)).
 					Get(),
@@ -2871,7 +2872,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DelayedCloseTimeout(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
@@ -2936,7 +2937,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 					DefaultFilters().
 					ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 					Get(),
@@ -2955,7 +2956,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						ConnectionShutdownGracePeriod(timeout.DurationSetting(90 * time.Second)).
 						Get()),
 				}},
@@ -3016,7 +3017,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 					RouteConfigName("ingress_http").
 					MetricsPrefix("ingress_http").
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil)).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy("/dev/stdout", "", nil, v1alpha1.LogLevelInfo)).
 					DefaultFilters().
 					AddFilter(&http.HttpFilter{
 						Name: wellknown.HTTPRateLimit,
@@ -3101,7 +3102,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(envoy_v3.HTTPConnectionManagerBuilder().
 					RouteConfigName(ENVOY_HTTP_LISTENER).
 					MetricsPrefix(ENVOY_HTTP_LISTENER).
-					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+					AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 					DefaultFilters().
 					AddFilter(&http.HttpFilter{
 						Name: wellknown.HTTPRateLimit,
@@ -3140,7 +3141,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						AddFilter(&http.HttpFilter{
 							Name: wellknown.HTTPRateLimit,
 							ConfigType: &http.HttpFilter_TypedConfig{
@@ -3246,7 +3247,7 @@ func TestListenerVisit(t *testing.T) {
 				FilterChains: envoy_v3.FilterChains(
 					envoy_v3.HTTPConnectionManagerBuilder().
 						RouteConfigName(ENVOY_HTTP_LISTENER).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						DefaultFilters().
 						AddFilter(&http.HttpFilter{
 							Name: wellknown.HTTPRateLimit,
@@ -3285,7 +3286,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(path.Join("https", "www.example.com")).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						AddFilter(&http.HttpFilter{
 							Name: wellknown.HTTPRateLimit,
 							ConfigType: &http.HttpFilter_TypedConfig{
@@ -3318,7 +3319,7 @@ func TestListenerVisit(t *testing.T) {
 						DefaultFilters().
 						MetricsPrefix(ENVOY_HTTPS_LISTENER).
 						RouteConfigName(ENVOY_FALLBACK_ROUTECONFIG).
-						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil)).
+						AccessLoggers(envoy_v3.FileAccessLogEnvoy(DEFAULT_HTTP_ACCESS_LOG, "", nil, v1alpha1.LogLevelInfo)).
 						AddFilter(&http.HttpFilter{
 							Name: wellknown.HTTPRateLimit,
 							ConfigType: &http.HttpFilter_TypedConfig{
