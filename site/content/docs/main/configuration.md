@@ -53,8 +53,8 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--leader-election-lease-duration`                       | The duration of the leadership lease.                                  |
 | `--leader-election-renew-deadline`                       | The duration leader will retry refreshing leadership before giving up. |
 | `--leader-election-retry-period`                         | The interval which Contour will attempt to acquire leadership lease.   |
-| `--leader-election-resource-name`                        | The name of the resource (ConfigMap) leader election will lease.       |
-| `--leader-election-resource-namespace`                   | The namespace of the resource (ConfigMap) leader election will lease.  |
+| `--leader-election-resource-name`                        | The name of the resource (Lease) leader election will lease.           |
+| `--leader-election-resource-namespace`                   | The namespace of the resource (Lease) leader election will lease.      |
 | `-d, --debug`                                            | Enable debug logging                                                   |
 | `--kubernetes-debug=<log level>`                         | Enable Kubernetes client debug logging                                 |
 
@@ -294,10 +294,6 @@ data:
       envoy-client-certificate:
     #   name: envoy-client-cert-secret-name
     #   namespace: projectcontour
-    # The following config shows the defaults for the leader election.
-    # leaderelection:
-    #   configmap-name: leader-elect
-    #   configmap-namespace: projectcontour
     ### Logging options
     # Default setting
     accesslog-format: envoy
@@ -407,7 +403,7 @@ If present, the value of the `CONTOUR_NAMESPACE` environment variable is used as
 1. The value for the `contour bootstrap --namespace` flag unless otherwise specified.
 1. The value for the `contour certgen --namespace` flag unless otherwise specified.
 1. The value for the `contour serve --envoy-service-namespace` flag unless otherwise specified.
-1. The value for the `leaderelection.configmap-namespace` config file setting for `contour serve` unless otherwise specified.
+1. The value for the `contour serve --leader-election-resource-namespace` flag unless otherwise specified.
 
 The `CONTOUR_NAMESPACE` environment variable is set via the [Downward API][6] in the Contour [example manifests][7].
 

@@ -124,8 +124,8 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("leader-election-lease-duration", "The duration of the leadership lease.").Default("15s").DurationVar(&ctx.Config.LeaderElection.LeaseDuration)
 	serve.Flag("leader-election-renew-deadline", "The duration leader will retry refreshing leadership before giving up.").Default("10s").DurationVar(&ctx.Config.LeaderElection.RenewDeadline)
 	serve.Flag("leader-election-retry-period", "The interval which Contour will attempt to acquire leadership lease.").Default("2s").DurationVar(&ctx.Config.LeaderElection.RetryPeriod)
-	serve.Flag("leader-election-resource-name", "The name of the resource (ConfigMap) leader election will lease.").Default("leader-elect").StringVar(&ctx.Config.LeaderElection.Name)
-	serve.Flag("leader-election-resource-namespace", "The namespace of the resource (ConfigMap) leader election will lease.").Default(ctx.Config.LeaderElection.Namespace).StringVar(&ctx.Config.LeaderElection.Namespace)
+	serve.Flag("leader-election-resource-name", "The name of the resource (Lease) leader election will lease.").Default("leader-elect").StringVar(&ctx.Config.LeaderElection.Name)
+	serve.Flag("leader-election-resource-namespace", "The namespace of the resource (Lease) leader election will lease.").Default(ctx.Config.LeaderElection.Namespace).StringVar(&ctx.Config.LeaderElection.Namespace)
 
 	serve.Flag("xds-address", "xDS gRPC API address.").PlaceHolder("<ipaddr>").StringVar(&ctx.xdsAddr)
 	serve.Flag("xds-port", "xDS gRPC API port.").PlaceHolder("<port>").IntVar(&ctx.xdsPort)
@@ -205,9 +205,7 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 		options.LeaderElection = false
 	} else {
 		options.LeaderElection = true
-		// This represents a multilock on configmaps and leases.
-		// TODO: switch to solely "leases" once a release cycle has passed.
-		options.LeaderElectionResourceLock = "configmapsleases"
+		options.LeaderElectionResourceLock = "leases"
 		options.LeaderElectionNamespace = ctx.Config.LeaderElection.Namespace
 		options.LeaderElectionID = ctx.Config.LeaderElection.Name
 		options.LeaseDuration = &ctx.Config.LeaderElection.LeaseDuration
