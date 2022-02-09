@@ -9,15 +9,31 @@ env:
   GOPROXY: https://proxy.golang.org/
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 jobs:
+  # Ensures correct release-note labels are set:
+  # - At least one label
+  # - At most one of the main category labels
+  # - A deprecation label alone or with something other than "none-required"
+  # Ensures you can have a change that is just a deprecation, or include a
+  # deprecation with another release note.
   check-label:
     name: Check release-note label set
     runs-on: ubuntu-latest
     steps:
       - uses: mheap/github-action-required-labels@v1
         with:
-          mode: exactly
+          mode: minimum
           count: 1
-          labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note/none-required"
+          labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note/deprecation, release-note, release-note-action-required, release-note/none-required"
+      - uses: mheap/github-action-required-labels@v1
+        with:
+          mode: maximum
+          count: 1
+          labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note, release-note-action-required, release-note/none-required"
+      - uses: mheap/github-action-required-labels@v1
+        with:
+          mode: maximum
+          count: 1
+          labels: "release-note/deprecation, release-note/none-required"
   check-changelog:
     name: Check for changelog file
     needs:
