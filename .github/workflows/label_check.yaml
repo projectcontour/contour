@@ -41,6 +41,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        # * Module download cache
+        # * Build cache (Linux)
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-${{ github.job }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ github.job }}-go-
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17.5'
     - run: go run ./hack/actions/check-changefile-exists.go
       env:
         PR_NUMBER: ${{ github.event.number }}
