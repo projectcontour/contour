@@ -25,12 +25,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=BuilderType --srcpkg=github.com/projectcontour/contour/internal/dag
+//go:generate go run github.com/vektra/mockery/v2 --case=snake --name=DagBuilder --srcpkg=github.com/projectcontour/contour/internal/debug
 
 func TestWriteDotEscapesLabels(t *testing.T) {
 	d := dag.DAG{}
 	d.Listeners = append(d.Listeners, getTestListeners()...)
-	b := mocks.BuilderType{}
+	b := mocks.DagBuilder{}
 	b.On("Build").Return(&d)
 
 	dw := &dotWriter{
@@ -56,7 +56,7 @@ func TestWriteDotEscapesLabels(t *testing.T) {
 func TestWriteDotLineCount(t *testing.T) {
 	d := dag.DAG{}
 	d.Listeners = append(d.Listeners, getTestListeners()...)
-	b := mocks.BuilderType{}
+	b := mocks.DagBuilder{}
 	b.On("Build").Return(&d)
 
 	dw := &dotWriter{
