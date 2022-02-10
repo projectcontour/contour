@@ -82,70 +82,38 @@ or https://github.com/projectcontour/contour/blob/main/design/changelog.md for b
 		logFriendlyError("No labels set on PR")
 	}
 
-	// Find all release-note labels.
-	// They should be unique, based on how we set up the label check action.
-	releaseNoteLabels := map[string]struct{}{}
-	for _, label := range prDetails.Labels {
-		name := *label.Name
-		if strings.HasPrefix(name, "release-note") {
-			releaseNoteLabels[name] = struct{}{}
-		}
-	}
-
-	if len(releaseNoteLabels) == 0 {
-		logFriendlyError("No release-note labels set on PR")
-	}
-
-	// Exit early if no changelog required.
-	if _, found := releaseNoteLabels["release-note/none-required"]; found {
-		log.Println("No changelog required.")
-		os.Exit(0)
-	}
-
 	changeLogFileName := func(category string) string {
 		return fmt.Sprintf("./changelogs/unreleased/%d-%s-%s.md", pr, *prDetails.User.Login, category)
 	}
 
 	// Collect list of changelog files to check for.
+	// Labels guaranteed to be unique and exist based on label check action.
 	changelogFiles := []string{}
-	// There can always be a deprecation.
-	if _, found := releaseNoteLabels["release-note/deprecation"]; found {
-		changelogFiles = append(changelogFiles, changeLogFileName("deprecation"))
-		// Delete so we don't count it later.
-		delete(releaseNoteLabels, "release-note/deprecation")
-	}
-
-	if len(releaseNoteLabels) > 1 {
-		logFriendlyError("Too many release-note labels set")
-	}
-
-	// Try to determine the category of the PR.
-	var category string
-	for label := range releaseNoteLabels {
-		if label == "release-note" || label == "release-note-action-required" {
-			category = "major"
+	for _, label := range prDetails.Labels {
+		name := *label.Name
+		if !strings.HasPrefix(name, "release-note") {
 			continue
 		}
 
-		// Otherwise, extract the category.
-		labelSplit := strings.Split(label, "/")
+		var category string
+		labelSplit := strings.Split(name, "/")
 		if len(labelSplit) > 1 {
-			category = labelSplit[1]
+			category = strings.Join(labelSplit[1:], "/")
 		}
-	}
+		switch name {
+		case "release-note/none-required":
+			// Exit early if no changelog required.
+			log.Println("No changelog required.")
+			os.Exit(0)
+		case "release-note", "release-note-action-required":
+			category = "major"
+		case "release-note/major", "release-note/minor", "release-note/small", "release-note/docs", "release-note/infra", "release-note/deprecation":
+		default:
+			logFriendlyError(fmt.Sprintf("Invalid release-note label category: %q", category))
+		}
 
-	validCategories := map[string]struct{}{
-		"major": {},
-		"minor": {},
-		"small": {},
-		"docs":  {},
-		"infra": {},
+		changelogFiles = append(changelogFiles, changeLogFileName(category))
 	}
-	if _, found := validCategories[category]; !found {
-		logFriendlyError(fmt.Sprintf("Invalid release-note label category: %q", category))
-	}
-
-	changelogFiles = append(changelogFiles, changeLogFileName(category))
 
 	for _, f := range changelogFiles {
 		changelogFile, err := os.Stat(f)
