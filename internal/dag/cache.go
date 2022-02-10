@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -31,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
@@ -47,6 +49,10 @@ type KubernetesCache struct {
 	// cached.
 	IngressClassNames []string
 
+	// Gateway is the optional name of the specific Gateway to cache.
+	// If set, only the Gateway with this namespace/name will be kept.
+	Gateway *types.NamespacedName
+
 	// Secrets that are referred from the configuration file.
 	ConfiguredSecretRefs []*types.NamespacedName
 
@@ -62,6 +68,8 @@ type KubernetesCache struct {
 	tlsroutes                 map[types.NamespacedName]*gatewayapi_v1alpha2.TLSRoute
 	referencepolicies         map[types.NamespacedName]*gatewayapi_v1alpha2.ReferencePolicy
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
+
+	Client client.Client
 
 	initialize sync.Once
 
@@ -146,11 +154,45 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
 			return true
 		case *gatewayapi_v1alpha2.GatewayClass:
-			kc.gatewayclass = obj
-			return true
+			switch {
+			// Specific gateway configured: make sure the incoming gateway class
+			// matches that gateway's.
+			case kc.Gateway != nil:
+				if kc.gateway == nil || obj.Name != string(kc.gateway.Spec.GatewayClassName) {
+					return false
+				}
+
+				kc.gatewayclass = obj
+				return true
+			// Otherwise, take whatever we're given.
+			default:
+				kc.gatewayclass = obj
+				return true
+			}
 		case *gatewayapi_v1alpha2.Gateway:
-			kc.gateway = obj
-			return true
+			switch {
+			// Specific gateway configured: make sure the incoming gateway
+			// matches, and get its gateway class.
+			case kc.Gateway != nil:
+				if k8s.NamespacedNameOf(obj) != *kc.Gateway {
+					return false
+				}
+
+				kc.gateway = obj
+
+				gatewayClass := &gatewayapi_v1alpha2.GatewayClass{}
+				if err := kc.Client.Get(context.Background(), client.ObjectKey{Name: string(kc.gateway.Spec.GatewayClassName)}, gatewayClass); err != nil {
+					kc.WithError(err).Errorf("error getting gatewayclass for gateway %s/%s", kc.gateway.Namespace, kc.gateway.Name)
+				} else {
+					kc.gatewayclass = gatewayClass
+				}
+
+				return true
+			// Otherwise, take whatever we're given.
+			default:
+				kc.gateway = obj
+				return true
+			}
 		case *gatewayapi_v1alpha2.HTTPRoute:
 			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
 			return true
@@ -248,11 +290,29 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		delete(kc.tlscertificatedelegations, m)
 		return ok
 	case *gatewayapi_v1alpha2.GatewayClass:
-		kc.gatewayclass = nil
-		return true
+		switch {
+		case kc.Gateway != nil:
+			if kc.gatewayclass == nil || obj.Name != kc.gatewayclass.Name {
+				return false
+			}
+			kc.gatewayclass = nil
+			return true
+		default:
+			kc.gatewayclass = nil
+			return true
+		}
 	case *gatewayapi_v1alpha2.Gateway:
-		kc.gateway = nil
-		return true
+		switch {
+		case kc.Gateway != nil:
+			if kc.gateway == nil || k8s.NamespacedNameOf(obj) != k8s.NamespacedNameOf(kc.gateway) {
+				return false
+			}
+			kc.gateway = nil
+			return true
+		default:
+			kc.gateway = nil
+			return true
+		}
 	case *gatewayapi_v1alpha2.HTTPRoute:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httproutes[m]

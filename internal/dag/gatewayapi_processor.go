@@ -637,6 +637,14 @@ func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener 
 }
 
 func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.GatewayStatusUpdate, fieldErrs field.ErrorList) {
+	// If Contour's running, the Gateway is considered scheduled.
+	gwAccessor.AddCondition(
+		gatewayapi_v1alpha2.GatewayConditionScheduled,
+		metav1.ConditionTrue,
+		status.GatewayReasonType(gatewayapi_v1alpha2.GatewayReasonScheduled),
+		"Gateway is scheduled",
+	)
+
 	switch {
 	case len(fieldErrs) > 0:
 		// If we have Gateway-specific errors, use those to set the Ready=false condition.

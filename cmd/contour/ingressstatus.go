@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -53,6 +54,7 @@ type loadBalancerStatusWriter struct {
 	statusUpdater         k8s.StatusUpdater
 	ingressClassNames     []string
 	gatewayControllerName string
+	gatewayName           *types.NamespacedName
 }
 
 func (isw *loadBalancerStatusWriter) NeedLeaderElection() bool {
@@ -73,6 +75,7 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 		Cache:                 isw.cache,
 		IngressClassNames:     isw.ingressClassNames,
 		GatewayControllerName: isw.gatewayControllerName,
+		GatewayName:           isw.gatewayName,
 		StatusUpdater:         isw.statusUpdater,
 	}
 
@@ -84,9 +87,9 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 		&networking_v1.Ingress{},
 	}
 
-	// Only create Gateway informer if a controller name was provided,
+	// Only create Gateway informer if a controller or gateway name was provided,
 	// otherwise the API may not exist in the cluster.
-	if len(isw.gatewayControllerName) > 0 {
+	if len(isw.gatewayControllerName) > 0 || isw.gatewayName != nil {
 		resources = append(resources, &gatewayapi_v1alpha2.Gateway{})
 	}
 
@@ -132,9 +135,9 @@ func (isw *loadBalancerStatusWriter) Start(ctx context.Context) error {
 				}
 			}
 
-			// Only list Gateways if a controller name was configured,
+			// Only list Gateways if a controller or gateway name was configured,
 			// otherwise the API may not exist in the cluster.
-			if len(isw.gatewayControllerName) > 0 {
+			if len(isw.gatewayControllerName) > 0 || isw.gatewayName != nil {
 				var gatewayList gatewayapi_v1alpha2.GatewayList
 				if err := isw.cache.List(context.Background(), &gatewayList); err != nil {
 					isw.log.WithError(err).WithField("kind", "Gateway").Error("failed to list objects")
