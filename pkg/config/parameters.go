@@ -423,7 +423,7 @@ type TimeoutParameters struct {
 	// for more information.
 	ConnectionShutdownGracePeriod string `yaml:"connection-shutdown-grace-period,omitempty"`
 
-	// ConnectionTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	// If not set, a default value of 2 seconds will be used.
 	//
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
