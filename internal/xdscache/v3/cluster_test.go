@@ -15,6 +15,7 @@ package v3
 
 import (
 	"testing"
+	"time"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -844,6 +845,7 @@ func serviceWithAnnotations(ns, name string, annotations map[string]string, port
 func cluster(c *envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
 	// NOTE: Keep this in sync with envoy.defaultCluster().
 	defaults := &envoy_cluster_v3.Cluster{
+		ConnectTimeout: protobuf.Duration(2 * time.Second),
 		CommonLbConfig: envoy_v3.ClusterCommonLBConfig(),
 		LbPolicy:       envoy_cluster_v3.Cluster_ROUND_ROBIN,
 	}

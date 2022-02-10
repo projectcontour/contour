@@ -472,7 +472,6 @@ func (t TimeoutParameters) Validate() error {
 	}
 
 	// ConnectTimeout is normally implicitly set to 2s in Defaults().
-	// If user sets "" then Envoy built-in default should be used.
 	// ConnectTimeout cannot be "infinite" so use time.ParseDuration() directly instead of v().
 	if t.ConnectTimeout != "" {
 		if _, err := time.ParseDuration(t.ConnectTimeout); err != nil {
