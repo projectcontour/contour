@@ -31,8 +31,9 @@ import (
 	envoy_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoy_file_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_v3_tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoy_service_discovery_v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/envoy"
@@ -256,10 +257,15 @@ func upstreamFileTLSContext(c *envoy.BootstrapConfig) *envoy_tls_v3.UpstreamTlsC
 						},
 					},
 					// TODO(youngnick): Does there need to be a flag wired down to here?
-					MatchSubjectAltNames: []*envoy_matcher_v3.StringMatcher{{
-						MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
-							Exact: "contour",
-						}},
+					MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+						{
+							SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+							Matcher: &matcher.StringMatcher{
+								MatchPattern: &matcher.StringMatcher_Exact{
+									Exact: "contour",
+								},
+							},
+						},
 					},
 				},
 			},
@@ -337,10 +343,15 @@ func validationContextSdsSecretConfig(c *envoy.BootstrapConfig) *envoy_service_d
 						Filename: c.GrpcCABundle,
 					},
 				},
-				MatchSubjectAltNames: []*envoy_matcher_v3.StringMatcher{{
-					MatchPattern: &envoy_matcher_v3.StringMatcher_Exact{
-						Exact: "contour",
-					}},
+				MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+					{
+						SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+						Matcher: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_Exact{
+								Exact: "contour",
+							},
+						},
+					},
 				},
 			},
 		},
