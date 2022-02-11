@@ -120,12 +120,12 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("incluster", "Use in cluster configuration.").BoolVar(&ctx.Config.InCluster)
 	serve.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").PlaceHolder("/path/to/file").StringVar(&ctx.Config.Kubeconfig)
 
-	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
-	serve.Flag("leader-election-lease-duration", "The duration of the leadership lease.").Default("15s").DurationVar(&ctx.Config.LeaderElection.LeaseDuration)
-	serve.Flag("leader-election-renew-deadline", "The duration leader will retry refreshing leadership before giving up.").Default("10s").DurationVar(&ctx.Config.LeaderElection.RenewDeadline)
-	serve.Flag("leader-election-retry-period", "The interval which Contour will attempt to acquire leadership lease.").Default("2s").DurationVar(&ctx.Config.LeaderElection.RetryPeriod)
-	serve.Flag("leader-election-resource-name", "The name of the resource (Lease) leader election will lease.").Default("leader-elect").StringVar(&ctx.Config.LeaderElection.Name)
-	serve.Flag("leader-election-resource-namespace", "The namespace of the resource (Lease) leader election will lease.").Default(ctx.Config.LeaderElection.Namespace).StringVar(&ctx.Config.LeaderElection.Namespace)
+	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
+	serve.Flag("leader-election-lease-duration", "The duration of the leadership lease.").Default("15s").DurationVar(&ctx.LeaderElection.LeaseDuration)
+	serve.Flag("leader-election-renew-deadline", "The duration leader will retry refreshing leadership before giving up.").Default("10s").DurationVar(&ctx.LeaderElection.RenewDeadline)
+	serve.Flag("leader-election-retry-period", "The interval which Contour will attempt to acquire leadership lease.").Default("2s").DurationVar(&ctx.LeaderElection.RetryPeriod)
+	serve.Flag("leader-election-resource-name", "The name of the resource (Lease) leader election will lease.").Default("leader-elect").StringVar(&ctx.LeaderElection.Name)
+	serve.Flag("leader-election-resource-namespace", "The namespace of the resource (Lease) leader election will lease.").Default(config.GetenvOr("CONTOUR_NAMESPACE", "projectcontour")).StringVar(&ctx.LeaderElection.Namespace)
 
 	serve.Flag("xds-address", "xDS gRPC API address.").PlaceHolder("<ipaddr>").StringVar(&ctx.xdsAddr)
 	serve.Flag("xds-port", "xDS gRPC API port.").PlaceHolder("<port>").IntVar(&ctx.xdsPort)
@@ -200,17 +200,17 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 		MetricsBindAddress:     "0",
 		HealthProbeBindAddress: "0",
 	}
-	if ctx.DisableLeaderElection {
+	if ctx.LeaderElection.Disable {
 		log.Info("Leader election disabled")
 		options.LeaderElection = false
 	} else {
 		options.LeaderElection = true
 		options.LeaderElectionResourceLock = "leases"
-		options.LeaderElectionNamespace = ctx.Config.LeaderElection.Namespace
-		options.LeaderElectionID = ctx.Config.LeaderElection.Name
-		options.LeaseDuration = &ctx.Config.LeaderElection.LeaseDuration
-		options.RenewDeadline = &ctx.Config.LeaderElection.RenewDeadline
-		options.RetryPeriod = &ctx.Config.LeaderElection.RetryPeriod
+		options.LeaderElectionNamespace = ctx.LeaderElection.Namespace
+		options.LeaderElectionID = ctx.LeaderElection.Name
+		options.LeaseDuration = &ctx.LeaderElection.LeaseDuration
+		options.RenewDeadline = &ctx.LeaderElection.RenewDeadline
+		options.RetryPeriod = &ctx.LeaderElection.RetryPeriod
 		options.LeaderElectionReleaseOnCancel = true
 	}
 	mgr, err := manager.New(restConfig, options)
