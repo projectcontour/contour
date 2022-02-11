@@ -23,12 +23,12 @@ jobs:
         with:
           mode: minimum
           count: 1
-          labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note/deprecation, release-note, release-note-action-required, release-note/none-required"
+          labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note/deprecation, release-note/none-required"
       - uses: mheap/github-action-required-labels@v1
         with:
           mode: maximum
           count: 1
-          labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note, release-note-action-required, release-note/none-required"
+          labels: "release-note/major, release-note/minor, release-note/small, release-note/docs, release-note/infra, release-note/none-required"
       - uses: mheap/github-action-required-labels@v1
         with:
           mode: maximum

@@ -91,7 +91,7 @@ or https://github.com/projectcontour/contour/blob/main/design/changelog.md for b
 	changelogFiles := []string{}
 	for _, label := range prDetails.Labels {
 		name := *label.Name
-		if !strings.HasPrefix(name, "release-note") {
+		if !strings.HasPrefix(name, "release-note/") {
 			continue
 		}
 
@@ -105,8 +105,6 @@ or https://github.com/projectcontour/contour/blob/main/design/changelog.md for b
 			// Exit early if no changelog required.
 			log.Println("No changelog required.")
 			os.Exit(0)
-		case "release-note", "release-note-action-required":
-			category = "major"
 		case "release-note/major", "release-note/minor", "release-note/small", "release-note/docs", "release-note/infra", "release-note/deprecation":
 		default:
 			logFriendlyError(fmt.Sprintf("Invalid release-note label category: %q", category))
