@@ -488,7 +488,7 @@ type VirtualHost struct {
 	Routes map[string]*Route
 }
 
-func (v *VirtualHost) addRoute(route *Route) {
+func (v *VirtualHost) AddRoute(route *Route) {
 	if v.Routes == nil {
 		v.Routes = make(map[string]*Route)
 	}

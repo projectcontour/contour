@@ -179,14 +179,14 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
 			vhost := p.dag.EnsureVirtualHost(host)
-			vhost.addRoute(r)
+			vhost.AddRoute(r)
 		}
 
 		// computeSecureVirtualhosts will have populated b.securevirtualhosts
 		// with the names of tls enabled ingress objects. If host exists then
 		// it is correctly configured for TLS.
 		if svh := p.dag.GetSecureVirtualHost(host); svh != nil && host != "*" {
-			svh.addRoute(r)
+			svh.AddRoute(r)
 		}
 	}
 }
