@@ -357,16 +357,6 @@ type GatewayParameters struct {
 	ControllerName string `yaml:"controllerName,omitempty"`
 }
 
-// LeaderElectionParameters holds the config bits for leader election
-// inside the  configuration file.
-type LeaderElectionParameters struct {
-	LeaseDuration time.Duration `yaml:"lease-duration,omitempty"`
-	RenewDeadline time.Duration `yaml:"renew-deadline,omitempty"`
-	RetryPeriod   time.Duration `yaml:"retry-period,omitempty"`
-	Namespace     string        `yaml:"configmap-namespace,omitempty"`
-	Name          string        `yaml:"configmap-name,omitempty"`
-}
-
 // TimeoutParameters holds various configurable proxy timeout values.
 type TimeoutParameters struct {
 	// RequestTimeout sets the client request timeout globally for Contour. Note that
@@ -609,11 +599,6 @@ type Parameters struct {
 	// TODO(youngnick): put a link to the issue and CVE here.
 	EnableExternalNameService bool `yaml:"enableExternalNameService,omitempty"`
 
-	// LeaderElection contains leader election parameters.
-	// Note: This method of configuring leader election is deprecated,
-	// please use command line flags instead.
-	LeaderElection LeaderElectionParameters `yaml:"leaderelection,omitempty"`
-
 	// Timeouts holds various configurable timeouts that can
 	// be set in the config file.
 	Timeouts TimeoutParameters `yaml:"timeouts,omitempty"`
@@ -802,13 +787,6 @@ func Defaults() Parameters {
 		TLS:                       TLSParameters{},
 		DisablePermitInsecure:     false,
 		DisableAllowChunkedLength: false,
-		LeaderElection: LeaderElectionParameters{
-			LeaseDuration: time.Second * 15,
-			RenewDeadline: time.Second * 10,
-			RetryPeriod:   time.Second * 2,
-			Name:          "leader-elect",
-			Namespace:     contourNamespace,
-		},
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.

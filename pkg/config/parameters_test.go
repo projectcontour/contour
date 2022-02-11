@@ -17,7 +17,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,12 +71,6 @@ json-fields:
 - upstream_service_time
 - user_agent
 - x_forwarded_for
-leaderelection:
-  lease-duration: 15s
-  renew-deadline: 10s
-  retry-period: 2s
-  configmap-namespace: projectcontour
-  configmap-name: leader-elect
 timeouts:
   connection-idle-timeout: 60s
 envoy-service-namespace: projectcontour
@@ -462,12 +455,6 @@ func TestConfigFileDefaultOverrideImport(t *testing.T) {
 incluster: false
 disablePermitInsecure: false
 disableAllowChunkedLength: false
-leaderelection:
-  configmap-name: leader-elect
-  configmap-namespace: projectcontour
-  lease-duration: 15s
-  renew-deadline: 10s
-  retry-period: 2s
 `,
 	)
 
@@ -488,32 +475,6 @@ tls:
   - ECDHE-RSA-AES256-GCM-SHA384
 `)
 
-	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, "foo", conf.LeaderElection.Name)
-		assert.Equal(t, "bar", conf.LeaderElection.Namespace)
-	}, `
-leaderelection:
-  configmap-name: foo
-  configmap-namespace: bar
-`)
-
-	check(func(t *testing.T, conf *Parameters) {
-		assert.Equal(t, conf.LeaderElection,
-			LeaderElectionParameters{
-				Name:          "foo",
-				Namespace:     "bar",
-				LeaseDuration: 600 * time.Second,
-				RenewDeadline: 500 * time.Second,
-				RetryPeriod:   60 * time.Second,
-			})
-	}, `
-leaderelection:
-  configmap-name: foo
-  configmap-namespace: bar
-  lease-duration: 600s
-  renew-deadline: 500s
-  retry-period: 60s
-`)
 	check(func(t *testing.T, conf *Parameters) {
 		assert.ElementsMatch(t,
 			[]HTTPVersionType{HTTPVersion1, HTTPVersion2, HTTPVersion2, HTTPVersion1},
