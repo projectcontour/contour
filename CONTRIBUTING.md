@@ -178,7 +178,8 @@ the need to cherrypick a commit or rollback arise, it should be clear what a spe
 with a colon as delimiter. For example 'docs:', 'internal/(packagename):', 'design:' or something similar.
 - PRs *must* be labelled with a `release-note/category` label, where category is one of
 `major`, `minor`, `small`, `docs`, or `infra`, unless the change is really small, in which case
-it may have a `release-note/not-required` category.
+it may have a `release-note/not-required` category. PRs may also include a `release-note/deprecation`
+label alone or in addition to the primary label.
 - PRs *must* include a file named `changelogs/unreleased/PR#-githubID-category.md`, which is a Markdown
 file with a description of the change. Please see `changelogs/unreleased/<category>-sample.md` for 
 sample changelogs.

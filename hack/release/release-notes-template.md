@@ -39,7 +39,11 @@ Feedback and bug reports are welcome!
 
 # Deprecation and Removal Notices
 
-TODO
+{{ range .Deprecation }}
+{{ .Content }}
+
+(#{{ .PRNumber }}, {{ .Author }})
+{{ end }}
 
 # Installing and Upgrading
 {{ if .Prerelease}}
