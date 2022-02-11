@@ -340,6 +340,18 @@ func (f *Framework) CreateNamespace(name string) {
 			Labels: map[string]string{"contour-e2e-ns": "true"},
 		},
 	}
+	key := client.ObjectKeyFromObject(ns)
+
+	existing := &corev1.Namespace{}
+	if err := f.Client.Get(context.Background(), key, existing); err == nil && existing.Status.Phase == corev1.NamespaceTerminating {
+		// Got an existing namespace and it's terminating: give it a chance to go
+		// away.
+		require.Eventually(f.t, func() bool {
+			return api_errors.IsNotFound(f.Client.Get(context.TODO(), key, ns))
+		}, 3*time.Minute, time.Second)
+	}
+
+	// Now try creating it.
 	require.NoError(f.t, f.Client.Create(context.TODO(), ns))
 }
 
