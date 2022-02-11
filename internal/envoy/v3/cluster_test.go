@@ -511,7 +511,7 @@ func TestCluster(t *testing.T) {
 		"cluster with connect timeout set": {
 			cluster: &dag.Cluster{
 				Upstream:       service(s1),
-				ConnectTimeout: 2 * time.Second,
+				ConnectTimeout: 10 * time.Second,
 			},
 			want: &envoy_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -521,7 +521,7 @@ func TestCluster(t *testing.T) {
 					EdsConfig:   ConfigSource("contour"),
 					ServiceName: "default/kuard/http",
 				},
-				ConnectTimeout: protobuf.Duration(2 * time.Second),
+				ConnectTimeout: protobuf.Duration(10 * time.Second),
 			},
 		},
 	}
