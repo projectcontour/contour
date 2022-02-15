@@ -357,16 +357,6 @@ type GatewayParameters struct {
 	ControllerName string `yaml:"controllerName,omitempty"`
 }
 
-// LeaderElectionParameters holds the config bits for leader election
-// inside the  configuration file.
-type LeaderElectionParameters struct {
-	LeaseDuration time.Duration `yaml:"lease-duration,omitempty"`
-	RenewDeadline time.Duration `yaml:"renew-deadline,omitempty"`
-	RetryPeriod   time.Duration `yaml:"retry-period,omitempty"`
-	Namespace     string        `yaml:"configmap-namespace,omitempty"`
-	Name          string        `yaml:"configmap-name,omitempty"`
-}
-
 // TimeoutParameters holds various configurable proxy timeout values.
 type TimeoutParameters struct {
 	// RequestTimeout sets the client request timeout globally for Contour. Note that
@@ -422,6 +412,14 @@ type TimeoutParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-drain-timeout
 	// for more information.
 	ConnectionShutdownGracePeriod string `yaml:"connection-shutdown-grace-period,omitempty"`
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	// If not set, a default value of 2 seconds will be used.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
+	// for more information.
+	// +optional
+	ConnectTimeout string `yaml:"connect-timeout,omitempty"`
 }
 
 // Validate the timeout parameters.
@@ -461,6 +459,14 @@ func (t TimeoutParameters) Validate() error {
 
 	if err := v(t.ConnectionShutdownGracePeriod); err != nil {
 		return fmt.Errorf("connection shutdown grace period %q: %w", t.ConnectionShutdownGracePeriod, err)
+	}
+
+	// ConnectTimeout is normally implicitly set to 2s in Defaults().
+	// ConnectTimeout cannot be "infinite" so use time.ParseDuration() directly instead of v().
+	if t.ConnectTimeout != "" {
+		if _, err := time.ParseDuration(t.ConnectTimeout); err != nil {
+			return fmt.Errorf("connect timeout %q: %w", t.ConnectTimeout, err)
+		}
 	}
 
 	return nil
@@ -611,11 +617,6 @@ type Parameters struct {
 	// Defaults to disabled for security reasons.
 	// TODO(youngnick): put a link to the issue and CVE here.
 	EnableExternalNameService bool `yaml:"enableExternalNameService,omitempty"`
-
-	// LeaderElection contains leader election parameters.
-	// Note: This method of configuring leader election is deprecated,
-	// please use command line flags instead.
-	LeaderElection LeaderElectionParameters `yaml:"leaderelection,omitempty"`
 
 	// Timeouts holds various configurable timeouts that can
 	// be set in the config file.
@@ -825,17 +826,11 @@ func Defaults() Parameters {
 		TLS:                       TLSParameters{},
 		DisablePermitInsecure:     false,
 		DisableAllowChunkedLength: false,
-		LeaderElection: LeaderElectionParameters{
-			LeaseDuration: time.Second * 15,
-			RenewDeadline: time.Second * 10,
-			RetryPeriod:   time.Second * 2,
-			Name:          "leader-elect",
-			Namespace:     contourNamespace,
-		},
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.
 			ConnectionIdleTimeout: "60s",
+			ConnectTimeout:        "2s",
 		},
 		Policy: PolicyParameters{
 			RequestHeadersPolicy:  HeadersPolicy{},

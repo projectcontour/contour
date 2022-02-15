@@ -249,6 +249,33 @@ var _ = Describe("HTTPProxy", func() {
 
 	f.NamespacedTest("httpproxy-host-header-rewrite", testHostHeaderRewrite)
 
+	f.NamespacedTest("httpproxy-multiple-ingress-classes-field", func(namespace string) {
+		Context("with more than one ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testMultipleIngressClassesField(namespace)
+		})
+	})
+	f.NamespacedTest("httpproxy-multiple-ingress-classes-annotation", func(namespace string) {
+		Context("with more than one ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testMultipleIngressClassesAnnotation(namespace)
+		})
+	})
+
 	f.NamespacedTest("httpproxy-external-name-service-insecure", func(namespace string) {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {

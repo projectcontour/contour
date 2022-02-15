@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -84,6 +85,9 @@ type HTTPProxyProcessor struct {
 
 	// Response headers that will be set on all routes (optional).
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	ConnectTimeout time.Duration
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -366,13 +370,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 }
 
 type vhost interface {
-	addRoute(*Route)
+	AddRoute(*Route)
 }
 
 // addRoutes adds all routes to the vhost supplied.
 func addRoutes(vhost vhost, routes []*Route) {
 	for _, route := range routes {
-		vhost.addRoute(route)
+		vhost.AddRoute(route)
 	}
 }
 
@@ -694,6 +698,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
 				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
+				ConnectTimeout:        p.ConnectTimeout,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -789,6 +794,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 				SNI:                  s.ExternalName,
+				ConnectTimeout:       p.ConnectTimeout,
 			})
 		}
 		secure := p.dag.EnsureSecureVirtualHost(host)

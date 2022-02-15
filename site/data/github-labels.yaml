@@ -21,20 +21,6 @@ default:
       target: issues
       addedBy: anyone
 
-# Release notes.
-    - color: c2e0c6
-      description: Denotes a PR that will be considered when it comes time to generate release notes.
-      name: release-note
-      target: prs
-      addedBy: prow
-      previously:
-        - name: "release note"
-    - color: c2e0c6
-      description: Denotes a PR that introduces potentially breaking changes that require user action. # These actions will be specifically called out when it comes time to generate release notes.
-      name: release-note-action-required
-      target: prs
-      addedBy: prow
-
 # Area.
     - color: 0052cc
       description: Issues or PRs related to dependency changes.
@@ -370,6 +356,11 @@ default:
     - color: "164175"
       description: An infrastructure update for the release notes.
       name: release-note/infra
+      target: prs
+      addedBy: prow
+    - color: "164175"
+      description: A deprecation or removal that needs about a paragraph of explanation in the release notes.
+      name: release-note/deprecation
       target: prs
       addedBy: prow
     - color: "164175"

@@ -78,10 +78,6 @@ data:
       envoy-client-certificate:
     #   name: envoy-client-cert-secret-name
     #   namespace: projectcontour
-    # The following config shows the defaults for the leader election.
-    # leaderelection:
-    #   configmap-name: leader-elect
-    #   configmap-namespace: projectcontour
     ####
     # ExternalName Services are disabled by default due to CVE-2021-XXXXX
     # You can re-enable them by setting this setting to `true`.
@@ -140,6 +136,7 @@ data:
     #   max-connection-duration: infinity
     #   delayed-close-timeout: 1s
     #   connection-shutdown-grace-period: 5s
+    #   connect-timeout: 2s
     #
     # Envoy cluster settings.
     # cluster:
@@ -605,6 +602,13 @@ spec:
                     description: Timeouts holds various configurable timeouts that
                       can be set in the config file.
                     properties:
+                      connectTimeout:
+                        description: "ConnectTimeout defines how long the proxy should
+                          wait when establishing connection to upstream service. If
+                          not set, a default value of 2 seconds will be used. \n See
+                          https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
+                          for more information."
+                        type: string
                       connectionIdleTimeout:
                         description: "ConnectionIdleTimeout defines how long the proxy
                           should wait while there are no active requests (for HTTP/1.1)
@@ -734,9 +738,11 @@ spec:
               ingress:
                 description: Ingress contains parameters for ingress options.
                 properties:
-                  className:
-                    description: Ingress Class Name Contour should use.
-                    type: string
+                  classNames:
+                    description: Ingress Class Names Contour should use.
+                    items:
+                      type: string
+                    type: array
                   statusAddress:
                     description: Address to set in Ingress object status.
                     type: string
@@ -1543,6 +1549,13 @@ spec:
                         description: Timeouts holds various configurable timeouts
                           that can be set in the config file.
                         properties:
+                          connectTimeout:
+                            description: "ConnectTimeout defines how long the proxy
+                              should wait when establishing connection to upstream
+                              service. If not set, a default value of 2 seconds will
+                              be used. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
+                              for more information."
+                            type: string
                           connectionIdleTimeout:
                             description: "ConnectionIdleTimeout defines how long the
                               proxy should wait while there are no active requests
@@ -1675,9 +1688,11 @@ spec:
                   ingress:
                     description: Ingress contains parameters for ingress options.
                     properties:
-                      className:
-                        description: Ingress Class Name Contour should use.
-                        type: string
+                      classNames:
+                        description: Ingress Class Names Contour should use.
+                        items:
+                          type: string
+                        type: array
                       statusAddress:
                         description: Address to set in Ingress object status.
                         type: string
@@ -4899,7 +4914,6 @@ spec:
   backoffLimit: 1
 
 ---
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4907,6 +4921,20 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
+  name: contour
+subjects:
+- kind: ServiceAccount
+  name: contour
+  namespace: projectcontour
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: contour-rolebinding
+  namespace: projectcontour
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
   name: contour
 subjects:
 - kind: ServiceAccount
@@ -4927,15 +4955,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  - events
-  verbs:
-  - create
-  - get
-  - update
-- apiGroups:
-  - ""
-  resources:
   - endpoints
   - namespaces
   - secrets
@@ -4944,14 +4963,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - create
-  - get
-  - update
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -4973,14 +4984,6 @@ rules:
   - tlsroutes/status
   verbs:
   - update
-- apiGroups:
-  - networking.k8s.io
-  resources:
-  - ingressclasses
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -5014,6 +5017,31 @@ rules:
   - contourconfigurations/status
   - extensionservices/status
   - httpproxies/status
+  verbs:
+  - create
+  - get
+  - update
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: contour
+  namespace: projectcontour
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
   verbs:
   - create
   - get

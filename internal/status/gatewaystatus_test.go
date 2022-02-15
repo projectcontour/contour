@@ -194,3 +194,40 @@ func TestGatewayAddListenerCondition(t *testing.T) {
 	assert.Equal(t, string(gatewayapi_v1alpha2.ListenerReasonUnsupportedProtocol), res.Reason)
 	assert.Equal(t, "message 2, message 4", res.Message)
 }
+
+func TestGetGatewayConditions(t *testing.T) {
+	tests := map[string]struct {
+		conditions []metav1.Condition
+		want       map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition
+	}{
+		"no gateway conditions": {
+			conditions: nil,
+			want:       map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{},
+		},
+		"one gateway condition": {
+			conditions: []metav1.Condition{
+				{Type: string(gatewayapi_v1alpha2.GatewayConditionReady)},
+			},
+			want: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionReady: {Type: string(gatewayapi_v1alpha2.GatewayConditionReady)},
+			},
+		},
+		"multiple gateway conditions": {
+			conditions: []metav1.Condition{
+				{Type: string(gatewayapi_v1alpha2.GatewayConditionReady)},
+				{Type: string(gatewayapi_v1alpha2.GatewayConditionScheduled)},
+			},
+			want: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionReady:     {Type: string(gatewayapi_v1alpha2.GatewayConditionReady)},
+				gatewayapi_v1alpha2.GatewayConditionScheduled: {Type: string(gatewayapi_v1alpha2.GatewayConditionScheduled)},
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := getGatewayConditions(&gatewayapi_v1alpha2.GatewayStatus{Conditions: tc.conditions})
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}

@@ -41,7 +41,7 @@ type StatusAddressUpdater struct {
 	Logger                logrus.FieldLogger
 	Cache                 cache.Cache
 	LBStatus              v1.LoadBalancerStatus
-	IngressClassName      string
+	IngressClassNames     []string
 	GatewayControllerName string
 	StatusUpdater         StatusUpdater
 
@@ -77,13 +77,13 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 			WithField("namespace", obj.GetNamespace()).
 			WithField("ingress-class-annotation", annotation.IngressClass(obj)).
 			WithField("kind", KindOf(obj)).
-			WithField("target-ingress-class", s.IngressClassName).
+			WithField("target-ingress-classes", s.IngressClassNames).
 			Debug("unmatched ingress class, skipping status address update")
 	}
 
 	switch o := obj.(type) {
 	case *networking_v1.Ingress:
-		if !ingressclass.MatchesIngress(o, s.IngressClassName) {
+		if !ingressclass.MatchesIngress(o, s.IngressClassNames) {
 			logNoMatch(s.Logger.WithField("ingress-class-name", pointer.StringPtrDerefOr(o.Spec.IngressClassName, "")), o)
 			return
 		}
@@ -107,7 +107,7 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		))
 
 	case *contour_api_v1.HTTPProxy:
-		if !ingressclass.MatchesHTTPProxy(o, s.IngressClassName) {
+		if !ingressclass.MatchesHTTPProxy(o, s.IngressClassNames) {
 			logNoMatch(s.Logger, o)
 			return
 		}

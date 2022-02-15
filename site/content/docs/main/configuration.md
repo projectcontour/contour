@@ -37,7 +37,7 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--contour-key-file=</path/to/file\|CONTOUR_KEY_FILE>`   | Contour key file name for serving gRPC over TLS                        |
 | `--insecure`                                             | Allow serving without TLS secured gRPC                                 |
 | `--root-namespaces=<ns,ns>`                              | Restrict contour to searching these namespaces for root ingress routes |
-| `--ingress-class-name=<name>`                            | Contour IngressClass name                                              |
+| `--ingress-class-name=<name>`                            | Contour IngressClass name (comma-separated list allowed)               |
 | `--ingress-status-address=<address>`                     | Address to set in Ingress object status                                |
 | `--envoy-http-access-log=</path/to/file>`                | Envoy HTTP access log                                                  |
 | `--envoy-https-access-log=</path/to/file>`               | Envoy HTTPS access log                                                 |
@@ -53,8 +53,8 @@ Many of these flags are mirrored in the [Contour Configuration File](#configurat
 | `--leader-election-lease-duration`                       | The duration of the leadership lease.                                  |
 | `--leader-election-renew-deadline`                       | The duration leader will retry refreshing leadership before giving up. |
 | `--leader-election-retry-period`                         | The interval which Contour will attempt to acquire leadership lease.   |
-| `--leader-election-resource-name`                        | The name of the resource (ConfigMap) leader election will lease.       |
-| `--leader-election-resource-namespace`                   | The namespace of the resource (ConfigMap) leader election will lease.  |
+| `--leader-election-resource-name`                        | The name of the resource (Lease) leader election will lease.           |
+| `--leader-election-resource-namespace`                   | The namespace of the resource (Lease) leader election will lease.      |
 | `-d, --debug`                                            | Enable debug logging                                                   |
 | `--kubernetes-debug=<log level>`                         | Enable Kubernetes client debug logging                                 |
 
@@ -150,6 +150,7 @@ The timeout configuration block can be used to configure various timeouts for th
 | max-connection-duration          | string | none*   | This field defines the maximum period of time after an HTTP connection has been established from the client to the proxy before it is closed by the proxy, regardless of whether there has been activity or not. Must be a [valid Go duration string][4], or omitted or set to `infinity` for no max duration. See [the Envoy documentation][10] for more information.                                                                                           |
 | delayed-close-timeout            | string | `1s`*   | *Note: this is an advanced setting that should not normally need to be tuned.* <br /><br /> This field defines how long envoy will wait, once connection close processing has been initiated, for the downstream peer to close the connection before Envoy closes the socket associated with the connection. Setting this timeout to 'infinity' will disable it.  See [the Envoy documentation][13] for more information.                                        |
 | connection-shutdown-grace-period | string | `5s`*   | This field defines how long the proxy will wait between sending an initial GOAWAY frame and a second, final GOAWAY frame when terminating an HTTP/2 connection. During this grace period, the proxy will continue to respond to new streams. After the final GOAWAY frame has been sent, the proxy will refuse new streams. Must be a [valid Go duration string][4]. See [the Envoy documentation][11] for more information.                                     |
+| connect-timeout                  | string | `2s`    | This field defines how long the proxy will wait for the upstream connection to be established.
 
 _This is Envoy's default setting value and is not explicitly configured by Contour._
 
@@ -295,10 +296,6 @@ data:
       envoy-client-certificate:
     #   name: envoy-client-cert-secret-name
     #   namespace: projectcontour
-    # The following config shows the defaults for the leader election.
-    # leaderelection:
-    #   configmap-name: leader-elect
-    #   configmap-namespace: projectcontour
     ### Logging options
     # Default setting
     accesslog-format: envoy
@@ -409,7 +406,7 @@ If present, the value of the `CONTOUR_NAMESPACE` environment variable is used as
 1. The value for the `contour bootstrap --namespace` flag unless otherwise specified.
 1. The value for the `contour certgen --namespace` flag unless otherwise specified.
 1. The value for the `contour serve --envoy-service-namespace` flag unless otherwise specified.
-1. The value for the `leaderelection.configmap-namespace` config file setting for `contour serve` unless otherwise specified.
+1. The value for the `contour serve --leader-election-resource-namespace` flag unless otherwise specified.
 
 The `CONTOUR_NAMESPACE` environment variable is set via the [Downward API][6] in the Contour [example manifests][7].
 

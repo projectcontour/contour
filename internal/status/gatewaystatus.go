@@ -147,8 +147,8 @@ func (gatewayUpdate *GatewayStatusUpdate) AddListenerCondition(
 func getGatewayConditions(gs *gatewayapi_v1alpha2.GatewayStatus) map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition {
 	conditions := make(map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition)
 	for _, cond := range gs.Conditions {
-		if val, ok := conditions[gatewayapi_v1alpha2.GatewayConditionType(cond.Type)]; !ok {
-			conditions[gatewayapi_v1alpha2.GatewayConditionType(cond.Type)] = val
+		if _, ok := conditions[gatewayapi_v1alpha2.GatewayConditionType(cond.Type)]; !ok {
+			conditions[gatewayapi_v1alpha2.GatewayConditionType(cond.Type)] = cond
 		}
 	}
 	return conditions

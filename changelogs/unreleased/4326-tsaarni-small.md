@@ -1,0 +1,1 @@
+Upstream TCP connection timeout is now configurable in [configuration file](https://projectcontour.io/docs/main/configuration/#timeout-configuration) and in [`ContourConfiguration`](https://projectcontour.io/docs/main/config/api/#projectcontour.io/v1alpha1.TimeoutParameters).
