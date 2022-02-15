@@ -412,6 +412,14 @@ type TimeoutParameters struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-drain-timeout
 	// for more information.
 	ConnectionShutdownGracePeriod string `yaml:"connection-shutdown-grace-period,omitempty"`
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	// If not set, a default value of 2 seconds will be used.
+	//
+	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
+	// for more information.
+	// +optional
+	ConnectTimeout string `yaml:"connect-timeout,omitempty"`
 }
 
 // Validate the timeout parameters.
@@ -451,6 +459,14 @@ func (t TimeoutParameters) Validate() error {
 
 	if err := v(t.ConnectionShutdownGracePeriod); err != nil {
 		return fmt.Errorf("connection shutdown grace period %q: %w", t.ConnectionShutdownGracePeriod, err)
+	}
+
+	// ConnectTimeout is normally implicitly set to 2s in Defaults().
+	// ConnectTimeout cannot be "infinite" so use time.ParseDuration() directly instead of v().
+	if t.ConnectTimeout != "" {
+		if _, err := time.ParseDuration(t.ConnectTimeout); err != nil {
+			return fmt.Errorf("connect timeout %q: %w", t.ConnectTimeout, err)
+		}
 	}
 
 	return nil
@@ -791,6 +807,7 @@ func Defaults() Parameters {
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.
 			ConnectionIdleTimeout: "60s",
+			ConnectTimeout:        "2s",
 		},
 		Policy: PolicyParameters{
 			RequestHeadersPolicy:  HeadersPolicy{},

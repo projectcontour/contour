@@ -102,6 +102,7 @@ data:
     #   max-connection-duration: infinity
     #   delayed-close-timeout: 1s
     #   connection-shutdown-grace-period: 5s
+    #   connect-timeout: 2s
     #
     # Envoy cluster settings.
     # cluster:

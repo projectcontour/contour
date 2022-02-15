@@ -17,6 +17,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -49,6 +50,9 @@ type IngressProcessor struct {
 
 	// Response headers that will be set on all routes (optional).
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	ConnectTimeout time.Duration
 }
 
 // Run translates Ingresses into DAG objects and
@@ -229,6 +233,7 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 			ClientCertificate:     clientCertSecret,
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
+			ConnectTimeout:        p.ConnectTimeout,
 		}},
 	}
 

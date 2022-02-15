@@ -98,6 +98,10 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
 	}
 
+	if c.ConnectTimeout > time.Duration(0) {
+		cluster.ConnectTimeout = protobuf.Duration(c.ConnectTimeout)
+	}
+
 	return cluster
 }
 
@@ -141,6 +145,10 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 		)
 	case "h2c":
 		cluster.TypedExtensionProtocolOptions = http2ProtocolOptions()
+	}
+
+	if ext.ConnectTimeout > time.Duration(0) {
+		cluster.ConnectTimeout = protobuf.Duration(ext.ConnectTimeout)
 	}
 
 	return cluster

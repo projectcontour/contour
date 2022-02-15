@@ -73,6 +73,7 @@ json-fields:
 - x_forwarded_for
 timeouts:
   connection-idle-timeout: 60s
+  connect-timeout: 2s
 envoy-service-namespace: projectcontour
 envoy-service-name: envoy
 default-http-versions: []
@@ -252,6 +253,7 @@ func TestValidateTimeoutParams(t *testing.T) {
 		MaxConnectionDuration:         "infinite",
 		DelayedCloseTimeout:           "infinite",
 		ConnectionShutdownGracePeriod: "infinite",
+		ConnectTimeout:                "2s",
 	}.Validate())
 	assert.NoError(t, TimeoutParameters{
 		RequestTimeout:                "infinity",
@@ -260,6 +262,7 @@ func TestValidateTimeoutParams(t *testing.T) {
 		MaxConnectionDuration:         "infinity",
 		DelayedCloseTimeout:           "infinity",
 		ConnectionShutdownGracePeriod: "infinity",
+		ConnectTimeout:                "2s",
 	}.Validate())
 
 	assert.Error(t, TimeoutParameters{RequestTimeout: "foo"}.Validate())
@@ -268,6 +271,7 @@ func TestValidateTimeoutParams(t *testing.T) {
 	assert.Error(t, TimeoutParameters{MaxConnectionDuration: "boop"}.Validate())
 	assert.Error(t, TimeoutParameters{DelayedCloseTimeout: "bebop"}.Validate())
 	assert.Error(t, TimeoutParameters{ConnectionShutdownGracePeriod: "bong"}.Validate())
+	assert.Error(t, TimeoutParameters{ConnectTimeout: "infinite"}.Validate())
 
 }
 

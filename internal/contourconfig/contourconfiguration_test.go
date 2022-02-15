@@ -39,6 +39,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				MaxConnectionDuration:         timeout.DefaultSetting(),
 				DelayedClose:                  timeout.DefaultSetting(),
 				ConnectionShutdownGracePeriod: timeout.DefaultSetting(),
+				ConnectTimeout:                0,
 			},
 		},
 		"timeouts not set": {
@@ -50,6 +51,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				MaxConnectionDuration:         timeout.DefaultSetting(),
 				DelayedClose:                  timeout.DefaultSetting(),
 				ConnectionShutdownGracePeriod: timeout.DefaultSetting(),
+				ConnectTimeout:                0,
 			},
 		},
 		"timeouts all set": {
@@ -60,6 +62,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				MaxConnectionDuration:         pointer.String("infinity"),
 				DelayedCloseTimeout:           pointer.String("5s"),
 				ConnectionShutdownGracePeriod: pointer.String("6s"),
+				ConnectTimeout:                pointer.String("8s"),
 			},
 			expected: contourconfig.Timeouts{
 				Request:                       timeout.DurationSetting(time.Second),
@@ -68,6 +71,7 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				MaxConnectionDuration:         timeout.DisabledSetting(),
 				DelayedClose:                  timeout.DurationSetting(time.Second * 5),
 				ConnectionShutdownGracePeriod: timeout.DurationSetting(time.Second * 6),
+				ConnectTimeout:                8 * time.Second,
 			},
 		},
 		"request timeout invalid": {
@@ -105,6 +109,12 @@ func TestParseTimeoutPolicy(t *testing.T) {
 				ConnectionShutdownGracePeriod: pointer.String("xxx"),
 			},
 			errorMsg: "failed to parse connection shutdown grace period",
+		},
+		"connect timeout invalid": {
+			config: &contour_api_v1alpha1.TimeoutParameters{
+				ConnectTimeout: pointer.String("infinite"),
+			},
+			errorMsg: "failed to parse connect timeout",
 		},
 	}
 

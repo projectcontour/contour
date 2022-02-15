@@ -339,6 +339,9 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	if len(ctx.Config.Timeouts.ConnectionShutdownGracePeriod) > 0 {
 		timeoutParams.ConnectionShutdownGracePeriod = pointer.StringPtr(ctx.Config.Timeouts.ConnectionShutdownGracePeriod)
 	}
+	if len(ctx.Config.Timeouts.ConnectTimeout) > 0 {
+		timeoutParams.ConnectTimeout = pointer.StringPtr(ctx.Config.Timeouts.ConnectTimeout)
+	}
 
 	var dnsLookupFamily contour_api_v1alpha1.ClusterDNSFamilyType
 	switch ctx.Config.Cluster.DNSLookupFamily {
