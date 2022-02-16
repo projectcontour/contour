@@ -61,7 +61,9 @@ Contour expects a kubernetes service pointing to Envoy. Add annotations to the s
 
 | annotation name | value | meaning | 
 | ----- | --- | ----- |
-| service.beta.kubernetes.io/aws-load-balancer-type | nlb | explicitly requires an NLB, instead of an ALB |
+| service.beta.kubernetes.io/aws-load-balancer-type | external | explicitly requires an NLB, instead of an ALB |
+| service.beta.kubernetes.io/aws-load-balancer-nlb-target-type | ip | route traffic directly to the pod IP |
+| service.beta.kubernetes.io/aws-load-balancer-scheme | internet-facing | An internet-facing load balancer has a publicly resolvable DNS name |
 | service.beta.kubernetes.io/aws-load-balancer-ssl-cert | "arn:aws:acm:..." | identifies the TLS certificate used by the NLB |
 | service.beta.kubernetes.io/aws-load-balancer-ssl-ports | 443 | determines the port the NLB should listen for TLS traffic on| 
 
@@ -74,13 +76,16 @@ metadata:
   name: envoy
   namespace: projectcontour
   annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:us-east-2:185309785115:certificate/7610ed7d-5a81-4ea2-a18a-7ba1606cca3e"
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
 spec:
   externalTrafficPolicy: Local
   ports:
-  - port: 80
+  - port: 443
+    targetPort: 80
     name: http
     protocol: TCP
   selector:
@@ -102,7 +107,7 @@ kubectl get svc envoy --namespace projectcontour
 
 ```
 NAME    TYPE           CLUSTER-IP      EXTERNAL-IP                                                                     PORT(S)        AGE
-envoy   LoadBalancer   10.100.24.154   a7ea2bbde8a164036a7e4c1ed5700cdf-154fb911d990bb1f.elb.us-east-2.amazonaws.com   80:31606/TCP   40d
+envoy   LoadBalancer   10.100.24.154   a7ea2bbde8a164036a7e4c1ed5700cdf-154fb911d990bb1f.elb.us-east-2.amazonaws.com   443:31606/TCP   40d
 ```
 
 Note the last 4 digits of the domain name for the NLB. For example, "bb1f". 
