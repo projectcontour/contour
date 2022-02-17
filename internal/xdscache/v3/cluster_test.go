@@ -262,7 +262,7 @@ func TestClusterVisit(t *testing.T) {
 			},
 			want: clustermap(
 				&envoy_cluster_v3.Cluster{
-					Name:                 "default/kuard/80/da39a3ee5e",
+					Name:                 "default/kuard/80/f4f94965ec",
 					AltStatName:          "default_kuard_80",
 					ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 					EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
