@@ -97,6 +97,7 @@ spec:
                   listener:
                     connectionBalancer: ""
                     disableAllowChunkedLength: false
+                    disableMergeSlashes: false
                     tls:
                       cipherSuites:
                       - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
@@ -252,6 +253,11 @@ spec:
                           revert back to Envoy''s default behavior in case of failures.
                           Please file an issue if failures are encountered. See: https://github.com/projectcontour/contour/issues/3221'
                         type: boolean
+                      disableMergeSlashes:
+                        description: DisableMergeSlashes disables Envoy's non-standard
+                          merge_slashes path transformation option which strips duplicate
+                          slashes from request URL paths.
+                        type: boolean
                       tls:
                         description: TLS holds various configurable Envoy TLS listener
                           values.
@@ -301,6 +307,7 @@ spec:
                     required:
                     - connectionBalancer
                     - disableAllowChunkedLength
+                    - disableMergeSlashes
                     - tls
                     - useProxyProtocol
                     type: object
@@ -1040,6 +1047,7 @@ spec:
                       listener:
                         connectionBalancer: ""
                         disableAllowChunkedLength: false
+                        disableMergeSlashes: false
                         tls:
                           cipherSuites:
                           - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
@@ -1197,6 +1205,11 @@ spec:
                               behavior in case of failures. Please file an issue if
                               failures are encountered. See: https://github.com/projectcontour/contour/issues/3221'
                             type: boolean
+                          disableMergeSlashes:
+                            description: DisableMergeSlashes disables Envoy's non-standard
+                              merge_slashes path transformation option which strips
+                              duplicate slashes from request URL paths.
+                            type: boolean
                           tls:
                             description: TLS holds various configurable Envoy TLS
                               listener values.
@@ -1247,6 +1260,7 @@ spec:
                         required:
                         - connectionBalancer
                         - disableAllowChunkedLength
+                        - disableMergeSlashes
                         - tls
                         - useProxyProtocol
                         type: object

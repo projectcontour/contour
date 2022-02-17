@@ -122,6 +122,9 @@ type ListenerConfig struct {
 	// listeners.
 	AllowChunkedLength bool
 
+	// MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option for all listeners.
+	MergeSlashes bool
+
 	// XffNumTrustedHops sets the number of additional ingress proxy hops from the
 	// right side of the x-forwarded-for HTTP header to trust.
 	XffNumTrustedHops uint32
@@ -378,6 +381,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
+					MergeSlashes(cfg.MergeSlashes).
 					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
@@ -429,6 +433,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
+					MergeSlashes(cfg.MergeSlashes).
 					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()
@@ -493,6 +498,7 @@ func (c *ListenerCache) OnChange(root *dag.DAG) {
 					MaxConnectionDuration(cfg.Timeouts.MaxConnectionDuration).
 					ConnectionShutdownGracePeriod(cfg.Timeouts.ConnectionShutdownGracePeriod).
 					AllowChunkedLength(cfg.AllowChunkedLength).
+					MergeSlashes(cfg.MergeSlashes).
 					AddFilter(envoy_v3.OriginalIPDetectionFilter(cfg.XffNumTrustedHops)).
 					AddFilter(envoy_v3.GlobalRateLimitFilter(envoyGlobalRateLimitConfig(cfg.RateLimitConfig))).
 					Get()

@@ -1,0 +1,2 @@
+Envoy's [`merge_slashes`](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-merge-slashes) option that enables
+a non-standard path transformation option to replace multiple consecutive slashes in an URL path with a single slash can now be disabled by setting the `DisableMergeSlashes` option in the Contour config file or ContourConfiguration custom resource.

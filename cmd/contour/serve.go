@@ -335,6 +335,7 @@ func (s *Server) doServe() error {
 		Timeouts:                     timeouts,
 		DefaultHTTPVersions:          parseDefaultHTTPVersions(contourConfiguration.Envoy.DefaultHTTPVersions),
 		AllowChunkedLength:           !contourConfiguration.Envoy.Listener.DisableAllowChunkedLength,
+		MergeSlashes:                 !contourConfiguration.Envoy.Listener.DisableMergeSlashes,
 		XffNumTrustedHops:            contourConfiguration.Envoy.Network.XffNumTrustedHops,
 		ConnectionBalancer:           contourConfiguration.Envoy.Listener.ConnectionBalancer,
 	}

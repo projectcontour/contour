@@ -151,6 +151,7 @@ type httpConnectionManagerBuilder struct {
 	filters                       []*http.HttpFilter
 	codec                         HTTPVersionType // Note the zero value is AUTO, which is the default we want.
 	allowChunkedLength            bool
+	mergeSlashes                  bool
 }
 
 // RouteConfigName sets the name of the RDS element that contains
@@ -220,6 +221,12 @@ func (b *httpConnectionManagerBuilder) ConnectionShutdownGracePeriod(timeout tim
 
 func (b *httpConnectionManagerBuilder) AllowChunkedLength(enabled bool) *httpConnectionManagerBuilder {
 	b.allowChunkedLength = enabled
+	return b
+}
+
+// MergeSlashes toggles Envoy's non-standard merge_slashes path transformation option on the connection manager.
+func (b *httpConnectionManagerBuilder) MergeSlashes(enabled bool) *httpConnectionManagerBuilder {
+	b.mergeSlashes = enabled
 	return b
 }
 
@@ -399,7 +406,7 @@ func (b *httpConnectionManagerBuilder) Get() *envoy_listener_v3.Filter {
 
 		// issue #1487 pass through X-Request-Id if provided.
 		PreserveExternalRequestId: true,
-		MergeSlashes:              true,
+		MergeSlashes:              b.mergeSlashes,
 
 		RequestTimeout:      envoy.Timeout(b.requestTimeout),
 		StreamIdleTimeout:   envoy.Timeout(b.streamIdleTimeout),
