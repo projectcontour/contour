@@ -27,6 +27,15 @@ import (
 // CACertificateKey is the key name for accessing TLS CA certificate bundles in Kubernetes Secrets.
 const CACertificateKey = "ca.crt"
 
+// validTLSSecret returns an error if the Secret is not of type TLS or if it doesn't contain certificate and private key material.
+func validTLSSecret(s *v1.Secret) error {
+	if s.Type != v1.SecretTypeTLS {
+		return fmt.Errorf("secret type is not %q", v1.SecretTypeTLS)
+	}
+	_, err := isValidSecret(s)
+	return err
+}
+
 // isValidSecret returns true if the secret is interesting and well
 // formed. TLS certificate/key pairs must be secrets of type
 // "kubernetes.io/tls". Certificate bundles may be "kubernetes.io/tls"

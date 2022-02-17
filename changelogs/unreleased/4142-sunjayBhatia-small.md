@@ -1,2 +1,0 @@
-Update to using Envoy bootstrap Admin [`access_log` field](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/accesslog/v3/accesslog.proto#envoy-v3-api-msg-config-accesslog-v3-accesslog) instead of deprecated `access_log_path` (deprecated in Envoy v1.18.0)
-Update to using Envoy [XFF Original IP Detection extension](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/http/original_ip_detection/xff/v3/xff.proto) instead of HTTPConnectionManager `xff_num_trusted_hops` field (deprecated in Envoy v1.19.0)

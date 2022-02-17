@@ -42,15 +42,15 @@ type KubernetesCache struct {
 	// namespace.
 	RootNamespaces []string
 
-	// Contour's IngressClassName.
-	// If not set, defaults to DEFAULT_INGRESS_CLASS.
-	IngressClassName string
+	// Names of ingress classes to cache HTTPProxies/Ingresses for. If not
+	// set, objects with no ingress class or DEFAULT_INGRESS_CLASS will be
+	// cached.
+	IngressClassNames []string
 
 	// Secrets that are referred from the configuration file.
 	ConfiguredSecretRefs []*types.NamespacedName
 
 	ingresses                 map[types.NamespacedName]*networking_v1.Ingress
-	ingressclass              *networking_v1.IngressClass
 	httpproxies               map[types.NamespacedName]*contour_api_v1.HTTPProxy
 	secrets                   map[types.NamespacedName]*v1.Secret
 	tlscertificatedelegations map[types.NamespacedName]*contour_api_v1.TLSCertificateDelegation
@@ -82,22 +82,6 @@ func (kc *KubernetesCache) init() {
 	kc.extensions = make(map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService)
 }
 
-// matchesIngressClass returns true if the given IngressClass
-// is the one this cache is using.
-func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) bool {
-	// If no ingress class name set, we allow an ingress class that is named
-	// with the default Contour accepted name.
-	if kc.IngressClassName == "" {
-		return obj.Name == ingressclass.DefaultClassName
-	}
-	// Otherwise, the name of the ingress class must match what has been
-	// configured.
-	if obj.Name == kc.IngressClassName {
-		return true
-	}
-	return false
-}
-
 // Insert inserts obj into the KubernetesCache.
 // Insert returns true if the cache accepted the object, or false if the value
 // is not interesting to the cache. If an object with a matching type, name,
@@ -105,111 +89,115 @@ func (kc *KubernetesCache) matchesIngressClass(obj *networking_v1.IngressClass) 
 func (kc *KubernetesCache) Insert(obj interface{}) bool {
 	kc.initialize.Do(kc.init)
 
-	if obj, ok := obj.(metav1.Object); ok {
-		kind := k8s.KindOf(obj)
-		for key := range obj.GetAnnotations() {
-			// Emit a warning if this is a known annotation that has
-			// been applied to an invalid object kind. Note that we
-			// only warn for known annotations because we want to
-			// allow users to add arbitrary orthogonal annotations
-			// to objects that we inspect.
-			if annotation.IsKnown(key) && !annotation.ValidForKind(kind, key) {
-				// TODO(jpeach): this should be exposed
-				// to the user as a status condition.
+	maybeInsert := func(obj interface{}) bool {
+		switch obj := obj.(type) {
+		case *v1.Secret:
+			valid, err := isValidSecret(obj)
+			if !valid {
+				if err != nil {
+					kc.WithField("name", obj.GetName()).
+						WithField("namespace", obj.GetNamespace()).
+						WithField("kind", "Secret").
+						WithField("version", k8s.VersionOf(obj)).
+						Error(err)
+				}
+				return false
+			}
+
+			kc.secrets[k8s.NamespacedNameOf(obj)] = obj
+			return kc.secretTriggersRebuild(obj)
+		case *v1.Service:
+			kc.services[k8s.NamespacedNameOf(obj)] = obj
+			return kc.serviceTriggersRebuild(obj)
+		case *v1.Namespace:
+			kc.namespaces[obj.Name] = obj
+			return true
+		case *networking_v1.Ingress:
+			if !ingressclass.MatchesIngress(obj, kc.IngressClassNames) {
+				// We didn't get a match so report this object is being ignored.
 				kc.WithField("name", obj.GetName()).
 					WithField("namespace", obj.GetNamespace()).
-					WithField("kind", kind).
-					WithField("version", k8s.VersionOf(obj)).
-					WithField("annotation", key).
-					Error("ignoring invalid or unsupported annotation")
+					WithField("kind", k8s.KindOf(obj)).
+					WithField("ingress-class-annotation", annotation.IngressClass(obj)).
+					WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
+					WithField("target-ingress-classes", kc.IngressClassNames).
+					Debug("ignoring Ingress with unmatched ingress class")
+				return false
 			}
+
+			kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		case *contour_api_v1.HTTPProxy:
+			if !ingressclass.MatchesHTTPProxy(obj, kc.IngressClassNames) {
+				// We didn't get a match so report this object is being ignored.
+				kc.WithField("name", obj.GetName()).
+					WithField("namespace", obj.GetNamespace()).
+					WithField("kind", k8s.KindOf(obj)).
+					WithField("ingress-class-annotation", annotation.IngressClass(obj)).
+					WithField("ingress-class-name", obj.Spec.IngressClassName).
+					WithField("target-ingress-classes", kc.IngressClassNames).
+					Debug("ignoring HTTPProxy with unmatched ingress class")
+				return false
+			}
+
+			kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		case *contour_api_v1.TLSCertificateDelegation:
+			kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		case *gatewayapi_v1alpha2.GatewayClass:
+			kc.gatewayclass = obj
+			return true
+		case *gatewayapi_v1alpha2.Gateway:
+			kc.gateway = obj
+			return true
+		case *gatewayapi_v1alpha2.HTTPRoute:
+			kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		case *gatewayapi_v1alpha2.TLSRoute:
+			kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		case *gatewayapi_v1alpha2.ReferencePolicy:
+			kc.referencepolicies[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		case *contour_api_v1alpha1.ExtensionService:
+			kc.extensions[k8s.NamespacedNameOf(obj)] = obj
+			return true
+		case *contour_api_v1alpha1.ContourConfiguration:
+			return false
+		default:
+			// not an interesting object
+			kc.WithField("object", obj).Error("insert unknown object")
+			return false
 		}
 	}
 
-	switch obj := obj.(type) {
-	case *v1.Secret:
-		valid, err := isValidSecret(obj)
-		if !valid {
-			if err != nil {
-				kc.WithField("name", obj.GetName()).
-					WithField("namespace", obj.GetNamespace()).
-					WithField("kind", "Secret").
-					WithField("version", k8s.VersionOf(obj)).
-					Error(err)
+	if maybeInsert(obj) {
+		// Only check annotations if we actually inserted
+		// the object in our cache; uninteresting objects
+		// should not be checked.
+		if obj, ok := obj.(metav1.Object); ok {
+			kind := k8s.KindOf(obj)
+			for key := range obj.GetAnnotations() {
+				// Emit a warning if this is a known annotation that has
+				// been applied to an invalid object kind. Note that we
+				// only warn for known annotations because we want to
+				// allow users to add arbitrary orthogonal annotations
+				// to objects that we inspect.
+				if annotation.IsKnown(key) && !annotation.ValidForKind(kind, key) {
+					// TODO(jpeach): this should be exposed
+					// to the user as a status condition.
+					kc.WithField("name", obj.GetName()).
+						WithField("namespace", obj.GetNamespace()).
+						WithField("kind", kind).
+						WithField("version", k8s.VersionOf(obj)).
+						WithField("annotation", key).
+						Error("ignoring invalid or unsupported annotation")
+				}
 			}
-			return false
 		}
 
-		kc.secrets[k8s.NamespacedNameOf(obj)] = obj
-		return kc.secretTriggersRebuild(obj)
-	case *v1.Service:
-		kc.services[k8s.NamespacedNameOf(obj)] = obj
-		return kc.serviceTriggersRebuild(obj)
-	case *v1.Namespace:
-		kc.namespaces[obj.Name] = obj
 		return true
-	case *networking_v1.Ingress:
-		if !ingressclass.MatchesIngress(obj, kc.IngressClassName) {
-			// We didn't get a match so report this object is being ignored.
-			kc.WithField("name", obj.GetName()).
-				WithField("namespace", obj.GetNamespace()).
-				WithField("kind", k8s.KindOf(obj)).
-				WithField("ingress-class-annotation", annotation.IngressClass(obj)).
-				WithField("ingress-class-name", pointer.StringPtrDerefOr(obj.Spec.IngressClassName, "")).
-				WithField("target-ingress-class", kc.IngressClassName).
-				Debug("ignoring Ingress with unmatched ingress class")
-			return false
-		}
-
-		kc.ingresses[k8s.NamespacedNameOf(obj)] = obj
-		return true
-	case *networking_v1.IngressClass:
-		if kc.matchesIngressClass(obj) {
-			kc.ingressclass = obj
-			return true
-		}
-	case *contour_api_v1.HTTPProxy:
-		if !ingressclass.MatchesHTTPProxy(obj, kc.IngressClassName) {
-			// We didn't get a match so report this object is being ignored.
-			kc.WithField("name", obj.GetName()).
-				WithField("namespace", obj.GetNamespace()).
-				WithField("kind", k8s.KindOf(obj)).
-				WithField("ingress-class-annotation", annotation.IngressClass(obj)).
-				WithField("ingress-class-name", obj.Spec.IngressClassName).
-				WithField("target-ingress-class", kc.IngressClassName).
-				Debug("ignoring HTTPProxy with unmatched ingress class")
-			return false
-		}
-
-		kc.httpproxies[k8s.NamespacedNameOf(obj)] = obj
-		return true
-	case *contour_api_v1.TLSCertificateDelegation:
-		kc.tlscertificatedelegations[k8s.NamespacedNameOf(obj)] = obj
-		return true
-	case *gatewayapi_v1alpha2.GatewayClass:
-		kc.gatewayclass = obj
-		return true
-	case *gatewayapi_v1alpha2.Gateway:
-		kc.gateway = obj
-		return true
-	case *gatewayapi_v1alpha2.HTTPRoute:
-		kc.httproutes[k8s.NamespacedNameOf(obj)] = obj
-		return true
-	case *gatewayapi_v1alpha2.TLSRoute:
-		kc.tlsroutes[k8s.NamespacedNameOf(obj)] = obj
-		return true
-	case *gatewayapi_v1alpha2.ReferencePolicy:
-		kc.referencepolicies[k8s.NamespacedNameOf(obj)] = obj
-		return true
-	case *contour_api_v1alpha1.ExtensionService:
-		kc.extensions[k8s.NamespacedNameOf(obj)] = obj
-		return true
-	case *contour_api_v1alpha1.ContourConfiguration:
-		return false
-	default:
-		// not an interesting object
-		kc.WithField("object", obj).Error("insert unknown object")
-		return false
 	}
 
 	return false
@@ -249,12 +237,6 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		_, ok := kc.ingresses[m]
 		delete(kc.ingresses, m)
 		return ok
-	case *networking_v1.IngressClass:
-		if kc.matchesIngressClass(obj) {
-			kc.ingressclass = nil
-			return true
-		}
-		return false
 	case *contour_api_v1.HTTPProxy:
 		m := k8s.NamespacedNameOf(obj)
 		_, ok := kc.httpproxies[m]

@@ -402,6 +402,13 @@ spec:
                     description: Timeouts holds various configurable timeouts that
                       can be set in the config file.
                     properties:
+                      connectTimeout:
+                        description: "ConnectTimeout defines how long the proxy should
+                          wait when establishing connection to upstream service. If
+                          not set, a default value of 2 seconds will be used. \n See
+                          https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
+                          for more information."
+                        type: string
                       connectionIdleTimeout:
                         description: "ConnectionIdleTimeout defines how long the proxy
                           should wait while there are no active requests (for HTTP/1.1)
@@ -531,9 +538,11 @@ spec:
               ingress:
                 description: Ingress contains parameters for ingress options.
                 properties:
-                  className:
-                    description: Ingress Class Name Contour should use.
-                    type: string
+                  classNames:
+                    description: Ingress Class Names Contour should use.
+                    items:
+                      type: string
+                    type: array
                   statusAddress:
                     description: Address to set in Ingress object status.
                     type: string
@@ -1329,6 +1338,13 @@ spec:
                         description: Timeouts holds various configurable timeouts
                           that can be set in the config file.
                         properties:
+                          connectTimeout:
+                            description: "ConnectTimeout defines how long the proxy
+                              should wait when establishing connection to upstream
+                              service. If not set, a default value of 2 seconds will
+                              be used. \n See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#envoy-v3-api-field-config-cluster-v3-cluster-connect-timeout
+                              for more information."
+                            type: string
                           connectionIdleTimeout:
                             description: "ConnectionIdleTimeout defines how long the
                               proxy should wait while there are no active requests
@@ -1461,9 +1477,11 @@ spec:
                   ingress:
                     description: Ingress contains parameters for ingress options.
                     properties:
-                      className:
-                        description: Ingress Class Name Contour should use.
-                        type: string
+                      classNames:
+                        description: Ingress Class Names Contour should use.
+                        items:
+                          type: string
+                        type: array
                       statusAddress:
                         description: Address to set in Ingress object status.
                         type: string

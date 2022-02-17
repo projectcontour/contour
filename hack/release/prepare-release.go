@@ -250,6 +250,8 @@ func generateReleaseNotes(version, kubeMinVersion, kubeMaxVersion string) error 
 			d.Small = append(d.Small, entry)
 		case "docs":
 			d.Docs = append(d.Docs, entry)
+		case "deprecation":
+			d.Deprecation = append(d.Deprecation, entry)
 		default:
 			fmt.Printf("Unrecognized category %q\n", entry.Category)
 			continue
@@ -345,6 +347,7 @@ type Data struct {
 	Minor                []Entry
 	Small                []Entry
 	Docs                 []Entry
+	Deprecation          []Entry
 	Contributors         []string
 	KubernetesMinVersion string
 	KubernetesMaxVersion string

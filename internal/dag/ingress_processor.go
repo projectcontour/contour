@@ -17,6 +17,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -49,6 +50,9 @@ type IngressProcessor struct {
 
 	// Response headers that will be set on all routes (optional).
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	ConnectTimeout time.Duration
 }
 
 // Run translates Ingresses into DAG objects and
@@ -76,7 +80,7 @@ func (p *IngressProcessor) computeSecureVirtualhosts() {
 	for _, ing := range p.source.ingresses {
 		for _, tls := range ing.Spec.TLS {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.TLSCertAnnotationNamespace(ing), k8s.DefaultNamespace(ing.GetNamespace()))
-			sec, err := p.source.LookupSecret(secretName, validSecret)
+			sec, err := p.source.LookupSecret(secretName, validTLSSecret)
 			if err != nil {
 				p.WithError(err).
 					WithField("name", ing.GetName()).
@@ -131,7 +135,7 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 	var clientCertSecret *Secret
 	var err error
 	if p.ClientCertificate != nil {
-		clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validSecret)
+		clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validTLSSecret)
 		if err != nil {
 			p.WithError(err).
 				WithField("name", ing.GetName()).
@@ -179,14 +183,14 @@ func (p *IngressProcessor) computeIngressRule(ing *networking_v1.Ingress, rule n
 		// should we create port 80 routes for this ingress
 		if annotation.TLSRequired(ing) || annotation.HTTPAllowed(ing) {
 			vhost := p.dag.EnsureVirtualHost(host)
-			vhost.addRoute(r)
+			vhost.AddRoute(r)
 		}
 
 		// computeSecureVirtualhosts will have populated b.securevirtualhosts
 		// with the names of tls enabled ingress objects. If host exists then
 		// it is correctly configured for TLS.
 		if svh := p.dag.GetSecureVirtualHost(host); svh != nil && host != "*" {
-			svh.addRoute(r)
+			svh.AddRoute(r)
 		}
 	}
 }
@@ -229,6 +233,7 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 			ClientCertificate:     clientCertSecret,
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
+			ConnectTimeout:        p.ConnectTimeout,
 		}},
 	}
 

@@ -120,12 +120,12 @@ func registerServe(app *kingpin.Application) (*kingpin.CmdClause, *serveContext)
 	serve.Flag("incluster", "Use in cluster configuration.").BoolVar(&ctx.Config.InCluster)
 	serve.Flag("kubeconfig", "Path to kubeconfig (if not in running inside a cluster).").PlaceHolder("/path/to/file").StringVar(&ctx.Config.Kubeconfig)
 
-	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.DisableLeaderElection)
-	serve.Flag("leader-election-lease-duration", "The duration of the leadership lease.").Default("15s").DurationVar(&ctx.Config.LeaderElection.LeaseDuration)
-	serve.Flag("leader-election-renew-deadline", "The duration leader will retry refreshing leadership before giving up.").Default("10s").DurationVar(&ctx.Config.LeaderElection.RenewDeadline)
-	serve.Flag("leader-election-retry-period", "The interval which Contour will attempt to acquire leadership lease.").Default("2s").DurationVar(&ctx.Config.LeaderElection.RetryPeriod)
-	serve.Flag("leader-election-resource-name", "The name of the resource (ConfigMap) leader election will lease.").Default("leader-elect").StringVar(&ctx.Config.LeaderElection.Name)
-	serve.Flag("leader-election-resource-namespace", "The namespace of the resource (ConfigMap) leader election will lease.").Default(ctx.Config.LeaderElection.Namespace).StringVar(&ctx.Config.LeaderElection.Namespace)
+	serve.Flag("disable-leader-election", "Disable leader election mechanism.").BoolVar(&ctx.LeaderElection.Disable)
+	serve.Flag("leader-election-lease-duration", "The duration of the leadership lease.").Default("15s").DurationVar(&ctx.LeaderElection.LeaseDuration)
+	serve.Flag("leader-election-renew-deadline", "The duration leader will retry refreshing leadership before giving up.").Default("10s").DurationVar(&ctx.LeaderElection.RenewDeadline)
+	serve.Flag("leader-election-retry-period", "The interval which Contour will attempt to acquire leadership lease.").Default("2s").DurationVar(&ctx.LeaderElection.RetryPeriod)
+	serve.Flag("leader-election-resource-name", "The name of the resource (Lease) leader election will lease.").Default("leader-elect").StringVar(&ctx.LeaderElection.Name)
+	serve.Flag("leader-election-resource-namespace", "The namespace of the resource (Lease) leader election will lease.").Default(config.GetenvOr("CONTOUR_NAMESPACE", "projectcontour")).StringVar(&ctx.LeaderElection.Namespace)
 
 	serve.Flag("xds-address", "xDS gRPC API address.").PlaceHolder("<ipaddr>").StringVar(&ctx.xdsAddr)
 	serve.Flag("xds-port", "xDS gRPC API port.").PlaceHolder("<port>").IntVar(&ctx.xdsPort)
@@ -196,21 +196,21 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 
 	// Instantiate a controller-runtime manager.
 	options := manager.Options{
-		Scheme: scheme,
+		Scheme:                 scheme,
+		MetricsBindAddress:     "0",
+		HealthProbeBindAddress: "0",
 	}
-	if ctx.DisableLeaderElection {
+	if ctx.LeaderElection.Disable {
 		log.Info("Leader election disabled")
 		options.LeaderElection = false
 	} else {
 		options.LeaderElection = true
-		// This represents a multilock on configmaps and leases.
-		// TODO: switch to solely "leases" once a release cycle has passed.
-		options.LeaderElectionResourceLock = "configmapsleases"
-		options.LeaderElectionNamespace = ctx.Config.LeaderElection.Namespace
-		options.LeaderElectionID = ctx.Config.LeaderElection.Name
-		options.LeaseDuration = &ctx.Config.LeaderElection.LeaseDuration
-		options.RenewDeadline = &ctx.Config.LeaderElection.RenewDeadline
-		options.RetryPeriod = &ctx.Config.LeaderElection.RetryPeriod
+		options.LeaderElectionResourceLock = "leases"
+		options.LeaderElectionNamespace = ctx.LeaderElection.Namespace
+		options.LeaderElectionID = ctx.LeaderElection.Name
+		options.LeaseDuration = &ctx.LeaderElection.LeaseDuration
+		options.RenewDeadline = &ctx.LeaderElection.RenewDeadline
+		options.RetryPeriod = &ctx.LeaderElection.RetryPeriod
 		options.LeaderElectionReleaseOnCancel = true
 	}
 	mgr, err := manager.New(restConfig, options)
@@ -370,9 +370,9 @@ func (s *Server) doServe() error {
 		s.log.WithField("context", "envoy-client-certificate").Infof("enabled client certificate with secret: %q", contourConfiguration.Envoy.ClientCertificate)
 	}
 
-	ingressClassName := ""
-	if contourConfiguration.Ingress != nil && contourConfiguration.Ingress.ClassName != nil {
-		ingressClassName = *contourConfiguration.Ingress.ClassName
+	var ingressClassNames []string
+	if contourConfiguration.Ingress != nil {
+		ingressClassNames = contourConfiguration.Ingress.ClassNames
 	}
 
 	var clientCert *types.NamespacedName
@@ -390,7 +390,7 @@ func (s *Server) doServe() error {
 	}
 
 	builder := s.getDAGBuilder(dagBuilderConfig{
-		ingressClassName:          ingressClassName,
+		ingressClassNames:         ingressClassNames,
 		rootNamespaces:            contourConfiguration.HTTPProxy.RootNamespaces,
 		gatewayAPIConfigured:      contourConfiguration.Gateway != nil,
 		disablePermitInsecure:     contourConfiguration.HTTPProxy.DisablePermitInsecure,
@@ -399,6 +399,7 @@ func (s *Server) doServe() error {
 		headersPolicy:             contourConfiguration.Policy,
 		clientCert:                clientCert,
 		fallbackCert:              fallbackCert,
+		connectTimeout:            timeouts.ConnectTimeout,
 	})
 
 	// Build the core Kubernetes event handler.
@@ -429,7 +430,6 @@ func (s *Server) doServe() error {
 		"contourconfigurations":     &contour_api_v1alpha1.ContourConfiguration{},
 		"services":                  &corev1.Service{},
 		"ingresses":                 &networking_v1.Ingress{},
-		"ingressclasses":            &networking_v1.IngressClass{},
 	} {
 		if err := informOnResource(r, eventHandler, s.mgr.GetCache()); err != nil {
 			s.log.WithError(err).WithField("resource", name).Fatal("failed to create informer")
@@ -489,7 +489,7 @@ func (s *Server) doServe() error {
 		log:                   s.log.WithField("context", "loadBalancerStatusWriter"),
 		cache:                 s.mgr.GetCache(),
 		lbStatus:              make(chan corev1.LoadBalancerStatus, 1),
-		ingressClassName:      ingressClassName,
+		ingressClassNames:     ingressClassNames,
 		gatewayControllerName: gatewayControllerName,
 		statusUpdater:         sh.Writer(),
 	}
@@ -770,7 +770,7 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 }
 
 type dagBuilderConfig struct {
-	ingressClassName          string
+	ingressClassNames         []string
 	rootNamespaces            []string
 	gatewayAPIConfigured      bool
 	disablePermitInsecure     bool
@@ -779,6 +779,7 @@ type dagBuilderConfig struct {
 	headersPolicy             *contour_api_v1alpha1.PolicyConfig
 	clientCert                *types.NamespacedName
 	fallbackCert              *types.NamespacedName
+	connectTimeout            time.Duration
 }
 
 func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
@@ -837,12 +838,14 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ClientCertificate:         dbc.clientCert,
 			RequestHeadersPolicy:      &requestHeadersPolicyIngress,
 			ResponseHeadersPolicy:     &responseHeadersPolicyIngress,
+			ConnectTimeout:            dbc.connectTimeout,
 		},
 		&dag.ExtensionServiceProcessor{
 			// Note that ExtensionService does not support ExternalName, if it does get added,
 			// need to bring EnableExternalNameService in here too.
 			FieldLogger:       s.log.WithField("context", "ExtensionServiceProcessor"),
 			ClientCertificate: dbc.clientCert,
+			ConnectTimeout:    dbc.connectTimeout,
 		},
 		&dag.HTTPProxyProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
@@ -852,6 +855,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 			ClientCertificate:         dbc.clientCert,
 			RequestHeadersPolicy:      &requestHeadersPolicy,
 			ResponseHeadersPolicy:     &responseHeadersPolicy,
+			ConnectTimeout:            dbc.connectTimeout,
 		},
 	}
 
@@ -859,6 +863,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
+			ConnectTimeout:            dbc.connectTimeout,
 		})
 	}
 
@@ -877,7 +882,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 	builder := &dag.Builder{
 		Source: dag.KubernetesCache{
 			RootNamespaces:       dbc.rootNamespaces,
-			IngressClassName:     dbc.ingressClassName,
+			IngressClassNames:    dbc.ingressClassNames,
 			ConfiguredSecretRefs: configuredSecretRefs,
 			FieldLogger:          s.log.WithField("context", "KubernetesCache"),
 		},

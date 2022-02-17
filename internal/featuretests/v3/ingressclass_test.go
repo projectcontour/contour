@@ -39,7 +39,7 @@ const (
 
 func TestIngressClassAnnotation_Configured(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
-		b.Source.IngressClassName = "linkerd"
+		b.Source.IngressClassNames = []string{"linkerd"}
 	})
 	defer done()
 
@@ -504,7 +504,7 @@ func TestIngressClassAnnotation_NotConfigured(t *testing.T) {
 func TestIngressClassAnnotationUpdate(t *testing.T) {
 	t.Skip("Test disabled, see issue #2964")
 	rh, c, done := setup(t, func(b *dag.Builder) {
-		b.Source.IngressClassName = "contour"
+		b.Source.IngressClassNames = []string{"contour"}
 	})
 	defer done()
 
@@ -567,7 +567,7 @@ func TestIngressClassAnnotationUpdate(t *testing.T) {
 
 func TestIngressClassResource_Configured(t *testing.T) {
 	rh, c, done := setup(t, func(b *dag.Builder) {
-		b.Source.IngressClassName = "testingressclass"
+		b.Source.IngressClassNames = []string{"testingressclass"}
 	})
 	defer done()
 

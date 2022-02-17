@@ -126,10 +126,15 @@ func extUpstreamValidation(t *testing.T, rh cache.ResourceEventHandler, c *Conto
 								InlineBytes: []byte(featuretests.CERTIFICATE),
 							},
 						},
-						MatchSubjectAltNames: []*matcher.StringMatcher{{
-							MatchPattern: &matcher.StringMatcher_Exact{
-								Exact: "ext.projectcontour.io",
-							}},
+						MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+							{
+								SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+								Matcher: &matcher.StringMatcher{
+									MatchPattern: &matcher.StringMatcher_Exact{
+										Exact: "ext.projectcontour.io",
+									},
+								},
+							},
 						},
 					},
 				},

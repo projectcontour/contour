@@ -24,7 +24,7 @@ Contour does not require an IngressClass resource with the name passed in the af
 Ingresses may specify an IngressClass name via the original annotation method or via the `ingressClassName` spec field.
 As the `ingressClassName` field has been introduced on Ingress v1beta1, there should be no differences in IngressClass name filtering between the two available versions of the resource.
 Contour uses its configured IngressClass name to filter Ingresses.
-If the `--ingress-class-name` flag is provided, Contour will only accept Ingress resources that exactly match the specified IngressClass name via annotation or spec field, with the value in the annotation taking precedence.
+If the `--ingress-class-name` flag is provided, Contour will only accept Ingress resources that exactly match the specified IngressClass name via annotation or spec field, with the value in the annotation taking precedence. (The `--ingress-class-name` value can be a comma-separated list of class names to match against.)
 If the flag is not passed to `contour serve` Contour will accept any Ingress resource that specifies the IngressClass name `contour` in annotation or spec fields or does not specify one at all.
 
 ## Default Backend

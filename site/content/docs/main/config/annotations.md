@@ -33,6 +33,8 @@ This same logic applies for these annotations on HTTPProxy objects.
 
 _Note: Both `Ingress` and `HTTPProxy` now have an `IngressClassName` field in their spec. Going forward this is the preferred way to specify an ingress class, rather than using an annotation. If both the annotation and the spec field are specified on an object, the annotation takes preference for backwards compatibility._
 
+_Note: The `--ingress-class-name` value can be a comma-separated list of class names to match against.  Contour will serve the Ingress or HTTPProxy if the annotation or IngressClassName matches any of the specified class name values.
+
 ### Other annotations 
 
  - `ingress.kubernetes.io/force-ssl-redirect`: Requires TLS/SSL for the Ingress to Envoy by setting the [Envoy virtual host option require_tls][16].

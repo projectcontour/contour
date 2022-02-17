@@ -15,6 +15,7 @@ package debug
 
 import (
 	"fmt"
+	"html"
 	"io"
 
 	"github.com/projectcontour/contour/internal/dag"
@@ -24,21 +25,39 @@ import (
 // quick and dirty dot debugging package
 
 type dotWriter struct {
-	*dag.Builder
+	Builder DagBuilder
+}
+
+// DagBuilder encapsulates only the Build aspect of the dag.Builder
+type DagBuilder interface {
+	// Build builds and returns a new DAG
+	Build() *dag.DAG
 }
 
 type pair struct {
 	a, b interface{}
 }
 
+type nodeCollection map[interface{}]bool
+type edgeCollection map[pair]bool
+
 func (dw *dotWriter) writeDot(w io.Writer) {
+	nodes, edges := collectDag(dw.Builder)
+
 	fmt.Fprintln(w, "digraph DAG {\nrankdir=\"LR\"")
 
+	printNodes(nodes, w)
+	printEdges(edges, w)
+
+	fmt.Fprintln(w, "}")
+}
+
+func collectDag(b DagBuilder) (nodeCollection, edgeCollection) {
 	nodes := map[interface{}]bool{}
 	edges := map[pair]bool{}
 
 	// collect nodes and edges
-	for _, listener := range dw.Builder.Build().Listeners {
+	for _, listener := range b.Build().Listeners {
 		nodes[listener] = true
 
 		for _, vhost := range listener.VirtualHosts {
@@ -110,34 +129,38 @@ func (dw *dotWriter) writeDot(w io.Writer) {
 		}
 	}
 
+	return nodes, edges
+}
+
+func printNodes(nodes nodeCollection, w io.Writer) {
 	// print nodes
 	for node := range nodes {
 		switch node := node.(type) {
 		case *dag.Listener:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{listener|%s:%d}"]`+"\n", node, node.Address, node.Port)
+			fmt.Fprintf(w, `"%p" [shape=record, label="{listener|%s:%d}"]`+"\n", node, html.EscapeString(node.Address), node.Port)
 		case *dag.VirtualHost:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{http://%s}"]`+"\n", node, node.Name)
+			fmt.Fprintf(w, `"%p" [shape=record, label="{http://%s}"]`+"\n", node, html.EscapeString(node.Name))
 		case *dag.SecureVirtualHost:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{https://%s}"]`+"\n", node, node.VirtualHost.Name)
+			fmt.Fprintf(w, `"%p" [shape=record, label="{https://%s}"]`+"\n", node, html.EscapeString(node.VirtualHost.Name))
 		case *dag.Route:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{%s}"]`+"\n", node, node.PathMatchCondition.String())
+			fmt.Fprintf(w, `"%p" [shape=record, label="{%s}"]`+"\n", node, html.EscapeString(node.PathMatchCondition.String()))
 		case *dag.Cluster:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{cluster|{%s|weight %d}}"]`+"\n", node, envoy.Clustername(node), node.Weight)
+			fmt.Fprintf(w, `"%p" [shape=record, label="{cluster|{%s|weight %d}}"]`+"\n", node, html.EscapeString(envoy.Clustername(node)), node.Weight)
 		case *dag.Service:
 			fmt.Fprintf(w, `"%p" [shape=record, label="{service|%s/%s:%d}"]`+"\n",
-				node, node.Weighted.ServiceNamespace, node.Weighted.ServiceName, node.Weighted.ServicePort.Port)
+				node, html.EscapeString(node.Weighted.ServiceNamespace), html.EscapeString(node.Weighted.ServiceName), node.Weighted.ServicePort.Port)
 		case *dag.Secret:
-			fmt.Fprintf(w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", node, node.Namespace(), node.Name())
+			fmt.Fprintf(w, `"%p" [shape=record, label="{secret|%s/%s}"]`+"\n", node, html.EscapeString(node.Namespace()), html.EscapeString(node.Name()))
 		case *dag.TCPProxy:
 			fmt.Fprintf(w, `"%p" [shape=record, label="{tcpproxy}"]`+"\n", node)
 
 		}
 	}
+}
 
+func printEdges(edges edgeCollection, w io.Writer) {
 	// print edges
 	for edge := range edges {
 		fmt.Fprintf(w, `"%p" -> "%p"`+"\n", edge.a, edge.b)
 	}
-
-	fmt.Fprintln(w, "}")
 }

@@ -23,6 +23,189 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+func TestValidTLSSecret(t *testing.T) {
+	tests := map[string]struct {
+		secret *v1.Secret
+		err    error
+	}{
+		// TLS Secret, single cert
+		"TLS Secret, single certificate": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+				},
+			},
+			err: nil,
+		},
+		"TLS Secret, empty": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{},
+			},
+			err: errors.New("missing TLS certificate"),
+		},
+		"TLS Secret, certificate plus CA in bundle": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(pemBundle(fixture.CERTIFICATE, fixture.CA_CERT)),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+				},
+			},
+			err: nil,
+		},
+		"TLS Secret, certificate plus CA with no CN in bundle": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(pemBundle(fixture.CERTIFICATE, fixture.CA_CERT_NO_CN)),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+				},
+			},
+			err: nil,
+		},
+		"TLS Secret, single certificate plus CA in ca.crt key": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+					CACertificateKey:    []byte(fixture.CA_CERT),
+				},
+			},
+			err: nil,
+		},
+		"TLS Secret, single certificate plus CA with no CN in ca.crt key": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.RSA_PRIVATE_KEY),
+					CACertificateKey:    []byte(fixture.CA_CERT_NO_CN),
+				},
+			},
+			err: nil,
+		},
+		"TLS Secret, missing CN": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.MISSING_CN_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.MISSING_CN_KEY),
+				},
+			},
+			err: errors.New("invalid TLS certificate: certificate has no common name or subject alt name"),
+		},
+		"TLS Secret, CA cert": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CA_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.CA_KEY),
+				},
+			},
+			err: nil,
+		},
+		"TLS Secret, CA cert, missing CN": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.CA_CERT_NO_CN),
+					v1.TLSPrivateKeyKey: []byte(fixture.CA_KEY_NO_CN),
+				},
+			},
+			err: errors.New("invalid TLS certificate: certificate has no common name or subject alt name"),
+		},
+
+		"EC cert with SubjectAltName only": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.EC_CERTIFICATE),
+					v1.TLSPrivateKeyKey: []byte(fixture.EC_PRIVATE_KEY),
+				},
+			},
+			err: nil,
+		},
+		// The next two test cases are to cover
+		// #3496.
+		//
+		"TLS Secret, wildcard cert with different SANs": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.WILDCARD_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.WILDCARD_KEY),
+				},
+			},
+			err: nil,
+		},
+		"TLS Secret, wildcard cert with different SANs plus CA cert": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeTLS,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.WILDCARD_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.WILDCARD_KEY),
+					CACertificateKey:    []byte(fixture.CA_CERT),
+				},
+			},
+			err: nil,
+		},
+		"Opaque Secret, CA Cert": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					CACertificateKey: []byte(fixture.CA_CERT),
+				},
+			},
+			err: errors.New(`secret type is not "kubernetes.io/tls"`),
+		},
+		// Opaque Secret, CA Cert with No CN
+		"Opaque Secret, CA Cert with No CN": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					CACertificateKey: []byte(fixture.CA_CERT_NO_CN),
+				},
+			},
+			err: errors.New(`secret type is not "kubernetes.io/tls"`),
+		},
+		"Opaque Secret, zero length CA Cert": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					CACertificateKey: []byte(""),
+				},
+			},
+			err: errors.New(`secret type is not "kubernetes.io/tls"`),
+		},
+		// Opaque Secret with TLS cert details won't be added.
+		"Opaque Secret, with TLS Cert and Key": {
+			secret: &v1.Secret{
+				Type: v1.SecretTypeOpaque,
+				Data: map[string][]byte{
+					v1.TLSCertKey:       []byte(fixture.WILDCARD_CERT),
+					v1.TLSPrivateKeyKey: []byte(fixture.WILDCARD_KEY),
+					CACertificateKey:    []byte(fixture.CA_CERT),
+				},
+			},
+			err: errors.New(`secret type is not "kubernetes.io/tls"`),
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+
+			want := tc.err
+			got := validTLSSecret(tc.secret)
+
+			assert.Equal(t, want, got)
+		})
+	}
+}
+
 func TestIsValidSecret(t *testing.T) {
 	tests := map[string]struct {
 		secret *v1.Secret

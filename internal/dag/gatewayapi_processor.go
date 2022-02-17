@@ -18,6 +18,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/projectcontour/contour/internal/errors"
 	"github.com/projectcontour/contour/internal/k8s"
@@ -52,6 +53,9 @@ type GatewayAPIProcessor struct {
 	// This is normally disabled for security reasons.
 	// See https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for details.
 	EnableExternalNameService bool
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	ConnectTimeout time.Duration
 }
 
 // matchConditions holds match rules.
@@ -387,7 +391,7 @@ func (p *GatewayAPIProcessor) validGatewayTLS(listenerTLS gatewayapi_v1alpha2.Ga
 		meta = types.NamespacedName{Name: string(certificateRef.Name), Namespace: p.source.gateway.Namespace}
 	}
 
-	listenerSecret, err := p.source.LookupSecret(meta, validSecret)
+	listenerSecret, err := p.source.LookupSecret(meta, validTLSSecret)
 	if err != nil {
 		gwAccessor.AddListenerCondition(
 			listenerName,
@@ -720,9 +724,10 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 			// https://github.com/projectcontour/contour/issues/3593
 			service.Weighted.Weight = routeWeight
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
-				Upstream: service,
-				SNI:      service.ExternalName,
-				Weight:   routeWeight,
+				Upstream:       service,
+				SNI:            service.ExternalName,
+				Weight:         routeWeight,
+				ConnectTimeout: p.ConnectTimeout,
 			})
 		}
 
@@ -880,10 +885,10 @@ func (p *GatewayAPIProcessor) computeHTTPRoute(route *gatewayapi_v1alpha2.HTTPRo
 				case listenerSecret != nil:
 					svhost := p.dag.EnsureSecureVirtualHost(host)
 					svhost.Secret = listenerSecret
-					svhost.addRoute(route)
+					svhost.AddRoute(route)
 				default:
 					vhost := p.dag.EnsureVirtualHost(host)
-					vhost.addRoute(route)
+					vhost.AddRoute(route)
 				}
 
 				programmed = true
@@ -1072,6 +1077,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			Weight:               routeWeight,
 			Protocol:             service.Protocol,
 			RequestHeadersPolicy: headerPolicy,
+			ConnectTimeout:       p.ConnectTimeout,
 		})
 	}
 

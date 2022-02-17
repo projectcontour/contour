@@ -181,6 +181,34 @@ var _ = Describe("Ingress", func() {
 		})
 	})
 
+	f.NamespacedTest("ingress-multiple-ingress-classes-contour", func(namespace string) {
+		Context("multiple ingress classes with contour ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testIngressClass(namespace, "contour")
+		})
+	})
+
+	f.NamespacedTest("ingress-multiple-ingress-classes-team1", func(namespace string) {
+		Context("multiple ingress classes with team1 ingress ClassName set", func() {
+			BeforeEach(func() {
+				additionalContourArgs = []string{
+					"--ingress-class-name=contour,team1",
+				}
+				contourConfiguration.Spec.Ingress = &contour_api_v1alpha1.IngressConfig{
+					ClassNames: []string{"contour", "team1"},
+				}
+			})
+			testIngressClass(namespace, "team1")
+		})
+	})
+
 	f.NamespacedTest("long-path-match", testLongPathMatch)
 
 	Context("with global headers policy defined", func() {

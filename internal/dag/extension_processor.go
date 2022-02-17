@@ -16,6 +16,7 @@ package dag
 import (
 	"path"
 	"strings"
+	"time"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -35,6 +36,9 @@ type ExtensionServiceProcessor struct {
 	// secret containing client certificate and private key to be
 	// used when establishing TLS connection to upstream cluster.
 	ClientCertificate *types.NamespacedName
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	ConnectTimeout time.Duration
 }
 
 var _ Processor = &ExtensionServiceProcessor{}
@@ -88,7 +92,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 
 	var clientCertSecret *Secret
 	if p.ClientCertificate != nil {
-		clientCertSecret, err = cache.LookupSecret(*p.ClientCertificate, validSecret)
+		clientCertSecret, err = cache.LookupSecret(*p.ClientCertificate, validTLSSecret)
 		if err != nil {
 			validCondition.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 				"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
@@ -108,6 +112,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 		TimeoutPolicy:      tp,
 		SNI:                "",
 		ClientCertificate:  clientCertSecret,
+		ConnectTimeout:     p.ConnectTimeout,
 	}
 
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)

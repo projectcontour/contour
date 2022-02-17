@@ -22,13 +22,28 @@ import (
 )
 
 func main() {
-
 	log := logrus.StandardLogger()
 	// Forcing colors makes the output nicer to read,
 	// and allows multiline strings to work properly.
 	log.SetFormatter(&logrus.TextFormatter{
 		ForceColors: true,
 	})
+
+	logFriendlyError := func(errorMessage string) {
+		log.Fatal(fmt.Sprintf(`
+Thanks for your PR.
+For a PR to be accepted to Contour, it must have:
+- at least one release-note label set
+- a file named changelogs/unreleased/PR#-author-category,
+  where category matches the release-note/category label you apply.
+
+Error: %s
+	
+Please see the "Commit message and PR guidelines" section of CONTRIBUTING.md,
+or https://github.com/projectcontour/contour/blob/main/design/changelog.md for background.`, errorMessage))
+
+	}
+
 	// We need a GITHUB_TOKEN and PR_NUMBER in the environment.
 	// These are set by the Action config file
 	// in .github/workflows/prbuild.yaml,
@@ -63,76 +78,53 @@ func main() {
 		log.Fatalf("Couldn't get PR details: %s", err)
 	}
 
-	// No labels. This is most likely what people will see at first, so this message
-	// is as friendly as I could make it.
 	if len(prDetails.Labels) == 0 {
-		log.Fatal(`
-Thanks for your PR.
-For a PR to be accepted to Contour, it must have:
-- at least one release-note label set
-- a file named changelogs/unreleased/PR#-author-category,
-	where category matches the relase-note/category label you apply.
-	
-Please see the "Commit message and PR guidelines" section of CONTRIBUTING.md,
-or https://github.com/projectcontour/contour/blob/main/design/changelog.md for background.`)
-
+		logFriendlyError("No labels set on PR")
 	}
 
-	// Try to determine the category of the PR.
-	var category string
+	changeLogFileName := func(category string) string {
+		return fmt.Sprintf("./changelogs/unreleased/%d-%s-%s.md", pr, *prDetails.User.Login, category)
+	}
+
+	// Collect list of changelog files to check for.
+	// Labels guaranteed to be unique and exist based on label check action.
+	changelogFiles := []string{}
 	for _, label := range prDetails.Labels {
 		name := *label.Name
-		if strings.HasPrefix(name, "release-note") {
-			// In case the old release-note labels stick around, mark them
-			// as "major" category.
-			if name == "release-note" || name == "release-note-action-required" {
-				category = "major"
-				break
-			}
-
-			// Otherwise, extract the category.
-			labelSplit := strings.Split(name, "/")
-			if len(labelSplit) > 1 {
-				category = labelSplit[1]
-			}
+		if !strings.HasPrefix(name, "release-note/") {
+			continue
 		}
+
+		var category string
+		labelSplit := strings.Split(name, "/")
+		if len(labelSplit) > 1 {
+			category = strings.Join(labelSplit[1:], "/")
+		}
+		switch name {
+		case "release-note/none-required":
+			// Exit early if no changelog required.
+			log.Println("No changelog required.")
+			os.Exit(0)
+		case "release-note/major", "release-note/minor", "release-note/small", "release-note/docs", "release-note/infra", "release-note/deprecation":
+		default:
+			logFriendlyError(fmt.Sprintf("Invalid release-note label category: %q", category))
+		}
+
+		changelogFiles = append(changelogFiles, changeLogFileName(category))
 	}
 
-	if category == "" {
-		log.Fatal(`
-Thanks for your PR.
-For a PR to be accepted to Contour, it must have:
-- at least one release-note label set
-- a file named changelogs/unreleased/PR#-author-category,
-  where category matches the relase-note/category label you apply.
+	for _, f := range changelogFiles {
+		changelogFile, err := os.Stat(f)
 
-There are some labels set, but there must be at least one release-note label.`)
-	}
+		if os.IsNotExist(err) {
+			logFriendlyError("Missing changelog file at " + f)
+		} else if err != nil {
+			log.Fatal(err)
+		}
 
-	// None required is the escape hatch for small changes.
-	if category == "none-required" {
-		log.Println("No changelog required.")
-		os.Exit(0)
-	}
-
-	changelogFile, err := os.Stat(fmt.Sprintf("./changelogs/unreleased/%d-%s-%s.md",
-		pr, *prDetails.User.Login, category))
-
-	if os.IsNotExist(err) {
-		log.Fatalf(`
-Thanks for your PR, and thanks for labelling it with a release-note.
-For a PR to be accepted to Contour, it must have a file named
-changelogs/unreleased/%d-%s-%s.md with a description of the change.`,
-			pr, *prDetails.User.Login, category)
-	}
-
-	if changelogFile.Size() == 0 {
-		log.Fatalf(`
-		Thanks for your PR, and thanks for labelling it with a release-note.
-For a PR to be accepted to Contour, it must have:
-- a file named changelogs/unreleased/%d-%s-%s.md with a description of the change
-- the file must not be empty.`,
-			pr, *prDetails.User.Login, category)
+		if changelogFile.Size() == 0 {
+			logFriendlyError("Empty changelog file at " + f)
+		}
 	}
 
 	os.Exit(0)

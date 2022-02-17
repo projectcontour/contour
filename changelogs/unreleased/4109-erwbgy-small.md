@@ -1,0 +1,1 @@
+Allow the contour --ingress-class-name value to be a comma-separated list of classes to match against.  Contour will process Ingress and HTTPProxy objects with any of the specified ingress classes. (Note that the alpha ContourConfiguration CRD has also been changed to use a ClassNames array field instead of a scalar ClassName field.)

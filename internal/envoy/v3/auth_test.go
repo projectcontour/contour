@@ -86,10 +86,15 @@ func TestUpstreamTLSContext(t *testing.T) {
 									InlineBytes: []byte("ca"),
 								},
 							},
-							MatchSubjectAltNames: []*matcher.StringMatcher{{
-								MatchPattern: &matcher.StringMatcher_Exact{
-									Exact: "www.example.com",
-								}},
+							MatchTypedSubjectAltNames: []*envoy_v3_tls.SubjectAltNameMatcher{
+								{
+									SanType: envoy_v3_tls.SubjectAltNameMatcher_DNS,
+									Matcher: &matcher.StringMatcher{
+										MatchPattern: &matcher.StringMatcher_Exact{
+											Exact: "www.example.com",
+										},
+									},
+								},
 							},
 						},
 					},

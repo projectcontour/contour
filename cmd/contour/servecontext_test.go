@@ -445,7 +445,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -512,6 +512,7 @@ func TestConvertServeContext(t *testing.T) {
 					DefaultHTTPVersions: nil,
 					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
 						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+						ConnectTimeout:        pointer.StringPtr("2s"),
 					},
 					Cluster: contour_api_v1alpha1.ClusterParameters{
 						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
@@ -550,7 +551,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -617,6 +618,7 @@ func TestConvertServeContext(t *testing.T) {
 					DefaultHTTPVersions: nil,
 					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
 						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+						ConnectTimeout:        pointer.StringPtr("2s"),
 					},
 					Cluster: contour_api_v1alpha1.ClusterParameters{
 						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
@@ -661,7 +663,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     pointer.StringPtr("coolclass"),
+					ClassNames:    []string{"coolclass"},
 					StatusAddress: pointer.StringPtr("1.2.3.4"),
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -728,6 +730,7 @@ func TestConvertServeContext(t *testing.T) {
 					DefaultHTTPVersions: nil,
 					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
 						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+						ConnectTimeout:        pointer.StringPtr("2s"),
 					},
 					Cluster: contour_api_v1alpha1.ClusterParameters{
 						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
@@ -766,7 +769,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -833,6 +836,7 @@ func TestConvertServeContext(t *testing.T) {
 					DefaultHTTPVersions: nil,
 					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
 						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+						ConnectTimeout:        pointer.StringPtr("2s"),
 					},
 					Cluster: contour_api_v1alpha1.ClusterParameters{
 						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
@@ -873,7 +877,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -943,6 +947,7 @@ func TestConvertServeContext(t *testing.T) {
 					DefaultHTTPVersions: nil,
 					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
 						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+						ConnectTimeout:        pointer.StringPtr("2s"),
 					},
 					Cluster: contour_api_v1alpha1.ClusterParameters{
 						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
@@ -981,7 +986,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -1048,6 +1053,7 @@ func TestConvertServeContext(t *testing.T) {
 					DefaultHTTPVersions: nil,
 					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
 						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+						ConnectTimeout:        pointer.StringPtr("2s"),
 					},
 					Cluster: contour_api_v1alpha1.ClusterParameters{
 						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
@@ -1089,7 +1095,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -1156,6 +1162,7 @@ func TestConvertServeContext(t *testing.T) {
 					DefaultHTTPVersions: nil,
 					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
 						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+						ConnectTimeout:        pointer.StringPtr("2s"),
 					},
 					Cluster: contour_api_v1alpha1.ClusterParameters{
 						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
@@ -1202,7 +1209,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -1271,6 +1278,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
 						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+						ConnectTimeout:        pointer.StringPtr("2s"),
 					},
 					Cluster: contour_api_v1alpha1.ClusterParameters{
 						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
@@ -1309,7 +1317,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Ingress: &contour_api_v1alpha1.IngressConfig{
-					ClassName:     nil,
+					ClassNames:    nil,
 					StatusAddress: nil,
 				},
 				Debug: contour_api_v1alpha1.DebugConfig{
@@ -1356,6 +1364,7 @@ func TestConvertServeContext(t *testing.T) {
 					DefaultHTTPVersions: nil,
 					Timeouts: &contour_api_v1alpha1.TimeoutParameters{
 						ConnectionIdleTimeout: pointer.StringPtr("60s"),
+						ConnectTimeout:        pointer.StringPtr("2s"),
 					},
 					Cluster: contour_api_v1alpha1.ClusterParameters{
 						DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,

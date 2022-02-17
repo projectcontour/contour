@@ -60,9 +60,17 @@ type HTTP struct {
 type HTTPRequestOpts struct {
 	Path        string
 	Host        string
+	OverrideURL string
 	RequestOpts []func(*http.Request)
 	ClientOpts  []func(*http.Client)
 	Condition   func(*http.Response) bool
+}
+
+func (o *HTTPRequestOpts) requestURLBase(defaultURL string) string {
+	if o.OverrideURL != "" {
+		return o.OverrideURL
+	}
+	return defaultURL
 }
 
 func OptSetHeaders(headers map[string]string) func(*http.Request) {
@@ -77,7 +85,7 @@ func OptSetHeaders(headers map[string]string) func(*http.Request) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) RequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", h.HTTPURLBase+opts.Path, nil)
+	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host
@@ -111,7 +119,7 @@ func OptDontFollowRedirects(c *http.Client) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) MetricsRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", h.HTTPURLMetricsBase+opts.Path, nil)
+	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLMetricsBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	for _, opt := range opts.RequestOpts {
@@ -129,7 +137,7 @@ func (h *HTTP) MetricsRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) 
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) AdminRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", h.HTTPURLAdminBase+opts.Path, nil)
+	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPURLAdminBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	for _, opt := range opts.RequestOpts {
@@ -146,9 +154,17 @@ func (h *HTTP) AdminRequestUntil(opts *HTTPRequestOpts) (*HTTPResponse, bool) {
 type HTTPSRequestOpts struct {
 	Path          string
 	Host          string
+	OverrideURL   string
 	RequestOpts   []func(*http.Request)
 	TLSConfigOpts []func(*tls.Config)
 	Condition     func(*http.Response) bool
+}
+
+func (o *HTTPSRequestOpts) requestURLBase(defaultURL string) string {
+	if o.OverrideURL != "" {
+		return o.OverrideURL
+	}
+	return defaultURL
 }
 
 func OptSetSNI(name string) func(*tls.Config) {
@@ -161,7 +177,7 @@ func OptSetSNI(name string) func(*tls.Config) {
 // parameters until "condition" returns true or the timeout is reached.
 // It always returns the last HTTP response received.
 func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) {
-	req, err := http.NewRequest("GET", h.HTTPSURLBase+opts.Path, nil)
+	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPSURLBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host
@@ -198,7 +214,7 @@ func (h *HTTP) SecureRequestUntil(opts *HTTPSRequestOpts) (*HTTPResponse, bool) 
 // SecureRequestUntil will retry requests to account for eventual consistency and
 // other ephemeral issues.
 func (h *HTTP) SecureRequest(opts *HTTPSRequestOpts) (*HTTPResponse, error) {
-	req, err := http.NewRequest("GET", h.HTTPSURLBase+opts.Path, nil)
+	req, err := http.NewRequest("GET", opts.requestURLBase(h.HTTPSURLBase)+opts.Path, nil)
 	require.NoError(h.t, err, "error creating HTTP request")
 
 	req.Host = opts.Host

@@ -35,7 +35,7 @@ run::sed() {
 }
 
 # Update the image tags in the Contour, Envoy and certgen manifests to the new version.
-for example in examples/contour/03-envoy.yaml examples/contour/03-contour.yaml examples/contour/02-job-certgen.yaml ; do
+for example in examples/contour/03-envoy.yaml examples/deployment/03-envoy-deployment.yaml examples/contour/03-contour.yaml examples/contour/02-job-certgen.yaml ; do
     # The version might be main or OLDVERS depending on whether we are
     # tagging from the release branch or from main.
     run::sed \
@@ -70,8 +70,10 @@ if git status -s examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then
         examples/contour/03-contour.yaml \
         examples/contour/03-envoy.yaml \
         examples/contour/02-job-certgen.yaml \
+        examples/deployment/03-envoy-deployment.yaml \
         examples/render/contour.yaml \
-        examples/render/contour-gateway.yaml
+        examples/render/contour-gateway.yaml \
+        examples/render/contour-deployment.yaml
 fi
 
 git tag -F - "$NEWVERS" <<EOF

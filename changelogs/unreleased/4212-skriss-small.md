@@ -1,1 +1,0 @@
-Gateway API: allow Gateways to reference TLS certificates in other namespaces when an applicable ReferencePolicy is defined. See [the Gateway API documentation](https://gateway-api.sigs.k8s.io/v1alpha2/guides/tls/#cross-namespace-certificate-references) for more information.

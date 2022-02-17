@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	contour_api_v1 "github.com/projectcontour/contour/apis/projectcontour/v1"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
@@ -84,6 +85,9 @@ type HTTPProxyProcessor struct {
 
 	// Response headers that will be set on all routes (optional).
 	ResponseHeadersPolicy *HeadersPolicy
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	ConnectTimeout time.Duration
 }
 
 // Run translates HTTPProxies into DAG objects and
@@ -180,7 +184,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 		// Attach secrets to TLS enabled vhosts.
 		if !tls.Passthrough {
 			secretName := k8s.NamespacedNameFrom(tls.SecretName, k8s.DefaultNamespace(proxy.Namespace))
-			sec, err := p.source.LookupSecret(secretName, validSecret)
+			sec, err := p.source.LookupSecret(secretName, validTLSSecret)
 			if err != nil {
 				validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 					"Spec.VirtualHost.TLS Secret %q is invalid: %s", tls.SecretName, err)
@@ -224,7 +228,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 					return
 				}
 
-				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validSecret)
+				sec, err = p.source.LookupSecret(*p.FallbackCertificate, validTLSSecret)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "FallbackNotValid",
 						"Spec.Virtualhost.TLS Secret %q fallback certificate is invalid: %s", p.FallbackCertificate, err)
@@ -366,13 +370,13 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 }
 
 type vhost interface {
-	addRoute(*Route)
+	AddRoute(*Route)
 }
 
 // addRoutes adds all routes to the vhost supplied.
 func addRoutes(vhost vhost, routes []*Route) {
 	for _, route := range routes {
-		vhost.addRoute(route)
+		vhost.AddRoute(route)
 	}
 }
 
@@ -673,7 +677,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 
 			var clientCertSecret *Secret
 			if p.ClientCertificate != nil {
-				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validSecret)
+				clientCertSecret, err = p.source.LookupSecret(*p.ClientCertificate, validTLSSecret)
 				if err != nil {
 					validCond.AddErrorf(contour_api_v1.ConditionTypeTLSError, "SecretNotValid",
 						"tls.envoy-client-certificate Secret %q is invalid: %s", p.ClientCertificate, err)
@@ -694,6 +698,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
 				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
+				ConnectTimeout:        p.ConnectTimeout,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -789,6 +794,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 				SNI:                  s.ExternalName,
+				ConnectTimeout:       p.ConnectTimeout,
 			})
 		}
 		secure := p.dag.EnsureSecureVirtualHost(host)

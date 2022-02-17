@@ -508,6 +508,22 @@ func TestCluster(t *testing.T) {
 				),
 			},
 		},
+		"cluster with connect timeout set": {
+			cluster: &dag.Cluster{
+				Upstream:       service(s1),
+				ConnectTimeout: 10 * time.Second,
+			},
+			want: &envoy_cluster_v3.Cluster{
+				Name:                 "default/kuard/443/da39a3ee5e",
+				AltStatName:          "default_kuard_443",
+				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   ConfigSource("contour"),
+					ServiceName: "default/kuard/http",
+				},
+				ConnectTimeout: protobuf.Duration(10 * time.Second),
+			},
+		},
 	}
 
 	for name, tc := range tests {

@@ -1,1 +1,0 @@
-Adds a new Ingress annotation, `projectcontour.io/tls-cert-namespace`, to allow [TLS Certificate Delegation](https://projectcontour.io/docs/main/config/tls-delegation/) to be used with Ingress v1.
