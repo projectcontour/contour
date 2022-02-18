@@ -962,11 +962,13 @@ func (d *Deployment) DumpContourLogs() error {
 		req := coreClient.CoreV1().Pods(d.Namespace.Name).GetLogs(pod.Name, podLogOptions)
 		logs, err := req.Stream(context.TODO())
 		if err != nil {
-			return err
+			fmt.Fprintln(d.cmdOutputWriter, "Failed to get logs stream:", err)
+			continue
 		}
 		defer logs.Close()
 		if _, err := io.Copy(d.cmdOutputWriter, logs); err != nil {
-			return err
+			fmt.Fprintln(d.cmdOutputWriter, "Failed to copy logs:", err)
+			continue
 		}
 		fmt.Fprintln(d.cmdOutputWriter, "********** End of log output for Contour pod:", pod.Name)
 	}

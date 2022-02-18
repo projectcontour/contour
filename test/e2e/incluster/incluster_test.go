@@ -20,12 +20,16 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var f = e2e.NewFramework(true)
@@ -80,6 +84,17 @@ var _ = Describe("Incluster", func() {
 		// Clean out contour after each test.
 		require.NoError(f.T(), f.Deployment.EnsureDeleted(f.Deployment.ContourDeployment))
 		require.NoError(f.T(), f.Deployment.EnsureDeleted(contourConfig))
+		require.Eventually(f.T(), func() bool {
+			pods := new(v1.PodList)
+			podListOptions := &client.ListOptions{
+				LabelSelector: labels.SelectorFromSet(f.Deployment.ContourDeployment.Spec.Selector.MatchLabels),
+				Namespace:     f.Deployment.ContourDeployment.Namespace,
+			}
+			if err := f.Client.List(context.TODO(), pods, podListOptions); err != nil {
+				return false
+			}
+			return len(pods.Items) == 0
+		}, time.Minute, time.Millisecond*50)
 	})
 
 	f.NamespacedTest("smoke-test", testSimpleSmoke)
