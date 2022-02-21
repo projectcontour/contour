@@ -699,6 +699,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
 				ConnectTimeout:        p.ConnectTimeout,
+				IdleConnectionTimeout: tp.IdleConnectionTimeout,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",

@@ -263,7 +263,7 @@ func routeRoute(r *dag.Route) *envoy_route_v3.Route_Route {
 	ra := envoy_route_v3.RouteAction{
 		RetryPolicy:           retryPolicy(r),
 		Timeout:               envoy.Timeout(r.TimeoutPolicy.ResponseTimeout),
-		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleTimeout),
+		IdleTimeout:           envoy.Timeout(r.TimeoutPolicy.IdleStreamTimeout),
 		PrefixRewrite:         r.PrefixRewrite,
 		HashPolicy:            hashPolicy(r.RequestHashPolicies),
 		RequestMirrorPolicies: mirrorPolicy(r),

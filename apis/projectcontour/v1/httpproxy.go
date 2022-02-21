@@ -765,6 +765,12 @@ type TimeoutPolicy struct {
 	// +optional
 	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
 	Idle string `json:"idle,omitempty"`
+
+	// Timeout for how long connection from the proxy to the upstream service is kept when there are no active requests.
+	// If not supplied, Envoy's default value of 1h applies.
+	// +optional
+	// +kubebuilder:validation:Pattern=`^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$`
+	IdleConnection string `json:"idleConnection,omitempty"`
 }
 
 // RetryOn is a string type alias with validation to ensure that the value is valid.

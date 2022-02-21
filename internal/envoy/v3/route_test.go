@@ -355,7 +355,7 @@ func TestRouteRoute(t *testing.T) {
 		"idle timeout 10m": {
 			route: &dag.Route{
 				TimeoutPolicy: dag.TimeoutPolicy{
-					IdleTimeout: timeout.DurationSetting(10 * time.Minute),
+					IdleStreamTimeout: timeout.DurationSetting(10 * time.Minute),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},
@@ -371,7 +371,7 @@ func TestRouteRoute(t *testing.T) {
 		"idle timeout infinity": {
 			route: &dag.Route{
 				TimeoutPolicy: dag.TimeoutPolicy{
-					IdleTimeout: timeout.DisabledSetting(),
+					IdleStreamTimeout: timeout.DisabledSetting(),
 				},
 				Clusters: []*dag.Cluster{c1},
 			},

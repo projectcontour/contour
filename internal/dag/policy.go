@@ -405,8 +405,8 @@ func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger
 		response = annotation.ContourAnnotation(ingress, "request-timeout")
 		if len(response) == 0 {
 			return TimeoutPolicy{
-				ResponseTimeout: timeout.DefaultSetting(),
-				IdleTimeout:     timeout.DefaultSetting(),
+				ResponseTimeout:   timeout.DefaultSetting(),
+				IdleStreamTimeout: timeout.DefaultSetting(),
 			}
 		}
 	}
@@ -426,8 +426,9 @@ func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger
 func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy) (TimeoutPolicy, error) {
 	if tp == nil {
 		return TimeoutPolicy{
-			ResponseTimeout: timeout.DefaultSetting(),
-			IdleTimeout:     timeout.DefaultSetting(),
+			ResponseTimeout:       timeout.DefaultSetting(),
+			IdleStreamTimeout:     timeout.DefaultSetting(),
+			IdleConnectionTimeout: timeout.DefaultSetting(),
 		}, nil
 	}
 
@@ -436,14 +437,20 @@ func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy) (TimeoutPolicy, error) {
 		return TimeoutPolicy{}, fmt.Errorf("error parsing response timeout: %w", err)
 	}
 
-	idleTimeout, err := timeout.Parse(tp.Idle)
+	idleStreamTimeout, err := timeout.Parse(tp.Idle)
 	if err != nil {
 		return TimeoutPolicy{}, fmt.Errorf("error parsing idle timeout: %w", err)
 	}
 
+	idleConnectionTimeout, err := timeout.Parse(tp.IdleConnection)
+	if err != nil {
+		return TimeoutPolicy{}, fmt.Errorf("error parsing idle connection timeout: %w", err)
+	}
+
 	return TimeoutPolicy{
-		ResponseTimeout: responseTimeout,
-		IdleTimeout:     idleTimeout,
+		ResponseTimeout:       responseTimeout,
+		IdleStreamTimeout:     idleStreamTimeout,
+		IdleConnectionTimeout: idleConnectionTimeout,
 	}, nil
 }
 

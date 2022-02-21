@@ -107,12 +107,13 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 				xds.ClusterLoadAssignmentName(k8s.NamespacedNameOf(ext), ""),
 			),
 		},
-		Protocol:           "h2",
-		UpstreamValidation: nil,
-		TimeoutPolicy:      tp,
-		SNI:                "",
-		ClientCertificate:  clientCertSecret,
-		ConnectTimeout:     p.ConnectTimeout,
+		Protocol:              "h2",
+		UpstreamValidation:    nil,
+		TimeoutPolicy:         tp,
+		SNI:                   "",
+		ClientCertificate:     clientCertSecret,
+		ConnectTimeout:        p.ConnectTimeout,
+		IdleConnectionTimeout: tp.IdleConnectionTimeout,
 	}
 
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)

@@ -274,8 +274,12 @@ type TimeoutPolicy struct {
 	// from the backend server.
 	ResponseTimeout timeout.Setting
 
-	// IdleTimeout is the timeout applied to idle connections.
-	IdleTimeout timeout.Setting
+	// IdleStreamTimeout is the timeout applied to idle connection during single request-response.
+	// Stream is HTTP/2 and HTTP/3 concept, for HTTP/1 it refers to single request-response within connection.
+	IdleStreamTimeout timeout.Setting
+
+	// IdleConnectionTimeout is the timeout applied to idle connection.
+	IdleConnectionTimeout timeout.Setting
 }
 
 // RetryPolicy defines the retry / number / timeout options
@@ -688,6 +692,9 @@ type Cluster struct {
 
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
+
+	// IdleConnectionTimeout defines how long the proxy should keep idle connection to upstream service before disconnecting.
+	IdleConnectionTimeout timeout.Setting
 }
 
 // WeightedService represents the load balancing weight of a
@@ -862,6 +869,9 @@ type ExtensionCluster struct {
 
 	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
 	ConnectTimeout time.Duration
+
+	// IdleConnectionTimeout defines how long the proxy should keep idle connection to upstream service before disconnecting.
+	IdleConnectionTimeout timeout.Setting
 }
 
 func wildcardDomainHeaderMatch(fqdn string) HeaderMatchCondition {

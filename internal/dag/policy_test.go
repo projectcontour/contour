@@ -232,7 +232,7 @@ func TestTimeoutPolicy(t *testing.T) {
 				Idle: "900s",
 			},
 			want: TimeoutPolicy{
-				IdleTimeout: timeout.DurationSetting(900 * time.Second),
+				IdleStreamTimeout: timeout.DurationSetting(900 * time.Second),
 			},
 		},
 	}

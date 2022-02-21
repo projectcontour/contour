@@ -38,6 +38,7 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"github.com/projectcontour/contour/internal/timeout"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -213,7 +214,7 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 						KeepaliveInterval: protobuf.UInt32(5),
 					},
 				},
-				TypedExtensionProtocolOptions: http2ProtocolOptions(),
+				TypedExtensionProtocolOptions: protocolOptions(HTTPVersion2, timeout.DefaultSetting()),
 				CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
 					Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{{
 						Priority:           envoy_core_v3.RoutingPriority_HIGH,

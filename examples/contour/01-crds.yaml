@@ -2093,6 +2093,12 @@ spec:
                       manager-wide stream_idle_timeout default of 5m still applies.
                     pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                     type: string
+                  idleConnection:
+                    description: Timeout for how long connection from the proxy to
+                      the upstream service is kept when there are no active requests.
+                      If not supplied, Envoy's default value of 1h applies.
+                    pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                    type: string
                   response:
                     description: Timeout for receiving a response from the server
                       after processing a request from client. If not supplied, Envoy's
@@ -3350,6 +3356,13 @@ spec:
                             consecutive requests. If not specified, there is no per-route
                             idle timeout, though a connection manager-wide stream_idle_timeout
                             default of 5m still applies.
+                          pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
+                          type: string
+                        idleConnection:
+                          description: Timeout for how long connection from the proxy
+                            to the upstream service is kept when there are no active
+                            requests. If not supplied, Envoy's default value of 1h
+                            applies.
                           pattern: ^(((\d*(\.\d*)?h)|(\d*(\.\d*)?m)|(\d*(\.\d*)?s)|(\d*(\.\d*)?ms)|(\d*(\.\d*)?us)|(\d*(\.\d*)?µs)|(\d*(\.\d*)?ns))+|infinity|infinite)$
                           type: string
                         response:
