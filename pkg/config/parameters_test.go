@@ -71,6 +71,7 @@ json-fields:
 - upstream_service_time
 - user_agent
 - x_forwarded_for
+accesslog-level: info
 timeouts:
   connection-idle-timeout: 60s
   connect-timeout: 2s

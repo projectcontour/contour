@@ -349,6 +349,13 @@ type EnvoyLogging struct {
 	// output when AccessLogFormat is json.
 	// +optional
 	AccessLogFields AccessLogFields `json:"jsonFields,omitempty"`
+
+	// AccessLogLevel sets the verbosity level of the access log.
+	// Valid options are `info`, `error` and `disabled`.
+	// Default value is `info`, meaning all requests are logged.
+	// +kubebuilder:default="info"
+	// +kubebuilder:validation:Enum="info";"error";"disabled"
+	AccessLogLevel AccessLogLevel `json:"accessLogLevel,omitempty"`
 }
 
 // TimeoutParameters holds various configurable proxy timeout values.

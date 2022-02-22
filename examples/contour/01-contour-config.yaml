@@ -63,6 +63,7 @@ data:
     # accesslog-format-string: "...\n"
     # To enable JSON logging in Envoy
     # accesslog-format: json
+    # accesslog-level: info
     # The default fields that will be logged are specified below.
     # To customise this list, just add or remove entries.
     # The canonical list is available at

@@ -319,6 +319,16 @@ spec:
                           when format is set to `envoy`. When empty, Envoy's default
                           format is used.
                         type: string
+                      accessLogLevel:
+                        default: info
+                        description: AccessLogLevel sets the verbosity level of the
+                          access log. Valid options are `info`, `error` and `disabled`.
+                          Default value is `info`, meaning all requests are logged.
+                        enum:
+                        - info
+                        - error
+                        - disabled
+                        type: string
                       jsonFields:
                         description: AccessLogFields sets the fields that JSON logging
                           will output when AccessLogFormat is json.
@@ -1254,6 +1264,17 @@ spec:
                             description: AccessLogFormatString sets the access log
                               format when format is set to `envoy`. When empty, Envoy's
                               default format is used.
+                            type: string
+                          accessLogLevel:
+                            default: info
+                            description: AccessLogLevel sets the verbosity level of
+                              the access log. Valid options are `info`, `error` and
+                              `disabled`. Default value is `info`, meaning all requests
+                              are logged.
+                            enum:
+                            - info
+                            - error
+                            - disabled
                             type: string
                           jsonFields:
                             description: AccessLogFields sets the fields that JSON

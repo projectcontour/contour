@@ -485,6 +485,7 @@ func TestConvertServeContext(t *testing.T) {
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 						AccessLogFormatString: nil,
+						AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
 							"@timestamp",
 							"authority",
@@ -591,6 +592,7 @@ func TestConvertServeContext(t *testing.T) {
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 						AccessLogFormatString: nil,
+						AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
 							"@timestamp",
 							"authority",
@@ -703,6 +705,7 @@ func TestConvertServeContext(t *testing.T) {
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 						AccessLogFormatString: nil,
+						AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
 							"@timestamp",
 							"authority",
@@ -809,6 +812,7 @@ func TestConvertServeContext(t *testing.T) {
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 						AccessLogFormatString: nil,
+						AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
 							"@timestamp",
 							"authority",
@@ -920,6 +924,7 @@ func TestConvertServeContext(t *testing.T) {
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 						AccessLogFormatString: nil,
+						AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
 							"@timestamp",
 							"authority",
@@ -1026,6 +1031,7 @@ func TestConvertServeContext(t *testing.T) {
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 						AccessLogFormatString: nil,
+						AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
 							"@timestamp",
 							"authority",
@@ -1135,6 +1141,7 @@ func TestConvertServeContext(t *testing.T) {
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 						AccessLogFormatString: nil,
+						AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
 							"@timestamp",
 							"authority",
@@ -1249,6 +1256,7 @@ func TestConvertServeContext(t *testing.T) {
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
 						AccessLogFormatString: nil,
+						AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
 							"@timestamp",
 							"authority",
@@ -1357,6 +1365,7 @@ func TestConvertServeContext(t *testing.T) {
 					Logging: contour_api_v1alpha1.EnvoyLogging{
 						AccessLogFormat:       contour_api_v1alpha1.JSONAccessLog,
 						AccessLogFormatString: pointer.StringPtr("foo-bar-baz"),
+						AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
 						AccessLogFields: contour_api_v1alpha1.AccessLogFields([]string{
 							"custom_field",
 						}),
