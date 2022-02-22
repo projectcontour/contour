@@ -46,6 +46,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	apimachinery_util_yaml "k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -924,6 +926,51 @@ func (d *Deployment) DeleteResourcesForInclusterContour() error {
 		if err := d.EnsureDeleted(r); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (d *Deployment) DumpContourLogs() error {
+	config, err := clientcmd.BuildConfigFromFlags("", d.kubeConfig)
+	if err != nil {
+		return err
+	}
+	coreClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	pods := new(v1.PodList)
+	podListOptions := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(d.ContourDeployment.Spec.Selector.MatchLabels),
+		Namespace:     d.ContourDeployment.Namespace,
+	}
+	if err := d.client.List(context.TODO(), pods, podListOptions); err != nil {
+		return err
+	}
+
+	podLogOptions := &v1.PodLogOptions{
+		Container: "contour",
+	}
+	for _, pod := range pods.Items {
+		if pod.Status.Phase == v1.PodFailed {
+			continue
+		}
+
+		fmt.Fprintln(d.cmdOutputWriter, "********** Start of log output for Contour pod:", pod.Name)
+		req := coreClient.CoreV1().Pods(d.Namespace.Name).GetLogs(pod.Name, podLogOptions)
+		logs, err := req.Stream(context.TODO())
+		if err != nil {
+			fmt.Fprintln(d.cmdOutputWriter, "Failed to get logs stream:", err)
+			continue
+		}
+		defer logs.Close()
+		if _, err := io.Copy(d.cmdOutputWriter, logs); err != nil {
+			fmt.Fprintln(d.cmdOutputWriter, "Failed to copy logs:", err)
+			continue
+		}
+		fmt.Fprintln(d.cmdOutputWriter, "********** End of log output for Contour pod:", pod.Name)
 	}
 
 	return nil

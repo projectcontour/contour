@@ -148,17 +148,18 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 		contourBin   string
 		contourImage string
 	)
+
+	var found bool
+	if kubeConfig, found = os.LookupEnv("KUBECONFIG"); !found {
+		kubeConfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	}
+
 	if inClusterTestSuite {
 		var found bool
 		if contourImage, found = os.LookupEnv("CONTOUR_E2E_IMAGE"); !found {
 			contourImage = "ghcr.io/projectcontour/contour:main"
 		}
 	} else {
-		var found bool
-		if kubeConfig, found = os.LookupEnv("KUBECONFIG"); !found {
-			kubeConfig = filepath.Join(os.Getenv("HOME"), ".kube", "config")
-		}
-
 		contourHost = os.Getenv("CONTOUR_E2E_LOCAL_HOST")
 		require.NotEmpty(t, contourHost, "CONTOUR_E2E_LOCAL_HOST environment variable not supplied")
 
