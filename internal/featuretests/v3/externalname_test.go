@@ -105,7 +105,7 @@ func TestExternalNameService(t *testing.T) {
 				envoy_v3.VirtualHost("kuard.projectcontour.io",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: routeCluster("default/kuard/80/da39a3ee5e"),
+						Action: routeCluster("default/kuard/80/a28d1ec01b"),
 					},
 				),
 			),
@@ -115,7 +115,7 @@ func TestExternalNameService(t *testing.T) {
 
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
-			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
+			externalNameCluster("default/kuard/80/a28d1ec01b", "default/kuard", "default_kuard_80", "foo.io", 80),
 		),
 		TypeUrl: clusterType,
 	})
@@ -148,7 +148,7 @@ func TestExternalNameService(t *testing.T) {
 				envoy_v3.VirtualHost("kuard.projectcontour.io",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: routeHostRewrite("default/kuard/80/da39a3ee5e", "external.address"),
+						Action: routeHostRewrite("default/kuard/80/95e871afaf", "external.address"),
 					},
 				),
 			),
@@ -158,7 +158,7 @@ func TestExternalNameService(t *testing.T) {
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		TypeUrl: clusterType,
 		Resources: resources(t,
-			externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
+			externalNameCluster("default/kuard/80/95e871afaf", "default/kuard", "default_kuard_80", "foo.io", 80),
 		),
 	})
 
@@ -193,7 +193,7 @@ func TestExternalNameService(t *testing.T) {
 				envoy_v3.VirtualHost("kuard.projectcontour.io",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: routeHostRewrite("default/kuard/80/da39a3ee5e", "external.address"),
+						Action: routeHostRewrite("default/kuard/80/cdbf075ad8", "external.address"),
 					},
 				),
 			),
@@ -204,7 +204,7 @@ func TestExternalNameService(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			DefaultCluster(
-				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
+				externalNameCluster("default/kuard/80/cdbf075ad8", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&envoy_cluster_v3.Cluster{
 					TypedExtensionProtocolOptions: map[string]*any.Any{
 						"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
@@ -257,7 +257,7 @@ func TestExternalNameService(t *testing.T) {
 				envoy_v3.VirtualHost("kuard.projectcontour.io",
 					&envoy_route_v3.Route{
 						Match:  routePrefix("/"),
-						Action: routeHostRewrite("default/kuard/80/da39a3ee5e", "external.address"),
+						Action: routeHostRewrite("default/kuard/80/f9439c1de8", "external.address"),
 					},
 				),
 			),
@@ -268,7 +268,7 @@ func TestExternalNameService(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			DefaultCluster(
-				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
+				externalNameCluster("default/kuard/80/f9439c1de8", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&envoy_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
 						envoy_v3.UpstreamTLSContext(nil, "external.address", nil),
@@ -309,7 +309,7 @@ func TestExternalNameService(t *testing.T) {
 		TypeUrl: clusterType,
 		Resources: resources(t,
 			DefaultCluster(
-				externalNameCluster("default/kuard/80/da39a3ee5e", "default/kuard", "default_kuard_80", "foo.io", 80),
+				externalNameCluster("default/kuard/80/7d449598f5", "default/kuard", "default_kuard_80", "foo.io", 80),
 				&envoy_cluster_v3.Cluster{
 					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
 						envoy_v3.UpstreamTLSContext(nil, "foo.io", nil),
