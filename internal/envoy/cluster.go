@@ -24,6 +24,10 @@ import (
 )
 
 // Clustername returns the name of the CDS cluster for this service.
+//
+// Note: Cluster name is used to deduplicate clusters.
+// When for example two HTTPProxies result in Clusters with equal name, only single cluster will be configured to Envoy.
+// Therefore the generated name must contain all relevant fields that make the cluster unique.
 func Clustername(cluster *dag.Cluster) string {
 	service := cluster.Upstream
 	buf := cluster.LoadBalancerPolicy
@@ -46,6 +50,7 @@ func Clustername(cluster *dag.Cluster) string {
 		buf += uv.CACertificate.Object.ObjectMeta.Name
 		buf += uv.SubjectName
 	}
+	buf += cluster.Protocol + cluster.SNI
 
 	// This isn't a crypto hash, we just want a unique name.
 	hash := sha1.Sum([]byte(buf)) // nolint:gosec
