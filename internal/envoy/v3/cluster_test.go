@@ -132,7 +132,7 @@ func TestCluster(t *testing.T) {
 				Protocol: "h2c",
 			},
 			want: &envoy_cluster_v3.Cluster{
-				Name:                 "default/kuard/443/da39a3ee5e",
+				Name:                 "default/kuard/443/f4f94965ec",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
@@ -157,7 +157,7 @@ func TestCluster(t *testing.T) {
 				Protocol: "h2",
 			},
 			want: &envoy_cluster_v3.Cluster{
-				Name:                 "default/kuard/443/da39a3ee5e",
+				Name:                 "default/kuard/443/bf1c365741",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
@@ -248,7 +248,7 @@ func TestCluster(t *testing.T) {
 				Protocol: "tls",
 			},
 			want: &envoy_cluster_v3.Cluster{
-				Name:                 "default/kuard/443/da39a3ee5e",
+				Name:                 "default/kuard/443/4929fca9d4",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
@@ -267,7 +267,7 @@ func TestCluster(t *testing.T) {
 				SNI:      "projectcontour.local",
 			},
 			want: &envoy_cluster_v3.Cluster{
-				Name:                 "default/kuard/443/da39a3ee5e",
+				Name:                 "default/kuard/443/a996a742af",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_STRICT_DNS),
 				LoadAssignment:       StaticClusterLoadAssignment(service(svcExternal, "tls")),
@@ -286,7 +286,7 @@ func TestCluster(t *testing.T) {
 				},
 			},
 			want: &envoy_cluster_v3.Cluster{
-				Name:                 "default/kuard/443/3ac4e90987",
+				Name:                 "default/kuard/443/62d1f9ad02",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
@@ -496,7 +496,7 @@ func TestCluster(t *testing.T) {
 				ClientCertificate: clientSecret,
 			},
 			want: &envoy_cluster_v3.Cluster{
-				Name:                 "default/kuard/443/da39a3ee5e",
+				Name:                 "default/kuard/443/4929fca9d4",
 				AltStatName:          "default_kuard_443",
 				ClusterDiscoveryType: ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
 				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
@@ -529,113 +529,133 @@ func TestClusterLoadAssignmentName(t *testing.T) {
 }
 
 func TestClustername(t *testing.T) {
-	tests := map[string]struct {
+	type testcase struct {
 		cluster *dag.Cluster
 		want    string
-	}{
-		"simple": {
-			cluster: &dag.Cluster{
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "backend",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Name:       "http",
-							Protocol:   "TCP",
-							Port:       80,
-							TargetPort: intstr.FromInt(6502),
-						},
-					},
-				},
-			},
-			want: "default/backend/80/da39a3ee5e",
-		},
-		"far too long": {
-			cluster: &dag.Cluster{
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "must-be-in-want-of-a-wife",
-						ServiceNamespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
-						ServicePort: v1.ServicePort{
-							Name:       "http",
-							Protocol:   "TCP",
-							Port:       9999,
-							TargetPort: intstr.FromString("http-alt"),
-						},
-					},
-				},
-			},
-			want: "it-is-a--dea8b0/must-be--dea8b0/9999/da39a3ee5e",
-		},
-		"various healthcheck params": {
-			cluster: &dag.Cluster{
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "backend",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Name:       "http",
-							Protocol:   "TCP",
-							Port:       80,
-							TargetPort: intstr.FromInt(6502),
-						},
-					},
-				},
-				LoadBalancerPolicy: "Random",
-				HTTPHealthCheckPolicy: &dag.HTTPHealthCheckPolicy{
-					Path:               "/healthz",
-					Interval:           5 * time.Second,
-					Timeout:            30 * time.Second,
-					UnhealthyThreshold: 3,
-					HealthyThreshold:   1,
-				},
-			},
-			want: "default/backend/80/5c26077e1d",
-		},
-		"upstream tls validation with subject alt name": {
-			cluster: &dag.Cluster{
-				Upstream: &dag.Service{
-					Weighted: dag.WeightedService{
-						Weight:           1,
-						ServiceName:      "backend",
-						ServiceNamespace: "default",
-						ServicePort: v1.ServicePort{
-							Name:       "http",
-							Protocol:   "TCP",
-							Port:       80,
-							TargetPort: intstr.FromInt(6502),
-						},
-					},
-				},
-				LoadBalancerPolicy: "Random",
-				UpstreamValidation: &dag.PeerValidationContext{
-					CACertificate: &dag.Secret{
-						Object: &v1.Secret{
-							ObjectMeta: metav1.ObjectMeta{
-								Name:      "secret",
-								Namespace: "default",
-							},
-							Data: map[string][]byte{
-								dag.CACertificateKey: []byte("somethingsecret"),
-							},
-						},
-					},
-					SubjectName: "foo.com",
-				},
-			},
-			want: "default/backend/80/6bf46b7b3a",
-		},
 	}
 
-	for name, tc := range tests {
+	run := func(t *testing.T, name string, tc testcase) {
+		t.Helper()
 		t.Run(name, func(t *testing.T) {
+			t.Helper()
 			got := envoy.Clustername(tc.cluster)
 			assert.Equal(t, tc.want, got)
 		})
 	}
+
+	run(t, "simple", testcase{
+		cluster: &dag.Cluster{
+			Upstream: &dag.Service{
+				Weighted: dag.WeightedService{
+					Weight:           1,
+					ServiceName:      "backend",
+					ServiceNamespace: "default",
+					ServicePort: v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
+				},
+			},
+		},
+		want: "default/backend/80/da39a3ee5e",
+	})
+
+	run(t, "far too long", testcase{
+		cluster: &dag.Cluster{
+			Upstream: &dag.Service{
+				Weighted: dag.WeightedService{
+					Weight:           1,
+					ServiceName:      "must-be-in-want-of-a-wife",
+					ServiceNamespace: "it-is-a-truth-universally-acknowledged-that-a-single-man-in-possession-of-a-good-fortune",
+					ServicePort: v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       9999,
+						TargetPort: intstr.FromString("http-alt"),
+					},
+				},
+			},
+		},
+		want: "it-is-a--dea8b0/must-be--dea8b0/9999/da39a3ee5e",
+	})
+
+	run(t, "various healthcheck params", testcase{
+		cluster: &dag.Cluster{
+			Upstream: &dag.Service{
+				Weighted: dag.WeightedService{
+					Weight:           1,
+					ServiceName:      "backend",
+					ServiceNamespace: "default",
+					ServicePort: v1.ServicePort{
+						Name:       "http",
+						Protocol:   "TCP",
+						Port:       80,
+						TargetPort: intstr.FromInt(6502),
+					},
+				},
+			},
+			LoadBalancerPolicy: "Random",
+			HTTPHealthCheckPolicy: &dag.HTTPHealthCheckPolicy{
+				Path:               "/healthz",
+				Interval:           5 * time.Second,
+				Timeout:            30 * time.Second,
+				UnhealthyThreshold: 3,
+				HealthyThreshold:   1,
+			},
+		},
+		want: "default/backend/80/5c26077e1d",
+	})
+
+	cluster1 := &dag.Cluster{
+		Upstream: &dag.Service{
+			Weighted: dag.WeightedService{
+				Weight:           1,
+				ServiceName:      "backend",
+				ServiceNamespace: "default",
+				ServicePort: v1.ServicePort{
+					Name:       "http",
+					Protocol:   "TCP",
+					Port:       80,
+					TargetPort: intstr.FromInt(6502),
+				},
+			},
+		},
+		LoadBalancerPolicy: "Random",
+		UpstreamValidation: &dag.PeerValidationContext{
+			CACertificate: &dag.Secret{
+				Object: &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret",
+						Namespace: "default",
+					},
+					Data: map[string][]byte{
+						dag.CACertificateKey: []byte("somethingsecret"),
+					},
+				},
+			},
+			SubjectName: "foo.com",
+		},
+	}
+
+	run(t, "upstream tls validation with subject alt name", testcase{
+		cluster: cluster1,
+		want:    "default/backend/80/6bf46b7b3a",
+	})
+
+	cluster1.SNI = "foo.bar"
+	run(t, "upstream tls validation with subject alt name with SNI", testcase{
+		cluster: cluster1,
+		want:    "default/backend/80/b8a2ccb774",
+	})
+
+	cluster1.Protocol = "h2"
+	run(t, "upstream tls validation with subject alt name with Protocol", testcase{
+		cluster: cluster1,
+		want:    "default/backend/80/50abc1400c",
+	})
+
 }
 
 func TestLBPolicy(t *testing.T) {

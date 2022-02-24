@@ -357,7 +357,7 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 				Address: envoy_v3.SocketAddress("0.0.0.0", 8443),
 				FilterChains: appendFilterChains(
 					filterchaintls("k8s.run.ubisoft.org", s1,
-						tcpproxy("ingress_https", svc.Namespace+"/"+svc.Name+"/443/da39a3ee5e"), nil),
+						tcpproxy("ingress_https", svc.Namespace+"/"+svc.Name+"/443/4929fca9d4"), nil),
 				),
 				ListenerFilters: envoy_v3.ListenerFilters(
 					envoy_v3.TLSInspector(),
@@ -371,7 +371,7 @@ func TestTCPProxyTLSBackend(t *testing.T) {
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
 		Resources: resources(t,
 			tlsCluster(cluster(
-				svc.Namespace+"/"+svc.Name+"/443/da39a3ee5e",
+				svc.Namespace+"/"+svc.Name+"/443/4929fca9d4",
 				svc.Namespace+"/"+svc.Name+"/https",
 				svc.Namespace+"_"+svc.Name+"_443",
 			), nil, "", "", nil),
