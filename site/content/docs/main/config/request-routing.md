@@ -84,6 +84,48 @@ For `header` conditions there is one required field, `name`, and six operator fi
 
 - `exact` is a string, and checks that the header exactly matches the whole string. `notexact` checks that the header does *not* exactly match the whole string.
 
+## Request Redirection
+
+HTTP redirects can be implemented in HTTPProxy using `requestRedirectPolicy` on a route.
+In the following basic example, requests to `example.com` are redirected to `www.example.com`.
+We configure a root HTTPProxy for `example.com` that contains redirect configuration.
+We also configure a root HTTPProxy for `www.example.com` that represents the destination of the redirect.
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: example-com
+spec:
+  virtualhost:
+    fqdn: example.com
+  routes:
+    - conditions:
+      - prefix: /
+      requestRedirectPolicy:
+        hostname: www.example.com
+```
+
+```yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: www-example-com
+spec:
+  virtualhost:
+    fqdn: www.example.com
+  routes:
+    - conditions:
+      - prefix: /
+      services:
+        - name: s1
+          port: 80
+```
+
+In addition to specifying the hostname to set in the `location` header, the scheme, port, and returned status code of the redirect response can be configured.
+Configuration of the path or a path prefix replacement to modify the path of the returned `location` can be included as well.
+See [the API specification][8] for more detail.
+
 ## Multiple Upstreams
 
 One of the key HTTPProxy features is the ability to support multiple services for a given path:
@@ -320,3 +362,4 @@ Any perturbation in the set of pods backing a service risks redistributing backe
 [5]: https://godoc.org/time#ParseDuration
 [6]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-idle-timeout
 [7]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/overview
+[8]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.HTTPRequestRedirectPolicy
