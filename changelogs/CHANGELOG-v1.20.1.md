@@ -3,14 +3,14 @@ We are delighted to present version v1.20.1 of Contour, our layer 7 HTTP reverse
 A big thank you to everyone who contributed to the release.
 
 
-- [Other Changes](#other-changes)
+- [Changes](#changes)
 - [Docs Changes](#docs-changes)
 - [Deprecations/Removals](#deprecation-and-removal-notices)
 - [Installing/Upgrading](#installing-and-upgrading)
 - [Compatible Kubernetes Versions](#compatible-kubernetes-versions)
 
 
-# Other Changes
+# Changes
 - Fixed a bug where upstream TLS SNI (`HTTProxy.spec.routes.requestHeadersPolicy` `Host` key) and protocol fields might not take effect when e.g. two `HTTPProxies` were otherwise equal but differed only on those fields. (#4350, @tsaarni)
 - Update github.com/prometheus/client_golang to v1.11.1 to address CVE-2022-21698. (#4361, @tsaarni)
 - Updates Envoy to v1.21.1. See the [Envoy changelog](https://www.envoyproxy.io/docs/envoy/v1.21.1/version_history/current) for details. (#4365, @skriss)
