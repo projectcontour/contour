@@ -1,0 +1,1 @@
+Added documentation for HTTPProxy request redirection.
