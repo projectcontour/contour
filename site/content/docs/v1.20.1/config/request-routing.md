@@ -124,7 +124,7 @@ spec:
 
 In addition to specifying the hostname to set in the `location` header, the scheme, port, and returned status code of the redirect response can be configured.
 Configuration of the path or a path prefix replacement to modify the path of the returned `location` can be included as well.
-See [the API specification][8] for more detail.
+See [the API specification][3] for more detail.
 
 ## Multiple Upstreams
 
@@ -358,6 +358,7 @@ None of these properties are guaranteed by a Kubernetes cluster and will be visi
 
 Any perturbation in the set of pods backing a service risks redistributing backends around the hash ring.
 
+[3]: /docs/{{< param version >}}/config/api/#projectcontour.io/v1.HTTPRequestRedirectPolicy
 [4]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-timeout
 [5]: https://godoc.org/time#ParseDuration
 [6]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-idle-timeout
