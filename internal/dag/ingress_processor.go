@@ -233,7 +233,7 @@ func (p *IngressProcessor) route(ingress *networking_v1.Ingress, host string, pa
 			ClientCertificate:     clientCertSecret,
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
-			ConnectTimeout:        p.ConnectTimeout,
+			TimeoutPolicy:         TimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 		}},
 	}
 

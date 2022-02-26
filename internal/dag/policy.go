@@ -415,7 +415,7 @@ func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger
 	// construct and use the HTTPProxy timeout policy logic.
 	tp, err := timeoutPolicy(&contour_api_v1.TimeoutPolicy{
 		Response: response,
-	})
+	}, 0)
 	if err != nil {
 		log.WithError(err).Error("Error parsing response-timeout annotation, using the default value")
 		return TimeoutPolicy{}
@@ -424,7 +424,7 @@ func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger
 	return tp
 }
 
-func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy) (TimeoutPolicy, error) {
+func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy, connectTimeout time.Duration) (TimeoutPolicy, error) {
 	if tp == nil {
 		return TimeoutPolicy{
 			ResponseTimeout:       timeout.DefaultSetting(),
@@ -452,6 +452,7 @@ func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy) (TimeoutPolicy, error) {
 		ResponseTimeout:       responseTimeout,
 		IdleStreamTimeout:     idleStreamTimeout,
 		IdleConnectionTimeout: idleConnectionTimeout,
+		ConnectTimeout:        connectTimeout,
 	}, nil
 }
 

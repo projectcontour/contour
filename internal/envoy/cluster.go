@@ -51,8 +51,8 @@ func Clustername(cluster *dag.Cluster) string {
 		buf += uv.SubjectName
 	}
 	buf += cluster.Protocol + cluster.SNI
-	if !cluster.IdleConnectionTimeout.UseDefault() {
-		buf += cluster.IdleConnectionTimeout.Duration().String()
+	if !cluster.TimeoutPolicy.IdleConnectionTimeout.UseDefault() {
+		buf += cluster.TimeoutPolicy.IdleConnectionTimeout.Duration().String()
 	}
 
 	// This isn't a crypto hash, we just want a unique name.

@@ -512,7 +512,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		tp, err := timeoutPolicy(route.TimeoutPolicy)
+		tp, err := timeoutPolicy(route.TimeoutPolicy, p.ConnectTimeout)
 		if err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "TimeoutPolicyNotValid",
 				"route.timeoutPolicy failed to parse: %s", err)
@@ -698,8 +698,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
 				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
-				ConnectTimeout:        p.ConnectTimeout,
-				IdleConnectionTimeout: tp.IdleConnectionTimeout,
+				TimeoutPolicy:         tp,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -795,7 +794,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 				SNI:                  s.ExternalName,
-				ConnectTimeout:       p.ConnectTimeout,
+				TimeoutPolicy:        TimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			})
 		}
 		secure := p.dag.EnsureSecureVirtualHost(host)

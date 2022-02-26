@@ -511,8 +511,8 @@ func TestCluster(t *testing.T) {
 		},
 		"cluster with connect timeout set": {
 			cluster: &dag.Cluster{
-				Upstream:       service(s1),
-				ConnectTimeout: 10 * time.Second,
+				Upstream:      service(s1),
+				TimeoutPolicy: dag.TimeoutPolicy{ConnectTimeout: 10 * time.Second},
 			},
 			want: &envoy_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/da39a3ee5e",
@@ -527,8 +527,8 @@ func TestCluster(t *testing.T) {
 		},
 		"cluster with idle connection timeout set": {
 			cluster: &dag.Cluster{
-				Upstream:              service(s1),
-				IdleConnectionTimeout: timeout.DurationSetting(10 * time.Second),
+				Upstream:      service(s1),
+				TimeoutPolicy: dag.TimeoutPolicy{IdleConnectionTimeout: timeout.DurationSetting(10 * time.Second)},
 			},
 			want: &envoy_cluster_v3.Cluster{
 				Name:                 "default/kuard/443/357c84df09",

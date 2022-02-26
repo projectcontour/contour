@@ -8274,10 +8274,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
-							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
-								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
-							},
+							Clusters:           withTimeout(clustermap(s1), TimeoutPolicy{ResponseTimeout: timeout.DurationSetting(90 * time.Second)}),
+							TimeoutPolicy:      TimeoutPolicy{ResponseTimeout: timeout.DurationSetting(90 * time.Second)},
 						}),
 					),
 				},
@@ -8337,10 +8335,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
-							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
-								ResponseTimeout: timeout.DisabledSetting(),
-							},
+							Clusters:           withTimeout(clustermap(s1), TimeoutPolicy{ResponseTimeout: timeout.DisabledSetting()}),
+							TimeoutPolicy:      TimeoutPolicy{ResponseTimeout: timeout.DisabledSetting()},
 						}),
 					),
 				},
@@ -12517,4 +12513,11 @@ func withMirror(r *Route, mirror *Service) *Route {
 		},
 	}
 	return r
+}
+
+func withTimeout(clusters []*Cluster, timeout TimeoutPolicy) []*Cluster {
+	for _, c := range clusters {
+		c.TimeoutPolicy = timeout
+	}
+	return clusters
 }

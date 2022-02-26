@@ -261,7 +261,7 @@ func TestTimeoutPolicy(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := timeoutPolicy(tc.tp)
+			got, gotErr := timeoutPolicy(tc.tp, 0)
 			if tc.wantErr {
 				assert.Error(t, gotErr)
 			} else {

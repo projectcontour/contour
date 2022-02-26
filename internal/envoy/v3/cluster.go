@@ -102,11 +102,11 @@ func Cluster(c *dag.Cluster) *envoy_cluster_v3.Cluster {
 		httpVersion = HTTPVersion2
 	}
 
-	if c.ConnectTimeout > time.Duration(0) {
-		cluster.ConnectTimeout = protobuf.Duration(c.ConnectTimeout)
+	if c.TimeoutPolicy.ConnectTimeout > time.Duration(0) {
+		cluster.ConnectTimeout = protobuf.Duration(c.TimeoutPolicy.ConnectTimeout)
 	}
 
-	cluster.TypedExtensionProtocolOptions = protocolOptions(httpVersion, c.IdleConnectionTimeout)
+	cluster.TypedExtensionProtocolOptions = protocolOptions(httpVersion, c.TimeoutPolicy.IdleConnectionTimeout)
 
 	return cluster
 }
@@ -154,10 +154,10 @@ func ExtensionCluster(ext *dag.ExtensionCluster) *envoy_cluster_v3.Cluster {
 		http2Version = HTTPVersion2
 	}
 
-	if ext.ConnectTimeout > time.Duration(0) {
-		cluster.ConnectTimeout = protobuf.Duration(ext.ConnectTimeout)
+	if ext.TimeoutPolicy.ConnectTimeout > time.Duration(0) {
+		cluster.ConnectTimeout = protobuf.Duration(ext.TimeoutPolicy.ConnectTimeout)
 	}
-	cluster.TypedExtensionProtocolOptions = protocolOptions(http2Version, ext.IdleConnectionTimeout)
+	cluster.TypedExtensionProtocolOptions = protocolOptions(http2Version, ext.TimeoutPolicy.IdleConnectionTimeout)
 
 	return cluster
 }

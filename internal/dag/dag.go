@@ -268,7 +268,7 @@ func (r *Route) HasPathRegex() bool {
 	return ok
 }
 
-// TimeoutPolicy defines the timeout policy for a route.
+// TimeoutPolicy defines the timeout policy for a route or a cluster.
 type TimeoutPolicy struct {
 	// ResponseTimeout is the timeout applied to the response
 	// from the backend server.
@@ -280,6 +280,9 @@ type TimeoutPolicy struct {
 
 	// IdleConnectionTimeout is the timeout applied to idle connection.
 	IdleConnectionTimeout timeout.Setting
+
+	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
+	ConnectTimeout time.Duration
 }
 
 // RetryPolicy defines the retry / number / timeout options
@@ -690,11 +693,8 @@ type Cluster struct {
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *Secret
 
-	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
-	ConnectTimeout time.Duration
-
-	// IdleConnectionTimeout defines how long the proxy should keep idle connection to upstream service before disconnecting.
-	IdleConnectionTimeout timeout.Setting
+	// TimeoutPolicy specifies how to handle timeouts for this cluster.
+	TimeoutPolicy TimeoutPolicy
 }
 
 // WeightedService represents the load balancing weight of a
@@ -866,12 +866,6 @@ type ExtensionCluster struct {
 	// ClientCertificate is the optional identifier of the TLS secret containing client certificate and
 	// private key to be used when establishing TLS connection to upstream cluster.
 	ClientCertificate *Secret
-
-	// ConnectTimeout defines how long the proxy should wait when establishing connection to upstream service.
-	ConnectTimeout time.Duration
-
-	// IdleConnectionTimeout defines how long the proxy should keep idle connection to upstream service before disconnecting.
-	IdleConnectionTimeout timeout.Setting
 }
 
 func wildcardDomainHeaderMatch(fqdn string) HeaderMatchCondition {
