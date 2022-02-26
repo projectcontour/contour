@@ -227,13 +227,35 @@ func TestTimeoutPolicy(t *testing.T) {
 				ResponseTimeout: timeout.DisabledSetting(),
 			},
 		},
-		"idle timeout": {
+		"idle stream timeout": {
 			tp: &contour_api_v1.TimeoutPolicy{
 				Idle: "900s",
 			},
 			want: TimeoutPolicy{
 				IdleStreamTimeout: timeout.DurationSetting(900 * time.Second),
 			},
+		},
+		"idle connection timeout": {
+			tp: &contour_api_v1.TimeoutPolicy{
+				IdleConnection: "900s",
+			},
+			want: TimeoutPolicy{
+				IdleConnectionTimeout: timeout.DurationSetting(900 * time.Second),
+			},
+		},
+		"infinite idle connection timeout": {
+			tp: &contour_api_v1.TimeoutPolicy{
+				IdleConnection: "infinite",
+			},
+			want: TimeoutPolicy{
+				IdleConnectionTimeout: timeout.DisabledSetting(),
+			},
+		},
+		"invalid idle connection timeout": {
+			tp: &contour_api_v1.TimeoutPolicy{
+				IdleConnection: "invalid value",
+			},
+			wantErr: true,
 		},
 	}
 
