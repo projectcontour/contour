@@ -405,8 +405,9 @@ func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger
 		response = annotation.ContourAnnotation(ingress, "request-timeout")
 		if len(response) == 0 {
 			return TimeoutPolicy{
-				ResponseTimeout:   timeout.DefaultSetting(),
-				IdleStreamTimeout: timeout.DefaultSetting(),
+				ResponseTimeout:       timeout.DefaultSetting(),
+				IdleStreamTimeout:     timeout.DefaultSetting(),
+				IdleConnectionTimeout: timeout.DefaultSetting(),
 			}
 		}
 	}
