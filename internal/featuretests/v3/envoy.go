@@ -216,6 +216,23 @@ func h2cCluster(c *envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
 	return c
 }
 
+func withConnectionTimeout(c *envoy_cluster_v3.Cluster, timeout time.Duration) *envoy_cluster_v3.Cluster {
+	c.TypedExtensionProtocolOptions = map[string]*any.Any{
+		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
+			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
+				CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
+					IdleTimeout: protobuf.Duration(timeout),
+				},
+				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+					ExplicitHttpConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+						ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+					},
+				},
+			}),
+	}
+	return c
+}
+
 func withResponseTimeout(route *envoy_route_v3.Route_Route, timeout time.Duration) *envoy_route_v3.Route_Route {
 	route.Route.Timeout = protobuf.Duration(timeout)
 	return route
