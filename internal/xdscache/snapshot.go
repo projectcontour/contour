@@ -84,6 +84,7 @@ func (s *SnapshotHandler) generateNewSnapshot() {
 		envoy_resource_v3.RouteType:    asResources(s.resources[envoy_resource_v3.RouteType].Contents()),
 		envoy_resource_v3.ListenerType: asResources(s.resources[envoy_resource_v3.ListenerType].Contents()),
 		envoy_resource_v3.SecretType:   asResources(s.resources[envoy_resource_v3.SecretType].Contents()),
+		envoy_resource_v3.RuntimeType:  asResources(s.resources[envoy_resource_v3.RuntimeType].Contents()),
 	}
 
 	s.snapLock.Lock()
