@@ -38,6 +38,12 @@ import (
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/projectcontour/contour/internal/envoy"
 	"github.com/projectcontour/contour/internal/protobuf"
+	"google.golang.org/protobuf/types/known/structpb"
+)
+
+const (
+	maxRegexProgramSizeError = 1 << 20
+	maxRegexProgramSizeWarn  = 1000
 )
 
 // WriteBootstrap writes bootstrap configuration to files.
@@ -156,6 +162,27 @@ func bootstrap(c *envoy.BootstrapConfig) ([]bootstrapf, error) {
 
 func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 	return &envoy_bootstrap_v3.Bootstrap{
+		LayeredRuntime: &envoy_bootstrap_v3.LayeredRuntime{
+			Layers: []*envoy_bootstrap_v3.RuntimeLayer{
+				{
+					Name: "base",
+					LayerSpecifier: &envoy_bootstrap_v3.RuntimeLayer_StaticLayer{
+						StaticLayer: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"re2.max_program_size.error_level": {Kind: &structpb.Value_NumberValue{NumberValue: maxRegexProgramSizeError}},
+								"re2.max_program_size.warn_level":  {Kind: &structpb.Value_NumberValue{NumberValue: maxRegexProgramSizeWarn}},
+							},
+						},
+					},
+				},
+				{
+					Name: "admin",
+					LayerSpecifier: &envoy_bootstrap_v3.RuntimeLayer_AdminLayer_{
+						AdminLayer: &envoy_bootstrap_v3.RuntimeLayer_AdminLayer{},
+					},
+				},
+			},
+		},
 		DynamicResources: &envoy_bootstrap_v3.Bootstrap_DynamicResources{
 			LdsConfig: ConfigSource("contour"),
 			CdsConfig: ConfigSource("contour"),
