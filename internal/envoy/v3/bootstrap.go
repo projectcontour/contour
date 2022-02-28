@@ -175,6 +175,11 @@ func bootstrapConfig(c *envoy.BootstrapConfig) *envoy_bootstrap_v3.Bootstrap {
 						},
 					},
 				},
+				// Admin layer needs to be included here to maintain ability to
+				// modify runtime settings via admin console. We have it as the
+				// last layer so changes made via admin console override any
+				// settings from previous layers.
+				// See https://www.envoyproxy.io/docs/envoy/latest/configuration/operations/runtime#admin-console
 				{
 					Name: "admin",
 					LayerSpecifier: &envoy_bootstrap_v3.RuntimeLayer_AdminLayer_{
