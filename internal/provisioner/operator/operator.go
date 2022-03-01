@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/projectcontour/contour/internal/provisioner/controller"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -50,8 +49,6 @@ type Operator struct {
 	config  *Config
 }
 
-// +kubebuilder:rbac:groups=operator.projectcontour.io,resources=contours,verbs=get;list;watch;update
-// +kubebuilder:rbac:groups=operator.projectcontour.io,resources=contours/status,verbs=get;update;patch
 // cert-gen needs create/update secrets.
 // +kubebuilder:rbac:groups="",resources=namespaces;secrets;serviceaccounts;services,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;delete;create;update
@@ -73,10 +70,7 @@ type Operator struct {
 
 // New creates a new operator from cliCfg and operatorConfig.
 func New(restConfig *rest.Config, operatorConfig *Config) (*Operator, error) {
-	// TODO(skriss) it's unclear why these resources are configured to
-	// not be cached, investigate if this can be dropped.
 	nonCached := []client.Object{
-		&operatorv1alpha1.Contour{},
 		&apiextensionsv1.CustomResourceDefinition{},
 	}
 
@@ -92,9 +86,6 @@ func New(restConfig *rest.Config, operatorConfig *Config) (*Operator, error) {
 	}
 
 	// Create and register the controllers with the operator manager.
-	if _, err := controller.NewContourController(mgr, operatorConfig.ContourImage, operatorConfig.EnvoyImage); err != nil {
-		return nil, fmt.Errorf("failed to create contour controller: %w", err)
-	}
 	if _, err := controller.NewGatewayClassController(mgr, operatorConfig.GatewayControllerName); err != nil {
 		return nil, fmt.Errorf("failed to create gatewayclass controller: %w", err)
 	}

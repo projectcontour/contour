@@ -20,7 +20,6 @@ import (
 	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -80,19 +79,6 @@ func New(cfg Config) *operatorv1alpha1.Contour {
 		cntr.Spec.EnableExternalNameService = cfg.EnableExternalNameService
 	}
 	return cntr
-}
-
-// CurrentContour returns the current Contour for the provided ns/name.
-func CurrentContour(ctx context.Context, cli client.Client, ns, name string) (*operatorv1alpha1.Contour, error) {
-	cntr := &operatorv1alpha1.Contour{}
-	key := types.NamespacedName{
-		Namespace: ns,
-		Name:      name,
-	}
-	if err := cli.Get(ctx, key, cntr); err != nil {
-		return nil, err
-	}
-	return cntr, nil
 }
 
 // OtherContoursExist lists Contour objects in all namespaces, returning the list

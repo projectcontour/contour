@@ -606,7 +606,3 @@ type ContourStatus struct {
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
-
-func init() {
-	SchemeBuilder.Register(&Contour{}, &ContourList{})
-}
