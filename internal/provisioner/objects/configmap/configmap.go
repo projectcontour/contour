@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,11 +44,11 @@ var contourConfigMapTemplate = template.Must(template.New("contour.yaml").Parse(
 #   determine which XDS Server implementation to utilize in Contour.
 #   xds-server-type: contour
 #
-# Specify the Gateway API configuration.{{if .GatewayControllerName }}
+# Specify the Gateway API configuration.
 gateway:
-  controllerName: {{.GatewayControllerName}}{{else}}
-# gateway:
-#   controllerName: projectcontour.io/projectcontour/contour{{end}}
+  gatewayRef:
+    namespace: {{ .GatewayNamespace }}
+    name: {{ .GatewayName }}
 #
 # should contour expect to be running inside a k8s cluster
 # incluster: true
@@ -87,9 +88,12 @@ tls:
 # ExternalName Services are disabled by default due to CVE-2021-XXXXX
 # You can re-enable them by setting this setting to "true".
 # This is not recommended without understanding the security implications.
-# Please see the advisory at https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for the details.{{if .EnableExternalNameService }}
-enableExternalNameService: {{.EnableExternalNameService}}{{else}}
-# enableExternalNameService: false{{end}}
+# Please see the advisory at https://github.com/projectcontour/contour/security/advisories/GHSA-5ph6-qq5x-7jwc for the details.
+{{ if .EnableExternalNameService -}}
+enableExternalNameService: {{ .EnableExternalNameService }}
+{{ else -}}
+# enableExternalNameService: false
+{{ end -}}
 ##
 ### Logging options
 # Default setting
@@ -163,9 +167,13 @@ type configMapParams struct {
 
 // contourConfig contains Contour configuration parameters.
 type contourConfig struct {
-	// GatewayControllerName is the name of the controller that should
-	// reconcile GatewayClasses and associated Gateways.
-	GatewayControllerName string
+	// GatewayNamespace is the namespace of the specific Gateway that the Contour
+	// instance should reconcile.
+	GatewayNamespace string
+
+	// GatewayName is the name of the specific Gateway that the Contour
+	// instance should reconcile.
+	GatewayName string
 
 	// EnableExternalNameService sets whether ExternalName Services are
 	// allowed.
@@ -174,24 +182,22 @@ type contourConfig struct {
 
 // configForContour returns a configMapParams with default fields set for contour.
 func configForContour(contour *operatorv1alpha1.Contour) *configMapParams {
-	cfg := &configMapParams{Name: ContourConfigMapName}
-	cfg.Namespace = contour.Spec.Namespace.Name
-	labels := objcontour.OwnerLabels(contour)
-	cfg.Labels = labels
-	if contour.Spec.GatewayControllerName != nil {
-		cfg.Contour = contourConfig{
-			GatewayControllerName: *contour.Spec.GatewayControllerName,
-		}
+	return &configMapParams{
+		Namespace: contour.Spec.Namespace.Name,
+		Name:      ContourConfigMapName,
+		Labels:    objcontour.OwnerLabels(contour),
+		Contour: contourConfig{
+			GatewayNamespace:          contour.Namespace,
+			GatewayName:               contour.Name,
+			EnableExternalNameService: pointer.BoolDeref(contour.Spec.EnableExternalNameService, false),
+		},
 	}
-	if contour.Spec.EnableExternalNameService != nil {
-		cfg.Contour.EnableExternalNameService = *contour.Spec.EnableExternalNameService
-	}
-	return cfg
 }
 
 // EnsureConfigMap ensures that a ConfigMap exists for the given contour.
 func EnsureConfigMap(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
 	cfg := configForContour(contour)
+
 	desired, err := desired(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to build configmap: %w", err)

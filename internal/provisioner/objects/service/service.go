@@ -133,9 +133,11 @@ func EnsureContourService(ctx context.Context, cli client.Client, contour *opera
 	return nil
 }
 
-// EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
-func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
-	desired := DesiredEnvoyService(contour)
+// EnsureEnvoyService ensures that an Envoy Service exists for the given contour
+// and optional map of service port names to service ports. If the service port
+// map is not provided, http->80 and https->443 are used.
+func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, servicePorts map[string]int32) error {
+	desired := DesiredEnvoyService(contour, servicePorts)
 	current, err := currentEnvoyService(ctx, cli, contour)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -218,9 +220,20 @@ func DesiredContourService(contour *operatorv1alpha1.Contour) *corev1.Service {
 }
 
 // DesiredEnvoyService generates the desired Envoy Service for the given contour.
-func DesiredEnvoyService(contour *operatorv1alpha1.Contour) *corev1.Service {
+func DesiredEnvoyService(contour *operatorv1alpha1.Contour, servicePorts map[string]int32) *corev1.Service {
 	var ports []corev1.ServicePort
 	var httpFound, httpsFound bool
+
+	// assign default service ports for http/https
+	if servicePorts == nil {
+		servicePorts = map[string]int32{}
+	}
+	if _, ok := servicePorts["http"]; !ok {
+		servicePorts["http"] = EnvoyServiceHTTPPort
+	}
+	if _, ok := servicePorts["https"]; !ok {
+		servicePorts["https"] = EnvoyServiceHTTPSPort
+	}
 
 	for _, port := range contour.Spec.NetworkPublishing.Envoy.ContainerPorts {
 		switch port.Name {
@@ -230,7 +243,7 @@ func DesiredEnvoyService(contour *operatorv1alpha1.Contour) *corev1.Service {
 			ports = append(ports, corev1.ServicePort{
 				Name:       port.Name,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       EnvoyServiceHTTPPort,
+				Port:       servicePorts[port.Name],
 				TargetPort: intstr.IntOrString{IntVal: port.PortNumber},
 			})
 		case "https":
@@ -239,7 +252,7 @@ func DesiredEnvoyService(contour *operatorv1alpha1.Contour) *corev1.Service {
 			ports = append(ports, corev1.ServicePort{
 				Name:       port.Name,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       EnvoyServiceHTTPSPort,
+				Port:       servicePorts[port.Name],
 				TargetPort: intstr.IntOrString{IntVal: port.PortNumber},
 			})
 		}

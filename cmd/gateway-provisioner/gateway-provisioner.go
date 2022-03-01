@@ -32,10 +32,12 @@ func main() {
 		"The container image used for the managed Contour.")
 	flag.StringVar(&config.EnvoyImage, "envoy-image", config.EnvoyImage,
 		"The container image used for the managed Envoy.")
-	flag.StringVar(&config.MetricsBindAddress, "metrics-addr", config.MetricsBindAddress, "The "+
-		"address the metric endpoint binds to. It can be set to \"0\" to disable serving metrics.")
+	flag.StringVar(&config.MetricsBindAddress, "metrics-addr", config.MetricsBindAddress,
+		"The address the metric endpoint binds to. It can be set to \"0\" to disable serving metrics.")
 	flag.BoolVar(&config.LeaderElection, "enable-leader-election", config.LeaderElection,
 		"Enable leader election for the operator. Enabling this will ensure there is only one active operator.")
+	flag.StringVar(&config.GatewayControllerName, "gateway-controller-name", config.GatewayControllerName,
+		"The controller string to process GatewayClasses and Gateways for.")
 
 	flag.Parse()
 

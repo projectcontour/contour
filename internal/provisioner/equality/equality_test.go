@@ -597,7 +597,7 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 				PortNumber: objsvc.EnvoyServiceHTTPSPort,
 			},
 		}
-		expected := objsvc.DesiredEnvoyService(cntr)
+		expected := objsvc.DesiredEnvoyService(cntr, nil)
 
 		mutated := expected.DeepCopy()
 		tc.mutate(mutated)
@@ -647,7 +647,7 @@ func TestNodePortServiceChanged(t *testing.T) {
 				PortNumber: objsvc.EnvoyServiceHTTPSPort,
 			},
 		}
-		expected := objsvc.DesiredEnvoyService(cntr)
+		expected := objsvc.DesiredEnvoyService(cntr, nil)
 
 		mutated := expected.DeepCopy()
 		tc.mutate(mutated)

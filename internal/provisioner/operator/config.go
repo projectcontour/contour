@@ -19,6 +19,7 @@ const (
 	DefaultMetricsAddr            = ":8080"
 	DefaultEnableLeaderElection   = false
 	DefaultEnableLeaderElectionID = "0d879e31.projectcontour.io"
+	DefaultGatewayControllerName  = "projectcontour.io/gateway-provisioner"
 )
 
 // Config is configuration of the operator.
@@ -42,15 +43,20 @@ type Config struct {
 	// LeaderElectionID determines the name of the configmap that leader election will
 	// use for holding the leader lock.
 	LeaderElectionID string
+
+	// GatewayControllerName defines the controller string that this operator instance
+	// will process GatewayClasses and Gateways for.
+	GatewayControllerName string
 }
 
 // DefaultConfig returns an operator config using default values.
 func DefaultConfig() *Config {
 	return &Config{
-		ContourImage:       DefaultContourImage,
-		EnvoyImage:         DefaultEnvoyImage,
-		MetricsBindAddress: DefaultMetricsAddr,
-		LeaderElection:     DefaultEnableLeaderElection,
-		LeaderElectionID:   DefaultEnableLeaderElectionID,
+		ContourImage:          DefaultContourImage,
+		EnvoyImage:            DefaultEnvoyImage,
+		MetricsBindAddress:    DefaultMetricsAddr,
+		LeaderElection:        DefaultEnableLeaderElection,
+		LeaderElectionID:      DefaultEnableLeaderElectionID,
+		GatewayControllerName: DefaultGatewayControllerName,
 	}
 }

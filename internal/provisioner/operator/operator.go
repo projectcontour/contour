@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 const (
@@ -73,30 +72,37 @@ type Operator struct {
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list
 
 // New creates a new operator from cliCfg and operatorConfig.
-func New(cliCfg *rest.Config, operatorConfig *Config) (*Operator, error) {
-	nonCached := []client.Object{&operatorv1alpha1.Contour{}, &gatewayv1alpha2.GatewayClass{},
-		&gatewayv1alpha2.Gateway{}, &apiextensionsv1.CustomResourceDefinition{}}
-	mgrOpts := manager.Options{
+func New(restConfig *rest.Config, operatorConfig *Config) (*Operator, error) {
+	// TODO(skriss) it's unclear why these resources are configured to
+	// not be cached, investigate if this can be dropped.
+	nonCached := []client.Object{
+		&operatorv1alpha1.Contour{},
+		&apiextensionsv1.CustomResourceDefinition{},
+	}
+
+	mgr, err := controller_runtime.NewManager(restConfig, manager.Options{
 		Scheme:                GetOperatorScheme(),
 		LeaderElection:        operatorConfig.LeaderElection,
 		LeaderElectionID:      operatorConfig.LeaderElectionID,
 		MetricsBindAddress:    operatorConfig.MetricsBindAddress,
 		ClientDisableCacheFor: nonCached,
-	}
-	mgr, err := controller_runtime.NewManager(cliCfg, mgrOpts)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)
 	}
 
-	// Create and register the contour controller with the operator manager.
-	if _, err := controller.New(mgr, controller.Config{
-		ContourImage: operatorConfig.ContourImage,
-		EnvoyImage:   operatorConfig.EnvoyImage,
-	}); err != nil {
+	// Create and register the controllers with the operator manager.
+	if _, err := controller.NewContourController(mgr, operatorConfig.ContourImage, operatorConfig.EnvoyImage); err != nil {
 		return nil, fmt.Errorf("failed to create contour controller: %w", err)
 	}
+	if _, err := controller.NewGatewayClassController(mgr, operatorConfig.GatewayControllerName); err != nil {
+		return nil, fmt.Errorf("failed to create gatewayclass controller: %w", err)
+	}
+	if _, err := controller.NewGatewayController(mgr, operatorConfig.GatewayControllerName, operatorConfig.ContourImage, operatorConfig.EnvoyImage); err != nil {
+		return nil, fmt.Errorf("failed to create gateway controller: %w", err)
+	}
 
-	restMapper, err := apiutil.NewDiscoveryRESTMapper(cliCfg)
+	restMapper, err := apiutil.NewDiscoveryRESTMapper(restConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +115,8 @@ func New(cliCfg *rest.Config, operatorConfig *Config) (*Operator, error) {
 	}, nil
 }
 
-// Start creates Gateway API controllers (if configured) and starts the operator
-// synchronously until a message is received from ctx.
+// Start runs the operator manager until an error is received or the context
+// is cancelled.
 func (o *Operator) Start(ctx context.Context) error {
 	errChan := make(chan error)
 	go func() {

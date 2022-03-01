@@ -18,14 +18,7 @@ import (
 	"fmt"
 
 	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
-	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
-	objcm "github.com/projectcontour/contour/internal/provisioner/objects/configmap"
 	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
-	objds "github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
-	objdeploy "github.com/projectcontour/contour/internal/provisioner/objects/deployment"
-	objjob "github.com/projectcontour/contour/internal/provisioner/objects/job"
-	objns "github.com/projectcontour/contour/internal/provisioner/objects/namespace"
-	objsvc "github.com/projectcontour/contour/internal/provisioner/objects/service"
 	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
 	"github.com/projectcontour/contour/internal/provisioner/status"
 	"github.com/projectcontour/contour/internal/provisioner/validation"
@@ -44,34 +37,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const (
-	controllerName = "contour_controller"
-)
-
-// Config holds all the things necessary for the controller to run.
-type Config struct {
-	// ContourImage is the name of the Contour container image.
-	ContourImage string
-	// EnvoyImage is the name of the Envoy container image.
-	EnvoyImage string
-}
-
 // reconciler reconciles a Contour object.
 type reconciler struct {
-	config Config
-	client client.Client
-	log    logr.Logger
+	client  client.Client
+	ensurer *ensurer
+	log     logr.Logger
 }
 
-// New creates the contour controller from mgr and cfg. The controller will be pre-configured
+// NewContourController creates the contour controller from mgr and cfg. The controller will be pre-configured
 // to watch for Contour objects across all namespaces.
-func New(mgr manager.Manager, cfg Config) (controller.Controller, error) {
+func NewContourController(mgr manager.Manager, contourImage, envoyImage string) (controller.Controller, error) {
 	r := &reconciler{
-		config: cfg,
 		client: mgr.GetClient(),
-		log:    ctrl.Log.WithName(controllerName),
+		log:    ctrl.Log.WithName("contour-controller"),
 	}
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
+
+	r.ensurer = &ensurer{
+		log:          r.log,
+		client:       r.client,
+		contourImage: contourImage,
+		envoyImage:   envoyImage,
+	}
+
+	c, err := controller.New("contour-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return nil, err
 	}
@@ -171,87 +159,27 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 // ensureContour ensures all necessary resources exist for the given contour.
 func (r *reconciler) ensureContour(ctx context.Context, contour *operatorv1alpha1.Contour) error {
-	var errs []error
-	cli := r.client
+	errs := r.ensurer.ensureContour(ctx, contour, nil)
 
-	handleResult := func(resource string, err error) {
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to ensure %s for contour %s/%s: %w", resource, contour.Namespace, contour.Name, err))
-		} else {
-			r.log.Info(fmt.Sprintf("ensured %s for contour", resource), "namespace", contour.Namespace, "name", contour.Name)
-		}
+	if err := status.SyncContour(ctx, r.client, contour); err != nil {
+		errs = append(errs, fmt.Errorf("failed to sync status for contour %s/%s: %w", contour.Namespace, contour.Name, err))
+	} else {
+		r.log.Info("synced status for contour", "namespace", contour.Namespace, "name", contour.Name)
 	}
 
-	syncContourStatus := func() error {
-		if err := status.SyncContour(ctx, cli, contour); err != nil {
-			errs = append(errs, fmt.Errorf("failed to sync status for contour %s/%s: %w", contour.Namespace, contour.Name, err))
-		} else {
-			r.log.Info("synced status for contour", "namespace", contour.Namespace, "name", contour.Name)
-		}
-		return retryable.NewMaybeRetryableAggregate(errs)
-	}
-
-	handleResult("namespace", objns.EnsureNamespace(ctx, cli, contour))
-	handleResult("rbac", objutil.EnsureRBAC(ctx, cli, contour))
-
-	if len(errs) > 0 {
-		return syncContourStatus()
-	}
-
-	contourImage := r.config.ContourImage
-	envoyImage := r.config.EnvoyImage
-
-	handleResult("configmap", objcm.EnsureConfigMap(ctx, cli, contour))
-	handleResult("job", objjob.EnsureJob(ctx, cli, contour, contourImage))
-	handleResult("deployment", objdeploy.EnsureDeployment(ctx, cli, contour, contourImage))
-	handleResult("daemonset", objds.EnsureDaemonSet(ctx, cli, contour, contourImage, envoyImage))
-	handleResult("contour service", objsvc.EnsureContourService(ctx, cli, contour))
-
-	switch contour.Spec.NetworkPublishing.Envoy.Type {
-	case operatorv1alpha1.LoadBalancerServicePublishingType, operatorv1alpha1.NodePortServicePublishingType, operatorv1alpha1.ClusterIPServicePublishingType:
-		handleResult("envoy service", objsvc.EnsureEnvoyService(ctx, cli, contour))
-	}
-
-	return syncContourStatus()
+	return retryable.NewMaybeRetryableAggregate(errs)
 }
 
 // ensureContourDeleted ensures contour and all child resources have been deleted.
 func (r *reconciler) ensureContourDeleted(ctx context.Context, contour *operatorv1alpha1.Contour) error {
-	var errs []error
-	cli := r.client
-
-	handleResult := func(resource string, err error) {
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to delete %s for contour %s/%s: %w", resource, contour.Namespace, contour.Name, err))
-		} else {
-			r.log.Info(fmt.Sprintf("deleted %s for contour", resource), "namespace", contour.Namespace, "name", contour.Name)
-		}
+	if errs := r.ensurer.ensureContourDeleted(ctx, contour); len(errs) > 0 {
+		return utilerrors.NewAggregate(errs)
 	}
 
-	switch contour.Spec.NetworkPublishing.Envoy.Type {
-	case operatorv1alpha1.LoadBalancerServicePublishingType, operatorv1alpha1.NodePortServicePublishingType, operatorv1alpha1.ClusterIPServicePublishingType:
-		handleResult("envoy service", objsvc.EnsureEnvoyServiceDeleted(ctx, cli, contour))
+	if err := objcontour.EnsureFinalizerRemoved(ctx, r.client, contour); err != nil {
+		return fmt.Errorf("failed to remove finalizer from contour %s/%s: %w", contour.Namespace, contour.Name, err)
 	}
 
-	handleResult("service", objsvc.EnsureContourServiceDeleted(ctx, cli, contour))
-	handleResult("daemonset", objds.EnsureDaemonSetDeleted(ctx, cli, contour))
-	handleResult("deployment", objdeploy.EnsureDeploymentDeleted(ctx, cli, contour))
-	handleResult("job", objjob.EnsureJobDeleted(ctx, cli, contour, r.config.ContourImage))
-	handleResult("configmap", objcm.EnsureConfigMapDeleted(ctx, cli, contour))
-	handleResult("rbac", objutil.EnsureRBACDeleted(ctx, cli, contour))
-	if deleteExpected, err := objns.EnsureNamespaceDeleted(ctx, cli, contour); deleteExpected {
-		handleResult("namespace", err)
-	} else {
-		r.log.Info("bypassing namespace deletion", "namespace", contour.Namespace, "name", contour.Name)
-	}
-
-	if len(errs) == 0 {
-		if err := objcontour.EnsureFinalizerRemoved(ctx, cli, contour); err != nil {
-			errs = append(errs, fmt.Errorf("failed to remove finalizer from contour %s/%s: %w", contour.Namespace, contour.Name, err))
-		} else {
-			r.log.Info("removed finalizer from contour", "namespace", contour.Namespace, "name", contour.Name)
-		}
-	}
-
-	return utilerrors.NewAggregate(errs)
+	r.log.Info("removed finalizer from contour", "namespace", contour.Namespace, "name", contour.Name)
+	return nil
 }
