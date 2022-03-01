@@ -14,7 +14,7 @@
 package operator
 
 import (
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"

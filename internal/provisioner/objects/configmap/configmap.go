@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"text/template"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	objcontour "github.com/projectcontour/contour-operator/internal/objects/contour"
-	"github.com/projectcontour/contour-operator/pkg/labels"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/labels"
+	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"

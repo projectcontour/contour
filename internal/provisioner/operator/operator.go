@@ -18,8 +18,8 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	"github.com/projectcontour/contour-operator/internal/controller"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/controller"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/rest"

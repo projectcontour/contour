@@ -17,8 +17,8 @@ import (
 	"flag"
 	"os"
 
-	"github.com/projectcontour/contour-operator/internal/operator"
-	"github.com/projectcontour/contour-operator/internal/parse"
+	"github.com/projectcontour/contour/internal/provisioner/operator"
+	"github.com/projectcontour/contour/internal/provisioner/parse"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"

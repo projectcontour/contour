@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 
 	appsv1 "k8s.io/api/apps/v1"

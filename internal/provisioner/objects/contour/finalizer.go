@@ -17,8 +17,8 @@ import (
 	"context"
 	"fmt"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	"github.com/projectcontour/contour-operator/pkg/slice"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/slice"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

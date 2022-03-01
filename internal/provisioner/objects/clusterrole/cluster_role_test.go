@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	objcontour "github.com/projectcontour/contour-operator/internal/objects/contour"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"

@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	"github.com/projectcontour/contour-operator/internal/equality"
-	objds "github.com/projectcontour/contour-operator/internal/objects/daemonset"
-	objdeploy "github.com/projectcontour/contour-operator/internal/objects/deployment"
-	retryable "github.com/projectcontour/contour-operator/internal/retryableerror"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/equality"
+	objds "github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
+	objdeploy "github.com/projectcontour/contour/internal/provisioner/objects/deployment"
+	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

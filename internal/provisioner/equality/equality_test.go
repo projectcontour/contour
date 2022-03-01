@@ -16,12 +16,12 @@ package equality_test
 import (
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	"github.com/projectcontour/contour-operator/internal/equality"
-	objds "github.com/projectcontour/contour-operator/internal/objects/daemonset"
-	objdeploy "github.com/projectcontour/contour-operator/internal/objects/deployment"
-	objjob "github.com/projectcontour/contour-operator/internal/objects/job"
-	objsvc "github.com/projectcontour/contour-operator/internal/objects/service"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/equality"
+	objds "github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
+	objdeploy "github.com/projectcontour/contour/internal/provisioner/objects/deployment"
+	objjob "github.com/projectcontour/contour/internal/provisioner/objects/job"
+	objsvc "github.com/projectcontour/contour/internal/provisioner/objects/service"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"

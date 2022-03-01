@@ -18,9 +18,9 @@ import (
 	"sort"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	objcontour "github.com/projectcontour/contour-operator/internal/objects/contour"
-	objcfg "github.com/projectcontour/contour-operator/internal/objects/sharedconfig"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"time"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	"github.com/projectcontour/contour-operator/internal/equality"
-	objutil "github.com/projectcontour/contour-operator/internal/objects"
-	objcontour "github.com/projectcontour/contour-operator/internal/objects/contour"
-	labels "github.com/projectcontour/contour-operator/pkg/labels"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/equality"
+	labels "github.com/projectcontour/contour/internal/provisioner/labels"
+	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
+	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"

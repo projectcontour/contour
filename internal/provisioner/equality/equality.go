@@ -14,7 +14,7 @@
 package equality
 
 import (
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"

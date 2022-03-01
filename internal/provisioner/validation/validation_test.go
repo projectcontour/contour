@@ -18,8 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	"github.com/projectcontour/contour-operator/pkg/validation"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/validation"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

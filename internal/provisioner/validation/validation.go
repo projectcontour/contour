@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"net"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
-	objcontour "github.com/projectcontour/contour-operator/internal/objects/contour"
-	"github.com/projectcontour/contour-operator/pkg/slice"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/slice"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

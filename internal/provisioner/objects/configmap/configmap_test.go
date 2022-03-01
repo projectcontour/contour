@@ -16,7 +16,7 @@ package configmap
 import (
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour-operator/api/v1alpha1"
+	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
