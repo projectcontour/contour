@@ -13,10 +13,12 @@
 
 package labels
 
-import "sigs.k8s.io/controller-runtime/pkg/client"
+type LabeledObject interface {
+	GetLabels() map[string]string
+}
 
 // Exist returns true if obj contains labels m.
-func Exist(obj client.Object, m map[string]string) bool {
+func Exist(obj LabeledObject, m map[string]string) bool {
 	labels := obj.GetLabels()
 	if labels == nil {
 		return false

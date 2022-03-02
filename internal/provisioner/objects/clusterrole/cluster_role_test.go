@@ -17,8 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -46,19 +45,19 @@ func checkClusterRoleLabels(t *testing.T, cr *rbacv1.ClusterRole, expected map[s
 
 func TestDesiredClusterRole(t *testing.T) {
 	name := "test-cr"
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    true,
-		NetworkType: operatorv1alpha1.LoadBalancerServicePublishingType,
+		NetworkType: model.LoadBalancerServicePublishingType,
 	}
-	cntr := objcontour.New(cfg)
+	cntr := model.New(cfg)
 	cr := desiredClusterRole(name, cntr)
 	checkClusterRoleName(t, cr, name)
 	ownerLabels := map[string]string{
-		operatorv1alpha1.OwningContourNameLabel: cntr.Name,
-		operatorv1alpha1.OwningContourNsLabel:   cntr.Namespace,
+		model.OwningContourNameLabel: cntr.Name,
+		model.OwningContourNsLabel:   cntr.Namespace,
 	}
 	checkClusterRoleLabels(t, cr, ownerLabels)
 }

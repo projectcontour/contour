@@ -18,11 +18,10 @@ import (
 	"fmt"
 	"time"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	labels "github.com/projectcontour/contour/internal/provisioner/labels"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -49,7 +48,7 @@ func certgenJobName(contourImage string) string {
 // TODO [danehans]: The real dependency is whether the TLS secrets are present.
 // The method should first check for the secrets, then use certgen as a secret
 // generating strategy.
-func EnsureJob(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, image string) error {
+func EnsureJob(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
 	desired := DesiredJob(contour, image)
 	current, err := currentJob(ctx, cli, contour, image)
 	if err != nil {
@@ -66,7 +65,7 @@ func EnsureJob(ctx context.Context, cli client.Client, contour *operatorv1alpha1
 
 // EnsureJobDeleted ensures the Job for the provided contour is deleted if
 // Contour owner labels exist.
-func EnsureJobDeleted(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, image string) error {
+func EnsureJobDeleted(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
 	job, err := currentJob(ctx, cli, contour, image)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -74,7 +73,7 @@ func EnsureJobDeleted(ctx context.Context, cli client.Client, contour *operatorv
 		}
 		return err
 	}
-	if labels.Exist(job, objcontour.OwnerLabels(contour)) {
+	if labels.Exist(job, model.OwnerLabels(contour)) {
 		if err := cli.Delete(ctx, job); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
@@ -86,7 +85,7 @@ func EnsureJobDeleted(ctx context.Context, cli client.Client, contour *operatorv
 }
 
 // currentJob returns the current Job resource named name for the provided contour.
-func currentJob(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, image string) (*batchv1.Job, error) {
+func currentJob(ctx context.Context, cli client.Client, contour *model.Contour, image string) (*batchv1.Job, error) {
 	current := &batchv1.Job{}
 	key := types.NamespacedName{
 		Namespace: contour.Spec.Namespace.Name,
@@ -100,7 +99,7 @@ func currentJob(ctx context.Context, cli client.Client, contour *operatorv1alpha
 }
 
 // DesiredJob generates the desired Job resource using image for the given contour.
-func DesiredJob(contour *operatorv1alpha1.Contour, image string) *batchv1.Job {
+func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 	env := corev1.EnvVar{
 		Name: jobNsEnvVar,
 		ValueFrom: &corev1.EnvVarSource{
@@ -147,7 +146,7 @@ func DesiredJob(contour *operatorv1alpha1.Contour, image string) *batchv1.Job {
 		"app.kubernetes.io/managed-by": "contour-operator",
 	}
 	// Add owner labels
-	for k, v := range objcontour.OwnerLabels(contour) {
+	for k, v := range model.OwnerLabels(contour) {
 		labels[k] = v
 	}
 
@@ -165,7 +164,7 @@ func DesiredJob(contour *operatorv1alpha1.Contour, image string) *batchv1.Job {
 			TTLSecondsAfterFinished: pointer.Int32Ptr(int32(0)),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: objcontour.OwningSelector(contour).MatchLabels,
+					Labels: model.OwningSelector(contour).MatchLabels,
 				},
 				Spec: spec,
 			},
@@ -176,8 +175,8 @@ func DesiredJob(contour *operatorv1alpha1.Contour, image string) *batchv1.Job {
 
 // recreateJobIfNeeded recreates a Job if current doesn't match desired,
 // using contour to verify the existence of owner labels.
-func recreateJobIfNeeded(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, current, desired *batchv1.Job) error {
-	if labels.Exist(current, objcontour.OwnerLabels(contour)) {
+func recreateJobIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *batchv1.Job) error {
+	if labels.Exist(current, model.OwnerLabels(contour)) {
 		updated, changed := equality.JobConfigChanged(current, desired)
 		if !changed {
 			return nil

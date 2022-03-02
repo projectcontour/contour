@@ -18,13 +18,12 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects"
 	"github.com/projectcontour/contour/internal/provisioner/objects/configmap"
 	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	"github.com/projectcontour/contour/internal/provisioner/objects/job"
-	"github.com/projectcontour/contour/internal/provisioner/objects/namespace"
 	"github.com/projectcontour/contour/internal/provisioner/objects/service"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,7 +35,7 @@ type ensurer struct {
 	envoyImage   string
 }
 
-func (e *ensurer) ensureContour(ctx context.Context, contour *operatorv1alpha1.Contour, servicePorts map[string]int32) []error {
+func (e *ensurer) ensureContour(ctx context.Context, contour *model.Contour, servicePorts map[string]int32) []error {
 	var errs []error
 
 	handleResult := func(resource string, err error) {
@@ -47,7 +46,6 @@ func (e *ensurer) ensureContour(ctx context.Context, contour *operatorv1alpha1.C
 		}
 	}
 
-	handleResult("namespace", namespace.EnsureNamespace(ctx, e.client, contour))
 	handleResult("rbac", objects.EnsureRBAC(ctx, e.client, contour))
 
 	if len(errs) > 0 {
@@ -61,14 +59,14 @@ func (e *ensurer) ensureContour(ctx context.Context, contour *operatorv1alpha1.C
 	handleResult("contour service", service.EnsureContourService(ctx, e.client, contour))
 
 	switch contour.Spec.NetworkPublishing.Envoy.Type {
-	case operatorv1alpha1.LoadBalancerServicePublishingType, operatorv1alpha1.NodePortServicePublishingType, operatorv1alpha1.ClusterIPServicePublishingType:
+	case model.LoadBalancerServicePublishingType, model.NodePortServicePublishingType, model.ClusterIPServicePublishingType:
 		handleResult("envoy service", service.EnsureEnvoyService(ctx, e.client, contour, servicePorts))
 	}
 
 	return errs
 }
 
-func (e *ensurer) ensureContourDeleted(ctx context.Context, contour *operatorv1alpha1.Contour) []error {
+func (e *ensurer) ensureContourDeleted(ctx context.Context, contour *model.Contour) []error {
 	var errs []error
 
 	handleResult := func(resource string, err error) {
@@ -86,11 +84,6 @@ func (e *ensurer) ensureContourDeleted(ctx context.Context, contour *operatorv1a
 	handleResult("job", job.EnsureJobDeleted(ctx, e.client, contour, e.contourImage))
 	handleResult("configmap", configmap.EnsureConfigMapDeleted(ctx, e.client, contour))
 	handleResult("rbac", objects.EnsureRBACDeleted(ctx, e.client, contour))
-	if deleteExpected, err := namespace.EnsureNamespaceDeleted(ctx, e.client, contour); deleteExpected {
-		handleResult("namespace", err)
-	} else {
-		e.log.Info("bypassing namespace deletion", "namespace", contour.Namespace, "name", contour.Name)
-	}
 
 	return errs
 }

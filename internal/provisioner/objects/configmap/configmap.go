@@ -19,9 +19,8 @@ import (
 	"fmt"
 	"text/template"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -181,11 +180,11 @@ type contourConfig struct {
 }
 
 // configForContour returns a configMapParams with default fields set for contour.
-func configForContour(contour *operatorv1alpha1.Contour) *configMapParams {
+func configForContour(contour *model.Contour) *configMapParams {
 	return &configMapParams{
 		Namespace: contour.Spec.Namespace.Name,
 		Name:      ContourConfigMapName,
-		Labels:    objcontour.OwnerLabels(contour),
+		Labels:    model.OwnerLabels(contour),
 		Contour: contourConfig{
 			GatewayNamespace:          contour.Namespace,
 			GatewayName:               contour.Name,
@@ -195,7 +194,7 @@ func configForContour(contour *operatorv1alpha1.Contour) *configMapParams {
 }
 
 // EnsureConfigMap ensures that a ConfigMap exists for the given contour.
-func EnsureConfigMap(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
+func EnsureConfigMap(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	cfg := configForContour(contour)
 
 	desired, err := desired(cfg)
@@ -216,7 +215,7 @@ func EnsureConfigMap(ctx context.Context, cli client.Client, contour *operatorv1
 }
 
 // EnsureConfigMapDeleted deletes a ConfigMap for the provided contour, if the configured owner labels exist.
-func EnsureConfigMapDeleted(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
+func EnsureConfigMapDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	cfg := configForContour(contour)
 	cfgMap, err := current(ctx, cli, cfg)
 	if err != nil {

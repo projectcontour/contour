@@ -17,8 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -108,14 +107,14 @@ func checkDeploymentHasTolerations(t *testing.T, deploy *appsv1.Deployment, expe
 
 func TestDesiredDeployment(t *testing.T) {
 	name := "deploy-test"
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    false,
-		NetworkType: operatorv1alpha1.LoadBalancerServicePublishingType,
+		NetworkType: model.LoadBalancerServicePublishingType,
 	}
-	cntr := objcontour.New(cfg)
+	cntr := model.New(cfg)
 	icName := "test-ic"
 	cntr.Spec.IngressClassName = &icName
 	// Change the default ports to test Envoy service port args.
@@ -167,16 +166,16 @@ func TestNodePlacementDeployment(t *testing.T) {
 			Effect:   corev1.TaintEffectNoSchedule,
 		},
 	}
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    false,
-		NetworkType: operatorv1alpha1.LoadBalancerServicePublishingType,
+		NetworkType: model.LoadBalancerServicePublishingType,
 	}
-	cntr := objcontour.New(cfg)
-	cntr.Spec.NodePlacement = &operatorv1alpha1.NodePlacement{
-		Contour: &operatorv1alpha1.ContourNodePlacement{
+	cntr := model.New(cfg)
+	cntr.Spec.NodePlacement = &model.NodePlacement{
+		Contour: &model.ContourNodePlacement{
 			NodeSelector: selectors,
 			Tolerations:  tolerations,
 		},

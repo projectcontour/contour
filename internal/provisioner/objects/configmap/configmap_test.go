@@ -16,7 +16,7 @@ package configmap
 import (
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -134,13 +134,13 @@ accesslog-format: envoy
 #   num-trusted-hops: 0
 `
 
-	c := &operatorv1alpha1.Contour{
+	c := &model.Contour{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test-ns",
 		},
-		Spec: operatorv1alpha1.ContourSpec{
-			Namespace: operatorv1alpha1.NamespaceSpec{
+		Spec: model.ContourSpec{
+			Namespace: model.NamespaceSpec{
 				Name: "some-ns",
 			},
 		},
@@ -263,12 +263,12 @@ accesslog-format: envoy
 #   right side of the x-forwarded-for HTTP header to trust.
 #   num-trusted-hops: 0
 `
-	c := &operatorv1alpha1.Contour{
+	c := &model.Contour{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test-ns",
 		},
-		Spec: operatorv1alpha1.ContourSpec{
+		Spec: model.ContourSpec{
 			EnableExternalNameService: pointer.Bool(true),
 		},
 	}
@@ -389,13 +389,13 @@ accesslog-format: envoy
 #   num-trusted-hops: 0
 `
 
-	c := &operatorv1alpha1.Contour{
+	c := &model.Contour{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      "test",
 			Namespace: "test-ns",
 		},
-		Spec: operatorv1alpha1.ContourSpec{
-			Namespace: operatorv1alpha1.NamespaceSpec{
+		Spec: model.ContourSpec{
+			Namespace: model.NamespaceSpec{
 				Name: "some-ns",
 			},
 		},

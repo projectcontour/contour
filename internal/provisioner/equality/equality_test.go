@@ -16,8 +16,8 @@ package equality_test
 import (
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/projectcontour/contour/internal/provisioner/equality"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	objds "github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
 	objdeploy "github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	objjob "github.com/projectcontour/contour/internal/provisioner/objects/job"
@@ -34,7 +34,7 @@ var (
 	testName  = "test"
 	testNs    = testName + "-ns"
 	testImage = "test-image:main"
-	cntr      = &operatorv1alpha1.Contour{
+	cntr      = &model.Contour{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNs,
@@ -167,8 +167,8 @@ func TestJobConfigChanged(t *testing.T) {
 		{
 			description: "if the contour owning labels are removed",
 			mutate: func(job *batchv1.Job) {
-				delete(job.Spec.Template.Labels, operatorv1alpha1.OwningContourNameLabel)
-				delete(job.Spec.Template.Labels, operatorv1alpha1.OwningContourNsLabel)
+				delete(job.Spec.Template.Labels, model.OwningContourNameLabel)
+				delete(job.Spec.Template.Labels, model.OwningContourNsLabel)
 			},
 			expect: true,
 		},
@@ -561,29 +561,29 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 
 	for _, tc := range testCases {
 
-		cntr.Spec.NetworkPublishing.Envoy.Type = operatorv1alpha1.LoadBalancerServicePublishingType
-		cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = operatorv1alpha1.ExternalLoadBalancer
-		cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = operatorv1alpha1.AWSLoadBalancerProvider
+		cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
+		cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.ExternalLoadBalancer
+		cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AWSLoadBalancerProvider
 		if tc.description == "if load balancer IP changed" {
 			loadBalancerIP := "1.2.3.4"
-			cntr = &operatorv1alpha1.Contour{
-				Spec: operatorv1alpha1.ContourSpec{
-					NetworkPublishing: operatorv1alpha1.NetworkPublishing{
-						Envoy: operatorv1alpha1.EnvoyNetworkPublishing{
-							Type: operatorv1alpha1.LoadBalancerServicePublishingType,
-							LoadBalancer: operatorv1alpha1.LoadBalancerStrategy{
-								ProviderParameters: operatorv1alpha1.ProviderLoadBalancerParameters{
-									GCP: &operatorv1alpha1.GCPLoadBalancerParameters{},
+			cntr = &model.Contour{
+				Spec: model.ContourSpec{
+					NetworkPublishing: model.NetworkPublishing{
+						Envoy: model.EnvoyNetworkPublishing{
+							Type: model.LoadBalancerServicePublishingType,
+							LoadBalancer: model.LoadBalancerStrategy{
+								ProviderParameters: model.ProviderLoadBalancerParameters{
+									GCP: &model.GCPLoadBalancerParameters{},
 								},
 							},
 						},
 					},
 				},
 			}
-			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = operatorv1alpha1.GCPLoadBalancerProvider
+			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.GCPLoadBalancerProvider
 			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Address = &loadBalancerIP
 		}
-		cntr.Spec.NetworkPublishing.Envoy.ContainerPorts = []operatorv1alpha1.ContainerPort{
+		cntr.Spec.NetworkPublishing.Envoy.ContainerPorts = []model.ContainerPort{
 			{
 				Name:       "http",
 				PortNumber: objsvc.EnvoyServiceHTTPPort,
@@ -632,8 +632,8 @@ func TestNodePortServiceChanged(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		cntr.Spec.NetworkPublishing.Envoy.Type = operatorv1alpha1.NodePortServicePublishingType
-		cntr.Spec.NetworkPublishing.Envoy.ContainerPorts = []operatorv1alpha1.ContainerPort{
+		cntr.Spec.NetworkPublishing.Envoy.Type = model.NodePortServicePublishingType
+		cntr.Spec.NetworkPublishing.Envoy.ContainerPorts = []model.ContainerPort{
 			{
 				Name:       "http",
 				PortNumber: objsvc.EnvoyServiceHTTPPort,

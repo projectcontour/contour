@@ -17,10 +17,9 @@ import (
 	"context"
 	"fmt"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	equality "github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -30,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ensureRole(ctx context.Context, cli client.Client, name string, contour *operatorv1alpha1.Contour, desired *rbacv1.Role) (*rbacv1.Role, error) {
+func ensureRole(ctx context.Context, cli client.Client, name string, contour *model.Contour, desired *rbacv1.Role) (*rbacv1.Role, error) {
 	current, err := CurrentRole(ctx, cli, contour.Spec.Namespace.Name, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -51,14 +50,14 @@ func ensureRole(ctx context.Context, cli client.Client, name string, contour *op
 
 // EnsureControllerRole ensures a Role resource exists with the for the Contour
 // controller.
-func EnsureControllerRole(ctx context.Context, cli client.Client, name string, contour *operatorv1alpha1.Contour) (*rbacv1.Role, error) {
+func EnsureControllerRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) (*rbacv1.Role, error) {
 	return ensureRole(ctx, cli, name, contour, desiredControllerRole(name, contour))
 }
 
 // desiredControllerRole constructs an instance of the desired Role resource with the
 // provided ns/name and contour namespace/name for the owning contour labels for
 // the Contour controller.
-func desiredControllerRole(name string, contour *operatorv1alpha1.Contour) *rbacv1.Role {
+func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 	role := &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Role",
@@ -66,7 +65,7 @@ func desiredControllerRole(name string, contour *operatorv1alpha1.Contour) *rbac
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Spec.Namespace.Name,
 			Name:      name,
-			Labels:    objcontour.OwnerLabels(contour),
+			Labels:    model.OwnerLabels(contour),
 		},
 	}
 	verbCGU := []string{"create", "get", "update"}
@@ -87,14 +86,14 @@ func desiredControllerRole(name string, contour *operatorv1alpha1.Contour) *rbac
 
 // EnsureCertgenRole ensures a Role resource exists for the certgen
 // job.
-func EnsureCertgenRole(ctx context.Context, cli client.Client, name string, contour *operatorv1alpha1.Contour) (*rbacv1.Role, error) {
+func EnsureCertgenRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) (*rbacv1.Role, error) {
 	return ensureRole(ctx, cli, name, contour, desiredCertgenRole(name, contour))
 }
 
 // desiredCertgenRole constructs an instance of the desired Role resource with the
 // provided ns/name and contour namespace/name for the owning contour labels for
 // the certgen job.
-func desiredCertgenRole(name string, contour *operatorv1alpha1.Contour) *rbacv1.Role {
+func desiredCertgenRole(name string, contour *model.Contour) *rbacv1.Role {
 	role := &rbacv1.Role{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Role",
@@ -102,7 +101,7 @@ func desiredCertgenRole(name string, contour *operatorv1alpha1.Contour) *rbacv1.
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Spec.Namespace.Name,
 			Name:      name,
-			Labels:    objcontour.OwnerLabels(contour),
+			Labels:    model.OwnerLabels(contour),
 		},
 	}
 	role.Rules = []rbacv1.PolicyRule{
@@ -139,8 +138,8 @@ func createRole(ctx context.Context, cli client.Client, role *rbacv1.Role) (*rba
 
 // updateRoleIfNeeded updates a Role resource if current does not match desired,
 // using contour to verify the existence of owner labels.
-func updateRoleIfNeeded(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, current, desired *rbacv1.Role) (*rbacv1.Role, error) {
-	if labels.Exist(current, objcontour.OwnerLabels(contour)) {
+func updateRoleIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.Role) (*rbacv1.Role, error) {
+	if labels.Exist(current, model.OwnerLabels(contour)) {
 		role, updated := equality.RoleConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, role); err != nil {

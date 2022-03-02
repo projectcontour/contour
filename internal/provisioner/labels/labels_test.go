@@ -16,7 +16,7 @@ package labels
 import (
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 )
 
 func TestExist(t *testing.T) {
@@ -64,7 +64,7 @@ func TestExist(t *testing.T) {
 		},
 	}
 
-	contour := operatorv1alpha1.Contour{}
+	contour := model.Contour{}
 	for _, tc := range testCases {
 		contour.Labels = tc.current
 		result := Exist(&contour, tc.exist)

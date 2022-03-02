@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,13 +95,13 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if errors.IsNotFound(err) {
 			r.log.WithValues("gateway-namespace", req.Namespace, "gateway-name", req.Name).Info("deleting gateway resources")
 
-			contour := &operatorv1alpha1.Contour{
+			contour := &model.Contour{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: req.Namespace,
 					Name:      req.Name,
 				},
-				Spec: operatorv1alpha1.ContourSpec{
-					Namespace: operatorv1alpha1.NamespaceSpec{
+				Spec: model.ContourSpec{
+					Namespace: model.NamespaceSpec{
 						Name:             req.Namespace,
 						RemoveOnDeletion: false,
 					},
@@ -121,20 +121,20 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	r.log.WithValues("gateway-namespace", req.Namespace, "gateway-name", req.Name).Info("ensuring gateway resources")
 
-	gatewayContour := &operatorv1alpha1.Contour{
+	gatewayContour := &model.Contour{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: gateway.Namespace,
 			Name:      gateway.Name,
 		},
-		Spec: operatorv1alpha1.ContourSpec{
+		Spec: model.ContourSpec{
 			Replicas: 2,
-			Namespace: operatorv1alpha1.NamespaceSpec{
+			Namespace: model.NamespaceSpec{
 				Name: gateway.Namespace,
 			},
-			NetworkPublishing: operatorv1alpha1.NetworkPublishing{
-				Envoy: operatorv1alpha1.EnvoyNetworkPublishing{
-					Type: operatorv1alpha1.LoadBalancerServicePublishingType,
-					ContainerPorts: []operatorv1alpha1.ContainerPort{
+			NetworkPublishing: model.NetworkPublishing{
+				Envoy: model.EnvoyNetworkPublishing{
+					Type: model.LoadBalancerServicePublishingType,
+					ContainerPorts: []model.ContainerPort{
 						{
 							Name:       "http",
 							PortNumber: 8080,

@@ -17,8 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -58,14 +57,14 @@ func checkContainerHasImage(t *testing.T, container *corev1.Container, image str
 
 func TestDesiredJob(t *testing.T) {
 	name := "job-test"
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    false,
-		NetworkType: operatorv1alpha1.LoadBalancerServicePublishingType,
+		NetworkType: model.LoadBalancerServicePublishingType,
 	}
-	cntr := objcontour.New(cfg)
+	cntr := model.New(cfg)
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	job := DesiredJob(cntr, testContourImage)
 	container := checkJobHasContainer(t, job, jobContainerName)

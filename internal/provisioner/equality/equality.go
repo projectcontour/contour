@@ -14,7 +14,7 @@
 package equality
 
 import (
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -76,8 +76,8 @@ func JobConfigChanged(current, expected *batchv1.Job) (*batchv1.Job, bool) {
 	// The completions field is immutable, so no need to compare. Ignore job-generated
 	// labels and only check the presence of the contour owning labels.
 	if current.Spec.Template.Labels != nil {
-		_, nameFound := current.Spec.Template.Labels[operatorv1alpha1.OwningContourNameLabel]
-		_, nsFound := current.Spec.Template.Labels[operatorv1alpha1.OwningContourNsLabel]
+		_, nameFound := current.Spec.Template.Labels[model.OwningContourNameLabel]
+		_, nsFound := current.Spec.Template.Labels[model.OwningContourNsLabel]
 		if !nameFound || !nsFound {
 			updated = expected
 			changed = true

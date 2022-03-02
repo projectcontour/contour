@@ -11,14 +11,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
+package model
 
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
-
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
 	// OwningContourNameLabel is the owner reference label used for a Contour
@@ -33,29 +32,67 @@ const (
 	ContourFinalizer = "contour.operator.projectcontour.io/finalizer"
 )
 
-// +kubebuilder:object:root=true
-
-// Contour is the Schema for the contours API.
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Available")].status`
-// +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=`.status.conditions[?(@.type=="Available")].reason`
+// Contour is the representation of an instance of Contour + Envoy.
 type Contour struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the desired state of Contour.
 	Spec ContourSpec `json:"spec,omitempty"`
-	// Status defines the observed state of Contour.
-	Status ContourStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+// IsFinalized returns true if Contour is finalized.
+func (c *Contour) IsFinalized() bool {
+	for _, f := range c.Finalizers {
+		if f == ContourFinalizer {
+			return true
+		}
+	}
+	return false
+}
 
-// ContourList contains a list of Contour.
-type ContourList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Contour `json:"items"`
+// ContourNodeSelectorExists returns true if a nodeSelector is specified for Contour.
+func (c *Contour) ContourNodeSelectorExists() bool {
+	if c.Spec.NodePlacement != nil &&
+		c.Spec.NodePlacement.Contour != nil &&
+		c.Spec.NodePlacement.Contour.NodeSelector != nil {
+		return true
+	}
+
+	return false
+}
+
+// ContourTolerationsExist returns true if tolerations are set for Contour.
+func (c *Contour) ContourTolerationsExist() bool {
+	if c.Spec.NodePlacement != nil &&
+		c.Spec.NodePlacement.Contour != nil &&
+		len(c.Spec.NodePlacement.Contour.Tolerations) > 0 {
+		return true
+	}
+
+	return false
+}
+
+// EnvoyNodeSelectorExists returns true if a nodeSelector is specified for Envoy.
+func (c *Contour) EnvoyNodeSelectorExists() bool {
+	if c.Spec.NodePlacement != nil &&
+		c.Spec.NodePlacement.Envoy != nil &&
+		c.Spec.NodePlacement.Envoy.NodeSelector != nil {
+		return true
+	}
+
+	return false
+}
+
+// EnvoyTolerationsExist returns true if tolerations are set for Envoy.
+func (c *Contour) EnvoyTolerationsExist() bool {
+	if c.Spec.NodePlacement != nil &&
+		c.Spec.NodePlacement.Envoy != nil &&
+		len(c.Spec.NodePlacement.Envoy.Tolerations) > 0 {
+		return true
+	}
+
+	return false
 }
 
 // ContourSpec defines the desired state of Contour.
@@ -583,26 +620,92 @@ const (
 	ContourAvailableConditionType = "Available"
 )
 
-// ContourStatus defines the observed state of Contour.
-type ContourStatus struct {
-	// AvailableContours is the number of observed available replicas
-	// according to the Contour deployment. The deployment and its pods
-	// will reside in the namespace specified by spec.namespace.name of
-	// the contour.
-	AvailableContours int32 `json:"availableContours"`
+// Config is the configuration of a Contour.
+type Config struct {
+	Name                      string
+	Namespace                 string
+	SpecNs                    string
+	RemoveNs                  bool
+	Replicas                  int32
+	NetworkType               NetworkPublishingType
+	NodePorts                 []NodePort
+	GatewayControllerName     *string
+	EnableExternalNameService *bool
+}
 
-	// AvailableEnvoys is the number of observed available pods from
-	// the Envoy daemonset. The daemonset and its pods will reside in the
-	// namespace specified by spec.namespace.name of the contour.
-	AvailableEnvoys int32 `json:"availableEnvoys"`
+// New makes a Contour object using the provided ns/name for the object's
+// namespace/name, pubType for the network publishing type of Envoy, and
+// Envoy container ports 8080/8443.
+func New(cfg Config) *Contour {
+	cntr := &Contour{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: cfg.Namespace,
+			Name:      cfg.Name,
+		},
+		Spec: ContourSpec{
+			Replicas: cfg.Replicas,
+			Namespace: NamespaceSpec{
+				Name:             cfg.SpecNs,
+				RemoveOnDeletion: cfg.RemoveNs,
+			},
+			NetworkPublishing: NetworkPublishing{
+				Envoy: EnvoyNetworkPublishing{
+					Type: cfg.NetworkType,
+					ContainerPorts: []ContainerPort{
+						{
+							Name:       "http",
+							PortNumber: int32(8080),
+						},
+						{
+							Name:       "https",
+							PortNumber: int32(8443),
+						},
+					},
+				},
+			},
+		},
+	}
+	if cfg.NetworkType == NodePortServicePublishingType && len(cfg.NodePorts) > 0 {
+		cntr.Spec.NetworkPublishing.Envoy.NodePorts = cfg.NodePorts
+	}
+	if cfg.GatewayControllerName != nil {
+		cntr.Spec.GatewayControllerName = cfg.GatewayControllerName
+	}
+	if cfg.EnableExternalNameService != nil {
+		cntr.Spec.EnableExternalNameService = cfg.EnableExternalNameService
+	}
+	return cntr
+}
 
-	// Conditions represent the observations of a contour's current state.
-	// Known condition types are "Available". Reference the condition type
-	// for additional details.
-	//
-	// +patchMergeKey=type
-	// +patchStrategy=merge
-	// +listType=map
-	// +listMapKey=type
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
+// OwningSelector returns a label selector using "contour.operator.projectcontour.io/owning-contour-name"
+// and "contour.operator.projectcontour.io/owning-contour-namespace" labels.
+func OwningSelector(contour *Contour) *metav1.LabelSelector {
+	return &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			OwningContourNameLabel: contour.Name,
+			OwningContourNsLabel:   contour.Namespace,
+		},
+	}
+}
+
+// OwnerLabels returns owner labels for the provided contour.
+func OwnerLabels(contour *Contour) map[string]string {
+	return map[string]string{
+		OwningContourNameLabel: contour.Name,
+		OwningContourNsLabel:   contour.Namespace,
+	}
+}
+
+// MakeNodePorts returns a nodeport slice using the ports key as the nodeport name
+// and the ports value as the nodeport number.
+func MakeNodePorts(ports map[string]int) []NodePort {
+	nodePorts := []NodePort{}
+	for k, v := range ports {
+		p := NodePort{
+			Name:       k,
+			PortNumber: pointer.Int32Ptr(int32(v)),
+		}
+		nodePorts = append(nodePorts, p)
+	}
+	return nodePorts
 }

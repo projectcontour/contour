@@ -18,10 +18,9 @@ import (
 	"fmt"
 	"strings"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	objds "github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
 	objdeploy "github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
@@ -102,15 +101,15 @@ var (
 	// details see:
 	//  https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
 	//
-	InternalLBAnnotations = map[operatorv1alpha1.LoadBalancerProviderType]map[string]string{
-		operatorv1alpha1.AWSLoadBalancerProvider: {
+	InternalLBAnnotations = map[model.LoadBalancerProviderType]map[string]string{
+		model.AWSLoadBalancerProvider: {
 			awsInternalLBAnnotation: "true",
 		},
-		operatorv1alpha1.AzureLoadBalancerProvider: {
+		model.AzureLoadBalancerProvider: {
 			// Azure load balancers are not customizable and are set to (2 fail @ 5s interval, 2 healthy)
 			azureInternalLBAnnotation: "true",
 		},
-		operatorv1alpha1.GCPLoadBalancerProvider: {
+		model.GCPLoadBalancerProvider: {
 			gcpLBTypeAnnotation:       "Internal",
 			gcpLBTypeAnnotationLegacy: "Internal",
 		},
@@ -118,7 +117,7 @@ var (
 )
 
 // EnsureContourService ensures that a Contour Service exists for the given contour.
-func EnsureContourService(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
+func EnsureContourService(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	desired := DesiredContourService(contour)
 	current, err := currentContourService(ctx, cli, contour)
 	if err != nil {
@@ -136,7 +135,7 @@ func EnsureContourService(ctx context.Context, cli client.Client, contour *opera
 // EnsureEnvoyService ensures that an Envoy Service exists for the given contour
 // and optional map of service port names to service ports. If the service port
 // map is not provided, http->80 and https->443 are used.
-func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, servicePorts map[string]int32) error {
+func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour, servicePorts map[string]int32) error {
 	desired := DesiredEnvoyService(contour, servicePorts)
 	current, err := currentEnvoyService(ctx, cli, contour)
 	if err != nil {
@@ -153,7 +152,7 @@ func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *operato
 
 // EnsureContourServiceDeleted ensures that a Contour Service for the
 // provided contour is deleted if Contour owner labels exist.
-func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
+func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	svc, err := currentContourService(ctx, cli, contour)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -161,7 +160,7 @@ func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour
 		}
 		return err
 	}
-	if labels.Exist(svc, objcontour.OwnerLabels(contour)) {
+	if labels.Exist(svc, model.OwnerLabels(contour)) {
 		if err := cli.Delete(ctx, svc); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -174,7 +173,7 @@ func EnsureContourServiceDeleted(ctx context.Context, cli client.Client, contour
 
 // EnsureEnvoyServiceDeleted ensures that an Envoy Service for the
 // provided contour is deleted.
-func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
+func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	svc, err := currentEnvoyService(ctx, cli, contour)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -182,7 +181,7 @@ func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *
 		}
 		return err
 	}
-	if labels.Exist(svc, objcontour.OwnerLabels(contour)) {
+	if labels.Exist(svc, model.OwnerLabels(contour)) {
 		if err := cli.Delete(ctx, svc); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -194,13 +193,13 @@ func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *
 }
 
 // DesiredContourService generates the desired Contour Service for the given contour.
-func DesiredContourService(contour *operatorv1alpha1.Contour) *corev1.Service {
+func DesiredContourService(contour *model.Contour) *corev1.Service {
 	xdsPort := objcfg.XDSPort
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Spec.Namespace.Name,
 			Name:      contourSvcName,
-			Labels:    objcontour.OwnerLabels(contour),
+			Labels:    model.OwnerLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -220,7 +219,7 @@ func DesiredContourService(contour *operatorv1alpha1.Contour) *corev1.Service {
 }
 
 // DesiredEnvoyService generates the desired Envoy Service for the given contour.
-func DesiredEnvoyService(contour *operatorv1alpha1.Contour, servicePorts map[string]int32) *corev1.Service {
+func DesiredEnvoyService(contour *model.Contour, servicePorts map[string]int32) *corev1.Service {
 	var ports []corev1.ServicePort
 	var httpFound, httpsFound bool
 
@@ -267,7 +266,7 @@ func DesiredEnvoyService(contour *operatorv1alpha1.Contour, servicePorts map[str
 			Namespace:   contour.Spec.Namespace.Name,
 			Name:        envoySvcName,
 			Annotations: map[string]string{},
-			Labels:      objcontour.OwnerLabels(contour),
+			Labels:      model.OwnerLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:           ports,
@@ -277,8 +276,8 @@ func DesiredEnvoyService(contour *operatorv1alpha1.Contour, servicePorts map[str
 	}
 
 	// Add AWS LB annotations based on the network publishing strategy and provider type.
-	if contour.Spec.NetworkPublishing.Envoy.Type == operatorv1alpha1.LoadBalancerServicePublishingType &&
-		contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.AWSLoadBalancerProvider {
+	if contour.Spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
+		contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AWSLoadBalancerProvider {
 		// Add the TCP backend protocol annotation for AWS classic load balancers.
 		if isELB(&contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters) {
 			svc.Annotations[awsLbBackendProtoAnnotation] = "tcp"
@@ -301,31 +300,31 @@ func DesiredEnvoyService(contour *operatorv1alpha1.Contour, servicePorts map[str
 
 	// Add the Subnet annotation if specified by provider parameters.
 	if subnetNeeded(&contour.Spec) {
-		if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.AzureLoadBalancerProvider {
+		if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider {
 			svc.Annotations[azureLBSubnetAnnotation] = *contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Subnet
-		} else if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.GCPLoadBalancerProvider {
+		} else if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.GCPLoadBalancerProvider {
 			svc.Annotations[gcpLBSubnetAnnotation] = *contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Subnet
 		}
 	}
 
 	// Add LoadBalancerIP parameter if specified by provider parameters.
 	if loadBalancerAddressNeeded(&contour.Spec) {
-		if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.AzureLoadBalancerProvider {
+		if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider {
 			svc.Spec.LoadBalancerIP = *contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Address
-		} else if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.GCPLoadBalancerProvider {
+		} else if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.GCPLoadBalancerProvider {
 			svc.Spec.LoadBalancerIP = *contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Address
 		}
 	}
 
 	epType := contour.Spec.NetworkPublishing.Envoy.Type
-	if epType == operatorv1alpha1.LoadBalancerServicePublishingType ||
-		epType == operatorv1alpha1.NodePortServicePublishingType {
+	if epType == model.LoadBalancerServicePublishingType ||
+		epType == model.NodePortServicePublishingType {
 		svc.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeLocal
 	}
 	switch epType {
-	case operatorv1alpha1.LoadBalancerServicePublishingType:
+	case model.LoadBalancerServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
-		isInternal := contour.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope == operatorv1alpha1.InternalLoadBalancer
+		isInternal := contour.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope == model.InternalLoadBalancer
 		if isInternal {
 			provider := contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type
 			internalAnnotations := InternalLBAnnotations[provider]
@@ -333,7 +332,7 @@ func DesiredEnvoyService(contour *operatorv1alpha1.Contour, servicePorts map[str
 				svc.Annotations[name] = value
 			}
 		}
-	case operatorv1alpha1.NodePortServicePublishingType:
+	case model.NodePortServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeNodePort
 		if len(contour.Spec.NetworkPublishing.Envoy.NodePorts) > 0 {
 			for _, p := range contour.Spec.NetworkPublishing.Envoy.NodePorts {
@@ -346,14 +345,14 @@ func DesiredEnvoyService(contour *operatorv1alpha1.Contour, servicePorts map[str
 				}
 			}
 		}
-	case operatorv1alpha1.ClusterIPServicePublishingType:
+	case model.ClusterIPServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeClusterIP
 	}
 	return svc
 }
 
 // currentContourService returns the current Contour Service for the provided contour.
-func currentContourService(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) (*corev1.Service, error) {
+func currentContourService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: contour.Spec.Namespace.Name,
@@ -367,7 +366,7 @@ func currentContourService(ctx context.Context, cli client.Client, contour *oper
 }
 
 // currentEnvoyService returns the current Envoy Service for the provided contour.
-func currentEnvoyService(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) (*corev1.Service, error) {
+func currentEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: contour.Spec.Namespace.Name,
@@ -389,8 +388,8 @@ func createService(ctx context.Context, cli client.Client, svc *corev1.Service) 
 }
 
 // updateContourServiceIfNeeded updates a Contour Service if current does not match desired.
-func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, current, desired *corev1.Service) error {
-	if labels.Exist(current, objcontour.OwnerLabels(contour)) {
+func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
+	if labels.Exist(current, model.OwnerLabels(contour)) {
 		_, updated := equality.ClusterIPServiceChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, desired); err != nil {
@@ -404,16 +403,16 @@ func updateContourServiceIfNeeded(ctx context.Context, cli client.Client, contou
 
 // updateEnvoyServiceIfNeeded updates an Envoy Service if current does not match desired,
 // using contour to verify the existence of owner labels.
-func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, current, desired *corev1.Service) error {
-	if labels.Exist(current, objcontour.OwnerLabels(contour)) {
+func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.Service) error {
+	if labels.Exist(current, model.OwnerLabels(contour)) {
 		// Using the Service returned by the equality pkg instead of the desired
 		// parameter since clusterIP is immutable.
 		var updated *corev1.Service
 		needed := false
 		switch contour.Spec.NetworkPublishing.Envoy.Type {
-		case operatorv1alpha1.NodePortServicePublishingType:
+		case model.NodePortServicePublishingType:
 			updated, needed = equality.NodePortServiceChanged(current, desired)
-		case operatorv1alpha1.ClusterIPServicePublishingType:
+		case model.ClusterIPServicePublishingType:
 			updated, needed = equality.ClusterIPServiceChanged(current, desired)
 		// Add additional network publishing types as they are introduced.
 		default:
@@ -431,27 +430,27 @@ func updateEnvoyServiceIfNeeded(ctx context.Context, cli client.Client, contour 
 }
 
 // isELB returns true if params is an AWS Classic ELB.
-func isELB(params *operatorv1alpha1.ProviderLoadBalancerParameters) bool {
-	return params.Type == operatorv1alpha1.AWSLoadBalancerProvider &&
-		(params.AWS == nil || params.AWS.Type == operatorv1alpha1.AWSClassicLoadBalancer)
+func isELB(params *model.ProviderLoadBalancerParameters) bool {
+	return params.Type == model.AWSLoadBalancerProvider &&
+		(params.AWS == nil || params.AWS.Type == model.AWSClassicLoadBalancer)
 }
 
 // allocationIDsNeeded returns true if "service.beta.kubernetes.io/aws-load-balancer-eip-allocations"
 // annotation is needed based on the provided spec.
-func allocationIDsNeeded(spec *operatorv1alpha1.ContourSpec) bool {
-	return spec.NetworkPublishing.Envoy.Type == operatorv1alpha1.LoadBalancerServicePublishingType &&
+func allocationIDsNeeded(spec *model.ContourSpec) bool {
+	return spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.Scope == "External" &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.AWSLoadBalancerProvider &&
+		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AWSLoadBalancerProvider &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS != nil &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS.Type == operatorv1alpha1.AWSNetworkLoadBalancer &&
+		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS.Type == model.AWSNetworkLoadBalancer &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS.AllocationIDs != nil
 }
 
 // resourceGroupNeeded returns true if "service.beta.kubernetes.io/azure-load-balancer-resource-group"
 // annotation is needed based on the provided spec.
-func resourceGroupNeeded(spec *operatorv1alpha1.ContourSpec) bool {
-	return spec.NetworkPublishing.Envoy.Type == operatorv1alpha1.LoadBalancerServicePublishingType &&
-		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.AzureLoadBalancerProvider &&
+func resourceGroupNeeded(spec *model.ContourSpec) bool {
+	return spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
+		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure != nil &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.Scope == "External" &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.ResourceGroup != nil
@@ -460,25 +459,25 @@ func resourceGroupNeeded(spec *operatorv1alpha1.ContourSpec) bool {
 // subnetNeeded returns true if "service.beta.kubernetes.io/azure-load-balancer-internal-subnet" or
 // "networking.gke.io/internal-load-balancer-subnet" annotation is needed based
 // on the provided spec.
-func subnetNeeded(spec *operatorv1alpha1.ContourSpec) bool {
-	return spec.NetworkPublishing.Envoy.Type == operatorv1alpha1.LoadBalancerServicePublishingType &&
+func subnetNeeded(spec *model.ContourSpec) bool {
+	return spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
 		spec.NetworkPublishing.Envoy.LoadBalancer.Scope == "Internal" &&
-		((spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.AzureLoadBalancerProvider &&
+		((spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider &&
 			spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure != nil &&
 			spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Subnet != nil) ||
-			(spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.GCPLoadBalancerProvider &&
+			(spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.GCPLoadBalancerProvider &&
 				spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP != nil &&
 				spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Subnet != nil))
 }
 
 // loadBalancerAddressNeeded returns true if LoadBalancerIP parameter of service
 // is needed based on provided spec.
-func loadBalancerAddressNeeded(spec *operatorv1alpha1.ContourSpec) bool {
-	return spec.NetworkPublishing.Envoy.Type == operatorv1alpha1.LoadBalancerServicePublishingType &&
-		((spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.AzureLoadBalancerProvider &&
+func loadBalancerAddressNeeded(spec *model.ContourSpec) bool {
+	return spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType &&
+		((spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider &&
 			spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure != nil &&
 			spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Address != nil) ||
-			(spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.GCPLoadBalancerProvider &&
+			(spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.GCPLoadBalancerProvider &&
 				spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP != nil &&
 				spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Address != nil))
 }

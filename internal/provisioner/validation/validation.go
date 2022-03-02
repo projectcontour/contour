@@ -18,35 +18,27 @@ import (
 	"fmt"
 	"net"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/slice"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Contour returns true if contour is valid.
-func Contour(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
-	// TODO [danehans]: Remove when https://github.com/projectcontour/contour-operator/issues/18 is fixed.
-	exist, err := objcontour.OtherContoursExistInSpecNs(ctx, cli, contour)
-	if err != nil {
-		return fmt.Errorf("failed to verify if other contours exist in namespace %s: %w",
-			contour.Spec.Namespace.Name, err)
-	}
-	if exist {
-		return fmt.Errorf("other contours exist in namespace %s", contour.Spec.Namespace.Name)
-	}
+func Contour(ctx context.Context, cli client.Client, contour *model.Contour) error {
+	// TODO(sk) this used to check for existence of another Contour in the namespace,
+	// we likely want to do the same for Gateways somehow.
 
 	if err := ContainerPorts(contour); err != nil {
 		return err
 	}
 
-	if contour.Spec.NetworkPublishing.Envoy.Type == operatorv1alpha1.NodePortServicePublishingType {
+	if contour.Spec.NetworkPublishing.Envoy.Type == model.NodePortServicePublishingType {
 		if err := NodePorts(contour); err != nil {
 			return err
 		}
 	}
 
-	if contour.Spec.NetworkPublishing.Envoy.Type == operatorv1alpha1.LoadBalancerServicePublishingType {
+	if contour.Spec.NetworkPublishing.Envoy.Type == model.LoadBalancerServicePublishingType {
 		if err := LoadBalancerAddress(contour); err != nil {
 			return err
 		}
@@ -60,7 +52,7 @@ func Contour(ctx context.Context, cli client.Client, contour *operatorv1alpha1.C
 
 // ContainerPorts validates container ports of contour, returning an
 // error if the container ports do not meet the API specification.
-func ContainerPorts(contour *operatorv1alpha1.Contour) error {
+func ContainerPorts(contour *model.Contour) error {
 	var numsFound []int32
 	var namesFound []string
 	httpFound := false
@@ -89,7 +81,7 @@ func ContainerPorts(contour *operatorv1alpha1.Contour) error {
 
 // NodePorts validates nodeports of contour, returning an error if the nodeports
 // do not meet the API specification.
-func NodePorts(contour *operatorv1alpha1.Contour) error {
+func NodePorts(contour *model.Contour) error {
 	ports := contour.Spec.NetworkPublishing.Envoy.NodePorts
 	if ports == nil {
 		// When unspecified, API server will auto-assign port numbers.
@@ -114,15 +106,15 @@ func NodePorts(contour *operatorv1alpha1.Contour) error {
 
 // LoadBalancerAddress validates LoadBalancer "address" parameter of contour, returning an
 // error if "address" does not meet the API specification.
-func LoadBalancerAddress(contour *operatorv1alpha1.Contour) error {
-	if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.AzureLoadBalancerProvider &&
+func LoadBalancerAddress(contour *model.Contour) error {
+	if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.AzureLoadBalancerProvider &&
 		contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure != nil &&
 		contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Address != nil {
 		validationIP := net.ParseIP(*contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Address)
 		if validationIP == nil {
 			return fmt.Errorf("wrong LoadBalancer address format, should be string with IPv4 or IPv6 format")
 		}
-	} else if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == operatorv1alpha1.GCPLoadBalancerProvider &&
+	} else if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type == model.GCPLoadBalancerProvider &&
 		contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP != nil &&
 		contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Address != nil {
 		validationIP := net.ParseIP(*contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Address)
@@ -137,19 +129,19 @@ func LoadBalancerAddress(contour *operatorv1alpha1.Contour) error {
 // LoadBalancerProvider validates LoadBalancer provider parameters of contour, returning
 // and error if parameters for different provider are specified the for the one specified
 // with "type" parameter.
-func LoadBalancerProvider(contour *operatorv1alpha1.Contour) error {
+func LoadBalancerProvider(contour *model.Contour) error {
 	switch contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type {
-	case operatorv1alpha1.AWSLoadBalancerProvider:
+	case model.AWSLoadBalancerProvider:
 		if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure != nil ||
 			contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP != nil {
 			return fmt.Errorf("aws provider chosen, other providers parameters should not be specified")
 		}
-	case operatorv1alpha1.AzureLoadBalancerProvider:
+	case model.AzureLoadBalancerProvider:
 		if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS != nil ||
 			contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP != nil {
 			return fmt.Errorf("azure provider chosen, other providers parameters should not be specified")
 		}
-	case operatorv1alpha1.GCPLoadBalancerProvider:
+	case model.GCPLoadBalancerProvider:
 		if contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS != nil ||
 			contour.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure != nil {
 			return fmt.Errorf("gcp provider chosen, other providers parameters should not be specified")

@@ -17,10 +17,9 @@ import (
 	"context"
 	"fmt"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -33,7 +32,7 @@ import (
 // EnsureClusterRoleBinding ensures a ClusterRoleBinding resource with the provided
 // name exists, using roleRef for the role reference, svcAct for the subject and
 // the contour namespace/name for the owning contour labels.
-func EnsureClusterRoleBinding(ctx context.Context, cli client.Client, name, roleRef, svcAct string, contour *operatorv1alpha1.Contour) error {
+func EnsureClusterRoleBinding(ctx context.Context, cli client.Client, name, roleRef, svcAct string, contour *model.Contour) error {
 	desired := desiredClusterRoleBinding(name, roleRef, svcAct, contour)
 	current, err := CurrentClusterRoleBinding(ctx, cli, name)
 	if err != nil {
@@ -55,14 +54,14 @@ func EnsureClusterRoleBinding(ctx context.Context, cli client.Client, name, role
 // desiredClusterRoleBinding constructs an instance of the desired ClusterRoleBinding
 // resource with the provided name, contour namespace/name for the owning contour
 // labels, roleRef for the role reference, and svcAcctRef for the subject.
-func desiredClusterRoleBinding(name, roleRef, svcAcctRef string, contour *operatorv1alpha1.Contour) *rbacv1.ClusterRoleBinding {
+func desiredClusterRoleBinding(name, roleRef, svcAcctRef string, contour *model.Contour) *rbacv1.ClusterRoleBinding {
 	crb := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "RoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: objcontour.OwnerLabels(contour),
+			Labels: model.OwnerLabels(contour),
 		},
 	}
 	crb.Subjects = []rbacv1.Subject{
@@ -103,8 +102,8 @@ func createClusterRoleBinding(ctx context.Context, cli client.Client, crb *rbacv
 
 // updateClusterRoleBindingIfNeeded updates a ClusterRoleBinding resource if current
 // does not match desired, using contour to verify the existence of owner labels.
-func updateClusterRoleBindingIfNeeded(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, current, desired *rbacv1.ClusterRoleBinding) error {
-	if labels.Exist(current, objcontour.OwnerLabels(contour)) {
+func updateClusterRoleBindingIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.ClusterRoleBinding) error {
+	if labels.Exist(current, model.OwnerLabels(contour)) {
 		crb, updated := equality.ClusterRoleBindingConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, crb); err != nil {

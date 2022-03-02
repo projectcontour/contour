@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/validation"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +32,7 @@ const (
 func TestContainerPorts(t *testing.T) {
 	testCases := []struct {
 		description string
-		ports       []operatorv1alpha1.ContainerPort
+		ports       []model.ContainerPort
 		expected    bool
 	}{
 		{
@@ -41,7 +41,7 @@ func TestContainerPorts(t *testing.T) {
 		},
 		{
 			description: "non-default http and https ports",
-			ports: []operatorv1alpha1.ContainerPort{
+			ports: []model.ContainerPort{
 				{
 					Name:       "http",
 					PortNumber: int32(8081),
@@ -55,7 +55,7 @@ func TestContainerPorts(t *testing.T) {
 		},
 		{
 			description: "duplicate port names",
-			ports: []operatorv1alpha1.ContainerPort{
+			ports: []model.ContainerPort{
 				{
 					Name:       "http",
 					PortNumber: envoyInsecureContainerPort,
@@ -69,7 +69,7 @@ func TestContainerPorts(t *testing.T) {
 		},
 		{
 			description: "duplicate port numbers",
-			ports: []operatorv1alpha1.ContainerPort{
+			ports: []model.ContainerPort{
 				{
 					Name:       "http",
 					PortNumber: envoyInsecureContainerPort,
@@ -83,7 +83,7 @@ func TestContainerPorts(t *testing.T) {
 		},
 		{
 			description: "only http port specified",
-			ports: []operatorv1alpha1.ContainerPort{
+			ports: []model.ContainerPort{
 				{
 					Name:       "http",
 					PortNumber: envoyInsecureContainerPort,
@@ -93,7 +93,7 @@ func TestContainerPorts(t *testing.T) {
 		},
 		{
 			description: "only https port specified",
-			ports: []operatorv1alpha1.ContainerPort{
+			ports: []model.ContainerPort{
 				{
 					Name:       "https",
 					PortNumber: envoySecureContainerPort,
@@ -103,24 +103,24 @@ func TestContainerPorts(t *testing.T) {
 		},
 		{
 			description: "empty ports",
-			ports:       []operatorv1alpha1.ContainerPort{},
+			ports:       []model.ContainerPort{},
 			expected:    false,
 		},
 	}
 
 	name := "test-validation"
-	cntr := &operatorv1alpha1.Contour{
+	cntr := &model.Contour{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: fmt.Sprintf("%s-ns", name),
 		},
-		Spec: operatorv1alpha1.ContourSpec{
-			Namespace: operatorv1alpha1.NamespaceSpec{Name: "projectcontour"},
-			NetworkPublishing: operatorv1alpha1.NetworkPublishing{
-				Envoy: operatorv1alpha1.EnvoyNetworkPublishing{
-					Type: operatorv1alpha1.LoadBalancerServicePublishingType,
-					ContainerPorts: []operatorv1alpha1.ContainerPort{
+		Spec: model.ContourSpec{
+			Namespace: model.NamespaceSpec{Name: "projectcontour"},
+			NetworkPublishing: model.NetworkPublishing{
+				Envoy: model.EnvoyNetworkPublishing{
+					Type: model.LoadBalancerServicePublishingType,
+					ContainerPorts: []model.ContainerPort{
 						{
 							Name:       "http",
 							PortNumber: int32(8080),
@@ -182,22 +182,22 @@ func TestLoadBalancerIP(t *testing.T) {
 	}
 
 	name := "test-validation"
-	cntr := &operatorv1alpha1.Contour{
+	cntr := &model.Contour{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: fmt.Sprintf("%s-ns", name),
 		},
-		Spec: operatorv1alpha1.ContourSpec{
-			Namespace: operatorv1alpha1.NamespaceSpec{Name: "projectcontour"},
-			NetworkPublishing: operatorv1alpha1.NetworkPublishing{
-				Envoy: operatorv1alpha1.EnvoyNetworkPublishing{
-					Type: operatorv1alpha1.LoadBalancerServicePublishingType,
-					LoadBalancer: operatorv1alpha1.LoadBalancerStrategy{
+		Spec: model.ContourSpec{
+			Namespace: model.NamespaceSpec{Name: "projectcontour"},
+			NetworkPublishing: model.NetworkPublishing{
+				Envoy: model.EnvoyNetworkPublishing{
+					Type: model.LoadBalancerServicePublishingType,
+					LoadBalancer: model.LoadBalancerStrategy{
 						Scope: "External",
-						ProviderParameters: operatorv1alpha1.ProviderLoadBalancerParameters{
+						ProviderParameters: model.ProviderLoadBalancerParameters{
 							Type: "GCP",
-							GCP:  &operatorv1alpha1.GCPLoadBalancerParameters{},
+							GCP:  &model.GCPLoadBalancerParameters{},
 						},
 					},
 				},
@@ -223,8 +223,8 @@ func TestLoadBalancerIP(t *testing.T) {
 func TestLoadBalancerProvider(t *testing.T) {
 	testCases := []struct {
 		description        string
-		provider           operatorv1alpha1.LoadBalancerProviderType
-		additionalProvider operatorv1alpha1.LoadBalancerProviderType
+		provider           model.LoadBalancerProviderType
+		additionalProvider model.LoadBalancerProviderType
 		expected           bool
 	}{
 		{
@@ -271,23 +271,23 @@ func TestLoadBalancerProvider(t *testing.T) {
 
 	name := "test-validation"
 	testString := "projectcontour"
-	cntr := &operatorv1alpha1.Contour{
+	cntr := &model.Contour{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: fmt.Sprintf("%s-ns", name),
 		},
-		Spec: operatorv1alpha1.ContourSpec{
-			Namespace: operatorv1alpha1.NamespaceSpec{Name: "projectcontour"},
-			NetworkPublishing: operatorv1alpha1.NetworkPublishing{
-				Envoy: operatorv1alpha1.EnvoyNetworkPublishing{
-					Type: operatorv1alpha1.LoadBalancerServicePublishingType,
-					LoadBalancer: operatorv1alpha1.LoadBalancerStrategy{
+		Spec: model.ContourSpec{
+			Namespace: model.NamespaceSpec{Name: "projectcontour"},
+			NetworkPublishing: model.NetworkPublishing{
+				Envoy: model.EnvoyNetworkPublishing{
+					Type: model.LoadBalancerServicePublishingType,
+					LoadBalancer: model.LoadBalancerStrategy{
 						Scope: "External",
-						ProviderParameters: operatorv1alpha1.ProviderLoadBalancerParameters{
-							AWS:   &operatorv1alpha1.AWSLoadBalancerParameters{},
-							Azure: &operatorv1alpha1.AzureLoadBalancerParameters{},
-							GCP:   &operatorv1alpha1.GCPLoadBalancerParameters{},
+						ProviderParameters: model.ProviderLoadBalancerParameters{
+							AWS:   &model.AWSLoadBalancerParameters{},
+							Azure: &model.AzureLoadBalancerParameters{},
+							GCP:   &model.GCPLoadBalancerParameters{},
 						},
 					},
 				},
@@ -298,7 +298,7 @@ func TestLoadBalancerProvider(t *testing.T) {
 	for _, tc := range testCases {
 		switch tc.provider {
 		case "AWS":
-			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = operatorv1alpha1.AWSLoadBalancerProvider
+			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AWSLoadBalancerProvider
 			switch tc.additionalProvider {
 			case "Azure":
 				cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Azure.Subnet = &testString
@@ -306,7 +306,7 @@ func TestLoadBalancerProvider(t *testing.T) {
 				cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Subnet = &testString
 			}
 		case "Azure":
-			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = operatorv1alpha1.AzureLoadBalancerProvider
+			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AzureLoadBalancerProvider
 			switch tc.additionalProvider {
 			case "AWS":
 				cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS.AllocationIDs = strings.Split(testString, "")
@@ -314,7 +314,7 @@ func TestLoadBalancerProvider(t *testing.T) {
 				cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.GCP.Subnet = &testString
 			}
 		case "GCP":
-			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = operatorv1alpha1.GCPLoadBalancerProvider
+			cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.GCPLoadBalancerProvider
 			switch tc.additionalProvider {
 			case "AWS":
 				cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.AWS.AllocationIDs = strings.Split(testString, "")
@@ -338,7 +338,7 @@ func TestNodePorts(t *testing.T) {
 
 	testCases := []struct {
 		description string
-		ports       []operatorv1alpha1.NodePort
+		ports       []model.NodePort
 		expected    bool
 	}{
 		{
@@ -347,7 +347,7 @@ func TestNodePorts(t *testing.T) {
 		},
 		{
 			description: "user-specified http and https nodeports",
-			ports: []operatorv1alpha1.NodePort{
+			ports: []model.NodePort{
 				{
 					Name:       "http",
 					PortNumber: &httpPort,
@@ -361,7 +361,7 @@ func TestNodePorts(t *testing.T) {
 		},
 		{
 			description: "invalid port name",
-			ports: []operatorv1alpha1.NodePort{
+			ports: []model.NodePort{
 				{
 					Name:       "http",
 					PortNumber: &httpPort,
@@ -375,7 +375,7 @@ func TestNodePorts(t *testing.T) {
 		},
 		{
 			description: "auto-assigned https port number",
-			ports: []operatorv1alpha1.NodePort{
+			ports: []model.NodePort{
 				{
 					Name:       "http",
 					PortNumber: &httpPort,
@@ -388,7 +388,7 @@ func TestNodePorts(t *testing.T) {
 		},
 		{
 			description: "auto-assigned http and https port numbers",
-			ports: []operatorv1alpha1.NodePort{
+			ports: []model.NodePort{
 				{
 					Name: "http",
 				},
@@ -400,7 +400,7 @@ func TestNodePorts(t *testing.T) {
 		},
 		{
 			description: "duplicate nodeport names",
-			ports: []operatorv1alpha1.NodePort{
+			ports: []model.NodePort{
 				{
 					Name:       "http",
 					PortNumber: &httpPort,
@@ -414,7 +414,7 @@ func TestNodePorts(t *testing.T) {
 		},
 		{
 			description: "duplicate nodeport numbers",
-			ports: []operatorv1alpha1.NodePort{
+			ports: []model.NodePort{
 				{
 					Name:       "http",
 					PortNumber: &httpPort,
@@ -429,18 +429,18 @@ func TestNodePorts(t *testing.T) {
 	}
 
 	name := "test-validation"
-	cntr := &operatorv1alpha1.Contour{
+	cntr := &model.Contour{
 		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: fmt.Sprintf("%s-ns", name),
 		},
-		Spec: operatorv1alpha1.ContourSpec{
-			Namespace: operatorv1alpha1.NamespaceSpec{Name: "projectcontour"},
-			NetworkPublishing: operatorv1alpha1.NetworkPublishing{
-				Envoy: operatorv1alpha1.EnvoyNetworkPublishing{
-					Type: operatorv1alpha1.NodePortServicePublishingType,
-					NodePorts: []operatorv1alpha1.NodePort{
+		Spec: model.ContourSpec{
+			Namespace: model.NamespaceSpec{Name: "projectcontour"},
+			NetworkPublishing: model.NetworkPublishing{
+				Envoy: model.EnvoyNetworkPublishing{
+					Type: model.NodePortServicePublishingType,
+					NodePorts: []model.NodePort{
 						{
 							Name:       "http",
 							PortNumber: &httpPort,

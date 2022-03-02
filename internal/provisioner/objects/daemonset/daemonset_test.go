@@ -17,8 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -154,14 +153,14 @@ func checkDaemonSecurityContext(t *testing.T, ds *appsv1.DaemonSet) {
 
 func TestDesiredDaemonSet(t *testing.T) {
 	name := "ds-test"
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    false,
-		NetworkType: operatorv1alpha1.LoadBalancerServicePublishingType,
+		NetworkType: model.LoadBalancerServicePublishingType,
 	}
-	cntr := objcontour.New(cfg)
+	cntr := model.New(cfg)
 	testContourImage := "ghcr.io/projectcontour/contour:test"
 	testEnvoyImage := "docker.io/envoyproxy/envoy:test"
 	ds := DesiredDaemonSet(cntr, testContourImage, testEnvoyImage)
@@ -194,16 +193,16 @@ func TestNodePlacementDaemonSet(t *testing.T) {
 			Effect:   corev1.TaintEffectNoSchedule,
 		},
 	}
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    false,
-		NetworkType: operatorv1alpha1.LoadBalancerServicePublishingType,
+		NetworkType: model.LoadBalancerServicePublishingType,
 	}
-	cntr := objcontour.New(cfg)
-	cntr.Spec.NodePlacement = &operatorv1alpha1.NodePlacement{
-		Envoy: &operatorv1alpha1.EnvoyNodePlacement{
+	cntr := model.New(cfg)
+	cntr.Spec.NodePlacement = &model.NodePlacement{
+		Envoy: &model.EnvoyNodePlacement{
 			NodeSelector: selectors,
 			Tolerations:  tolerations,
 		},

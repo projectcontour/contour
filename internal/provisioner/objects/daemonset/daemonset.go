@@ -18,12 +18,11 @@ import (
 	"fmt"
 	"path/filepath"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
 	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -72,7 +71,7 @@ const (
 )
 
 // EnsureDaemonSet ensures a DaemonSet exists for the given contour.
-func EnsureDaemonSet(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, contourImage, envoyImage string) error {
+func EnsureDaemonSet(ctx context.Context, cli client.Client, contour *model.Contour, contourImage, envoyImage string) error {
 	desired := DesiredDaemonSet(contour, contourImage, envoyImage)
 	current, err := CurrentDaemonSet(ctx, cli, contour)
 	if err != nil {
@@ -93,7 +92,7 @@ func EnsureDaemonSet(ctx context.Context, cli client.Client, contour *operatorv1
 
 // EnsureDaemonSetDeleted ensures the DaemonSet for the provided contour is deleted
 // if Contour owner labels exist.
-func EnsureDaemonSetDeleted(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
+func EnsureDaemonSetDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	ds, err := CurrentDaemonSet(ctx, cli, contour)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -101,7 +100,7 @@ func EnsureDaemonSetDeleted(ctx context.Context, cli client.Client, contour *ope
 		}
 		return err
 	}
-	if labels.Exist(ds, objcontour.OwnerLabels(contour)) {
+	if labels.Exist(ds, model.OwnerLabels(contour)) {
 		if err := cli.Delete(ctx, ds); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -115,7 +114,7 @@ func EnsureDaemonSetDeleted(ctx context.Context, cli client.Client, contour *ope
 // DesiredDaemonSet returns the desired DaemonSet for the provided contour using
 // contourImage as the shutdown-manager/envoy-initconfig container images and
 // envoyImage as Envoy's container image.
-func DesiredDaemonSet(contour *operatorv1alpha1.Contour, contourImage, envoyImage string) *appsv1.DaemonSet {
+func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *appsv1.DaemonSet {
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "contour",
 		"app.kubernetes.io/instance":   contour.Name,
@@ -123,7 +122,7 @@ func DesiredDaemonSet(contour *operatorv1alpha1.Contour, contourImage, envoyImag
 		"app.kubernetes.io/managed-by": "contour-operator",
 	}
 	// Add owner labels
-	for k, v := range objcontour.OwnerLabels(contour) {
+	for k, v := range model.OwnerLabels(contour) {
 		labels[k] = v
 	}
 
@@ -383,7 +382,7 @@ func DesiredDaemonSet(contour *operatorv1alpha1.Contour, contourImage, envoyImag
 }
 
 // CurrentDaemonSet returns the current DaemonSet resource for the provided contour.
-func CurrentDaemonSet(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) (*appsv1.DaemonSet, error) {
+func CurrentDaemonSet(ctx context.Context, cli client.Client, contour *model.Contour) (*appsv1.DaemonSet, error) {
 	ds := &appsv1.DaemonSet{}
 	key := types.NamespacedName{
 		Namespace: contour.Spec.Namespace.Name,
@@ -405,8 +404,8 @@ func createDaemonSet(ctx context.Context, cli client.Client, ds *appsv1.DaemonSe
 
 // updateDaemonSetIfNeeded updates a DaemonSet if current does not match desired,
 // using contour to verify the existence of owner labels.
-func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, current, desired *appsv1.DaemonSet) error {
-	if labels.Exist(current, objcontour.OwnerLabels(contour)) {
+func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.DaemonSet) error {
+	if labels.Exist(current, model.OwnerLabels(contour)) {
 		ds, updated := equality.DaemonsetConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, ds); err != nil {

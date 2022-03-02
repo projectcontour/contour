@@ -17,8 +17,7 @@ import (
 	"fmt"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -46,38 +45,38 @@ func checkRoleLabels(t *testing.T, role *rbacv1.Role, expected map[string]string
 
 func TestDesiredCertgenRole(t *testing.T) {
 	name := "role-test"
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    false,
-		NetworkType: operatorv1alpha1.LoadBalancerServicePublishingType,
+		NetworkType: model.LoadBalancerServicePublishingType,
 	}
-	cntr := objcontour.New(cfg)
+	cntr := model.New(cfg)
 	role := desiredCertgenRole(name, cntr)
 	checkRoleName(t, role, name)
 	ownerLabels := map[string]string{
-		operatorv1alpha1.OwningContourNameLabel: cntr.Name,
-		operatorv1alpha1.OwningContourNsLabel:   cntr.Namespace,
+		model.OwningContourNameLabel: cntr.Name,
+		model.OwningContourNsLabel:   cntr.Namespace,
 	}
 	checkRoleLabels(t, role, ownerLabels)
 }
 
 func TestDesiredControllerRole(t *testing.T) {
 	name := "role-test"
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    false,
-		NetworkType: operatorv1alpha1.LoadBalancerServicePublishingType,
+		NetworkType: model.LoadBalancerServicePublishingType,
 	}
-	cntr := objcontour.New(cfg)
+	cntr := model.New(cfg)
 	role := desiredControllerRole(name, cntr)
 	checkRoleName(t, role, name)
 	ownerLabels := map[string]string{
-		operatorv1alpha1.OwningContourNameLabel: cntr.Name,
-		operatorv1alpha1.OwningContourNsLabel:   cntr.Namespace,
+		model.OwningContourNameLabel: cntr.Name,
+		model.OwningContourNsLabel:   cntr.Namespace,
 	}
 	checkRoleLabels(t, role, ownerLabels)
 }

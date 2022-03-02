@@ -17,10 +17,9 @@ import (
 	"context"
 	"fmt"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	utilequality "github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -32,7 +31,7 @@ import (
 
 // EnsureServiceAccount ensures a ServiceAccount resource exists with the provided name
 // and contour namespace/name for the owning contour labels.
-func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, contour *operatorv1alpha1.Contour) (*corev1.ServiceAccount, error) {
+func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, contour *model.Contour) (*corev1.ServiceAccount, error) {
 	desired := DesiredServiceAccount(name, contour)
 	current, err := CurrentServiceAccount(ctx, cli, contour.Spec.Namespace.Name, name)
 	if err != nil {
@@ -54,7 +53,7 @@ func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, c
 
 // DesiredServiceAccount generates the desired ServiceAccount resource for the
 // given contour.
-func DesiredServiceAccount(name string, contour *operatorv1alpha1.Contour) *corev1.ServiceAccount {
+func DesiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			Kind: rbacv1.ServiceAccountKind,
@@ -62,7 +61,7 @@ func DesiredServiceAccount(name string, contour *operatorv1alpha1.Contour) *core
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Spec.Namespace.Name,
 			Name:      name,
-			Labels:    objcontour.OwnerLabels(contour),
+			Labels:    model.OwnerLabels(contour),
 		},
 	}
 }
@@ -91,8 +90,8 @@ func createServiceAccount(ctx context.Context, cli client.Client, sa *corev1.Ser
 
 // updateSvcAcctIfNeeded updates a ServiceAccount resource if current does not match desired,
 // using contour to verify the existence of owner labels.
-func updateSvcAcctIfNeeded(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, current, desired *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-	if labels.Exist(current, objcontour.OwnerLabels(contour)) {
+func updateSvcAcctIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+	if labels.Exist(current, model.OwnerLabels(contour)) {
 		sa, updated := utilequality.ServiceAccountConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, sa); err != nil {

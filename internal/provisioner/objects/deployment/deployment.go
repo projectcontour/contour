@@ -18,13 +18,12 @@ import (
 	"fmt"
 	"path/filepath"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
 	objcm "github.com/projectcontour/contour/internal/provisioner/objects/configmap"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
 	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -67,7 +66,7 @@ const (
 )
 
 // EnsureDeployment ensures a deployment using image exists for the given contour.
-func EnsureDeployment(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, image string) error {
+func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
 	desired := DesiredDeployment(contour, image)
 	current, err := CurrentDeployment(ctx, cli, contour)
 	if err != nil {
@@ -90,7 +89,7 @@ func EnsureDeployment(ctx context.Context, cli client.Client, contour *operatorv
 
 // EnsureDeploymentDeleted ensures the deployment for the provided contour
 // is deleted if Contour owner labels exist.
-func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
+func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	deploy, err := CurrentDeployment(ctx, cli, contour)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -99,7 +98,7 @@ func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *op
 		return err
 	}
 
-	if labels.Exist(deploy, objcontour.OwnerLabels(contour)) {
+	if labels.Exist(deploy, model.OwnerLabels(contour)) {
 		if err := cli.Delete(ctx, deploy); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -112,7 +111,7 @@ func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *op
 
 // DesiredDeployment returns the desired deployment for the provided contour using
 // image as Contour's container image.
-func DesiredDeployment(contour *operatorv1alpha1.Contour, image string) *appsv1.Deployment {
+func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment {
 	xdsPort := objcfg.XDSPort
 	args := []string{
 		"serve",
@@ -323,7 +322,7 @@ func DesiredDeployment(contour *operatorv1alpha1.Contour, image string) *appsv1.
 }
 
 // CurrentDeployment returns the Deployment resource for the provided contour.
-func CurrentDeployment(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) (*appsv1.Deployment, error) {
+func CurrentDeployment(ctx context.Context, cli client.Client, contour *model.Contour) (*appsv1.Deployment, error) {
 	deploy := &appsv1.Deployment{}
 	key := types.NamespacedName{
 		Namespace: contour.Spec.Namespace.Name,
@@ -345,8 +344,8 @@ func createDeployment(ctx context.Context, cli client.Client, deploy *appsv1.Dep
 
 // updateDeploymentIfNeeded updates a Deployment if current does not match desired,
 // using contour to verify the existence of owner labels.
-func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, current, desired *appsv1.Deployment) error {
-	if labels.Exist(current, objcontour.OwnerLabels(contour)) {
+func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *appsv1.Deployment) error {
+	if labels.Exist(current, model.OwnerLabels(contour)) {
 		deploy, updated := equality.DeploymentConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, deploy); err != nil {
@@ -358,7 +357,7 @@ func updateDeploymentIfNeeded(ctx context.Context, cli client.Client, contour *o
 }
 
 // makeDeploymentLabels returns labels for a Contour deployment.
-func makeDeploymentLabels(contour *operatorv1alpha1.Contour) map[string]string {
+func makeDeploymentLabels(contour *model.Contour) map[string]string {
 	labels := map[string]string{
 		"app.kubernetes.io/name":       "contour",
 		"app.kubernetes.io/instance":   contour.Name,
@@ -367,7 +366,7 @@ func makeDeploymentLabels(contour *operatorv1alpha1.Contour) map[string]string {
 	}
 
 	// Add owner labels
-	for k, v := range objcontour.OwnerLabels(contour) {
+	for k, v := range model.OwnerLabels(contour) {
 		labels[k] = v
 	}
 

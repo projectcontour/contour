@@ -17,11 +17,10 @@ import (
 	"context"
 	"fmt"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	objcr "github.com/projectcontour/contour/internal/provisioner/objects/clusterrole"
 	objcrb "github.com/projectcontour/contour/internal/provisioner/objects/clusterrolebinding"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
 	objrole "github.com/projectcontour/contour/internal/provisioner/objects/role"
 	objrb "github.com/projectcontour/contour/internal/provisioner/objects/rolebinding"
 	objsa "github.com/projectcontour/contour/internal/provisioner/objects/serviceaccount"
@@ -47,7 +46,7 @@ const (
 
 // EnsureRBAC ensures all the necessary RBAC resources exist for the
 // provided contour.
-func EnsureRBAC(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
+func EnsureRBAC(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	ns := contour.Spec.Namespace.Name
 	names := []string{ContourRbacName, EnvoyRbacName, CertGenRbacName}
 	for _, name := range names {
@@ -85,16 +84,16 @@ func EnsureRBAC(ctx context.Context, cli client.Client, contour *operatorv1alpha
 
 // EnsureRBACDeleted ensures all the necessary RBAC resources for the provided
 // contour are deleted if Contour owner labels exist.
-func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour) error {
+func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	var errs []error
 	ns := contour.Spec.Namespace.Name
 	objectsToDelete := []client.Object{}
-	contoursExist, err := objcontour.OtherContoursExistInSpecNs(ctx, cli, contour)
-	if err != nil {
-		return fmt.Errorf("failed to verify if contours contoursExist in namespace %s: %w",
-			contour.Spec.Namespace.Name, err)
-	}
-	if !contoursExist {
+
+	// TODO(sk) right now we can't support running more than one Contour instance
+	// per namespace, so just assume there's only one.
+	otherContoursExistInSpecNs := false
+
+	if !otherContoursExistInSpecNs {
 		controllerRoleBind, err := objrb.CurrentRoleBinding(ctx, cli, ns, ContourRoleBindingName)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
@@ -134,34 +133,30 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *operator
 			}
 		}
 	}
-	contoursExist, _, err = objcontour.OtherContoursExist(ctx, cli, contour)
-	if err != nil {
-		return fmt.Errorf("failed to verify if contours exist in any namespace: %w", err)
+
+	// ClusterRole and ClusterRoleBinding resources are namespace-named to allow ownership
+	// from individual instances of Contour.
+	nsName := fmt.Sprintf("%s-%s", ContourRbacName, contour.Spec.Namespace.Name)
+	crb, err := objcrb.CurrentClusterRoleBinding(ctx, cli, nsName)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
 	}
-	if !contoursExist {
-		// ClusterRole and ClusterRoleBinding resources are namespace-named to allow ownership
-		// from individual instances of Contour.
-		nsName := fmt.Sprintf("%s-%s", ContourRbacName, contour.Spec.Namespace.Name)
-		crb, err := objcrb.CurrentClusterRoleBinding(ctx, cli, nsName)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-		if crb != nil {
-			objectsToDelete = append(objectsToDelete, crb)
-		}
-		cr, err := objcr.CurrentClusterRole(ctx, cli, nsName)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-		if cr != nil {
-			objectsToDelete = append(objectsToDelete, cr)
-		}
+	if crb != nil {
+		objectsToDelete = append(objectsToDelete, crb)
 	}
+	cr, err := objcr.CurrentClusterRole(ctx, cli, nsName)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+	if cr != nil {
+		objectsToDelete = append(objectsToDelete, cr)
+	}
+
 	for _, object := range objectsToDelete {
 		kind := object.GetObjectKind().GroupVersionKind().Kind
 		namespace := object.(metav1.Object).GetNamespace()
 		name := object.(metav1.Object).GetName()
-		if labels.Exist(object, objcontour.OwnerLabels(contour)) {
+		if labels.Exist(object, model.OwnerLabels(contour)) {
 			if err := cli.Delete(ctx, object); err != nil {
 				if errors.IsNotFound(err) {
 					continue

@@ -18,8 +18,7 @@ import (
 	"sort"
 	"testing"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
 
 	corev1 "k8s.io/api/core/v1"
@@ -135,14 +134,14 @@ func checkServiceHasLoadBalancerAddress(t *testing.T, svc *corev1.Service, addre
 
 func TestDesiredContourService(t *testing.T) {
 	name := "svc-test"
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    false,
-		NetworkType: operatorv1alpha1.LoadBalancerServicePublishingType,
+		NetworkType: model.LoadBalancerServicePublishingType,
 	}
-	cntr := objcontour.New(cfg)
+	cntr := model.New(cfg)
 	svc := DesiredContourService(cntr)
 	xdsPort := objcfg.XDSPort
 	checkServiceHasPort(t, svc, xdsPort)
@@ -157,15 +156,15 @@ func TestDesiredEnvoyService(t *testing.T) {
 	allocationIDs := []string{"eipalloc-0123456789", "eipalloc-1234567890"}
 	resourceGroup := "contour-rg-test"
 	subnet := "contour-subnet-test"
-	cfg := objcontour.Config{
+	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
 		SpecNs:      "projectcontour",
 		RemoveNs:    false,
-		NetworkType: operatorv1alpha1.NodePortServicePublishingType,
-		NodePorts:   objcontour.MakeNodePorts(map[string]int{"http": 30081, "https": 30444}),
+		NetworkType: model.NodePortServicePublishingType,
+		NodePorts:   model.MakeNodePorts(map[string]int{"http": 30081, "https": 30444}),
 	}
-	cntr := objcontour.New(cfg)
+	cntr := model.New(cfg)
 	svc := DesiredEnvoyService(cntr, nil)
 	checkServiceHasType(t, svc, corev1.ServiceTypeNodePort)
 	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeLocal)
@@ -182,27 +181,27 @@ func TestDesiredEnvoyService(t *testing.T) {
 
 	// Check LB annotations for the different provider types, starting with AWS ELB (the default
 	// if AWS provider params are not passed).
-	cntr.Spec.NetworkPublishing.Envoy.Type = operatorv1alpha1.LoadBalancerServicePublishingType
-	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = operatorv1alpha1.ExternalLoadBalancer
-	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = operatorv1alpha1.AWSLoadBalancerProvider
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.LoadBalancerServicePublishingType
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.ExternalLoadBalancer
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters.Type = model.AWSLoadBalancerProvider
 	svc = DesiredEnvoyService(cntr, nil)
 	checkServiceHasType(t, svc, corev1.ServiceTypeLoadBalancer)
 	checkServiceHasExternalTrafficPolicy(t, svc, corev1.ServiceExternalTrafficPolicyTypeLocal)
 	checkServiceHasAnnotations(t, svc, awsLbBackendProtoAnnotation, awsLBProxyProtocolAnnotation)
 
 	// Test proxy protocol for AWS Classic load balancer (when provider params are specified).
-	elbParams := operatorv1alpha1.ProviderLoadBalancerParameters{
-		Type: operatorv1alpha1.AWSLoadBalancerProvider,
-		AWS:  &operatorv1alpha1.AWSLoadBalancerParameters{Type: operatorv1alpha1.AWSClassicLoadBalancer},
+	elbParams := model.ProviderLoadBalancerParameters{
+		Type: model.AWSLoadBalancerProvider,
+		AWS:  &model.AWSLoadBalancerParameters{Type: model.AWSClassicLoadBalancer},
 	}
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters = elbParams
 	svc = DesiredEnvoyService(cntr, nil)
 	checkServiceHasAnnotations(t, svc, awsLbBackendProtoAnnotation, awsLBProxyProtocolAnnotation)
 
 	// Check AWS NLB load balancer type.
-	nlbParams := operatorv1alpha1.ProviderLoadBalancerParameters{
-		Type: operatorv1alpha1.AWSLoadBalancerProvider,
-		AWS:  &operatorv1alpha1.AWSLoadBalancerParameters{Type: operatorv1alpha1.AWSNetworkLoadBalancer, AllocationIDs: allocationIDs},
+	nlbParams := model.ProviderLoadBalancerParameters{
+		Type: model.AWSLoadBalancerProvider,
+		AWS:  &model.AWSLoadBalancerParameters{Type: model.AWSNetworkLoadBalancer, AllocationIDs: allocationIDs},
 	}
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters = nlbParams
 	svc = DesiredEnvoyService(cntr, nil)
@@ -210,9 +209,9 @@ func TestDesiredEnvoyService(t *testing.T) {
 	checkServiceHasAnnotations(t, svc, awsLBTypeAnnotation, awsLBAllocationIDsAnnotation)
 
 	// Check Azure external load balancer type.
-	azureParams := operatorv1alpha1.ProviderLoadBalancerParameters{
-		Type:  operatorv1alpha1.AzureLoadBalancerProvider,
-		Azure: &operatorv1alpha1.AzureLoadBalancerParameters{Address: &loadBalancerAddress, ResourceGroup: &resourceGroup},
+	azureParams := model.ProviderLoadBalancerParameters{
+		Type:  model.AzureLoadBalancerProvider,
+		Azure: &model.AzureLoadBalancerParameters{Address: &loadBalancerAddress, ResourceGroup: &resourceGroup},
 	}
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters = azureParams
 	svc = DesiredEnvoyService(cntr, nil)
@@ -220,24 +219,24 @@ func TestDesiredEnvoyService(t *testing.T) {
 	checkServiceHasAnnotations(t, svc, azureLBResourceGroupAnnotation)
 
 	// Check GCP external load balancer type.
-	gcpParams := operatorv1alpha1.ProviderLoadBalancerParameters{
-		Type: operatorv1alpha1.GCPLoadBalancerProvider,
-		GCP:  &operatorv1alpha1.GCPLoadBalancerParameters{Address: &loadBalancerAddress},
+	gcpParams := model.ProviderLoadBalancerParameters{
+		Type: model.GCPLoadBalancerProvider,
+		GCP:  &model.GCPLoadBalancerParameters{Address: &loadBalancerAddress},
 	}
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters = gcpParams
 	svc = DesiredEnvoyService(cntr, nil)
 	checkServiceHasLoadBalancerAddress(t, svc, loadBalancerAddress)
 
 	// Test an internal ELB
-	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = operatorv1alpha1.InternalLoadBalancer
+	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.Scope = model.InternalLoadBalancer
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters = elbParams
 	svc = DesiredEnvoyService(cntr, nil)
 	checkServiceHasAnnotations(t, svc, awsInternalLBAnnotation, awsLbBackendProtoAnnotation, awsLBProxyProtocolAnnotation)
 
 	// Test an internal Azure LB.
-	azureParamsInternal := operatorv1alpha1.ProviderLoadBalancerParameters{
-		Type:  operatorv1alpha1.AzureLoadBalancerProvider,
-		Azure: &operatorv1alpha1.AzureLoadBalancerParameters{Address: &loadBalancerAddress, Subnet: &subnet},
+	azureParamsInternal := model.ProviderLoadBalancerParameters{
+		Type:  model.AzureLoadBalancerProvider,
+		Azure: &model.AzureLoadBalancerParameters{Address: &loadBalancerAddress, Subnet: &subnet},
 	}
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters = azureParamsInternal
 	svc = DesiredEnvoyService(cntr, nil)
@@ -245,9 +244,9 @@ func TestDesiredEnvoyService(t *testing.T) {
 	checkServiceHasAnnotations(t, svc, azureInternalLBAnnotation, azureLBSubnetAnnotation)
 
 	// Test an internal GCP LB.
-	gcpParamsInternal := operatorv1alpha1.ProviderLoadBalancerParameters{
-		Type: operatorv1alpha1.GCPLoadBalancerProvider,
-		GCP:  &operatorv1alpha1.GCPLoadBalancerParameters{Address: &loadBalancerAddress, Subnet: &subnet},
+	gcpParamsInternal := model.ProviderLoadBalancerParameters{
+		Type: model.GCPLoadBalancerProvider,
+		GCP:  &model.GCPLoadBalancerParameters{Address: &loadBalancerAddress, Subnet: &subnet},
 	}
 	cntr.Spec.NetworkPublishing.Envoy.LoadBalancer.ProviderParameters = gcpParamsInternal
 	svc = DesiredEnvoyService(cntr, nil)
@@ -255,7 +254,7 @@ func TestDesiredEnvoyService(t *testing.T) {
 	checkServiceHasAnnotations(t, svc, gcpLBTypeAnnotation, gcpLBTypeAnnotationLegacy, gcpLBSubnetAnnotation)
 
 	// Set network publishing type to ClusterIPService and verify the service type is as expected.
-	cntr.Spec.NetworkPublishing.Envoy.Type = operatorv1alpha1.ClusterIPServicePublishingType
+	cntr.Spec.NetworkPublishing.Envoy.Type = model.ClusterIPServicePublishingType
 	svc = DesiredEnvoyService(cntr, nil)
 	checkServiceHasType(t, svc, corev1.ServiceTypeClusterIP)
 	checkServiceHasAnnotations(t, svc) // passing no keys means we expect no annotations

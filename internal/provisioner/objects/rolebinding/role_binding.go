@@ -17,10 +17,9 @@ import (
 	"context"
 	"fmt"
 
-	operatorv1alpha1 "github.com/projectcontour/contour/internal/provisioner/api"
 	equality "github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
-	objcontour "github.com/projectcontour/contour/internal/provisioner/objects/contour"
+	"github.com/projectcontour/contour/internal/provisioner/model"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -33,7 +32,7 @@ import (
 // EnsureRoleBinding ensures a RoleBinding resource exists with the provided
 // ns/name and contour namespace/name for the owning contour labels.
 // The RoleBinding will use svcAct for the subject and role for the role reference.
-func EnsureRoleBinding(ctx context.Context, cli client.Client, name, svcAct, role string, contour *operatorv1alpha1.Contour) error {
+func EnsureRoleBinding(ctx context.Context, cli client.Client, name, svcAct, role string, contour *model.Contour) error {
 	desired := desiredRoleBinding(name, svcAct, role, contour)
 	current, err := CurrentRoleBinding(ctx, cli, contour.Spec.Namespace.Name, name)
 	if err != nil {
@@ -57,7 +56,7 @@ func EnsureRoleBinding(ctx context.Context, cli client.Client, name, svcAct, rol
 // with the provided name in Contour spec Namespace, using contour namespace/name
 // for the owning contour labels. The RoleBinding will use svcAct for the subject
 // and role for the role reference.
-func desiredRoleBinding(name, svcAcctRef, roleRef string, contour *operatorv1alpha1.Contour) *rbacv1.RoleBinding {
+func desiredRoleBinding(name, svcAcctRef, roleRef string, contour *model.Contour) *rbacv1.RoleBinding {
 	rb := &rbacv1.RoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "RoleBinding",
@@ -65,7 +64,7 @@ func desiredRoleBinding(name, svcAcctRef, roleRef string, contour *operatorv1alp
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Spec.Namespace.Name,
 			Name:      name,
-			Labels:    objcontour.OwnerLabels(contour),
+			Labels:    model.OwnerLabels(contour),
 		},
 	}
 	rb.Subjects = []rbacv1.Subject{{
@@ -107,8 +106,8 @@ func createRoleBinding(ctx context.Context, cli client.Client, rb *rbacv1.RoleBi
 
 // updateRoleBindingIfNeeded updates a RoleBinding resource if current does
 // not match desired.
-func updateRoleBindingIfNeeded(ctx context.Context, cli client.Client, contour *operatorv1alpha1.Contour, current, desired *rbacv1.RoleBinding) error {
-	if labels.Exist(current, objcontour.OwnerLabels(contour)) {
+func updateRoleBindingIfNeeded(ctx context.Context, cli client.Client, contour *model.Contour, current, desired *rbacv1.RoleBinding) error {
+	if labels.Exist(current, model.OwnerLabels(contour)) {
 		rb, updated := equality.RoleBindingConfigChanged(current, desired)
 		if updated {
 			if err := cli.Update(ctx, rb); err != nil {
