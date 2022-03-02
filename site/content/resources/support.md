@@ -20,11 +20,11 @@ They are our best guess as to when each version will be released.
 
 | Version |v1.19 |v1.20|v1.21|v1.22|v1.23|
 |---------|--------|-------|-------|-------|-------|
-|Q3 2021 | :heavy_check_mark: |
-|Q4 2021 | :negative_squared_cross_mark: | :heavy_check_mark: |
-|Q1 2022 | :negative_squared_cross_mark: | :heavy_check_mark: |:heavy_check_mark: |
-|Q2 2022 | :negative_squared_cross_mark: | :heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |
-|Q3 2022 | :negative_squared_cross_mark: | :negative_squared_cross_mark: |:heavy_check_mark: |:heavy_check_mark: | :heavy_check_mark: |
+|Q3 2021 | ✅ |
+|Q4 2021 | ❌ | ✅ |
+|Q1 2022 | ❌ | ✅ |✅ |
+|Q2 2022 | ❌ | ✅ |✅ |✅ |
+|Q3 2022 | ❌ | ❌ |✅ |❌ | ✅ |
 
 ## What does a release being "supported" mean?
 
