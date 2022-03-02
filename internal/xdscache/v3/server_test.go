@@ -25,6 +25,7 @@ import (
 	envoy_service_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
+	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	resource "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/projectcontour/contour/internal/contour"
@@ -184,6 +185,16 @@ func TestGRPC(t *testing.T) {
 			checkrecv(t, stream)                    // check we receive one notification
 			checktimeout(t, stream)                 // check that the second receive times out
 		},
+		"StreamRuntime": func(t *testing.T, cc *grpc.ClientConn) {
+			rtds := envoy_service_runtime_v3.NewRuntimeDiscoveryServiceClient(cc)
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+			stream, err := rtds.StreamRuntime(ctx)
+			require.NoError(t, err)
+			sendreq(t, stream, resource.RuntimeType) // send initial notification
+			checkrecv(t, stream)                     // check we receive one notification
+			checktimeout(t, stream)                  // check that the second receive times out
+		},
 	}
 
 	log := logrus.New()
@@ -198,6 +209,7 @@ func TestGRPC(t *testing.T) {
 				&RouteCache{},
 				&ClusterCache{},
 				et,
+				&RuntimeCache{},
 			}
 
 			eh = contour.NewEventHandler(contour.EventHandlerConfig{

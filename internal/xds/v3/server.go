@@ -19,6 +19,7 @@ import (
 	envoy_service_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
+	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"google.golang.org/grpc"
 )
@@ -31,6 +32,7 @@ type Server interface {
 	envoy_service_route_v3.RouteDiscoveryServiceServer
 	envoy_service_discovery_v3.AggregatedDiscoveryServiceServer
 	envoy_service_secret_v3.SecretDiscoveryServiceServer
+	envoy_service_runtime_v3.RuntimeDiscoveryServiceServer
 }
 
 // RegisterServer registers the given xDS protocol Server with the gRPC
@@ -43,4 +45,5 @@ func RegisterServer(srv Server, g *grpc.Server) {
 	envoy_service_endpoint_v3.RegisterEndpointDiscoveryServiceServer(g, srv)
 	envoy_service_listener_v3.RegisterListenerDiscoveryServiceServer(g, srv)
 	envoy_service_route_v3.RegisterRouteDiscoveryServiceServer(g, srv)
+	envoy_service_runtime_v3.RegisterRuntimeDiscoveryServiceServer(g, srv)
 }

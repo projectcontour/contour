@@ -23,6 +23,7 @@ import (
 	envoy_service_endpoint_v3 "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
+	envoy_service_runtime_v3 "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
@@ -63,6 +64,7 @@ type contourServer struct {
 	envoy_service_endpoint_v3.UnimplementedEndpointDiscoveryServiceServer
 	envoy_service_cluster_v3.UnimplementedClusterDiscoveryServiceServer
 	envoy_service_listener_v3.UnimplementedListenerDiscoveryServiceServer
+	envoy_service_runtime_v3.UnimplementedRuntimeDiscoveryServiceServer
 
 	logrus.FieldLogger
 	resources   map[string]xds.Resource
@@ -175,5 +177,9 @@ func (s *contourServer) StreamRoutes(srv envoy_service_route_v3.RouteDiscoverySe
 }
 
 func (s *contourServer) StreamSecrets(srv envoy_service_secret_v3.SecretDiscoveryService_StreamSecretsServer) error {
+	return s.stream(srv)
+}
+
+func (s *contourServer) StreamRuntime(srv envoy_service_runtime_v3.RuntimeDiscoveryService_StreamRuntimeServer) error {
 	return s.stream(srv)
 }
