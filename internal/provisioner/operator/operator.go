@@ -19,7 +19,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/projectcontour/contour/internal/provisioner/controller"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/rest"
 	controller_runtime "sigs.k8s.io/controller-runtime"
@@ -66,20 +65,14 @@ type Operator struct {
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;delete;create;update
-// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list
 
 // New creates a new operator from cliCfg and operatorConfig.
 func New(restConfig *rest.Config, operatorConfig *Config) (*Operator, error) {
-	nonCached := []client.Object{
-		&apiextensionsv1.CustomResourceDefinition{},
-	}
-
 	mgr, err := controller_runtime.NewManager(restConfig, manager.Options{
-		Scheme:                GetOperatorScheme(),
-		LeaderElection:        operatorConfig.LeaderElection,
-		LeaderElectionID:      operatorConfig.LeaderElectionID,
-		MetricsBindAddress:    operatorConfig.MetricsBindAddress,
-		ClientDisableCacheFor: nonCached,
+		Scheme:             GetOperatorScheme(),
+		LeaderElection:     operatorConfig.LeaderElection,
+		LeaderElectionID:   operatorConfig.LeaderElectionID,
+		MetricsBindAddress: operatorConfig.MetricsBindAddress,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)
