@@ -61,7 +61,7 @@ More often than not, the discussion sparked by the desire to change a particular
 ### Limited feature scope
 
 The Contour project has a well defined scope: a reverse proxy implementation for HTTP workloads on Kubernetes clusters.
-Contour’s limited support for TCP proxying is intended solely for Contour to to support web applications which desire to handle TLS directly.
+Contour’s limited support for TCP proxying is intended solely for Contour to support web applications which desire to handle TLS directly.
 
 ### Every feature is supportable by the application developer or cluster administrator
 
@@ -88,6 +88,10 @@ By closely tracking the Ingress and Gateway API specifications we actively contr
 ## Our pledge to our users
 
 We promise that:
-- We will treat all your interactions with us in accordance with our Code of Conduct.
+- We will treat all your interactions with us in accordance with our [Code of Conduct][1].
 - We will consider each request on its merits.
 - In the event that we cannot accommodate a request, we will provide a reasonable explanation, with reference to the principles embodied in this document.
+  
+
+[1]: https://github.com/projectcontour/contour/blob/main/CODE_OF_CONDUCT.md
+

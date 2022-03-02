@@ -56,9 +56,9 @@ site
 
 Usage of links within a page has been standardized to simplify the process of finding and fixing links as required.
 
-Avoid using inline links, instead, use a reference table the bottom of the file; making it easier to find and update links. [Reference Links][3]. There are some exceptions to this rule, such as deprecation warnings.
+Avoid using inline links, instead, use a reference table at the bottom of the file; making it easier to find and update links. [Reference Links][3]. There are some exceptions to this rule, such as deprecation warnings.
 
-There are several conditions which will determine to correct type of link templating to use.
+There are several conditions which will determine the correct type of link templating to use.
 
 **Linking to a blog post:**
 

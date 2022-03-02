@@ -95,7 +95,7 @@ We maintain a CI pipeline that runs golangci-lint including the usual set of Go 
 ## Conclusion
 
 The Contour team works hard to understand the project's security context and keep up with the state of the art for Kubernetes security.
-The team hopes that this examination of our security model provides some insight into both how we develop Contour and what adminsitrators should be thinking about to run Contour in as secure way as possible.
+The team hopes that this examination of our security model provides some insight into both how we develop Contour and what administrators should be thinking about to run Contour in as secure way as possible.
 We aim for secure-by-default as far as possible, and where we do have to allow risks, will document them here.
 
 [1]: /resources/security-process

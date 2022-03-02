@@ -40,9 +40,9 @@ When you are ready to take on an issue, see [Website Contribution Guidelines][5]
 - Testing
 - Setting up your environment  
 
-# Getting Started with Documentation  
+# Getting Started with Documentation
 
-Documentation is critical to the success of any project. Open to all levels, Contour needs help to create and update its documentation. Join an [office hours][9] meeting and learn more about the Tech Docs Working Group.  
+Documentation is critical to the success of any project. Open to all levels, Contour needs help to create and update its documentation. Join the [Contour Community Meetings][8] meeting and learn more about the Tech Docs Working Group.  
 
 Review the [Contour Technical Documentation Contributing Guide][6] for instructions to set up your environment.  
 
@@ -73,25 +73,16 @@ To find out more about contributing to Contour, connect with us at a Contour Com
 
 ## Contour Community meetings  
 
-Discuss issues, features, or suggestions with the Contour team and other community members.  
-
-See the [Community][8] page for:
-- Meeting schedule
-- Meeting notes with zoom link
-- Meeting recordings  
-
-## Contour Office Hours meetings  
-
-Ask anything during office hours and find out more about Contour. 
+Discuss issues, features, or suggestions with the Contour team and other community members.  Ask anything and find out more about Contour. 
 
 Ask questions:
 - “How do I do this in Contour?”
 - “Why does Contour do this thing this way?”
 - “Where can I find…?”  
 
-See the [Office Hours][9] page for:
+See the [Community][8] page for:
 - Meeting schedule
-- Meeting link
+- Meeting notes with zoom link
 - Meeting recordings  
 
 ## Mailing list  
