@@ -128,7 +128,6 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 	}
 	spec := corev1.PodSpec{
 		Containers:                    []corev1.Container{container},
-		DeprecatedServiceAccount:      objutil.CertGenRbacName,
 		ServiceAccountName:            objutil.CertGenRbacName,
 		SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
 		RestartPolicy:                 corev1.RestartPolicyNever,

@@ -299,7 +299,6 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 						},
 					},
 					DNSPolicy:                     corev1.DNSClusterFirst,
-					DeprecatedServiceAccount:      objutil.ContourRbacName,
 					ServiceAccountName:            objutil.ContourRbacName,
 					RestartPolicy:                 corev1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",

@@ -358,7 +358,6 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 						},
 					},
 					ServiceAccountName:            objutil.EnvoyRbacName,
-					DeprecatedServiceAccount:      EnvoyContainerName,
 					AutomountServiceAccountToken:  pointer.BoolPtr(false),
 					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(300)),
 					SecurityContext:               objutil.NewUnprivilegedPodSecurity(),

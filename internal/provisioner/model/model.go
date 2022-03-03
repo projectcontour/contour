@@ -94,14 +94,6 @@ type ContourSpec struct {
 	// +kubebuilder:default={envoy: {type: LoadBalancerService, containerPorts: {{name: http, portNumber: 8080}, {name: https, portNumber: 8443}}}}
 	NetworkPublishing NetworkPublishing `json:"networkPublishing,omitempty"`
 
-	// GatewayClassRef is a reference to a GatewayClass name used for
-	// managing a Contour.
-	// DEPRECATED: The contour operator no longer reconciles GatewayClasses.
-	//
-	// +kubebuilder:validation:MaxLength=253
-	// +optional
-	GatewayClassRef *string `json:"gatewayClassRef,omitempty"`
-
 	// GatewayControllerName is used to determine which GatewayClass
 	// Contour reconciles. The string takes the form of
 	// "projectcontour.io/<namespace>/contour". If unset, Contour will not
