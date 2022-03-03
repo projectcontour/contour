@@ -110,7 +110,6 @@ func TestContainerPorts(t *testing.T) {
 
 	name := "test-validation"
 	cntr := &model.Contour{
-		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: fmt.Sprintf("%s-ns", name),
@@ -182,7 +181,6 @@ func TestLoadBalancerIP(t *testing.T) {
 
 	name := "test-validation"
 	cntr := &model.Contour{
-		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: fmt.Sprintf("%s-ns", name),
@@ -270,7 +268,6 @@ func TestLoadBalancerProvider(t *testing.T) {
 	name := "test-validation"
 	testString := "projectcontour"
 	cntr := &model.Contour{
-		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: fmt.Sprintf("%s-ns", name),
@@ -427,7 +424,6 @@ func TestNodePorts(t *testing.T) {
 
 	name := "test-validation"
 	cntr := &model.Contour{
-		TypeMeta: metav1.TypeMeta{},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: fmt.Sprintf("%s-ns", name),

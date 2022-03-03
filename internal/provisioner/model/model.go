@@ -27,7 +27,6 @@ const (
 
 // Contour is the representation of an instance of Contour + Envoy.
 type Contour struct {
-	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines the desired state of Contour.
