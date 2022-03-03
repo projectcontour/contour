@@ -119,7 +119,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 		"app.kubernetes.io/name":       "contour",
 		"app.kubernetes.io/instance":   contour.Name,
 		"app.kubernetes.io/component":  "ingress-controller",
-		"app.kubernetes.io/managed-by": "contour-operator",
+		"app.kubernetes.io/managed-by": "contour-gateway-provisioner",
 	}
 	// Add owner labels
 	for k, v := range model.OwnerLabels(contour) {
@@ -419,9 +419,6 @@ func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *mo
 
 // EnvoyDaemonSetPodSelector returns a label selector using "app: envoy" as the
 // key/value pair.
-//
-// TODO [danehans]: Update to use "contour.operator.projectcontour.io/daemonset-envoy"
-// when https://github.com/projectcontour/contour/issues/1821 is fixed.
 func EnvoyDaemonSetPodSelector() *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: map[string]string{

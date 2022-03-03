@@ -362,7 +362,7 @@ func makeDeploymentLabels(contour *model.Contour) map[string]string {
 		"app.kubernetes.io/name":       "contour",
 		"app.kubernetes.io/instance":   contour.Name,
 		"app.kubernetes.io/component":  "ingress-controller",
-		"app.kubernetes.io/managed-by": "contour-operator",
+		"app.kubernetes.io/managed-by": "contour-gateway-provisioner",
 	}
 
 	// Add owner labels
@@ -375,9 +375,6 @@ func makeDeploymentLabels(contour *model.Contour) map[string]string {
 
 // ContourDeploymentPodSelector returns a label selector using "app: contour" as the
 // key/value pair.
-//
-// TODO [danehans]: Update to use "contour.operator.projectcontour.io/deployment-contour"
-// when https://github.com/projectcontour/contour/issues/1821 is fixed.
 func ContourDeploymentPodSelector() *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: map[string]string{

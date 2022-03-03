@@ -143,7 +143,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 		"app.kubernetes.io/instance":   contour.Name,
 		"app.kubernetes.io/component":  "ingress-controller",
 		"app.kubernetes.io/part-of":    "project-contour",
-		"app.kubernetes.io/managed-by": "contour-operator",
+		"app.kubernetes.io/managed-by": "contour-gateway-provisioner",
 	}
 	// Add owner labels
 	for k, v := range model.OwnerLabels(contour) {

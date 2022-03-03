@@ -41,7 +41,7 @@ func main() {
 	flag.StringVar(&config.MetricsBindAddress, "metrics-addr", config.MetricsBindAddress,
 		"The address the metric endpoint binds to. It can be set to \"0\" to disable serving metrics.")
 	flag.BoolVar(&config.LeaderElection, "enable-leader-election", config.LeaderElection,
-		"Enable leader election for the operator. Enabling this will ensure there is only one active operator.")
+		"Enable leader election for the gateway provisioner. Enabling this will ensure there is only one active gateway provisioner.")
 	flag.StringVar(&config.GatewayControllerName, "gateway-controller-name", config.GatewayControllerName,
 		"The controller string to process GatewayClasses and Gateways for.")
 
@@ -63,40 +63,40 @@ func main() {
 
 	mgr, err := createManager(ctrl.GetConfigOrDie(), config)
 	if err != nil {
-		setupLog.Error(err, "failed to create contour operator")
+		setupLog.Error(err, "failed to create contour gateway provisioner")
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting contour operator")
+	setupLog.Info("starting contour gateway provisioner")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "failed to start contour operator")
+		setupLog.Error(err, "failed to start contour gateway provisioner")
 		os.Exit(1)
 	}
 }
 
-// Config is configuration of the operator.
+// Config is configuration of the gateway provisioner.
 type Config struct {
 	// ContourImage is the container image for the Contour container(s) managed
-	// by the operator.
+	// by the gateway provisioner.
 	ContourImage string
 
 	// EnvoyImage is the container image for the Envoy container(s) managed
-	// by the operator.
+	// by the gateway provisioner.
 	EnvoyImage string
 
-	// MetricsBindAddress is the TCP address that the operator should bind to for
+	// MetricsBindAddress is the TCP address that the gateway provisioner should bind to for
 	// serving prometheus metrics. It can be set to "0" to disable the metrics serving.
 	MetricsBindAddress string
 
 	// LeaderElection determines whether or not to use leader election when starting
-	// the operator.
+	// the gateway provisioner.
 	LeaderElection bool
 
 	// LeaderElectionID determines the name of the configmap that leader election will
 	// use for holding the leader lock.
 	LeaderElectionID string
 
-	// GatewayControllerName defines the controller string that this operator instance
+	// GatewayControllerName defines the controller string that this gateway provisioner instance
 	// will process GatewayClasses and Gateways for.
 	GatewayControllerName string
 }
@@ -110,7 +110,7 @@ const (
 	DefaultGatewayControllerName  = "projectcontour.io/gateway-provisioner"
 )
 
-// DefaultConfig returns an operator config using default values.
+// DefaultConfig returns a gateway provisioner config using default values.
 func DefaultConfig() *Config {
 	return &Config{
 		ContourImage:          DefaultContourImage,
@@ -122,8 +122,8 @@ func DefaultConfig() *Config {
 	}
 }
 
-// createManager creates a new manager from restConfig and operatorConfig.
-func createManager(restConfig *rest.Config, operatorConfig *Config) (manager.Manager, error) {
+// createManager creates a new manager from restConfig and provisionerConfig.
+func createManager(restConfig *rest.Config, provisionerConfig *Config) (manager.Manager, error) {
 	scheme, err := createScheme()
 	if err != nil {
 		return nil, fmt.Errorf("error creating runtime scheme: %w", err)
@@ -131,32 +131,32 @@ func createManager(restConfig *rest.Config, operatorConfig *Config) (manager.Man
 
 	mgr, err := ctrl.NewManager(restConfig, manager.Options{
 		Scheme:             scheme,
-		LeaderElection:     operatorConfig.LeaderElection,
-		LeaderElectionID:   operatorConfig.LeaderElectionID,
-		MetricsBindAddress: operatorConfig.MetricsBindAddress,
-		Logger:             ctrl.Log.WithName("contour_operator"),
+		LeaderElection:     provisionerConfig.LeaderElection,
+		LeaderElectionID:   provisionerConfig.LeaderElectionID,
+		MetricsBindAddress: provisionerConfig.MetricsBindAddress,
+		Logger:             ctrl.Log.WithName("contour-gateway-provisioner"),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)
 	}
 
-	// Create and register the controllers with the operator manager.
-	if _, err := controller.NewGatewayClassController(mgr, operatorConfig.GatewayControllerName); err != nil {
+	// Create and register the controllers with the manager.
+	if _, err := controller.NewGatewayClassController(mgr, provisionerConfig.GatewayControllerName); err != nil {
 		return nil, fmt.Errorf("failed to create gatewayclass controller: %w", err)
 	}
-	if _, err := controller.NewGatewayController(mgr, operatorConfig.GatewayControllerName, operatorConfig.ContourImage, operatorConfig.EnvoyImage); err != nil {
+	if _, err := controller.NewGatewayController(mgr, provisionerConfig.GatewayControllerName, provisionerConfig.ContourImage, provisionerConfig.EnvoyImage); err != nil {
 		return nil, fmt.Errorf("failed to create gateway controller: %w", err)
 	}
 	return mgr, nil
 }
 
 func createScheme() (*runtime.Scheme, error) {
-	// scheme contains all the API types necessary for the operator's dynamic
+	// scheme contains all the API types necessary for the gateway provisioner's dynamic
 	// clients to work. Any new non-core types must be added here.
 	//
 	// NOTE: The discovery mechanism used by the client doesn't automatically
 	// refresh, so only add types here that are guaranteed to exist before the
-	// operator starts.
+	// gateway provisioner starts.
 	scheme := runtime.NewScheme()
 
 	if err := clientgoscheme.AddToScheme(scheme); err != nil {

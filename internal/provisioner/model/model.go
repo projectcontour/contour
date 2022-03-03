@@ -20,16 +20,9 @@ import (
 )
 
 const (
-	// OwningContourNameLabel is the owner reference label used for a Contour
-	// created by the operator. The value should be the name of the contour.
-	OwningContourNameLabel = "contour.operator.projectcontour.io/owning-contour-name"
-
-	// OwningContourNsLabel is the owner reference label used for a Contour
-	// created by the operator. The value should be the namespace of the contour.
-	OwningContourNsLabel = "contour.operator.projectcontour.io/owning-contour-namespace"
-
-	// ContourFinalizer is the name of the finalizer used for a Contour.
-	ContourFinalizer = "contour.operator.projectcontour.io/finalizer"
+	// OwningGatewayNameLabel is the owner reference label used for a Contour
+	// created by the gateway provisioner. The value should be the name of the Gateway.
+	OwningGatewayNameLabel = "projectcontour.io/owning-gateway-name"
 )
 
 // Contour is the representation of an instance of Contour + Envoy.
@@ -39,16 +32,6 @@ type Contour struct {
 
 	// Spec defines the desired state of Contour.
 	Spec ContourSpec `json:"spec,omitempty"`
-}
-
-// IsFinalized returns true if Contour is finalized.
-func (c *Contour) IsFinalized() bool {
-	for _, f := range c.Finalizers {
-		if f == ContourFinalizer {
-			return true
-		}
-	}
-	return false
 }
 
 // ContourNodeSelectorExists returns true if a nodeSelector is specified for Contour.
@@ -677,13 +660,11 @@ func New(cfg Config) *Contour {
 	return cntr
 }
 
-// OwningSelector returns a label selector using "contour.operator.projectcontour.io/owning-contour-name"
-// and "contour.operator.projectcontour.io/owning-contour-namespace" labels.
+// OwningSelector returns a label selector using "projectcontour.io/owning-gateway-name".
 func OwningSelector(contour *Contour) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			OwningContourNameLabel: contour.Name,
-			OwningContourNsLabel:   contour.Namespace,
+			OwningGatewayNameLabel: contour.Name,
 		},
 	}
 }
@@ -691,8 +672,7 @@ func OwningSelector(contour *Contour) *metav1.LabelSelector {
 // OwnerLabels returns owner labels for the provided contour.
 func OwnerLabels(contour *Contour) map[string]string {
 	return map[string]string{
-		OwningContourNameLabel: contour.Name,
-		OwningContourNsLabel:   contour.Namespace,
+		OwningGatewayNameLabel: contour.Name,
 	}
 }
 

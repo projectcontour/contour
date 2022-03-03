@@ -74,11 +74,9 @@ func JobConfigChanged(current, expected *batchv1.Job) (*batchv1.Job, bool) {
 	}
 
 	// The completions field is immutable, so no need to compare. Ignore job-generated
-	// labels and only check the presence of the contour owning labels.
+	// labels and only check the presence of the Gateway owning labels.
 	if current.Spec.Template.Labels != nil {
-		_, nameFound := current.Spec.Template.Labels[model.OwningContourNameLabel]
-		_, nsFound := current.Spec.Template.Labels[model.OwningContourNsLabel]
-		if !nameFound || !nsFound {
+		if _, nameFound := current.Spec.Template.Labels[model.OwningGatewayNameLabel]; !nameFound {
 			updated = expected
 			changed = true
 		}

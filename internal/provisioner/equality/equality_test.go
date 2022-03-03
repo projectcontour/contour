@@ -165,10 +165,9 @@ func TestJobConfigChanged(t *testing.T) {
 			expect: true,
 		},
 		{
-			description: "if the contour owning labels are removed",
+			description: "if the owning label is removed",
 			mutate: func(job *batchv1.Job) {
-				delete(job.Spec.Template.Labels, model.OwningContourNameLabel)
-				delete(job.Spec.Template.Labels, model.OwningContourNsLabel)
+				delete(job.Spec.Template.Labels, model.OwningGatewayNameLabel)
 			},
 			expect: true,
 		},
