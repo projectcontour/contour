@@ -22,4 +22,4 @@ EOF
 exec go run sigs.k8s.io/controller-tools/cmd/controller-gen \
     rbac:roleName=contour \
     output:stdout \
-    paths="./cmd/...;./internal/..."
+    paths="./internal/k8s"

@@ -164,6 +164,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	r.log.WithValues("gateway-namespace", req.Namespace, "gateway-name", req.Name).Info("setting gateway's Scheduled condition to true")
 
+	// nolint:gocritic
 	gateway.Status.Conditions = append(newConds, metav1.Condition{
 		Type:               string(gatewayapi_v1alpha2.GatewayConditionScheduled),
 		Status:             metav1.ConditionTrue,

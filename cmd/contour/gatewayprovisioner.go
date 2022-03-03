@@ -51,7 +51,7 @@ func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *
 		Default(config.envoyImage).
 		StringVar(&config.envoyImage)
 
-	cmd.Flag("metrics-addr", "The address the metric endpoint binds to. It can be set to \"0\" to disable serving metrics.").
+	cmd.Flag("metrics-addr", "The address the metric endpoint binds to. It can be set to 0 to disable serving metrics.").
 		Default(config.metricsBindAddress).
 		StringVar(&config.metricsBindAddress)
 

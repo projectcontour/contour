@@ -96,6 +96,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	r.log.WithValues("gatewayclass-name", req.Name).Info("setting gateway class's Accepted condition to true")
 
+	// nolint:gocritic
 	gatewayClass.Status.Conditions = append(newConds, metav1.Condition{
 		Type:               string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted),
 		Status:             metav1.ConditionTrue,

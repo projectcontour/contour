@@ -133,11 +133,9 @@ func ClusterIPServiceChanged(current, expected *corev1.Service) (*corev1.Service
 	if len(current.Spec.Ports) != len(expected.Spec.Ports) {
 		updated.Spec.Ports = expected.Spec.Ports
 		changed = true
-	} else {
-		if !apiequality.Semantic.DeepEqual(current.Spec.Ports, expected.Spec.Ports) {
-			updated.Spec.Ports = expected.Spec.Ports
-			changed = true
-		}
+	} else if !apiequality.Semantic.DeepEqual(current.Spec.Ports, expected.Spec.Ports) {
+		updated.Spec.Ports = expected.Spec.Ports
+		changed = true
 	}
 
 	if !apiequality.Semantic.DeepEqual(current.Spec.Selector, expected.Spec.Selector) {
