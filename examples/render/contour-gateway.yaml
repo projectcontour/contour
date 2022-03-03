@@ -586,6 +586,19 @@ spec:
                     required:
                     - adminPort
                     type: object
+                  runtime:
+                    description: Runtime holds various parameters for configuring
+                      Envoy runtime settings.
+                    properties:
+                      maxRegexProgramSizeError:
+                        description: MaxRegexProgramSizeError ...
+                        format: int32
+                        type: integer
+                      maxRegexProgramSizeWarning:
+                        description: MaxRegexProgramSizeWarning ...
+                        format: int32
+                        type: integer
+                    type: object
                   service:
                     default:
                       name: envoy
@@ -673,6 +686,7 @@ spec:
                 - logging
                 - metrics
                 - network
+                - runtime
                 - service
                 type: object
               gateway:
@@ -1533,6 +1547,19 @@ spec:
                         required:
                         - adminPort
                         type: object
+                      runtime:
+                        description: Runtime holds various parameters for configuring
+                          Envoy runtime settings.
+                        properties:
+                          maxRegexProgramSizeError:
+                            description: MaxRegexProgramSizeError ...
+                            format: int32
+                            type: integer
+                          maxRegexProgramSizeWarning:
+                            description: MaxRegexProgramSizeWarning ...
+                            format: int32
+                            type: integer
+                        type: object
                       service:
                         default:
                           name: envoy
@@ -1623,6 +1650,7 @@ spec:
                     - logging
                     - metrics
                     - network
+                    - runtime
                     - service
                     type: object
                   gateway:

@@ -4819,6 +4819,21 @@ NetworkParameters
 <p>Network holds various configurable Envoy network values.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>runtime</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.RuntimeParameters">
+RuntimeParameters
+</a>
+</em>
+</td>
+<td>
+<p>Runtime holds various parameters for configuring Envoy runtime
+settings.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1alpha1.EnvoyListener">EnvoyListener
@@ -5896,6 +5911,51 @@ headers X-RateLimit-Limit, X-RateLimit-Remaining, and X-RateLimit-Reset
 (as defined by the IETF Internet-Draft linked below), on responses
 to clients when the Rate Limit Service is consulted for a request.</p>
 <p>ref. <a href="https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html">https://tools.ietf.org/id/draft-polli-ratelimit-headers-03.html</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="projectcontour.io/v1alpha1.RuntimeParameters">RuntimeParameters
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>)
+</p>
+<p>
+<p>Runtime holds various parameters for configuring Envoy runtime settings.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>maxRegexProgramSizeError</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxRegexProgramSizeError &hellip;</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>maxRegexProgramSizeWarning</code>
+<br>
+<em>
+uint32
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxRegexProgramSizeWarning &hellip;</p>
 </td>
 </tr>
 </tbody>

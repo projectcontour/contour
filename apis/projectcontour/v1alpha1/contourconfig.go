@@ -242,6 +242,10 @@ type EnvoyConfig struct {
 
 	// Network holds various configurable Envoy network values.
 	Network NetworkParameters `json:"network"`
+
+	// Runtime holds various parameters for configuring Envoy runtime
+	// settings.
+	Runtime RuntimeParameters `json:"runtime"`
 }
 
 // LogLevel is the logging levels available.
@@ -486,6 +490,19 @@ type NetworkParameters struct {
 	// If configured to port "0" then the admin interface is disabled.
 	// +kubebuilder:default=9001
 	EnvoyAdminPort int `json:"adminPort"`
+}
+
+// Runtime holds various parameters for configuring Envoy runtime settings.
+type RuntimeParameters struct {
+	// MaxRegexProgramSizeError ...
+	//
+	// +optional
+	MaxRegexProgramSizeError uint32 `json:"maxRegexProgramSizeError"`
+
+	// MaxRegexProgramSizeWarning ...
+	//
+	// +optional
+	MaxRegexProgramSizeWarning uint32 `json:"maxRegexProgramSizeWarning"`
 }
 
 // RateLimitServiceConfig defines properties of a global Rate Limit Service.
