@@ -14,39 +14,17 @@
 package operator
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/go-logr/logr"
 	"github.com/projectcontour/contour/internal/provisioner/controller"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/rest"
-	controller_runtime "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
 	operatorName = "contour_operator"
 )
-
-// Clients holds the API clients required by Operator.
-type Client struct {
-	client.Client
-	meta.RESTMapper
-}
-
-// Operator is the scaffolding for the contour operator. It sets up dependencies
-// and defines the topology of the operator and its managed components, wiring
-// them together. Operator knows what specific resource types should produce
-// operator events.
-type Operator struct {
-	client  Client
-	manager manager.Manager
-	log     logr.Logger
-	config  *Config
-}
 
 // cert-gen needs create/update secrets.
 // +kubebuilder:rbac:groups="",resources=namespaces;secrets;serviceaccounts;services,verbs=get;list;watch;delete;create;update
@@ -67,12 +45,13 @@ type Operator struct {
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;delete;create;update
 
 // New creates a new operator from cliCfg and operatorConfig.
-func New(restConfig *rest.Config, operatorConfig *Config) (*Operator, error) {
-	mgr, err := controller_runtime.NewManager(restConfig, manager.Options{
+func New(restConfig *rest.Config, operatorConfig *Config) (manager.Manager, error) {
+	mgr, err := ctrl.NewManager(restConfig, manager.Options{
 		Scheme:             GetOperatorScheme(),
 		LeaderElection:     operatorConfig.LeaderElection,
 		LeaderElectionID:   operatorConfig.LeaderElectionID,
 		MetricsBindAddress: operatorConfig.MetricsBindAddress,
+		Logger:             ctrl.Log.WithName(operatorName),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)
@@ -85,33 +64,5 @@ func New(restConfig *rest.Config, operatorConfig *Config) (*Operator, error) {
 	if _, err := controller.NewGatewayController(mgr, operatorConfig.GatewayControllerName, operatorConfig.ContourImage, operatorConfig.EnvoyImage); err != nil {
 		return nil, fmt.Errorf("failed to create gateway controller: %w", err)
 	}
-
-	restMapper, err := apiutil.NewDiscoveryRESTMapper(restConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Operator{
-		manager: mgr,
-		client:  Client{mgr.GetClient(), restMapper},
-		log:     controller_runtime.Log.WithName(operatorName),
-		config:  operatorConfig,
-	}, nil
-}
-
-// Start runs the operator manager until an error is received or the context
-// is cancelled.
-func (o *Operator) Start(ctx context.Context) error {
-	errChan := make(chan error)
-	go func() {
-		errChan <- o.manager.Start(ctx)
-	}()
-
-	// Wait for the manager to exit or an explicit stop.
-	select {
-	case <-ctx.Done():
-		return nil
-	case err := <-errChan:
-		return err
-	}
+	return mgr, nil
 }
