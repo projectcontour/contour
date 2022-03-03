@@ -11,20 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package operator
-
-import (
-	"fmt"
-
-	"github.com/projectcontour/contour/internal/provisioner/controller"
-	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-)
-
-const (
-	operatorName = "contour_operator"
-)
+package rbac
 
 // cert-gen needs create/update secrets.
 // +kubebuilder:rbac:groups="",resources=namespaces;secrets;serviceaccounts;services,verbs=get;list;watch;delete;create;update
@@ -43,26 +30,3 @@ const (
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;delete;create;update
-
-// New creates a new operator from cliCfg and operatorConfig.
-func New(restConfig *rest.Config, operatorConfig *Config) (manager.Manager, error) {
-	mgr, err := ctrl.NewManager(restConfig, manager.Options{
-		Scheme:             GetOperatorScheme(),
-		LeaderElection:     operatorConfig.LeaderElection,
-		LeaderElectionID:   operatorConfig.LeaderElectionID,
-		MetricsBindAddress: operatorConfig.MetricsBindAddress,
-		Logger:             ctrl.Log.WithName(operatorName),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create manager: %w", err)
-	}
-
-	// Create and register the controllers with the operator manager.
-	if _, err := controller.NewGatewayClassController(mgr, operatorConfig.GatewayControllerName); err != nil {
-		return nil, fmt.Errorf("failed to create gatewayclass controller: %w", err)
-	}
-	if _, err := controller.NewGatewayController(mgr, operatorConfig.GatewayControllerName, operatorConfig.ContourImage, operatorConfig.EnvoyImage); err != nil {
-		return nil, fmt.Errorf("failed to create gateway controller: %w", err)
-	}
-	return mgr, nil
-}
