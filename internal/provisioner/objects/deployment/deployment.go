@@ -222,7 +222,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	}
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Spec.Namespace.Name,
+			Namespace: contour.Namespace,
 			Name:      contourDeploymentName,
 			Labels:    makeDeploymentLabels(contour),
 		},
@@ -325,7 +325,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 func CurrentDeployment(ctx context.Context, cli client.Client, contour *model.Contour) (*appsv1.Deployment, error) {
 	deploy := &appsv1.Deployment{}
 	key := types.NamespacedName{
-		Namespace: contour.Spec.Namespace.Name,
+		Namespace: contour.Namespace,
 		Name:      contourDeploymentName,
 	}
 	if err := cli.Get(ctx, key, deploy); err != nil {

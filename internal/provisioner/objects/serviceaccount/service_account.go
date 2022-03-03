@@ -33,7 +33,7 @@ import (
 // and contour namespace/name for the owning contour labels.
 func EnsureServiceAccount(ctx context.Context, cli client.Client, name string, contour *model.Contour) (*corev1.ServiceAccount, error) {
 	desired := DesiredServiceAccount(name, contour)
-	current, err := CurrentServiceAccount(ctx, cli, contour.Spec.Namespace.Name, name)
+	current, err := CurrentServiceAccount(ctx, cli, contour.Namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			updated, err := createServiceAccount(ctx, cli, desired)
@@ -59,7 +59,7 @@ func DesiredServiceAccount(name string, contour *model.Contour) *corev1.ServiceA
 			Kind: rbacv1.ServiceAccountKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Spec.Namespace.Name,
+			Namespace: contour.Namespace,
 			Name:      name,
 			Labels:    model.OwnerLabels(contour),
 		},

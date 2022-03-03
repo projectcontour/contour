@@ -30,7 +30,7 @@ import (
 )
 
 func ensureRole(ctx context.Context, cli client.Client, name string, contour *model.Contour, desired *rbacv1.Role) (*rbacv1.Role, error) {
-	current, err := CurrentRole(ctx, cli, contour.Spec.Namespace.Name, name)
+	current, err := CurrentRole(ctx, cli, contour.Namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			updated, err := createRole(ctx, cli, desired)
@@ -63,7 +63,7 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 			Kind: "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Spec.Namespace.Name,
+			Namespace: contour.Namespace,
 			Name:      name,
 			Labels:    model.OwnerLabels(contour),
 		},
@@ -99,7 +99,7 @@ func desiredCertgenRole(name string, contour *model.Contour) *rbacv1.Role {
 			Kind: "Role",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Spec.Namespace.Name,
+			Namespace: contour.Namespace,
 			Name:      name,
 			Labels:    model.OwnerLabels(contour),
 		},

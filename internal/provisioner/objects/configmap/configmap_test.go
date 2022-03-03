@@ -139,16 +139,11 @@ accesslog-format: envoy
 			Name:      "test",
 			Namespace: "test-ns",
 		},
-		Spec: model.ContourSpec{
-			Namespace: model.NamespaceSpec{
-				Name: "some-ns",
-			},
-		},
 	}
 	cm, err := desired(configForContour(c))
 	require.NoError(t, err)
 	require.Equal(t, "contour", cm.Name)
-	require.Equal(t, "some-ns", cm.Namespace)
+	require.Equal(t, "test-ns", cm.Namespace)
 	require.Contains(t, cm.Data, "contour.yaml")
 	assert.Equal(t, expected, cm.Data["contour.yaml"])
 }
@@ -394,16 +389,11 @@ accesslog-format: envoy
 			Name:      "test",
 			Namespace: "test-ns",
 		},
-		Spec: model.ContourSpec{
-			Namespace: model.NamespaceSpec{
-				Name: "some-ns",
-			},
-		},
 	}
 	cm, err := desired(configForContour(c))
 	require.NoError(t, err)
 	require.Equal(t, "contour", cm.Name)
-	require.Equal(t, "some-ns", cm.Namespace)
+	require.Equal(t, "test-ns", cm.Namespace)
 	require.Contains(t, cm.Data, "contour.yaml")
 	assert.Equal(t, expected, cm.Data["contour.yaml"])
 }

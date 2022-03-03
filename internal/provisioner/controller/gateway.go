@@ -100,12 +100,6 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					Namespace: req.Namespace,
 					Name:      req.Name,
 				},
-				Spec: model.ContourSpec{
-					Namespace: model.NamespaceSpec{
-						Name:             req.Namespace,
-						RemoveOnDeletion: false,
-					},
-				},
 			}
 
 			if errs := r.ensurer.ensureContourDeleted(ctx, contour); len(errs) > 0 {
@@ -128,9 +122,6 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		},
 		Spec: model.ContourSpec{
 			Replicas: 2,
-			Namespace: model.NamespaceSpec{
-				Name: gateway.Namespace,
-			},
 			NetworkPublishing: model.NetworkPublishing{
 				Envoy: model.EnvoyNetworkPublishing{
 					Type: model.LoadBalancerServicePublishingType,

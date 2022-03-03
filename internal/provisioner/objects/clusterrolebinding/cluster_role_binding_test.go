@@ -68,8 +68,6 @@ func TestDesiredClusterRoleBinding(t *testing.T) {
 	cfg := model.Config{
 		Name:        crbName,
 		Namespace:   fmt.Sprintf("%s-ns", crbName),
-		SpecNs:      "projectcontour",
-		RemoveNs:    true,
 		NetworkType: model.LoadBalancerServicePublishingType,
 	}
 	cntr := model.New(cfg)
@@ -81,6 +79,6 @@ func TestDesiredClusterRoleBinding(t *testing.T) {
 		model.OwningGatewayNameLabel: cntr.Name,
 	}
 	checkClusterRoleBindingLabels(t, crb, ownerLabels)
-	checkClusterRoleBindingSvcAcct(t, crb, testSvcAcct, cntr.Spec.Namespace.Name)
+	checkClusterRoleBindingSvcAcct(t, crb, testSvcAcct, cntr.Namespace)
 	checkClusterRoleBindingRole(t, crb, testRoleRef)
 }

@@ -47,7 +47,7 @@ const (
 // EnsureRBAC ensures all the necessary RBAC resources exist for the
 // provided contour.
 func EnsureRBAC(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	ns := contour.Spec.Namespace.Name
+	ns := contour.Namespace
 	names := []string{ContourRbacName, EnvoyRbacName, CertGenRbacName}
 	for _, name := range names {
 		_, err := objsa.EnsureServiceAccount(ctx, cli, name, contour)
@@ -57,7 +57,7 @@ func EnsureRBAC(ctx context.Context, cli client.Client, contour *model.Contour) 
 	}
 	// ClusterRole and ClusterRoleBinding resources are namespace-named to allow ownership
 	// from individual instances of Contour.
-	nsName := fmt.Sprintf("%s-%s", ContourRbacName, contour.Spec.Namespace.Name)
+	nsName := fmt.Sprintf("%s-%s", ContourRbacName, ns)
 	cr, err := objcr.EnsureClusterRole(ctx, cli, nsName, contour)
 	if err != nil {
 		return fmt.Errorf("failed to ensure cluster role %s: %w", ContourRbacName, err)
@@ -86,7 +86,7 @@ func EnsureRBAC(ctx context.Context, cli client.Client, contour *model.Contour) 
 // contour are deleted if Contour owner labels exist.
 func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	var errs []error
-	ns := contour.Spec.Namespace.Name
+	ns := contour.Namespace
 	objectsToDelete := []client.Object{}
 
 	// TODO(sk) right now we can't support running more than one Contour instance
@@ -136,7 +136,7 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 
 	// ClusterRole and ClusterRoleBinding resources are namespace-named to allow ownership
 	// from individual instances of Contour.
-	nsName := fmt.Sprintf("%s-%s", ContourRbacName, contour.Spec.Namespace.Name)
+	nsName := fmt.Sprintf("%s-%s", ContourRbacName, contour.Namespace)
 	crb, err := objcrb.CurrentClusterRoleBinding(ctx, cli, nsName)
 	if err != nil && !errors.IsNotFound(err) {
 		return err

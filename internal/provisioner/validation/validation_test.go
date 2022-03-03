@@ -116,7 +116,6 @@ func TestContainerPorts(t *testing.T) {
 			Namespace: fmt.Sprintf("%s-ns", name),
 		},
 		Spec: model.ContourSpec{
-			Namespace: model.NamespaceSpec{Name: "projectcontour"},
 			NetworkPublishing: model.NetworkPublishing{
 				Envoy: model.EnvoyNetworkPublishing{
 					Type: model.LoadBalancerServicePublishingType,
@@ -189,7 +188,6 @@ func TestLoadBalancerIP(t *testing.T) {
 			Namespace: fmt.Sprintf("%s-ns", name),
 		},
 		Spec: model.ContourSpec{
-			Namespace: model.NamespaceSpec{Name: "projectcontour"},
 			NetworkPublishing: model.NetworkPublishing{
 				Envoy: model.EnvoyNetworkPublishing{
 					Type: model.LoadBalancerServicePublishingType,
@@ -278,7 +276,6 @@ func TestLoadBalancerProvider(t *testing.T) {
 			Namespace: fmt.Sprintf("%s-ns", name),
 		},
 		Spec: model.ContourSpec{
-			Namespace: model.NamespaceSpec{Name: "projectcontour"},
 			NetworkPublishing: model.NetworkPublishing{
 				Envoy: model.EnvoyNetworkPublishing{
 					Type: model.LoadBalancerServicePublishingType,
@@ -436,7 +433,6 @@ func TestNodePorts(t *testing.T) {
 			Namespace: fmt.Sprintf("%s-ns", name),
 		},
 		Spec: model.ContourSpec{
-			Namespace: model.NamespaceSpec{Name: "projectcontour"},
 			NetworkPublishing: model.NetworkPublishing{
 				Envoy: model.EnvoyNetworkPublishing{
 					Type: model.NodePortServicePublishingType,

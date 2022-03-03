@@ -48,8 +48,6 @@ func TestDesiredClusterRole(t *testing.T) {
 	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
-		SpecNs:      "projectcontour",
-		RemoveNs:    true,
 		NetworkType: model.LoadBalancerServicePublishingType,
 	}
 	cntr := model.New(cfg)

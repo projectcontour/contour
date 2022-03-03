@@ -87,12 +87,6 @@ type ContourSpec struct {
 	// +kubebuilder:validation:Minimum=0
 	Replicas int32 `json:"replicas,omitempty"`
 
-	// Namespace defines the schema of a Contour namespace. See each field for
-	// additional details.
-	//
-	// +kubebuilder:default={name: "projectcontour", removeOnDeletion: false}
-	Namespace NamespaceSpec `json:"namespace,omitempty"`
-
 	// NetworkPublishing defines the schema for publishing Contour to a network.
 	//
 	// See each field for additional details.
@@ -607,8 +601,6 @@ const (
 type Config struct {
 	Name                      string
 	Namespace                 string
-	SpecNs                    string
-	RemoveNs                  bool
 	Replicas                  int32
 	NetworkType               NetworkPublishingType
 	NodePorts                 []NodePort
@@ -627,10 +619,6 @@ func New(cfg Config) *Contour {
 		},
 		Spec: ContourSpec{
 			Replicas: cfg.Replicas,
-			Namespace: NamespaceSpec{
-				Name:             cfg.SpecNs,
-				RemoveOnDeletion: cfg.RemoveNs,
-			},
 			NetworkPublishing: NetworkPublishing{
 				Envoy: EnvoyNetworkPublishing{
 					Type: cfg.NetworkType,

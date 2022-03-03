@@ -282,24 +282,6 @@ func NodePortServiceChanged(current, expected *corev1.Service) (*corev1.Service,
 	return updated, true
 }
 
-// NamespaceConfigChanged checks if the current and expected Namespace match
-// and if not, returns true and the expected Namespace.
-func NamespaceConfigChanged(current, expected *corev1.Namespace) (*corev1.Namespace, bool) {
-	changed := false
-	updated := current.DeepCopy()
-
-	if !apiequality.Semantic.DeepEqual(current.Labels, expected.Labels) {
-		updated = expected
-		changed = true
-	}
-
-	if !changed {
-		return nil, false
-	}
-
-	return updated, true
-}
-
 // ServiceAccountConfigChanged checks if the current and expected ServiceAccount
 // match and if not, returns true and the expected ServiceAccount.
 func ServiceAccountConfigChanged(current, expected *corev1.ServiceAccount) (*corev1.ServiceAccount, bool) {

@@ -197,7 +197,7 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 	xdsPort := objcfg.XDSPort
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Spec.Namespace.Name,
+			Namespace: contour.Namespace,
 			Name:      contourSvcName,
 			Labels:    model.OwnerLabels(contour),
 		},
@@ -263,7 +263,7 @@ func DesiredEnvoyService(contour *model.Contour, servicePorts map[string]int32) 
 
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:   contour.Spec.Namespace.Name,
+			Namespace:   contour.Namespace,
 			Name:        envoySvcName,
 			Annotations: map[string]string{},
 			Labels:      model.OwnerLabels(contour),
@@ -355,7 +355,7 @@ func DesiredEnvoyService(contour *model.Contour, servicePorts map[string]int32) 
 func currentContourService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
 	current := &corev1.Service{}
 	key := types.NamespacedName{
-		Namespace: contour.Spec.Namespace.Name,
+		Namespace: contour.Namespace,
 		Name:      contourSvcName,
 	}
 	err := cli.Get(ctx, key, current)
@@ -369,7 +369,7 @@ func currentContourService(ctx context.Context, cli client.Client, contour *mode
 func currentEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) (*corev1.Service, error) {
 	current := &corev1.Service{}
 	key := types.NamespacedName{
-		Namespace: contour.Spec.Namespace.Name,
+		Namespace: contour.Namespace,
 		Name:      envoySvcName,
 	}
 	err := cli.Get(ctx, key, current)

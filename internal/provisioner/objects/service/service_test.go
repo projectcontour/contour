@@ -137,8 +137,6 @@ func TestDesiredContourService(t *testing.T) {
 	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
-		SpecNs:      "projectcontour",
-		RemoveNs:    false,
 		NetworkType: model.LoadBalancerServicePublishingType,
 	}
 	cntr := model.New(cfg)
@@ -159,8 +157,6 @@ func TestDesiredEnvoyService(t *testing.T) {
 	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
-		SpecNs:      "projectcontour",
-		RemoveNs:    false,
 		NetworkType: model.NodePortServicePublishingType,
 		NodePorts:   model.MakeNodePorts(map[string]int{"http": 30081, "https": 30444}),
 	}

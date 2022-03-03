@@ -68,12 +68,9 @@ func TestDesiredRoleBinding(t *testing.T) {
 	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
-		SpecNs:      "projectcontour",
-		RemoveNs:    false,
 		NetworkType: model.LoadBalancerServicePublishingType,
 	}
 	cntr := model.New(cfg)
-	cntr.Spec.Namespace.Name = "test-rb-ns"
 	rbName := "test-rb"
 	svcAcct := "test-svc-acct-ref"
 	roleRef := "test-role-ref"
@@ -83,6 +80,6 @@ func TestDesiredRoleBinding(t *testing.T) {
 		model.OwningGatewayNameLabel: cntr.Name,
 	}
 	checkRoleBindingLabels(t, rb, ownerLabels)
-	checkRoleBindingSvcAcct(t, rb, svcAcct, cntr.Spec.Namespace.Name)
+	checkRoleBindingSvcAcct(t, rb, svcAcct, cntr.Namespace)
 	checkRoleBindingRole(t, rb, roleRef)
 }

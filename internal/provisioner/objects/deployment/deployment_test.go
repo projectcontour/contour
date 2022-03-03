@@ -110,8 +110,6 @@ func TestDesiredDeployment(t *testing.T) {
 	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
-		SpecNs:      "projectcontour",
-		RemoveNs:    false,
 		NetworkType: model.LoadBalancerServicePublishingType,
 	}
 	cntr := model.New(cfg)
@@ -169,8 +167,6 @@ func TestNodePlacementDeployment(t *testing.T) {
 	cfg := model.Config{
 		Name:        name,
 		Namespace:   fmt.Sprintf("%s-ns", name),
-		SpecNs:      "projectcontour",
-		RemoveNs:    false,
 		NetworkType: model.LoadBalancerServicePublishingType,
 	}
 	cntr := model.New(cfg)

@@ -182,7 +182,7 @@ type contourConfig struct {
 // configForContour returns a configMapParams with default fields set for contour.
 func configForContour(contour *model.Contour) *configMapParams {
 	return &configMapParams{
-		Namespace: contour.Spec.Namespace.Name,
+		Namespace: contour.Namespace,
 		Name:      ContourConfigMapName,
 		Labels:    model.OwnerLabels(contour),
 		Contour: contourConfig{
