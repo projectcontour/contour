@@ -26,7 +26,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -92,7 +91,6 @@ type gatewayProvisionerConfig struct {
 }
 
 func runGatewayProvisioner(config *gatewayProvisionerConfig) {
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	setupLog := ctrl.Log.WithName("setup")
 
 	for _, image := range []string{config.contourImage, config.envoyImage} {
@@ -127,11 +125,12 @@ func createManager(restConfig *rest.Config, provisionerConfig *gatewayProvisione
 	}
 
 	mgr, err := ctrl.NewManager(restConfig, manager.Options{
-		Scheme:             scheme,
-		LeaderElection:     provisionerConfig.leaderElection,
-		LeaderElectionID:   provisionerConfig.leaderElectionID,
-		MetricsBindAddress: provisionerConfig.metricsBindAddress,
-		Logger:             ctrl.Log.WithName("contour-gateway-provisioner"),
+		Scheme:                     scheme,
+		LeaderElection:             provisionerConfig.leaderElection,
+		LeaderElectionResourceLock: "leases",
+		LeaderElectionID:           provisionerConfig.leaderElectionID,
+		MetricsBindAddress:         provisionerConfig.metricsBindAddress,
+		Logger:                     ctrl.Log.WithName("contour-gateway-provisioner"),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create manager: %w", err)

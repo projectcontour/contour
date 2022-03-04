@@ -30,3 +30,7 @@ package rbac
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;delete;create;update
+
+// Add RBAC policy to support leader election.
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;get;update,namespace=projectcontour
+// +kubebuilder:rbac:groups="coordination.k8s.io",resources=leases,verbs=create;get;update,namespace=projectcontour
