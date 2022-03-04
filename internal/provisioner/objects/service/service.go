@@ -132,11 +132,9 @@ func EnsureContourService(ctx context.Context, cli client.Client, contour *model
 	return nil
 }
 
-// EnsureEnvoyService ensures that an Envoy Service exists for the given contour
-// and optional map of service port names to service ports. If the service port
-// map is not provided, http->80 and https->443 are used.
-func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour, servicePorts map[string]int32) error {
-	desired := DesiredEnvoyService(contour, servicePorts)
+// EnsureEnvoyService ensures that an Envoy Service exists for the given contour.
+func EnsureEnvoyService(ctx context.Context, cli client.Client, contour *model.Contour) error {
+	desired := DesiredEnvoyService(contour)
 	current, err := currentEnvoyService(ctx, cli, contour)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -219,13 +217,15 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 }
 
 // DesiredEnvoyService generates the desired Envoy Service for the given contour.
-func DesiredEnvoyService(contour *model.Contour, servicePorts map[string]int32) *corev1.Service {
+func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	var ports []corev1.ServicePort
 	var httpFound, httpsFound bool
 
-	// assign default service ports for http/https
-	if servicePorts == nil {
-		servicePorts = map[string]int32{}
+	// Put service ports in a map for easy lookup, and default
+	// http/https service port numbers if not specified.
+	servicePorts := map[string]int32{}
+	for _, p := range contour.Spec.NetworkPublishing.Envoy.ServicePorts {
+		servicePorts[p.Name] = p.PortNumber
 	}
 	if _, ok := servicePorts["http"]; !ok {
 		servicePorts["http"] = EnvoyServiceHTTPPort

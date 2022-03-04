@@ -140,12 +140,16 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		},
 	}
 
-	servicePorts := map[string]int32{}
 	for _, listener := range gateway.Spec.Listeners {
-		servicePorts[string(listener.Name)] = int32(listener.Port)
+		port := model.ServicePort{
+			Name:       string(listener.Name),
+			PortNumber: int32(listener.Port),
+		}
+
+		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 
-	if errs := r.ensurer.ensureContour(ctx, gatewayContour, servicePorts); len(errs) > 0 {
+	if errs := r.ensurer.ensureContour(ctx, gatewayContour); len(errs) > 0 {
 		return ctrl.Result{}, fmt.Errorf("failed to ensure Contour for gateway: %w", retryable.NewMaybeRetryableAggregate(errs))
 	}
 

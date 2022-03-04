@@ -284,6 +284,11 @@ type EnvoyNetworkPublishing struct {
 	// +kubebuilder:default={scope: External, providerParameters: {type: AWS}}
 	LoadBalancer LoadBalancerStrategy `json:"loadBalancer,omitempty"`
 
+	// ServicePorts is a list of ports to expose on the Envoy service.
+	// TODO(sk) ServicePorts, NodePorts and ContainerPorts should collapse
+	// into a single struct.
+	ServicePorts []ServicePort
+
 	// NodePorts is a list of network ports to expose on each node's IP at a static
 	// port number using a NodePort Service. Present only if type is NodePortService.
 	// A ClusterIP Service, which the NodePort Service routes to, is automatically
@@ -537,6 +542,11 @@ type GCPLoadBalancerParameters struct {
 	// +kubebuilder:validation:MaxLength=63
 	// +optional
 	Subnet *string `json:"subnet,omitempty"`
+}
+
+type ServicePort struct {
+	Name       string
+	PortNumber int32
 }
 
 // NodePort is the schema to specify a network port for a NodePort Service.

@@ -35,7 +35,7 @@ type ensurer struct {
 	envoyImage   string
 }
 
-func (e *ensurer) ensureContour(ctx context.Context, contour *model.Contour, servicePorts map[string]int32) []error {
+func (e *ensurer) ensureContour(ctx context.Context, contour *model.Contour) []error {
 	var errs []error
 
 	handleResult := func(resource string, err error) {
@@ -60,7 +60,7 @@ func (e *ensurer) ensureContour(ctx context.Context, contour *model.Contour, ser
 
 	switch contour.Spec.NetworkPublishing.Envoy.Type {
 	case model.LoadBalancerServicePublishingType, model.NodePortServicePublishingType, model.ClusterIPServicePublishingType:
-		handleResult("envoy service", service.EnsureEnvoyService(ctx, e.client, contour, servicePorts))
+		handleResult("envoy service", service.EnsureEnvoyService(ctx, e.client, contour))
 	}
 
 	return errs
