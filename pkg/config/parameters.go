@@ -613,6 +613,10 @@ type Parameters struct {
 	// See: https://github.com/projectcontour/contour/issues/3221
 	DisableAllowChunkedLength bool `yaml:"disableAllowChunkedLength,omitempty"`
 
+	// DisableMergeSlashes disables Envoy's non-standard merge_slashes path transformation option
+	// which strips duplicate slashes from request URL paths.
+	DisableMergeSlashes bool `yaml:"disableMergeSlashes,omitempty"`
+
 	// EnableExternalNameService allows processing of ExternalNameServices
 	// Defaults to disabled for security reasons.
 	// TODO(youngnick): put a link to the issue and CVE here.
@@ -826,6 +830,7 @@ func Defaults() Parameters {
 		TLS:                       TLSParameters{},
 		DisablePermitInsecure:     false,
 		DisableAllowChunkedLength: false,
+		DisableMergeSlashes:       false,
 		Timeouts: TimeoutParameters{
 			// This is chosen as a rough default to stop idle connections wasting resources,
 			// without stopping slow connections from being terminated too quickly.

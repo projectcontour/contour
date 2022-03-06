@@ -45,7 +45,7 @@ type ContourConfigurationSpec struct {
 	// Envoy contains parameters for Envoy as well
 	// as how to optionally configure a managed Envoy fleet.
 	// +optional
-	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, health: {address: "0.0.0.0", port: 8002}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "HTTP/1.1";"HTTP/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
+	// +kubebuilder:default={listener: {useProxyProtocol: false, disableAllowChunkedLength: false, disableMergeSlashes: false, connectionBalancer: "", tls: { minimumProtocolVersion: "1.2", cipherSuites: "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]";"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]";"ECDHE-ECDSA-AES256-GCM-SHA384";"ECDHE-RSA-AES256-GCM-SHA384" }}, service: {name: "envoy", namespace: "projectcontour"}, http: {address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout"}, https: {address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout"}, health: {address: "0.0.0.0", port: 8002}, metrics: {address: "0.0.0.0", port: 8002}, logging: { accessLogFormat: "envoy"}, defaultHTTPVersions: "HTTP/1.1";"HTTP/2", cluster: {dnsLookupFamily: "auto"}, network: { adminPort: 9001}}
 	Envoy EnvoyConfig `json:"envoy"`
 
 	// Gateway contains parameters for the gateway-api Gateway that Contour
@@ -288,6 +288,10 @@ type EnvoyListenerConfig struct {
 	// are encountered.
 	// See: https://github.com/projectcontour/contour/issues/3221
 	DisableAllowChunkedLength bool `json:"disableAllowChunkedLength"`
+
+	// DisableMergeSlashes disables Envoy's non-standard merge_slashes path transformation option
+	// which strips duplicate slashes from request URL paths.
+	DisableMergeSlashes bool `json:"disableMergeSlashes"`
 
 	// ConnectionBalancer. If the value is exact, the listener will use the exact connection balancer
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v2/api/v2/listener.proto#envoy-api-msg-listener-connectionbalanceconfig

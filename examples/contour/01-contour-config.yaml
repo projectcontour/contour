@@ -24,6 +24,11 @@ data:
     # Disable RFC-compliant behavior to strip "Content-Length" header if
     # "Tranfer-Encoding: chunked" is also set.
     # disableAllowChunkedLength: false
+    #
+    # Disable Envoy's non-standard merge_slashes path transformation option
+    # that strips duplicate slashes from request URLs.
+    # disableMergeSlashes: false
+    #
     # Disable HTTPProxy permitInsecure field
     disablePermitInsecure: false
     tls:
