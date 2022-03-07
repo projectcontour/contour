@@ -23,6 +23,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 	klog "k8s.io/klog/v2"
+	controller_runtime_log "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type klogParams struct {
@@ -85,7 +86,7 @@ func InitLogging(options ...LogOption) {
 
 		// Also set the controller-runtime logger to the same
 		// concrete logger.
-		// controller_runtime_log.SetLogger(logger)
+		controller_runtime_log.SetLogger(logger)
 	}
 }
 
