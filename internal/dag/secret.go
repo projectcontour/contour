@@ -74,9 +74,16 @@ func isValidSecret(secret *v1.Secret) (bool, error) {
 			return false, nil
 		}
 
+		data, ok := secret.Data[CACertificateKey]
+
+		// Secret is not a CA
+		if !ok {
+			return false, nil
+		}
+
 		// If there's an Opaque Secret with a `ca.crt` key, and it's zero
 		// length, Contour can't use it, so return an error.
-		if data := secret.Data[CACertificateKey]; len(data) == 0 {
+		if len(data) == 0 {
 			return false, errors.New("can't use zero-length ca.crt value")
 		}
 
