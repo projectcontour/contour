@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	klog "k8s.io/klog/v2"
+	controller_runtime_log "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -122,6 +123,15 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	assert.Equal(t, "bar", errorEntry.Data["foo"])
 	assert.Equal(t, errorLogged, errorEntry.Data["error"])
 	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, errorLine), errorEntry.Data["caller"])
+}
+
+func TestControllerRuntimeLoggerLogsToLogrus(t *testing.T) {
+	log, logHook := test.NewNullLogger()
+	InitLogging(LogWriterOption(log.WithField("foo", "bar")))
+
+	controller_runtime_log.Log.Info("some message")
+	require.Len(t, logHook.AllEntries(), 1)
+	assert.Equal(t, logHook.AllEntries()[0].Message, "some message")
 }
 
 // Last LogWriterOption passed in should be used.

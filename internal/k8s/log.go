@@ -78,9 +78,14 @@ func InitLogging(options ...LogOption) {
 		// Use the LogSink from a logrusr Logger, but wrapped in
 		// an adapter that always returns true for Enabled() since
 		// we rely on klog to do log level filtering.
+		logger := logrusr.New(p.log, logrusr.WithReportCaller())
 		klog.SetLogger(logr.New(&alwaysEnabledLogSink{
-			LogSink: logrusr.New(p.log, logrusr.WithReportCaller()).GetSink(),
+			LogSink: logger.GetSink(),
 		}))
+
+		// Also set the controller-runtime logger to the same
+		// concrete logger.
+		// controller_runtime_log.SetLogger(logger)
 	}
 }
 
