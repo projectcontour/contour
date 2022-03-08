@@ -44,6 +44,7 @@ func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgenConf
 	certgenApp.Flag("certificate-lifetime", "Generated certificate lifetime (in days).").Default(strconv.Itoa(certs.DefaultCertificateLifetime)).UintVar(&certgenConfig.Lifetime)
 	certgenApp.Flag("overwrite", "Overwrite existing files or Secrets.").BoolVar(&certgenConfig.Overwrite)
 	certgenApp.Flag("secrets-format", "Specify how to format the generated Kubernetes Secrets.").Default("legacy").StringVar(&certgenConfig.Format)
+	certgenApp.Flag("secrets-name-prefix", "Specify a prefix to be used as the first part of the generated Kubernetes secrets' names.").StringVar(&certgenConfig.NamePrefix)
 
 	certgenApp.Arg("outputdir", "Directory to write output files into (default \"certs\").").Default("certs").StringVar(&certgenConfig.OutputDir)
 
@@ -82,6 +83,9 @@ type certgenConfig struct {
 
 	// Format specifies how to format the Kubernetes Secrets (must be "legacy" or "compat").
 	Format string
+
+	// NamePrefix specifies the prefix to use for the generated Kubernetes secrets' names.
+	NamePrefix string
 }
 
 // OutputCerts outputs the certs in certs as directed by config.
@@ -95,9 +99,9 @@ func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs 
 	if config.OutputYAML || config.OutputKube {
 		switch config.Format {
 		case "legacy":
-			secrets = certgen.AsLegacySecrets(config.Namespace, certs)
+			secrets = certgen.AsLegacySecrets(config.Namespace, config.NamePrefix, certs)
 		case "compact":
-			secrets = certgen.AsSecrets(config.Namespace, certs)
+			secrets = certgen.AsSecrets(config.Namespace, config.NamePrefix, certs)
 		default:
 			return fmt.Errorf("unsupported Secrets format %q", config.Format)
 		}
