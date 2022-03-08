@@ -112,7 +112,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 	container := corev1.Container{
 		Name:            jobContainerName,
 		Image:           image,
-		ImagePullPolicy: corev1.PullAlways,
+		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command: []string{
 			"contour",
 			"certgen",
