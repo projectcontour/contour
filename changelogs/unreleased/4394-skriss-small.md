@@ -1,0 +1,1 @@
+Adds an optional `--name-prefix` flag to the `contour certgen` command which, if specified, will be added as a prefix to the names of the generated Kubernetes secrets (e.g. `myprefix-contourcert` and `myprefix-envoycert`).
