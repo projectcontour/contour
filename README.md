@@ -35,7 +35,7 @@ Thanks for taking the time to join our community and start contributing!
 - Check out the [open issues](https://github.com/projectcontour/contour/issues).
 - Join our Kubernetes Slack channel: [#contour](https://kubernetes.slack.com/messages/contour/)
 - Join the **Contour Community Meetings** - [schedule, notes, and recordings can be found here](https://projectcontour.io/community)
-
+- Find GOVERNANCE in our [Community repo](https://github.com/projectcontour/community)
 ## Roadmap
 
 See [Contour's roadmap](https://github.com/projectcontour/community/blob/main/ROADMAP.md) to learn more about where we are headed.
