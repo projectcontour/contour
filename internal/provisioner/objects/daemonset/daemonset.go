@@ -268,7 +268,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 			Args: []string{
 				"bootstrap",
 				filepath.Join("/", envoyCfgVolMntDir, envoyCfgFileName),
-				"--xds-address=contour",
+				"--xds-address=contour-" + contour.Name,
 				fmt.Sprintf("--xds-port=%d", objcfg.XDSPort),
 				fmt.Sprintf("--xds-resource-version=%s", xdsResourceVersion),
 				fmt.Sprintf("--resources-dir=%s", filepath.Join("/", envoyCfgVolMntDir, "resources")),
@@ -307,13 +307,13 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
-			Name:      envoyDaemonSetName,
+			Name:      fmt.Sprintf("%s-%s", envoyDaemonSetName, contour.Name),
 			Labels:    labels,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			RevisionHistoryLimit: pointer.Int32Ptr(int32(10)),
 			// Ensure the deamonset adopts only its own pods.
-			Selector: EnvoyDaemonSetPodSelector(),
+			Selector: EnvoyDaemonSetPodSelector(contour.Name),
 			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
 				Type: appsv1.RollingUpdateDaemonSetStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
@@ -329,7 +329,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 						"prometheus.io/port":   "8002",
 						"prometheus.io/path":   "/stats/prometheus",
 					},
-					Labels: EnvoyDaemonSetPodSelector().MatchLabels,
+					Labels: EnvoyDaemonSetPodSelector(contour.Name).MatchLabels,
 				},
 				Spec: corev1.PodSpec{
 					Containers:     containers,
@@ -340,7 +340,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
 									DefaultMode: pointer.Int32Ptr(int32(420)),
-									SecretName:  envoyCertsSecretName,
+									SecretName:  fmt.Sprintf("%s-%s", contour.Name, envoyCertsSecretName),
 								},
 							},
 						},
@@ -357,7 +357,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 							},
 						},
 					},
-					ServiceAccountName:            objutil.EnvoyRbacName,
+					ServiceAccountName:            fmt.Sprintf("%s-%s", objutil.EnvoyRbacName, contour.Name),
 					AutomountServiceAccountToken:  pointer.BoolPtr(false),
 					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(300)),
 					SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
@@ -385,7 +385,7 @@ func CurrentDaemonSet(ctx context.Context, cli client.Client, contour *model.Con
 	ds := &appsv1.DaemonSet{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      envoyDaemonSetName,
+		Name:      fmt.Sprintf("%s-%s", envoyDaemonSetName, contour.Name),
 	}
 	if err := cli.Get(ctx, key, ds); err != nil {
 		return nil, err
@@ -418,10 +418,10 @@ func updateDaemonSetIfNeeded(ctx context.Context, cli client.Client, contour *mo
 
 // EnvoyDaemonSetPodSelector returns a label selector using "app: envoy" as the
 // key/value pair.
-func EnvoyDaemonSetPodSelector() *metav1.LabelSelector {
+func EnvoyDaemonSetPodSelector(contourName string) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"app": "envoy",
+			"app": "envoy-" + contourName,
 		},
 	}
 }

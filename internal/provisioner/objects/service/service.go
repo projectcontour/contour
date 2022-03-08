@@ -196,7 +196,7 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
-			Name:      contourSvcName,
+			Name:      fmt.Sprintf("%s-%s", contourSvcName, contour.Name),
 			Labels:    model.OwnerLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
@@ -208,7 +208,7 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 					TargetPort: intstr.IntOrString{IntVal: xdsPort},
 				},
 			},
-			Selector:        objdeploy.ContourDeploymentPodSelector().MatchLabels,
+			Selector:        objdeploy.ContourDeploymentPodSelector(contour.Name).MatchLabels,
 			Type:            corev1.ServiceTypeClusterIP,
 			SessionAffinity: corev1.ServiceAffinityNone,
 		},
@@ -264,13 +264,13 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   contour.Namespace,
-			Name:        envoySvcName,
+			Name:        fmt.Sprintf("%s-%s", envoySvcName, contour.Name),
 			Annotations: map[string]string{},
 			Labels:      model.OwnerLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:           ports,
-			Selector:        objds.EnvoyDaemonSetPodSelector().MatchLabels,
+			Selector:        objds.EnvoyDaemonSetPodSelector(contour.Name).MatchLabels,
 			SessionAffinity: corev1.ServiceAffinityNone,
 		},
 	}
@@ -356,7 +356,7 @@ func currentContourService(ctx context.Context, cli client.Client, contour *mode
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      contourSvcName,
+		Name:      fmt.Sprintf("%s-%s", contourSvcName, contour.Name),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {
@@ -370,7 +370,7 @@ func currentEnvoyService(ctx context.Context, cli client.Client, contour *model.
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      envoySvcName,
+		Name:      fmt.Sprintf("%s-%s", envoySvcName, contour.Name),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {

@@ -25,9 +25,6 @@ import (
 
 // Contour returns true if contour is valid.
 func Contour(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	// TODO(sk) this used to check for existence of another Contour in the namespace,
-	// we likely want to do the same for Gateways somehow.
-
 	if err := ContainerPorts(contour); err != nil {
 		return err
 	}

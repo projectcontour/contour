@@ -50,34 +50,37 @@ func EnsureRBAC(ctx context.Context, cli client.Client, contour *model.Contour) 
 	ns := contour.Namespace
 	names := []string{ContourRbacName, EnvoyRbacName, CertGenRbacName}
 	for _, name := range names {
-		_, err := objsa.EnsureServiceAccount(ctx, cli, name, contour)
+		saName := fmt.Sprintf("%s-%s", name, contour.Name)
+
+		_, err := objsa.EnsureServiceAccount(ctx, cli, saName, contour)
 		if err != nil {
-			return fmt.Errorf("failed to ensure service account %s/%s: %w", ns, name, err)
+			return fmt.Errorf("failed to ensure service account %s/%s: %w", ns, saName, err)
 		}
 	}
 	// ClusterRole and ClusterRoleBinding resources are namespace-named to allow ownership
 	// from individual instances of Contour.
-	nsName := fmt.Sprintf("%s-%s", ContourRbacName, ns)
+	nsName := fmt.Sprintf("%s-%s-%s", ContourRbacName, ns, contour.Name)
 	cr, err := objcr.EnsureClusterRole(ctx, cli, nsName, contour)
 	if err != nil {
-		return fmt.Errorf("failed to ensure cluster role %s: %w", ContourRbacName, err)
+		return fmt.Errorf("failed to ensure cluster role %s: %w", nsName, err)
 	}
-	if err := objcrb.EnsureClusterRoleBinding(ctx, cli, nsName, cr.Name, ContourRbacName, contour); err != nil {
-		return fmt.Errorf("failed to ensure cluster role binding %s: %w", ContourRbacName, err)
+	if err := objcrb.EnsureClusterRoleBinding(ctx, cli, nsName, cr.Name, fmt.Sprintf("%s-%s", ContourRbacName, contour.Name), contour); err != nil {
+		return fmt.Errorf("failed to ensure cluster role binding %s: %w", fmt.Sprintf("%s-%s", ContourRbacName, contour.Name), err)
 	}
-	certRole, err := objrole.EnsureCertgenRole(ctx, cli, CertGenRbacName, contour)
+	certRole, err := objrole.EnsureCertgenRole(ctx, cli, fmt.Sprintf("%s-%s", CertGenRbacName, contour.Name), contour)
 	if err != nil {
-		return fmt.Errorf("failed to ensure certgen role %s/%s: %w", ns, CertGenRbacName, err)
+		return fmt.Errorf("failed to ensure certgen role %s/%s: %w", ns, fmt.Sprintf("%s-%s", CertGenRbacName, contour.Name), err)
 	}
-	if err := objrb.EnsureRoleBinding(ctx, cli, ContourRbacName, CertGenRbacName, certRole.Name, contour); err != nil {
+	// this one is named "contour-<gateway-name>" despite being for certgen.
+	if err := objrb.EnsureRoleBinding(ctx, cli, fmt.Sprintf("%s-%s", ContourRbacName, contour.Name), fmt.Sprintf("%s-%s", CertGenRbacName, contour.Name), certRole.Name, contour); err != nil {
 		return fmt.Errorf("failed to ensure certgen role binding %s/%s: %w", ns, ContourRbacName, err)
 	}
-	controllerRole, err := objrole.EnsureControllerRole(ctx, cli, ContourRbacName, contour)
+	controllerRole, err := objrole.EnsureControllerRole(ctx, cli, fmt.Sprintf("%s-%s", ContourRbacName, contour.Name), contour)
 	if err != nil {
-		return fmt.Errorf("failed to ensure controller role %s/%s: %w", ns, ContourRbacName, err)
+		return fmt.Errorf("failed to ensure controller role %s/%s: %w", ns, fmt.Sprintf("%s-%s", ContourRbacName, contour.Name), err)
 	}
-	if err := objrb.EnsureRoleBinding(ctx, cli, ContourRoleBindingName, ContourRbacName, controllerRole.Name, contour); err != nil {
-		return fmt.Errorf("failed to ensure controller role binding %s/%s: %w", ns, ContourRbacName, err)
+	if err := objrb.EnsureRoleBinding(ctx, cli, fmt.Sprintf("%s-%s", ContourRoleBindingName, contour.Name), fmt.Sprintf("%s-%s", ContourRbacName, contour.Name), controllerRole.Name, contour); err != nil {
+		return fmt.Errorf("failed to ensure controller role binding %s/%s: %w", ns, fmt.Sprintf("%s-%s", ContourRoleBindingName, contour.Name), err)
 	}
 	return nil
 }
@@ -89,48 +92,42 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 	ns := contour.Namespace
 	objectsToDelete := []client.Object{}
 
-	// TODO(sk) right now we can't support running more than one Contour instance
-	// per namespace, so just assume there's only one.
-	otherContoursExistInSpecNs := false
-
-	if !otherContoursExistInSpecNs {
-		controllerRoleBind, err := objrb.CurrentRoleBinding(ctx, cli, ns, ContourRoleBindingName)
+	controllerRoleBind, err := objrb.CurrentRoleBinding(ctx, cli, ns, ContourRoleBindingName)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+	if controllerRoleBind != nil {
+		objectsToDelete = append(objectsToDelete, controllerRoleBind)
+	}
+	controllerRole, err := objrole.CurrentRole(ctx, cli, ns, ContourRbacName)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+	if controllerRole != nil {
+		objectsToDelete = append(objectsToDelete, controllerRole)
+	}
+	certRoleBind, err := objrb.CurrentRoleBinding(ctx, cli, ns, ContourRbacName)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+	if certRoleBind != nil {
+		objectsToDelete = append(objectsToDelete, certRoleBind)
+	}
+	certRole, err := objrole.CurrentRole(ctx, cli, ns, CertGenRbacName)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+	if certRole != nil {
+		objectsToDelete = append(objectsToDelete, certRole)
+	}
+	names := []string{ContourRbacName, EnvoyRbacName, CertGenRbacName}
+	for _, name := range names {
+		svcAct, err := objsa.CurrentServiceAccount(ctx, cli, ns, name)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
-		if controllerRoleBind != nil {
-			objectsToDelete = append(objectsToDelete, controllerRoleBind)
-		}
-		controllerRole, err := objrole.CurrentRole(ctx, cli, ns, ContourRbacName)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-		if controllerRole != nil {
-			objectsToDelete = append(objectsToDelete, controllerRole)
-		}
-		certRoleBind, err := objrb.CurrentRoleBinding(ctx, cli, ns, ContourRbacName)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-		if certRoleBind != nil {
-			objectsToDelete = append(objectsToDelete, certRoleBind)
-		}
-		certRole, err := objrole.CurrentRole(ctx, cli, ns, CertGenRbacName)
-		if err != nil && !errors.IsNotFound(err) {
-			return err
-		}
-		if certRole != nil {
-			objectsToDelete = append(objectsToDelete, certRole)
-		}
-		names := []string{ContourRbacName, EnvoyRbacName, CertGenRbacName}
-		for _, name := range names {
-			svcAct, err := objsa.CurrentServiceAccount(ctx, cli, ns, name)
-			if err != nil && !errors.IsNotFound(err) {
-				return err
-			}
-			if svcAct != nil {
-				objectsToDelete = append(objectsToDelete, svcAct)
-			}
+		if svcAct != nil {
+			objectsToDelete = append(objectsToDelete, svcAct)
 		}
 	}
 

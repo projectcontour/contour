@@ -142,7 +142,7 @@ accesslog-format: envoy
 	}
 	cm, err := desired(configForContour(c))
 	require.NoError(t, err)
-	require.Equal(t, "contour", cm.Name)
+	require.Equal(t, "contour-test", cm.Name)
 	require.Equal(t, "test-ns", cm.Namespace)
 	require.Contains(t, cm.Data, "contour.yaml")
 	assert.Equal(t, expected, cm.Data["contour.yaml"])
@@ -392,7 +392,7 @@ accesslog-format: envoy
 	}
 	cm, err := desired(configForContour(c))
 	require.NoError(t, err)
-	require.Equal(t, "contour", cm.Name)
+	require.Equal(t, "contour-test", cm.Name)
 	require.Equal(t, "test-ns", cm.Namespace)
 	require.Contains(t, cm.Data, "contour.yaml")
 	assert.Equal(t, expected, cm.Data["contour.yaml"])

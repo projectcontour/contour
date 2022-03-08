@@ -38,10 +38,8 @@ const (
 	jobNsEnvVar      = "CONTOUR_NAMESPACE"
 )
 
-func certgenJobName(contourImage string) string {
-	// [TODO] danehans: Remove and use contour.Name + "-certgen" when
-	// https://github.com/projectcontour/contour/issues/2122 is fixed.
-	return "contour-certgen-" + objutil.TagFromImage(contourImage)
+func certgenJobName(contourImage, contourName string) string {
+	return fmt.Sprintf("%s-%s-%s", "contour-certgen", objutil.TagFromImage(contourImage), contourName)
 }
 
 // EnsureJob ensures that a Job exists for the given contour.
@@ -89,7 +87,7 @@ func currentJob(ctx context.Context, cli client.Client, contour *model.Contour, 
 	current := &batchv1.Job{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      certgenJobName(image),
+		Name:      certgenJobName(image, contour.Name),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {
@@ -121,6 +119,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 			"--overwrite",
 			"--secrets-format=compact",
 			fmt.Sprintf("--namespace=$(%s)", jobNsEnvVar),
+			fmt.Sprintf("--secrets-name-prefix=%s", contour.Name),
 		},
 		Env:                      []corev1.EnvVar{env},
 		TerminationMessagePath:   "/dev/termination-log",
@@ -128,7 +127,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 	}
 	spec := corev1.PodSpec{
 		Containers:                    []corev1.Container{container},
-		ServiceAccountName:            objutil.CertGenRbacName,
+		ServiceAccountName:            fmt.Sprintf("%s-%s", objutil.CertGenRbacName, contour.Name),
 		SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
 		RestartPolicy:                 corev1.RestartPolicyNever,
 		DNSPolicy:                     corev1.DNSClusterFirst,
@@ -151,7 +150,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      certgenJobName(image),
+			Name:      certgenJobName(image, contour.Name),
 			Namespace: contour.Namespace,
 			Labels:    labels,
 		},

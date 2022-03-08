@@ -183,7 +183,7 @@ type contourConfig struct {
 func configForContour(contour *model.Contour) *configMapParams {
 	return &configMapParams{
 		Namespace: contour.Namespace,
-		Name:      ContourConfigMapName,
+		Name:      fmt.Sprintf("%s-%s", ContourConfigMapName, contour.Name),
 		Labels:    model.OwnerLabels(contour),
 		Contour: contourConfig{
 			GatewayNamespace:          contour.Namespace,
