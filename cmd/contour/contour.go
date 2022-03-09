@@ -102,15 +102,15 @@ func main() {
 		// on top of any values sourced from -c's config file.
 		kingpin.MustParse(app.Parse(args))
 
+		if serveCtx.Config.Debug {
+			log.SetLevel(logrus.DebugLevel)
+		}
+
 		// Reinitialize with the target debug level.
 		k8s.InitLogging(
 			k8s.LogWriterOption(log.WithField("context", "kubernetes")),
 			k8s.LogLevelOption(int(serveCtx.KubernetesDebug)),
 		)
-
-		if serveCtx.Config.Debug {
-			log.SetLevel(logrus.DebugLevel)
-		}
 
 		log.Infof("args: %v", args)
 

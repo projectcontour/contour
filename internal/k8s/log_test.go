@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	klog "k8s.io/klog/v2"
+	controller_runtime_log "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -124,6 +125,18 @@ func TestKlogOnlyLogsToLogrus(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s:%d", sourceFile, errorLine), errorEntry.Data["caller"])
 }
 
+func TestControllerRuntimeLoggerLogsToLogrus(t *testing.T) {
+	// Comment out the following line to run this test.
+	t.Skip("this test has to be run individually since the controller-runtime logging infrastructure can only be initialized once per process")
+
+	log, logHook := test.NewNullLogger()
+	InitLogging(LogWriterOption(log.WithField("foo", "bar")))
+
+	controller_runtime_log.Log.Info("some message")
+	require.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, klogFlushWaitTime, klogFlushWaitInterval)
+	assert.Equal(t, logHook.AllEntries()[0].Message, "some message")
+}
+
 // Last LogWriterOption passed in should be used.
 func TestMultipleLogWriterOptions(t *testing.T) {
 	log, logHook := test.NewNullLogger()
@@ -138,7 +151,7 @@ func TestMultipleLogWriterOptions(t *testing.T) {
 	assert.Equal(t, "data3", logHook.AllEntries()[0].Data["field"])
 }
 
-func TestLogLevelOption(t *testing.T) {
+func TestLogLevelOptionKlog(t *testing.T) {
 	log, logHook := test.NewNullLogger()
 	l := log.WithField("some", "field")
 	for logLevel := 1; logLevel <= 10; logLevel++ {
@@ -161,6 +174,34 @@ func TestLogLevelOption(t *testing.T) {
 				logHook.Reset()
 			}
 		})
+	}
+}
+
+func TestLogLevelOptionControllerRuntime(t *testing.T) {
+	// Comment out the following line to run this test.
+	t.Skip("this test has to be run individually since the controller-runtime logging infrastructure can only be initialized once per process")
+
+	log, logHook := test.NewNullLogger()
+	l := log.WithField("some", "field")
+
+	// We can only call InitLogging once and test the output of the
+	// controller-runtime logger with one log level because the
+	// underlying logger does not let us reset it.
+	logLevel := 5
+	InitLogging(LogWriterOption(l), LogLevelOption(logLevel))
+	// Make sure log verbosity is set properly.
+	for verbosityLevel := 1; verbosityLevel <= 10; verbosityLevel++ {
+		enabled := controller_runtime_log.Log.V(verbosityLevel).Enabled()
+		if verbosityLevel <= logLevel {
+			assert.True(t, enabled)
+			controller_runtime_log.Log.V(verbosityLevel).Info("something")
+			assert.Eventually(t, func() bool { return len(logHook.AllEntries()) == 1 }, klogFlushWaitTime, klogFlushWaitInterval)
+		} else {
+			assert.False(t, enabled)
+			controller_runtime_log.Log.V(verbosityLevel).Info("something")
+			assert.Never(t, func() bool { return len(logHook.AllEntries()) > 0 }, klogFlushWaitTime, klogFlushWaitInterval)
+		}
+		logHook.Reset()
 	}
 }
 
