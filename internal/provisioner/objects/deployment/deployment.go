@@ -37,10 +37,8 @@ import (
 )
 
 const (
-	// contourDeploymentName is the name of Contour's Deployment resource.
-	// [TODO] danehans: Remove and use contour.Name + "-contour" when
-	// https://github.com/projectcontour/contour/issues/2122 is fixed.
-	contourDeploymentName = "contour"
+	// contourDeploymentNamePrefix is the name of Contour's Deployment resource.
+	contourDeploymentNamePrefix = "contour"
 	// contourContainerName is the name of the Contour container.
 	contourContainerName = "contour"
 	// contourNsEnvVar is the name of the contour namespace environment variable.
@@ -64,6 +62,11 @@ const (
 	// debugPort is the network port number of Contour's debug service.
 	debugPort = 6060
 )
+
+// contourDeploymentNme returns the name of Contour's Deployment resource.
+func contourDeploymentName(contour *model.Contour) string {
+	return fmt.Sprintf("%s-%s", contourDeploymentNamePrefix, contour.Name)
+}
 
 // EnsureDeployment ensures a deployment using image exists for the given contour.
 func EnsureDeployment(ctx context.Context, cli client.Client, contour *model.Contour, image string) error {
@@ -225,7 +228,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
-			Name:      fmt.Sprintf("%s-%s", contourDeploymentName, contour.Name),
+			Name:      contourDeploymentName(contour),
 			Labels:    makeDeploymentLabels(contour),
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -285,7 +288,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: fmt.Sprintf("%s-%s", objcm.ContourConfigMapName, contour.Name),
+										Name: objcm.ContourConfigMapName(contour),
 									},
 									Items: []corev1.KeyToPath{
 										{
@@ -299,7 +302,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 						},
 					},
 					DNSPolicy:                     corev1.DNSClusterFirst,
-					ServiceAccountName:            fmt.Sprintf("%s-%s", objutil.ContourRbacName, contour.Name),
+					ServiceAccountName:            objutil.GetContourRBACNames(contour).ServiceAccount,
 					RestartPolicy:                 corev1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",
 					SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
@@ -325,7 +328,7 @@ func CurrentDeployment(ctx context.Context, cli client.Client, contour *model.Co
 	deploy := &appsv1.Deployment{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      fmt.Sprintf("%s-%s", contourDeploymentName, contour.Name),
+		Name:      contourDeploymentName(contour),
 	}
 	if err := cli.Get(ctx, key, deploy); err != nil {
 		return nil, err

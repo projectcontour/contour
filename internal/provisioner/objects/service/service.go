@@ -34,14 +34,10 @@ import (
 )
 
 const (
-	// contourSvcName is the name of Contour's Service.
-	// [TODO] danehans: Update Contour name to contour.Name + "-contour" to support multiple
-	// Contours/ns when https://github.com/projectcontour/contour/issues/2122 is fixed.
-	contourSvcName = "contour"
-	// [TODO] danehans: Update Envoy name to contour.Name + "-envoy" to support multiple
-	// Contours/ns when https://github.com/projectcontour/contour/issues/2122 is fixed.
-	// envoySvcName is the name of Envoy's Service.
-	envoySvcName = "envoy"
+	// contourSvcNamePrefix is the prefix of the name of Contour's Service.
+	contourSvcNamePrefix = "contour"
+	// envoySvcNamePrefix is the prefix of the name of Envoy's Service.
+	envoySvcNamePrefix = "envoy"
 	// awsLbBackendProtoAnnotation is a Service annotation that places the AWS ELB into
 	// "TCP" mode so that it does not do HTTP negotiation for HTTPS connections at the
 	// ELB edge. The downside of this is the remote IP address of all connections will
@@ -94,6 +90,16 @@ const (
 	// details see: https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
 	EnvoyNodePortHTTPSPort = int32(30443)
 )
+
+// contourServiceName returns the name of Contour's Service resource.
+func contourServiceName(contour *model.Contour) string {
+	return fmt.Sprintf("%s-%s", contourSvcNamePrefix, contour.Name)
+}
+
+// envoyServiceName returns the name of Envoy's service resource.
+func envoyServiceName(contour *model.Contour) string {
+	return fmt.Sprintf("%s-%s", envoySvcNamePrefix, contour.Name)
+}
 
 var (
 	// InternalLBAnnotations maps cloud providers to the provider's annotation
@@ -196,7 +202,7 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
-			Name:      fmt.Sprintf("%s-%s", contourSvcName, contour.Name),
+			Name:      contourServiceName(contour),
 			Labels:    model.OwnerLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
@@ -264,7 +270,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   contour.Namespace,
-			Name:        fmt.Sprintf("%s-%s", envoySvcName, contour.Name),
+			Name:        envoyServiceName(contour),
 			Annotations: map[string]string{},
 			Labels:      model.OwnerLabels(contour),
 		},
@@ -356,7 +362,7 @@ func currentContourService(ctx context.Context, cli client.Client, contour *mode
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      fmt.Sprintf("%s-%s", contourSvcName, contour.Name),
+		Name:      contourServiceName(contour),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {
@@ -370,7 +376,7 @@ func currentEnvoyService(ctx context.Context, cli client.Client, contour *model.
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      fmt.Sprintf("%s-%s", envoySvcName, contour.Name),
+		Name:      envoyServiceName(contour),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {

@@ -127,7 +127,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 	}
 	spec := corev1.PodSpec{
 		Containers:                    []corev1.Container{container},
-		ServiceAccountName:            fmt.Sprintf("%s-%s", objutil.CertGenRbacName, contour.Name),
+		ServiceAccountName:            objutil.GetCertgenRBACNames(contour).ServiceAccount,
 		SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
 		RestartPolicy:                 corev1.RestartPolicyNever,
 		DNSPolicy:                     corev1.DNSClusterFirst,

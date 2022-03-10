@@ -31,12 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// ContourConfigMapName is the name of Contour's ConfigMap resource.
-	// [TODO] danehans: Remove and use contour.Name when
-	// https://github.com/projectcontour/contour/issues/2122 is fixed.
-	ContourConfigMapName = "contour"
-)
+// ContourConfigMapName returns the name of Contour's ConfigMap resource.
+func ContourConfigMapName(contour *model.Contour) string {
+	return fmt.Sprintf("%s-%s", "contour", contour.Name)
+}
 
 var contourConfigMapTemplate = template.Must(template.New("contour.yaml").Parse(`#
 # server:
@@ -189,7 +187,7 @@ type contourConfig struct {
 func configForContour(contour *model.Contour) *configMapParams {
 	return &configMapParams{
 		Namespace: contour.Namespace,
-		Name:      fmt.Sprintf("%s-%s", ContourConfigMapName, contour.Name),
+		Name:      ContourConfigMapName(contour),
 		Labels:    model.OwnerLabels(contour),
 		Contour: contourConfig{
 			GatewayNamespace:          contour.Namespace,

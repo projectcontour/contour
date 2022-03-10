@@ -36,10 +36,8 @@ import (
 )
 
 const (
-	// envoyDaemonSetName is the name of Envoy's DaemonSet resource.
-	// [TODO] danehans: Remove and use contour.Name + "-envoy" when
-	// https://github.com/projectcontour/contour/issues/2122 is fixed.
-	envoyDaemonSetName = "envoy"
+	// envoyDaemonSetNamePrefix is the prefix of the name of Envoy's DaemonSet resource.
+	envoyDaemonSetNamePrefix = "envoy"
 	// EnvoyContainerName is the name of the Envoy container.
 	EnvoyContainerName = "envoy"
 	// ShutdownContainerName is the name of the Shutdown Manager container.
@@ -69,6 +67,11 @@ const (
 	// xdsResourceVersion is the version of the Envoy xdS resource types.
 	xdsResourceVersion = "v3"
 )
+
+// envoyDaemonSetName returns the name of Envoy's DaemonSet resource.
+func envoyDaemonSetName(contour *model.Contour) string {
+	return fmt.Sprintf("%s-%s", envoyDaemonSetNamePrefix, contour.Name)
+}
 
 // EnsureDaemonSet ensures a DaemonSet exists for the given contour.
 func EnsureDaemonSet(ctx context.Context, cli client.Client, contour *model.Contour, contourImage, envoyImage string) error {
@@ -307,7 +310,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
-			Name:      fmt.Sprintf("%s-%s", envoyDaemonSetName, contour.Name),
+			Name:      envoyDaemonSetName(contour),
 			Labels:    labels,
 		},
 		Spec: appsv1.DaemonSetSpec{
@@ -357,7 +360,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 							},
 						},
 					},
-					ServiceAccountName:            fmt.Sprintf("%s-%s", objutil.EnvoyRbacName, contour.Name),
+					ServiceAccountName:            objutil.GetEnvoyRBACNames(contour).ServiceAccount,
 					AutomountServiceAccountToken:  pointer.BoolPtr(false),
 					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(300)),
 					SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
@@ -385,7 +388,7 @@ func CurrentDaemonSet(ctx context.Context, cli client.Client, contour *model.Con
 	ds := &appsv1.DaemonSet{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      fmt.Sprintf("%s-%s", envoyDaemonSetName, contour.Name),
+		Name:      envoyDaemonSetName(contour),
 	}
 	if err := cli.Get(ctx, key, ds); err != nil {
 		return nil, err
