@@ -157,7 +157,7 @@ Building on multiple upstreams is the ability to define relative weights for ups
 This is commonly used for canary testing of new versions of an application when you want to send a small fraction of traffic to a specific Service.
 
 ```yaml
-# httpproxy-weight-shfiting.yaml
+# httpproxy-weight-shifting.yaml
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
@@ -271,10 +271,10 @@ Example input values: "300ms", "5s", "1m".
 Each route can have a load balancing strategy applied to determine which of its Endpoints is selected for the request.
 The following list are the options available to choose from:
 
-- `RoundRobin`: Each healthy upstream Endpoint is selected in round robin order (Default strategy if none selected).
-- `WeightedLeastRequest`:  The least request load balancer uses different algorithms depending on whether hosts have the same or different weights in an attempt to route traffic based upon the number of active requests or the load at the time of selection.
+- `RoundRobin`: Each healthy upstream Endpoint is selected in round-robin order (Default strategy if none selected).
+- `WeightedLeastRequest`:  The least request load balancer uses different algorithms depending on whether hosts have the same or different weights in an attempt to route traffic based upon the number of active requests or the load at the time of selection. 
 - `Random`: The random strategy selects a random healthy Endpoints.
-- `RequestHash`: The request hashing strategy allows for load balancing based on request attributes. An upstream Endpoint is selected based on the hash of an element of a request. For example, requests that contain a consistent value in a HTTP request header will be routed to the same upstream Endpoint. Currently only hashing of HTTP request headers and the source IP of a request is supported.
+- `RequestHash`: The request hashing strategy allows for load balancing based on request attributes. An upstream Endpoint is selected based on the hash of an element of a request. For example, requests that contain a consistent value in an HTTP request header will be routed to the same upstream Endpoint. Currently, only hashing of HTTP request headers, query parameters and the source IP of a request is supported.
 - `Cookie`: The cookie load balancing strategy is similar to the request hash strategy and is a convenience feature to implement session affinity, as described below.
 
 More information on the load balancing strategy can be found in [Envoy's documentation][7].
@@ -305,6 +305,7 @@ spec:
 
 The below example demonstrates how request hash load balancing policies can be configured:
 
+Request hash headers
 ```yaml
 # httpproxy-lb-request-hash.yaml
 apiVersion: projectcontour.io/v1
@@ -329,15 +330,64 @@ spec:
         terminal: true
       - headerHashOptions:
           headerName: User-Agent
+```
+In this example, if a client request contains the `X-Some-Header` header, the value of the header will be hashed and used to route to an upstream Endpoint. This could be used to implement a similar workflow to cookie-based session affinity by passing a consistent value for this header. If it is present, because it is set as a `terminal` hash option, Envoy will not continue on to process to `User-Agent` header or source IP to calculate a hash. If `X-Some-Header` is not present, Envoy will use the `User-Agent` header value to make a routing decision along with the source IP of the client making the request. These policies can be used alone or as shown for an advanced routing decision.
+
+
+Request hash source ip
+```yaml
+# httpproxy-lb-request-hash-ip.yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: lb-request-hash 
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: request-hash.bar.com
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: httpbin
+      port: 8080
+    loadBalancerPolicy:
+      strategy: RequestHash
+      requestHashPolicies:
       - hashSourceIP: true
 ```
 
-In this example, if a client request contains the `X-Some-Header` header, the value of the header will be hashed and used to route to an upstream Endpoint. This could be used to implement a similar workflow to cookie-based session affinity by passing a consistent value for this header. If it is present, because it is set as a `terminal` hash option, Envoy will not continue on to process to `User-Agent` header or source IP to calculate a hash. If `X-Some-Header` is not present, Envoy will use the `User-Agent` header value to make a routing decision along with the source IP of the client making the request. These policies can be used alone or as shown for an advanced routing decision.
+Request hash query parameters
+```yaml
+# httpproxy-lb-request-hash.yaml
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: lb-request-hash 
+  namespace: default
+spec:
+  virtualhost:
+    fqdn: request-hash.bar.com
+  routes:
+  - conditions:
+    - prefix: /
+    services:
+    - name: httpbin
+      port: 8080
+    loadBalancerPolicy:
+      strategy: RequestHash
+      requestHashPolicies:
+      - queryParameterHashOptions:
+          prameterName: param1
+        terminal: true
+      - queryParameterHashOptions:
+          parameterName: param2
+```
 
 ## Session Affinity
 
 Session affinity, also known as _sticky sessions_, is a load balancing strategy whereby a sequence of requests from a single client are consistently routed to the same application backend.
-Contour supports session affinity on a per route basis with `loadBalancerPolicy` `strategy: Cookie`.
+Contour supports session affinity on a per-route basis with `loadBalancerPolicy` `strategy: Cookie`.
 
 ```yaml
 # httpproxy-sticky-sessions.yaml
