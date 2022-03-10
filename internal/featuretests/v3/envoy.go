@@ -274,9 +274,10 @@ func withSessionAffinity(route *envoy_route_v3.Route_Route) *envoy_route_v3.Rout
 }
 
 type hashPolicySpecifier struct {
-	headerName   string
-	terminal     bool
-	hashSourceIP bool
+	headerName    string
+	terminal      bool
+	hashSourceIP  bool
+	parameterName string
 }
 
 func withRequestHashPolicySpecifiers(route *envoy_route_v3.Route_Route, policies ...hashPolicySpecifier) *envoy_route_v3.Route_Route {
@@ -295,6 +296,13 @@ func withRequestHashPolicySpecifiers(route *envoy_route_v3.Route_Route, policies
 			hp.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Header_{
 				Header: &envoy_route_v3.RouteAction_HashPolicy_Header{
 					HeaderName: p.headerName,
+				},
+			}
+		}
+		if len(p.parameterName) > 0 {
+			hp.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
+				QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+					Name: p.parameterName,
 				},
 			}
 		}

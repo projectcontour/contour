@@ -2190,6 +2190,20 @@ spec:
                               minLength: 1
                               type: string
                           type: object
+                        queryParameterHashOptions:
+                          description: QueryParameterHashOptions should be set when
+                            request query parameter hash based load balancing is desired.
+                            It must be the only hash option field set, otherwise this
+                            request hash policy object will be ignored.
+                          properties:
+                            parameterName:
+                              description: ParameterName is the name of the HTTP request
+                                query parameter that will be used to calculate the
+                                hash key. If the query parameter specified is not
+                                present on a request, no hash will be produced.
+                              minLength: 1
+                              type: string
+                          type: object
                         terminal:
                           description: Terminal is a flag that allows for short-circuiting
                             computing of a hash for a given request. If set to true,
@@ -2868,6 +2882,22 @@ spec:
                                       request header that will be used to calculate
                                       the hash key. If the header specified is not
                                       present on a request, no hash will be produced.
+                                    minLength: 1
+                                    type: string
+                                type: object
+                              queryParameterHashOptions:
+                                description: QueryParameterHashOptions should be set
+                                  when request query parameter hash based load balancing
+                                  is desired. It must be the only hash option field
+                                  set, otherwise this request hash policy object will
+                                  be ignored.
+                                properties:
+                                  parameterName:
+                                    description: ParameterName is the name of the
+                                      HTTP request query parameter that will be used
+                                      to calculate the hash key. If the query parameter
+                                      specified is not present on a request, no hash
+                                      will be produced.
                                     minLength: 1
                                     type: string
                                 type: object
@@ -3625,6 +3655,21 @@ spec:
                                     request header that will be used to calculate
                                     the hash key. If the header specified is not present
                                     on a request, no hash will be produced.
+                                  minLength: 1
+                                  type: string
+                              type: object
+                            queryParameterHashOptions:
+                              description: QueryParameterHashOptions should be set
+                                when request query parameter hash based load balancing
+                                is desired. It must be the only hash option field
+                                set, otherwise this request hash policy object will
+                                be ignored.
+                              properties:
+                                parameterName:
+                                  description: ParameterName is the name of the HTTP
+                                    request query parameter that will be used to calculate
+                                    the hash key. If the query parameter specified
+                                    is not present on a request, no hash will be produced.
                                   minLength: 1
                                   type: string
                               type: object

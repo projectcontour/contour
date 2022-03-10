@@ -529,6 +529,48 @@ func TestRouteRoute(t *testing.T) {
 				},
 			},
 		},
+		"single service w/ request query parameter hashing": {
+			route: &dag.Route{
+				Clusters: []*dag.Cluster{c3},
+				RequestHashPolicies: []dag.RequestHashPolicy{
+					{
+						Terminal: true,
+						QueryParameterHashOptions: &dag.QueryParameterHashOptions{
+							ParameterName: "something",
+						},
+					},
+					{
+						QueryParameterHashOptions: &dag.QueryParameterHashOptions{
+							ParameterName: "other",
+						},
+					},
+				},
+			},
+			want: &envoy_route_v3.Route_Route{
+				Route: &envoy_route_v3.RouteAction{
+					ClusterSpecifier: &envoy_route_v3.RouteAction_Cluster{
+						Cluster: "default/kuard/8080/1a2ffc1fef",
+					},
+					HashPolicy: []*envoy_route_v3.RouteAction_HashPolicy{
+						{
+							Terminal: true,
+							PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
+								QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+									Name: "something",
+								},
+							},
+						},
+						{
+							PolicySpecifier: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
+								QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+									Name: "other",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"host header rewrite": {
 			route: &dag.Route{
 				RequestHeadersPolicy: &dag.HeadersPolicy{

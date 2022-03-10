@@ -321,6 +321,13 @@ func hashPolicy(requestHashPolicies []dag.RequestHashPolicy) []*envoy_route_v3.R
 				},
 			}
 		}
+		if rhp.QueryParameterHashOptions != nil {
+			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_QueryParameter_{
+				QueryParameter: &envoy_route_v3.RouteAction_HashPolicy_QueryParameter{
+					Name: rhp.QueryParameterHashOptions.ParameterName,
+				},
+			}
+		}
 		if rhp.CookieHashOptions != nil {
 			newHP.PolicySpecifier = &envoy_route_v3.RouteAction_HashPolicy_Cookie_{
 				Cookie: &envoy_route_v3.RouteAction_HashPolicy_Cookie{

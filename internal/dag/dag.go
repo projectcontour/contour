@@ -345,6 +345,12 @@ type HeaderHashOptions struct {
 	HeaderName string
 }
 
+// QueryParameterHashOptions contains options for hashing a request query parameter.
+type QueryParameterHashOptions struct {
+	// ParameterName is the name of the query parameter to hash.
+	ParameterName string
+}
+
 // CookieHashOptions contains options for hashing a HTTP cookie.
 type CookieHashOptions struct {
 	// CookieName is the name of the header to hash.
@@ -372,6 +378,9 @@ type RequestHashPolicy struct {
 
 	// HashSourceIP is set to true when source ip hashing is desired.
 	HashSourceIP bool
+
+	// QueryParameterHashOptions is set when a query parameter hash is desired.
+	QueryParameterHashOptions *QueryParameterHashOptions
 }
 
 // GlobalRateLimitPolicy holds global rate limiting parameters.

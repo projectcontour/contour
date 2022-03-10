@@ -294,3 +294,76 @@ func TestLoadBalancerPolicyRequestHashSourceIP(t *testing.T) {
 		TypeUrl: routeType,
 	})
 }
+
+func TestLoadBalancerPolicyRequestHashQueryParameter(t *testing.T) {
+	rh, c, done := setup(t)
+	defer done()
+
+	s1 := fixture.NewService("app").WithPorts(
+		v1.ServicePort{Port: 80, TargetPort: intstr.FromInt(8080)},
+		v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(s1)
+
+	proxy1 := fixture.NewProxy("simple").
+		WithFQDN("www.example.com").
+		WithSpec(contour_api_v1.HTTPProxySpec{
+			Routes: []contour_api_v1.Route{{
+				Conditions: matchconditions(prefixMatchCondition("/cart")),
+				LoadBalancerPolicy: &contour_api_v1.LoadBalancerPolicy{
+					Strategy: "RequestHash",
+					RequestHashPolicies: []contour_api_v1.RequestHashPolicy{
+						{
+							Terminal: true,
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "something",
+							},
+						},
+						{
+							QueryParameterHashOptions: &contour_api_v1.QueryParameterHashOptions{
+								ParameterName: "other",
+							},
+						},
+					},
+				},
+				Services: []contour_api_v1.Service{{
+					Name: s1.Name,
+					Port: 80,
+				}},
+			}},
+		})
+	rh.OnAdd(proxy1)
+
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			DefaultCluster(&envoy_cluster_v3.Cluster{
+				Name:                 s1.Namespace + "/" + s1.Name + "/80/1a2ffc1fef",
+				ClusterDiscoveryType: envoy_v3.ClusterDiscoveryType(envoy_cluster_v3.Cluster_EDS),
+				AltStatName:          s1.Namespace + "_" + s1.Name + "_80",
+				EdsClusterConfig: &envoy_cluster_v3.Cluster_EdsClusterConfig{
+					EdsConfig:   envoy_v3.ConfigSource("contour"),
+					ServiceName: s1.Namespace + "/" + s1.Name,
+				},
+				LbPolicy: envoy_cluster_v3.Cluster_RING_HASH,
+			}),
+		),
+		TypeUrl: clusterType,
+	})
+
+	c.Request(routeType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t,
+			envoy_v3.RouteConfiguration("ingress_http",
+				envoy_v3.VirtualHost("www.example.com",
+					&envoy_route_v3.Route{
+						Match: routePrefix("/cart"),
+						Action: withRequestHashPolicySpecifiers(
+							routeCluster("default/app/80/1a2ffc1fef"),
+							hashPolicySpecifier{parameterName: "something", terminal: true},
+							hashPolicySpecifier{parameterName: "other"},
+						),
+					},
+				),
+			),
+		),
+		TypeUrl: routeType,
+	})
+}

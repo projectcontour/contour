@@ -665,16 +665,27 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 		hashSourceIPSet := false
 		// Map of unique header names.
 		headerHashPolicies := map[string]bool{}
+		// Map of unique query parameter names.
+		queryParameterHashPolicies := map[string]bool{}
 		for _, hashPolicy := range lbp.RequestHashPolicies {
 			rhp := RequestHashPolicy{
 				Terminal: hashPolicy.Terminal,
 			}
 
 			// Ensure hashing for exactly one request attribute is set.
-			if (!hashPolicy.HashSourceIP && hashPolicy.HeaderHashOptions == nil) ||
-				(hashPolicy.HashSourceIP && hashPolicy.HeaderHashOptions != nil) {
+			attrCounter := 0
+			if hashPolicy.HashSourceIP {
+				attrCounter++
+			}
+			if hashPolicy.HeaderHashOptions != nil {
+				attrCounter++
+			}
+			if hashPolicy.QueryParameterHashOptions != nil {
+				attrCounter++
+			}
+			if attrCounter != 1 {
 				validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
-					"ignoring invalid request hash policy, must set exactly one of hashSourceIP or headerHashOptions")
+					"ignoring invalid request hash policy, must set exactly one of hashSourceIP or headerHashOptions or queryParameterHashOptions")
 				continue
 			}
 
@@ -706,11 +717,31 @@ func loadBalancerRequestHashPolicies(lbp *contour_api_v1.LoadBalancerPolicy, val
 				}
 			}
 
+			if hashPolicy.QueryParameterHashOptions != nil {
+				// Pretty much everyone assumes that query parameter names are case-insensitive,
+				// but there is no actual standard for that.
+				queryParameter := strings.ToLower(hashPolicy.QueryParameterHashOptions.ParameterName)
+				if queryParameter == "" {
+					validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
+						"ignoring invalid query parameter hash policy options with an invalid empty query parameter name")
+					continue
+				}
+				if _, ok := queryParameterHashPolicies[queryParameter]; ok {
+					validCond.AddWarningf("SpecError", "IgnoredField",
+						"ignoring invalid query parameter hash policy options with duplicated query parameter name %s", queryParameter)
+					continue
+				}
+				queryParameterHashPolicies[queryParameter] = true
+				rhp.QueryParameterHashOptions = &QueryParameterHashOptions{
+					ParameterName: queryParameter,
+				}
+			}
+
 			rhps = append(rhps, rhp)
 		}
 		if len(rhps) == 0 {
 			validCond.AddWarningf(contour_api_v1.ConditionTypeSpecError, "IgnoredField",
-				"ignoring invalid header hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
+				"ignoring invalid request hash policy options, setting load balancer strategy to default %s", LoadBalancerPolicyRoundRobin)
 			rhps = nil
 			actualStrategy = LoadBalancerPolicyRoundRobin
 		}
