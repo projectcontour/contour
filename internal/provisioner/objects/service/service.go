@@ -21,9 +21,9 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
+	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
 	objds "github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
 	objdeploy "github.com/projectcontour/contour/internal/provisioner/objects/deployment"
-	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -184,7 +184,7 @@ func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *
 
 // DesiredContourService generates the desired Contour Service for the given contour.
 func DesiredContourService(contour *model.Contour) *corev1.Service {
-	xdsPort := objcfg.XDSPort
+	xdsPort := objutil.XDSPort
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,

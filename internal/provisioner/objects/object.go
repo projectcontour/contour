@@ -17,6 +17,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	// XDSPort is the network port number of Contour's xDS service.
+	XDSPort = int32(8001)
+	// EnvoyInsecureContainerPort is the network port number of Envoy's insecure listener.
+	EnvoyInsecureContainerPort = int32(8080)
+	// EnvoySecureContainerPort is the network port number of Envoy's secure listener.
+	EnvoySecureContainerPort = int32(8443)
+)
+
 // NewUnprivilegedPodSecurity makes a a non-root PodSecurityContext object
 // using 65534 as the user and group ID.
 func NewUnprivilegedPodSecurity() *corev1.PodSecurityContext {

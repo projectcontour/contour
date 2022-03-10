@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package objects
+package rbac
 
 import (
 	"context"
@@ -19,11 +19,11 @@ import (
 
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	objcr "github.com/projectcontour/contour/internal/provisioner/objects/clusterrole"
-	objcrb "github.com/projectcontour/contour/internal/provisioner/objects/clusterrolebinding"
-	objrole "github.com/projectcontour/contour/internal/provisioner/objects/role"
-	objrb "github.com/projectcontour/contour/internal/provisioner/objects/rolebinding"
-	objsa "github.com/projectcontour/contour/internal/provisioner/objects/serviceaccount"
+	objcr "github.com/projectcontour/contour/internal/provisioner/objects/rbac/clusterrole"
+	objcrb "github.com/projectcontour/contour/internal/provisioner/objects/rbac/clusterrolebinding"
+	objrole "github.com/projectcontour/contour/internal/provisioner/objects/rbac/role"
+	objrb "github.com/projectcontour/contour/internal/provisioner/objects/rbac/rolebinding"
+	objsa "github.com/projectcontour/contour/internal/provisioner/objects/rbac/serviceaccount"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
