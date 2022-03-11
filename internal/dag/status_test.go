@@ -6620,6 +6620,64 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
 	})
 
+	run(t, "HTTPRouteFilterURLRewrite with ReplaceFullPath HTTPPathModifierType is not yet supported for httproute rule", testcase{
+		objs: []interface{}{
+			kuardService,
+			&gatewayapi_v1beta1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "basic",
+					Namespace: "default",
+					Labels: map[string]string{
+						"app": "contour",
+					},
+				},
+				Spec: gatewayapi_v1beta1.HTTPRouteSpec{
+					CommonRouteSpec: gatewayapi_v1beta1.CommonRouteSpec{
+						ParentRefs: []gatewayapi_v1beta1.ParentReference{gatewayapi.GatewayParentRef("projectcontour", "contour")},
+					},
+					Hostnames: []gatewayapi_v1beta1.Hostname{
+						"test.projectcontour.io",
+					},
+					Rules: []gatewayapi_v1beta1.HTTPRouteRule{{
+						Matches:     gatewayapi.HTTPRouteMatch(gatewayapi_v1beta1.PathMatchPathPrefix, "/"),
+						BackendRefs: gatewayapi.HTTPBackendRef("kuard", 8080, 1),
+						Filters: []gatewayapi_v1beta1.HTTPRouteFilter{{
+							Type: gatewayapi_v1beta1.HTTPRouteFilterURLRewrite,
+							URLRewrite: &gatewayapi_v1beta1.HTTPURLRewriteFilter{
+								Path: &gatewayapi_v1beta1.HTTPPathModifier{
+									Type: gatewayapi_v1beta1.FullPathHTTPPathModifier,
+								},
+							},
+						}},
+					}},
+				},
+			}},
+		wantRouteConditions: []*status.RouteStatusUpdate{{
+			FullName: types.NamespacedName{Namespace: "default", Name: "basic"},
+			RouteParentStatuses: []*gatewayapi_v1beta1.RouteParentStatus{
+				{
+					ParentRef: gatewayapi.GatewayParentRef("projectcontour", "contour"),
+					Conditions: []metav1.Condition{
+						{
+							Type:    string(status.ConditionNotImplemented),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(status.ReasonHTTPRouteFilterType),
+							Message: "HTTPRoute.Spec.Rules.Filters.URLRewrite.Path.Type: invalid type \"ReplaceFullPath\": only ReplacePrefixMatch is supported.",
+						},
+						{
+							Type:    string(gatewayapi_v1beta1.RouteConditionAccepted),
+							Status:  contour_api_v1.ConditionTrue,
+							Reason:  string(gatewayapi_v1beta1.RouteReasonAccepted),
+							Message: "Accepted HTTPRoute",
+						},
+					},
+				},
+			},
+		}},
+		// Invalid filters still result in an attached route.
+		wantGatewayStatusUpdate: validGatewayStatusUpdate("http", "HTTPRoute", 1),
+	})
+
 	run(t, "Invalid RequestHeaderModifier due to duplicated headers", testcase{
 		objs: []interface{}{
 			kuardService,
