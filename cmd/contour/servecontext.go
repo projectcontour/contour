@@ -289,7 +289,13 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 	if ctx.Config.GatewayConfig != nil {
 		gatewayConfig = &contour_api_v1alpha1.GatewayConfig{
 			ControllerName: ctx.Config.GatewayConfig.ControllerName,
-			GatewayName:    ctx.Config.GatewayConfig.GatewayName,
+		}
+
+		if ctx.Config.GatewayConfig.GatewayName != nil {
+			gatewayConfig.GatewayName = &contour_api_v1alpha1.NamespacedName{
+				Namespace: ctx.Config.GatewayConfig.GatewayName.Namespace,
+				Name:      ctx.Config.GatewayConfig.GatewayName.Name,
+			}
 		}
 	}
 

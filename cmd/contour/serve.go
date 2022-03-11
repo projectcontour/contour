@@ -398,9 +398,11 @@ func (s *Server) doServe() error {
 	if contourConfiguration.Gateway != nil {
 		gatewayControllerName = contourConfiguration.Gateway.ControllerName
 
-		if len(contourConfiguration.Gateway.GatewayName) > 0 {
-			nsName := k8s.NamespacedNameFrom(contourConfiguration.Gateway.GatewayName)
-			gatewayName = &nsName
+		if contourConfiguration.Gateway.GatewayName != nil {
+			gatewayName = &types.NamespacedName{
+				Namespace: contourConfiguration.Gateway.GatewayName.Namespace,
+				Name:      contourConfiguration.Gateway.GatewayName.Name,
+			}
 		}
 	}
 
@@ -731,12 +733,12 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
 
 	// Check if GatewayAPI is configured.
-	if contourConfiguration.Gateway != nil && (len(contourConfiguration.Gateway.GatewayName) > 0 || len(contourConfiguration.Gateway.ControllerName) > 0) {
+	if contourConfiguration.Gateway != nil && (contourConfiguration.Gateway.GatewayName != nil || len(contourConfiguration.Gateway.ControllerName) > 0) {
 		switch {
 		// If a specific gateway was specified, we don't need to run the
 		// GatewayClass and Gateway controllers to determine which gateway
 		// to process, we just need informers to get events.
-		case len(contourConfiguration.Gateway.GatewayName) > 0:
+		case contourConfiguration.Gateway.GatewayName != nil:
 			// Inform on GatewayClasses.
 			if err := informOnResource(&gatewayapi_v1alpha2.GatewayClass{}, eventHandler, mgr.GetCache()); err != nil {
 				s.log.WithError(err).WithField("resource", "gatewayclasses").Fatal("failed to create informer")

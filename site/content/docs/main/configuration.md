@@ -196,7 +196,14 @@ The gateway configuration block is used to configure which gateway-api Gateway C
 | Field Name     | Type   | Default | Description                                                                    |
 | -------------- | ------ | ------- | ------------------------------------------------------------------------------ |
 | controllerName | string |         | Gateway Class controller name (i.e. projectcontour.io/projectcontour/contour). If set, Contour will reconcile the oldest GatewayClass, and its oldest Gateway, with this controller string. Only one of `controllerName` or `gatewayName` must be set. |
-| gatewayName    | string |         | Gateway name. If set, Contour will reconcile this specific Gateway. Only one of `controllerName` or `gatewayName` must be set. |
+| gatewayName    | NamespacedName |         | [Gateway namespace and name](#gateway-name). If set, Contour will reconcile this specific Gateway. Only one of `controllerName` or `gatewayName` must be the specific Gateway to reconcile. |
+
+### Gateway Name
+
+| Field Name | Type   | Default | Description                                                                                     |
+| ---------- | ------ | ------- | ----------------------------------------------------------------------------------------------- |
+| name       | string | `""`    | This field specifies the name of the specific Gateway to reconcile.                             |
+| namespace  | string | `""`    | This field specifies the namespace of the specific Gateway to reconcile.                        |
 
 ### Policy Configuration
 

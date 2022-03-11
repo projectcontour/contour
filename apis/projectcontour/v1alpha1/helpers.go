@@ -33,10 +33,24 @@ func (status *ExtensionServiceStatus) GetConditionFor(condType string) *contour_
 
 // Validate configuration that is not already covered by CRD validation.
 func (c *ContourConfigurationSpec) Validate() error {
+	// Validation of root configuration fields.
 	if err := endpointsInConfict(c.Health, c.Metrics); err != nil {
 		return fmt.Errorf("invalid contour configuration: %v", err)
 	}
-	return c.Envoy.Validate()
+
+	// Validation of nested configuration structs.
+	validateFuncs := []func() error{
+		c.Envoy.Validate,
+		c.Gateway.Validate,
+	}
+
+	for _, validate := range validateFuncs {
+		if err := validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Validate configuration that cannot be handled with CRD validation.
@@ -52,5 +66,22 @@ func endpointsInConfict(health HealthConfig, metrics MetricsConfig) error {
 	if metrics.TLS != nil && health.Address == metrics.Address && health.Port == metrics.Port {
 		return fmt.Errorf("cannot use single port for health over HTTP and metrics over HTTPS")
 	}
+	return nil
+}
+
+// Validate ensures that exactly one of ControllerName or GatewayName are specified.
+func (g *GatewayConfig) Validate() error {
+	if g == nil {
+		return nil
+	}
+
+	if len(g.ControllerName) > 0 && g.GatewayName != nil {
+		return fmt.Errorf("invalid gateway configuration: exactly one of controller name or gateway name must be specified")
+	}
+
+	if len(g.ControllerName) == 0 && g.GatewayName == nil {
+		return fmt.Errorf("invalid gateway configuration: exactly one of controller name or gateway name must be specified")
+	}
+
 	return nil
 }

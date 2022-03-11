@@ -703,7 +703,15 @@ spec:
                       Contour instance corresponds to. If set, Contour will reconcile
                       only this gateway, and will not reconcile any gateway classes.
                       Exactly one of ControllerName or GatewayName must be set.
-                    type: string
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
                 type: object
               health:
                 default:
@@ -1664,7 +1672,15 @@ spec:
                           Contour instance corresponds to. If set, Contour will reconcile
                           only this gateway, and will not reconcile any gateway classes.
                           Exactly one of ControllerName or GatewayName must be set.
-                        type: string
+                        properties:
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        required:
+                        - name
+                        - namespace
+                        type: object
                     type: object
                   health:
                     default:

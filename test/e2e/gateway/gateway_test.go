@@ -28,7 +28,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/projectcontour/contour/internal/gatewayapi"
-	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/pkg/config"
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
@@ -98,7 +97,10 @@ func runGatewayTests() {
 					// Update contour config to point to specified gateway.
 					contourConfig.GatewayConfig = &config.GatewayParameters{}
 					if reconcileMode == ReconcileModeGateway {
-						contourConfig.GatewayConfig.GatewayName = k8s.NamespacedNameOf(gateway).String()
+						contourConfig.GatewayConfig.GatewayName = &config.NamespacedName{
+							Namespace: gateway.Namespace,
+							Name:      gateway.Name,
+						}
 					} else {
 						contourConfig.GatewayConfig.ControllerName = string(gatewayClass.Spec.ControllerName)
 					}
@@ -106,7 +108,10 @@ func runGatewayTests() {
 					// Update contour configuration to point to specified gateway.
 					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{}
 					if reconcileMode == ReconcileModeGateway {
-						contourConfiguration.Spec.Gateway.GatewayName = k8s.NamespacedNameOf(gateway).String()
+						contourConfiguration.Spec.Gateway.GatewayName = &contour_api_v1alpha1.NamespacedName{
+							Namespace: gateway.Namespace,
+							Name:      gateway.Name,
+						}
 					} else {
 						contourConfiguration.Spec.Gateway.ControllerName = string(gatewayClass.Spec.ControllerName)
 					}

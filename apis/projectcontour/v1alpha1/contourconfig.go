@@ -109,6 +109,7 @@ type GatewayConfig struct {
 	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
 	// If unset, the gatewayclass controller will not be started.
 	// Exactly one of ControllerName or GatewayName must be set.
+	// +optional
 	ControllerName string `json:"controllerName,omitempty"`
 
 	// GatewayName defines a specific Gateway that this Contour
@@ -116,7 +117,8 @@ type GatewayConfig struct {
 	// only this gateway, and will not reconcile any gateway
 	// classes.
 	// Exactly one of ControllerName or GatewayName must be set.
-	GatewayName string `json:"gatewayName,omitempty"`
+	// +optional
+	GatewayName *NamespacedName `json:"gatewayName,omitempty"`
 }
 
 // TLS holds TLS file config details.

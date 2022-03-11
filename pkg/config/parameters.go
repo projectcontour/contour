@@ -49,11 +49,11 @@ func (g *GatewayParameters) Validate() error {
 		return nil
 	}
 
-	if len(g.ControllerName) == 0 && len(g.GatewayName) == 0 {
+	if len(g.ControllerName) == 0 && g.GatewayName == nil {
 		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway name must be provided")
 	}
 
-	if len(g.ControllerName) > 0 && len(g.GatewayName) > 0 {
+	if len(g.ControllerName) > 0 && g.GatewayName != nil {
 		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway name must be provided")
 	}
 
@@ -358,7 +358,7 @@ type GatewayParameters struct {
 	// only this gateway, and will not reconcile any gateway
 	// classes.
 	// Exactly one of ControllerName or GatewayName must be set.
-	GatewayName string `yaml:"gatewayName,omitempty"`
+	GatewayName *NamespacedName `yaml:"gatewayName,omitempty"`
 }
 
 // TimeoutParameters holds various configurable proxy timeout values.
