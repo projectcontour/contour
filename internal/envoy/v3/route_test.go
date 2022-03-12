@@ -1079,8 +1079,12 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: SafeRegexMatch(".*11-22-33-44.*"),
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: SafeRegexMatch(".*11-22-33-44.*"),
+							},
+						},
 					},
 				}},
 			},
@@ -1098,8 +1102,12 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: SafeRegexMatch(".*11\\.22\\.33\\.44.*"),
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: SafeRegexMatch(".*11\\.22\\.33\\.44.*"),
+							},
+						},
 					},
 				}},
 			},
@@ -1117,8 +1125,12 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: SafeRegexMatch(".*11\\.\\[22\\]\\.\\*33\\.44.*"),
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: SafeRegexMatch(".*11\\.\\[22\\]\\.\\*33\\.44.*"),
+							},
+						},
 					},
 				}},
 			},
@@ -1204,12 +1216,16 @@ func TestRouteMatch(t *testing.T) {
 				Headers: []*envoy_route_v3.HeaderMatcher{{
 					Name:        "x-regex-header",
 					InvertMatch: false,
-					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-						SafeRegexMatch: &matcher.RegexMatcher{
-							EngineType: &matcher.RegexMatcher_GoogleRe2{
-								GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+					HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_SafeRegex{
+								SafeRegex: &matcher.RegexMatcher{
+									EngineType: &matcher.RegexMatcher_GoogleRe2{
+										GoogleRe2: &matcher.RegexMatcher_GoogleRE2{},
+									},
+									Regex: "[a-z0-9][a-z0-9-]+someniceregex",
+								},
 							},
-							Regex: "[a-z0-9][a-z0-9-]+someniceregex",
 						},
 					},
 				}},

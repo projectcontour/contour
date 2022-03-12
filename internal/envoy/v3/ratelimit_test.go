@@ -23,6 +23,7 @@ import (
 	envoy_config_filter_http_local_ratelimit_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	ratelimit_filter_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
 	http "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoy_type_v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/projectcontour/contour/internal/dag"
@@ -214,8 +215,12 @@ func TestGlobalRateLimits(t *testing.T) {
 									Headers: []*envoy_route_v3.HeaderMatcher{
 										{
 											Name: "A-Header",
-											HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_ExactMatch{
-												ExactMatch: "foo",
+											HeaderMatchSpecifier: &envoy_route_v3.HeaderMatcher_StringMatch{
+												StringMatch: &matcher.StringMatcher{
+													MatchPattern: &matcher.StringMatcher_Exact{
+														Exact: "foo",
+													},
+												},
 											},
 										},
 									},
