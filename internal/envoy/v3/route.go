@@ -530,14 +530,22 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 
 		switch h.MatchType {
 		case dag.HeaderMatchTypeExact:
-			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_ExactMatch{ExactMatch: h.Value}
+			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_Exact{Exact: h.Value},
+				},
+			}
 		case dag.HeaderMatchTypeContains:
 			header.HeaderMatchSpecifier = containsMatch(h.Value)
 		case dag.HeaderMatchTypePresent:
 			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_PresentMatch{PresentMatch: true}
 		case dag.HeaderMatchTypeRegex:
-			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-				SafeRegexMatch: SafeRegexMatch(h.Value),
+			header.HeaderMatchSpecifier = &envoy_route_v3.HeaderMatcher_StringMatch{
+				StringMatch: &matcher.StringMatcher{
+					MatchPattern: &matcher.StringMatcher_SafeRegex{
+						SafeRegex: SafeRegexMatch(h.Value),
+					},
+				},
 			}
 		}
 		envoyHeaders = append(envoyHeaders, header)
@@ -547,14 +555,18 @@ func headerMatcher(headers []dag.HeaderMatchCondition) []*envoy_route_v3.HeaderM
 
 // containsMatch returns a HeaderMatchSpecifier which will match the
 // supplied substring
-func containsMatch(s string) *envoy_route_v3.HeaderMatcher_SafeRegexMatch {
+func containsMatch(s string) *envoy_route_v3.HeaderMatcher_StringMatch {
 	// convert the substring s into a regular expression that matches s.
 	// note that Envoy expects the expression to match the entire string, not just the substring
 	// formed from s. see [projectcontour/contour/#1751 & envoyproxy/envoy#8283]
 	regex := fmt.Sprintf(".*%s.*", regexp.QuoteMeta(s))
 
-	return &envoy_route_v3.HeaderMatcher_SafeRegexMatch{
-		SafeRegexMatch: SafeRegexMatch(regex),
+	return &envoy_route_v3.HeaderMatcher_StringMatch{
+		StringMatch: &matcher.StringMatcher{
+			MatchPattern: &matcher.StringMatcher_SafeRegex{
+				SafeRegex: SafeRegexMatch(regex),
+			},
+		},
 	}
 }
 
