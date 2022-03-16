@@ -53,14 +53,9 @@ done
 
 echo
 
-# certgen uses the ':latest' image tag, so it always needs to be pulled. Everything
-# else correctly uses versioned image tags so we should use IfNotPresent.
 for y in $FILES ; do
     echo # Ensure we have at least one newline between joined fragments.
     case $y in
-    */02-job-certgen.yaml)
-        cat "$y"
-        ;;
     $SKIP_FILE)
        # skip this file
         ;;
