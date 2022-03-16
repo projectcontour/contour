@@ -1404,6 +1404,15 @@ func TestHTTPConnectionManager(t *testing.T) {
 											TypeUrl: HTTPFilterGzip,
 										},
 									},
+									ContentType: []string{
+										// Default content-types https://github.com/envoyproxy/envoy/blob/e74999dbdb12aa4d6b7a5d62d51731ea86bf72be/source/extensions/filters/http/compressor/compressor_filter.cc#L35-L38
+										"text/html", "text/plain", "text/css", "application/javascript", "application/x-javascript",
+										"text/javascript", "text/x-javascript", "text/ecmascript", "text/js", "text/jscript",
+										"text/x-js", "application/ecmascript", "application/x-json", "application/xml",
+										"application/json", "image/svg+xml", "text/xml", "application/xhtml+xml",
+										// Additional content-types for grpc-web https://github.com/grpc/grpc-web#wire-format-mode
+										"application/grpc-web-text", "application/grpc-web+proto",
+									},
 								}),
 							},
 						}, {
