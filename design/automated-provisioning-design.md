@@ -29,15 +29,21 @@ It’s possible that we’ll decide on different terms for these concepts going 
 
 ## Design
 The Contour Operator, including the `operator.projectcontour.io/Contour` CRD, will be deprecated.
-We will continue to make the minimal updates required to keep it functioning as-is, and ship new releases as we ship Contour releases, until Gateway API reaches beta (which is expected to be soon, i.e this year) and Contour ships its first release supporting the beta API.
+We will continue to make the minimal updates required to keep it functioning as-is, and ship new releases as we ship Contour releases, until all of the following conditions are met:
+- Gateway API reaches beta (which is expected to be soon, i.e by mid-year 2022)
+- Contour ships its first release supporting the beta Gateway API
+- The Contour Gateway provisioner (described below) provides equivalent functionality for what the Operator currently offers
+
 At that point we will stop maintaining the Operator, including the Contour CRD, and put it in archive mode.
-This conservative deprecation schedule should give current Operator users enough time to migrate off of it, along with a viable alternative if using Gateway API (described below).
+This conservative deprecation schedule should give current Operator users enough time to migrate off of it, along with a viable alternative (described below).
 
 A new subcommand will be added to the contour binary within the `projectcontour/contour` repository, here called the Gateway provisioner.
 This subcommand will implement dynamic Gateway provisioning functionality, as described previously.
 Initially, a good portion of the existing Contour Operator code will be copied into `projectcontour/contour` to provide the required functionality; this code will be modified as needed to fully support the Gateway use cases and to more closely adhere to existing Contour code style and standards.
 
-Use of the Gateway provisioner is optional; users who are not interested in dynamic Gateway provisioning or the Gateway API in general are not required to use it.
+Use of the Gateway provisioner will be optional.
+While it will be required to have a fully conformant implementation of Gateway API, users who are not interested in dynamic Gateway provisioning or the Gateway API in general are not required to use it.
+It will, however, be the only supported way to dynamically provision Contour instances.
 
 The Gateway provisioner will run as a Deployment in-cluster.
 It will watch for GatewayClasses that have a `spec.controller` value matching what the Gateway provisioner has been configured with (e.g. `projectcontour.io/gateway-provisioner`).
@@ -61,12 +67,17 @@ Contour itself will continue to handle the vast majority of the Gateway and HTTP
 It is responsible for programming Envoy to fulfill the Gateway and route specs, and for setting appropriate conditions on resources.
 The provisioner is solely responsible for deploying Contour + Envoy instances, and for setting the “Scheduled” condition on Gateways.
 
+It is worth noting that Contour instances deployed by the Gateway provisioner are still fully capable of processing Ingress and HTTPProxy resources.
+This allows for the possibility of using the Gateway API and Gateway provisioner solely as a means of *provisioning* Contour, while continuing to use Ingress and/or HTTPProxy for defining routing configuration. 
+
 Again, the Gateway provisioner will be an optional component; users who are not interested in Gateway API or dynamic provisioning of Gateways are not required to use it.
 Those users can continue to statically provision their Contour + Envoy instances, for use with either Gateway API or traditional Ingress / HTTPProxy.
 
 There will be two ways to configure Contour for Gateway API support in the static provisioning scenario:
 - **Controller name** - this is the model implemented today, where Contour is configured with a controller name, and it continuously looks for the oldest GatewayClass with that controller, and the oldest Gateway using that GatewayClass. This model is appropriate for users who expect their GatewayClasses and Gateways to come and go, and who want their Contour instance to dynamically pick up the appropriate Gateway as those changes occur.
-- **Gateway name** - Contour can alternately be directly configured with a specific Gateway name, which avoids the multiple levels of indirection of the previous model. This model is appropriate for users who expect their Contour instance to correspond to a single static Gateway; the lifecycle of the Gateway and the lifecycle of the Contour instance are tied together.
+- **Gateway name** - Contour can alternately be directly configured with a specific Gateway name, which avoids the multiple levels of indirection of the previous model. This model is appropriate for users who expect their Contour instance to correspond to a single static Gateway; the lifecycle of the Gateway and the lifecycle of the Contour instance are tied together. 
+
+Note that the Gateway provisioner will make use of the **Gateway name** mode of configuring Contour, to tie each instance of Contour it provisions directly to a specific Gateway.
 
 ### GatewayClass Parameters
 
@@ -81,7 +92,8 @@ Note that, according to the Gateway API documentation:
 > This recommendation is intended to limit the blast radius of changes to GatewayClass or associated parameters. 
 (ref. [GatewayClass API reference documentation](https://gateway-api.sigs.k8s.io/v1alpha2/references/spec/#gateway.networking.k8s.io/v1alpha2.GatewayClass)) 
 
-This also implies that Contour users can modify the ContourConfigurations used by their running Contours after instantiation, without having those changes overwritten by the Gateway provisioner. 
+For Contour, this means that after a Gateway has been provisioned, the Gateway provisioner will not apply subsequent changes to the GatewayClass/ContourDeployment to it.  
+This also means that Contour users can modify the ContourConfigurations used by their running Contours after instantiation, without having those changes overwritten by the Gateway provisioner.
 
 Since the Gateway provisioner supports multiple GatewayClasses, each GatewayClass can have a different ContourDeployment reference, corresponding to different sets of Gateway configuration profiles that the infrastructure provider offers (e.g. an external vs. internal profile).
 Gateways are then provisioned simply by referencing the desired GatewayClass/configuration profile.
