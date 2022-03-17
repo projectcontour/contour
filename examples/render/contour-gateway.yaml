@@ -4911,7 +4911,7 @@ spec:
       containers:
       - name: contour
         image: ghcr.io/projectcontour/contour:main
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         command:
         - contour
         - certgen
@@ -5162,7 +5162,7 @@ spec:
         - --config-path=/config/contour.yaml
         command: ["contour"]
         image: ghcr.io/projectcontour/contour:main
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         name: contour
         ports:
         - containerPort: 8001
@@ -5251,7 +5251,7 @@ spec:
           - envoy
           - shutdown-manager
         image: ghcr.io/projectcontour/contour:main
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         lifecycle:
           preStop:
             exec:
@@ -5335,7 +5335,7 @@ spec:
         command:
         - contour
         image: ghcr.io/projectcontour/contour:main
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         name: envoy-initconfig
         volumeMounts:
         - name: envoy-config

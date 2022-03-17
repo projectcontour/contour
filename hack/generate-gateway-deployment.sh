@@ -41,7 +41,7 @@ for y in "${REPO}/examples/contour/"*.yaml ; do
         sed 's|# gateway:|gateway:|g ; s|#   controllerName: projectcontour.io/projectcontour/contour|  controllerName: projectcontour.io/projectcontour/contour|g' < "$y"
         ;;
     *)
-        sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < "$y"
+        cat $y
         ;;
     esac
 done

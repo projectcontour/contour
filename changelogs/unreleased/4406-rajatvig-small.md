@@ -1,0 +1,1 @@
+Change imagePullPolicy to IfNotPresent only on release
