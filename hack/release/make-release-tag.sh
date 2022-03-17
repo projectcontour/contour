@@ -41,6 +41,7 @@ for example in examples/contour/03-envoy.yaml examples/deployment/03-envoy-deplo
     # and switch the imagePullPolicy to IfNotPresent
     run::sed \
         "-es|ghcr.io/projectcontour/contour:main|$IMG|" \
+        "-es|ghcr.io/projectcontour/contour:$OLDVERS|$IMG|" \
         "-es|imagePullPolicy: Always|imagePullPolicy: IfNotPresent|" \
         "$example"
 done
