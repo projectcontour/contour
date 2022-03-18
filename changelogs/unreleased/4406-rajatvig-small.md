@@ -1,1 +1,1 @@
-Change imagePullPolicy to IfNotPresent only on release
+In the example manifests, leave `imagePullPolicy` as `Always` on main branch and only change to `IfNotPresent` on release branches/release-tagged manifests.
