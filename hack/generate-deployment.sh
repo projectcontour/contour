@@ -60,7 +60,7 @@ for y in $FILES ; do
        # skip this file
         ;;
     *)
-        sed 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' < "$y"
+        cat $y
         ;;
     esac
 done

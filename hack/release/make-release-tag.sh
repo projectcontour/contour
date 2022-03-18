@@ -34,13 +34,15 @@ run::sed() {
     esac
 }
 
-# Update the image tags in the Contour, Envoy and certgen manifests to the new version.
+# Update the image tags in the Contour, Envoy and certgen manifests to the new version
+# and switch the imagePullPolicy to IfNotPresent.
 for example in examples/contour/03-envoy.yaml examples/deployment/03-envoy-deployment.yaml examples/contour/03-contour.yaml examples/contour/02-job-certgen.yaml ; do
     # The version might be main or OLDVERS depending on whether we are
     # tagging from the release branch or from main.
     run::sed \
         "-es|ghcr.io/projectcontour/contour:main|$IMG|" \
         "-es|ghcr.io/projectcontour/contour:$OLDVERS|$IMG|" \
+        "-es|imagePullPolicy: Always|imagePullPolicy: IfNotPresent|" \
         "$example"
 done
 
