@@ -70,7 +70,6 @@ var _ = Describe("Gateway API", func() {
 	// body. Modifies contour config to point to gateway.
 	testWithGateway := func(gateway *gatewayapi_v1alpha2.Gateway, gatewayClass *gatewayapi_v1alpha2.GatewayClass, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 		return func(namespace string) {
-
 			Context(fmt.Sprintf("with gateway %s/%s, controllerName: %s", namespace, gateway.Name, gatewayClass.Spec.ControllerName), func() {
 				BeforeEach(func() {
 					// Ensure gateway created in this test's namespace.
@@ -132,7 +131,7 @@ var _ = Describe("Gateway API", func() {
 		require.NoError(f.T(), f.Deployment.StopLocalContour(contourCmd, contourConfigFile))
 	})
 
-	Describe("HTTPRoute: Insecure (Non-TLS) Gateway", func() {
+	Describe("Gateway with one HTTP listener", func() {
 		testWithHTTPGateway := func(body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 			gw := &gatewayapi_v1alpha2.Gateway{
@@ -176,7 +175,7 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-request-redirect-rule", testWithHTTPGateway(testRequestRedirectRule))
 	})
 
-	Describe("HTTPRoute: TLS Gateway", func() {
+	Describe("Gateway with one HTTP listener and one HTTPS listener", func() {
 		testWithHTTPSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 
@@ -237,7 +236,7 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-httproute-tls-wildcard-host", testWithHTTPSGateway("*.wildcardhost.gateway.projectcontour.io", testTLSWildcardHost))
 	})
 
-	Describe("TLSRoute Gateway: Mode: Passthrough", func() {
+	Describe("Gateway with one TLS listener with Mode=Passthrough", func() {
 		gatewayClass := getGatewayClass()
 		gw := &gatewayapi_v1alpha2.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
@@ -265,8 +264,7 @@ var _ = Describe("Gateway API", func() {
 		f.NamespacedTest("gateway-tlsroute-mode-passthrough", testWithGateway(gw, gatewayClass, testTLSRoutePassthrough))
 	})
 
-	Describe("TLSRoute Gateway: Mode: Terminate", func() {
-
+	Describe("Gateway with one TLS listener with Mode=Terminate", func() {
 		testWithTLSGateway := func(hostname string, body e2e.NamespacedTestBody) e2e.NamespacedTestBody {
 			gatewayClass := getGatewayClass()
 			gw := &gatewayapi_v1alpha2.Gateway{
