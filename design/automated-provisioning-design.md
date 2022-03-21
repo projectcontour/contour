@@ -25,6 +25,7 @@ It’s possible that we’ll decide on different terms for these concepts going 
 
 ## Goals
 - Create an optional dynamic Gateway provisioner, implemented in `projectcontour/contour` as a subcommand of the `contour` binary and deployed as a separate Deployment, in order to have a conformant Gateway API implementation.
+- Support all major functionality that the Contour operator/`Contour` CRD currently provide within the Gateway provisioner.
 - Deprecate the Contour operator and associated `Contour` CRD, to focus effort on the Gateway provisioner.
 
 ## Design
@@ -42,8 +43,12 @@ This subcommand will implement dynamic Gateway provisioning functionality, as de
 Initially, a good portion of the existing Contour Operator code will be copied into `projectcontour/contour` to provide the required functionality; this code will be modified as needed to fully support the Gateway use cases and to more closely adhere to existing Contour code style and standards.
 
 Use of the Gateway provisioner will be optional.
-While it will be required to have a fully conformant implementation of Gateway API, users who are not interested in dynamic Gateway provisioning or the Gateway API in general are not required to use it.
+While it will be required to have a fully conformant implementation of Gateway API, users who are not interested in dynamic Gateway/Contour provisioning or the Gateway API in general are not required to use it.
 It will, however, be the only supported way to dynamically provision Contour instances.
+It is worth noting that Contour instances deployed by the Gateway provisioner are still fully capable of processing Ingress and HTTPProxy resources.
+This allows for the possibility of using the Gateway API and Gateway provisioner solely as a means of *provisioning* Contour, while continuing to use Ingress and/or HTTPProxy for defining routing configuration.
+This also allows the Contour team to focus on implementing *one* standardized provisioning API, as opposed to both Gateway API and the experimental `Contour` CRD.
+We believe this is a more effective use of our efforts.
 
 The Gateway provisioner will run as a Deployment in-cluster.
 It will watch for GatewayClasses that have a `spec.controller` value matching what the Gateway provisioner has been configured with (e.g. `projectcontour.io/gateway-provisioner`).
@@ -66,9 +71,6 @@ We are not attempting to solve that more complex problem in this design document
 Contour itself will continue to handle the vast majority of the Gateway and HTTPRoute/TLSRoute validation and processing.
 It is responsible for programming Envoy to fulfill the Gateway and route specs, and for setting appropriate conditions on resources.
 The provisioner is solely responsible for deploying Contour + Envoy instances, and for setting the “Scheduled” condition on Gateways.
-
-It is worth noting that Contour instances deployed by the Gateway provisioner are still fully capable of processing Ingress and HTTPProxy resources.
-This allows for the possibility of using the Gateway API and Gateway provisioner solely as a means of *provisioning* Contour, while continuing to use Ingress and/or HTTPProxy for defining routing configuration. 
 
 Again, the Gateway provisioner will be an optional component; users who are not interested in Gateway API or dynamic provisioning of Gateways are not required to use it.
 Those users can continue to statically provision their Contour + Envoy instances, for use with either Gateway API or traditional Ingress / HTTPProxy.
