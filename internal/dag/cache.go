@@ -69,7 +69,7 @@ type KubernetesCache struct {
 	referencepolicies         map[types.NamespacedName]*gatewayapi_v1alpha2.ReferencePolicy
 	extensions                map[types.NamespacedName]*contour_api_v1alpha1.ExtensionService
 
-	Client client.Client
+	Client client.Reader
 
 	initialize sync.Once
 

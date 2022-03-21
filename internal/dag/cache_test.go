@@ -14,6 +14,7 @@
 package dag
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -30,14 +31,16 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func TestKubernetesCacheInsert(t *testing.T) {
 	tests := map[string]struct {
-		pre  []interface{}
-		obj  interface{}
-		want bool
+		cacheGateway *types.NamespacedName
+		pre          []interface{}
+		obj          interface{}
+		want         bool
 	}{
 		"insert secret": {
 			obj: &v1.Secret{
@@ -896,14 +899,102 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			},
 			want: true,
 		},
+
+		// SPECIFIC GATEWAY TESTS
+		"specific gateway configured, insert gatewayclass, no gateway cached": {
+			cacheGateway: &types.NamespacedName{
+				Namespace: "gateway-namespace",
+				Name:      "gateway-name",
+			},
+			obj: &gatewayapi_v1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+			},
+			want: false,
+		},
+		"specific gateway configured, insert gatewayclass, gateway cached referencing different gatewayclass": {
+			cacheGateway: &types.NamespacedName{
+				Namespace: "gateway-namespace",
+				Name:      "gateway-name",
+			},
+			pre: []interface{}{
+				&gatewayapi_v1alpha2.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-namespace",
+						Name:      "gateway-name",
+					},
+					Spec: gatewayapi_v1alpha2.GatewaySpec{
+						GatewayClassName: gatewayapi_v1alpha2.ObjectName("some-other-gatewayclass"),
+					},
+				},
+			},
+			obj: &gatewayapi_v1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+			},
+			want: false,
+		},
+		"specific gateway configured, insert gatewayclass, gateway cached referencing matching gatewayclass": {
+			cacheGateway: &types.NamespacedName{
+				Namespace: "gateway-namespace",
+				Name:      "gateway-name",
+			},
+			pre: []interface{}{
+				&gatewayapi_v1alpha2.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-namespace",
+						Name:      "gateway-name",
+					},
+					Spec: gatewayapi_v1alpha2.GatewaySpec{
+						GatewayClassName: gatewayapi_v1alpha2.ObjectName("gatewayclass-1"),
+					},
+				},
+			},
+			obj: &gatewayapi_v1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+			},
+			want: true,
+		},
+		"specific gateway configured, insert gateway, namespace/name don't match": {
+			cacheGateway: &types.NamespacedName{
+				Namespace: "gateway-namespace",
+				Name:      "gateway-name",
+			},
+			obj: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-namespace",
+					Name:      "some-other-gateway-name",
+				},
+			},
+			want: false,
+		},
+		"specific gateway configured, insert gateway, namespace/name match": {
+			cacheGateway: &types.NamespacedName{
+				Namespace: "gateway-namespace",
+				Name:      "gateway-name",
+			},
+			obj: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-namespace",
+					Name:      "gateway-name",
+				},
+			},
+			want: true,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			cache := KubernetesCache{
+				Gateway: tc.cacheGateway,
 				ConfiguredSecretRefs: []*types.NamespacedName{
 					{Name: "secretReferredByConfigFile", Namespace: "default"}},
 				FieldLogger: fixture.NewTestLogger(t),
+				Client:      new(fakeReader),
 			}
 			for _, p := range tc.pre {
 				cache.Insert(p)
@@ -912,6 +1003,22 @@ func TestKubernetesCacheInsert(t *testing.T) {
 			assert.Equalf(t, tc.want, got, "Insert failed for object %v ", tc.obj)
 		})
 	}
+}
+
+// Simple fake for use with specific Gateway test cases,
+// just returns an error on Get. This could be improved
+// or replaced with a mock but would also require
+// further changes to the test structure to be useful for
+// validating that the gateway's gatewayclass is fetched
+// correctly.
+type fakeReader struct{}
+
+func (r *fakeReader) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+	return errors.New("not implemented")
+}
+
+func (r *fakeReader) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	panic("not implemented")
 }
 
 func TestKubernetesCacheRemove(t *testing.T) {
@@ -1154,6 +1261,97 @@ func TestKubernetesCacheRemove(t *testing.T) {
 			cache: cache("not an object"),
 			obj:   "not an object",
 			want:  false,
+		},
+		"specific gateway configured, remove gatewayclass, no gatewayclass cached": {
+			cache: &KubernetesCache{
+				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+			},
+			obj: &gatewayapi_v1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+			},
+			want: false,
+		},
+		"specific gateway configured, remove gatewayclass, non-matching name": {
+			cache: &KubernetesCache{
+				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				gatewayclass: &gatewayapi_v1alpha2.GatewayClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "gatewayclass-1",
+					},
+				},
+			},
+			obj: &gatewayapi_v1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "some-other-gatewayclass",
+				},
+			},
+			want: false,
+		},
+		"specific gateway configured, remove gatewayclass, matching name": {
+			cache: &KubernetesCache{
+				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				gatewayclass: &gatewayapi_v1alpha2.GatewayClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "gatewayclass-1",
+					},
+				},
+			},
+			obj: &gatewayapi_v1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+			},
+			want: true,
+		},
+		"specific gateway configured, remove gateway, no gateway cached": {
+			cache: &KubernetesCache{
+				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+			},
+			obj: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-namespace",
+					Name:      "gateway-name",
+				},
+			},
+			want: false,
+		},
+		"specific gateway configured, remove gateway, non-matching namespace/name": {
+			cache: &KubernetesCache{
+				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				gateway: &gatewayapi_v1alpha2.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-namespace",
+						Name:      "gateway-name",
+					},
+				},
+			},
+			obj: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-namespace",
+					Name:      "some-other-gateway",
+				},
+			},
+			want: false,
+		},
+		"specific gateway configured, remove gateway, matching namespace/name": {
+			cache: &KubernetesCache{
+				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				gateway: &gatewayapi_v1alpha2.Gateway{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-namespace",
+						Name:      "gateway-name",
+					},
+				},
+			},
+			obj: &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-namespace",
+					Name:      "gateway-name",
+				},
+			},
+			want: true,
 		},
 	}
 
