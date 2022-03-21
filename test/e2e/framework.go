@@ -348,7 +348,7 @@ func (f *Framework) CreateNamespace(name string) {
 		// Got an existing namespace and it's terminating: give it a chance to go
 		// away.
 		require.Eventually(f.t, func() bool {
-			return api_errors.IsNotFound(f.Client.Get(context.TODO(), key, ns))
+			return api_errors.IsNotFound(f.Client.Get(context.TODO(), key, existing))
 		}, 3*time.Minute, time.Second)
 	}
 
