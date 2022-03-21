@@ -19,6 +19,12 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/projectcontour/contour/internal/provisioner/model"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
+	"github.com/projectcontour/contour/internal/provisioner/objects/configmap"
+	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
+	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
+	"github.com/projectcontour/contour/internal/provisioner/objects/job"
+	"github.com/projectcontour/contour/internal/provisioner/objects/service"
 	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +45,6 @@ type gatewayReconciler struct {
 	contourImage      string
 	envoyImage        string
 	client            client.Client
-	ensurer           *ensurer
 	log               logr.Logger
 }
 
@@ -50,13 +55,6 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 		envoyImage:        envoyImage,
 		client:            mgr.GetClient(),
 		log:               ctrl.Log.WithName("gateway-controller"),
-	}
-
-	r.ensurer = &ensurer{
-		log:          r.log,
-		client:       r.client,
-		contourImage: contourImage,
-		envoyImage:   envoyImage,
 	}
 
 	c, err := controller.New("gateway-controller", mgr, controller.Options{Reconciler: r})
@@ -102,7 +100,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				},
 			}
 
-			if errs := r.ensurer.ensureContourDeleted(ctx, contour); len(errs) > 0 {
+			if errs := r.ensureContourDeleted(ctx, contour); len(errs) > 0 {
 				err := utilerrors.NewAggregate(errs)
 				r.log.Error(err, "unable to delete contour for gateway %s/%s", req.Namespace, req.Name)
 			}
@@ -149,7 +147,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 
-	if errs := r.ensurer.ensureContour(ctx, gatewayContour); len(errs) > 0 {
+	if errs := r.ensureContour(ctx, gatewayContour); len(errs) > 0 {
 		return ctrl.Result{}, fmt.Errorf("failed to ensure Contour for gateway: %w", retryable.NewMaybeRetryableAggregate(errs))
 	}
 
@@ -183,4 +181,57 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Contour) []error {
+	var errs []error
+
+	handleResult := func(resource string, err error) {
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to ensure %s for contour %s/%s: %w", resource, contour.Namespace, contour.Name, err))
+		} else {
+			r.log.Info(fmt.Sprintf("ensured %s for contour", resource), "namespace", contour.Namespace, "name", contour.Name)
+		}
+	}
+
+	handleResult("rbac", objects.EnsureRBAC(ctx, r.client, contour))
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	handleResult("configmap", configmap.EnsureConfigMap(ctx, r.client, contour))
+	handleResult("job", job.EnsureJob(ctx, r.client, contour, r.contourImage))
+	handleResult("deployment", deployment.EnsureDeployment(ctx, r.client, contour, r.contourImage))
+	handleResult("daemonset", daemonset.EnsureDaemonSet(ctx, r.client, contour, r.contourImage, r.envoyImage))
+	handleResult("contour service", service.EnsureContourService(ctx, r.client, contour))
+
+	switch contour.Spec.NetworkPublishing.Envoy.Type {
+	case model.LoadBalancerServicePublishingType, model.NodePortServicePublishingType, model.ClusterIPServicePublishingType:
+		handleResult("envoy service", service.EnsureEnvoyService(ctx, r.client, contour))
+	}
+
+	return errs
+}
+
+func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *model.Contour) []error {
+	var errs []error
+
+	handleResult := func(resource string, err error) {
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to delete %s for contour %s/%s: %w", resource, contour.Namespace, contour.Name, err))
+		} else {
+			r.log.Info(fmt.Sprintf("deleted %s for contour", resource), "namespace", contour.Namespace, "name", contour.Name)
+		}
+	}
+
+	handleResult("envoy service", service.EnsureEnvoyServiceDeleted(ctx, r.client, contour))
+	handleResult("service", service.EnsureContourServiceDeleted(ctx, r.client, contour))
+	handleResult("daemonset", daemonset.EnsureDaemonSetDeleted(ctx, r.client, contour))
+	handleResult("deployment", deployment.EnsureDeploymentDeleted(ctx, r.client, contour))
+	handleResult("job", job.EnsureJobDeleted(ctx, r.client, contour, r.contourImage))
+	handleResult("configmap", configmap.EnsureConfigMapDeleted(ctx, r.client, contour))
+	handleResult("rbac", objects.EnsureRBACDeleted(ctx, r.client, contour))
+
+	return errs
 }
