@@ -19,7 +19,6 @@ package httpproxy
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 
 	. "github.com/onsi/ginkgo/v2"
 	contourv1 "github.com/projectcontour/contour/apis/projectcontour/v1"
@@ -68,13 +67,7 @@ func testTCPRouteHTTPSTermination(namespace string) {
 		res, ok := f.HTTP.SecureRequestUntil(&e2e.HTTPSRequestOpts{
 			Host: p.Spec.VirtualHost.Fqdn,
 			TLSConfigOpts: []func(*tls.Config){
-				func(c *tls.Config) {
-					certPool := x509.NewCertPool()
-					certPool.AppendCertsFromPEM(certSecret.Data["ca.crt"])
-
-					c.RootCAs = certPool
-					c.InsecureSkipVerify = false
-				},
+				e2e.VerifyTLSServerCert(certSecret.Data["ca.crt"]),
 			},
 			Condition: e2e.HasStatusCode(200),
 		})

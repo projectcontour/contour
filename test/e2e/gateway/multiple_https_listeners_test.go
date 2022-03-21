@@ -19,7 +19,6 @@ package gateway
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -75,13 +74,7 @@ func testMultipleHTTPSListeners(namespace string) {
 				TLSConfigOpts: []func(*tls.Config){
 					// Verify the server cert to ensure we're getting
 					// the right one.
-					func(c *tls.Config) {
-						certPool := x509.NewCertPool()
-						certPool.AppendCertsFromPEM(certSecret.Data["ca.crt"])
-
-						c.RootCAs = certPool
-						c.InsecureSkipVerify = false
-					},
+					e2e.VerifyTLSServerCert(certSecret.Data["ca.crt"]),
 				},
 				Condition: e2e.HasStatusCode(200),
 			})

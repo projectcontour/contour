@@ -18,6 +18,8 @@ package e2e
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -521,4 +523,17 @@ func DetailedConditionInvalid(conditions []contourv1.DetailedCondition) bool {
 		}
 	}
 	return false
+}
+
+// VerifyTLSServerCert returns a TLS config functional
+// option that enables verifying the TLS server cert using
+// the provided CA cert.
+func VerifyTLSServerCert(caCert []byte) func(*tls.Config) {
+	return func(c *tls.Config) {
+		certPool := x509.NewCertPool()
+		certPool.AppendCertsFromPEM(caCert)
+
+		c.RootCAs = certPool
+		c.InsecureSkipVerify = false
+	}
 }
