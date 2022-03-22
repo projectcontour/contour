@@ -28,6 +28,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -75,7 +76,7 @@ func (c *Client) dial() *grpc.ClientConn {
 		})
 		options = append(options, grpc.WithTransportCredentials(creds))
 	default:
-		options = append(options, grpc.WithInsecure())
+		options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	conn, err := grpc.Dial(c.ContourAddr, options...)

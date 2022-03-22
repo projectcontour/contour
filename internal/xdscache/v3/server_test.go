@@ -38,6 +38,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
@@ -233,7 +234,7 @@ func TestGRPC(t *testing.T) {
 				cancel()
 				<-done
 			}()
-			cc, err := grpc.Dial(l.Addr().String(), grpc.WithInsecure())
+			cc, err := grpc.Dial(l.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 			require.NoError(t, err)
 			defer cc.Close()
 			fn(t, cc)
