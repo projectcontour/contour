@@ -49,12 +49,12 @@ func (c *Contour) LeaderElectionLeaseName() string {
 
 // ContourCertsSecretName returns the name of the Contour xDS TLS certs Secret resource.
 func (c *Contour) ContourCertsSecretName() string {
-	return c.Name + "-contourcert"
+	return "contourcert-" + c.Name
 }
 
 // EnvoyCertsSecretName returns the name of the Envoy xDS TLS certs Secret resource.
 func (c *Contour) EnvoyCertsSecretName() string {
-	return c.Name + "-envoycert"
+	return "envoycert-" + c.Name
 }
 
 // ContourRBACNames returns the names of the RBAC resources for

@@ -116,7 +116,7 @@ func TestSecretNamePrefix(t *testing.T) {
 		OutputPEM:  false,
 		Lifetime:   0,
 		Overwrite:  false,
-		NamePrefix: "testprefix",
+		NameSuffix: "-testsuffix",
 	}
 
 	certificates, err := certs.GenerateCerts(
@@ -128,19 +128,19 @@ func TestSecretNamePrefix(t *testing.T) {
 		t.Fatalf("failed to generate certificates: %s", err)
 	}
 
-	secrets := certgen.AsSecrets(conf.Namespace, conf.NamePrefix, certificates)
+	secrets := certgen.AsSecrets(conf.Namespace, conf.NameSuffix, certificates)
 	if len(secrets) != 2 {
 		t.Errorf("expected 2 secrets, got %d", len(secrets))
 	}
 
 	wantedNames := map[string][]string{
-		"testprefix-envoycert": {
+		"envoycert-testsuffix": {
 			"envoy",
 			fmt.Sprintf("envoy.%s", conf.Namespace),
 			fmt.Sprintf("envoy.%s.svc", conf.Namespace),
 			fmt.Sprintf("envoy.%s.svc.cluster.local", conf.Namespace),
 		},
-		"testprefix-contourcert": {
+		"contourcert-testsuffix": {
 			"contour",
 			fmt.Sprintf("contour.%s", conf.Namespace),
 			fmt.Sprintf("contour.%s.svc", conf.Namespace),

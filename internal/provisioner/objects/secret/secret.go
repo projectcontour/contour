@@ -50,7 +50,7 @@ func EnsureXDSSecrets(ctx context.Context, cli client.Client, contour *model.Con
 		return fmt.Errorf("error generating xDS TLS certificates: %w", err)
 	}
 
-	secrets := certgen.AsSecrets(contour.Namespace, contour.Name, certs)
+	secrets := certgen.AsSecrets(contour.Namespace, "-"+contour.Name, certs)
 
 	for _, secret := range secrets {
 		// Add owner labels.
@@ -95,7 +95,10 @@ func tagFromImage(image string) string {
 }
 
 func tlsSecretsExist(contour *model.Contour, cli client.Client, generatedByVersion string) bool {
-	for _, secretName := range []string{contour.Name + "-contourcert", contour.Name + "-envoycert"} {
+	for _, secretName := range []string{
+		contour.ContourCertsSecretName(),
+		contour.EnvoyCertsSecretName(),
+	} {
 		s := &corev1.Secret{}
 
 		key := client.ObjectKey{
@@ -116,7 +119,10 @@ func tlsSecretsExist(contour *model.Contour, cli client.Client, generatedByVersi
 }
 
 func EnsureXDSSecretsDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	for _, secretName := range []string{contour.Name + "-contourcert", contour.Name + "-envoycert"} {
+	for _, secretName := range []string{
+		contour.ContourCertsSecretName(),
+		contour.EnvoyCertsSecretName(),
+	} {
 		s := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: contour.Namespace,

@@ -151,18 +151,11 @@ func WriteSecretsKube(client *kubernetes.Clientset, secrets []*corev1.Secret, fo
 // AsSecrets transforms the given Certificates struct into a slice of
 // Secrets in in compact Secret format, which is compatible with
 // both cert-manager and Contour.
-func AsSecrets(namespace, namePrefix string, certdata *certs.Certificates) []*corev1.Secret {
-	certname := func(baseName string) string {
-		if len(namePrefix) > 0 {
-			return fmt.Sprintf("%s-%s", namePrefix, baseName)
-		}
-		return baseName
-	}
-
+func AsSecrets(namespace, nameSuffix string, certdata *certs.Certificates) []*corev1.Secret {
 	return []*corev1.Secret{
 		newSecret(
 			corev1.SecretTypeTLS,
-			certname("contourcert"),
+			"contourcert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				dag.CACertificateKey:    certdata.CACertificate,
@@ -171,7 +164,7 @@ func AsSecrets(namespace, namePrefix string, certdata *certs.Certificates) []*co
 			}),
 		newSecret(
 			corev1.SecretTypeTLS,
-			certname("envoycert"),
+			"envoycert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				dag.CACertificateKey:    certdata.CACertificate,
@@ -185,18 +178,11 @@ func AsSecrets(namespace, namePrefix string, certdata *certs.Certificates) []*co
 // Secrets that is compatible with certgen from contour 1.4 and earlier.
 // The difference is that the CA cert is in a separate secret, rather
 // than duplicated inline in each TLS secrets.
-func AsLegacySecrets(namespace, namePrefix string, certdata *certs.Certificates) []*corev1.Secret {
-	certname := func(baseName string) string {
-		if len(namePrefix) > 0 {
-			return fmt.Sprintf("%s-%s", namePrefix, baseName)
-		}
-		return baseName
-	}
-
+func AsLegacySecrets(namespace, nameSuffix string, certdata *certs.Certificates) []*corev1.Secret {
 	return []*corev1.Secret{
 		newSecret(
 			corev1.SecretTypeTLS,
-			certname("contourcert"),
+			"contourcert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				corev1.TLSCertKey:       certdata.ContourCertificate,
@@ -204,7 +190,7 @@ func AsLegacySecrets(namespace, namePrefix string, certdata *certs.Certificates)
 			}),
 		newSecret(
 			corev1.SecretTypeTLS,
-			certname("envoycert"),
+			"envoycert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				corev1.TLSCertKey:       certdata.EnvoyCertificate,
@@ -212,7 +198,7 @@ func AsLegacySecrets(namespace, namePrefix string, certdata *certs.Certificates)
 			}),
 		newSecret(
 			corev1.SecretTypeOpaque,
-			certname("cacert"),
+			"cacert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				"cacert.pem": certdata.CACertificate,
