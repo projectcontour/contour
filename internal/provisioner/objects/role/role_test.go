@@ -43,22 +43,6 @@ func checkRoleLabels(t *testing.T, role *rbacv1.Role, expected map[string]string
 	t.Errorf("role has unexpected %q labels", role.Labels)
 }
 
-func TestDesiredCertgenRole(t *testing.T) {
-	name := "role-test"
-	cfg := model.Config{
-		Name:        name,
-		Namespace:   fmt.Sprintf("%s-ns", name),
-		NetworkType: model.LoadBalancerServicePublishingType,
-	}
-	cntr := model.New(cfg)
-	role := desiredCertgenRole(name, cntr)
-	checkRoleName(t, role, name)
-	ownerLabels := map[string]string{
-		model.OwningGatewayNameLabel: cntr.Name,
-	}
-	checkRoleLabels(t, role, ownerLabels)
-}
-
 func TestDesiredControllerRole(t *testing.T) {
 	name := "role-test"
 	cfg := model.Config{

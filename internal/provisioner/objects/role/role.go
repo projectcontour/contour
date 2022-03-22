@@ -84,36 +84,6 @@ func desiredControllerRole(name string, contour *model.Contour) *rbacv1.Role {
 	return role
 }
 
-// EnsureCertgenRole ensures a Role resource exists for the certgen
-// job.
-func EnsureCertgenRole(ctx context.Context, cli client.Client, name string, contour *model.Contour) (*rbacv1.Role, error) {
-	return ensureRole(ctx, cli, name, contour, desiredCertgenRole(name, contour))
-}
-
-// desiredCertgenRole constructs an instance of the desired Role resource with the
-// provided ns/name and contour namespace/name for the owning contour labels for
-// the certgen job.
-func desiredCertgenRole(name string, contour *model.Contour) *rbacv1.Role {
-	role := &rbacv1.Role{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Role",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: contour.Namespace,
-			Name:      name,
-			Labels:    model.OwnerLabels(contour),
-		},
-	}
-	role.Rules = []rbacv1.PolicyRule{
-		{
-			Verbs:     []string{"create", "update"},
-			APIGroups: []string{corev1.GroupName},
-			Resources: []string{"secrets"},
-		},
-	}
-	return role
-}
-
 // CurrentRole returns the current Role for the provided ns/name.
 func CurrentRole(ctx context.Context, cli client.Client, ns, name string) (*rbacv1.Role, error) {
 	current := &rbacv1.Role{}

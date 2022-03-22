@@ -20,11 +20,9 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	objds "github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
 	objdeploy "github.com/projectcontour/contour/internal/provisioner/objects/deployment"
-	objjob "github.com/projectcontour/contour/internal/provisioner/objects/job"
 	objsvc "github.com/projectcontour/contour/internal/provisioner/objects/service"
 
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -141,111 +139,6 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestJobConfigChanged(t *testing.T) {
-	zero := int32(0)
-
-	testCases := []struct {
-		description string
-		mutate      func(*batchv1.Job)
-		expect      bool
-	}{
-		{
-			description: "if nothing changed",
-			mutate:      func(_ *batchv1.Job) {},
-			expect:      false,
-		},
-		{
-			description: "if the job labels are removed",
-			mutate: func(job *batchv1.Job) {
-				job.Labels = map[string]string{}
-			},
-			expect: true,
-		},
-		{
-			description: "if the owning label is removed",
-			mutate: func(job *batchv1.Job) {
-				delete(job.Spec.Template.Labels, model.OwningGatewayNameLabel)
-			},
-			expect: true,
-		},
-		{
-			description: "if the container image is changed",
-			mutate: func(job *batchv1.Job) {
-				job.Spec.Template.Spec.Containers[0].Image = "foo:latest"
-			},
-			expect: true,
-		},
-		{
-			description: "if parallelism is changed",
-			mutate: func(job *batchv1.Job) {
-				job.Spec.Parallelism = &zero
-			},
-			expect: true,
-		},
-		// Completions is immutable, so performing an equality comparison is unneeded.
-		{
-			description: "if backoffLimit is changed",
-			mutate: func(job *batchv1.Job) {
-				job.Spec.BackoffLimit = &zero
-			},
-			expect: true,
-		},
-		{
-			description: "if service account name is changed",
-			mutate: func(job *batchv1.Job) {
-				job.Spec.Template.Spec.ServiceAccountName = "foo"
-			},
-			expect: true,
-		},
-		{
-			description: "if container commands are changed",
-			mutate: func(job *batchv1.Job) {
-				job.Spec.Template.Spec.Containers[0].Command = []string{"foo"}
-			},
-			expect: true,
-		},
-		{
-			description: "if container env vars are changed",
-			mutate: func(job *batchv1.Job) {
-				job.Spec.Template.Spec.Containers[0].Env[0] = corev1.EnvVar{
-					Name: "foo",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							FieldPath: "metadata.name",
-						},
-					},
-				}
-			},
-			expect: true,
-		},
-		{
-			description: "if security context is changed",
-			mutate: func(job *batchv1.Job) {
-				job.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-					RunAsUser:    nil,
-					RunAsGroup:   nil,
-					RunAsNonRoot: nil,
-				}
-			},
-			expect: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		expected := objjob.DesiredJob(cntr, testImage)
-
-		mutated := expected.DeepCopy()
-		tc.mutate(mutated)
-		if updated, changed := equality.JobConfigChanged(mutated, expected); changed != tc.expect {
-			t.Errorf("%s, expect jobConfigChanged to be %t, got %t", tc.description, tc.expect, changed)
-		} else if changed {
-			if _, changedAgain := equality.JobConfigChanged(updated, expected); changedAgain {
-				t.Errorf("%s, jobConfigChanged does not behave as a fixed point function", tc.description)
-			}
-		}
 	}
 }
 

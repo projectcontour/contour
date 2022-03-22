@@ -15,7 +15,6 @@ package model
 
 import (
 	"fmt"
-	"strings"
 )
 
 // ConfigMapName returns the name of the Contour ConfigMap resource.
@@ -58,21 +57,6 @@ func (c *Contour) EnvoyCertsSecretName() string {
 	return c.Name + "-envoycert"
 }
 
-// CertgenJobName returns the name of the certgen Job resource.
-func (c *Contour) CertgenJobName(contourImage string) string {
-	return fmt.Sprintf("contour-certgen-%s-%s", tagFromImage(contourImage), c.Name)
-}
-
-// tagFromImage returns the tag from the provided image or an
-// empty string if the image does not contain a tag.
-func tagFromImage(image string) string {
-	if strings.Contains(image, ":") {
-		parsed := strings.Split(image, ":")
-		return parsed[1]
-	}
-	return ""
-}
-
 // ContourRBACNames returns the names of the RBAC resources for
 // the Contour deployment.
 func (c *Contour) ContourRBACNames() RBACNames {
@@ -92,18 +76,6 @@ func (c *Contour) ContourRBACNames() RBACNames {
 func (c *Contour) EnvoyRBACNames() RBACNames {
 	return RBACNames{
 		ServiceAccount: "envoy-" + c.Name,
-	}
-}
-
-// CertgenRBACNames returns the names of the RBAC resources for
-// the Certgen job.
-func (c *Contour) CertgenRBACNames() RBACNames {
-	return RBACNames{
-		ServiceAccount: "contour-certgen-" + c.Name,
-		Role:           "contour-certgen-" + c.Name,
-
-		// this one is name contour-<gateway-name> despite being for certgen for legacy reasons.
-		RoleBinding: "contour-" + c.Name,
 	}
 }
 

@@ -8495,17 +8495,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - batch
-  resources:
-  - jobs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
   - coordination.k8s.io
   resources:
   - leases

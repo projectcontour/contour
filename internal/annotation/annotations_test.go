@@ -458,8 +458,8 @@ func TestAnnotationKindValidation(t *testing.T) {
 				},
 			},
 		},
-		"secrets": {
-			obj: &v1.Secret{},
+		"namespaces": {
+			obj: &v1.Namespace{},
 			annotations: map[string]status{
 				// In our namespace but not valid on this kind.
 				"projectcontour.io/ingress.class": {

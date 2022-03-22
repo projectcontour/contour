@@ -40,10 +40,6 @@ func EnsureRBAC(ctx context.Context, cli client.Client, contour *model.Contour) 
 		return fmt.Errorf("failed to ensure Envoy RBAC: %w", err)
 	}
 
-	if err := ensureCertgenRBAC(ctx, cli, contour); err != nil {
-		return fmt.Errorf("failed to ensure Certgen RBAC: %w", err)
-	}
-
 	return nil
 }
 
@@ -85,25 +81,6 @@ func ensureEnvoyRBAC(ctx context.Context, cli client.Client, contour *model.Cont
 	return nil
 }
 
-func ensureCertgenRBAC(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	names := contour.CertgenRBACNames()
-
-	// Ensure service account.
-	if _, err := objsa.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
-		return fmt.Errorf("failed to ensure service account %s/%s: %w", contour.Namespace, names.ServiceAccount, err)
-	}
-
-	// Ensure role & binding.
-	if _, err := objrole.EnsureCertgenRole(ctx, cli, names.Role, contour); err != nil {
-		return fmt.Errorf("failed to ensure certgen role %s/%s: %w", contour.Namespace, names.Role, err)
-	}
-	if err := objrb.EnsureRoleBinding(ctx, cli, names.RoleBinding, names.ServiceAccount, names.Role, contour); err != nil {
-		return fmt.Errorf("failed to ensure certgen role binding %s/%s: %w", contour.Namespace, names.RoleBinding, err)
-	}
-
-	return nil
-}
-
 // EnsureRBACDeleted ensures all the necessary RBAC resources for the provided
 // contour are deleted if Contour owner labels exist.
 func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
@@ -112,7 +89,6 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 	for _, name := range []model.RBACNames{
 		contour.ContourRBACNames(),
 		contour.EnvoyRBACNames(),
-		contour.CertgenRBACNames(),
 	} {
 		if len(name.RoleBinding) > 0 {
 			rolebinding, err := objrb.CurrentRoleBinding(ctx, cli, contour.Namespace, name.RoleBinding)
