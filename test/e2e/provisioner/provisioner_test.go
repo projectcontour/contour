@@ -95,6 +95,60 @@ var _ = Describe("Gateway provisioner", func() {
 			require.True(f.T(), ok)
 		})
 	})
+
+	f.NamespacedTest("multiple-gateways-per-namespace", func(namespace string) {
+		Specify("Multiple basic one-listener HTTP gateways can be provisioned in a single namespace", func() {
+			gateway := &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "http-1",
+					Namespace: namespace,
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour"),
+					Listeners: []gatewayapi_v1alpha2.Listener{
+						{
+							Name:     "http",
+							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
+							Port:     gatewayapi_v1alpha2.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+								},
+							},
+						},
+					},
+				},
+			}
+
+			_, ok := f.CreateGatewayAndWaitFor(gateway, gatewayReady)
+			require.True(f.T(), ok)
+
+			gateway = &gatewayapi_v1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "http-2",
+					Namespace: namespace,
+				},
+				Spec: gatewayapi_v1alpha2.GatewaySpec{
+					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour"),
+					Listeners: []gatewayapi_v1alpha2.Listener{
+						{
+							Name:     "http",
+							Protocol: gatewayapi_v1alpha2.HTTPProtocolType,
+							Port:     gatewayapi_v1alpha2.PortNumber(80),
+							AllowedRoutes: &gatewayapi_v1alpha2.AllowedRoutes{
+								Namespaces: &gatewayapi_v1alpha2.RouteNamespaces{
+									From: gatewayapi.FromNamespacesPtr(gatewayapi_v1alpha2.NamespacesFromSame),
+								},
+							},
+						},
+					},
+				},
+			}
+
+			_, ok = f.CreateGatewayAndWaitFor(gateway, gatewayReady)
+			require.True(f.T(), ok)
+		})
+	})
 })
 
 // gatewayClassAccepted returns true if the gateway has a .status.conditions
