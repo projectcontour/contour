@@ -17,7 +17,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.42.0
+          version: v1.45.0
           args: --build-tags=e2e
       - uses: act10ns/slack@v1
         with:
