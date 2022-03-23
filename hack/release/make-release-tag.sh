@@ -34,9 +34,9 @@ run::sed() {
     esac
 }
 
-# Update the image tags in the Contour, Envoy and certgen manifests to the new version
+# Update the image tags in the Contour, Envoy, certgen and provisioner manifests to the new version
 # and switch the imagePullPolicy to IfNotPresent.
-for example in examples/contour/03-envoy.yaml examples/deployment/03-envoy-deployment.yaml examples/contour/03-contour.yaml examples/contour/02-job-certgen.yaml ; do
+for example in examples/contour/03-envoy.yaml examples/deployment/03-envoy-deployment.yaml examples/contour/03-contour.yaml examples/contour/02-job-certgen.yaml examples/gateway-provisioner/03-gateway-provisioner.yaml ; do
     # The version might be main or OLDVERS depending on whether we are
     # tagging from the release branch or from main.
     run::sed \
@@ -62,6 +62,14 @@ for example in examples/contour/02-job-certgen.yaml ; do
         "$example"
 done
 
+# Update the Docker image tags for Contour in the provisioner's config.
+# The version might be main or OLDVERS depending on whether we are
+# tagging from the release branch or from main.
+run::sed \
+  "-es|ghcr.io/projectcontour/contour:main|$IMG|" \
+  "-es|ghcr.io/projectcontour/contour:$OLDVERS|$IMG|" \
+  "cmd/contour/gatewayprovisioner.go"
+
 make generate
 
 # If pushing the tag failed, then we might have already committed the
@@ -69,13 +77,16 @@ make generate
 # make sure that there are changes to commit before we do it.
 if git status -s examples/contour 2>&1 | grep -E -q '^\s+[MADRCU]'; then
     git commit -s -m "Update Contour Docker image to $NEWVERS." \
+        cmd/contour/gatewayprovisioner.go \
         examples/contour/03-contour.yaml \
         examples/contour/03-envoy.yaml \
         examples/contour/02-job-certgen.yaml \
         examples/deployment/03-envoy-deployment.yaml \
+        examples/gateway-provisioner/03-gateway-provisioner.yaml \
         examples/render/contour.yaml \
         examples/render/contour-gateway.yaml \
-        examples/render/contour-deployment.yaml
+        examples/render/contour-deployment.yaml \
+        examples/render/contour-gateway-provisioner.yaml
 fi
 
 git tag -F - "$NEWVERS" <<EOF
