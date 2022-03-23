@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -141,7 +141,7 @@ func TestDesiredContourService(t *testing.T) {
 	}
 	cntr := model.New(cfg)
 	svc := DesiredContourService(cntr)
-	xdsPort := objutil.XDSPort
+	xdsPort := objects.XDSPort
 	checkServiceHasPort(t, svc, xdsPort)
 	checkServiceHasTargetPort(t, svc, xdsPort)
 	checkServiceHasPortName(t, svc, "xds")

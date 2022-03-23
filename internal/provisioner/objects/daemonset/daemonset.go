@@ -22,7 +22,7 @@ import (
 	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -262,7 +262,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 				"bootstrap",
 				filepath.Join("/", envoyCfgVolMntDir, envoyCfgFileName),
 				fmt.Sprintf("--xds-address=%s", contour.ContourServiceName()),
-				fmt.Sprintf("--xds-port=%d", objutil.XDSPort),
+				fmt.Sprintf("--xds-port=%d", objects.XDSPort),
 				fmt.Sprintf("--xds-resource-version=%s", xdsResourceVersion),
 				fmt.Sprintf("--resources-dir=%s", filepath.Join("/", envoyCfgVolMntDir, "resources")),
 				fmt.Sprintf("--envoy-cafile=%s", filepath.Join("/", envoyCertsVolMntDir, "ca.crt")),
@@ -353,7 +353,7 @@ func DesiredDaemonSet(contour *model.Contour, contourImage, envoyImage string) *
 					ServiceAccountName:            contour.EnvoyRBACNames().ServiceAccount,
 					AutomountServiceAccountToken:  pointer.BoolPtr(false),
 					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(300)),
-					SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
+					SecurityContext:               objects.NewUnprivilegedPodSecurity(),
 					DNSPolicy:                     corev1.DNSClusterFirst,
 					RestartPolicy:                 corev1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",

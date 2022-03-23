@@ -18,9 +18,9 @@ import (
 
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	objds "github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
-	objdeploy "github.com/projectcontour/contour/internal/provisioner/objects/deployment"
-	objsvc "github.com/projectcontour/contour/internal/provisioner/objects/service"
+	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
+	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
+	"github.com/projectcontour/contour/internal/provisioner/objects/service"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -105,14 +105,14 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 			description: "if probe values are set to default values",
 			mutate: func(ds *appsv1.DaemonSet) {
 				for i, c := range ds.Spec.Template.Spec.Containers {
-					if c.Name == objds.ShutdownContainerName {
+					if c.Name == daemonset.ShutdownContainerName {
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.ProbeHandler.HTTPGet.Scheme = "HTTP"
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.TimeoutSeconds = int32(1)
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.PeriodSeconds = int32(10)
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.SuccessThreshold = int32(1)
 						ds.Spec.Template.Spec.Containers[i].LivenessProbe.FailureThreshold = int32(3)
 					}
-					if c.Name == objds.EnvoyContainerName {
+					if c.Name == daemonset.EnvoyContainerName {
 						ds.Spec.Template.Spec.Containers[i].ReadinessProbe.TimeoutSeconds = int32(1)
 						// ReadinessProbe InitialDelaySeconds and PeriodSeconds are not set as defaults,
 						// so they are omitted.
@@ -127,7 +127,7 @@ func TestDaemonSetConfigChanged(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			original := objds.DesiredDaemonSet(cntr, testImage, testImage)
+			original := daemonset.DesiredDaemonSet(cntr, testImage, testImage)
 
 			mutated := original.DeepCopy()
 			tc.mutate(mutated)
@@ -222,7 +222,7 @@ func TestDeploymentConfigChanged(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		original := objdeploy.DesiredDeployment(cntr, testImage)
+		original := deployment.DesiredDeployment(cntr, testImage)
 		mutated := original.DeepCopy()
 		tc.mutate(mutated)
 		if updated, changed := equality.DeploymentConfigChanged(original, mutated); changed != tc.expect {
@@ -326,7 +326,7 @@ func TestClusterIpServiceChanged(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		expected := objsvc.DesiredContourService(cntr)
+		expected := service.DesiredContourService(cntr)
 
 		mutated := expected.DeepCopy()
 		tc.mutate(mutated)
@@ -478,18 +478,18 @@ func TestLoadBalancerServiceChanged(t *testing.T) {
 		cntr.Spec.NetworkPublishing.Envoy.ContainerPorts = []model.ContainerPort{
 			{
 				Name:       "http",
-				PortNumber: objsvc.EnvoyServiceHTTPPort,
+				PortNumber: service.EnvoyServiceHTTPPort,
 			},
 			{
 				Name:       "https",
-				PortNumber: objsvc.EnvoyServiceHTTPPort,
+				PortNumber: service.EnvoyServiceHTTPPort,
 			},
 			{
 				Name:       "https",
-				PortNumber: objsvc.EnvoyServiceHTTPSPort,
+				PortNumber: service.EnvoyServiceHTTPSPort,
 			},
 		}
-		expected := objsvc.DesiredEnvoyService(cntr)
+		expected := service.DesiredEnvoyService(cntr)
 
 		mutated := expected.DeepCopy()
 		tc.mutate(mutated)
@@ -528,18 +528,18 @@ func TestNodePortServiceChanged(t *testing.T) {
 		cntr.Spec.NetworkPublishing.Envoy.ContainerPorts = []model.ContainerPort{
 			{
 				Name:       "http",
-				PortNumber: objsvc.EnvoyServiceHTTPPort,
+				PortNumber: service.EnvoyServiceHTTPPort,
 			},
 			{
 				Name:       "https",
-				PortNumber: objsvc.EnvoyServiceHTTPSPort,
+				PortNumber: service.EnvoyServiceHTTPSPort,
 			},
 			{
 				Name:       "https",
-				PortNumber: objsvc.EnvoyServiceHTTPSPort,
+				PortNumber: service.EnvoyServiceHTTPSPort,
 			},
 		}
-		expected := objsvc.DesiredEnvoyService(cntr)
+		expected := service.DesiredEnvoyService(cntr)
 
 		mutated := expected.DeepCopy()
 		tc.mutate(mutated)

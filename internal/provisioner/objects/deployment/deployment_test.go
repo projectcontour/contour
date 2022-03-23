@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -116,8 +116,8 @@ func TestDesiredDeployment(t *testing.T) {
 	icName := "test-ic"
 	cntr.Spec.IngressClassName = &icName
 	// Change the default ports to test Envoy service port args.
-	insecurePort := objutil.EnvoyInsecureContainerPort
-	securePort := objutil.EnvoySecureContainerPort
+	insecurePort := objects.EnvoyInsecureContainerPort
+	securePort := objects.EnvoySecureContainerPort
 	for i, p := range cntr.Spec.NetworkPublishing.Envoy.ContainerPorts {
 		if p.Name == "http" && p.PortNumber == insecurePort {
 			cntr.Spec.NetworkPublishing.Envoy.ContainerPorts[i].PortNumber = int32(8081)
