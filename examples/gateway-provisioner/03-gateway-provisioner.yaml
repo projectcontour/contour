@@ -21,9 +21,8 @@ spec:
         - gateway-provisioner
         - --metrics-addr=127.0.0.1:8080
         - --enable-leader-election
-        - --contour-image=steveheptio/contour:specific-gateway
         command: ["contour"]
-        image: docker.io/steveheptio/contour:gateway-provisioner
+        image: ghcr.io/projectcontour/contour:main
         imagePullPolicy: Always
         name: contour-gateway-provisioner
         resources:
