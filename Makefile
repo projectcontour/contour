@@ -223,6 +223,7 @@ generate-deployment:
 	@./hack/generate-deployment.sh deployment
 	@./hack/generate-deployment.sh daemonset
 	@./hack/generate-gateway-deployment.sh
+	@./hack/generate-provisioner-deployment.sh
 
 .PHONY: generate-crd-yaml
 generate-crd-yaml:
