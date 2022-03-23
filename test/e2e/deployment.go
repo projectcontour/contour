@@ -86,11 +86,6 @@ type Deployment struct {
 	ContourServiceAccount     *v1.ServiceAccount
 	EnvoyServiceAccount       *v1.ServiceAccount
 	ContourConfigMap          *v1.ConfigMap
-	ExtensionServiceCRD       *apiextensions_v1.CustomResourceDefinition
-	HTTPProxyCRD              *apiextensions_v1.CustomResourceDefinition
-	TLSCertDelegationCRD      *apiextensions_v1.CustomResourceDefinition
-	ContourConfigurationCRD   *apiextensions_v1.CustomResourceDefinition
-	ContourDeploymentCRD      *apiextensions_v1.CustomResourceDefinition
 	CertgenServiceAccount     *v1.ServiceAccount
 	CertgenRoleBinding        *rbac_v1.RoleBinding
 	CertgenRole               *rbac_v1.Role
@@ -149,11 +144,6 @@ func (d *Deployment) UnmarshalResources() error {
 	d.ContourServiceAccount = new(v1.ServiceAccount)
 	d.EnvoyServiceAccount = new(v1.ServiceAccount)
 	d.ContourConfigMap = new(v1.ConfigMap)
-	d.ExtensionServiceCRD = new(apiextensions_v1.CustomResourceDefinition)
-	d.HTTPProxyCRD = new(apiextensions_v1.CustomResourceDefinition)
-	d.TLSCertDelegationCRD = new(apiextensions_v1.CustomResourceDefinition)
-	d.ContourConfigurationCRD = new(apiextensions_v1.CustomResourceDefinition)
-	d.ContourDeploymentCRD = new(apiextensions_v1.CustomResourceDefinition)
 	d.CertgenServiceAccount = new(v1.ServiceAccount)
 	d.CertgenRoleBinding = new(rbac_v1.RoleBinding)
 	d.CertgenRole = new(rbac_v1.Role)
@@ -172,11 +162,12 @@ func (d *Deployment) UnmarshalResources() error {
 		d.ContourServiceAccount,
 		d.EnvoyServiceAccount,
 		d.ContourConfigMap,
-		d.ExtensionServiceCRD,
-		d.HTTPProxyCRD,
-		d.TLSCertDelegationCRD,
-		d.ContourConfigurationCRD,
-		d.ContourDeploymentCRD,
+		// CRDs are installed at cluster setup time so we can ignore them.
+		&apiextensions_v1.CustomResourceDefinition{},
+		&apiextensions_v1.CustomResourceDefinition{},
+		&apiextensions_v1.CustomResourceDefinition{},
+		&apiextensions_v1.CustomResourceDefinition{},
+		&apiextensions_v1.CustomResourceDefinition{},
 		d.CertgenServiceAccount,
 		d.CertgenRoleBinding,
 		d.CertgenRole,
@@ -269,26 +260,6 @@ func (d *Deployment) EnsureEnvoyServiceAccount() error {
 
 func (d *Deployment) EnsureContourConfigMap() error {
 	return d.ensureResource(d.ContourConfigMap, new(v1.ConfigMap))
-}
-
-func (d *Deployment) EnsureExtensionServiceCRD() error {
-	return d.ensureResource(d.ExtensionServiceCRD, new(apiextensions_v1.CustomResourceDefinition))
-}
-
-func (d *Deployment) EnsureHTTPProxyCRD() error {
-	return d.ensureResource(d.HTTPProxyCRD, new(apiextensions_v1.CustomResourceDefinition))
-}
-
-func (d *Deployment) EnsureTLSCertDelegationCRD() error {
-	return d.ensureResource(d.TLSCertDelegationCRD, new(apiextensions_v1.CustomResourceDefinition))
-}
-
-func (d *Deployment) EnsureContourConfigurationCRD() error {
-	return d.ensureResource(d.ContourConfigurationCRD, new(apiextensions_v1.CustomResourceDefinition))
-}
-
-func (d *Deployment) EnsureContourDeploymentCRD() error {
-	return d.ensureResource(d.ContourDeploymentCRD, new(apiextensions_v1.CustomResourceDefinition))
 }
 
 func (d *Deployment) EnsureCertgenServiceAccount() error {
@@ -485,7 +456,6 @@ func (d *Deployment) EnsureRateLimitResources(namespace string, configContents s
 // Includes:
 // - namespace
 // - Envoy service account
-// - CRDs
 // - Envoy service
 // - ConfigMap with Envoy bootstrap config
 // - Envoy DaemonSet modified for local Contour xDS server
@@ -494,21 +464,6 @@ func (d *Deployment) EnsureResourcesForLocalContour() error {
 		return err
 	}
 	if err := d.EnsureEnvoyServiceAccount(); err != nil {
-		return err
-	}
-	if err := d.EnsureExtensionServiceCRD(); err != nil {
-		return err
-	}
-	if err := d.EnsureHTTPProxyCRD(); err != nil {
-		return err
-	}
-	if err := d.EnsureTLSCertDelegationCRD(); err != nil {
-		return err
-	}
-	if err := d.EnsureContourConfigurationCRD(); err != nil {
-		return err
-	}
-	if err := d.EnsureContourDeploymentCRD(); err != nil {
 		return err
 	}
 	if err := d.EnsureEnvoyService(); err != nil {
@@ -629,9 +584,6 @@ func (d *Deployment) DeleteResourcesForLocalContour() error {
 	for _, r := range []client.Object{
 		d.ContourConfigMap,
 		d.EnvoyService,
-		d.TLSCertDelegationCRD,
-		d.ExtensionServiceCRD,
-		d.HTTPProxyCRD,
 		d.EnvoyServiceAccount,
 	} {
 		if err := d.EnsureDeleted(r); err != nil {
@@ -755,7 +707,6 @@ func (d *Deployment) StopLocalContour(contourCmd *gexec.Session, configFile stri
 // - Contour service account
 // - Envoy service account
 // - Contour configmap
-// - CRDs
 // - Certgen service account
 // - Certgen role binding
 // - Certgen role
@@ -781,21 +732,6 @@ func (d *Deployment) EnsureResourcesForInclusterContour(startContourDeployment b
 		return err
 	}
 	if err := d.EnsureContourConfigMap(); err != nil {
-		return err
-	}
-	if err := d.EnsureExtensionServiceCRD(); err != nil {
-		return err
-	}
-	if err := d.EnsureHTTPProxyCRD(); err != nil {
-		return err
-	}
-	if err := d.EnsureTLSCertDelegationCRD(); err != nil {
-		return err
-	}
-	if err := d.EnsureContourConfigurationCRD(); err != nil {
-		return err
-	}
-	if err := d.EnsureContourDeploymentCRD(); err != nil {
 		return err
 	}
 	if err := d.EnsureCertgenServiceAccount(); err != nil {
@@ -916,9 +852,6 @@ func (d *Deployment) DeleteResourcesForInclusterContour() error {
 		d.CertgenRole,
 		d.CertgenRoleBinding,
 		d.CertgenServiceAccount,
-		d.TLSCertDelegationCRD,
-		d.ExtensionServiceCRD,
-		d.HTTPProxyCRD,
 		d.ContourConfigMap,
 		d.EnvoyServiceAccount,
 		d.ContourServiceAccount,
