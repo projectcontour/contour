@@ -62,6 +62,7 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 	var (
 		createGetUpdate = []string{"create", "get", "update"}
 		getListWatch    = []string{"get", "list", "watch"}
+		update          = []string{"update"}
 	)
 
 	policyRuleFor := func(apiGroup string, verbs []string, resources ...string) rbacv1.PolicyRule {
@@ -87,7 +88,7 @@ func desiredClusterRole(name string, contour *model.Contour) *rbacv1.ClusterRole
 			// Gateway API resources.
 			// Note, ReferencePolicy does not currently have a .status field so it's omitted from the status rule.
 			policyRuleFor(gatewayv1alpha2.GroupName, getListWatch, "gatewayclasses", "gateways", "httproutes", "tlsroutes", "referencepolicies"),
-			policyRuleFor(gatewayv1alpha2.GroupName, createGetUpdate, "gatewayclasses/status", "gateways/status", "httproutes/status", "tlsroutes/status"),
+			policyRuleFor(gatewayv1alpha2.GroupName, update, "gatewayclasses/status", "gateways/status", "httproutes/status", "tlsroutes/status"),
 
 			// Ingress resources.
 			policyRuleFor(networkingv1.GroupName, getListWatch, "ingresses"),

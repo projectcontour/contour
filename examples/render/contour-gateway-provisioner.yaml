@@ -8448,6 +8448,9 @@ rules:
   - ""
   resources:
   - configmaps
+  - secrets
+  - serviceaccounts
+  - services
   verbs:
   - create
   - delete
@@ -8459,6 +8462,9 @@ rules:
   - ""
   resources:
   - endpoints
+  - namespaces
+  - secrets
+  - services
   verbs:
   - get
   - list
@@ -8472,33 +8478,9 @@ rules:
   - get
   - update
 - apiGroups:
-  - ""
-  resources:
-  - namespaces
-  - secrets
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - daemonsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
   - deployments
   verbs:
   - create
@@ -8514,8 +8496,15 @@ rules:
   verbs:
   - create
   - get
-  - list
   - update
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - gatewayclasses
+  - gateways
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - gateway.networking.k8s.io
@@ -8528,8 +8517,14 @@ rules:
   verbs:
   - get
   - list
-  - update
   - watch
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - gatewayclasses/status
+  - gateways/status
+  verbs:
+  - update
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -8538,8 +8533,6 @@ rules:
   - httproutes/status
   - tlsroutes/status
   verbs:
-  - create
-  - get
   - update
 - apiGroups:
   - networking.k8s.io
