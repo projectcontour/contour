@@ -20,6 +20,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/controller"
 	"github.com/projectcontour/contour/internal/provisioner/parse"
 
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -27,7 +28,7 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gateway_api_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *gatewayProvisionerConfig) {
@@ -158,7 +159,10 @@ func createScheme() (*runtime.Scheme, error) {
 	if err := clientgoscheme.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
-	if err := gatewayv1alpha2.AddToScheme(scheme); err != nil {
+	if err := gateway_api_v1alpha2.AddToScheme(scheme); err != nil {
+		return nil, err
+	}
+	if err := contour_api_v1alpha1.AddToScheme(scheme); err != nil {
 		return nil, err
 	}
 

@@ -28,6 +28,7 @@ import (
 	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -65,7 +67,18 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 	if err := c.Watch(
 		&source.Kind{Type: &gatewayapi_v1alpha2.Gateway{}},
 		&handler.EnqueueRequestForObject{},
-		predicate.NewPredicateFuncs(r.hasMatchingController),
+		predicate.NewPredicateFuncs(r.forReconcilableGatewayClass),
+	); err != nil {
+		return nil, err
+	}
+
+	// Watch GatewayClasses so we can trigger reconciles for any related
+	// Gateways when a provisioner-controlled GatewayClass becomes
+	// "Accepted: true".
+	if err := c.Watch(
+		&source.Kind{Type: &gatewayapi_v1alpha2.GatewayClass{}},
+		handler.EnqueueRequestsFromMapFunc(r.getGatewayClassGateways),
+		predicate.NewPredicateFuncs(r.isGatewayClassReconcilable),
 	); err != nil {
 		return nil, err
 	}
@@ -73,7 +86,10 @@ func NewGatewayController(mgr manager.Manager, gatewayController, contourImage, 
 	return c, nil
 }
 
-func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
+// forReconcilableGatewayClass returns true if the provided Gateway uses a GatewayClass
+// controlled by the provisioner, and that GatewayClass has a condition of
+// "Accepted: true".
+func (r *gatewayReconciler) forReconcilableGatewayClass(obj client.Object) bool {
 	gw, ok := obj.(*gatewayapi_v1alpha2.Gateway)
 	if !ok {
 		return false
@@ -84,7 +100,55 @@ func (r *gatewayReconciler) hasMatchingController(obj client.Object) bool {
 		return false
 	}
 
-	return gatewayClass.Spec.ControllerName == r.gatewayController
+	return r.isGatewayClassReconcilable(gatewayClass)
+}
+
+// isGatewayClassReconcilable returns true if the provided object is a
+// GatewayClass controlled by the provisioner that has an "Accepted: true"
+// condition.
+func (r *gatewayReconciler) isGatewayClassReconcilable(obj client.Object) bool {
+	gatewayClass, ok := obj.(*gatewayapi_v1alpha2.GatewayClass)
+	if !ok {
+		return false
+	}
+
+	if gatewayClass.Spec.ControllerName != r.gatewayController {
+		return false
+	}
+
+	var accepted bool
+	for _, cond := range gatewayClass.Status.Conditions {
+		if cond.Type == string(gatewayapi_v1alpha2.GatewayClassConditionStatusAccepted) {
+			if cond.Status == metav1.ConditionTrue {
+				accepted = true
+			}
+			break
+		}
+	}
+
+	return accepted
+}
+
+func (r *gatewayReconciler) getGatewayClassGateways(gatewayClass client.Object) []reconcile.Request {
+	var gateways gatewayapi_v1alpha2.GatewayList
+	if err := r.client.List(context.Background(), &gateways); err != nil {
+		r.log.Error(err, "error listing gateways")
+		return nil
+	}
+
+	var reconciles []reconcile.Request
+	for _, gw := range gateways.Items {
+		if gw.Spec.GatewayClassName == gatewayapi_v1alpha2.ObjectName(gatewayClass.GetName()) {
+			reconciles = append(reconciles, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: gw.Namespace,
+					Name:      gw.Name,
+				},
+			})
+		}
+	}
+
+	return reconciles
 }
 
 func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -109,6 +173,17 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 		// Error reading the object, so requeue the request.
 		return ctrl.Result{}, fmt.Errorf("failed to get gateway %s: %w", req, err)
+	}
+
+	// Theoretically all event sources should be filtered already, but doesn't hurt
+	// to double-check this here to ensure we only reconcile gateways for accepted
+	// gateway classes the provisioner controls.
+	gatewayClass := &gatewayapi_v1alpha2.GatewayClass{}
+	if err := r.client.Get(ctx, client.ObjectKey{Name: string(gateway.Spec.GatewayClassName)}, gatewayClass); err != nil {
+		return ctrl.Result{}, fmt.Errorf("error getting gateway's gateway class: %w", err)
+	}
+	if !r.isGatewayClassReconcilable(gatewayClass) {
+		return ctrl.Result{}, nil
 	}
 
 	r.log.WithValues("gateway-namespace", req.Namespace, "gateway-name", req.Name).Info("ensuring gateway resources")
