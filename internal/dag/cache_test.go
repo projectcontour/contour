@@ -990,7 +990,7 @@ func TestKubernetesCacheInsert(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			cache := KubernetesCache{
-				Gateway: tc.cacheGateway,
+				ConfiguredGatewayToCache: tc.cacheGateway,
 				ConfiguredSecretRefs: []*types.NamespacedName{
 					{Name: "secretReferredByConfigFile", Namespace: "default"}},
 				FieldLogger: fixture.NewTestLogger(t),
@@ -1264,7 +1264,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"specific gateway configured, remove gatewayclass, no gatewayclass cached": {
 			cache: &KubernetesCache{
-				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
 			},
 			obj: &gatewayapi_v1alpha2.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1275,7 +1275,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"specific gateway configured, remove gatewayclass, non-matching name": {
 			cache: &KubernetesCache{
-				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
 				gatewayclass: &gatewayapi_v1alpha2.GatewayClass{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "gatewayclass-1",
@@ -1291,7 +1291,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"specific gateway configured, remove gatewayclass, matching name": {
 			cache: &KubernetesCache{
-				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
 				gatewayclass: &gatewayapi_v1alpha2.GatewayClass{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "gatewayclass-1",
@@ -1307,7 +1307,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"specific gateway configured, remove gateway, no gateway cached": {
 			cache: &KubernetesCache{
-				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
 			},
 			obj: &gatewayapi_v1alpha2.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1319,7 +1319,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"specific gateway configured, remove gateway, non-matching namespace/name": {
 			cache: &KubernetesCache{
-				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
 				gateway: &gatewayapi_v1alpha2.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",
@@ -1337,7 +1337,7 @@ func TestKubernetesCacheRemove(t *testing.T) {
 		},
 		"specific gateway configured, remove gateway, matching namespace/name": {
 			cache: &KubernetesCache{
-				Gateway: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
+				ConfiguredGatewayToCache: &types.NamespacedName{Namespace: "gateway-namespace", Name: "gateway-name"},
 				gateway: &gatewayapi_v1alpha2.Gateway{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "gateway-namespace",

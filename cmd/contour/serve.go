@@ -916,12 +916,12 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 
 	builder := &dag.Builder{
 		Source: dag.KubernetesCache{
-			RootNamespaces:       dbc.rootNamespaces,
-			IngressClassNames:    dbc.ingressClassNames,
-			Gateway:              dbc.gatewayName,
-			ConfiguredSecretRefs: configuredSecretRefs,
-			FieldLogger:          s.log.WithField("context", "KubernetesCache"),
-			Client:               dbc.client,
+			RootNamespaces:           dbc.rootNamespaces,
+			IngressClassNames:        dbc.ingressClassNames,
+			ConfiguredGatewayToCache: dbc.gatewayName,
+			ConfiguredSecretRefs:     configuredSecretRefs,
+			FieldLogger:              s.log.WithField("context", "KubernetesCache"),
+			Client:                   dbc.client,
 		},
 		Processors: dagProcessors,
 	}

@@ -49,9 +49,9 @@ type KubernetesCache struct {
 	// cached.
 	IngressClassNames []string
 
-	// Gateway is the optional name of the specific Gateway to cache.
+	// ConfiguredGatewayToCache is the optional name of the specific Gateway to cache.
 	// If set, only the Gateway with this namespace/name will be kept.
-	Gateway *types.NamespacedName
+	ConfiguredGatewayToCache *types.NamespacedName
 
 	// Secrets that are referred from the configuration file.
 	ConfiguredSecretRefs []*types.NamespacedName
@@ -157,7 +157,7 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			switch {
 			// Specific gateway configured: make sure the incoming gateway class
 			// matches that gateway's.
-			case kc.Gateway != nil:
+			case kc.ConfiguredGatewayToCache != nil:
 				if kc.gateway == nil || obj.Name != string(kc.gateway.Spec.GatewayClassName) {
 					return false
 				}
@@ -173,8 +173,8 @@ func (kc *KubernetesCache) Insert(obj interface{}) bool {
 			switch {
 			// Specific gateway configured: make sure the incoming gateway
 			// matches, and get its gateway class.
-			case kc.Gateway != nil:
-				if k8s.NamespacedNameOf(obj) != *kc.Gateway {
+			case kc.ConfiguredGatewayToCache != nil:
+				if k8s.NamespacedNameOf(obj) != *kc.ConfiguredGatewayToCache {
 					return false
 				}
 
@@ -291,7 +291,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		return ok
 	case *gatewayapi_v1alpha2.GatewayClass:
 		switch {
-		case kc.Gateway != nil:
+		case kc.ConfiguredGatewayToCache != nil:
 			if kc.gatewayclass == nil || obj.Name != kc.gatewayclass.Name {
 				return false
 			}
@@ -303,7 +303,7 @@ func (kc *KubernetesCache) remove(obj interface{}) bool {
 		}
 	case *gatewayapi_v1alpha2.Gateway:
 		switch {
-		case kc.Gateway != nil:
+		case kc.ConfiguredGatewayToCache != nil:
 			if kc.gateway == nil || k8s.NamespacedNameOf(obj) != k8s.NamespacedNameOf(kc.gateway) {
 				return false
 			}
