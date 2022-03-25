@@ -5,7 +5,7 @@ This is an alternate way to configure Contour, vs. the existing mode of specifyi
 This new configuration option can be specified via:
 ```yaml
 gateway:
-  gatewayName:
+  gatewayRef:
     namespace: gateway-namespace
     name: gateway-name
 ```

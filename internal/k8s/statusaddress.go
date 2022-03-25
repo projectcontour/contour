@@ -44,7 +44,7 @@ type StatusAddressUpdater struct {
 	LBStatus              v1.LoadBalancerStatus
 	IngressClassNames     []string
 	GatewayControllerName string
-	GatewayName           *types.NamespacedName
+	GatewayRef            *types.NamespacedName
 	StatusUpdater         StatusUpdater
 
 	// mu guards the LBStatus field, which can be updated dynamically.
@@ -136,8 +136,8 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		switch {
 		// Specific Gateway configured: check if the added Gateway
 		// matches.
-		case s.GatewayName != nil:
-			if NamespacedNameOf(o) != *s.GatewayName {
+		case s.GatewayRef != nil:
+			if NamespacedNameOf(o) != *s.GatewayRef {
 				s.Logger.
 					WithField("name", o.Name).
 					WithField("namespace", o.Namespace).

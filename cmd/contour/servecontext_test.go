@@ -393,7 +393,7 @@ func TestConvertServeContext(t *testing.T) {
 
 	specificGateway := newServeContext()
 	specificGateway.Config.GatewayConfig = &config.GatewayParameters{
-		GatewayName: &config.NamespacedName{
+		GatewayRef: &config.NamespacedName{
 			Namespace: "gateway-namespace",
 			Name:      "gateway-name",
 		},
@@ -967,7 +967,7 @@ func TestConvertServeContext(t *testing.T) {
 					},
 				},
 				Gateway: &contour_api_v1alpha1.GatewayConfig{
-					GatewayName: &contour_api_v1alpha1.NamespacedName{
+					GatewayRef: &contour_api_v1alpha1.NamespacedName{
 						Namespace: "gateway-namespace",
 						Name:      "gateway-name",
 					},

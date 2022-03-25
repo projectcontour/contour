@@ -393,15 +393,15 @@ func (s *Server) doServe() error {
 	}
 
 	var gatewayControllerName string
-	var gatewayName *types.NamespacedName
+	var gatewayRef *types.NamespacedName
 
 	if contourConfiguration.Gateway != nil {
 		gatewayControllerName = contourConfiguration.Gateway.ControllerName
 
-		if contourConfiguration.Gateway.GatewayName != nil {
-			gatewayName = &types.NamespacedName{
-				Namespace: contourConfiguration.Gateway.GatewayName.Namespace,
-				Name:      contourConfiguration.Gateway.GatewayName.Name,
+		if contourConfiguration.Gateway.GatewayRef != nil {
+			gatewayRef = &types.NamespacedName{
+				Namespace: contourConfiguration.Gateway.GatewayRef.Namespace,
+				Name:      contourConfiguration.Gateway.GatewayRef.Name,
 			}
 		}
 	}
@@ -410,7 +410,7 @@ func (s *Server) doServe() error {
 		ingressClassNames:         ingressClassNames,
 		rootNamespaces:            contourConfiguration.HTTPProxy.RootNamespaces,
 		gatewayControllerName:     gatewayControllerName,
-		gatewayName:               gatewayName,
+		gatewayRef:                gatewayRef,
 		disablePermitInsecure:     contourConfiguration.HTTPProxy.DisablePermitInsecure,
 		enableExternalNameService: contourConfiguration.EnableExternalNameService,
 		dnsLookupFamily:           contourConfiguration.Envoy.Cluster.DNSLookupFamily,
@@ -505,7 +505,7 @@ func (s *Server) doServe() error {
 		lbStatus:              make(chan corev1.LoadBalancerStatus, 1),
 		ingressClassNames:     ingressClassNames,
 		gatewayControllerName: gatewayControllerName,
-		gatewayName:           gatewayName,
+		gatewayRef:            gatewayRef,
 		statusUpdater:         sh.Writer(),
 	}
 	if err := s.mgr.Add(lbsw); err != nil {
@@ -733,12 +733,12 @@ func (s *Server) setupGatewayAPI(contourConfiguration contour_api_v1alpha1.Conto
 	needLeadershipNotification := []leadership.NeedLeaderElectionNotification{}
 
 	// Check if GatewayAPI is configured.
-	if contourConfiguration.Gateway != nil && (contourConfiguration.Gateway.GatewayName != nil || len(contourConfiguration.Gateway.ControllerName) > 0) {
+	if contourConfiguration.Gateway != nil && (contourConfiguration.Gateway.GatewayRef != nil || len(contourConfiguration.Gateway.ControllerName) > 0) {
 		switch {
 		// If a specific gateway was specified, we don't need to run the
 		// GatewayClass and Gateway controllers to determine which gateway
 		// to process, we just need informers to get events.
-		case contourConfiguration.Gateway.GatewayName != nil:
+		case contourConfiguration.Gateway.GatewayRef != nil:
 			// Inform on GatewayClasses.
 			if err := informOnResource(&gatewayapi_v1alpha2.GatewayClass{}, eventHandler, mgr.GetCache()); err != nil {
 				s.log.WithError(err).WithField("resource", "gatewayclasses").Fatal("failed to create informer")
@@ -806,7 +806,7 @@ type dagBuilderConfig struct {
 	ingressClassNames         []string
 	rootNamespaces            []string
 	gatewayControllerName     string
-	gatewayName               *types.NamespacedName
+	gatewayRef                *types.NamespacedName
 	disablePermitInsecure     bool
 	enableExternalNameService bool
 	dnsLookupFamily           contour_api_v1alpha1.ClusterDNSFamilyType
@@ -894,7 +894,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		},
 	}
 
-	if len(dbc.gatewayControllerName) > 0 || dbc.gatewayName != nil {
+	if len(dbc.gatewayControllerName) > 0 || dbc.gatewayRef != nil {
 		dagProcessors = append(dagProcessors, &dag.GatewayAPIProcessor{
 			EnableExternalNameService: dbc.enableExternalNameService,
 			FieldLogger:               s.log.WithField("context", "GatewayAPIProcessor"),
@@ -918,7 +918,7 @@ func (s *Server) getDAGBuilder(dbc dagBuilderConfig) *dag.Builder {
 		Source: dag.KubernetesCache{
 			RootNamespaces:           dbc.rootNamespaces,
 			IngressClassNames:        dbc.ingressClassNames,
-			ConfiguredGatewayToCache: dbc.gatewayName,
+			ConfiguredGatewayToCache: dbc.gatewayRef,
 			ConfiguredSecretRefs:     configuredSecretRefs,
 			FieldLogger:              s.log.WithField("context", "KubernetesCache"),
 			Client:                   dbc.client,

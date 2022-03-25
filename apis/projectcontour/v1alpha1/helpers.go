@@ -69,18 +69,18 @@ func endpointsInConfict(health HealthConfig, metrics MetricsConfig) error {
 	return nil
 }
 
-// Validate ensures that exactly one of ControllerName or GatewayName are specified.
+// Validate ensures that exactly one of ControllerName or GatewayRef are specified.
 func (g *GatewayConfig) Validate() error {
 	if g == nil {
 		return nil
 	}
 
-	if len(g.ControllerName) > 0 && g.GatewayName != nil {
-		return fmt.Errorf("invalid gateway configuration: exactly one of controller name or gateway name must be specified")
+	if len(g.ControllerName) > 0 && g.GatewayRef != nil {
+		return fmt.Errorf("invalid gateway configuration: exactly one of controller name or gateway ref must be specified")
 	}
 
-	if len(g.ControllerName) == 0 && g.GatewayName == nil {
-		return fmt.Errorf("invalid gateway configuration: exactly one of controller name or gateway name must be specified")
+	if len(g.ControllerName) == 0 && g.GatewayRef == nil {
+		return fmt.Errorf("invalid gateway configuration: exactly one of controller name or gateway ref must be specified")
 	}
 
 	return nil

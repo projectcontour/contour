@@ -97,7 +97,7 @@ func runGatewayTests() {
 					// Update contour config to point to specified gateway.
 					contourConfig.GatewayConfig = &config.GatewayParameters{}
 					if reconcileMode == ReconcileModeGateway {
-						contourConfig.GatewayConfig.GatewayName = &config.NamespacedName{
+						contourConfig.GatewayConfig.GatewayRef = &config.NamespacedName{
 							Namespace: gateway.Namespace,
 							Name:      gateway.Name,
 						}
@@ -108,7 +108,7 @@ func runGatewayTests() {
 					// Update contour configuration to point to specified gateway.
 					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{}
 					if reconcileMode == ReconcileModeGateway {
-						contourConfiguration.Spec.Gateway.GatewayName = &contour_api_v1alpha1.NamespacedName{
+						contourConfiguration.Spec.Gateway.GatewayRef = &contour_api_v1alpha1.NamespacedName{
 							Namespace: gateway.Namespace,
 							Name:      gateway.Name,
 						}

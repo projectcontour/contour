@@ -49,12 +49,12 @@ func (g *GatewayParameters) Validate() error {
 		return nil
 	}
 
-	if len(g.ControllerName) == 0 && g.GatewayName == nil {
-		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway name must be provided")
+	if len(g.ControllerName) == 0 && g.GatewayRef == nil {
+		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway ref must be provided")
 	}
 
-	if len(g.ControllerName) > 0 && g.GatewayName != nil {
-		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway name must be provided")
+	if len(g.ControllerName) > 0 && g.GatewayRef != nil {
+		return fmt.Errorf("invalid Gateway parameters specified: exactly one of controller name or gateway ref must be provided")
 	}
 
 	return nil
@@ -350,15 +350,15 @@ type GatewayParameters struct {
 	// ControllerName is used to determine whether Contour should reconcile a
 	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
 	// If unset, the gatewayclass controller will not be started.
-	// Exactly one of ControllerName or GatewayName must be set.
+	// Exactly one of ControllerName or GatewayRef must be set.
 	ControllerName string `yaml:"controllerName,omitempty"`
 
-	// GatewayName defines a specific Gateway that this Contour
+	// GatewayRef defines a specific Gateway that this Contour
 	// instance corresponds to. If set, Contour will reconcile
 	// only this gateway, and will not reconcile any gateway
 	// classes.
-	// Exactly one of ControllerName or GatewayName must be set.
-	GatewayName *NamespacedName `yaml:"gatewayName,omitempty"`
+	// Exactly one of ControllerName or GatewayRef must be set.
+	GatewayRef *NamespacedName `yaml:"gatewayRef,omitempty"`
 }
 
 // TimeoutParameters holds various configurable proxy timeout values.

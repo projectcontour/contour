@@ -693,13 +693,13 @@ spec:
                       should reconcile a GatewayClass. The string takes the form of
                       "projectcontour.io/<namespace>/contour". If unset, the gatewayclass
                       controller will not be started. Exactly one of ControllerName
-                      or GatewayName must be set.
+                      or GatewayRef must be set.
                     type: string
-                  gatewayName:
-                    description: GatewayName defines a specific Gateway that this
-                      Contour instance corresponds to. If set, Contour will reconcile
-                      only this gateway, and will not reconcile any gateway classes.
-                      Exactly one of ControllerName or GatewayName must be set.
+                  gatewayRef:
+                    description: GatewayRef defines a specific Gateway that this Contour
+                      instance corresponds to. If set, Contour will reconcile only
+                      this gateway, and will not reconcile any gateway classes. Exactly
+                      one of ControllerName or GatewayRef must be set.
                     properties:
                       name:
                         type: string
@@ -1662,13 +1662,13 @@ spec:
                           should reconcile a GatewayClass. The string takes the form
                           of "projectcontour.io/<namespace>/contour". If unset, the
                           gatewayclass controller will not be started. Exactly one
-                          of ControllerName or GatewayName must be set.
+                          of ControllerName or GatewayRef must be set.
                         type: string
-                      gatewayName:
-                        description: GatewayName defines a specific Gateway that this
+                      gatewayRef:
+                        description: GatewayRef defines a specific Gateway that this
                           Contour instance corresponds to. If set, Contour will reconcile
                           only this gateway, and will not reconcile any gateway classes.
-                          Exactly one of ControllerName or GatewayName must be set.
+                          Exactly one of ControllerName or GatewayRef must be set.
                         properties:
                           name:
                             type: string

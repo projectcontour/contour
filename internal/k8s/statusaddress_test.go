@@ -374,7 +374,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 	testCases := map[string]struct {
 		status                     v1.LoadBalancerStatus
 		gatewayClassControllerName string
-		gatewayName                *types.NamespacedName
+		gatewayRef                 *types.NamespacedName
 		preop                      *gatewayapi_v1alpha2.Gateway
 		postop                     *gatewayapi_v1alpha2.Gateway
 	}{
@@ -543,8 +543,8 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 			},
 		},
 		"Specific gateway configured, gateway does not match": {
-			status:      ipLBStatus,
-			gatewayName: &types.NamespacedName{Namespace: "projectcontour", Name: "contour-gateway"},
+			status:     ipLBStatus,
+			gatewayRef: &types.NamespacedName{Namespace: "projectcontour", Name: "contour-gateway"},
 			preop: &gatewayapi_v1alpha2.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
@@ -581,8 +581,8 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 			},
 		},
 		"Specific gateway configured, gateway matches": {
-			status:      ipLBStatus,
-			gatewayName: &types.NamespacedName{Namespace: "projectcontour", Name: "contour-gateway"},
+			status:     ipLBStatus,
+			gatewayRef: &types.NamespacedName{Namespace: "projectcontour", Name: "contour-gateway"},
 			preop: &gatewayapi_v1alpha2.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: "projectcontour",
@@ -646,7 +646,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 			isu := StatusAddressUpdater{
 				Logger:                log,
 				GatewayControllerName: "projectcontour.io/contour",
-				GatewayName:           tc.gatewayName,
+				GatewayRef:            tc.gatewayRef,
 				Cache:                 mockCache,
 				LBStatus:              tc.status,
 				StatusUpdater:         &suc,
@@ -677,7 +677,7 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 			isu := StatusAddressUpdater{
 				Logger:                log,
 				GatewayControllerName: "projectcontour.io/contour",
-				GatewayName:           tc.gatewayName,
+				GatewayRef:            tc.gatewayRef,
 				Cache:                 mockCache,
 				LBStatus:              tc.status,
 				StatusUpdater:         &suc,
