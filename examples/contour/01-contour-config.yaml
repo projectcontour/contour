@@ -95,6 +95,7 @@ data:
     #   - "upstream_service_time"
     #   - "user_agent"
     #   - "x_forwarded_for"
+    #   - "grpc_status"
     #
     # default-http-versions:
     # - "HTTP/2"
