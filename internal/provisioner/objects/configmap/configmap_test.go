@@ -132,6 +132,8 @@ accesslog-format: envoy
 #   Configure the number of additional ingress proxy hops from the
 #   right side of the x-forwarded-for HTTP header to trust.
 #   num-trusted-hops: 0
+# Name of the envoy service to inspect for Ingress status details.
+envoy-service-name: envoy-test
 `
 
 	c := &model.Contour{
@@ -257,6 +259,8 @@ accesslog-format: envoy
 #   Configure the number of additional ingress proxy hops from the
 #   right side of the x-forwarded-for HTTP header to trust.
 #   num-trusted-hops: 0
+# Name of the envoy service to inspect for Ingress status details.
+envoy-service-name: envoy-test
 `
 	c := &model.Contour{
 		ObjectMeta: v1.ObjectMeta{
@@ -382,6 +386,8 @@ accesslog-format: envoy
 #   Configure the number of additional ingress proxy hops from the
 #   right side of the x-forwarded-for HTTP header to trust.
 #   num-trusted-hops: 0
+# Name of the envoy service to inspect for Ingress status details.
+envoy-service-name: envoy-test
 `
 
 	c := &model.Contour{
