@@ -8233,7 +8233,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
 						}),
@@ -8254,7 +8254,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
 						}),
@@ -8274,8 +8274,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
-							Clusters:           withTimeout(clustermap(s1), TimeoutPolicy{ResponseTimeout: timeout.DurationSetting(90 * time.Second)}),
-							TimeoutPolicy:      TimeoutPolicy{ResponseTimeout: timeout.DurationSetting(90 * time.Second)},
+							Clusters:           clustermap(s1),
+							TimeoutPolicy:      RouteTimeoutPolicy{ResponseTimeout: timeout.DurationSetting(90 * time.Second)},
 						}),
 					),
 				},
@@ -8294,7 +8294,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
 							},
 						}),
@@ -8315,7 +8315,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
 							},
 						}),
@@ -8335,8 +8335,8 @@ func TestDAGInsert(t *testing.T) {
 					VirtualHosts: virtualhosts(
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
-							Clusters:           withTimeout(clustermap(s1), TimeoutPolicy{ResponseTimeout: timeout.DisabledSetting()}),
-							TimeoutPolicy:      TimeoutPolicy{ResponseTimeout: timeout.DisabledSetting()},
+							Clusters:           clustermap(s1),
+							TimeoutPolicy:      RouteTimeoutPolicy{ResponseTimeout: timeout.DisabledSetting()},
 						}),
 					),
 				},
@@ -11388,6 +11388,9 @@ func TestDAGInsert(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			if name != "insert httpproxy w/ infinite timeoutpolicy" {
+				return
+			}
 			builder := Builder{
 				Source: KubernetesCache{
 					FieldLogger: fixture.NewTestLogger(t),
@@ -12513,11 +12516,4 @@ func withMirror(r *Route, mirror *Service) *Route {
 		},
 	}
 	return r
-}
-
-func withTimeout(clusters []*Cluster, timeout TimeoutPolicy) []*Cluster {
-	for _, c := range clusters {
-		c.TimeoutPolicy = timeout
-	}
-	return clusters
 }

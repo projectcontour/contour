@@ -735,7 +735,7 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 				Upstream:      service,
 				SNI:           service.ExternalName,
 				Weight:        routeWeight,
-				TimeoutPolicy: TimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+				TimeoutPolicy: ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			})
 		}
 
@@ -1085,7 +1085,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			Weight:               routeWeight,
 			Protocol:             service.Protocol,
 			RequestHeadersPolicy: headerPolicy,
-			TimeoutPolicy:        TimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
+			TimeoutPolicy:        ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 		})
 	}
 

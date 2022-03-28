@@ -218,7 +218,7 @@ type Route struct {
 	Websocket bool
 
 	// TimeoutPolicy defines the timeout request/idle
-	TimeoutPolicy TimeoutPolicy
+	TimeoutPolicy RouteTimeoutPolicy
 
 	// RetryPolicy defines the retry / number / timeout options for a route
 	RetryPolicy *RetryPolicy
@@ -268,8 +268,8 @@ func (r *Route) HasPathRegex() bool {
 	return ok
 }
 
-// TimeoutPolicy defines the timeout policy for a route or a cluster.
-type TimeoutPolicy struct {
+// RouteTimeoutPolicy defines the timeout policy for a route.
+type RouteTimeoutPolicy struct {
 	// ResponseTimeout is the timeout applied to the response
 	// from the backend server.
 	ResponseTimeout timeout.Setting
@@ -277,7 +277,10 @@ type TimeoutPolicy struct {
 	// IdleStreamTimeout is the timeout applied to idle connection during single request-response.
 	// Stream is HTTP/2 and HTTP/3 concept, for HTTP/1 it refers to single request-response within connection.
 	IdleStreamTimeout timeout.Setting
+}
 
+// ClusterTimeoutPolicy defines the timeout policy for a cluster.
+type ClusterTimeoutPolicy struct {
 	// IdleConnectionTimeout is the timeout applied to idle connection.
 	IdleConnectionTimeout timeout.Setting
 
@@ -694,7 +697,7 @@ type Cluster struct {
 	ClientCertificate *Secret
 
 	// TimeoutPolicy specifies how to handle timeouts for this cluster.
-	TimeoutPolicy TimeoutPolicy
+	TimeoutPolicy ClusterTimeoutPolicy
 }
 
 // WeightedService represents the load balancing weight of a
@@ -857,8 +860,11 @@ type ExtensionCluster struct {
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto#enum-config-cluster-v3-cluster-lbpolicy
 	LoadBalancerPolicy string
 
-	// TimeoutPolicy specifies how to handle timeouts to this extension.
-	TimeoutPolicy TimeoutPolicy
+	// RouteTimeoutPolicy specifies how to handle timeouts to this extension.
+	RouteTimeoutPolicy RouteTimeoutPolicy
+
+	// TimeoutPolicy specifies how to handle timeouts for this cluster.
+	ClusterTimeoutPolicy ClusterTimeoutPolicy
 
 	// SNI is used when a route proxies an upstream using TLS.
 	SNI string
