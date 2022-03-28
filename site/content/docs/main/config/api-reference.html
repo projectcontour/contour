@@ -5348,9 +5348,30 @@ string
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>ControllerName is used to determine whether Contour should reconcile a
 GatewayClass. The string takes the form of &ldquo;projectcontour.io/<namespace>/contour&rdquo;.
-If unset, the gatewayclass controller will not be started.</p>
+If unset, the gatewayclass controller will not be started.
+Exactly one of ControllerName or GatewayRef must be set.</p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>gatewayRef</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.NamespacedName">
+NamespacedName
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>GatewayRef defines a specific Gateway that this Contour
+instance corresponds to. If set, Contour will reconcile
+only this gateway, and will not reconcile any gateway
+classes.
+Exactly one of ControllerName or GatewayRef must be set.</p>
 </td>
 </tr>
 </tbody>
@@ -5688,6 +5709,7 @@ string
 <p>
 (<em>Appears on:</em>
 <a href="#projectcontour.io/v1alpha1.EnvoyConfig">EnvoyConfig</a>, 
+<a href="#projectcontour.io/v1alpha1.GatewayConfig">GatewayConfig</a>, 
 <a href="#projectcontour.io/v1alpha1.HTTPProxyConfig">HTTPProxyConfig</a>, 
 <a href="#projectcontour.io/v1alpha1.RateLimitServiceConfig">RateLimitServiceConfig</a>)
 </p>

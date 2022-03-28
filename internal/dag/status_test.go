@@ -2630,6 +2630,7 @@ func validGatewayStatusUpdate(listenerName string, kind gatewayapi_v1alpha2.Kind
 		{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionTrue,
@@ -3646,6 +3647,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -3787,6 +3789,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -3872,6 +3875,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -3957,6 +3961,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4042,6 +4047,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4128,6 +4134,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4531,6 +4538,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4586,6 +4594,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4642,6 +4651,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4698,6 +4708,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4760,6 +4771,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4818,6 +4830,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4880,6 +4893,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4939,6 +4953,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -4992,6 +5007,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -5045,6 +5061,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -5092,6 +5109,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -5145,6 +5163,7 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 		wantGatewayStatusUpdate: []*status.GatewayStatusUpdate{{
 			FullName: types.NamespacedName{Namespace: "projectcontour", Name: "contour"},
 			Conditions: map[gatewayapi_v1alpha2.GatewayConditionType]metav1.Condition{
+				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
 					Status:  contour_api_v1.ConditionFalse,
@@ -5711,5 +5730,14 @@ func TestGatewayAPITLSRouteDAGStatus(t *testing.T) {
 			}},
 			wantGatewayStatusUpdate: validGatewayStatusUpdate(string(gw.Spec.Listeners[0].Name), "TLSRoute", 0),
 		})
+	}
+}
+
+func gatewayScheduledCondition() metav1.Condition {
+	return metav1.Condition{
+		Type:    string(gatewayapi_v1alpha2.GatewayConditionScheduled),
+		Status:  contour_api_v1.ConditionTrue,
+		Reason:  string(gatewayapi_v1alpha2.GatewayReasonScheduled),
+		Message: "Gateway is scheduled",
 	}
 }

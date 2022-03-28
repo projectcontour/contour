@@ -290,6 +290,13 @@ func (ctx *serveContext) convertToContourConfigurationSpec() contour_api_v1alpha
 		gatewayConfig = &contour_api_v1alpha1.GatewayConfig{
 			ControllerName: ctx.Config.GatewayConfig.ControllerName,
 		}
+
+		if ctx.Config.GatewayConfig.GatewayRef != nil {
+			gatewayConfig.GatewayRef = &contour_api_v1alpha1.NamespacedName{
+				Namespace: ctx.Config.GatewayConfig.GatewayRef.Namespace,
+				Name:      ctx.Config.GatewayConfig.GatewayRef.Name,
+			}
+		}
 	}
 
 	var cipherSuites []contour_api_v1alpha1.TLSCipherType

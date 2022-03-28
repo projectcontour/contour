@@ -26,6 +26,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	networking_v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,6 +44,7 @@ type StatusAddressUpdater struct {
 	LBStatus              v1.LoadBalancerStatus
 	IngressClassNames     []string
 	GatewayControllerName string
+	GatewayRef            *types.NamespacedName
 	StatusUpdater         StatusUpdater
 
 	// mu guards the LBStatus field, which can be updated dynamically.
@@ -131,25 +133,39 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 		))
 
 	case *gatewayapi_v1alpha2.Gateway:
-		// Check if the Gateway's class is controlled by this Contour
-		gc := &gatewayapi_v1alpha2.GatewayClass{}
-		if err := s.Cache.Get(context.Background(), client.ObjectKey{Name: string(o.Spec.GatewayClassName)}, gc); err != nil {
-			s.Logger.
-				WithField("name", o.Name).
-				WithField("namespace", o.Namespace).
-				WithField("gatewayclass-name", o.Spec.GatewayClassName).
-				WithError(err).
-				Error("error getting gateway class for gateway")
-			return
-		}
-		if string(gc.Spec.ControllerName) != s.GatewayControllerName {
-			s.Logger.
-				WithField("name", o.Name).
-				WithField("namespace", o.Namespace).
-				WithField("gatewayclass-name", o.Spec.GatewayClassName).
-				WithField("gatewayclass-controller-name", gc.Spec.ControllerName).
-				Debug("Gateway's class is not controlled by this Contour, not setting address")
-			return
+		switch {
+		// Specific Gateway configured: check if the added Gateway
+		// matches.
+		case s.GatewayRef != nil:
+			if NamespacedNameOf(o) != *s.GatewayRef {
+				s.Logger.
+					WithField("name", o.Name).
+					WithField("namespace", o.Namespace).
+					Debug("Gateway is not for this Contour, not setting address")
+				return
+			}
+		// Otherwise, check if the added Gateway's class is controlled
+		// by us.
+		default:
+			gc := &gatewayapi_v1alpha2.GatewayClass{}
+			if err := s.Cache.Get(context.Background(), client.ObjectKey{Name: string(o.Spec.GatewayClassName)}, gc); err != nil {
+				s.Logger.
+					WithField("name", o.Name).
+					WithField("namespace", o.Namespace).
+					WithField("gatewayclass-name", o.Spec.GatewayClassName).
+					WithError(err).
+					Error("error getting gateway class for gateway")
+				return
+			}
+			if string(gc.Spec.ControllerName) != s.GatewayControllerName {
+				s.Logger.
+					WithField("name", o.Name).
+					WithField("namespace", o.Namespace).
+					WithField("gatewayclass-name", o.Spec.GatewayClassName).
+					WithField("gatewayclass-controller-name", gc.Spec.ControllerName).
+					Debug("Gateway's class is not controlled by this Contour, not setting address")
+				return
+			}
 		}
 
 		// Only set the Gateway's address if it has a condition of "Ready: true".

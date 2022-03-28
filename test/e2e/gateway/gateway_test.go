@@ -35,7 +35,16 @@ import (
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
+// ReconcileModeController means Contour should be configured
+// to reconcile based on a Gateway controller string.
+const ReconcileModeController = "controller"
+
+// ReconcileModeGateway means Contour should be configured
+// to reconcile a specific named Gateway.
+const ReconcileModeGateway = "gateway"
+
 var f = e2e.NewFramework(false)
+var reconcileMode = ReconcileModeController
 
 func TestGatewayAPI(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -55,6 +64,17 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("Gateway API", func() {
+	// Run all tests for both gateway reconciliation modes.
+	for _, mode := range []string{ReconcileModeController, ReconcileModeGateway} {
+		reconcileMode = mode
+
+		Context(fmt.Sprintf("Reconcile mode %s", mode), func() {
+			runGatewayTests()
+		})
+	}
+})
+
+func runGatewayTests() {
 	var (
 		contourCmd            *gexec.Session
 		contourConfig         *config.Parameters
@@ -75,13 +95,25 @@ var _ = Describe("Gateway API", func() {
 					// Ensure gateway created in this test's namespace.
 					gateway.Namespace = namespace
 					// Update contour config to point to specified gateway.
-					contourConfig.GatewayConfig = &config.GatewayParameters{
-						ControllerName: string(gatewayClass.Spec.ControllerName),
+					contourConfig.GatewayConfig = &config.GatewayParameters{}
+					if reconcileMode == ReconcileModeGateway {
+						contourConfig.GatewayConfig.GatewayRef = &config.NamespacedName{
+							Namespace: gateway.Namespace,
+							Name:      gateway.Name,
+						}
+					} else {
+						contourConfig.GatewayConfig.ControllerName = string(gatewayClass.Spec.ControllerName)
 					}
 
 					// Update contour configuration to point to specified gateway.
-					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
-						ControllerName: string(gatewayClass.Spec.ControllerName),
+					contourConfiguration.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{}
+					if reconcileMode == ReconcileModeGateway {
+						contourConfiguration.Spec.Gateway.GatewayRef = &contour_api_v1alpha1.NamespacedName{
+							Namespace: gateway.Namespace,
+							Name:      gateway.Name,
+						}
+					} else {
+						contourConfiguration.Spec.Gateway.ControllerName = string(gatewayClass.Spec.ControllerName)
 					}
 
 					contourGatewayClass = gatewayClass
@@ -122,7 +154,15 @@ var _ = Describe("Gateway API", func() {
 		// Wait for Envoy to be healthy.
 		require.NoError(f.T(), f.Deployment.WaitForEnvoyUpdated())
 
-		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassValid)
+		gatewayClassCond := gatewayClassValid
+		// If we're reconciling a specific Gateway,
+		// we don't expect GatewayClasses to be reconciled
+		// or become valid.
+		if reconcileMode == ReconcileModeGateway {
+			gatewayClassCond = func(*gatewayapi_v1alpha2.GatewayClass) bool { return true }
+		}
+
+		f.CreateGatewayClassAndWaitFor(contourGatewayClass, gatewayClassCond)
 		f.CreateGatewayAndWaitFor(contourGateway, gatewayValid)
 	})
 
@@ -391,7 +431,7 @@ var _ = Describe("Gateway API", func() {
 
 		f.NamespacedTest("gateway-multiple-https-listeners", testWithMultipleHTTPSListenersGateway(testMultipleHTTPSListeners))
 	})
-})
+}
 
 // httpRouteAccepted returns true if the route has a .status.conditions
 // entry of "Accepted: true".

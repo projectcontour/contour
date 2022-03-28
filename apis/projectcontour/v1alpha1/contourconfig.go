@@ -108,8 +108,17 @@ type GatewayConfig struct {
 	// ControllerName is used to determine whether Contour should reconcile a
 	// GatewayClass. The string takes the form of "projectcontour.io/<namespace>/contour".
 	// If unset, the gatewayclass controller will not be started.
-	// +kubebuilder:default="projectcontour.io/projectcontour/contour"
-	ControllerName string `json:"controllerName"`
+	// Exactly one of ControllerName or GatewayRef must be set.
+	// +optional
+	ControllerName string `json:"controllerName,omitempty"`
+
+	// GatewayRef defines a specific Gateway that this Contour
+	// instance corresponds to. If set, Contour will reconcile
+	// only this gateway, and will not reconcile any gateway
+	// classes.
+	// Exactly one of ControllerName or GatewayRef must be set.
+	// +optional
+	GatewayRef *NamespacedName `json:"gatewayRef,omitempty"`
 }
 
 // TLS holds TLS file config details.

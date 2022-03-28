@@ -494,14 +494,26 @@ spec:
                   that Contour is configured to serve traffic.
                 properties:
                   controllerName:
-                    default: projectcontour.io/projectcontour/contour
                     description: ControllerName is used to determine whether Contour
                       should reconcile a GatewayClass. The string takes the form of
                       "projectcontour.io/<namespace>/contour". If unset, the gatewayclass
-                      controller will not be started.
+                      controller will not be started. Exactly one of ControllerName
+                      or GatewayRef must be set.
                     type: string
-                required:
-                - controllerName
+                  gatewayRef:
+                    description: GatewayRef defines a specific Gateway that this Contour
+                      instance corresponds to. If set, Contour will reconcile only
+                      this gateway, and will not reconcile any gateway classes. Exactly
+                      one of ControllerName or GatewayRef must be set.
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                    required:
+                    - name
+                    - namespace
+                    type: object
                 type: object
               health:
                 default:
@@ -1451,14 +1463,26 @@ spec:
                       that Contour is configured to serve traffic.
                     properties:
                       controllerName:
-                        default: projectcontour.io/projectcontour/contour
                         description: ControllerName is used to determine whether Contour
                           should reconcile a GatewayClass. The string takes the form
                           of "projectcontour.io/<namespace>/contour". If unset, the
-                          gatewayclass controller will not be started.
+                          gatewayclass controller will not be started. Exactly one
+                          of ControllerName or GatewayRef must be set.
                         type: string
-                    required:
-                    - controllerName
+                      gatewayRef:
+                        description: GatewayRef defines a specific Gateway that this
+                          Contour instance corresponds to. If set, Contour will reconcile
+                          only this gateway, and will not reconcile any gateway classes.
+                          Exactly one of ControllerName or GatewayRef must be set.
+                        properties:
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        required:
+                        - name
+                        - namespace
+                        type: object
                     type: object
                   health:
                     default:
