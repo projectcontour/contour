@@ -861,6 +861,7 @@ type ExtensionCluster struct {
 	LoadBalancerPolicy string
 
 	// RouteTimeoutPolicy specifies how to handle timeouts to this extension.
+	// Defines default response timeout unless the
 	RouteTimeoutPolicy RouteTimeoutPolicy
 
 	// TimeoutPolicy specifies how to handle timeouts for this cluster.

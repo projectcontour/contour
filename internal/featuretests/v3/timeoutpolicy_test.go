@@ -275,7 +275,7 @@ func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {
 
 	// Check that cluster has connection timeout set.
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t, withConnectionTimeout(cluster("default/kuard/8080/b7427dbbf9", "default/kuard", "default_kuard_8080"), 3*time.Minute)),
+		Resources: resources(t, withConnectionTimeout(cluster("default/kuard/8080/b7427dbbf9", "default/kuard", "default_kuard_8080"), 3*time.Minute, envoy_v3.HTTPVersion1)),
 		TypeUrl:   clusterType,
 	})
 
@@ -284,7 +284,7 @@ func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {
 
 	// Check that cluster has connection timeout set to zero (infinite).
 	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
-		Resources: resources(t, withConnectionTimeout(cluster("default/kuard/8080/97705cb30a", "default/kuard", "default_kuard_8080"), 0)),
+		Resources: resources(t, withConnectionTimeout(cluster("default/kuard/8080/97705cb30a", "default/kuard", "default_kuard_8080"), 0, envoy_v3.HTTPVersion1)),
 		TypeUrl:   clusterType,
 	})
 }
