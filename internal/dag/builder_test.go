@@ -11388,9 +11388,6 @@ func TestDAGInsert(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			if name != "insert httpproxy w/ infinite timeoutpolicy" {
-				return
-			}
 			builder := Builder{
 				Source: KubernetesCache{
 					FieldLogger: fixture.NewTestLogger(t),
