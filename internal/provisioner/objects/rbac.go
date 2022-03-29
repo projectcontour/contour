@@ -29,65 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// contourRbacNamePrefix is the prefix of the name used for Contour RBAC resources.
-	contourRbacNamePrefix = "contour"
-
-	// contourRoleBindingNamePrefix is a special case RoleBinding name prefix since
-	// the certgen RoleBinding name is "contour"
-	contourRoleBindingNamePrefix = "contour-rolebinding"
-
-	// envoyRbacNamePrefix is the prefix of the name used for Envoy RBAC resources.
-	envoyRbacNamePrefix = "envoy"
-
-	// certGenRbacNamePrefix is the prefix of the name used for Contour certificate
-	// generation RBAC resources.
-	certGenRbacNamePrefix = "contour-certgen"
-)
-
-// RBACNames holds a set of names of related RBAC resources.
-type RBACNames struct {
-	ServiceAccount     string
-	ClusterRole        string
-	ClusterRoleBinding string
-	Role               string
-	RoleBinding        string
-}
-
-// GetContourRBACNames returns the names of the RBAC resources for
-// the Contour deployment.
-func GetContourRBACNames(contour *model.Contour) RBACNames {
-	return RBACNames{
-		ServiceAccount:     fmt.Sprintf("%s-%s", contourRbacNamePrefix, contour.Name),
-		ClusterRole:        fmt.Sprintf("%s-%s-%s", contourRbacNamePrefix, contour.Namespace, contour.Name),
-		ClusterRoleBinding: fmt.Sprintf("%s-%s-%s", contourRbacNamePrefix, contour.Namespace, contour.Name),
-		Role:               fmt.Sprintf("%s-%s", contourRbacNamePrefix, contour.Name),
-
-		// this one has a different prefix to differentiate from the certgen role binding (see below).
-		RoleBinding: fmt.Sprintf("%s-%s", contourRoleBindingNamePrefix, contour.Name),
-	}
-}
-
-// GetEnvoyRBACNames returns the names of the RBAC resources for
-// the Envoy daemonset.
-func GetEnvoyRBACNames(contour *model.Contour) RBACNames {
-	return RBACNames{
-		ServiceAccount: fmt.Sprintf("%s-%s", envoyRbacNamePrefix, contour.Name),
-	}
-}
-
-// GetCertgenRBACNames returns the names of the RBAC resources for
-// the Certgen job.
-func GetCertgenRBACNames(contour *model.Contour) RBACNames {
-	return RBACNames{
-		ServiceAccount: fmt.Sprintf("%s-%s", certGenRbacNamePrefix, contour.Name),
-		Role:           fmt.Sprintf("%s-%s", certGenRbacNamePrefix, contour.Name),
-
-		// this one is name contour-<gateway-name> despite being for certgen for legacy reasons.
-		RoleBinding: fmt.Sprintf("%s-%s", contourRbacNamePrefix, contour.Name),
-	}
-}
-
 // EnsureRBAC ensures all the necessary RBAC resources exist for the
 // provided contour.
 func EnsureRBAC(ctx context.Context, cli client.Client, contour *model.Contour) error {
@@ -107,7 +48,7 @@ func EnsureRBAC(ctx context.Context, cli client.Client, contour *model.Contour) 
 }
 
 func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	names := GetContourRBACNames(contour)
+	names := contour.ContourRBACNames()
 
 	// Ensure service account.
 	if _, err := objsa.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
@@ -134,7 +75,7 @@ func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Co
 }
 
 func ensureEnvoyRBAC(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	names := GetEnvoyRBACNames(contour)
+	names := contour.EnvoyRBACNames()
 
 	// Ensure service account.
 	if _, err := objsa.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
@@ -145,7 +86,7 @@ func ensureEnvoyRBAC(ctx context.Context, cli client.Client, contour *model.Cont
 }
 
 func ensureCertgenRBAC(ctx context.Context, cli client.Client, contour *model.Contour) error {
-	names := GetCertgenRBACNames(contour)
+	names := contour.CertgenRBACNames()
 
 	// Ensure service account.
 	if _, err := objsa.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
@@ -168,10 +109,10 @@ func ensureCertgenRBAC(ctx context.Context, cli client.Client, contour *model.Co
 func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Contour) error {
 	var deletions []client.Object
 
-	for _, name := range []RBACNames{
-		GetContourRBACNames(contour),
-		GetEnvoyRBACNames(contour),
-		GetCertgenRBACNames(contour),
+	for _, name := range []model.RBACNames{
+		contour.ContourRBACNames(),
+		contour.EnvoyRBACNames(),
+		contour.CertgenRBACNames(),
 	} {
 		if len(name.RoleBinding) > 0 {
 			rolebinding, err := objrb.CurrentRoleBinding(ctx, cli, contour.Namespace, name.RoleBinding)

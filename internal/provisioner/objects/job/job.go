@@ -38,10 +38,6 @@ const (
 	jobNsEnvVar      = "CONTOUR_NAMESPACE"
 )
 
-func certgenJobName(contourImage, contourName string) string {
-	return fmt.Sprintf("%s-%s-%s", "contour-certgen", objutil.TagFromImage(contourImage), contourName)
-}
-
 // EnsureJob ensures that a Job exists for the given contour.
 // TODO [danehans]: The real dependency is whether the TLS secrets are present.
 // The method should first check for the secrets, then use certgen as a secret
@@ -87,7 +83,7 @@ func currentJob(ctx context.Context, cli client.Client, contour *model.Contour, 
 	current := &batchv1.Job{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      certgenJobName(image, contour.Name),
+		Name:      contour.CertgenJobName(image),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {
@@ -127,7 +123,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 	}
 	spec := corev1.PodSpec{
 		Containers:                    []corev1.Container{container},
-		ServiceAccountName:            objutil.GetCertgenRBACNames(contour).ServiceAccount,
+		ServiceAccountName:            contour.CertgenRBACNames().ServiceAccount,
 		SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
 		RestartPolicy:                 corev1.RestartPolicyNever,
 		DNSPolicy:                     corev1.DNSClusterFirst,
@@ -150,7 +146,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      certgenJobName(image, contour.Name),
+			Name:      contour.CertgenJobName(image),
 			Namespace: contour.Namespace,
 			Labels:    labels,
 		},

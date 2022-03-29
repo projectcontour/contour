@@ -31,11 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ContourConfigMapName returns the name of Contour's ConfigMap resource.
-func ContourConfigMapName(contour *model.Contour) string {
-	return fmt.Sprintf("%s-%s", "contour", contour.Name)
-}
-
 var contourConfigMapTemplate = template.Must(template.New("contour.yaml").Parse(`#
 # server:
 #   determine which XDS Server implementation to utilize in Contour.
@@ -187,13 +182,13 @@ type contourConfig struct {
 func configForContour(contour *model.Contour) *configMapParams {
 	return &configMapParams{
 		Namespace: contour.Namespace,
-		Name:      ContourConfigMapName(contour),
+		Name:      contour.ConfigMapName(),
 		Labels:    model.OwnerLabels(contour),
 		Contour: contourConfig{
 			GatewayNamespace:          contour.Namespace,
 			GatewayName:               contour.Name,
 			EnableExternalNameService: pointer.BoolDeref(contour.Spec.EnableExternalNameService, false),
-			EnvoyServiceName:          fmt.Sprintf("envoy-%s", contour.Name),
+			EnvoyServiceName:          contour.EnvoyServiceName(),
 		},
 	}
 }

@@ -34,10 +34,6 @@ import (
 )
 
 const (
-	// contourSvcNamePrefix is the prefix of the name of Contour's Service.
-	contourSvcNamePrefix = "contour"
-	// envoySvcNamePrefix is the prefix of the name of Envoy's Service.
-	envoySvcNamePrefix = "envoy"
 	// awsLbBackendProtoAnnotation is a Service annotation that places the AWS ELB into
 	// "TCP" mode so that it does not do HTTP negotiation for HTTPS connections at the
 	// ELB edge. The downside of this is the remote IP address of all connections will
@@ -90,16 +86,6 @@ const (
 	// details see: https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
 	EnvoyNodePortHTTPSPort = int32(30443)
 )
-
-// contourServiceName returns the name of Contour's Service resource.
-func contourServiceName(contour *model.Contour) string {
-	return fmt.Sprintf("%s-%s", contourSvcNamePrefix, contour.Name)
-}
-
-// envoyServiceName returns the name of Envoy's service resource.
-func envoyServiceName(contour *model.Contour) string {
-	return fmt.Sprintf("%s-%s", envoySvcNamePrefix, contour.Name)
-}
 
 var (
 	// InternalLBAnnotations maps cloud providers to the provider's annotation
@@ -202,7 +188,7 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
-			Name:      contourServiceName(contour),
+			Name:      contour.ContourServiceName(),
 			Labels:    model.OwnerLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
@@ -214,7 +200,7 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 					TargetPort: intstr.IntOrString{IntVal: xdsPort},
 				},
 			},
-			Selector:        objdeploy.ContourDeploymentPodSelector(contour.Name).MatchLabels,
+			Selector:        objdeploy.ContourDeploymentPodSelector(contour).MatchLabels,
 			Type:            corev1.ServiceTypeClusterIP,
 			SessionAffinity: corev1.ServiceAffinityNone,
 		},
@@ -270,13 +256,13 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   contour.Namespace,
-			Name:        envoyServiceName(contour),
+			Name:        contour.EnvoyServiceName(),
 			Annotations: map[string]string{},
 			Labels:      model.OwnerLabels(contour),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:           ports,
-			Selector:        objds.EnvoyDaemonSetPodSelector(contour.Name).MatchLabels,
+			Selector:        objds.EnvoyDaemonSetPodSelector(contour).MatchLabels,
 			SessionAffinity: corev1.ServiceAffinityNone,
 		},
 	}
@@ -362,7 +348,7 @@ func currentContourService(ctx context.Context, cli client.Client, contour *mode
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      contourServiceName(contour),
+		Name:      contour.ContourServiceName(),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {
@@ -376,7 +362,7 @@ func currentEnvoyService(ctx context.Context, cli client.Client, contour *model.
 	current := &corev1.Service{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      envoyServiceName(contour),
+		Name:      contour.EnvoyServiceName(),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {
