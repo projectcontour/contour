@@ -38,12 +38,6 @@ const (
 	jobNsEnvVar      = "CONTOUR_NAMESPACE"
 )
 
-func certgenJobName(contourImage string) string {
-	// [TODO] danehans: Remove and use contour.Name + "-certgen" when
-	// https://github.com/projectcontour/contour/issues/2122 is fixed.
-	return "contour-certgen-" + objutil.TagFromImage(contourImage)
-}
-
 // EnsureJob ensures that a Job exists for the given contour.
 // TODO [danehans]: The real dependency is whether the TLS secrets are present.
 // The method should first check for the secrets, then use certgen as a secret
@@ -89,7 +83,7 @@ func currentJob(ctx context.Context, cli client.Client, contour *model.Contour, 
 	current := &batchv1.Job{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      certgenJobName(image),
+		Name:      contour.CertgenJobName(image),
 	}
 	err := cli.Get(ctx, key, current)
 	if err != nil {
@@ -121,6 +115,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 			"--overwrite",
 			"--secrets-format=compact",
 			fmt.Sprintf("--namespace=$(%s)", jobNsEnvVar),
+			fmt.Sprintf("--secrets-name-prefix=%s", contour.Name),
 		},
 		Env:                      []corev1.EnvVar{env},
 		TerminationMessagePath:   "/dev/termination-log",
@@ -128,7 +123,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 	}
 	spec := corev1.PodSpec{
 		Containers:                    []corev1.Container{container},
-		ServiceAccountName:            objutil.CertGenRbacName,
+		ServiceAccountName:            contour.CertgenRBACNames().ServiceAccount,
 		SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
 		RestartPolicy:                 corev1.RestartPolicyNever,
 		DNSPolicy:                     corev1.DNSClusterFirst,
@@ -151,7 +146,7 @@ func DesiredJob(contour *model.Contour, image string) *batchv1.Job {
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      certgenJobName(image),
+			Name:      contour.CertgenJobName(image),
 			Namespace: contour.Namespace,
 			Labels:    labels,
 		},

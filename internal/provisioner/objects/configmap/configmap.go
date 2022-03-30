@@ -31,13 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// ContourConfigMapName is the name of Contour's ConfigMap resource.
-	// [TODO] danehans: Remove and use contour.Name when
-	// https://github.com/projectcontour/contour/issues/2122 is fixed.
-	ContourConfigMapName = "contour"
-)
-
 var contourConfigMapTemplate = template.Must(template.New("contour.yaml").Parse(`#
 # server:
 #   determine which XDS Server implementation to utilize in Contour.
@@ -150,6 +143,8 @@ accesslog-format: envoy
 #   Configure the number of additional ingress proxy hops from the
 #   right side of the x-forwarded-for HTTP header to trust.
 #   num-trusted-hops: 0
+# Name of the envoy service to inspect for Ingress status details.
+envoy-service-name: {{ .EnvoyServiceName }}
 `))
 
 // configMapParams contains everything needed to manage a Contour ConfigMap.
@@ -177,18 +172,23 @@ type contourConfig struct {
 	// EnableExternalNameService sets whether ExternalName Services are
 	// allowed.
 	EnableExternalNameService bool
+
+	// EnvoyServiceName is the name of the envoy service to inspect for Ingress
+	// status details.
+	EnvoyServiceName string
 }
 
 // configForContour returns a configMapParams with default fields set for contour.
 func configForContour(contour *model.Contour) *configMapParams {
 	return &configMapParams{
 		Namespace: contour.Namespace,
-		Name:      ContourConfigMapName,
+		Name:      contour.ConfigMapName(),
 		Labels:    model.OwnerLabels(contour),
 		Contour: contourConfig{
 			GatewayNamespace:          contour.Namespace,
 			GatewayName:               contour.Name,
 			EnableExternalNameService: pointer.BoolDeref(contour.Spec.EnableExternalNameService, false),
+			EnvoyServiceName:          contour.EnvoyServiceName(),
 		},
 	}
 }

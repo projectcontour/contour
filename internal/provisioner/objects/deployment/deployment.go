@@ -23,7 +23,6 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
-	objcm "github.com/projectcontour/contour/internal/provisioner/objects/configmap"
 	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,10 +36,6 @@ import (
 )
 
 const (
-	// contourDeploymentName is the name of Contour's Deployment resource.
-	// [TODO] danehans: Remove and use contour.Name + "-contour" when
-	// https://github.com/projectcontour/contour/issues/2122 is fixed.
-	contourDeploymentName = "contour"
 	// contourContainerName is the name of the Contour container.
 	contourContainerName = "contour"
 	// contourNsEnvVar is the name of the contour namespace environment variable.
@@ -51,8 +46,6 @@ const (
 	contourCertsVolName = "contourcert"
 	// contourCertsVolMntDir is the directory name of the contour certificates volume.
 	contourCertsVolMntDir = "certs"
-	// contourCertsSecretName is the name of the secret used as the certificate volume source.
-	contourCertsSecretName = contourCertsVolName
 	// contourCfgVolName is the name of the contour configuration volume.
 	contourCfgVolName = "contour-config"
 	// contourCfgVolMntDir is the directory name of the contour configuration volume.
@@ -122,6 +115,8 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		fmt.Sprintf("--contour-cert-file=%s", filepath.Join("/", contourCertsVolMntDir, "tls.crt")),
 		fmt.Sprintf("--contour-key-file=%s", filepath.Join("/", contourCertsVolMntDir, "tls.key")),
 		fmt.Sprintf("--config-path=%s", filepath.Join("/", contourCfgVolMntDir, contourCfgFileName)),
+		fmt.Sprintf("--leader-election-resource-name=%s", contour.LeaderElectionLeaseName()),
+		fmt.Sprintf("--envoy-service-name=%s", contour.EnvoyServiceName()),
 	}
 	// Pass the insecure/secure flags to Contour if using non-default ports.
 	for _, port := range contour.Spec.NetworkPublishing.Envoy.ContainerPorts {
@@ -223,7 +218,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
-			Name:      contourDeploymentName,
+			Name:      contour.ContourDeploymentName(),
 			Labels:    makeDeploymentLabels(contour),
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -231,7 +226,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 			Replicas:                &contour.Spec.Replicas,
 			RevisionHistoryLimit:    pointer.Int32Ptr(int32(10)),
 			// Ensure the deployment adopts only its own pods.
-			Selector: ContourDeploymentPodSelector(),
+			Selector: ContourDeploymentPodSelector(contour),
 			Strategy: appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
@@ -247,7 +242,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 						"prometheus.io/scrape": "true",
 						"prometheus.io/port":   fmt.Sprintf("%d", metricsPort),
 					},
-					Labels: ContourDeploymentPodSelector().MatchLabels,
+					Labels: ContourDeploymentPodSelector(contour).MatchLabels,
 				},
 				Spec: corev1.PodSpec{
 					// TODO [danehans]: Readdress anti-affinity when https://github.com/projectcontour/contour/issues/2997
@@ -260,7 +255,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 									PodAffinityTerm: corev1.PodAffinityTerm{
 										TopologyKey: "kubernetes.io/hostname",
 										LabelSelector: &metav1.LabelSelector{
-											MatchLabels: ContourDeploymentPodSelector().MatchLabels,
+											MatchLabels: ContourDeploymentPodSelector(contour).MatchLabels,
 										},
 									},
 								},
@@ -274,7 +269,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
 									DefaultMode: pointer.Int32Ptr(int32(420)),
-									SecretName:  contourCertsSecretName,
+									SecretName:  contour.ContourCertsSecretName(),
 								},
 							},
 						},
@@ -283,9 +278,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										// [TODO] danehans: Update to contour.Name when
-										// projectcontour/contour/issues/2122 is fixed.
-										Name: objcm.ContourConfigMapName,
+										Name: contour.ConfigMapName(),
 									},
 									Items: []corev1.KeyToPath{
 										{
@@ -299,7 +292,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 						},
 					},
 					DNSPolicy:                     corev1.DNSClusterFirst,
-					ServiceAccountName:            objutil.ContourRbacName,
+					ServiceAccountName:            contour.ContourRBACNames().ServiceAccount,
 					RestartPolicy:                 corev1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",
 					SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
@@ -325,7 +318,7 @@ func CurrentDeployment(ctx context.Context, cli client.Client, contour *model.Co
 	deploy := &appsv1.Deployment{}
 	key := types.NamespacedName{
 		Namespace: contour.Namespace,
-		Name:      contourDeploymentName,
+		Name:      contour.ContourDeploymentName(),
 	}
 	if err := cli.Get(ctx, key, deploy); err != nil {
 		return nil, err
@@ -374,10 +367,10 @@ func makeDeploymentLabels(contour *model.Contour) map[string]string {
 
 // ContourDeploymentPodSelector returns a label selector using "app: contour" as the
 // key/value pair.
-func ContourDeploymentPodSelector() *metav1.LabelSelector {
+func ContourDeploymentPodSelector(contour *model.Contour) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"app": "contour",
+			"app": contour.ContourDeploymentName(),
 		},
 	}
 }

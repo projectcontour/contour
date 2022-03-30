@@ -14,8 +14,6 @@
 package objects
 
 import (
-	"strings"
-
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -30,14 +28,4 @@ func NewUnprivilegedPodSecurity() *corev1.PodSecurityContext {
 		RunAsGroup:   &group,
 		RunAsNonRoot: &nonRoot,
 	}
-}
-
-// TagFromImage returns the tag from the provided image or an
-// empty string if the image does not contain a tag.
-func TagFromImage(image string) string {
-	if strings.Contains(image, ":") {
-		parsed := strings.Split(image, ":")
-		return parsed[1]
-	}
-	return ""
 }

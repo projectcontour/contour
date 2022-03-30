@@ -132,6 +132,8 @@ accesslog-format: envoy
 #   Configure the number of additional ingress proxy hops from the
 #   right side of the x-forwarded-for HTTP header to trust.
 #   num-trusted-hops: 0
+# Name of the envoy service to inspect for Ingress status details.
+envoy-service-name: envoy-test
 `
 
 	c := &model.Contour{
@@ -142,7 +144,7 @@ accesslog-format: envoy
 	}
 	cm, err := desired(configForContour(c))
 	require.NoError(t, err)
-	require.Equal(t, "contour", cm.Name)
+	require.Equal(t, "contour-test", cm.Name)
 	require.Equal(t, "test-ns", cm.Namespace)
 	require.Contains(t, cm.Data, "contour.yaml")
 	assert.Equal(t, expected, cm.Data["contour.yaml"])
@@ -257,6 +259,8 @@ accesslog-format: envoy
 #   Configure the number of additional ingress proxy hops from the
 #   right side of the x-forwarded-for HTTP header to trust.
 #   num-trusted-hops: 0
+# Name of the envoy service to inspect for Ingress status details.
+envoy-service-name: envoy-test
 `
 	c := &model.Contour{
 		ObjectMeta: v1.ObjectMeta{
@@ -382,6 +386,8 @@ accesslog-format: envoy
 #   Configure the number of additional ingress proxy hops from the
 #   right side of the x-forwarded-for HTTP header to trust.
 #   num-trusted-hops: 0
+# Name of the envoy service to inspect for Ingress status details.
+envoy-service-name: envoy-test
 `
 
 	c := &model.Contour{
@@ -392,7 +398,7 @@ accesslog-format: envoy
 	}
 	cm, err := desired(configForContour(c))
 	require.NoError(t, err)
-	require.Equal(t, "contour", cm.Name)
+	require.Equal(t, "contour-test", cm.Name)
 	require.Equal(t, "test-ns", cm.Namespace)
 	require.Contains(t, cm.Data, "contour.yaml")
 	assert.Equal(t, expected, cm.Data["contour.yaml"])
