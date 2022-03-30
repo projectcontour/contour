@@ -1,0 +1,27 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: contour-gateway-provisioner-leader-election
+  namespace: projectcontour
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: contour-gateway-provisioner
+subjects:
+- kind: ServiceAccount
+  name: contour-gateway-provisioner
+  namespace: projectcontour
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: contour-gateway-provisioner
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: contour-gateway-provisioner
+subjects:
+- kind: ServiceAccount
+  name: contour-gateway-provisioner
+  namespace: projectcontour

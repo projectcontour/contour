@@ -64,8 +64,12 @@ func main() {
 	serve, serveCtx := registerServe(app)
 	version := app.Command("version", "Build information for Contour.")
 
+	gatewayProvisioner, gatewayProvisionerConfig := registerGatewayProvisioner(app)
+
 	args := os.Args[1:]
 	switch kingpin.MustParse(app.Parse(args)) {
+	case gatewayProvisioner.FullCommand():
+		runGatewayProvisioner(gatewayProvisionerConfig)
 	case sdm.FullCommand():
 		doShutdownManager(shutdownManagerCtx)
 	case sdmShutdown.FullCommand():

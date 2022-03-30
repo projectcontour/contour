@@ -77,6 +77,10 @@ type Framework struct {
 	// are part of a full Contour deployment manifest.
 	Deployment *Deployment
 
+	// Provisioner provides helpers for managing deploying resources that
+	// are part of a Contour gateway provisioner manifest.
+	Provisioner *Provisioner
+
 	// Kubectl provides helpers for managing kubectl port-forward helpers.
 	Kubectl *Kubectl
 
@@ -196,6 +200,13 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 
 	require.NoError(t, deployment.UnmarshalResources())
 
+	provisioner := &Provisioner{
+		client:          crClient,
+		cmdOutputWriter: ginkgo.GinkgoWriter,
+		contourImage:    contourImage,
+	}
+	require.NoError(t, provisioner.UnmarshalResources())
+
 	return &Framework{
 		Client:        crClient,
 		RetryInterval: time.Second,
@@ -225,9 +236,10 @@ func NewFramework(inClusterTestSuite bool) *Framework {
 			retryTimeout:  60 * time.Second,
 			t:             t,
 		},
-		Deployment: deployment,
-		Kubectl:    kubectl,
-		t:          t,
+		Deployment:  deployment,
+		Provisioner: provisioner,
+		Kubectl:     kubectl,
+		t:           t,
 	}
 }
 

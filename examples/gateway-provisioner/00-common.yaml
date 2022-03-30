@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: projectcontour 
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: contour-gateway-provisioner
+  namespace: projectcontour
