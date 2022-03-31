@@ -21,9 +21,9 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/equality"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	objds "github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
-	objdeploy "github.com/projectcontour/contour/internal/provisioner/objects/deployment"
-	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
+	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
+	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -184,7 +184,7 @@ func EnsureEnvoyServiceDeleted(ctx context.Context, cli client.Client, contour *
 
 // DesiredContourService generates the desired Contour Service for the given contour.
 func DesiredContourService(contour *model.Contour) *corev1.Service {
-	xdsPort := objcfg.XDSPort
+	xdsPort := objects.XDSPort
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: contour.Namespace,
@@ -200,7 +200,7 @@ func DesiredContourService(contour *model.Contour) *corev1.Service {
 					TargetPort: intstr.IntOrString{IntVal: xdsPort},
 				},
 			},
-			Selector:        objdeploy.ContourDeploymentPodSelector(contour).MatchLabels,
+			Selector:        deployment.ContourDeploymentPodSelector(contour).MatchLabels,
 			Type:            corev1.ServiceTypeClusterIP,
 			SessionAffinity: corev1.ServiceAffinityNone,
 		},
@@ -262,7 +262,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:           ports,
-			Selector:        objds.EnvoyDaemonSetPodSelector(contour).MatchLabels,
+			Selector:        daemonset.EnvoyDaemonSetPodSelector(contour).MatchLabels,
 			SessionAffinity: corev1.ServiceAffinityNone,
 		},
 	}

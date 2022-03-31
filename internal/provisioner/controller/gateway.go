@@ -19,10 +19,10 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/projectcontour/contour/internal/provisioner/objects"
 	"github.com/projectcontour/contour/internal/provisioner/objects/configmap"
 	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac"
 	"github.com/projectcontour/contour/internal/provisioner/objects/secret"
 	"github.com/projectcontour/contour/internal/provisioner/objects/service"
 	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
@@ -194,7 +194,7 @@ func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Co
 		}
 	}
 
-	handleResult("rbac", objects.EnsureRBAC(ctx, r.client, contour))
+	handleResult("rbac", rbac.EnsureRBAC(ctx, r.client, contour))
 
 	if len(errs) > 0 {
 		return errs
@@ -231,7 +231,7 @@ func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *m
 	handleResult("deployment", deployment.EnsureDeploymentDeleted(ctx, r.client, contour))
 	handleResult("xDS TLS Secrets", secret.EnsureXDSSecretsDeleted(ctx, r.client, contour))
 	handleResult("configmap", configmap.EnsureConfigMapDeleted(ctx, r.client, contour))
-	handleResult("rbac", objects.EnsureRBACDeleted(ctx, r.client, contour))
+	handleResult("rbac", rbac.EnsureRBACDeleted(ctx, r.client, contour))
 
 	return errs
 }

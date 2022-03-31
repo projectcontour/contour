@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package objects
+package rbac
 
 import (
 	"context"
@@ -19,11 +19,11 @@ import (
 
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	objcr "github.com/projectcontour/contour/internal/provisioner/objects/clusterrole"
-	objcrb "github.com/projectcontour/contour/internal/provisioner/objects/clusterrolebinding"
-	objrole "github.com/projectcontour/contour/internal/provisioner/objects/role"
-	objrb "github.com/projectcontour/contour/internal/provisioner/objects/rolebinding"
-	objsa "github.com/projectcontour/contour/internal/provisioner/objects/serviceaccount"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/clusterrole"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/clusterrolebinding"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/role"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/rolebinding"
+	"github.com/projectcontour/contour/internal/provisioner/objects/rbac/serviceaccount"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,23 +47,23 @@ func ensureContourRBAC(ctx context.Context, cli client.Client, contour *model.Co
 	names := contour.ContourRBACNames()
 
 	// Ensure service account.
-	if _, err := objsa.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
+	if _, err := serviceaccount.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
 		return fmt.Errorf("failed to ensure service account %s/%s: %w", contour.Namespace, names.ServiceAccount, err)
 	}
 
 	// Ensure cluster role & binding.
-	if _, err := objcr.EnsureClusterRole(ctx, cli, names.ClusterRole, contour); err != nil {
+	if _, err := clusterrole.EnsureClusterRole(ctx, cli, names.ClusterRole, contour); err != nil {
 		return fmt.Errorf("failed to ensure cluster role %s: %w", names.ClusterRole, err)
 	}
-	if err := objcrb.EnsureClusterRoleBinding(ctx, cli, names.ClusterRoleBinding, names.ClusterRole, names.ServiceAccount, contour); err != nil {
+	if err := clusterrolebinding.EnsureClusterRoleBinding(ctx, cli, names.ClusterRoleBinding, names.ClusterRole, names.ServiceAccount, contour); err != nil {
 		return fmt.Errorf("failed to ensure cluster role binding %s: %w", names.ClusterRoleBinding, err)
 	}
 
 	// Ensure role & binding.
-	if _, err := objrole.EnsureControllerRole(ctx, cli, names.Role, contour); err != nil {
+	if _, err := role.EnsureControllerRole(ctx, cli, names.Role, contour); err != nil {
 		return fmt.Errorf("failed to ensure controller role %s/%s: %w", contour.Namespace, names.Role, err)
 	}
-	if err := objrb.EnsureRoleBinding(ctx, cli, names.RoleBinding, names.ServiceAccount, names.Role, contour); err != nil {
+	if err := rolebinding.EnsureRoleBinding(ctx, cli, names.RoleBinding, names.ServiceAccount, names.Role, contour); err != nil {
 		return fmt.Errorf("failed to ensure controller role binding %s/%s: %w", contour.Namespace, names.RoleBinding, err)
 	}
 
@@ -74,7 +74,7 @@ func ensureEnvoyRBAC(ctx context.Context, cli client.Client, contour *model.Cont
 	names := contour.EnvoyRBACNames()
 
 	// Ensure service account.
-	if _, err := objsa.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
+	if _, err := serviceaccount.EnsureServiceAccount(ctx, cli, names.ServiceAccount, contour); err != nil {
 		return fmt.Errorf("failed to ensure service account %s/%s: %w", contour.Namespace, names.ServiceAccount, err)
 	}
 
@@ -91,7 +91,7 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		contour.EnvoyRBACNames(),
 	} {
 		if len(name.RoleBinding) > 0 {
-			rolebinding, err := objrb.CurrentRoleBinding(ctx, cli, contour.Namespace, name.RoleBinding)
+			rolebinding, err := rolebinding.CurrentRoleBinding(ctx, cli, contour.Namespace, name.RoleBinding)
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
@@ -101,7 +101,7 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		if len(name.Role) > 0 {
-			role, err := objrole.CurrentRole(ctx, cli, contour.Namespace, name.Role)
+			role, err := role.CurrentRole(ctx, cli, contour.Namespace, name.Role)
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
@@ -111,7 +111,7 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		if len(name.ClusterRoleBinding) > 0 {
-			clusterrolebinding, err := objcrb.CurrentClusterRoleBinding(ctx, cli, name.ClusterRoleBinding)
+			clusterrolebinding, err := clusterrolebinding.CurrentClusterRoleBinding(ctx, cli, name.ClusterRoleBinding)
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
@@ -121,7 +121,7 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		if len(name.ClusterRole) > 0 {
-			clusterrole, err := objcr.CurrentClusterRole(ctx, cli, name.ClusterRole)
+			clusterrole, err := clusterrole.CurrentClusterRole(ctx, cli, name.ClusterRole)
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
@@ -131,7 +131,7 @@ func EnsureRBACDeleted(ctx context.Context, cli client.Client, contour *model.Co
 		}
 
 		if len(name.ServiceAccount) > 0 {
-			serviceaccount, err := objsa.CurrentServiceAccount(ctx, cli, contour.Namespace, name.ServiceAccount)
+			serviceaccount, err := serviceaccount.CurrentServiceAccount(ctx, cli, contour.Namespace, name.ServiceAccount)
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}

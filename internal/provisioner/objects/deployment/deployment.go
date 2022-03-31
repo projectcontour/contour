@@ -22,8 +22,7 @@ import (
 	opintstr "github.com/projectcontour/contour/internal/provisioner/intstr"
 	"github.com/projectcontour/contour/internal/provisioner/labels"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	objutil "github.com/projectcontour/contour/internal/provisioner/objects"
-	objcfg "github.com/projectcontour/contour/internal/provisioner/objects/sharedconfig"
+	"github.com/projectcontour/contour/internal/provisioner/objects"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -105,7 +104,7 @@ func EnsureDeploymentDeleted(ctx context.Context, cli client.Client, contour *mo
 // DesiredDeployment returns the desired deployment for the provided contour using
 // image as Contour's container image.
 func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment {
-	xdsPort := objcfg.XDSPort
+	xdsPort := objects.XDSPort
 	args := []string{
 		"serve",
 		"--incluster",
@@ -121,9 +120,9 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 	// Pass the insecure/secure flags to Contour if using non-default ports.
 	for _, port := range contour.Spec.NetworkPublishing.Envoy.ContainerPorts {
 		switch {
-		case port.Name == "http" && port.PortNumber != objcfg.EnvoyInsecureContainerPort:
+		case port.Name == "http" && port.PortNumber != objects.EnvoyInsecureContainerPort:
 			args = append(args, fmt.Sprintf("--envoy-service-http-port=%d", port.PortNumber))
-		case port.Name == "https" && port.PortNumber != objcfg.EnvoySecureContainerPort:
+		case port.Name == "https" && port.PortNumber != objects.EnvoySecureContainerPort:
 			args = append(args, fmt.Sprintf("--envoy-service-https-port=%d", port.PortNumber))
 		}
 	}
@@ -295,7 +294,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 					ServiceAccountName:            contour.ContourRBACNames().ServiceAccount,
 					RestartPolicy:                 corev1.RestartPolicyAlways,
 					SchedulerName:                 "default-scheduler",
-					SecurityContext:               objutil.NewUnprivilegedPodSecurity(),
+					SecurityContext:               objects.NewUnprivilegedPodSecurity(),
 					TerminationGracePeriodSeconds: pointer.Int64Ptr(int64(30)),
 				},
 			},
