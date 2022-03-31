@@ -34,7 +34,7 @@ func TestGeneratedSecretsValid(t *testing.T) {
 	conf := certgenConfig{
 		KubeConfig: "",
 		InCluster:  false,
-		Namespace:  t.Name(),
+		Namespace:  "foo",
 		OutputDir:  "",
 		OutputKube: false,
 		OutputYAML: false,
@@ -52,7 +52,10 @@ func TestGeneratedSecretsValid(t *testing.T) {
 		t.Fatalf("failed to generate certificates: %s", err)
 	}
 
-	secrets := certgen.AsSecrets(conf.Namespace, "", certificates)
+	secrets, errs := certgen.AsSecrets(conf.Namespace, "", certificates)
+	if len(errs) > 0 {
+		t.Errorf("expected no errors, got %d", len(errs))
+	}
 	if len(secrets) != 2 {
 		t.Errorf("expected 2 secrets, got %d", len(secrets))
 	}
@@ -109,7 +112,7 @@ func TestSecretNamePrefix(t *testing.T) {
 	conf := certgenConfig{
 		KubeConfig: "",
 		InCluster:  false,
-		Namespace:  t.Name(),
+		Namespace:  "foo",
 		OutputDir:  "",
 		OutputKube: false,
 		OutputYAML: false,
@@ -128,7 +131,10 @@ func TestSecretNamePrefix(t *testing.T) {
 		t.Fatalf("failed to generate certificates: %s", err)
 	}
 
-	secrets := certgen.AsSecrets(conf.Namespace, conf.NameSuffix, certificates)
+	secrets, errs := certgen.AsSecrets(conf.Namespace, conf.NameSuffix, certificates)
+	if len(errs) > 0 {
+		t.Errorf("expected no errors, got %d", len(errs))
+	}
 	if len(secrets) != 2 {
 		t.Errorf("expected 2 secrets, got %d", len(secrets))
 	}
@@ -181,6 +187,38 @@ func TestSecretNamePrefix(t *testing.T) {
 	}
 }
 
+func TestInvalidNamespaceAndName(t *testing.T) {
+	conf := certgenConfig{
+		KubeConfig: "",
+		InCluster:  false,
+		Namespace:  "foo!!", // contains invalid characters
+		OutputDir:  "",
+		OutputKube: false,
+		OutputYAML: false,
+		OutputPEM:  false,
+		Lifetime:   0,
+		Overwrite:  false,
+		NameSuffix: "-testsuffix$", // contains invalid characters
+	}
+
+	certificates, err := certs.GenerateCerts(
+		&certs.Configuration{
+			Lifetime:  conf.Lifetime,
+			Namespace: conf.Namespace,
+		})
+	if err != nil {
+		t.Fatalf("failed to generate certificates: %s", err)
+	}
+
+	secrets, errs := certgen.AsSecrets(conf.Namespace, conf.NameSuffix, certificates)
+	if len(errs) != 2 {
+		t.Errorf("expected 2 errors, got %d", len(errs))
+	}
+	if len(secrets) != 0 {
+		t.Errorf("expected no secrets, got %d", len(secrets))
+	}
+}
+
 func TestOutputFileMode(t *testing.T) {
 	testCases := []struct {
 		name         string
@@ -208,6 +246,7 @@ func TestOutputFileMode(t *testing.T) {
 				OutputYAML: true,
 				Overwrite:  false,
 				Format:     "legacy",
+				Namespace:  "foo",
 			},
 		},
 		{
@@ -217,6 +256,7 @@ func TestOutputFileMode(t *testing.T) {
 				OutputYAML: true,
 				Overwrite:  true,
 				Format:     "legacy",
+				Namespace:  "foo",
 			},
 		},
 	}

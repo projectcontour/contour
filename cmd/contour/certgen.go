@@ -25,6 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	corev1 "k8s.io/api/core/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -91,6 +92,7 @@ type certgenConfig struct {
 // OutputCerts outputs the certs in certs as directed by config.
 func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs *certs.Certificates) error {
 	secrets := []*corev1.Secret{}
+	errs := []error{}
 	force := certgen.NoOverwrite
 	if config.Overwrite {
 		force = certgen.Overwrite
@@ -99,11 +101,15 @@ func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs 
 	if config.OutputYAML || config.OutputKube {
 		switch config.Format {
 		case "legacy":
-			secrets = certgen.AsLegacySecrets(config.Namespace, config.NameSuffix, certs)
+			secrets, errs = certgen.AsLegacySecrets(config.Namespace, config.NameSuffix, certs)
 		case "compact":
-			secrets = certgen.AsSecrets(config.Namespace, config.NameSuffix, certs)
+			secrets, errs = certgen.AsSecrets(config.Namespace, config.NameSuffix, certs)
 		default:
 			return fmt.Errorf("unsupported Secrets format %q", config.Format)
+		}
+
+		if len(errs) > 0 {
+			return utilerrors.NewAggregate(errs)
 		}
 	}
 

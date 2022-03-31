@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,7 +51,10 @@ func EnsureXDSSecrets(ctx context.Context, cli client.Client, contour *model.Con
 		return fmt.Errorf("error generating xDS TLS certificates: %w", err)
 	}
 
-	secrets := certgen.AsSecrets(contour.Namespace, "-"+contour.Name, certs)
+	secrets, errs := certgen.AsSecrets(contour.Namespace, "-"+contour.Name, certs)
+	if len(errs) > 0 {
+		return utilerrors.NewAggregate(errs)
+	}
 
 	for _, secret := range secrets {
 		// Add owner labels.
