@@ -91,8 +91,9 @@ type certgenConfig struct {
 
 // OutputCerts outputs the certs in certs as directed by config.
 func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs *certs.Certificates) error {
-	secrets := []*corev1.Secret{}
-	errs := []error{}
+	var secrets []*corev1.Secret
+	var errs []error
+
 	force := certgen.NoOverwrite
 	if config.Overwrite {
 		force = certgen.Overwrite
