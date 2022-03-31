@@ -732,10 +732,10 @@ func (p *GatewayAPIProcessor) computeTLSRoute(route *gatewayapi_v1alpha2.TLSRout
 			// https://github.com/projectcontour/contour/issues/3593
 			service.Weighted.Weight = routeWeight
 			proxy.Clusters = append(proxy.Clusters, &Cluster{
-				Upstream:       service,
-				SNI:            service.ExternalName,
-				Weight:         routeWeight,
-				ConnectTimeout: p.ConnectTimeout,
+				Upstream:      service,
+				SNI:           service.ExternalName,
+				Weight:        routeWeight,
+				TimeoutPolicy: ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			})
 		}
 
@@ -1085,7 +1085,7 @@ func (p *GatewayAPIProcessor) clusterRoutes(routeNamespace string, matchConditio
 			Weight:               routeWeight,
 			Protocol:             service.Protocol,
 			RequestHeadersPolicy: headerPolicy,
-			ConnectTimeout:       p.ConnectTimeout,
+			TimeoutPolicy:        ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 		})
 	}
 

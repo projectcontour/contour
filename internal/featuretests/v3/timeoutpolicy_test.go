@@ -150,25 +150,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 	rh.OnDelete(i4)
 
-	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: svc.Namespace,
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
-					Response: "600", // not 600s
-				},
-				Services: []contour_api_v1.Service{{
-					Name: svc.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
+	p1 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{Response: "600"}) // not 600s
 	rh.OnAdd(p1)
 
 	// check timeout policy with malformed response timeout is not propagated
@@ -179,22 +161,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: p1.ObjectMeta,
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
-					Response: "3m",
-				},
-				Services: []contour_api_v1.Service{{
-					Name: svc.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
+	p2 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{Response: "3m"})
 	rh.OnUpdate(p1, p2)
 
 	// check timeout policy with response timeout is propagated correctly
@@ -212,22 +179,7 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p3 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: p2.ObjectMeta,
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
-					Response: "infinity",
-				},
-				Services: []contour_api_v1.Service{{
-					Name: svc.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
+	p3 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{Response: "infinity"})
 	rh.OnUpdate(p2, p3)
 
 	// check timeout policy with explicit infine response timeout is propagated as infinity
@@ -246,33 +198,14 @@ func TestTimeoutPolicyRequestTimeout(t *testing.T) {
 	})
 }
 
-func TestTimeoutPolicyIdleTimeout(t *testing.T) {
+func TestTimeoutPolicyIdleStreamTimeout(t *testing.T) {
 	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
 	defer done()
 
 	svc := fixture.NewService("kuard").
 		WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
 	rh.OnAdd(svc)
-
-	p1 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "simple",
-			Namespace: svc.Namespace,
-		},
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
-					Idle: "600", // not 600s
-				},
-				Services: []contour_api_v1.Service{{
-					Name: svc.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
+	p1 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{Idle: "600"}) // not 600s
 	rh.OnAdd(p1)
 
 	// check timeout policy with malformed response timeout is not propagated
@@ -283,22 +216,7 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p2 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: p1.ObjectMeta,
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
-					Idle: "3m",
-				},
-				Services: []contour_api_v1.Service{{
-					Name: svc.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
+	p2 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{Idle: "3m"})
 	rh.OnUpdate(p1, p2)
 
 	// check timeout policy with response timeout is propagated correctly
@@ -316,22 +234,7 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
-	p3 := &contour_api_v1.HTTPProxy{
-		ObjectMeta: p2.ObjectMeta,
-		Spec: contour_api_v1.HTTPProxySpec{
-			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
-			Routes: []contour_api_v1.Route{{
-				Conditions: matchconditions(prefixMatchCondition("/")),
-				TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
-					Idle: "infinity",
-				},
-				Services: []contour_api_v1.Service{{
-					Name: svc.Name,
-					Port: 8080,
-				}},
-			}},
-		},
-	}
+	p3 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{Idle: "infinity"})
 	rh.OnUpdate(p2, p3)
 
 	// check timeout policy with explicit infine response timeout is propagated as infinity
@@ -349,4 +252,59 @@ func TestTimeoutPolicyIdleTimeout(t *testing.T) {
 		TypeUrl: routeType,
 	})
 
+}
+
+func TestTimeoutPolicyIdleConnectionTimeout(t *testing.T) {
+	rh, c, done := setup(t, func(reh *contour.EventHandler) {})
+	defer done()
+
+	svc := fixture.NewService("kuard").WithPorts(v1.ServicePort{Port: 8080, TargetPort: intstr.FromInt(8080)})
+	rh.OnAdd(svc)
+
+	p1 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{IdleConnection: "invalid"})
+	rh.OnAdd(p1)
+
+	// Check that cluster was not created with invalid input.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: nil,
+		TypeUrl:   clusterType,
+	})
+
+	p2 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{IdleConnection: "3m"})
+	rh.OnUpdate(p1, p2)
+
+	// Check that cluster has connection timeout set.
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t, withConnectionTimeout(cluster("default/kuard/8080/b7427dbbf9", "default/kuard", "default_kuard_8080"), 3*time.Minute, envoy_v3.HTTPVersion1)),
+		TypeUrl:   clusterType,
+	})
+
+	p3 := httpProxyWithTimoutPolicy(svc, &contour_api_v1.TimeoutPolicy{IdleConnection: "infinite"})
+	rh.OnUpdate(p2, p3)
+
+	// Check that cluster has connection timeout set to zero (infinite).
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		Resources: resources(t, withConnectionTimeout(cluster("default/kuard/8080/97705cb30a", "default/kuard", "default_kuard_8080"), 0, envoy_v3.HTTPVersion1)),
+		TypeUrl:   clusterType,
+	})
+}
+
+func httpProxyWithTimoutPolicy(svc *v1.Service, tp *contour_api_v1.TimeoutPolicy) *contour_api_v1.HTTPProxy {
+	return &contour_api_v1.HTTPProxy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "simple",
+			Namespace: svc.Namespace,
+		},
+		Spec: contour_api_v1.HTTPProxySpec{
+			VirtualHost: &contour_api_v1.VirtualHost{Fqdn: "test2.test.com"},
+			Routes: []contour_api_v1.Route{{
+				Conditions:    matchconditions(prefixMatchCondition("/")),
+				TimeoutPolicy: tp,
+				Services: []contour_api_v1.Service{{
+					Name: svc.Name,
+					Port: 8080,
+				}},
+			}},
+		},
+	}
 }

@@ -15,6 +15,7 @@ package v3
 
 import (
 	"testing"
+	"time"
 
 	envoy_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -248,6 +249,39 @@ func extExternalName(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	})
 }
 
+// extIdleConnectionTimeout sets timeout on ExtensionService which will be set in cluster.
+func extIdleConnectionTimeout(t *testing.T, rh cache.ResourceEventHandler, c *Contour) {
+	rh.OnAdd(&v1alpha1.ExtensionService{
+		ObjectMeta: fixture.ObjectMeta("ns/ext"),
+		Spec: v1alpha1.ExtensionServiceSpec{
+			Services: []v1alpha1.ExtensionServiceTarget{
+				{Name: "svc1", Port: 8081},
+			},
+			TimeoutPolicy: &contour_api_v1.TimeoutPolicy{
+				IdleConnection: "60s",
+			},
+		},
+	})
+
+	c.Request(clusterType).Equals(&envoy_discovery_v3.DiscoveryResponse{
+		TypeUrl: clusterType,
+		Resources: resources(t,
+			DefaultCluster(
+				withConnectionTimeout(cluster("extension/ns/ext", "extension/ns/ext", "extension_ns_ext"), 60*time.Second, envoy_v3.HTTPVersion2),
+				&envoy_cluster_v3.Cluster{
+					TransportSocket: envoy_v3.UpstreamTLSTransportSocket(
+						&envoy_v3_tls.UpstreamTlsContext{
+							CommonTlsContext: &envoy_v3_tls.CommonTlsContext{
+								AlpnProtocols: []string{"h2"},
+							},
+						},
+					),
+				},
+			),
+		),
+	})
+}
+
 func extMissingService(_ *testing.T, rh cache.ResourceEventHandler, c *Contour) {
 	rh.OnAdd(&v1alpha1.ExtensionService{
 		ObjectMeta: fixture.ObjectMeta("ns/ext"),
@@ -380,6 +414,7 @@ func TestExtensionService(t *testing.T) {
 		"Cleartext":                 extCleartext,
 		"UpstreamValidation":        extUpstreamValidation,
 		"ExternalName":              extExternalName,
+		"IdleConnectionTimeout":     extIdleConnectionTimeout,
 		"MissingService":            extMissingService,
 		"InconsistentProto":         extInconsistentProto,
 		"InvalidTimeout":            extInvalidTimeout,

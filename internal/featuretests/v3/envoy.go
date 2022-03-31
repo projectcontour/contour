@@ -216,6 +216,40 @@ func h2cCluster(c *envoy_cluster_v3.Cluster) *envoy_cluster_v3.Cluster {
 	return c
 }
 
+func withConnectionTimeout(c *envoy_cluster_v3.Cluster, timeout time.Duration, httpVersion envoy_v3.HTTPVersionType) *envoy_cluster_v3.Cluster {
+	var config *envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig
+
+	switch httpVersion {
+	// Default protocol version in Envoy is HTTP1.1.
+	case envoy_v3.HTTPVersion1, envoy_v3.HTTPVersionAuto:
+		config = &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+			ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
+		}
+	case envoy_v3.HTTPVersion2:
+		config = &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+			ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
+		}
+
+	case envoy_v3.HTTPVersion3:
+		config = &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
+			ProtocolConfig: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_Http3ProtocolOptions{},
+		}
+	}
+
+	c.TypedExtensionProtocolOptions = map[string]*any.Any{
+		"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": protobuf.MustMarshalAny(
+			&envoy_extensions_upstream_http_v3.HttpProtocolOptions{
+				CommonHttpProtocolOptions: &envoy_core_v3.HttpProtocolOptions{
+					IdleTimeout: protobuf.Duration(timeout),
+				},
+				UpstreamProtocolOptions: &envoy_extensions_upstream_http_v3.HttpProtocolOptions_ExplicitHttpConfig_{
+					ExplicitHttpConfig: config,
+				},
+			}),
+	}
+	return c
+}
+
 func withResponseTimeout(route *envoy_route_v3.Route_Route, timeout time.Duration) *envoy_route_v3.Route_Route {
 	route.Route.Timeout = protobuf.Duration(timeout)
 	return route

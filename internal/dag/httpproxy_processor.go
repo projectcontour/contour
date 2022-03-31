@@ -300,7 +300,7 @@ func (p *HTTPProxyProcessor) computeHTTPProxy(proxy *contour_api_v1.HTTPProxy) {
 				}
 
 				if timeout.UseDefault() {
-					svhost.AuthorizationResponseTimeout = ext.TimeoutPolicy.ResponseTimeout
+					svhost.AuthorizationResponseTimeout = ext.RouteTimeoutPolicy.ResponseTimeout
 				} else {
 					svhost.AuthorizationResponseTimeout = timeout
 				}
@@ -512,7 +512,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			return nil
 		}
 
-		tp, err := timeoutPolicy(route.TimeoutPolicy)
+		rtp, ctp, err := timeoutPolicy(route.TimeoutPolicy, p.ConnectTimeout)
 		if err != nil {
 			validCond.AddErrorf(contour_api_v1.ConditionTypeRouteError, "TimeoutPolicyNotValid",
 				"route.timeoutPolicy failed to parse: %s", err)
@@ -540,7 +540,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 			HeaderMatchConditions: mergeHeaderMatchConditions(routeConditions),
 			Websocket:             route.EnableWebsockets,
 			HTTPSUpgrade:          routeEnforceTLS(enforceTLS, route.PermitInsecure && !p.DisablePermitInsecure),
-			TimeoutPolicy:         tp,
+			TimeoutPolicy:         rtp,
 			RetryPolicy:           retryPolicy(route.RetryPolicy),
 			RequestHeadersPolicy:  reqHP,
 			ResponseHeadersPolicy: respHP,
@@ -698,7 +698,7 @@ func (p *HTTPProxyProcessor) computeRoutes(
 				SNI:                   determineSNI(r.RequestHeadersPolicy, reqHP, s),
 				DNSLookupFamily:       string(p.DNSLookupFamily),
 				ClientCertificate:     clientCertSecret,
-				ConnectTimeout:        p.ConnectTimeout,
+				TimeoutPolicy:         ctp,
 			}
 			if service.Mirror && r.MirrorPolicy != nil {
 				validCond.AddError(contour_api_v1.ConditionTypeServiceError, "OnlyOneMirror",
@@ -794,7 +794,7 @@ func (p *HTTPProxyProcessor) processHTTPProxyTCPProxy(validCond *contour_api_v1.
 				LoadBalancerPolicy:   lbPolicy,
 				TCPHealthCheckPolicy: tcpHealthCheckPolicy(tcpproxy.HealthCheckPolicy),
 				SNI:                  s.ExternalName,
-				ConnectTimeout:       p.ConnectTimeout,
+				TimeoutPolicy:        ClusterTimeoutPolicy{ConnectTimeout: p.ConnectTimeout},
 			})
 		}
 		secure := p.dag.EnsureSecureVirtualHost(host)

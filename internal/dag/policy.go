@@ -396,7 +396,7 @@ func ingressRetryPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) 
 	return rp
 }
 
-func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) TimeoutPolicy {
+func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger) RouteTimeoutPolicy {
 	response := annotation.ContourAnnotation(ingress, "response-timeout")
 	if len(response) == 0 {
 		// Note: due to a misunderstanding the name of the annotation is
@@ -404,47 +404,59 @@ func ingressTimeoutPolicy(ingress *networking_v1.Ingress, log logrus.FieldLogger
 		// the response body.
 		response = annotation.ContourAnnotation(ingress, "request-timeout")
 		if len(response) == 0 {
-			return TimeoutPolicy{
-				ResponseTimeout: timeout.DefaultSetting(),
-				IdleTimeout:     timeout.DefaultSetting(),
+			return RouteTimeoutPolicy{
+				ResponseTimeout:   timeout.DefaultSetting(),
+				IdleStreamTimeout: timeout.DefaultSetting(),
 			}
 		}
 	}
 	// if the request timeout annotation is present on this ingress
 	// construct and use the HTTPProxy timeout policy logic.
-	tp, err := timeoutPolicy(&contour_api_v1.TimeoutPolicy{
+	tp, _, err := timeoutPolicy(&contour_api_v1.TimeoutPolicy{
 		Response: response,
-	})
+	}, 0)
 	if err != nil {
 		log.WithError(err).Error("Error parsing response-timeout annotation, using the default value")
-		return TimeoutPolicy{}
+		return RouteTimeoutPolicy{}
 	}
 
 	return tp
 }
 
-func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy) (TimeoutPolicy, error) {
+func timeoutPolicy(tp *contour_api_v1.TimeoutPolicy, connectTimeout time.Duration) (RouteTimeoutPolicy, ClusterTimeoutPolicy, error) {
 	if tp == nil {
-		return TimeoutPolicy{
-			ResponseTimeout: timeout.DefaultSetting(),
-			IdleTimeout:     timeout.DefaultSetting(),
-		}, nil
+		return RouteTimeoutPolicy{
+				ResponseTimeout:   timeout.DefaultSetting(),
+				IdleStreamTimeout: timeout.DefaultSetting(),
+			}, ClusterTimeoutPolicy{
+				IdleConnectionTimeout: timeout.DefaultSetting(),
+				ConnectTimeout:        0,
+			},
+			nil
 	}
 
 	responseTimeout, err := timeout.Parse(tp.Response)
 	if err != nil {
-		return TimeoutPolicy{}, fmt.Errorf("error parsing response timeout: %w", err)
+		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing response timeout: %w", err)
 	}
 
-	idleTimeout, err := timeout.Parse(tp.Idle)
+	idleStreamTimeout, err := timeout.Parse(tp.Idle)
 	if err != nil {
-		return TimeoutPolicy{}, fmt.Errorf("error parsing idle timeout: %w", err)
+		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing idle timeout: %w", err)
 	}
 
-	return TimeoutPolicy{
-		ResponseTimeout: responseTimeout,
-		IdleTimeout:     idleTimeout,
-	}, nil
+	idleConnectionTimeout, err := timeout.Parse(tp.IdleConnection)
+	if err != nil {
+		return RouteTimeoutPolicy{}, ClusterTimeoutPolicy{}, fmt.Errorf("error parsing idle connection timeout: %w", err)
+	}
+
+	return RouteTimeoutPolicy{
+			ResponseTimeout:   responseTimeout,
+			IdleStreamTimeout: idleStreamTimeout,
+		}, ClusterTimeoutPolicy{
+			IdleConnectionTimeout: idleConnectionTimeout,
+			ConnectTimeout:        connectTimeout,
+		}, nil
 }
 
 func httpHealthCheckPolicy(hc *contour_api_v1.HTTPHealthCheckPolicy) *HTTPHealthCheckPolicy {

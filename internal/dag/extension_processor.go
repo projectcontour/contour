@@ -84,7 +84,7 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 	ext *contour_api_v1alpha1.ExtensionService,
 	validCondition *contour_api_v1.DetailedCondition,
 ) *ExtensionCluster {
-	tp, err := timeoutPolicy(ext.Spec.TimeoutPolicy)
+	rtp, ctp, err := timeoutPolicy(ext.Spec.TimeoutPolicy, p.ConnectTimeout)
 	if err != nil {
 		validCondition.AddErrorf(contour_api_v1.ConditionTypeSpecError, "TimeoutPolicyNotValid",
 			"spec.timeoutPolicy failed to parse: %s", err)
@@ -107,12 +107,12 @@ func (p *ExtensionServiceProcessor) buildExtensionService(
 				xds.ClusterLoadAssignmentName(k8s.NamespacedNameOf(ext), ""),
 			),
 		},
-		Protocol:           "h2",
-		UpstreamValidation: nil,
-		TimeoutPolicy:      tp,
-		SNI:                "",
-		ClientCertificate:  clientCertSecret,
-		ConnectTimeout:     p.ConnectTimeout,
+		Protocol:             "h2",
+		UpstreamValidation:   nil,
+		RouteTimeoutPolicy:   rtp,
+		ClusterTimeoutPolicy: ctp,
+		SNI:                  "",
+		ClientCertificate:    clientCertSecret,
 	}
 
 	lbPolicy := loadBalancerPolicy(ext.Spec.LoadBalancerPolicy)

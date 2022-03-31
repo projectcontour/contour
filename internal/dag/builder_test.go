@@ -8233,7 +8233,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
 						}),
@@ -8254,7 +8254,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
 							},
 						}),
@@ -8275,9 +8275,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
-								ResponseTimeout: timeout.DurationSetting(90 * time.Second),
-							},
+							TimeoutPolicy:      RouteTimeoutPolicy{ResponseTimeout: timeout.DurationSetting(90 * time.Second)},
 						}),
 					),
 				},
@@ -8296,7 +8294,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
 							},
 						}),
@@ -8317,7 +8315,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("*", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
+							TimeoutPolicy: RouteTimeoutPolicy{
 								ResponseTimeout: timeout.DisabledSetting(),
 							},
 						}),
@@ -8338,9 +8336,7 @@ func TestDAGInsert(t *testing.T) {
 						virtualhost("bar.com", &Route{
 							PathMatchCondition: prefixString("/"),
 							Clusters:           clustermap(s1),
-							TimeoutPolicy: TimeoutPolicy{
-								ResponseTimeout: timeout.DisabledSetting(),
-							},
+							TimeoutPolicy:      RouteTimeoutPolicy{ResponseTimeout: timeout.DisabledSetting()},
 						}),
 					),
 				},

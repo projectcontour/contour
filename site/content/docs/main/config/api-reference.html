@@ -3465,6 +3465,20 @@ If not specified, there is no per-route idle timeout, though a connection manage
 stream_idle_timeout default of 5m still applies.</p>
 </td>
 </tr>
+<tr>
+<td style="white-space:nowrap">
+<code>idleConnection</code>
+<br>
+<em>
+string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Timeout for how long connection from the proxy to the upstream service is kept when there are no active requests.
+If not supplied, Envoy&rsquo;s default value of 1h applies.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="projectcontour.io/v1.UpstreamValidation">UpstreamValidation
