@@ -29,7 +29,8 @@ type ContourDeploymentSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// Config is the config that the instances of Contour are to utilize.
-	Config ContourConfigurationSpec `json:"config"`
+	// +optional
+	Config *ContourConfigurationSpec `json:"config,omitempty"`
 }
 
 // ContourDeploymentStatus defines the observed state of a ContourDeployment resource.
