@@ -129,8 +129,8 @@ var _ = Describe("Gateway provisioner", func() {
 				Path:        "/prefix/match",
 				Condition:   e2e.HasStatusCode(200),
 			})
-			require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
 			require.NotNil(f.T(), res)
+			require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
 
 			body := f.GetEchoResponseBody(res.Body)
 			assert.Equal(f.T(), namespace, body.Namespace)
@@ -219,8 +219,8 @@ var _ = Describe("Gateway provisioner", func() {
 					Path:        fmt.Sprintf("/http-%d/match", i),
 					Condition:   e2e.HasStatusCode(200),
 				})
-				require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
 				require.NotNil(f.T(), res)
+				require.Truef(f.T(), ok, "expected 200 response code, got %d", res.StatusCode)
 
 				body := f.GetEchoResponseBody(res.Body)
 				assert.Equal(f.T(), namespace, body.Namespace)
