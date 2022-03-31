@@ -23,7 +23,7 @@ import (
 	"github.com/projectcontour/contour/internal/provisioner/objects/configmap"
 	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
-	"github.com/projectcontour/contour/internal/provisioner/objects/job"
+	"github.com/projectcontour/contour/internal/provisioner/objects/secret"
 	"github.com/projectcontour/contour/internal/provisioner/objects/service"
 	retryable "github.com/projectcontour/contour/internal/provisioner/retryableerror"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -201,7 +201,7 @@ func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Co
 	}
 
 	handleResult("configmap", configmap.EnsureConfigMap(ctx, r.client, contour))
-	handleResult("job", job.EnsureJob(ctx, r.client, contour, r.contourImage))
+	handleResult("xDS TLS secrets", secret.EnsureXDSSecrets(ctx, r.client, contour, r.contourImage))
 	handleResult("deployment", deployment.EnsureDeployment(ctx, r.client, contour, r.contourImage))
 	handleResult("daemonset", daemonset.EnsureDaemonSet(ctx, r.client, contour, r.contourImage, r.envoyImage))
 	handleResult("contour service", service.EnsureContourService(ctx, r.client, contour))
@@ -229,7 +229,7 @@ func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *m
 	handleResult("service", service.EnsureContourServiceDeleted(ctx, r.client, contour))
 	handleResult("daemonset", daemonset.EnsureDaemonSetDeleted(ctx, r.client, contour))
 	handleResult("deployment", deployment.EnsureDeploymentDeleted(ctx, r.client, contour))
-	handleResult("job", job.EnsureJobDeleted(ctx, r.client, contour, r.contourImage))
+	handleResult("xDS TLS Secrets", secret.EnsureXDSSecretsDeleted(ctx, r.client, contour))
 	handleResult("configmap", configmap.EnsureConfigMapDeleted(ctx, r.client, contour))
 	handleResult("rbac", objects.EnsureRBACDeleted(ctx, r.client, contour))
 

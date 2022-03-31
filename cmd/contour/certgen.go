@@ -25,6 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	corev1 "k8s.io/api/core/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -44,7 +45,7 @@ func registerCertGen(app *kingpin.Application) (*kingpin.CmdClause, *certgenConf
 	certgenApp.Flag("certificate-lifetime", "Generated certificate lifetime (in days).").Default(strconv.Itoa(certs.DefaultCertificateLifetime)).UintVar(&certgenConfig.Lifetime)
 	certgenApp.Flag("overwrite", "Overwrite existing files or Secrets.").BoolVar(&certgenConfig.Overwrite)
 	certgenApp.Flag("secrets-format", "Specify how to format the generated Kubernetes Secrets.").Default("legacy").StringVar(&certgenConfig.Format)
-	certgenApp.Flag("secrets-name-prefix", "Specify a prefix to be used as the first part of the generated Kubernetes secrets' names.").StringVar(&certgenConfig.NamePrefix)
+	certgenApp.Flag("secrets-name-suffix", "Specify a suffix to be appended to the generated Kubernetes secrets' names.").StringVar(&certgenConfig.NameSuffix)
 
 	certgenApp.Arg("outputdir", "Directory to write output files into (default \"certs\").").Default("certs").StringVar(&certgenConfig.OutputDir)
 
@@ -84,13 +85,15 @@ type certgenConfig struct {
 	// Format specifies how to format the Kubernetes Secrets (must be "legacy" or "compat").
 	Format string
 
-	// NamePrefix specifies the prefix to use for the generated Kubernetes secrets' names.
-	NamePrefix string
+	// NameSuffix specifies the suffix to use for the generated Kubernetes secrets' names.
+	NameSuffix string
 }
 
 // OutputCerts outputs the certs in certs as directed by config.
 func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs *certs.Certificates) error {
-	secrets := []*corev1.Secret{}
+	var secrets []*corev1.Secret
+	var errs []error
+
 	force := certgen.NoOverwrite
 	if config.Overwrite {
 		force = certgen.Overwrite
@@ -99,11 +102,15 @@ func OutputCerts(config *certgenConfig, kubeclient *kubernetes.Clientset, certs 
 	if config.OutputYAML || config.OutputKube {
 		switch config.Format {
 		case "legacy":
-			secrets = certgen.AsLegacySecrets(config.Namespace, config.NamePrefix, certs)
+			secrets, errs = certgen.AsLegacySecrets(config.Namespace, config.NameSuffix, certs)
 		case "compact":
-			secrets = certgen.AsSecrets(config.Namespace, config.NamePrefix, certs)
+			secrets, errs = certgen.AsSecrets(config.Namespace, config.NameSuffix, certs)
 		default:
 			return fmt.Errorf("unsupported Secrets format %q", config.Format)
+		}
+
+		if len(errs) > 0 {
+			return utilerrors.NewAggregate(errs)
 		}
 	}
 

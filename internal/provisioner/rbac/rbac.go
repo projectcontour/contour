@@ -13,7 +13,6 @@
 
 package rbac
 
-// cert-gen needs create/update secrets.
 // +kubebuilder:rbac:groups="",resources=namespaces;secrets;serviceaccounts;services,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups="",resources=events,verbs=get;create;update
@@ -27,7 +26,6 @@ package rbac
 // +kubebuilder:rbac:groups=projectcontour.io,resources=httpproxies;tlscertificatedelegations;extensionservices;contourconfigurations,verbs=get;list;watch
 // +kubebuilder:rbac:groups=projectcontour.io,resources=httpproxies/status;extensionservices/status;contourconfigurations/status,verbs=create;get;update
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;roles;rolebindings,verbs=get;list;delete;create;update;watch
-// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;delete;create;update
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;delete;create;update
 

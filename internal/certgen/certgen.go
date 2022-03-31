@@ -25,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -151,18 +152,17 @@ func WriteSecretsKube(client *kubernetes.Clientset, secrets []*corev1.Secret, fo
 // AsSecrets transforms the given Certificates struct into a slice of
 // Secrets in in compact Secret format, which is compatible with
 // both cert-manager and Contour.
-func AsSecrets(namespace, namePrefix string, certdata *certs.Certificates) []*corev1.Secret {
-	certname := func(baseName string) string {
-		if len(namePrefix) > 0 {
-			return fmt.Sprintf("%s-%s", namePrefix, baseName)
-		}
-		return baseName
+func AsSecrets(namespace, nameSuffix string, certdata *certs.Certificates) ([]*corev1.Secret, []error) {
+	// Only check the "contourcert" name because suffixes are the same
+	// for all, and "contourcert" is the longest.
+	if errs := validateSecretNamespaceAndName(namespace, "contourcert"+nameSuffix); len(errs) > 0 {
+		return nil, errs
 	}
 
 	return []*corev1.Secret{
 		newSecret(
 			corev1.SecretTypeTLS,
-			certname("contourcert"),
+			"contourcert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				dag.CACertificateKey:    certdata.CACertificate,
@@ -171,32 +171,31 @@ func AsSecrets(namespace, namePrefix string, certdata *certs.Certificates) []*co
 			}),
 		newSecret(
 			corev1.SecretTypeTLS,
-			certname("envoycert"),
+			"envoycert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				dag.CACertificateKey:    certdata.CACertificate,
 				corev1.TLSCertKey:       certdata.EnvoyCertificate,
 				corev1.TLSPrivateKeyKey: certdata.EnvoyPrivateKey,
 			}),
-	}
+	}, nil
 }
 
 // AsLegacySecrets transforms the given Certificates struct into a slice of
 // Secrets that is compatible with certgen from contour 1.4 and earlier.
 // The difference is that the CA cert is in a separate secret, rather
 // than duplicated inline in each TLS secrets.
-func AsLegacySecrets(namespace, namePrefix string, certdata *certs.Certificates) []*corev1.Secret {
-	certname := func(baseName string) string {
-		if len(namePrefix) > 0 {
-			return fmt.Sprintf("%s-%s", namePrefix, baseName)
-		}
-		return baseName
+func AsLegacySecrets(namespace, nameSuffix string, certdata *certs.Certificates) ([]*corev1.Secret, []error) {
+	// Only check the "contourcert" name because suffixes are the same
+	// for all, and "contourcert" is the longest.
+	if errs := validateSecretNamespaceAndName(namespace, "contourcert"+nameSuffix); len(errs) > 0 {
+		return nil, errs
 	}
 
 	return []*corev1.Secret{
 		newSecret(
 			corev1.SecretTypeTLS,
-			certname("contourcert"),
+			"contourcert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				corev1.TLSCertKey:       certdata.ContourCertificate,
@@ -204,7 +203,7 @@ func AsLegacySecrets(namespace, namePrefix string, certdata *certs.Certificates)
 			}),
 		newSecret(
 			corev1.SecretTypeTLS,
-			certname("envoycert"),
+			"envoycert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				corev1.TLSCertKey:       certdata.EnvoyCertificate,
@@ -212,10 +211,28 @@ func AsLegacySecrets(namespace, namePrefix string, certdata *certs.Certificates)
 			}),
 		newSecret(
 			corev1.SecretTypeOpaque,
-			certname("cacert"),
+			"cacert"+nameSuffix,
 			namespace,
 			map[string][]byte{
 				"cacert.pem": certdata.CACertificate,
 			}),
+	}, nil
+}
+
+func validateSecretNamespaceAndName(namespace, name string) []error {
+	var errs []error
+
+	for _, errstring := range validation.IsDNS1123Label(namespace) {
+		errs = append(errs, fmt.Errorf("invalid namespace name %q: %s", namespace, errstring))
 	}
+
+	for _, errstring := range validation.IsDNS1123Subdomain(name) {
+		errs = append(errs, fmt.Errorf("invalid secret name %q: %s", name, errstring))
+	}
+
+	if len(errs) > 0 {
+		return errs
+	}
+
+	return nil
 }

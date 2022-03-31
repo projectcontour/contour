@@ -14,10 +14,7 @@
 package equality
 
 import (
-	"github.com/projectcontour/contour/internal/provisioner/model"
-
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -50,48 +47,6 @@ func DaemonsetConfigChanged(current, expected *appsv1.DaemonSet) (*appsv1.Daemon
 // DaemonSetSelectorsDiffer checks if the current and expected DaemonSet selectors differ.
 func DaemonSetSelectorsDiffer(current, expected *appsv1.DaemonSet) bool {
 	return !apiequality.Semantic.DeepEqual(current.Spec.Selector, expected.Spec.Selector)
-}
-
-// JobConfigChanged checks if the current and expected Job match and if not,
-// returns true and the expected job.
-func JobConfigChanged(current, expected *batchv1.Job) (*batchv1.Job, bool) {
-	changed := false
-	updated := current.DeepCopy()
-
-	if !apiequality.Semantic.DeepEqual(current.Labels, expected.Labels) {
-		updated = expected
-		changed = true
-	}
-
-	if !apiequality.Semantic.DeepEqual(current.Spec.Parallelism, expected.Spec.Parallelism) {
-		updated = expected
-		changed = true
-	}
-
-	if !apiequality.Semantic.DeepEqual(current.Spec.BackoffLimit, expected.Spec.BackoffLimit) {
-		updated = expected
-		changed = true
-	}
-
-	// The completions field is immutable, so no need to compare. Ignore job-generated
-	// labels and only check the presence of the Gateway owning labels.
-	if current.Spec.Template.Labels != nil {
-		if _, nameFound := current.Spec.Template.Labels[model.OwningGatewayNameLabel]; !nameFound {
-			updated = expected
-			changed = true
-		}
-	}
-
-	if !apiequality.Semantic.DeepEqual(current.Spec.Template.Spec, expected.Spec.Template.Spec) {
-		updated = expected
-		changed = true
-	}
-
-	if !changed {
-		return nil, false
-	}
-
-	return updated, true
 }
 
 // DeploymentConfigChanged checks if the current and expected Deployment match
