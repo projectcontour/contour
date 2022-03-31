@@ -13,22 +13,29 @@
 
 package rbac
 
-// +kubebuilder:rbac:groups="",resources=namespaces;secrets;serviceaccounts;services,verbs=get;list;watch;delete;create;update
-// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;delete;create;update
-// +kubebuilder:rbac:groups="",resources=events,verbs=get;create;update
-// +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch
-// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update
-// +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gatewayclasses;gateways;httproutes;tlsroutes;referencepolicies,verbs=get;list;watch;update
-// Note, ReferencePolicy does not currently have a .status field so it's omitted from the below.
-// +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gatewayclasses/status;gateways/status;httproutes/status;tlsroutes/status,verbs=create;get;update
-// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch
-// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses/status,verbs=create;get;update
-// +kubebuilder:rbac:groups=projectcontour.io,resources=httpproxies;tlscertificatedelegations;extensionservices;contourconfigurations,verbs=get;list;watch
-// +kubebuilder:rbac:groups=projectcontour.io,resources=httpproxies/status;extensionservices/status;contourconfigurations/status,verbs=create;get;update
-// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;roles;rolebindings,verbs=get;list;delete;create;update;watch
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;delete;create;update
-// +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;delete;create;update
+// This file only contains entries for RBAC that the Provisioner needs itself directly.
+// Transitive requirements, i.e. RBAC the Provisioner needs in order to be able to create
+// the Contour ClusterRoles/Roles, are handled at YAML generation time by pulling in Contour's
+// RBAC entries as well.
 
-// Add RBAC policy to support leader election.
+// RBAC for Gateway API.
+// +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gatewayclasses;gateways,verbs=get;list;watch
+// +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gatewayclasses/status;gateways/status,verbs=update
+// ---
+
+// RBAC for core Contour resources to be provisioned.
+// +kubebuilder:rbac:groups="",resources=configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments;daemonsets,verbs=get;list;watch;create;update;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings;roles;rolebindings,verbs=get;list;watch;create;update;delete
+// ---
+
+// RBAC for leader election for the provisioner.
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;get;update,namespace=projectcontour
 // +kubebuilder:rbac:groups="coordination.k8s.io",resources=leases,verbs=create;get;update,namespace=projectcontour
+// ---
+
+// Contour itself has leader election RBAC scoped to a single namespace, but the provisioner
+// needs it for all namespaces in order to be able to create those Roles.
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;get;update
+// +kubebuilder:rbac:groups="coordination.k8s.io",resources=leases,verbs=create;get;update
+// ---
