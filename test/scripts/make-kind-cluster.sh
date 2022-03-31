@@ -82,19 +82,19 @@ do
     kind::cluster::load "$image"
 done
 
-if [[ "${MULTINODE_CLUSTER}" == "true" ]]; then
-    # Install metallb.
-    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
-    if ! kubectl get secret -n metallb-system memberlist; then
-        ${KUBECTL} create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
-    fi
-    ${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
-    # Apply config with addresses based on docker network IPAM
-    subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":") | not)')
-    # Assume default kind network subnet prefix of 16, and choose addresses in that range.
-    address_first_octets=$(echo ${subnet} | awk -F. '{printf "%s.%s",$1,$2}')
-    address_range="${address_first_octets}.255.200-${address_first_octets}.255.250"
-    ${KUBECTL} apply -f - <<EOF
+
+# Install metallb.
+${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
+if ! kubectl get secret -n metallb-system memberlist; then
+    ${KUBECTL} create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+fi
+${KUBECTL} apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
+# Apply config with addresses based on docker network IPAM
+subnet=$(docker network inspect kind | jq -r '.[].IPAM.Config[].Subnet | select(contains(":") | not)')
+# Assume default kind network subnet prefix of 16, and choose addresses in that range.
+address_first_octets=$(echo ${subnet} | awk -F. '{printf "%s.%s",$1,$2}')
+address_range="${address_first_octets}.255.200-${address_first_octets}.255.250"
+${KUBECTL} apply -f - <<EOF
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -108,7 +108,7 @@ data:
       addresses:
       - ${address_range}
 EOF
-fi
+
 
 # Install cert-manager.
 ${KUBECTL} apply -f https://github.com/jetstack/cert-manager/releases/download/v1.5.1/cert-manager.yaml
