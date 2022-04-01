@@ -230,6 +230,7 @@ spec:
   - timeoutPolicy:
       response: 1s
       idle: 10s
+      idleConnection: 60s
     retryPolicy:
       count: 3
       perTryTimeout: 150ms
@@ -248,6 +249,9 @@ More information can be found in [Envoy's documentation][4].
 Timeout will not trigger while HTTP/1.1 connection is idle between two consecutive requests.
 If not specified, there is no per-route idle timeout, though a connection manager-wide stream idle timeout default of 5m still applies.
 More information can be found in [Envoy's documentation][6].
+- `timeoutPolicy.idleConnection` Timeout for how long connection from the proxy to the upstream service is kept when there are no active requests.
+If not supplied, Envoy’s default value of 1h applies.
+More information can be found in [Envoy's documentation][8].
 
 TimeoutPolicy durations are expressed in the Go [Duration format][5].
 Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
@@ -268,7 +272,7 @@ Each route can have a load balancing strategy applied to determine which of its 
 The following list are the options available to choose from:
 
 - `RoundRobin`: Each healthy upstream Endpoint is selected in round robin order (Default strategy if none selected).
-- `WeightedLeastRequest`:  The least request load balancer uses different algorithms depending on whether hosts have the same or different weights in an attempt to route traffic based upon the number of active requests or the load at the time of selection. 
+- `WeightedLeastRequest`:  The least request load balancer uses different algorithms depending on whether hosts have the same or different weights in an attempt to route traffic based upon the number of active requests or the load at the time of selection.
 - `Random`: The random strategy selects a random healthy Endpoints.
 - `RequestHash`: The request hashing strategy allows for load balancing based on request attributes. An upstream Endpoint is selected based on the hash of an element of a request. For example, requests that contain a consistent value in a HTTP request header will be routed to the same upstream Endpoint. Currently only hashing of HTTP request headers and the source IP of a request is supported.
 - `Cookie`: The cookie load balancing strategy is similar to the request hash strategy and is a convenience feature to implement session affinity, as described below.
@@ -306,7 +310,7 @@ The below example demonstrates how request hash load balancing policies can be c
 apiVersion: projectcontour.io/v1
 kind: HTTPProxy
 metadata:
-  name: lb-request-hash 
+  name: lb-request-hash
   namespace: default
 spec:
   virtualhost:
@@ -363,3 +367,4 @@ Any perturbation in the set of pods backing a service risks redistributing backe
 [5]: https://godoc.org/time#ParseDuration
 [6]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-field-config-route-v3-routeaction-idle-timeout
 [7]: https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/overview
+[8]: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-field-config-core-v3-httpprotocoloptions-idle-timeout
