@@ -168,22 +168,6 @@ func (s *StatusAddressUpdater) OnAdd(obj interface{}) {
 			}
 		}
 
-		// Only set the Gateway's address if it has a condition of "Ready: true".
-		var ready bool
-		for _, cond := range o.Status.Conditions {
-			if cond.Type == string(gatewayapi_v1alpha2.GatewayConditionReady) && cond.Status == metav1.ConditionTrue {
-				ready = true
-				break
-			}
-		}
-		if !ready {
-			s.Logger.
-				WithField("name", o.Name).
-				WithField("namespace", o.Namespace).
-				Debug("Gateway is not ready, not setting address")
-			return
-		}
-
 		s.StatusUpdater.Send(NewStatusUpdate(
 			o.Name,
 			o.Namespace,

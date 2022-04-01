@@ -466,44 +466,6 @@ func TestStatusAddressUpdater_Gateway(t *testing.T) {
 				},
 			},
 		},
-		"Gateway not ready": {
-			status:                     ipLBStatus,
-			gatewayClassControllerName: "projectcontour.io/contour",
-			preop: &gatewayapi_v1alpha2.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "projectcontour",
-					Name:      "contour-gateway",
-				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
-				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
-					Conditions: []metav1.Condition{
-						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
-							Status: metav1.ConditionFalse,
-						},
-					},
-				},
-			},
-			postop: &gatewayapi_v1alpha2.Gateway{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: "projectcontour",
-					Name:      "contour-gateway",
-				},
-				Spec: gatewayapi_v1alpha2.GatewaySpec{
-					GatewayClassName: gatewayapi_v1alpha2.ObjectName("contour-gatewayclass"),
-				},
-				Status: gatewayapi_v1alpha2.GatewayStatus{
-					Conditions: []metav1.Condition{
-						{
-							Type:   string(gatewayapi_v1alpha2.GatewayConditionReady),
-							Status: metav1.ConditionFalse,
-						},
-					},
-				},
-			},
-		},
 		"Gateway not controlled by this Contour": {
 			status:                     ipLBStatus,
 			gatewayClassControllerName: "projectcontour.io/some-other-controller",

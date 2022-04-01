@@ -20,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/projectcontour/contour/internal/errors"
 	"github.com/projectcontour/contour/internal/k8s"
 	"github.com/projectcontour/contour/internal/status"
 
@@ -30,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -93,13 +91,56 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	)
 	defer commit()
 
-	for _, listener := range p.source.gateway.Spec.Listeners {
-		// TODO revisit the last param since it's always true now
-		p.computeListener(listener, gwAccessor, true)
+	var gatewayNotReadyCondition *metav1.Condition
+
+	if !isAddressAssigned(p.source.gateway.Spec.Addresses, p.source.gateway.Status.Addresses) {
+		gatewayNotReadyCondition = &metav1.Condition{
+			Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
+			Status:  metav1.ConditionFalse,
+			Reason:  string(gatewayapi_v1alpha2.GatewayReasonAddressNotAssigned),
+			Message: "None of the addresses in Spec.Addresses have been assigned to the Gateway",
+		}
 	}
 
-	// TODO revisit the last param since it's always empty now
-	p.computeGatewayConditions(gwAccessor, nil)
+	for _, listener := range p.source.gateway.Spec.Listeners {
+		p.computeListener(listener, gwAccessor, gatewayNotReadyCondition == nil)
+	}
+
+	p.computeGatewayConditions(gwAccessor, gatewayNotReadyCondition)
+}
+
+// isAddressAssigned returns true if either there are no addresses requested in specAddresses,
+// or if at least one address from specAddresses appears in statusAddresses.
+func isAddressAssigned(specAddresses, statusAddresses []gatewayapi_v1alpha2.GatewayAddress) bool {
+	if len(specAddresses) == 0 {
+		return true
+	}
+
+	for _, specAddress := range specAddresses {
+		for _, statusAddress := range statusAddresses {
+			// Types must match
+			if addressTypeDerefOr(specAddress.Type, gatewayapi_v1alpha2.IPAddressType) != addressTypeDerefOr(statusAddress.Type, gatewayapi_v1alpha2.IPAddressType) {
+				continue
+			}
+
+			// Values must match
+			if specAddress.Value != statusAddress.Value {
+				continue
+			}
+
+			return true
+		}
+	}
+
+	// No match found, so no spec address is assigned.
+	return false
+}
+
+func addressTypeDerefOr(addressType *gatewayapi_v1alpha2.AddressType, defaultAddressType gatewayapi_v1alpha2.AddressType) gatewayapi_v1alpha2.AddressType {
+	if addressType != nil {
+		return *addressType
+	}
+	return defaultAddressType
 }
 
 func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Listener, gwAccessor *status.GatewayStatusUpdate, isGatewayValid bool) {
@@ -631,7 +672,7 @@ func routeSelectsGatewayListener(gateway *gatewayapi_v1alpha2.Gateway, listener 
 	return false
 }
 
-func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.GatewayStatusUpdate, fieldErrs field.ErrorList) {
+func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.GatewayStatusUpdate, gatewayNotReadyCondition *metav1.Condition) {
 	// If Contour's running, the Gateway is considered scheduled.
 	gwAccessor.AddCondition(
 		gatewayapi_v1alpha2.GatewayConditionScheduled,
@@ -641,9 +682,13 @@ func (p *GatewayAPIProcessor) computeGatewayConditions(gwAccessor *status.Gatewa
 	)
 
 	switch {
-	case len(fieldErrs) > 0:
-		// If we have Gateway-specific errors, use those to set the Ready=false condition.
-		gwAccessor.AddCondition(gatewayapi_v1alpha2.GatewayConditionReady, metav1.ConditionFalse, status.ReasonInvalidGateway, errors.ParseFieldErrors(fieldErrs))
+	case gatewayNotReadyCondition != nil:
+		gwAccessor.AddCondition(
+			gatewayapi_v1alpha2.GatewayConditionType(gatewayNotReadyCondition.Type),
+			gatewayNotReadyCondition.Status,
+			status.GatewayReasonType(gatewayNotReadyCondition.Reason),
+			gatewayNotReadyCondition.Message,
+		)
 	default:
 		// Check for any listeners with a Ready: false condition.
 		allListenersReady := true
