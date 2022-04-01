@@ -67,9 +67,6 @@ type matchConditions struct {
 // Run translates Service APIs into DAG objects and
 // adds them to the DAG.
 func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
-	var gatewayErrors field.ErrorList
-	path := field.NewPath("spec")
-
 	p.dag = dag
 	p.source = source
 
@@ -96,15 +93,13 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 	)
 	defer commit()
 
-	if len(p.source.gateway.Spec.Addresses) > 0 {
-		gatewayErrors = append(gatewayErrors, &field.Error{Type: field.ErrorTypeNotSupported, Field: path.String(), BadValue: p.source.gateway.Spec.Addresses, Detail: "Spec.Addresses is not supported"})
-	}
-
 	for _, listener := range p.source.gateway.Spec.Listeners {
-		p.computeListener(listener, gwAccessor, len(gatewayErrors) == 0)
+		// TODO revisit the last param since it's always true now
+		p.computeListener(listener, gwAccessor, true)
 	}
 
-	p.computeGatewayConditions(gwAccessor, gatewayErrors)
+	// TODO revisit the last param since it's always empty now
+	p.computeGatewayConditions(gwAccessor, nil)
 }
 
 func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Listener, gwAccessor *status.GatewayStatusUpdate, isGatewayValid bool) {

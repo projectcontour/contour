@@ -363,6 +363,10 @@ type LoadBalancerStrategy struct {
 	//
 	// +kubebuilder:default={type: "AWS"}
 	ProviderParameters ProviderLoadBalancerParameters `json:"providerParameters,omitempty"`
+
+	// LoadBalancerIP is the IP (or hostname) to request
+	// for the LoadBalancer service.
+	LoadBalancerIP string
 }
 
 // LoadBalancerScope is the scope at which a load balancer is exposed.

@@ -264,6 +264,7 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 			Ports:           ports,
 			Selector:        daemonset.EnvoyDaemonSetPodSelector(contour).MatchLabels,
 			SessionAffinity: corev1.ServiceAffinityNone,
+			LoadBalancerIP:  contour.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP,
 		},
 	}
 
