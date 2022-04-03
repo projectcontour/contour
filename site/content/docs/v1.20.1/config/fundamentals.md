@@ -33,6 +33,7 @@ spec:
             name: s1
             port:
               number: 80
+        pathType: Prefix
 ```
 
 This Ingress object, named `basic`, will route incoming HTTP traffic with a `Host:` header for `foo-basic.bar.com` to a Service named `s1` on port `80`.

@@ -29,6 +29,7 @@ spec:
             name: s1
             port:
               number: 80
+        pathType: Prefix
   - host: bar1.bar.com
     http:
       paths:
@@ -37,6 +38,7 @@ spec:
             name: s2
             port:
               number: 80
+        pathType: Prefix
 ```
 
 must be represented by two different HTTPProxy objects:
