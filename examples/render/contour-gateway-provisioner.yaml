@@ -1720,8 +1720,6 @@ spec:
                 format: int32
                 minimum: 0
                 type: integer
-            required:
-            - config
             type: object
           status:
             description: ContourDeploymentStatus defines the observed state of a ContourDeployment
@@ -8571,6 +8569,14 @@ rules:
   - create
   - get
   - update
+- apiGroups:
+  - projectcontour.io
+  resources:
+  - contourdeployments
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:

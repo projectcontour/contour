@@ -1907,8 +1907,6 @@ spec:
                 format: int32
                 minimum: 0
                 type: integer
-            required:
-            - config
             type: object
           status:
             description: ContourDeploymentStatus defines the observed state of a ContourDeployment

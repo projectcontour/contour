@@ -137,6 +137,14 @@ rules:
   - get
   - update
 - apiGroups:
+  - projectcontour.io
+  resources:
+  - contourdeployments
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
