@@ -20,12 +20,11 @@ import (
 	"github.com/go-logr/logr"
 	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	kubernetesscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -286,10 +285,8 @@ func TestGatewayClassReconcile(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			scheme := runtime.NewScheme()
-			require.NoError(t, kubernetesscheme.AddToScheme(scheme))
-			require.NoError(t, gatewayv1alpha2.AddToScheme(scheme))
-			require.NoError(t, contourv1alpha1.AddToScheme(scheme))
+			scheme, err := provisioner.CreateScheme()
+			require.NoError(t, err)
 
 			client := fake.NewClientBuilder().WithScheme(scheme)
 			if tc.gatewayClass != nil {
@@ -314,7 +311,7 @@ func TestGatewayClassReconcile(t *testing.T) {
 				}
 			}
 
-			_, err := r.Reconcile(context.Background(), req)
+			_, err = r.Reconcile(context.Background(), req)
 
 			tc.assertions(t, r, tc.gatewayClass, err)
 		})
