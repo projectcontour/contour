@@ -626,7 +626,7 @@ func (d *Deployment) StartLocalContour(config *config.Parameters, contourConfigu
 		contourConfiguration.Spec.XDSServer.Port = port
 		contourConfiguration.Spec.XDSServer.Address = "0.0.0.0"
 		contourConfiguration.Spec.XDSServer.TLS = &contour_api_v1alpha1.TLS{
-			Insecure: true,
+			Insecure: pointer.Bool(true),
 		}
 
 		if err := d.client.Create(context.TODO(), contourConfiguration); err != nil {

@@ -279,20 +279,25 @@ type ListenerCache struct {
 }
 
 // NewListenerCache returns an instance of a ListenerCache
-func NewListenerCache(envoyConfig contour_api_v1alpha1.EnvoyConfig, listenerConfig ListenerConfig) *ListenerCache {
+func NewListenerCache(
+	listenerConfig ListenerConfig,
+	metricsConfig contour_api_v1alpha1.MetricsConfig,
+	healthConfig contour_api_v1alpha1.HealthConfig,
+	adminPort int,
+) *ListenerCache {
 	listenerCache := &ListenerCache{
 		Config:       listenerConfig,
 		staticValues: map[string]*envoy_listener_v3.Listener{},
 	}
 
-	for _, l := range envoy_v3.StatsListeners(envoyConfig.Metrics, envoyConfig.Health) {
+	for _, l := range envoy_v3.StatsListeners(metricsConfig, healthConfig) {
 		listenerCache.staticValues[l.Name] = l
 	}
 
 	// If the port is not zero, allow the read-only options from the
 	// Envoy admin webpage to be served.
-	if envoyConfig.Network.EnvoyAdminPort > 0 {
-		admin := envoy_v3.AdminListener(envoyConfig.Network.EnvoyAdminPort)
+	if adminPort > 0 {
+		admin := envoy_v3.AdminListener(adminPort)
 		listenerCache.staticValues[admin.Name] = admin
 	}
 

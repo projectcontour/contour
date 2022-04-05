@@ -62,8 +62,8 @@ func (e *EnvoyConfig) Validate() error {
 }
 
 // endpointsInConfict returns error if different protocol are configured to use single port.
-func endpointsInConfict(health HealthConfig, metrics MetricsConfig) error {
-	if metrics.TLS != nil && health.Address == metrics.Address && health.Port == metrics.Port {
+func endpointsInConfict(health *HealthConfig, metrics *MetricsConfig) error {
+	if health != nil && metrics != nil && metrics.TLS != nil && health.Address == metrics.Address && health.Port == metrics.Port {
 		return fmt.Errorf("cannot use single port for health over HTTP and metrics over HTTPS")
 	}
 	return nil

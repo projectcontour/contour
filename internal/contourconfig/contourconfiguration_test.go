@@ -20,9 +20,32 @@ import (
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/contourconfig"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/pointer"
 )
+
+func TestOverlayOnDefaults(t *testing.T) {
+	// An empty ContourConfig results in just the defaults.
+	cfg := contour_api_v1alpha1.ContourConfigurationSpec{}
+	res, err := contourconfig.OverlayOnDefaults(cfg)
+	require.NoError(t, err)
+	assert.Equal(t, contourconfig.Defaults(), res)
+
+	// A single non-default field is overlaid correctly.
+	cfg = contour_api_v1alpha1.ContourConfigurationSpec{
+		XDSServer: &contour_api_v1alpha1.XDSServerConfig{
+			Type: contour_api_v1alpha1.EnvoyServerType,
+		},
+	}
+
+	want := contourconfig.Defaults()
+	want.XDSServer.Type = contour_api_v1alpha1.EnvoyServerType
+
+	res, err = contourconfig.OverlayOnDefaults(cfg)
+	require.NoError(t, err)
+	assert.Equal(t, want, res)
+}
 
 func TestParseTimeoutPolicy(t *testing.T) {
 	testCases := map[string]struct {

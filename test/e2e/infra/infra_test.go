@@ -136,7 +136,7 @@ var _ = Describe("Infra", func() {
 				CABundle:   "/metrics-certs/ca.crt",
 			}
 
-			contourConfiguration.Spec.Envoy.Metrics = contour_api_v1alpha1.MetricsConfig{
+			contourConfiguration.Spec.Envoy.Metrics = &contour_api_v1alpha1.MetricsConfig{
 				Address: "0.0.0.0",
 				Port:    8003,
 				TLS: &contour_api_v1alpha1.MetricsTLS{

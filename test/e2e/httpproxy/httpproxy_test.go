@@ -32,6 +32,7 @@ import (
 	"github.com/projectcontour/contour/test/e2e"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 var f = e2e.NewFramework(false)
@@ -282,7 +283,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
 			})
 			testExternalNameServiceInsecure(namespace)
 		})
@@ -292,7 +293,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
 			})
 			testExternalNameServiceTLS(namespace)
 		})
@@ -302,7 +303,7 @@ var _ = Describe("HTTPProxy", func() {
 		Context("with ExternalName Services enabled", func() {
 			BeforeEach(func() {
 				contourConfig.EnableExternalNameService = true
-				contourConfiguration.Spec.EnableExternalNameService = true
+				contourConfiguration.Spec.EnableExternalNameService = pointer.Bool(true)
 			})
 			testExternalNameServiceLocalhostInvalid(namespace)
 		})
@@ -327,8 +328,8 @@ var _ = Describe("HTTPProxy", func() {
 								Namespace: namespace,
 							},
 							Domain:                  "contour",
-							FailOpen:                false,
-							EnableXRateLimitHeaders: false,
+							FailOpen:                pointer.Bool(false),
+							EnableXRateLimitHeaders: pointer.Bool(false),
 						}
 						require.NoError(f.T(),
 							f.Deployment.EnsureRateLimitResources(

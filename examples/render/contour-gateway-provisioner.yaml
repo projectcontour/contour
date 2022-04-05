@@ -52,9 +52,6 @@ spec:
               customized, the other remaining options being command line flags.
             properties:
               debug:
-                default:
-                  kubernetesLogLevel: 0
-                  logLevel: info
                 description: Debug contains parameters to enable debug logging and
                   debug interfaces inside Contour.
                 properties:
@@ -62,7 +59,6 @@ spec:
                     description: Defines the Contour debug address interface.
                     type: string
                   kubernetesLogLevel:
-                    default: 0
                     description: "KubernetesDebugLogLevel defines the log level which
                       Contour will use when outputting Kubernetes specific log information.
                       \n Details: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md"
@@ -79,54 +75,12 @@ spec:
                   port:
                     description: Defines the Contour debug address port.
                     type: integer
-                required:
-                - logLevel
                 type: object
               enableExternalNameService:
-                default: false
                 description: EnableExternalNameService allows processing of ExternalNameServices
                   Defaults to disabled for security reasons.
                 type: boolean
               envoy:
-                default:
-                  cluster:
-                    dnsLookupFamily: auto
-                  defaultHTTPVersions:
-                  - HTTP/1.1
-                  - HTTP/2
-                  health:
-                    address: 0.0.0.0
-                    port: 8002
-                  http:
-                    accessLog: /dev/stdout
-                    address: 0.0.0.0
-                    port: 8080
-                  https:
-                    accessLog: /dev/stdout
-                    address: 0.0.0.0
-                    port: 8443
-                  listener:
-                    connectionBalancer: ""
-                    disableAllowChunkedLength: false
-                    disableMergeSlashes: false
-                    tls:
-                      cipherSuites:
-                      - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-                      - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-                      - ECDHE-ECDSA-AES256-GCM-SHA384
-                      - ECDHE-RSA-AES256-GCM-SHA384
-                      minimumProtocolVersion: "1.2"
-                    useProxyProtocol: false
-                  logging:
-                    accessLogFormat: envoy
-                  metrics:
-                    address: 0.0.0.0
-                    port: 8002
-                  network:
-                    adminPort: 9001
-                  service:
-                    name: envoy
-                    namespace: projectcontour
                 description: Envoy contains parameters for Envoy as well as how to
                   optionally configure a managed Envoy fleet.
                 properties:
@@ -149,7 +103,6 @@ spec:
                       values that can be set in the config file.
                     properties:
                       dnsLookupFamily:
-                        default: auto
                         description: "DNSLookupFamily defines how external names are
                           looked up When configured as V4, the DNS resolver will only
                           perform a lookup for addresses in the IPv4 family. If V6
@@ -165,8 +118,6 @@ spec:
                         - v4
                         - v6
                         type: string
-                    required:
-                    - dnsLookupFamily
                     type: object
                   defaultHTTPVersions:
                     description: DefaultHTTPVersions defines the default set of HTTPS
@@ -182,9 +133,6 @@ spec:
                       type: string
                     type: array
                   health:
-                    default:
-                      address: 0.0.0.0
-                      port: 8002
                     description: Health defines the endpoint Envoy uses to serve health
                       checks.
                     properties:
@@ -195,15 +143,8 @@ spec:
                       port:
                         description: Defines the health port.
                         type: integer
-                    required:
-                    - address
-                    - port
                     type: object
                   http:
-                    default:
-                      accessLog: /dev/stdout
-                      address: 0.0.0.0
-                      port: 8080
                     description: Defines the HTTP Listener for Envoy.
                     properties:
                       accessLog:
@@ -217,16 +158,8 @@ spec:
                       port:
                         description: Defines an Envoy listener Port.
                         type: integer
-                    required:
-                    - accessLog
-                    - address
-                    - port
                     type: object
                   https:
-                    default:
-                      accessLog: /dev/stdout
-                      address: 0.0.0.0
-                      port: 8443
                     description: Defines the HTTP Listener for Envoy.
                     properties:
                       accessLog:
@@ -240,10 +173,6 @@ spec:
                       port:
                         description: Defines an Envoy listener Port.
                         type: integer
-                    required:
-                    - accessLog
-                    - address
-                    - port
                     type: object
                   listener:
                     description: Listener hold various configurable Envoy listener
@@ -308,19 +237,10 @@ spec:
                             - "1.2"
                             - "1.3"
                             type: string
-                        required:
-                        - cipherSuites
-                        - minimumProtocolVersion
                         type: object
                       useProxyProtocol:
                         description: Use PROXY protocol for all listeners.
                         type: boolean
-                    required:
-                    - connectionBalancer
-                    - disableAllowChunkedLength
-                    - disableMergeSlashes
-                    - tls
-                    - useProxyProtocol
                     type: object
                   logging:
                     description: Logging defines how Envoy's logs can be configured.
@@ -338,7 +258,6 @@ spec:
                           format is used.
                         type: string
                       accessLogLevel:
-                        default: info
                         description: AccessLogLevel sets the verbosity level of the
                           access log. Valid options are `info`, `error` and `disabled`.
                           Default value is `info`, meaning all requests are logged.
@@ -353,13 +272,8 @@ spec:
                         items:
                           type: string
                         type: array
-                    required:
-                    - accessLogFormat
                     type: object
                   metrics:
-                    default:
-                      address: 0.0.0.0
-                      port: 8002
                     description: Metrics defines the endpoint Envoy uses to serve
                       metrics.
                     properties:
@@ -386,16 +300,12 @@ spec:
                             description: Client key filename.
                             type: string
                         type: object
-                    required:
-                    - address
-                    - port
                     type: object
                   network:
                     description: Network holds various configurable Envoy network
                       values.
                     properties:
                       adminPort:
-                        default: 9001
                         description: Configure the port used to access the Envoy Admin
                           interface. If configured to port "0" then the admin interface
                           is disabled.
@@ -408,13 +318,8 @@ spec:
                           for more information."
                         format: int32
                         type: integer
-                    required:
-                    - adminPort
                     type: object
                   service:
-                    default:
-                      name: envoy
-                      namespace: projectcontour
                     description: Service holds Envoy service parameters for setting
                       Ingress status.
                     properties:
@@ -489,16 +394,6 @@ spec:
                           for more information."
                         type: string
                     type: object
-                required:
-                - cluster
-                - defaultHTTPVersions
-                - http
-                - https
-                - listener
-                - logging
-                - metrics
-                - network
-                - service
                 type: object
               gateway:
                 description: Gateway contains parameters for the gateway-api Gateway
@@ -527,9 +422,6 @@ spec:
                     type: object
                 type: object
               health:
-                default:
-                  address: 0.0.0.0
-                  port: 8000
                 description: Health defines the endpoints Contour uses to serve health
                   checks.
                 properties:
@@ -540,13 +432,8 @@ spec:
                   port:
                     description: Defines the health port.
                     type: integer
-                required:
-                - address
-                - port
                 type: object
               httpproxy:
-                default:
-                  disablePermitInsecure: false
                 description: HTTPProxy defines parameters on HTTPProxy.
                 properties:
                   disablePermitInsecure:
@@ -572,8 +459,6 @@ spec:
                     items:
                       type: string
                     type: array
-                required:
-                - disablePermitInsecure
                 type: object
               ingress:
                 description: Ingress contains parameters for ingress options.
@@ -588,9 +473,6 @@ spec:
                     type: string
                 type: object
               metrics:
-                default:
-                  address: 0.0.0.0
-                  port: 8000
                 description: Metrics defines the endpoint Contour uses to serve metrics.
                 properties:
                   address:
@@ -616,9 +498,6 @@ spec:
                         description: Client key filename.
                         type: string
                     type: object
-                required:
-                - address
-                - port
                 type: object
               policy:
                 description: Policy specifies default policy applied if not overridden
@@ -687,20 +566,9 @@ spec:
                       limit decision within the timeout defined on the extension service.
                     type: boolean
                 required:
-                - domain
-                - enableXRateLimitHeaders
-                - failOpen
+                - extensionService
                 type: object
               xdsServer:
-                default:
-                  address: 0.0.0.0
-                  port: 8001
-                  tls:
-                    caFile: /certs/ca.crt
-                    certFile: /certs/tls.crt
-                    insecure: false
-                    keyFile: /certs/tls.key
-                  type: contour
                 description: XDSServer contains parameters for the xDS server.
                 properties:
                   address:
@@ -727,19 +595,10 @@ spec:
                       keyFile:
                         description: Client key filename.
                         type: string
-                    required:
-                    - insecure
                     type: object
                   type:
                     description: Defines the XDSServer to use for `contour serve`.
-                    enum:
-                    - contour
-                    - envoy
                     type: string
-                required:
-                - address
-                - port
-                - type
                 type: object
             type: object
           status:
@@ -1014,9 +873,6 @@ spec:
                   to utilize.
                 properties:
                   debug:
-                    default:
-                      kubernetesLogLevel: 0
-                      logLevel: info
                     description: Debug contains parameters to enable debug logging
                       and debug interfaces inside Contour.
                     properties:
@@ -1024,7 +880,6 @@ spec:
                         description: Defines the Contour debug address interface.
                         type: string
                       kubernetesLogLevel:
-                        default: 0
                         description: "KubernetesDebugLogLevel defines the log level
                           which Contour will use when outputting Kubernetes specific
                           log information. \n Details: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md"
@@ -1041,54 +896,12 @@ spec:
                       port:
                         description: Defines the Contour debug address port.
                         type: integer
-                    required:
-                    - logLevel
                     type: object
                   enableExternalNameService:
-                    default: false
                     description: EnableExternalNameService allows processing of ExternalNameServices
                       Defaults to disabled for security reasons.
                     type: boolean
                   envoy:
-                    default:
-                      cluster:
-                        dnsLookupFamily: auto
-                      defaultHTTPVersions:
-                      - HTTP/1.1
-                      - HTTP/2
-                      health:
-                        address: 0.0.0.0
-                        port: 8002
-                      http:
-                        accessLog: /dev/stdout
-                        address: 0.0.0.0
-                        port: 8080
-                      https:
-                        accessLog: /dev/stdout
-                        address: 0.0.0.0
-                        port: 8443
-                      listener:
-                        connectionBalancer: ""
-                        disableAllowChunkedLength: false
-                        disableMergeSlashes: false
-                        tls:
-                          cipherSuites:
-                          - '[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]'
-                          - '[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]'
-                          - ECDHE-ECDSA-AES256-GCM-SHA384
-                          - ECDHE-RSA-AES256-GCM-SHA384
-                          minimumProtocolVersion: "1.2"
-                        useProxyProtocol: false
-                      logging:
-                        accessLogFormat: envoy
-                      metrics:
-                        address: 0.0.0.0
-                        port: 8002
-                      network:
-                        adminPort: 9001
-                      service:
-                        name: envoy
-                        namespace: projectcontour
                     description: Envoy contains parameters for Envoy as well as how
                       to optionally configure a managed Envoy fleet.
                     properties:
@@ -1111,7 +924,6 @@ spec:
                           values that can be set in the config file.
                         properties:
                           dnsLookupFamily:
-                            default: auto
                             description: "DNSLookupFamily defines how external names
                               are looked up When configured as V4, the DNS resolver
                               will only perform a lookup for addresses in the IPv4
@@ -1127,8 +939,6 @@ spec:
                             - v4
                             - v6
                             type: string
-                        required:
-                        - dnsLookupFamily
                         type: object
                       defaultHTTPVersions:
                         description: DefaultHTTPVersions defines the default set of
@@ -1144,9 +954,6 @@ spec:
                           type: string
                         type: array
                       health:
-                        default:
-                          address: 0.0.0.0
-                          port: 8002
                         description: Health defines the endpoint Envoy uses to serve
                           health checks.
                         properties:
@@ -1157,15 +964,8 @@ spec:
                           port:
                             description: Defines the health port.
                             type: integer
-                        required:
-                        - address
-                        - port
                         type: object
                       http:
-                        default:
-                          accessLog: /dev/stdout
-                          address: 0.0.0.0
-                          port: 8080
                         description: Defines the HTTP Listener for Envoy.
                         properties:
                           accessLog:
@@ -1179,16 +979,8 @@ spec:
                           port:
                             description: Defines an Envoy listener Port.
                             type: integer
-                        required:
-                        - accessLog
-                        - address
-                        - port
                         type: object
                       https:
-                        default:
-                          accessLog: /dev/stdout
-                          address: 0.0.0.0
-                          port: 8443
                         description: Defines the HTTP Listener for Envoy.
                         properties:
                           accessLog:
@@ -1202,10 +994,6 @@ spec:
                           port:
                             description: Defines an Envoy listener Port.
                             type: integer
-                        required:
-                        - accessLog
-                        - address
-                        - port
                         type: object
                       listener:
                         description: Listener hold various configurable Envoy listener
@@ -1273,19 +1061,10 @@ spec:
                                 - "1.2"
                                 - "1.3"
                                 type: string
-                            required:
-                            - cipherSuites
-                            - minimumProtocolVersion
                             type: object
                           useProxyProtocol:
                             description: Use PROXY protocol for all listeners.
                             type: boolean
-                        required:
-                        - connectionBalancer
-                        - disableAllowChunkedLength
-                        - disableMergeSlashes
-                        - tls
-                        - useProxyProtocol
                         type: object
                       logging:
                         description: Logging defines how Envoy's logs can be configured.
@@ -1303,7 +1082,6 @@ spec:
                               default format is used.
                             type: string
                           accessLogLevel:
-                            default: info
                             description: AccessLogLevel sets the verbosity level of
                               the access log. Valid options are `info`, `error` and
                               `disabled`. Default value is `info`, meaning all requests
@@ -1319,13 +1097,8 @@ spec:
                             items:
                               type: string
                             type: array
-                        required:
-                        - accessLogFormat
                         type: object
                       metrics:
-                        default:
-                          address: 0.0.0.0
-                          port: 8002
                         description: Metrics defines the endpoint Envoy uses to serve
                           metrics.
                         properties:
@@ -1352,16 +1125,12 @@ spec:
                                 description: Client key filename.
                                 type: string
                             type: object
-                        required:
-                        - address
-                        - port
                         type: object
                       network:
                         description: Network holds various configurable Envoy network
                           values.
                         properties:
                           adminPort:
-                            default: 9001
                             description: Configure the port used to access the Envoy
                               Admin interface. If configured to port "0" then the
                               admin interface is disabled.
@@ -1374,13 +1143,8 @@ spec:
                               for more information."
                             format: int32
                             type: integer
-                        required:
-                        - adminPort
                         type: object
                       service:
-                        default:
-                          name: envoy
-                          namespace: projectcontour
                         description: Service holds Envoy service parameters for setting
                           Ingress status.
                         properties:
@@ -1458,16 +1222,6 @@ spec:
                               for more information."
                             type: string
                         type: object
-                    required:
-                    - cluster
-                    - defaultHTTPVersions
-                    - http
-                    - https
-                    - listener
-                    - logging
-                    - metrics
-                    - network
-                    - service
                     type: object
                   gateway:
                     description: Gateway contains parameters for the gateway-api Gateway
@@ -1496,9 +1250,6 @@ spec:
                         type: object
                     type: object
                   health:
-                    default:
-                      address: 0.0.0.0
-                      port: 8000
                     description: Health defines the endpoints Contour uses to serve
                       health checks.
                     properties:
@@ -1509,13 +1260,8 @@ spec:
                       port:
                         description: Defines the health port.
                         type: integer
-                    required:
-                    - address
-                    - port
                     type: object
                   httpproxy:
-                    default:
-                      disablePermitInsecure: false
                     description: HTTPProxy defines parameters on HTTPProxy.
                     properties:
                       disablePermitInsecure:
@@ -1541,8 +1287,6 @@ spec:
                         items:
                           type: string
                         type: array
-                    required:
-                    - disablePermitInsecure
                     type: object
                   ingress:
                     description: Ingress contains parameters for ingress options.
@@ -1557,9 +1301,6 @@ spec:
                         type: string
                     type: object
                   metrics:
-                    default:
-                      address: 0.0.0.0
-                      port: 8000
                     description: Metrics defines the endpoint Contour uses to serve
                       metrics.
                     properties:
@@ -1586,9 +1327,6 @@ spec:
                             description: Client key filename.
                             type: string
                         type: object
-                    required:
-                    - address
-                    - port
                     type: object
                   policy:
                     description: Policy specifies default policy applied if not overridden
@@ -1658,20 +1396,9 @@ spec:
                           the extension service.
                         type: boolean
                     required:
-                    - domain
-                    - enableXRateLimitHeaders
-                    - failOpen
+                    - extensionService
                     type: object
                   xdsServer:
-                    default:
-                      address: 0.0.0.0
-                      port: 8001
-                      tls:
-                        caFile: /certs/ca.crt
-                        certFile: /certs/tls.crt
-                        insecure: false
-                        keyFile: /certs/tls.key
-                      type: contour
                     description: XDSServer contains parameters for the xDS server.
                     properties:
                       address:
@@ -1698,19 +1425,10 @@ spec:
                           keyFile:
                             description: Client key filename.
                             type: string
-                        required:
-                        - insecure
                         type: object
                       type:
                         description: Defines the XDSServer to use for `contour serve`.
-                        enum:
-                        - contour
-                        - envoy
                         type: string
-                    required:
-                    - address
-                    - port
-                    - type
                     type: object
                 type: object
               replicas:

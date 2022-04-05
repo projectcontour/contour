@@ -17,9 +17,146 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/imdario/mergo"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/timeout"
+	"k8s.io/utils/pointer"
 )
+
+func UIntPtr(val uint) *uint {
+	return &val
+}
+
+func UInt32Ptr(val uint32) *uint32 {
+	return &val
+}
+
+func OverlayOnDefaults(spec contour_api_v1alpha1.ContourConfigurationSpec) (contour_api_v1alpha1.ContourConfigurationSpec, error) {
+	res := Defaults()
+
+	if err := mergo.Merge(&res, spec, mergo.WithOverride); err != nil {
+		return contour_api_v1alpha1.ContourConfigurationSpec{}, err
+	}
+
+	return res, nil
+}
+
+func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
+	return contour_api_v1alpha1.ContourConfigurationSpec{
+		XDSServer: &contour_api_v1alpha1.XDSServerConfig{
+			Type:    contour_api_v1alpha1.ContourServerType,
+			Address: "0.0.0.0",
+			Port:    8001,
+			TLS: &contour_api_v1alpha1.TLS{
+				CAFile:   "/certs/ca.crt",
+				CertFile: "/certs/tls.crt",
+				KeyFile:  "/certs/tls.key",
+				Insecure: pointer.Bool(false),
+			},
+		},
+		Ingress: &contour_api_v1alpha1.IngressConfig{
+			ClassNames:    nil,
+			StatusAddress: "",
+		},
+		Debug: &contour_api_v1alpha1.DebugConfig{
+			// TODO verify the address/port defaults, this is a change from current
+			// but matches the pkg/config defaults.
+			Address:                 "127.0.0.1",
+			Port:                    6060,
+			DebugLogLevel:           contour_api_v1alpha1.InfoLog,
+			KubernetesDebugLogLevel: UIntPtr(0),
+		},
+		Health: &contour_api_v1alpha1.HealthConfig{
+			Address: "0.0.0.0",
+			Port:    8000,
+		},
+		Envoy: &contour_api_v1alpha1.EnvoyConfig{
+			Listener: &contour_api_v1alpha1.EnvoyListenerConfig{
+				UseProxyProto:             pointer.Bool(false),
+				DisableAllowChunkedLength: pointer.Bool(false),
+				DisableMergeSlashes:       pointer.Bool(false),
+				ConnectionBalancer:        "",
+				TLS: &contour_api_v1alpha1.EnvoyTLS{
+					MinimumProtocolVersion: "1.2",
+					CipherSuites: []contour_api_v1alpha1.TLSCipherType{
+						"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
+						"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
+						"ECDHE-ECDSA-AES256-GCM-SHA384",
+						"ECDHE-RSA-AES256-GCM-SHA384",
+					},
+				},
+			},
+			Service: &contour_api_v1alpha1.NamespacedName{
+				Namespace: "projectcontour",
+				Name:      "envoy",
+			},
+			HTTPListener: &contour_api_v1alpha1.EnvoyListener{
+				Address:   "0.0.0.0",
+				Port:      8080,
+				AccessLog: "/dev/stdout",
+			},
+			HTTPSListener: &contour_api_v1alpha1.EnvoyListener{
+				Address:   "0.0.0.0",
+				Port:      8443,
+				AccessLog: "/dev/stdout",
+			},
+			Health: &contour_api_v1alpha1.HealthConfig{
+				Address: "0.0.0.0",
+				Port:    8002,
+			},
+			Metrics: &contour_api_v1alpha1.MetricsConfig{
+				Address: "0.0.0.0",
+				Port:    8002,
+				TLS:     nil,
+			},
+			ClientCertificate: nil,
+			Logging: &contour_api_v1alpha1.EnvoyLogging{
+				AccessLogFormat:       contour_api_v1alpha1.EnvoyAccessLog,
+				AccessLogFormatString: "",
+				AccessLogFields:       nil,
+				AccessLogLevel:        contour_api_v1alpha1.LogLevelInfo,
+			},
+			DefaultHTTPVersions: []contour_api_v1alpha1.HTTPVersionType{
+				"HTTP/1.1",
+				"HTTP/2",
+			},
+			Timeouts: &contour_api_v1alpha1.TimeoutParameters{
+				RequestTimeout:                nil,
+				ConnectionIdleTimeout:         nil,
+				StreamIdleTimeout:             nil,
+				MaxConnectionDuration:         nil,
+				DelayedCloseTimeout:           nil,
+				ConnectionShutdownGracePeriod: nil,
+				ConnectTimeout:                nil,
+			},
+			Cluster: &contour_api_v1alpha1.ClusterParameters{
+				DNSLookupFamily: contour_api_v1alpha1.AutoClusterDNSFamily,
+			},
+			Network: &contour_api_v1alpha1.NetworkParameters{
+				XffNumTrustedHops: UInt32Ptr(0),
+				EnvoyAdminPort:    pointer.Int(9001),
+			},
+		},
+		Gateway: nil,
+		HTTPProxy: &contour_api_v1alpha1.HTTPProxyConfig{
+			DisablePermitInsecure: pointer.Bool(false),
+			RootNamespaces:        nil,
+			FallbackCertificate:   nil,
+		},
+		EnableExternalNameService: pointer.Bool(false),
+		RateLimitService:          nil,
+		Policy: &contour_api_v1alpha1.PolicyConfig{
+			RequestHeadersPolicy:  &contour_api_v1alpha1.HeadersPolicy{},
+			ResponseHeadersPolicy: &contour_api_v1alpha1.HeadersPolicy{},
+			ApplyToIngress:        pointer.Bool(false),
+		},
+		Metrics: &contour_api_v1alpha1.MetricsConfig{
+			Address: "0.0.0.0",
+			Port:    8000,
+			TLS:     nil,
+		},
+	}
+}
 
 type Timeouts struct {
 	Request                       timeout.Setting
