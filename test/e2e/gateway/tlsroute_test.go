@@ -33,7 +33,8 @@ import (
 )
 
 func testTLSRoutePassthrough(namespace string) {
-	Specify("SNI matching can be used for routing", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4431
+	Specify("SNI matching can be used for routing", FlakeAttempts(3), func() {
 		t := f.T()
 
 		f.Fixtures.EchoSecure.Deploy(namespace, "echo")
@@ -100,7 +101,8 @@ func testTLSRoutePassthrough(namespace string) {
 }
 
 func testTLSRouteTerminate(namespace string) {
-	Specify("TLS requests terminate via SNI at Envoy and then are routed to a service", func() {
+	// Flake tracking issue: https://github.com/projectcontour/contour/issues/4431
+	Specify("TLS requests terminate via SNI at Envoy and then are routed to a service", FlakeAttempts(3), func() {
 		t := f.T()
 
 		f.Fixtures.Echo.Deploy(namespace, "echo")
