@@ -36,6 +36,8 @@ type ContourConfigurationSpec struct {
 	Debug *DebugConfig `json:"debug,omitempty"`
 
 	// Health defines the endpoints Contour uses to serve health checks.
+	//
+	// Contour's default is { address: "0.0.0.0", port: 8000 }.
 	// +optional
 	Health *HealthConfig `json:"health,omitempty"`
 
@@ -54,7 +56,8 @@ type ContourConfigurationSpec struct {
 	HTTPProxy *HTTPProxyConfig `json:"httpproxy,omitempty"`
 
 	// EnableExternalNameService allows processing of ExternalNameServices
-	// Defaults to disabled for security reasons.
+	//
+	// Contour's default is false for security reasons.
 	// +optional
 	EnableExternalNameService *bool `json:"enableExternalNameService,omitempty"`
 
@@ -68,6 +71,8 @@ type ContourConfigurationSpec struct {
 	Policy *PolicyConfig `json:"policy,omitempty"`
 
 	// Metrics defines the endpoint Contour uses to serve metrics.
+	//
+	// Contour's default is { address: "0.0.0.0", port: 8000 }.
 	// +optional
 	Metrics *MetricsConfig `json:"metrics,omitempty"`
 }
@@ -81,19 +86,27 @@ const EnvoyServerType XDSServerType = "envoy"
 // XDSServerConfig holds the config for the Contour xDS server.
 type XDSServerConfig struct {
 	// Defines the XDSServer to use for `contour serve`.
+	//
+	// Contour's default is "contour".
 	// +optional
 	Type XDSServerType `json:"type,omitempty"`
 
 	// Defines the xDS gRPC API address which Contour will serve.
+	//
+	// Contour's default is "0.0.0.0".
 	// +kubebuilder:validation:MinLength=1
 	// +optional
 	Address string `json:"address,omitempty"`
 
 	// Defines the xDS gRPC API port which Contour will serve.
+	//
+	// Contour's default is 8001.
 	// +optional
 	Port int `json:"port,omitempty"`
 
 	// TLS holds TLS file config details.
+	//
+	// Contour's default is { caFile: "/certs/ca.crt", certFile: "/certs/tls.cert", keyFile: "/certs/tls.key", insecure: false }.
 	// +optional
 	TLS *TLS `json:"tls,omitempty"`
 }
@@ -205,22 +218,32 @@ type EnvoyConfig struct {
 	Listener *EnvoyListenerConfig `json:"listener,omitempty"`
 
 	// Service holds Envoy service parameters for setting Ingress status.
+	//
+	// Contour's default is { namespace: "projectcontour", name: "envoy" }.
 	// +optional
 	Service *NamespacedName `json:"service,omitempty"`
 
 	// Defines the HTTP Listener for Envoy.
+	//
+	// Contour's default is { address: "0.0.0.0", port: 8080, accessLog: "/dev/stdout" }.
 	// +optional
 	HTTPListener *EnvoyListener `json:"http,omitempty"`
 
-	// Defines the HTTP Listener for Envoy.
+	// Defines the HTTPS Listener for Envoy.
+	//
+	// Contour's default is { address: "0.0.0.0", port: 8443, accessLog: "/dev/stdout" }.
 	// +optional
 	HTTPSListener *EnvoyListener `json:"https,omitempty"`
 
 	// Health defines the endpoint Envoy uses to serve health checks.
+	//
+	// Contour's default is { address: "0.0.0.0", port: 8002 }.
 	// +optional
 	Health *HealthConfig `json:"health,omitempty"`
 
 	// Metrics defines the endpoint Envoy uses to serve metrics.
+	//
+	// Contour's default is { address: "0.0.0.0", port: 8002 }.
 	// +optional
 	Metrics *MetricsConfig `json:"metrics,omitempty"`
 
@@ -239,6 +262,10 @@ type EnvoyConfig struct {
 	// versions the proxy should accept. HTTP versions are
 	// strings of the form "HTTP/xx". Supported versions are
 	// "HTTP/1.1" and "HTTP/2".
+	//
+	// Contour's default list is:
+	//   - "HTTP/1.1"
+	//	 - "HTTP/2"
 	// +optional
 	DefaultHTTPVersions []HTTPVersionType `json:"defaultHTTPVersions,omitempty"`
 
@@ -266,15 +293,21 @@ const DebugLog LogLevel = "debug"
 // DebugConfig contains Contour specific troubleshooting options.
 type DebugConfig struct {
 	// Defines the Contour debug address interface.
+	//
+	// Contour's default is "127.0.0.1".
 	// +optional
 	Address string `json:"address,omitempty"`
 
 	// Defines the Contour debug address port.
+	//
+	// Contour's default is 6060.
 	// +optional
 	Port int `json:"port,omitempty"`
 
 	// DebugLogLevel defines the log level which Contour will
 	// use when outputting log information.
+	//
+	// Contour's default is "info".
 	// +kubebuilder:validation:Enum=info;debug
 	// +optional
 	DebugLogLevel LogLevel `json:"logLevel,omitempty"`
@@ -283,6 +316,8 @@ type DebugConfig struct {
 	// use when outputting Kubernetes specific log information.
 	//
 	// Details: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md
+	//
+	// Contour's default is 0.
 	// +optional
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=9
@@ -292,6 +327,8 @@ type DebugConfig struct {
 // EnvoyListenerConfig hold various configurable Envoy listener values.
 type EnvoyListenerConfig struct {
 	// Use PROXY protocol for all listeners.
+	//
+	// Contour's default is false.
 	// +optional
 	UseProxyProto *bool `json:"useProxyProtocol,omitempty"`
 
@@ -301,11 +338,15 @@ type EnvoyListenerConfig struct {
 	// default behavior in case of failures. Please file an issue if failures
 	// are encountered.
 	// See: https://github.com/projectcontour/contour/issues/3221
+	//
+	// Contour's default is false.
 	// +optional
 	DisableAllowChunkedLength *bool `json:"disableAllowChunkedLength,omitempty"`
 
 	// DisableMergeSlashes disables Envoy's non-standard merge_slashes path transformation option
 	// which strips duplicate slashes from request URL paths.
+	//
+	// Contour's default is false.
 	// +optional
 	DisableMergeSlashes *bool `json:"disableMergeSlashes,omitempty"`
 
@@ -328,6 +369,8 @@ type TLSCipherType string
 type EnvoyTLS struct {
 	// MinimumProtocolVersion is the minimum TLS version this vhost should
 	// negotiate. Valid options are `1.2` (default) and `1.3`.
+	//
+	// Contour's default is "1.2".
 	// +kubebuilder:validation:Enum="1.2";"1.3"
 	// +optional
 	MinimumProtocolVersion string `json:"minimumProtocolVersion,omitempty"`
@@ -340,6 +383,12 @@ type EnvoyTLS struct {
 	//
 	//See: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/transport_sockets/tls/v3/common.proto#extensions-transport-sockets-tls-v3-tlsparameters
 	// Note: This list is a superset of what is valid for stock Envoy builds and those using BoringSSL FIPS.
+	//
+	// Contour's default list is:
+	//   - "[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]"
+	//   - "[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]"
+	//   - "ECDHE-ECDSA-AES256-GCM-SHA384"
+	//   - "ECDHE-RSA-AES256-GCM-SHA384"
 	// +optional
 	CipherSuites []TLSCipherType `json:"cipherSuites,omitempty"`
 }
@@ -364,6 +413,8 @@ type EnvoyListener struct {
 type EnvoyLogging struct {
 	// AccessLogFormat sets the global access log format.
 	// Valid options are 'envoy' or 'json'
+	//
+	// Contour's default is "envoy".
 	// +kubebuilder:validation:Enum="envoy";"json"
 	// +optional
 	AccessLogFormat AccessLogType `json:"accessLogFormat,omitempty"`
@@ -380,7 +431,8 @@ type EnvoyLogging struct {
 
 	// AccessLogLevel sets the verbosity level of the access log.
 	// Valid options are `info`, `error` and `disabled`.
-	// Default value is `info`, meaning all requests are logged.
+	//
+	// Contour's default is "info", meaning all requests are logged..
 	// +kubebuilder:validation:Enum="info";"error";"disabled"
 	// +optional
 	AccessLogLevel AccessLogLevel `json:"accessLogLevel,omitempty"`
@@ -478,6 +530,8 @@ type ClusterParameters struct {
 	//
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto.html#envoy-v3-api-enum-config-cluster-v3-cluster-dnslookupfamily
 	// for more information.
+	//
+	// Contour's default is "auto".
 	// +kubebuilder:validation:Enum="auto";"v4";"v6"
 	// +optional
 	DNSLookupFamily ClusterDNSFamilyType `json:"dnsLookupFamily,omitempty"`
@@ -487,6 +541,8 @@ type ClusterParameters struct {
 type HTTPProxyConfig struct {
 	// DisablePermitInsecure disables the use of the
 	// permitInsecure field in HTTPProxy.
+	//
+	// Contour's default is false.
 	// +optional
 	DisablePermitInsecure *bool `json:"disablePermitInsecure,omitempty"`
 
@@ -508,11 +564,15 @@ type NetworkParameters struct {
 	//
 	// See https://www.envoyproxy.io/docs/envoy/v1.17.0/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto?highlight=xff_num_trusted_hops
 	// for more information.
+	//
+	// Contour's default is 0.
 	// +optional
 	XffNumTrustedHops *uint32 `json:"numTrustedHops,omitempty"`
 
 	// Configure the port used to access the Envoy Admin interface.
 	// If configured to port "0" then the admin interface is disabled.
+	//
+	// Contour's default is 9001.
 	// +optional
 	EnvoyAdminPort *int `json:"adminPort,omitempty"`
 }
@@ -553,6 +613,8 @@ type PolicyConfig struct {
 	ResponseHeadersPolicy *HeadersPolicy `json:"responseHeaders,omitempty"`
 
 	// ApplyToIngress determines if the Policies will apply to ingress objects
+	//
+	// Contour's default is false.
 	// +optional
 	ApplyToIngress *bool `json:"applyToIngress,omitempty"`
 }
