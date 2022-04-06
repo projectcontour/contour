@@ -33,10 +33,11 @@ import (
 
 func TestGatewayClassReconcile(t *testing.T) {
 	tests := map[string]struct {
-		gatewayClass *gatewayv1alpha2.GatewayClass
-		params       *contourv1alpha1.ContourDeployment
-		req          *reconcile.Request
-		assertions   func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error)
+		gatewayClass  *gatewayv1alpha2.GatewayClass
+		params        *contourv1alpha1.ContourDeployment
+		req           *reconcile.Request
+		wantCondition *metav1.Condition
+		assertions    func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error)
 	}{
 		"reconcile request for non-existent gatewayclass results in no error": {
 			req: &reconcile.Request{
@@ -77,16 +78,10 @@ func TestGatewayClassReconcile(t *testing.T) {
 					ControllerName: "projectcontour.io/gateway-provisioner",
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error) {
-				assert.NoError(t, reconcileErr)
-
-				res := &gatewayv1alpha2.GatewayClass{}
-				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))
-
-				assert.Len(t, res.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassConditionStatusAccepted), res.Status.Conditions[0].Type)
-				assert.Equal(t, metav1.ConditionTrue, res.Status.Conditions[0].Status)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassReasonAccepted), res.Status.Conditions[0].Reason)
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionTrue,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonAccepted),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (target does not exist) gets Accepted: false condition": {
@@ -104,16 +99,10 @@ func TestGatewayClassReconcile(t *testing.T) {
 					},
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error) {
-				assert.NoError(t, reconcileErr)
-
-				res := &gatewayv1alpha2.GatewayClass{}
-				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))
-
-				assert.Len(t, res.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassConditionStatusAccepted), res.Status.Conditions[0].Type)
-				assert.Equal(t, metav1.ConditionFalse, res.Status.Conditions[0].Status)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassReasonInvalidParameters), res.Status.Conditions[0].Reason)
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid group) gets Accepted: false condition": {
@@ -137,16 +126,10 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name:      "gatewayclass-params",
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error) {
-				assert.NoError(t, reconcileErr)
-
-				res := &gatewayv1alpha2.GatewayClass{}
-				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))
-
-				assert.Len(t, res.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassConditionStatusAccepted), res.Status.Conditions[0].Type)
-				assert.Equal(t, metav1.ConditionFalse, res.Status.Conditions[0].Status)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassReasonInvalidParameters), res.Status.Conditions[0].Reason)
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid kind) gets Accepted: false condition": {
@@ -170,16 +153,10 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name:      "gatewayclass-params",
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error) {
-				assert.NoError(t, reconcileErr)
-
-				res := &gatewayv1alpha2.GatewayClass{}
-				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))
-
-				assert.Len(t, res.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassConditionStatusAccepted), res.Status.Conditions[0].Type)
-				assert.Equal(t, metav1.ConditionFalse, res.Status.Conditions[0].Status)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassReasonInvalidParameters), res.Status.Conditions[0].Reason)
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid name) gets Accepted: false condition": {
@@ -203,16 +180,10 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name:      "gatewayclass-params",
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error) {
-				assert.NoError(t, reconcileErr)
-
-				res := &gatewayv1alpha2.GatewayClass{}
-				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))
-
-				assert.Len(t, res.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassConditionStatusAccepted), res.Status.Conditions[0].Type)
-				assert.Equal(t, metav1.ConditionFalse, res.Status.Conditions[0].Status)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassReasonInvalidParameters), res.Status.Conditions[0].Reason)
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with an invalid parametersRef (invalid namespace) gets Accepted: false condition": {
@@ -236,16 +207,10 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name:      "gatewayclass-params",
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error) {
-				assert.NoError(t, reconcileErr)
-
-				res := &gatewayv1alpha2.GatewayClass{}
-				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))
-
-				assert.Len(t, res.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassConditionStatusAccepted), res.Status.Conditions[0].Type)
-				assert.Equal(t, metav1.ConditionFalse, res.Status.Conditions[0].Status)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassReasonInvalidParameters), res.Status.Conditions[0].Reason)
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
 			},
 		},
 		"gatewayclass controlled by us with a valid parametersRef gets Accepted: true condition": {
@@ -269,16 +234,10 @@ func TestGatewayClassReconcile(t *testing.T) {
 					Name:      "gatewayclass-params",
 				},
 			},
-			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error) {
-				assert.NoError(t, reconcileErr)
-
-				res := &gatewayv1alpha2.GatewayClass{}
-				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))
-
-				assert.Len(t, res.Status.Conditions, 1)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassConditionStatusAccepted), res.Status.Conditions[0].Type)
-				assert.Equal(t, metav1.ConditionTrue, res.Status.Conditions[0].Status)
-				assert.Equal(t, string(gatewayv1alpha2.GatewayClassReasonAccepted), res.Status.Conditions[0].Reason)
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionTrue,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonAccepted),
 			},
 		},
 	}
@@ -313,7 +272,19 @@ func TestGatewayClassReconcile(t *testing.T) {
 
 			_, err = r.Reconcile(context.Background(), req)
 
-			tc.assertions(t, r, tc.gatewayClass, err)
+			if tc.wantCondition != nil {
+				res := &gatewayv1alpha2.GatewayClass{}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(tc.gatewayClass), res))
+
+				require.Len(t, res.Status.Conditions, 1)
+				assert.Equal(t, tc.wantCondition.Type, res.Status.Conditions[0].Type)
+				assert.Equal(t, tc.wantCondition.Status, res.Status.Conditions[0].Status)
+				assert.Equal(t, tc.wantCondition.Reason, res.Status.Conditions[0].Reason)
+			}
+
+			if tc.assertions != nil {
+				tc.assertions(t, r, tc.gatewayClass, err)
+			}
 		})
 	}
 }
