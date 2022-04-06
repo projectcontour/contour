@@ -20,6 +20,7 @@ import (
 	"github.com/imdario/mergo"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/timeout"
+	"github.com/projectcontour/contour/pkg/config"
 	"k8s.io/utils/pointer"
 )
 
@@ -78,12 +79,7 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 				ConnectionBalancer:        "",
 				TLS: &contour_api_v1alpha1.EnvoyTLS{
 					MinimumProtocolVersion: "1.2",
-					CipherSuites: []contour_api_v1alpha1.TLSCipherType{
-						"[ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]",
-						"[ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]",
-						"ECDHE-ECDSA-AES256-GCM-SHA384",
-						"ECDHE-RSA-AES256-GCM-SHA384",
-					},
+					CipherSuites:           defaultCipherSuites(),
 				},
 			},
 			Service: &contour_api_v1alpha1.NamespacedName{
@@ -156,6 +152,16 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 			TLS:     nil,
 		},
 	}
+}
+
+func defaultCipherSuites() []contour_api_v1alpha1.TLSCipherType {
+	var res []contour_api_v1alpha1.TLSCipherType
+
+	for _, cipherSuite := range config.DefaultTLSCiphers {
+		res = append(res, contour_api_v1alpha1.TLSCipherType(cipherSuite))
+	}
+
+	return res
 }
 
 type Timeouts struct {

@@ -117,7 +117,7 @@ spec:
                       versions the proxy should accept. HTTP versions are strings
                       of the form \"HTTP/xx\". Supported versions are \"HTTP/1.1\"
                       and \"HTTP/2\". \n Contour's default list is:   - \"HTTP/1.1\"
-                      \t - \"HTTP/2\""
+                      \  - \"HTTP/2\""
                     items:
                       description: HTTPVersionType is the name of a supported HTTP
                         version.
@@ -964,7 +964,7 @@ spec:
                           of HTTPS versions the proxy should accept. HTTP versions
                           are strings of the form \"HTTP/xx\". Supported versions
                           are \"HTTP/1.1\" and \"HTTP/2\". \n Contour's default list
-                          is:   - \"HTTP/1.1\" \t - \"HTTP/2\""
+                          is:   - \"HTTP/1.1\"   - \"HTTP/2\""
                         items:
                           description: HTTPVersionType is the name of a supported
                             HTTP version.

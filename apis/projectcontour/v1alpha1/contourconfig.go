@@ -265,7 +265,7 @@ type EnvoyConfig struct {
 	//
 	// Contour's default list is:
 	//   - "HTTP/1.1"
-	//	 - "HTTP/2"
+	//   - "HTTP/2"
 	// +optional
 	DefaultHTTPVersions []HTTPVersionType `json:"defaultHTTPVersions,omitempty"`
 
