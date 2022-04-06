@@ -327,6 +327,13 @@ check-ingress-conformance: | install-contour-working run-ingress-conformance cle
 run-ingress-conformance:
 	./test/scripts/run-ingress-conformance.sh
 
+.PHONY: gateway-conformance
+gateway-conformance: | setup-kind-cluster load-contour-image-kind run-gateway-conformance cleanup-kind ## Setup a kind cluster and run Gateway API conformance tests in it.
+
+.PHONY: run-gatway-conformance
+run-gateway-conformance: ## Run Gateway API conformance tests against the current cluster.
+	./test/scripts/run-gateway-conformance.sh
+
 .PHONY: deploy-gcp-bench-cluster
 deploy-gcp-bench-cluster:
 	./test/scripts/gcp-bench-cluster.sh deploy
