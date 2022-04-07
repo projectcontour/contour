@@ -160,8 +160,7 @@ func grpcOptions(log logrus.FieldLogger, contourXDSConfig *contour_api_v1alpha1.
 		}),
 	}
 
-	// TODO take individual primitives instead of the API struct?
-	if !*contourXDSConfig.Insecure {
+	if !pointer.BoolDeref(contourXDSConfig.Insecure, false) {
 		tlsconfig := tlsconfig(log, contourXDSConfig)
 		creds := credentials.NewTLS(tlsconfig)
 		opts = append(opts, grpc.Creds(creds))

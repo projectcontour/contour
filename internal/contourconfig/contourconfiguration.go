@@ -24,14 +24,18 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+// UIntPtr returns a pointer to a uint value.
 func UIntPtr(val uint) *uint {
 	return &val
 }
 
+// UInt32Ptr returns a pointer to a uint32 value.
 func UInt32Ptr(val uint32) *uint32 {
 	return &val
 }
 
+// OverlayOnDefaults overlays the settings in the provided spec onto the
+// default settings, and returns the results.
 func OverlayOnDefaults(spec contour_api_v1alpha1.ContourConfigurationSpec) (contour_api_v1alpha1.ContourConfigurationSpec, error) {
 	res := Defaults()
 
@@ -42,6 +46,8 @@ func OverlayOnDefaults(spec contour_api_v1alpha1.ContourConfigurationSpec) (cont
 	return res, nil
 }
 
+// Defaults returns the default settings Contour uses if no user-specified
+// configuration is provided.
 func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 	return contour_api_v1alpha1.ContourConfigurationSpec{
 		XDSServer: &contour_api_v1alpha1.XDSServerConfig{
@@ -60,8 +66,6 @@ func Defaults() contour_api_v1alpha1.ContourConfigurationSpec {
 			StatusAddress: "",
 		},
 		Debug: &contour_api_v1alpha1.DebugConfig{
-			// TODO verify the address/port defaults, this is a change from current
-			// but matches the pkg/config defaults.
 			Address:                 "127.0.0.1",
 			Port:                    6060,
 			DebugLogLevel:           contour_api_v1alpha1.InfoLog,

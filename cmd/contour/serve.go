@@ -234,9 +234,8 @@ func NewServer(log logrus.FieldLogger, ctx *serveContext) (*Server, error) {
 	}, nil
 }
 
-// doServe runs the contour serve subcommand.
-func (s *Server) doServe() error {
-	var userSettings contour_api_v1alpha1.ContourConfigurationSpec
+func (s *Server) getConfig() (contour_api_v1alpha1.ContourConfigurationSpec, error) {
+	var userConfig contour_api_v1alpha1.ContourConfigurationSpec
 
 	// Get the ContourConfiguration CRD if specified
 	if len(s.ctx.contourConfigurationName) > 0 {
@@ -255,44 +254,63 @@ func (s *Server) doServe() error {
 		// Using GetAPIReader() here because the manager's caches won't be started yet,
 		// so reads from the manager's client (which uses the caches for reads) will fail.
 		if err := s.mgr.GetAPIReader().Get(context.Background(), key, contourConfig); err != nil {
-			return fmt.Errorf("error getting contour configuration %s: %v", key, err)
+			return contour_api_v1alpha1.ContourConfigurationSpec{}, fmt.Errorf("error getting contour configuration %s: %v", key, err)
 		}
 
 		// Copy the Spec from the parsed Configuration
-		userSettings = contourConfig.Spec
+		userConfig = contourConfig.Spec
 	} else {
 		// No contour configuration passed, so convert the ServeContext into a ContourConfigurationSpec.
-		userSettings = s.ctx.convertToContourConfigurationSpec()
+		userConfig = s.ctx.convertToContourConfigurationSpec()
 	}
 
-	contourConfiguration, err := contourconfig.OverlayOnDefaults(userSettings)
+	// Overlay the user-specified config onto the default config to come up
+	// with the final set of config to use.
+	contourConfiguration, err := contourconfig.OverlayOnDefaults(userConfig)
+	if err != nil {
+		return contour_api_v1alpha1.ContourConfigurationSpec{}, err
+	}
+
+	if err := contourConfiguration.Validate(); err != nil {
+		return contour_api_v1alpha1.ContourConfigurationSpec{}, err
+	}
+
+	return contourConfiguration, nil
+}
+
+// doServe runs the contour serve subcommand.
+func (s *Server) doServe() error {
+	// Get config. Any user-specified settings are "overlaid" onto default settings
+	// to come up with the final config. Note that because the default settings (as
+	// defined in contourconfig.Defaults()) instantiate structs for nearly every pointer
+	// in the ContourConfigurationSpec object structure, most nil-checking can be
+	// omitted in the below code. The exceptions are truly optional fields, such as
+	// RateLimitService, which is not required to exist/have a default.
+	contourConfiguration, err := s.getConfig()
 	if err != nil {
 		return err
 	}
 
-	if err := contourConfiguration.Validate(); err != nil {
-		return err
-	}
-
-	// informerNamespaces is a list of namespaces that we should start informers for.
+	// informerNamespaces is a set of namespaces that we should start informers for.
+	// If empty, informers will be started for all namespaces.
 	informerNamespaces := sets.NewString()
 
 	if rootNamespaces := contourConfiguration.HTTPProxy.RootNamespaces; len(rootNamespaces) > 0 {
+		s.log.WithField("context", "root-namespaces").Infof("watching root namespaces %q", rootNamespaces)
 		informerNamespaces.Insert(rootNamespaces...)
 
-		// Add the FallbackCertificateNamespace to informerNamespaces if it isn't present.
+		// The fallback cert and client cert's namespaces only need to be added to informerNamespaces
+		// if we're processing specifici root namespaces, because otherwise, the informers will start
+		// for all namespaces so the below will automatically be included.
+
 		if fallbackCert := contourConfiguration.HTTPProxy.FallbackCertificate; fallbackCert != nil {
 			s.log.WithField("context", "fallback-certificate").Infof("watching fallback certificate namespace %q", fallbackCert.Namespace)
-
 			informerNamespaces.Insert(fallbackCert.Namespace)
 		}
 
-		if contourConfiguration.Envoy != nil {
-			if clientCert := contourConfiguration.Envoy.ClientCertificate; clientCert != nil {
-				s.log.WithField("context", "envoy-client-certificate").Infof("watching client certificate namespace %q", clientCert.Namespace)
-
-				informerNamespaces.Insert(clientCert.Namespace)
-			}
+		if clientCert := contourConfiguration.Envoy.ClientCertificate; clientCert != nil {
+			s.log.WithField("context", "envoy-client-certificate").Infof("watching client certificate namespace %q", clientCert.Namespace)
+			informerNamespaces.Insert(clientCert.Namespace)
 		}
 	}
 
