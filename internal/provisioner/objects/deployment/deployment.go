@@ -45,12 +45,6 @@ const (
 	contourCertsVolName = "contourcert"
 	// contourCertsVolMntDir is the directory name of the contour certificates volume.
 	contourCertsVolMntDir = "certs"
-	// contourCfgVolName is the name of the contour configuration volume.
-	contourCfgVolName = "contour-config"
-	// contourCfgVolMntDir is the directory name of the contour configuration volume.
-	contourCfgVolMntDir = "config"
-	// contourCfgFileName is the name of the contour configuration file.
-	contourCfgFileName = "contour.yaml"
 	// metricsPort is the network port number of Contour's metrics service.
 	metricsPort = 8000
 	// debugPort is the network port number of Contour's debug service.
@@ -113,7 +107,7 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 		fmt.Sprintf("--contour-cafile=%s", filepath.Join("/", contourCertsVolMntDir, "ca.crt")),
 		fmt.Sprintf("--contour-cert-file=%s", filepath.Join("/", contourCertsVolMntDir, "tls.crt")),
 		fmt.Sprintf("--contour-key-file=%s", filepath.Join("/", contourCertsVolMntDir, "tls.key")),
-		fmt.Sprintf("--config-path=%s", filepath.Join("/", contourCfgVolMntDir, contourCfgFileName)),
+		fmt.Sprintf("--contour-config-name=%s", contour.ContourConfigurationName()),
 		fmt.Sprintf("--leader-election-resource-name=%s", contour.LeaderElectionLeaseName()),
 		fmt.Sprintf("--envoy-service-name=%s", contour.EnvoyServiceName()),
 	}
@@ -207,11 +201,6 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 				MountPath: filepath.Join("/", contourCertsVolMntDir),
 				ReadOnly:  true,
 			},
-			{
-				Name:      contourCfgVolName,
-				MountPath: filepath.Join("/", contourCfgVolMntDir),
-				ReadOnly:  true,
-			},
 		},
 	}
 	deploy := &appsv1.Deployment{
@@ -269,23 +258,6 @@ func DesiredDeployment(contour *model.Contour, image string) *appsv1.Deployment 
 								Secret: &corev1.SecretVolumeSource{
 									DefaultMode: pointer.Int32Ptr(int32(420)),
 									SecretName:  contour.ContourCertsSecretName(),
-								},
-							},
-						},
-						{
-							Name: contourCfgVolName,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: contour.ConfigMapName(),
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  contourCfgFileName,
-											Path: contourCfgFileName,
-										},
-									},
-									DefaultMode: pointer.Int32Ptr(int32(420)),
 								},
 							},
 						},
