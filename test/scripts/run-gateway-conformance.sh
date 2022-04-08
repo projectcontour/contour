@@ -19,14 +19,17 @@ set -o errexit
 set -o nounset
 
 readonly KUBECTL=${KUBECTL:-kubectl}
-readonly IMG=${CONTOUR_E2E_IMAGE:-ghcr.io/projectcontour/contour:main}
+export CONTOUR_IMG=${CONTOUR_E2E_IMAGE:-ghcr.io/projectcontour/contour:main}
 
-echo "Using Contour image: ${IMG}"
+echo "Using Contour image: ${CONTOUR_IMG}"
 
 ${KUBECTL} apply -f examples/gateway-provisioner/00-common.yaml
 ${KUBECTL} apply -f examples/gateway-provisioner/01-roles.yaml
 ${KUBECTL} apply -f examples/gateway-provisioner/02-rolebindings.yaml
-${KUBECTL} apply -f <(sed "s|ghcr.io/projectcontour/contour:main|$IMG|g; s|imagePullPolicy: Always|imagePullPolicy: IfNotPresent|g" examples/gateway-provisioner/03-gateway-provisioner.yaml)
+${KUBECTL} apply -f <(cat examples/gateway-provisioner/03-gateway-provisioner.yaml | \
+    yq eval '.spec.template.spec.containers[0].image = env(CONTOUR_IMG)' - | \
+    yq eval '.spec.template.spec.containers[0].imagePullPolicy = "IfNotPresent"' - | \
+    yq eval '.spec.template.spec.containers[0].args += "--contour-image="+env(CONTOUR_IMG)' -)
 
 ${KUBECTL} apply -f - <<EOF
 kind: GatewayClass
