@@ -14,102 +14,281 @@
 package controller
 
 import (
+	"context"
 	"testing"
 
+	"github.com/go-logr/logr"
+	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
+	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/gateway-api/apis/v1alpha2"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-func TestHasMatchingController(t *testing.T) {
+func TestGatewayClassReconcile(t *testing.T) {
 	tests := map[string]struct {
-		obj               client.Object
-		gatewayController string
-		want              bool
+		gatewayClass  *gatewayv1alpha2.GatewayClass
+		params        *contourv1alpha1.ContourDeployment
+		req           *reconcile.Request
+		wantCondition *metav1.Condition
+		assertions    func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error)
 	}{
-		"GatewayClass has matching controller": {
-			obj: &gatewayv1alpha2.GatewayClass{
+		"reconcile request for non-existent gatewayclass results in no error": {
+			req: &reconcile.Request{
+				NamespacedName: types.NamespacedName{Name: "nonexistent"},
+			},
+			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error) {
+				assert.NoError(t, reconcileErr)
+
+				gatewayClasses := &gatewayv1alpha2.GatewayClassList{}
+				require.NoError(t, r.client.List(context.Background(), gatewayClasses))
+				assert.Empty(t, gatewayClasses.Items)
+			},
+		},
+		"gatewayclass not controlled by us does not get conditions set": {
+			gatewayClass: &gatewayv1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
 				Spec: gatewayv1alpha2.GatewayClassSpec{
-					ControllerName: gatewayv1alpha2.GatewayController("projectcontour.io/gateway-provisioner"),
+					ControllerName: gatewayv1alpha2.GatewayController("someothercontroller.io/controller"),
 				},
 			},
-			gatewayController: "projectcontour.io/gateway-provisioner",
-			want:              true,
+			assertions: func(t *testing.T, r *gatewayClassReconciler, gc *gatewayv1alpha2.GatewayClass, reconcileErr error) {
+				assert.NoError(t, reconcileErr)
+
+				res := &gatewayv1alpha2.GatewayClass{}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gc), res))
+
+				assert.Empty(t, res.Status.Conditions)
+			},
 		},
-		"object is not a GatewayClass": {
-			obj:  &corev1.Service{},
-			want: false,
-		},
-		"GatewayClass has a non-matching controller": {
-			obj: &gatewayv1alpha2.GatewayClass{
+		"gatewayclass controlled by us with no parameters gets Accepted: true condition": {
+			gatewayClass: &gatewayv1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
 				Spec: gatewayv1alpha2.GatewayClassSpec{
-					ControllerName: gatewayv1alpha2.GatewayController("projectcontour.io/some-other-controller"),
+					ControllerName: "projectcontour.io/gateway-provisioner",
 				},
 			},
-			gatewayController: "projectcontour.io/gateway-provisioner",
-			want:              false,
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionTrue,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonAccepted),
+			},
+		},
+		"gatewayclass controlled by us with an invalid parametersRef (target does not exist) gets Accepted: false condition": {
+			gatewayClass: &gatewayv1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1alpha2.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-provisioner",
+					ParametersRef: &gatewayv1alpha2.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
+			},
+		},
+		"gatewayclass controlled by us with an invalid parametersRef (invalid group) gets Accepted: false condition": {
+			gatewayClass: &gatewayv1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1alpha2.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-provisioner",
+					ParametersRef: &gatewayv1alpha2.ParametersReference{
+						Group:     "invalidgroup.io",
+						Kind:      "ContourDeployment",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
+			},
+		},
+		"gatewayclass controlled by us with an invalid parametersRef (invalid kind) gets Accepted: false condition": {
+			gatewayClass: &gatewayv1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1alpha2.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-provisioner",
+					ParametersRef: &gatewayv1alpha2.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "InvalidKind",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
+			},
+		},
+		"gatewayclass controlled by us with an invalid parametersRef (invalid name) gets Accepted: false condition": {
+			gatewayClass: &gatewayv1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1alpha2.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-provisioner",
+					ParametersRef: &gatewayv1alpha2.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Name:      "invalid-name",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
+			},
+		},
+		"gatewayclass controlled by us with an invalid parametersRef (invalid namespace) gets Accepted: false condition": {
+			gatewayClass: &gatewayv1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1alpha2.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-provisioner",
+					ParametersRef: &gatewayv1alpha2.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("invalid-namespace"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionFalse,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonInvalidParameters),
+			},
+		},
+		"gatewayclass controlled by us with a valid parametersRef gets Accepted: true condition": {
+			gatewayClass: &gatewayv1alpha2.GatewayClass{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "gatewayclass-1",
+				},
+				Spec: gatewayv1alpha2.GatewayClassSpec{
+					ControllerName: "projectcontour.io/gateway-provisioner",
+					ParametersRef: &gatewayv1alpha2.ParametersReference{
+						Group:     "projectcontour.io",
+						Kind:      "ContourDeployment",
+						Name:      "gatewayclass-params",
+						Namespace: gatewayapi.NamespacePtr("projectcontour"),
+					},
+				},
+			},
+			params: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-params",
+				},
+			},
+			wantCondition: &metav1.Condition{
+				Type:   string(gatewayv1alpha2.GatewayClassConditionStatusAccepted),
+				Status: metav1.ConditionTrue,
+				Reason: string(gatewayv1alpha2.GatewayClassReasonAccepted),
+			},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			r := &gatewayClassReconciler{
-				gatewayController: v1alpha2.GatewayController(tc.gatewayController),
+			scheme, err := provisioner.CreateScheme()
+			require.NoError(t, err)
+
+			client := fake.NewClientBuilder().WithScheme(scheme)
+			if tc.gatewayClass != nil {
+				client.WithObjects(tc.gatewayClass)
+			}
+			if tc.params != nil {
+				client.WithObjects(tc.params)
 			}
 
-			assert.Equal(t, tc.want, r.hasMatchingController(tc.obj))
+			r := &gatewayClassReconciler{
+				gatewayController: "projectcontour.io/gateway-provisioner",
+				client:            client.Build(),
+				log:               logr.Discard(),
+			}
+
+			var req reconcile.Request
+			if tc.req != nil {
+				req = *tc.req
+			} else {
+				req = reconcile.Request{
+					NamespacedName: keyFor(tc.gatewayClass),
+				}
+			}
+
+			_, err = r.Reconcile(context.Background(), req)
+
+			if tc.wantCondition != nil {
+				res := &gatewayv1alpha2.GatewayClass{}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(tc.gatewayClass), res))
+
+				require.Len(t, res.Status.Conditions, 1)
+				assert.Equal(t, tc.wantCondition.Type, res.Status.Conditions[0].Type)
+				assert.Equal(t, tc.wantCondition.Status, res.Status.Conditions[0].Status)
+				assert.Equal(t, tc.wantCondition.Reason, res.Status.Conditions[0].Reason)
+			}
+
+			if tc.assertions != nil {
+				tc.assertions(t, r, tc.gatewayClass, err)
+			}
 		})
 	}
 }
 
-func TestIsContourDeploymentRef(t *testing.T) {
-	tests := map[string]struct {
-		ref  *gatewayv1alpha2.ParametersReference
-		want bool
-	}{
-		"valid ref": {
-			ref: &gatewayv1alpha2.ParametersReference{
-				Group:     "projectcontour.io",
-				Kind:      "ContourDeployment",
-				Namespace: gatewayapi.NamespacePtr("namespace-1"),
-			},
-			want: true,
-		},
-		"nil ref": {
-			want: false,
-		},
-		"group is not projectcontour.io": {
-			ref: &gatewayv1alpha2.ParametersReference{
-				Group:     "some-other-group.io",
-				Kind:      "ContourDeployment",
-				Namespace: gatewayapi.NamespacePtr("namespace-1"),
-			},
-			want: false,
-		},
-		"kind is not ContourDeployment": {
-			ref: &gatewayv1alpha2.ParametersReference{
-				Group:     "projectcontour.io",
-				Kind:      "SomeOtherKind",
-				Namespace: gatewayapi.NamespacePtr("namespace-1"),
-			},
-			want: false,
-		},
-		"namespace is nil": {
-			ref: &gatewayv1alpha2.ParametersReference{
-				Group:     "projectcontour.io",
-				Kind:      "ContourDeployment",
-				Namespace: nil,
-			},
-			want: false,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, isContourDeploymentRef(tc.ref))
-		})
-	}
+func keyFor(obj client.Object) types.NamespacedName {
+	return client.ObjectKeyFromObject(obj)
 }

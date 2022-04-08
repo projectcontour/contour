@@ -17,18 +17,15 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/projectcontour/contour/internal/provisioner/controller"
 	"github.com/projectcontour/contour/internal/provisioner/parse"
 
-	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-	"k8s.io/apimachinery/pkg/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	gateway_api_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func registerGatewayProvisioner(app *kingpin.Application) (*kingpin.CmdClause, *gatewayProvisionerConfig) {
@@ -120,7 +117,7 @@ func runGatewayProvisioner(config *gatewayProvisionerConfig) {
 
 // createManager creates a new manager from restConfig and provisionerConfig.
 func createManager(restConfig *rest.Config, provisionerConfig *gatewayProvisionerConfig) (manager.Manager, error) {
-	scheme, err := createScheme()
+	scheme, err := provisioner.CreateScheme()
 	if err != nil {
 		return nil, fmt.Errorf("error creating runtime scheme: %w", err)
 	}
@@ -145,26 +142,4 @@ func createManager(restConfig *rest.Config, provisionerConfig *gatewayProvisione
 		return nil, fmt.Errorf("failed to create gateway controller: %w", err)
 	}
 	return mgr, nil
-}
-
-func createScheme() (*runtime.Scheme, error) {
-	// scheme contains all the API types necessary for the gateway provisioner's dynamic
-	// clients to work. Any new non-core types must be added here.
-	//
-	// NOTE: The discovery mechanism used by the client doesn't automatically
-	// refresh, so only add types here that are guaranteed to exist before the
-	// gateway provisioner starts.
-	scheme := runtime.NewScheme()
-
-	if err := clientgoscheme.AddToScheme(scheme); err != nil {
-		return nil, err
-	}
-	if err := gateway_api_v1alpha2.AddToScheme(scheme); err != nil {
-		return nil, err
-	}
-	if err := contour_api_v1alpha1.AddToScheme(scheme); err != nil {
-		return nil, err
-	}
-
-	return scheme, nil
 }
