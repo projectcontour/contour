@@ -43,46 +43,46 @@ func EnsureContourConfig(ctx context.Context, cli client.Client, contour *model.
 				Name:      contour.ContourConfigurationName(),
 				Labels:    model.OwnerLabels(contour),
 			},
-			Spec: contour_api_v1alpha1.ContourConfigurationSpec{
-				Gateway: &contour_api_v1alpha1.GatewayConfig{
-					GatewayRef: &contour_api_v1alpha1.NamespacedName{
-						Namespace: contour.Namespace,
-						Name:      contour.Name,
-					},
-				},
-				Envoy: &contour_api_v1alpha1.EnvoyConfig{
-					Service: &contour_api_v1alpha1.NamespacedName{
-						Namespace: contour.Namespace,
-						Name:      contour.EnvoyServiceName(),
-					},
-				},
-			},
 		}
+
+		// Take any user-provided Config as a base.
+		if contour.Spec.Config != nil {
+			contourConfig.Spec = *contour.Spec.Config
+		}
+
+		// Override Gateway-specific settings to ensure the Contour is
+		// being configured correctly for the Gateway being provisioned.
+		setGatewayConfig(contourConfig, contour)
 
 		return cli.Create(ctx, contourConfig)
 	// Already exists: ensure it has the relevant fields set correctly.
 	default:
 		maybeUpdated := current.DeepCopy()
-		maybeUpdated.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
-			GatewayRef: &contour_api_v1alpha1.NamespacedName{
-				Namespace: contour.Namespace,
-				Name:      contour.Name,
-			},
-		}
 
-		if maybeUpdated.Spec.Envoy == nil {
-			maybeUpdated.Spec.Envoy = &contour_api_v1alpha1.EnvoyConfig{}
-		}
-		maybeUpdated.Spec.Envoy.Service = &contour_api_v1alpha1.NamespacedName{
-			Namespace: contour.Namespace,
-			Name:      contour.EnvoyServiceName(),
-		}
+		setGatewayConfig(maybeUpdated, contour)
 
 		if !equality.Semantic.DeepEqual(current, maybeUpdated) {
 			return cli.Update(ctx, maybeUpdated)
 		}
 
 		return nil
+	}
+}
+
+func setGatewayConfig(config *contour_api_v1alpha1.ContourConfiguration, contour *model.Contour) {
+	config.Spec.Gateway = &contour_api_v1alpha1.GatewayConfig{
+		GatewayRef: &contour_api_v1alpha1.NamespacedName{
+			Namespace: contour.Namespace,
+			Name:      contour.Name,
+		},
+	}
+
+	if config.Spec.Envoy == nil {
+		config.Spec.Envoy = &contour_api_v1alpha1.EnvoyConfig{}
+	}
+	config.Spec.Envoy.Service = &contour_api_v1alpha1.NamespacedName{
+		Namespace: contour.Namespace,
+		Name:      contour.EnvoyServiceName(),
 	}
 }
 
