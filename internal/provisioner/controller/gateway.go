@@ -213,6 +213,18 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		},
 	}
 
+	// Currently, only a single address of type IPAddress or Hostname
+	// is supported; anything else will be ignored.
+	if len(gateway.Spec.Addresses) > 0 {
+		address := gateway.Spec.Addresses[0]
+
+		if address.Type == nil ||
+			*address.Type == gatewayapi_v1alpha2.IPAddressType ||
+			*address.Type == gatewayapi_v1alpha2.HostnameAddressType {
+			gatewayContour.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP = address.Value
+		}
+	}
+
 	for _, listener := range gateway.Spec.Listeners {
 		port := model.ServicePort{
 			Name:       string(listener.Name),

@@ -18,12 +18,15 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -179,6 +182,140 @@ func TestGatewayReconcile(t *testing.T) {
 				assert.True(t, errors.IsNotFound(err))
 			},
 		},
+		"A gateway with no addresses results in an Envoy service with no loadBalancerIP": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: "gatewayclass-1",
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "")
+			},
+		},
+		"A gateway with one IP address results in an Envoy service with loadBalancerIP set to that IP address": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: "gatewayclass-1",
+					Addresses: []gatewayv1alpha2.GatewayAddress{
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayv1alpha2.IPAddressType),
+							Value: "172.18.255.207",
+						},
+					},
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "172.18.255.207")
+			},
+		},
+		"A gateway with two IP addresses results in an Envoy service with loadBalancerIP set to the first IP address": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: "gatewayclass-1",
+					Addresses: []gatewayv1alpha2.GatewayAddress{
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayv1alpha2.IPAddressType),
+							Value: "172.18.255.207",
+						},
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayv1alpha2.IPAddressType),
+							Value: "172.18.255.999",
+						},
+					},
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "172.18.255.207")
+			},
+		},
+		"A gateway with one Hostname address results in an Envoy service with loadBalancerIP set to that hostname": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: "gatewayclass-1",
+					Addresses: []gatewayv1alpha2.GatewayAddress{
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayv1alpha2.HostnameAddressType),
+							Value: "projectcontour.io",
+						},
+					},
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "projectcontour.io")
+			},
+		},
+		"A gateway with two Hostname addresses results in an Envoy service with loadBalancerIP set to the first hostname": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: "gatewayclass-1",
+					Addresses: []gatewayv1alpha2.GatewayAddress{
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayv1alpha2.HostnameAddressType),
+							Value: "projectcontour.io",
+						},
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayv1alpha2.HostnameAddressType),
+							Value: "anotherhost.io",
+						},
+					},
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "projectcontour.io")
+			},
+		},
+		"A gateway with one named address results in an Envoy service with no loadBalancerIP": {
+			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "default",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: "gatewayclass-1",
+					Addresses: []gatewayv1alpha2.GatewayAddress{
+						{
+							Type:  gatewayapi.AddressTypePtr(gatewayv1alpha2.NamedAddressType),
+							Value: "named-addresses-are-not-supported",
+						},
+					},
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "")
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -214,4 +351,18 @@ func TestGatewayReconcile(t *testing.T) {
 			tc.assertions(t, r, tc.gateway, err)
 		})
 	}
+}
+
+func assertEnvoyServiceLoadBalancerIP(t *testing.T, gateway *gatewayv1alpha2.Gateway, client client.Client, want string) {
+	// Get the expected Envoy service from the client.
+	envoyService := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: gateway.Namespace,
+			Name:      "envoy-" + gateway.Name,
+		},
+	}
+	require.NoError(t, client.Get(context.Background(), keyFor(envoyService), envoyService))
+
+	// Verify expected Spec.LoadBalancerIP.
+	assert.Equal(t, want, envoyService.Spec.LoadBalancerIP)
 }

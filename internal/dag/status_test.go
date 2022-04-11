@@ -4541,9 +4541,9 @@ func TestGatewayAPIHTTPRouteDAGStatus(t *testing.T) {
 				gatewayapi_v1alpha2.GatewayConditionScheduled: gatewayScheduledCondition(),
 				gatewayapi_v1alpha2.GatewayConditionReady: {
 					Type:    string(gatewayapi_v1alpha2.GatewayConditionReady),
-					Status:  contour_api_v1.ConditionFalse,
-					Reason:  status.ReasonInvalidGateway,
-					Message: "Unsupported value for spec; Spec.Addresses is not supported",
+					Status:  metav1.ConditionFalse,
+					Reason:  string(gatewayapi_v1alpha2.GatewayReasonAddressNotAssigned),
+					Message: "None of the addresses in Spec.Addresses have been assigned to the Gateway",
 				},
 			},
 			ListenerStatus: map[string]*gatewayapi_v1alpha2.ListenerStatus{
