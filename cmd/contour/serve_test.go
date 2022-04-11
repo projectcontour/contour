@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 )
 
 func TestGetDAGBuilder(t *testing.T) {
@@ -96,7 +97,7 @@ func TestGetDAGBuilder(t *testing.T) {
 				},
 				Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 			},
-			ApplyToIngress: false,
+			ApplyToIngress: pointer.Bool(false),
 		}
 
 		serve := &Server{
@@ -135,7 +136,7 @@ func TestGetDAGBuilder(t *testing.T) {
 				},
 				Remove: []string{"res-remove-key-1", "res-remove-key-2"},
 			},
-			ApplyToIngress: true,
+			ApplyToIngress: pointer.Bool(true),
 		}
 
 		serve := &Server{

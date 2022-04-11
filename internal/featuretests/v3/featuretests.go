@@ -82,10 +82,12 @@ func setup(t *testing.T, opts ...interface{}) (cache.ResourceEventHandler, *Cont
 	}
 
 	resources := []xdscache.ResourceCache{
-		xdscache_v3.NewListenerCache(v1alpha1.EnvoyConfig{
-			Metrics: v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
-			Health:  v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002}},
-			conf),
+		xdscache_v3.NewListenerCache(
+			conf,
+			v1alpha1.MetricsConfig{Address: "0.0.0.0", Port: 8002},
+			v1alpha1.HealthConfig{Address: "0.0.0.0", Port: 8002},
+			0,
+		),
 		&xdscache_v3.SecretCache{},
 		&xdscache_v3.RouteCache{},
 		&xdscache_v3.ClusterCache{},
