@@ -344,7 +344,7 @@ func runGatewayTests() {
 			})
 		}
 
-		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
+		f.NamespacedTest("gateway-tlsroute-mode-terminate", testWithTLSGateway("terminate.tlsroute.gatewayapi.projectcontour.io", testTLSRouteTerminate))
 	})
 
 	Describe("Gateway with multiple HTTPS listeners, each with a different hostname and TLS cert", func() {
