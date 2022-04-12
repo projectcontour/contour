@@ -334,6 +334,15 @@ func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *m
 }
 
 func (r *gatewayReconciler) getGatewayClassParams(ctx context.Context, gatewayClass *gatewayapi_v1alpha2.GatewayClass) (*contour_api_v1alpha1.ContourDeployment, error) {
+	// Check if there is a parametersRef to ContourDeployment with
+	// a namespace specified. Theoretically, we should only be reconciling
+	// Gateways for GatewayClasses that have valid parameter refs (or no refs),
+	// making this check mostly redundant other than checking for a nil params
+	// ref, but there is potentially a race condition where a GatewayClass's
+	// parameters ref is updated from valid to invalid, and then a Gateway reconcile
+	// is triggered before the GatewayClass's status is updated, that
+	// would lead to this code being executed for a GatewayClass with an
+	// invalid parametersRef.
 	if !isContourDeploymentRef(gatewayClass.Spec.ParametersRef) {
 		return nil, nil
 	}
