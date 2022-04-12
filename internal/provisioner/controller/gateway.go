@@ -152,10 +152,12 @@ func (r *gatewayReconciler) getGatewayClassGateways(gatewayClass client.Object) 
 }
 
 func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := r.log.WithValues("gateway-namespace", req.Namespace, "gateway-name", req.Name)
+
 	gateway := &gatewayapi_v1alpha2.Gateway{}
 	if err := r.client.Get(ctx, req.NamespacedName, gateway); err != nil {
 		if errors.IsNotFound(err) {
-			r.log.WithValues("gateway-namespace", req.Namespace, "gateway-name", req.Name).Info("deleting gateway resources")
+			log.Info("deleting gateway resources")
 
 			contour := &model.Contour{
 				ObjectMeta: metav1.ObjectMeta{
@@ -164,9 +166,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				},
 			}
 
-			if errs := r.ensureContourDeleted(ctx, contour); len(errs) > 0 {
-				err := utilerrors.NewAggregate(errs)
-				r.log.Error(err, "unable to delete contour for gateway %s/%s", req.Namespace, req.Name)
+			if errs := r.ensureContourDeleted(ctx, contour, log); len(errs) > 0 {
+				log.Error(utilerrors.NewAggregate(errs), "failed to delete resources for gateway")
 			}
 
 			return ctrl.Result{}, nil
@@ -186,7 +187,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	r.log.WithValues("gateway-namespace", req.Namespace, "gateway-name", req.Name).Info("ensuring gateway resources")
+	log.Info("ensuring gateway resources")
 
 	gatewayContour := &model.Contour{
 		ObjectMeta: metav1.ObjectMeta{
@@ -234,8 +235,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 
-	if errs := r.ensureContour(ctx, gatewayContour); len(errs) > 0 {
-		return ctrl.Result{}, fmt.Errorf("failed to ensure Contour for gateway: %w", retryable.NewMaybeRetryableAggregate(errs))
+	if errs := r.ensureContour(ctx, gatewayContour, log); len(errs) > 0 {
+		return ctrl.Result{}, fmt.Errorf("failed to ensure resources for gateway: %w", retryable.NewMaybeRetryableAggregate(errs))
 	}
 
 	var newConds []metav1.Condition
@@ -251,7 +252,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		newConds = append(newConds, cond)
 	}
 
-	r.log.WithValues("gateway-namespace", req.Namespace, "gateway-name", req.Name).Info("setting gateway's Scheduled condition to true")
+	log.Info("setting gateway's Scheduled condition to true")
 
 	// nolint:gocritic
 	gateway.Status.Conditions = append(newConds, metav1.Condition{
@@ -270,14 +271,14 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Contour) []error {
+func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Contour, log logr.Logger) []error {
 	var errs []error
 
 	handleResult := func(resource string, err error) {
 		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to ensure %s for contour %s/%s: %w", resource, contour.Namespace, contour.Name, err))
+			errs = append(errs, fmt.Errorf("failed to ensure %s for gateway %s/%s: %w", resource, contour.Namespace, contour.Name, err))
 		} else {
-			r.log.Info(fmt.Sprintf("ensured %s for contour", resource), "namespace", contour.Namespace, "name", contour.Name)
+			log.Info(fmt.Sprintf("ensured %s for gateway", resource))
 		}
 	}
 
@@ -301,14 +302,14 @@ func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Co
 	return errs
 }
 
-func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *model.Contour) []error {
+func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *model.Contour, log logr.Logger) []error {
 	var errs []error
 
 	handleResult := func(resource string, err error) {
 		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to delete %s for contour %s/%s: %w", resource, contour.Namespace, contour.Name, err))
+			errs = append(errs, fmt.Errorf("failed to delete %s for gateway %s/%s: %w", resource, contour.Namespace, contour.Name, err))
 		} else {
-			r.log.Info(fmt.Sprintf("deleted %s for contour", resource), "namespace", contour.Namespace, "name", contour.Name)
+			log.Info(fmt.Sprintf("deleted %s for gateway", resource))
 		}
 	}
 
