@@ -14,6 +14,7 @@
 package model
 
 import (
+	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -131,6 +132,9 @@ type ContourSpec struct {
 	//
 	// +optional
 	EnableExternalNameService *bool `json:"enableExternalNameService,omitempty"`
+
+	// Config is any user-defined Config for the Contour instance.
+	Config *contourv1alpha1.ContourConfigurationSpec
 }
 
 // NodePlacement describes node scheduling configuration of Contour and Envoy pods.

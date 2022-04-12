@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	contourv1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner"
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -56,11 +58,34 @@ func TestGatewayReconcile(t *testing.T) {
 		}
 	}
 
+	reconcilableGatewayClassWithParams := func(name, controller string) *gatewayv1alpha2.GatewayClass {
+		gc := reconcilableGatewayClass(name, controller)
+		gc.Spec.ParametersRef = &gatewayv1alpha2.ParametersReference{
+			Group:     gatewayv1alpha2.Group(contourv1alpha1.GroupVersion.Group),
+			Kind:      "ContourDeployment",
+			Namespace: gatewayapi.NamespacePtr("projectcontour"),
+			Name:      name + "-params",
+		}
+		return gc
+	}
+
+	reconcilableGatewayClassWithInvalidParams := func(name, controller string) *gatewayv1alpha2.GatewayClass {
+		gc := reconcilableGatewayClass(name, controller)
+		gc.Spec.ParametersRef = &gatewayv1alpha2.ParametersReference{
+			Group:     gatewayv1alpha2.Group(contourv1alpha1.GroupVersion.Group),
+			Kind:      "InvalidKind",
+			Namespace: gatewayapi.NamespacePtr("projectcontour"),
+			Name:      name + "-params",
+		}
+		return gc
+	}
+
 	tests := map[string]struct {
-		gatewayClass *gatewayv1alpha2.GatewayClass
-		gateway      *gatewayv1alpha2.Gateway
-		req          *reconcile.Request
-		assertions   func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error)
+		gatewayClass       *gatewayv1alpha2.GatewayClass
+		gatewayClassParams *contourv1alpha1.ContourDeployment
+		gateway            *gatewayv1alpha2.Gateway
+		req                *reconcile.Request
+		assertions         func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error)
 	}{
 		"A gateway for a reconcilable gatewayclass is reconciled": {
 			gatewayClass: reconcilableGatewayClass("gatewayclass-1", controller),
@@ -316,6 +341,206 @@ func TestGatewayReconcile(t *testing.T) {
 				assertEnvoyServiceLoadBalancerIP(t, gw, r.client, "")
 			},
 		},
+		"Config from the Gateway's GatewayClass params is applied to the provisioned ContourConfiguration": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Config: &contourv1alpha1.ContourConfigurationSpec{
+						EnableExternalNameService: pointer.Bool(true),
+						Envoy: &contourv1alpha1.EnvoyConfig{
+							Listener: &contourv1alpha1.EnvoyListenerConfig{
+								DisableMergeSlashes: pointer.Bool(true),
+							},
+						},
+					},
+				},
+			},
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: gatewayv1alpha2.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1alpha2.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the ContourConfiguration has been created
+				contourConfig := &contourv1alpha1.ContourConfiguration{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "contourconfig-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(contourConfig), contourConfig))
+
+				want := contourv1alpha1.ContourConfigurationSpec{
+					EnableExternalNameService: pointer.Bool(true),
+					Gateway: &contourv1alpha1.GatewayConfig{
+						GatewayRef: &contourv1alpha1.NamespacedName{
+							Namespace: gw.Name,
+							Name:      gw.Name,
+						},
+					},
+					Envoy: &contourv1alpha1.EnvoyConfig{
+						Listener: &contourv1alpha1.EnvoyListenerConfig{
+							DisableMergeSlashes: pointer.Bool(true),
+						},
+						Service: &contourv1alpha1.NamespacedName{
+							Namespace: gw.Namespace,
+							Name:      "envoy-" + gw.Name,
+						},
+					},
+				}
+
+				assert.Equal(t, want, contourConfig.Spec)
+			},
+		},
+		"Gateway-related config from the Gateway's GatewayClass params is overridden": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Config: &contourv1alpha1.ContourConfigurationSpec{
+						Gateway: &contourv1alpha1.GatewayConfig{
+							ControllerName: "some-controller",
+							GatewayRef: &contourv1alpha1.NamespacedName{
+								Namespace: "some-other-namespace",
+								Name:      "some-other-gateway",
+							},
+						},
+						Envoy: &contourv1alpha1.EnvoyConfig{
+							Service: &contourv1alpha1.NamespacedName{
+								Namespace: "some-other-namespace",
+								Name:      "some-other-service",
+							},
+						},
+					},
+				},
+			},
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: gatewayv1alpha2.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1alpha2.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the ContourConfiguration has been created
+				contourConfig := &contourv1alpha1.ContourConfiguration{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "contourconfig-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(contourConfig), contourConfig))
+
+				want := contourv1alpha1.ContourConfigurationSpec{
+					Gateway: &contourv1alpha1.GatewayConfig{
+						GatewayRef: &contourv1alpha1.NamespacedName{
+							Namespace: gw.Name,
+							Name:      gw.Name,
+						},
+					},
+					Envoy: &contourv1alpha1.EnvoyConfig{
+						Service: &contourv1alpha1.NamespacedName{
+							Namespace: gw.Namespace,
+							Name:      "envoy-" + gw.Name,
+						},
+					},
+				}
+
+				assert.Equal(t, want, contourConfig.Spec)
+			},
+		},
+		"If the Gateway's GatewayClass parametersRef is invalid it's ignored and the Gateway gets a default ContourConfiguration": {
+			gatewayClass: reconcilableGatewayClassWithInvalidParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Config: &contourv1alpha1.ContourConfigurationSpec{
+						EnableExternalNameService: pointer.Bool(true),
+						Envoy: &contourv1alpha1.EnvoyConfig{
+							Listener: &contourv1alpha1.EnvoyListenerConfig{
+								DisableMergeSlashes: pointer.Bool(true),
+							},
+						},
+					},
+				},
+			},
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: gatewayv1alpha2.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1alpha2.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the ContourConfiguration has been created
+				contourConfig := &contourv1alpha1.ContourConfiguration{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "contourconfig-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(contourConfig), contourConfig))
+
+				want := contourv1alpha1.ContourConfigurationSpec{
+					Gateway: &contourv1alpha1.GatewayConfig{
+						GatewayRef: &contourv1alpha1.NamespacedName{
+							Namespace: gw.Name,
+							Name:      gw.Name,
+						},
+					},
+					Envoy: &contourv1alpha1.EnvoyConfig{
+						Service: &contourv1alpha1.NamespacedName{
+							Namespace: gw.Namespace,
+							Name:      "envoy-" + gw.Name,
+						},
+					},
+				}
+
+				assert.Equal(t, want, contourConfig.Spec)
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -326,6 +551,9 @@ func TestGatewayReconcile(t *testing.T) {
 			client := fake.NewClientBuilder().WithScheme(scheme)
 			if tc.gatewayClass != nil {
 				client.WithObjects(tc.gatewayClass)
+			}
+			if tc.gatewayClassParams != nil {
+				client.WithObjects(tc.gatewayClassParams)
 			}
 			if tc.gateway != nil {
 				client.WithObjects(tc.gateway)

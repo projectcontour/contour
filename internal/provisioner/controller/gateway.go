@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects/contourconfig"
 	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
@@ -235,6 +236,14 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 
+	gcParams, err := r.getGatewayClassParams(ctx, gatewayClass)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("error getting gateway's gateway class parameters: %w", err)
+	}
+	if gcParams != nil {
+		gatewayContour.Spec.Config = gcParams.Spec.Config
+	}
+
 	if errs := r.ensureContour(ctx, gatewayContour, log); len(errs) > 0 {
 		return ctrl.Result{}, fmt.Errorf("failed to ensure resources for gateway: %w", retryable.NewMaybeRetryableAggregate(errs))
 	}
@@ -322,4 +331,32 @@ func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *m
 	handleResult("rbac", rbac.EnsureRBACDeleted(ctx, r.client, contour))
 
 	return errs
+}
+
+func (r *gatewayReconciler) getGatewayClassParams(ctx context.Context, gatewayClass *gatewayapi_v1alpha2.GatewayClass) (*contour_api_v1alpha1.ContourDeployment, error) {
+	// Check if there is a parametersRef to ContourDeployment with
+	// a namespace specified. Theoretically, we should only be reconciling
+	// Gateways for GatewayClasses that have valid parameter refs (or no refs),
+	// making this check mostly redundant other than checking for a nil params
+	// ref, but there is potentially a race condition where a GatewayClass's
+	// parameters ref is updated from valid to invalid, and then a Gateway reconcile
+	// is triggered before the GatewayClass's status is updated, that
+	// would lead to this code being executed for a GatewayClass with an
+	// invalid parametersRef.
+	if !isContourDeploymentRef(gatewayClass.Spec.ParametersRef) {
+		return nil, nil
+	}
+
+	gcParams := &contour_api_v1alpha1.ContourDeployment{}
+	key := client.ObjectKey{
+		Namespace: string(*gatewayClass.Spec.ParametersRef.Namespace),
+		Name:      gatewayClass.Spec.ParametersRef.Name,
+	}
+
+	if err := r.client.Get(ctx, key, gcParams); err != nil {
+		return nil, fmt.Errorf("error getting gateway class's parameters: %w", err)
+	}
+
+	return gcParams, nil
+
 }
