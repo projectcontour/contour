@@ -19,7 +19,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/projectcontour/contour/internal/provisioner/model"
-	"github.com/projectcontour/contour/internal/provisioner/objects/configmap"
+	"github.com/projectcontour/contour/internal/provisioner/objects/contourconfig"
 	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
 	"github.com/projectcontour/contour/internal/provisioner/objects/deployment"
 	"github.com/projectcontour/contour/internal/provisioner/objects/rbac"
@@ -288,7 +288,7 @@ func (r *gatewayReconciler) ensureContour(ctx context.Context, contour *model.Co
 		return errs
 	}
 
-	handleResult("configmap", configmap.EnsureConfigMap(ctx, r.client, contour))
+	handleResult("contour config", contourconfig.EnsureContourConfig(ctx, r.client, contour))
 	handleResult("xDS TLS secrets", secret.EnsureXDSSecrets(ctx, r.client, contour, r.contourImage))
 	handleResult("deployment", deployment.EnsureDeployment(ctx, r.client, contour, r.contourImage))
 	handleResult("daemonset", daemonset.EnsureDaemonSet(ctx, r.client, contour, r.contourImage, r.envoyImage))
@@ -318,7 +318,7 @@ func (r *gatewayReconciler) ensureContourDeleted(ctx context.Context, contour *m
 	handleResult("daemonset", daemonset.EnsureDaemonSetDeleted(ctx, r.client, contour))
 	handleResult("deployment", deployment.EnsureDeploymentDeleted(ctx, r.client, contour))
 	handleResult("xDS TLS Secrets", secret.EnsureXDSSecretsDeleted(ctx, r.client, contour))
-	handleResult("configmap", configmap.EnsureConfigMapDeleted(ctx, r.client, contour))
+	handleResult("contour config", contourconfig.EnsureContourConfigDeleted(ctx, r.client, contour))
 	handleResult("rbac", rbac.EnsureRBACDeleted(ctx, r.client, contour))
 
 	return errs

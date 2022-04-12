@@ -17,9 +17,9 @@ import (
 	"fmt"
 )
 
-// ConfigMapName returns the name of the Contour ConfigMap resource.
-func (c *Contour) ConfigMapName() string {
-	return "contour-" + c.Name
+// ContourConfigurationName returns the name of the ContourConfiguration resource.
+func (c *Contour) ContourConfigurationName() string {
+	return "contourconfig-" + c.Name
 }
 
 // ContourServiceName returns the name of the Contour Service resource.

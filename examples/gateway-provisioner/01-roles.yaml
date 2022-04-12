@@ -12,20 +12,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  - secrets
-  - serviceaccounts
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - endpoints
   - namespaces
   - secrets
@@ -42,6 +28,19 @@ rules:
   - create
   - get
   - update
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -115,6 +114,17 @@ rules:
   - create
   - get
   - update
+- apiGroups:
+  - projectcontour.io
+  resources:
+  - contourconfigurations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
 - apiGroups:
   - projectcontour.io
   resources:
