@@ -198,13 +198,13 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 	}()
 
 	if _, ok := validateListenersResult.InvalidListenerConditions[listener.Name]; ok {
-		// listener was found to be invalid
+		// Listener had an invalid protocol/port/hostname, don't need to inspect further.
 		return
 	}
 
 	var listenerSecret *Secret
 
-	// Validate the listener protocol is a supported type.
+	// Validate TLS details for HTTPS/TLS protocol listeners.
 	switch listener.Protocol {
 	case gatewayapi_v1alpha2.HTTPSProtocolType:
 		// Validate that if protocol is type HTTPS, that TLS is defined.
@@ -260,17 +260,6 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 				}
 			}
 		}
-	case gatewayapi_v1alpha2.HTTPProtocolType:
-		// Nothing further to validate.
-	default:
-		gwAccessor.AddListenerCondition(
-			string(listener.Name),
-			gatewayapi_v1alpha2.ListenerConditionDetached,
-			metav1.ConditionTrue,
-			gatewayapi_v1alpha2.ListenerReasonUnsupportedProtocol,
-			fmt.Sprintf("Listener.Protocol %q is not supported.", listener.Protocol),
-		)
-		return
 	}
 
 	// Get a list of the route kinds that the listener accepts.

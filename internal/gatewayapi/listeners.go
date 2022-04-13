@@ -14,6 +14,8 @@
 package gatewayapi
 
 import (
+	"fmt"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gatewayapi_v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -106,10 +108,12 @@ func ValidateListeners(listeners []gatewayapi_v1alpha2.Listener) ValidateListene
 				}
 			}
 		default:
-			// Unsupported protocol: ignore (will be handled in DAG processing)
-			// TODO(sk) probably makes sense to move the handling of unsupported
-			// protocols in here for cohesion.
-			continue
+			result.InvalidListenerConditions[listener.Name] = metav1.Condition{
+				Type:    string(gatewayapi_v1alpha2.ListenerConditionDetached),
+				Status:  metav1.ConditionTrue,
+				Reason:  string(gatewayapi_v1alpha2.ListenerReasonUnsupportedProtocol),
+				Message: fmt.Sprintf("Listener protocol %q is unsupported, must be one of HTTP, HTTPS or TLS", listener.Protocol),
+			}
 		}
 	}
 
