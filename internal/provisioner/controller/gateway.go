@@ -284,10 +284,6 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		Message:            "Gateway is scheduled",
 	})
 
-	// TODO set Listener conditions -- need to coordinate with gatewayapi_processor to avoid fighting.
-	//	- maybe we shouldn't even set conditions here -- run the validation logic to see what to program
-	// 	  on the service, but defer the condition setting to the gatewayapi_processor.
-
 	if err := r.client.Status().Update(ctx, gateway); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to set gateway %s scheduled condition: %w", req, err)
 	}

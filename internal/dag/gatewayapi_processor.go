@@ -103,7 +103,8 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 	}
 
-	// Add conditions for invalid listeners
+	// Validate listener protocols, ports and hostnames and add conditions
+	// for all invalid listeners.
 	validateListenersResult := gatewayapi.ValidateListeners(p.source.gateway.Spec.Listeners)
 	for name, cond := range validateListenersResult.InvalidListenerConditions {
 		gwAccessor.AddListenerCondition(
@@ -197,8 +198,9 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 		}
 	}()
 
+	// If the listener had an invalid protocol/port/hostname, we don't need to go
+	// any further.
 	if _, ok := validateListenersResult.InvalidListenerConditions[listener.Name]; ok {
-		// Listener had an invalid protocol/port/hostname, don't need to inspect further.
 		return
 	}
 
