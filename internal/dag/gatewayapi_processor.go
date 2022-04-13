@@ -103,9 +103,9 @@ func (p *GatewayAPIProcessor) Run(dag *DAG, source *KubernetesCache) {
 		}
 	}
 
-	// Add conditions for invalid HTTP listeners
+	// Add conditions for invalid listeners
 	validateListenersResult := gatewayapi.ValidateListeners(p.source.gateway.Spec.Listeners)
-	for name, cond := range validateListenersResult.InvalidHTTPListenerConditions {
+	for name, cond := range validateListenersResult.InvalidListenerConditions {
 		gwAccessor.AddListenerCondition(
 			string(name),
 			gatewayapi_v1alpha2.ListenerConditionType(cond.Type),
@@ -197,6 +197,11 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 		}
 	}()
 
+	if _, ok := validateListenersResult.InvalidListenerConditions[listener.Name]; ok {
+		// listener was found to be invalid
+		return
+	}
+
 	var listenerSecret *Secret
 
 	// Validate the listener protocol is a supported type.
@@ -256,10 +261,7 @@ func (p *GatewayAPIProcessor) computeListener(listener gatewayapi_v1alpha2.Liste
 			}
 		}
 	case gatewayapi_v1alpha2.HTTPProtocolType:
-		if _, ok := validateListenersResult.InvalidHTTPListenerConditions[listener.Name]; ok {
-			// listener was found to be invalid
-			return
-		}
+		// Nothing further to validate.
 	default:
 		gwAccessor.AddListenerCondition(
 			string(listener.Name),

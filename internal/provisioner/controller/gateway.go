@@ -228,31 +228,22 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
-	// Validate HTTP protocol listener ports and hostnames to get
-	// the port to program.
-	// TODO(sk) extend for HTTPS/TLS protocol listeners as well.
+	// Validate listener ports and hostnames to get
+	// the ports to program.
 	validateListenersResult := gatewayapi.ValidateListeners(gateway.Spec.Listeners)
 
-	// TODO handle no HTTP protocol listeners?
-	httpPort := model.ServicePort{
-		Name:       "http",
-		PortNumber: int32(validateListenersResult.HTTPPort),
-	}
-	gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, httpPort)
-
-	// Get HTTPS/TLS protocol listener port. TODO replace
-	// with logic similar to above for HTTP protocol.
-	for _, listener := range gateway.Spec.Listeners {
-		// We already handled the HTTP listener port above, so skip here.
-		if listener.Protocol == gatewayapi_v1alpha2.HTTPProtocolType {
-			continue
-		}
-
+	if validateListenersResult.InsecurePort > 0 {
 		port := model.ServicePort{
-			Name:       string(listener.Name),
-			PortNumber: int32(listener.Port),
+			Name:       "http",
+			PortNumber: int32(validateListenersResult.InsecurePort),
 		}
-
+		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
+	}
+	if validateListenersResult.SecurePort > 0 {
+		port := model.ServicePort{
+			Name:       "https",
+			PortNumber: int32(validateListenersResult.SecurePort),
+		}
 		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 
