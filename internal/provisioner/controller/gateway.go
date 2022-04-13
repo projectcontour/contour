@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-logr/logr"
 	contour_api_v1alpha1 "github.com/projectcontour/contour/apis/projectcontour/v1alpha1"
+	"github.com/projectcontour/contour/internal/gatewayapi"
 	"github.com/projectcontour/contour/internal/provisioner/model"
 	"github.com/projectcontour/contour/internal/provisioner/objects/contourconfig"
 	"github.com/projectcontour/contour/internal/provisioner/objects/daemonset"
@@ -227,7 +228,26 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
+	// Validate HTTP protocol listener ports and hostnames to get
+	// the port to program.
+	// TODO(sk) extend for HTTPS/TLS protocol listeners as well.
+	validateListenersResult := gatewayapi.ValidateListeners(gateway.Spec.Listeners)
+
+	// TODO handle no HTTP protocol listeners?
+	httpPort := model.ServicePort{
+		Name:       "http",
+		PortNumber: int32(validateListenersResult.HTTPPort),
+	}
+	gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, httpPort)
+
+	// Get HTTPS/TLS protocol listener port. TODO replace
+	// with logic similar to above for HTTP protocol.
 	for _, listener := range gateway.Spec.Listeners {
+		// We already handled the HTTP listener port above, so skip here.
+		if listener.Protocol == gatewayapi_v1alpha2.HTTPProtocolType {
+			continue
+		}
+
 		port := model.ServicePort{
 			Name:       string(listener.Name),
 			PortNumber: int32(listener.Port),
@@ -272,6 +292,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		Reason:             string(gatewayapi_v1alpha2.GatewayReasonScheduled),
 		Message:            "Gateway is scheduled",
 	})
+
+	// TODO set Listener conditions -- need to coordinate with gatewayapi_processor to avoid fighting.
+	//	- maybe we shouldn't even set conditions here -- run the validation logic to see what to program
+	// 	  on the service, but defer the condition setting to the gatewayapi_processor.
 
 	if err := r.client.Status().Update(ctx, gateway); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to set gateway %s scheduled condition: %w", req, err)
