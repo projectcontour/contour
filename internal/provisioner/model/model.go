@@ -304,10 +304,7 @@ type EnvoyNetworkPublishing struct {
 	// ClusterIP Service is created to publish the network endpoints.
 	//
 	// See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
-	//
-	// +unionDiscriminator
-	// +kubebuilder:default=LoadBalancerService
-	Type NetworkPublishingType `json:"type,omitempty"`
+	Type NetworkPublishingType
 
 	// LoadBalancer holds parameters for the load balancer. Present only if type is
 	// LoadBalancerService.
@@ -363,24 +360,25 @@ type EnvoyNetworkPublishing struct {
 	// +kubebuilder:validation:MaxItems=2
 	// +kubebuilder:default={{name: http, portNumber: 8080}, {name: https, portNumber: 8443}}
 	ContainerPorts []ContainerPort `json:"containerPorts,omitempty"`
+
+	// ServiceAnnotations is a set of annotations to add to the provisioned Envoy service.
+	ServiceAnnotations map[string]string
 }
 
-// NetworkPublishingType is a way to publish network endpoints.
-// +kubebuilder:validation:Enum=LoadBalancerService;NodePortService;ClusterIPService
-type NetworkPublishingType string
+type NetworkPublishingType = contourv1alpha1.NetworkPublishingType
 
 const (
 	// LoadBalancerServicePublishingType publishes a network endpoint using a Kubernetes
 	// LoadBalancer Service.
-	LoadBalancerServicePublishingType NetworkPublishingType = "LoadBalancerService"
+	LoadBalancerServicePublishingType NetworkPublishingType = contourv1alpha1.LoadBalancerServicePublishingType
 
 	// NodePortServicePublishingType publishes a network endpoint using a Kubernetes
 	// NodePort Service.
-	NodePortServicePublishingType NetworkPublishingType = "NodePortService"
+	NodePortServicePublishingType NetworkPublishingType = contourv1alpha1.NodePortServicePublishingType
 
 	// ClusterIPServicePublishingType publishes a network endpoint using a Kubernetes
 	// ClusterIP Service.
-	ClusterIPServicePublishingType NetworkPublishingType = "ClusterIPService"
+	ClusterIPServicePublishingType NetworkPublishingType = contourv1alpha1.ClusterIPServicePublishingType
 )
 
 // LoadBalancerStrategy holds parameters for a load balancer.

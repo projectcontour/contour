@@ -964,6 +964,98 @@ func TestGatewayReconcile(t *testing.T) {
 				}, daemonset.Spec.Template.Spec.Tolerations)
 			},
 		},
+		"If ContourDeployment.Spec.Envoy.NetworkPublishing is not specified, the Envoy service defaults to a LoadBalancer with no annotations": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{},
+			},
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: gatewayv1alpha2.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1alpha2.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the service has been created
+				svc := &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
+
+				assert.Equal(t, corev1.ServiceTypeLoadBalancer, svc.Spec.Type)
+				assert.Empty(t, svc.Annotations)
+			},
+		},
+		"If ContourDeployment.Spec.Envoy.NetworkPublishing is specified, its settings are used for the Envoy service": {
+			gatewayClass: reconcilableGatewayClassWithParams("gatewayclass-1", controller),
+			gatewayClassParams: &contourv1alpha1.ContourDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "projectcontour",
+					Name:      "gatewayclass-1-params",
+				},
+				Spec: contourv1alpha1.ContourDeploymentSpec{
+					Envoy: &contourv1alpha1.EnvoySettings{
+						NetworkPublishing: &contourv1alpha1.NetworkPublishing{
+							Type: contourv1alpha1.ClusterIPServicePublishingType,
+							ServiceAnnotations: map[string]string{
+								"key-1": "val-1",
+								"key-2": "val-2",
+							},
+						},
+					},
+				},
+			},
+			gateway: &gatewayv1alpha2.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "gateway-1",
+					Name:      "gateway-1",
+				},
+				Spec: gatewayv1alpha2.GatewaySpec{
+					GatewayClassName: gatewayv1alpha2.ObjectName("gatewayclass-1"),
+				},
+			},
+			assertions: func(t *testing.T, r *gatewayReconciler, gw *gatewayv1alpha2.Gateway, reconcileErr error) {
+				require.NoError(t, reconcileErr)
+
+				// Verify the Gateway has a "Scheduled: true" condition
+				require.NoError(t, r.client.Get(context.Background(), keyFor(gw), gw))
+				require.Len(t, gw.Status.Conditions, 1)
+				assert.Equal(t, string(gatewayv1alpha2.GatewayConditionScheduled), gw.Status.Conditions[0].Type)
+				assert.Equal(t, metav1.ConditionTrue, gw.Status.Conditions[0].Status)
+
+				// Verify the service has been created
+				svc := &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "gateway-1",
+						Name:      "envoy-gateway-1",
+					},
+				}
+				require.NoError(t, r.client.Get(context.Background(), keyFor(svc), svc))
+
+				assert.Equal(t, corev1.ServiceTypeClusterIP, svc.Spec.Type)
+				require.Len(t, svc.Annotations, 2)
+				assert.Equal(t, "val-1", svc.Annotations["key-1"])
+				assert.Equal(t, "val-2", svc.Annotations["key-2"])
+			},
+		},
 	}
 
 	for name, tc := range tests {

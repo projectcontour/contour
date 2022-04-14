@@ -252,6 +252,12 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		if gatewayClassParams.Spec.Envoy != nil {
+			// Network publishing
+			if networkPublishing := gatewayClassParams.Spec.Envoy.NetworkPublishing; networkPublishing != nil {
+				contourModel.Spec.NetworkPublishing.Envoy.Type = networkPublishing.Type
+				contourModel.Spec.NetworkPublishing.Envoy.ServiceAnnotations = networkPublishing.ServiceAnnotations
+			}
+
 			// Node placement
 			if nodePlacement := gatewayClassParams.Spec.Envoy.NodePlacement; nodePlacement != nil {
 				if contourModel.Spec.NodePlacement == nil {

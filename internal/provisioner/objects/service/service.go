@@ -317,6 +317,17 @@ func DesiredEnvoyService(contour *model.Contour) *corev1.Service {
 	case model.ClusterIPServicePublishingType:
 		svc.Spec.Type = corev1.ServiceTypeClusterIP
 	}
+
+	if len(contour.Spec.NetworkPublishing.Envoy.ServiceAnnotations) > 0 {
+		if svc.Annotations == nil {
+			svc.Annotations = map[string]string{}
+		}
+
+		for k, v := range contour.Spec.NetworkPublishing.Envoy.ServiceAnnotations {
+			svc.Annotations[k] = v
+		}
+	}
+
 	return svc
 }
 
