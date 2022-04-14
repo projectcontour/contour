@@ -240,8 +240,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error getting gateway's gateway class parameters: %w", err)
 	}
-	if gcParams != nil {
-		gatewayContour.Spec.Config = gcParams.Spec.Config
+	if gcParams != nil && gcParams.Spec.Contour != nil {
+		gatewayContour.Spec.Config = gcParams.Spec.Contour.Config
 	}
 
 	if errs := r.ensureContour(ctx, gatewayContour, log); len(errs) > 0 {
