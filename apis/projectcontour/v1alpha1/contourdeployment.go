@@ -66,6 +66,32 @@ type EnvoySettings struct {
 	// +optional
 	WorkloadType WorkloadType `json:"workloadType,omitempty"`
 
+	// NetworkPublishing defines how to expose Envoy to a network.
+	//
+	// +optional.
+	NetworkPublishing *NetworkPublishing `json:"networkPublishing,omitempty"`
+
+	// NodePlacement describes node scheduling configuration of Envoy pods.
+	//
+	// +optional
+	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
+}
+
+// WorkloadType is the type of Kubernetes workload to use for a component.
+//
+// +kubebuilder:validation:Enum=DaemonSet;Deployment
+type WorkloadType string
+
+const (
+	// A Kubernetes daemonset.
+	WorkloadTypeDaemonSet = "DaemonSet"
+
+	// A Kubernetes deployment.
+	WorkloadTypeDeployment = "Deployment"
+)
+
+// NetworkPublishing defines the schema for publishing to a network.
+type NetworkPublishing struct {
 	// NetworkPublishingType is the type of publishing strategy to use. Valid values are:
 	//
 	// * LoadBalancerService
@@ -96,32 +122,14 @@ type EnvoySettings struct {
 	//
 	// +kubebuilder:default=LoadBalancerService
 	// +optional
-	NetworkPublishingType NetworkPublishingType `json:"networkPublishingType,omitempty"`
+	Type NetworkPublishingType `json:"type,omitempty"`
 
 	// ServiceAnnotations is the annotations to add to
 	// the provisioned Envoy service.
 	//
 	// +optional
 	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
-
-	// NodePlacement describes node scheduling configuration of Envoy pods.
-	//
-	// +optional
-	NodePlacement *NodePlacement `json:"nodePlacement,omitempty"`
 }
-
-// WorkloadType is the type of Kubernetes workload to use for a component.
-//
-// +kubebuilder:validation:Enum=DaemonSet;Deployment
-type WorkloadType string
-
-const (
-	// A Kubernetes daemonset.
-	WorkloadTypeDaemonSet = "DaemonSet"
-
-	// A Kubernetes deployment.
-	WorkloadTypeDeployment = "Deployment"
-)
 
 // NetworkPublishingType is a way to publish network endpoints.
 //

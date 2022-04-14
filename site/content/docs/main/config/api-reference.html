@@ -5207,52 +5207,16 @@ as. Choices are DaemonSet and Deployment.</p>
 </tr>
 <tr>
 <td style="white-space:nowrap">
-<code>networkPublishingType</code>
+<code>networkPublishing</code>
 <br>
 <em>
-<a href="#projectcontour.io/v1alpha1.NetworkPublishingType">
-NetworkPublishingType
+<a href="#projectcontour.io/v1alpha1.NetworkPublishing">
+NetworkPublishing
 </a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>NetworkPublishingType is the type of publishing strategy to use. Valid values are:</p>
-<ul>
-<li>LoadBalancerService</li>
-</ul>
-<p>In this configuration, network endpoints for Envoy use container networking.
-A Kubernetes LoadBalancer Service is created to publish Envoy network
-endpoints.</p>
-<p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer">https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer</a></p>
-<ul>
-<li>NodePortService</li>
-</ul>
-<p>Publishes Envoy network endpoints using a Kubernetes NodePort Service.</p>
-<p>In this configuration, Envoy network endpoints use container networking. A Kubernetes
-NodePort Service is created to publish the network endpoints.</p>
-<p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#nodeport">https://kubernetes.io/docs/concepts/services-networking/service/#nodeport</a></p>
-<ul>
-<li>ClusterIPService</li>
-</ul>
-<p>Publishes Envoy network endpoints using a Kubernetes ClusterIP Service.</p>
-<p>In this configuration, Envoy network endpoints use container networking. A Kubernetes
-ClusterIP Service is created to publish the network endpoints.</p>
-<p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types">https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types</a></p>
-</td>
-</tr>
-<tr>
-<td style="white-space:nowrap">
-<code>serviceAnnotations</code>
-<br>
-<em>
-map[string]string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ServiceAnnotations is the annotations to add to
-the provisioned Envoy service.</p>
+<p>NetworkPublishing defines how to expose Envoy to a network.</p>
 </td>
 </tr>
 <tr>
@@ -6042,11 +6006,80 @@ If configured to port &ldquo;0&rdquo; then the admin interface is disabled.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="projectcontour.io/v1alpha1.NetworkPublishing">NetworkPublishing
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
+</p>
+<p>
+<p>NetworkPublishing defines the schema for publishing to a network.</p>
+</p>
+<table class="table table-striped table-borderless" style="border:none">
+<thead class="border-bottom">
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody class="border-top">
+<tr>
+<td style="white-space:nowrap">
+<code>type</code>
+<br>
+<em>
+<a href="#projectcontour.io/v1alpha1.NetworkPublishingType">
+NetworkPublishingType
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NetworkPublishingType is the type of publishing strategy to use. Valid values are:</p>
+<ul>
+<li>LoadBalancerService</li>
+</ul>
+<p>In this configuration, network endpoints for Envoy use container networking.
+A Kubernetes LoadBalancer Service is created to publish Envoy network
+endpoints.</p>
+<p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer">https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer</a></p>
+<ul>
+<li>NodePortService</li>
+</ul>
+<p>Publishes Envoy network endpoints using a Kubernetes NodePort Service.</p>
+<p>In this configuration, Envoy network endpoints use container networking. A Kubernetes
+NodePort Service is created to publish the network endpoints.</p>
+<p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#nodeport">https://kubernetes.io/docs/concepts/services-networking/service/#nodeport</a></p>
+<ul>
+<li>ClusterIPService</li>
+</ul>
+<p>Publishes Envoy network endpoints using a Kubernetes ClusterIP Service.</p>
+<p>In this configuration, Envoy network endpoints use container networking. A Kubernetes
+ClusterIP Service is created to publish the network endpoints.</p>
+<p>See: <a href="https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types">https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types</a></p>
+</td>
+</tr>
+<tr>
+<td style="white-space:nowrap">
+<code>serviceAnnotations</code>
+<br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ServiceAnnotations is the annotations to add to
+the provisioned Envoy service.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="projectcontour.io/v1alpha1.NetworkPublishingType">NetworkPublishingType
 (<code>string</code> alias)</h3>
 <p>
 (<em>Appears on:</em>
-<a href="#projectcontour.io/v1alpha1.EnvoySettings">EnvoySettings</a>)
+<a href="#projectcontour.io/v1alpha1.NetworkPublishing">NetworkPublishing</a>)
 </p>
 <p>
 <p>NetworkPublishingType is a way to publish network endpoints.</p>

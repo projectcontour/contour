@@ -1573,28 +1573,39 @@ spec:
                 description: Envoy contains settings for the Envoy part of the installation,
                   i.e. the xDS client/data plane and associated resources.
                 properties:
-                  networkPublishingType:
-                    default: LoadBalancerService
-                    description: "NetworkPublishingType is the type of publishing
-                      strategy to use. Valid values are: \n * LoadBalancerService
-                      \n In this configuration, network endpoints for Envoy use container
-                      networking. A Kubernetes LoadBalancer Service is created to
-                      publish Envoy network endpoints. \n See: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
-                      \n * NodePortService \n Publishes Envoy network endpoints using
-                      a Kubernetes NodePort Service. \n In this configuration, Envoy
-                      network endpoints use container networking. A Kubernetes NodePort
-                      Service is created to publish the network endpoints. \n See:
-                      https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
-                      \n * ClusterIPService \n Publishes Envoy network endpoints using
-                      a Kubernetes ClusterIP Service. \n In this configuration, Envoy
-                      network endpoints use container networking. A Kubernetes ClusterIP
-                      Service is created to publish the network endpoints. \n See:
-                      https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types"
-                    enum:
-                    - LoadBalancerService
-                    - NodePortService
-                    - ClusterIPService
-                    type: string
+                  networkPublishing:
+                    description: NetworkPublishing defines how to expose Envoy to
+                      a network.
+                    properties:
+                      serviceAnnotations:
+                        additionalProperties:
+                          type: string
+                        description: ServiceAnnotations is the annotations to add
+                          to the provisioned Envoy service.
+                        type: object
+                      type:
+                        default: LoadBalancerService
+                        description: "NetworkPublishingType is the type of publishing
+                          strategy to use. Valid values are: \n * LoadBalancerService
+                          \n In this configuration, network endpoints for Envoy use
+                          container networking. A Kubernetes LoadBalancer Service
+                          is created to publish Envoy network endpoints. \n See: https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer
+                          \n * NodePortService \n Publishes Envoy network endpoints
+                          using a Kubernetes NodePort Service. \n In this configuration,
+                          Envoy network endpoints use container networking. A Kubernetes
+                          NodePort Service is created to publish the network endpoints.
+                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#nodeport
+                          \n * ClusterIPService \n Publishes Envoy network endpoints
+                          using a Kubernetes ClusterIP Service. \n In this configuration,
+                          Envoy network endpoints use container networking. A Kubernetes
+                          ClusterIP Service is created to publish the network endpoints.
+                          \n See: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types"
+                        enum:
+                        - LoadBalancerService
+                        - NodePortService
+                        - ClusterIPService
+                        type: string
+                    type: object
                   nodePlacement:
                     description: NodePlacement describes node scheduling configuration
                       of Envoy pods.
@@ -1656,12 +1667,6 @@ spec:
                               type: string
                           type: object
                         type: array
-                    type: object
-                  serviceAnnotations:
-                    additionalProperties:
-                      type: string
-                    description: ServiceAnnotations is the annotations to add to the
-                      provisioned Envoy service.
                     type: object
                   workloadType:
                     default: Deployment
