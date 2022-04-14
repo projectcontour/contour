@@ -191,30 +191,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	log.Info("ensuring gateway resources")
 
-	gatewayContour := &model.Contour{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: gateway.Namespace,
-			Name:      gateway.Name,
-		},
-		Spec: model.ContourSpec{
-			Replicas: 2,
-			NetworkPublishing: model.NetworkPublishing{
-				Envoy: model.EnvoyNetworkPublishing{
-					Type: model.LoadBalancerServicePublishingType,
-					ContainerPorts: []model.ContainerPort{
-						{
-							Name:       "http",
-							PortNumber: 8080,
-						},
-						{
-							Name:       "https",
-							PortNumber: 8443,
-						},
-					},
-				},
-			},
-		},
-	}
+	contourModel := model.Default(gateway.Namespace, gateway.Name)
 
 	// Currently, only a single address of type IPAddress or Hostname
 	// is supported; anything else will be ignored.
@@ -224,7 +201,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if address.Type == nil ||
 			*address.Type == gatewayapi_v1alpha2.IPAddressType ||
 			*address.Type == gatewayapi_v1alpha2.HostnameAddressType {
-			gatewayContour.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP = address.Value
+			contourModel.Spec.NetworkPublishing.Envoy.LoadBalancer.LoadBalancerIP = address.Value
 		}
 	}
 
@@ -237,25 +214,33 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			Name:       "http",
 			PortNumber: int32(validateListenersResult.InsecurePort),
 		}
-		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
+		contourModel.Spec.NetworkPublishing.Envoy.ServicePorts = append(contourModel.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 	if validateListenersResult.SecurePort > 0 {
 		port := model.ServicePort{
 			Name:       "https",
 			PortNumber: int32(validateListenersResult.SecurePort),
 		}
-		gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts = append(gatewayContour.Spec.NetworkPublishing.Envoy.ServicePorts, port)
+
+		contourModel.Spec.NetworkPublishing.Envoy.ServicePorts = append(contourModel.Spec.NetworkPublishing.Envoy.ServicePorts, port)
 	}
 
 	gcParams, err := r.getGatewayClassParams(ctx, gatewayClass)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error getting gateway's gateway class parameters: %w", err)
 	}
+
 	if gcParams != nil {
-		gatewayContour.Spec.RuntimeSettings = gcParams.Spec.RuntimeSettings
+		// ContourConfiguration
+		contourModel.Spec.RuntimeSettings = gcParams.Spec.RuntimeSettings
+
+		if gcParams.Spec.Contour != nil {
+			// Deployment replicas
+			contourModel.Spec.Replicas = gcParams.Spec.Contour.Replicas
+		}
 	}
 
-	if errs := r.ensureContour(ctx, gatewayContour, log); len(errs) > 0 {
+	if errs := r.ensureContour(ctx, contourModel, log); len(errs) > 0 {
 		return ctrl.Result{}, fmt.Errorf("failed to ensure resources for gateway: %w", retryable.NewMaybeRetryableAggregate(errs))
 	}
 

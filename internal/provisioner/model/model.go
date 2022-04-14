@@ -26,6 +26,35 @@ const (
 	OwningGatewayNameLabel = "projectcontour.io/owning-gateway-name"
 )
 
+// Default returns a default instance of a Contour
+// for the given namespace/name.
+func Default(namespace, name string) *Contour {
+	return &Contour{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+		},
+		Spec: ContourSpec{
+			Replicas: 2,
+			NetworkPublishing: NetworkPublishing{
+				Envoy: EnvoyNetworkPublishing{
+					Type: LoadBalancerServicePublishingType,
+					ContainerPorts: []ContainerPort{
+						{
+							Name:       "http",
+							PortNumber: 8080,
+						},
+						{
+							Name:       "https",
+							PortNumber: 8443,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 // Contour is the representation of an instance of Contour + Envoy.
 type Contour struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
